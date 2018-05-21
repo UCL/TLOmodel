@@ -1,0 +1,3 @@
+# Base requirements file - common packages we use directly
+
+pandas
