@@ -51,3 +51,6 @@ html_short_title = '%s-%s' % (project, version)
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+# The checker can't see private repos
+linkcheck_ignore = ['^https://github.com/UCL/TLOmodel.*']
