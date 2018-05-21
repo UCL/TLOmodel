@@ -26,7 +26,7 @@ setup(
     author='Thanzi la Onse team',
     author_email='j.p.cooper@ucl.ac.uk',
     url='https://github.com/UCL/TLOmodel',
-    packages=find_packages('tlo'),
+    packages=find_packages(exclude=['tests']),
     include_package_data=True,
     zip_safe=False,
     classifiers=[
@@ -41,5 +41,5 @@ setup(
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='3',
+    python_requires='>=3',
 )
