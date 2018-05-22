@@ -12,4 +12,8 @@ include README.rst
 
 include tox.ini .travis.yml
 
+recursive-include requirements *.in
+recursive-include requirements *.txt
+recursive-include requirements Makefile
+
 global-exclude *.py[cod] __pycache__ *.so *.dylib
