@@ -10,7 +10,7 @@ getting distracted by modelling details.
 
 from pandas.tseries.offsets import DateOffset
 
-from tlo import Module, Parameter, Property
+from tlo import Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEvent, RegularEvent
 
 
@@ -26,16 +26,16 @@ class RandomDeath(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'death_probability': Parameter(float, 'Fixed probability of death each month'),
+        'death_probability': Parameter(Types.REAL, 'Fixed probability of death each month'),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'is_alive': Property(bool, 'Whether each individual is currently alive'),
+        'is_alive': Property(Types.BOOL, 'Whether each individual is currently alive'),
         'date_of_death': Property(
-            'datetime64[ns]', 'When the individual died (if they have)', optional=True),
+            Types.DATE, 'When the individual died (if they have)', optional=True),
     }
 
     def __init__(self, *args, **kwargs):
