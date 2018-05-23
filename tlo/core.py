@@ -1,10 +1,14 @@
 """Core framework classes.
 
-This contains things that didn't obviously go in their own module,
-such as specification for parameters and properties.
+This contains things that didn't obviously go in their own file, such as
+specification for parameters and properties, and the base Module class for
+disease modules.
 """
 
 from enum import Enum, auto
+
+import numpy as np
+import pandas as pd
 
 
 class Types(Enum):
@@ -31,13 +35,23 @@ class Specifiable:
     """Base class for Parameter and Property."""
 
     """Map our Types to pandas dtype specifications."""
-    TYPE_MAP = {
+    PANDAS_TYPE_MAP = {
         Types.DATE: 'datetime64[ns]',
         Types.BOOL: bool,
         Types.INT: int,
         Types.REAL: float,
         Types.CATEGORICAL: 'category',
         Types.LIST: object,
+    }
+
+    """Map our Types to Python types."""
+    PYTHON_TYPE_MAP = {
+        Types.DATE: pd.Timestamp,
+        Types.BOOL: bool,
+        Types.INT: int,
+        Types.REAL: float,
+        Types.CATEGORICAL: str,
+        Types.LIST: list,
     }
 
     def __init__(self, type_, description):
@@ -49,6 +63,14 @@ class Specifiable:
         assert type_ in Types
         self.type_ = type_
         self.description = description
+
+    @property
+    def python_type(self):
+        return self.PYTHON_TYPE_MAP[self.type_]
+
+    @property
+    def pandas_type(self):
+        return self.PANDAS_TYPE_MAP[self.type_]
 
 
 class Parameter(Specifiable):
@@ -67,3 +89,103 @@ class Property(Specifiable):
         """
         super().__init__(type_, description)
         self.optional = optional
+
+
+class Module:
+    """The base class for disease modules.
+
+    This declares the methods which individual modules must implement, and contains the
+    core functionality linking modules into a simulation. Useful properties available
+    on instances are:
+
+    `parameters`
+        A dictionary of module parameters, derived from specifications in the PARAMETERS
+        class attribute on a subclass. These parameters are also available as object
+        attributes in their own right(where their names do not clash) so you can do both
+        `m.parameters['name']` and `m.name`.
+
+    `rng`
+        A random number generator specific to this module, with its own internal state.
+        It's an instance of `numpy.random.RandomState`; see
+        https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html
+    """
+
+    def __init__(self):
+        """Construct a new disease module ready to be included in a simulation.
+
+        Initialises an empty parameters dictionary and module-specific random number
+        generator.
+        """
+        self.parameters = {}
+        self.rng = np.random.RandomState()
+
+    def read_parameters(self, data_folder):
+        """Read parameter values from file, if required.
+
+        Must be implemented by subclasses.
+
+        :param data_folder: path of a folder supplied to the Simulation containing data files.
+          Typically modules would read a particular file within here.
+        """
+        raise NotImplementedError
+
+    def initialise_population(self, population):
+        """Set our property values for the initial population.
+
+        Must be implemented by subclasses.
+
+        This method is called by the simulation when creating the initial population, and is
+        responsible for assigning initial values, for every individual, of those properties
+        'owned' by this module, i.e. those declared in its PROPERTIES dictionary.
+
+        TODO: We probably need to declare somehow which properties we 'read' here, so the
+        simulation knows what order to initialise modules in!
+
+        :param population: the population of individuals
+        """
+        raise NotImplementedError
+
+    def initialise_simulation(self, sim):
+        """Get ready for simulation start.
+
+        Must be implemented by subclasses.
+
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+        """
+        raise NotImplementedError
+
+    def on_birth(self, mother, child):
+        """Initialise our properties for a newborn individual.
+
+        Must be implemented by subclasses.
+
+        This is called by the simulation whenever a new person is born.
+
+        :param mother: the mother for this child
+        :param child: the new child
+        """
+        raise NotImplementedError
+
+    def __getattr__(self, name):
+        """Look up a module parameter as though it is an object property.
+
+        :param name: the parameter name
+        """
+        try:
+            return self.parameters[name]
+        except KeyError:
+            raise AttributeError('Attribute %s not found' % name)
+
+    def __setattr__(self, name, value):
+        """Set a module parameter as though it is an object property.
+
+        :param name: the parameter name
+        :param value: the new value for the parameter
+        """
+        if name in self.PARAMETERS:
+            assert isinstance(value, self.PARAMETERS[name].python_type)
+            self.parameters[name] = value
+        else:
+            super().__setattr__(name, value)
