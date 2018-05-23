@@ -1,4 +1,5 @@
 
+# TODO: Consider using pd.Timestamp instead
 from datetime import date
 
 import pandas as pd
