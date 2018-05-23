@@ -20,7 +20,10 @@ class RandomDeath(Module):
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
     framework:
-    *
+    * `read_parameters(data_folder)`
+    * `initialise_population(population)`
+    * `initialise_simulation(sim)`
+    * `on_birth(mother, child)`
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
