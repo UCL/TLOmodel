@@ -7,3 +7,4 @@ from .core import (  # noqa
     Types,
 )
 from .population import Person, Population  # noqa
+from .simulation import Simulation  # noqa

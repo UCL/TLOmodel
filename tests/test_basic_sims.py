@@ -4,7 +4,7 @@ from datetime import date
 
 import pandas as pd
 
-from tlo import Person, PopulationBuilder, Simulation
+from tlo import Person, Simulation
 from tlo.test import random_death
 
 
@@ -28,8 +28,7 @@ def test_individual_death():
     sim.seed_rngs(0)
 
     # Create a population of 2 individuals
-    builder = PopulationBuilder(sim)
-    builder.make_population(n=2)
+    sim.make_initial_population(n=2)
     assert len(sim.population) == 2
 
     # Test individual-based property access
