@@ -6,3 +6,4 @@ from .core import (  # noqa
     Property,
     Types,
 )
+from .population import Person, Population  # noqa
