@@ -98,6 +98,9 @@ class Module:
     core functionality linking modules into a simulation. Useful properties available
     on instances are:
 
+    `name`:
+        The unique name of this module within the simulation.
+
     `parameters`
         A dictionary of module parameters, derived from specifications in the PARAMETERS
         class attribute on a subclass. These parameters are also available as object
@@ -110,14 +113,29 @@ class Module:
         https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html
     """
 
-    def __init__(self):
+    # Subclasses may declare this dictionary to specify module-level parameters.
+    # We give an empty definition here as default.
+    PARAMETERS = {}
+
+    # Subclasses may declare this dictionary to specify properties of individuals.
+    # We give an empty definition here as default.
+    PROPERTIES = {}
+
+    # The explicit attributes of the module. We list these so we can distinguish dynamic
+    # parameters created from the PARAMETERS specification.
+    __slots__ = ('name', 'parameters', 'rng')
+
+    def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
 
         Initialises an empty parameters dictionary and module-specific random number
         generator.
+
+        :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
         self.rng = np.random.RandomState()
+        self.name = name or self.__class__.__name__
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -184,8 +202,11 @@ class Module:
         :param name: the parameter name
         :param value: the new value for the parameter
         """
-        if name in self.PARAMETERS:
-            assert isinstance(value, self.PARAMETERS[name].python_type)
-            self.parameters[name] = value
-        else:
+        try:
             super().__setattr__(name, value)
+        except AttributeError:
+            if name in self.PARAMETERS:
+                assert isinstance(value, self.PARAMETERS[name].python_type)
+                self.parameters[name] = value
+            else:
+                raise
