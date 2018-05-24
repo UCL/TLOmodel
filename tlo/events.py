@@ -10,7 +10,7 @@ class Event:
     defined below, and implement at least an `apply` method.
     """
 
-    def __init__(self, module):
+    def __init__(self, module, *args, **kwargs):
         """Create a new event.
 
         Note that just creating an event does not schedule it to happen; that
@@ -22,6 +22,8 @@ class Event:
         """
         self.module = module
         self.sim = module.sim
+        # This is needed so mixin constructors are called
+        super().__init__(*args, **kwargs)
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""

@@ -90,6 +90,21 @@ class Property(Specifiable):
         super().__init__(type_, description)
         self.optional = optional
 
+    def create_series(self, name, size):
+        """Create a Pandas Series for this property.
+
+        The values will be left unitialised.
+
+        :param name: the name for the series
+        :param size: the length of the series
+        """
+        s = pd.Series(
+            name=name,
+            index=range(size),
+            dtype=self.pandas_type,
+        )
+        return s
+
 
 class Module:
     """The base class for disease modules.
@@ -111,6 +126,9 @@ class Module:
         A random number generator specific to this module, with its own internal state.
         It's an instance of `numpy.random.RandomState`; see
         https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html
+
+    `sim`
+        The simulation this module is part of, once registered.
     """
 
     # Subclasses may declare this dictionary to specify module-level parameters.
@@ -123,7 +141,7 @@ class Module:
 
     # The explicit attributes of the module. We list these so we can distinguish dynamic
     # parameters created from the PARAMETERS specification.
-    __slots__ = ('name', 'parameters', 'rng')
+    __slots__ = ('name', 'parameters', 'rng', 'sim')
 
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
@@ -136,6 +154,7 @@ class Module:
         self.parameters = {}
         self.rng = np.random.RandomState()
         self.name = name or self.__class__.__name__
+        self.sim = None
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.

@@ -6,6 +6,7 @@ from pandas.tseries.offsets import DateOffset  # noqa
 
 # Import our key classes so they're available in the main namespace
 from .core import (  # noqa
+    Module,
     Parameter,
     Property,
     Types,
