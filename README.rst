@@ -41,6 +41,8 @@ To build the documentation, activate your environment as above then run::
 
     tox -e docs
 
+The generated HTML documentation will appear in `dist/docs`.
+
 Development
 ===========
 

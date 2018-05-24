@@ -79,7 +79,7 @@ class RandomDeath(Module):
         """
         # Everyone starts off alive
         # We use 'broadcasting' to set the same value for every individual
-        population.props['is_alive'][:] = True
+        population.props.loc[:, 'is_alive'] = True
         # No-one has a death date yet, so we can leave that uninitialised
         # (which means it will be full of 'not a time' values)
 
@@ -137,7 +137,11 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # Generate a series of random numbers, one per individual
         probs = self.module.rng.rand(len(population))
-        # Figure out which individuals are dead
+        # Figure out which individuals are newly dead
+        deaths = population.is_alive & (probs < self.death_probability)
+        # Record their date of death
+        population.props.loc[deaths, 'date_of_death'] = self.sim.date
+        # Kill them
         population.is_alive &= (probs >= self.death_probability)
         # We could do this more verbosely:
         # population.is_alive[:] = population.is_alive & (probs >= self.death_probability)

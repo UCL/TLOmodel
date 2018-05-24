@@ -22,7 +22,7 @@ def test_individual_death():
     rd.death_probability = 0.2
 
     # Seed the random number generators
-    sim.seed_rngs(0)
+    sim.seed_rngs(1)
 
     # Create a population of 2 individuals
     sim.make_initial_population(n=2)
@@ -30,14 +30,14 @@ def test_individual_death():
 
     # Test individual-based property access
     assert isinstance(sim.population[0], Person)
-    assert sim.population[0].props['is_alive']
     assert sim.population[0].is_alive
+    assert sim.population[0].props['is_alive'][0]
 
     # Test population-based property access
     assert len(sim.population.props['is_alive']) == 2
     assert isinstance(sim.population.props['is_alive'], pd.Series)
     pd.testing.assert_series_equal(
-        pd.Series([True, True]),
+        pd.Series([True, True], name='is_alive'),
         sim.population.props['is_alive'])
     assert sim.population.is_alive is sim.population.props['is_alive']
 
@@ -48,7 +48,7 @@ def test_individual_death():
 
     # Check death dates match reference data
     pd.testing.assert_series_equal(
-        pd.Series([False, False]),
+        pd.Series([False, False], name='is_alive'),
         sim.population.props['is_alive'])
     pd.testing.assert_series_equal(
         pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)], name='date_of_death'),
