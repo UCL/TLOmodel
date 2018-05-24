@@ -1,16 +1,13 @@
 
-# TODO: Consider using pd.Timestamp instead
-from datetime import date
-
 import pandas as pd
 
-from tlo import Person, Simulation
+from tlo import Date, Person, Simulation
 from tlo.test import random_death
 
 
 def test_individual_death():
     # Create a new simulation to orchestrate matters
-    sim = Simulation(start_date=date(2010, 1, 1))
+    sim = Simulation(start_date=Date(2010, 1, 1))
 
     # Register just a test module with random death
     # Note: this approach would allow us to give a different name if desired,
@@ -45,14 +42,14 @@ def test_individual_death():
     assert sim.population.is_alive is sim.population.props['is_alive']
 
     # Simulate for 10 years
-    assert sim.date == date(2010, 1, 1)
-    sim.simulate(end_date=date(2020, 1, 1))
-    assert sim.date == date(2020, 1, 1)
+    assert sim.date == Date(2010, 1, 1)
+    sim.simulate(end_date=Date(2010, 5, 1))
+    assert sim.date == Date(2010, 5, 1)
 
     # Check death dates match reference data
     pd.testing.assert_series_equal(
         pd.Series([False, False]),
         sim.population.props['is_alive'])
     pd.testing.assert_series_equal(
-        pd.Series([date(2012, 1, 1), date(2018, 1, 1)]),
+        pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)], name='date_of_death'),
         sim.population.props['date_of_death'])

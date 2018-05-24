@@ -1,6 +1,6 @@
 """Support for creating different kinds of events."""
 
-from pandas.tseries.offsets import DateOffset
+from tlo import DateOffset
 
 
 class Event:

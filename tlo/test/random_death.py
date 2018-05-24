@@ -8,9 +8,7 @@ This is thus mainly useful for demonstrating how to write a disease module, with
 getting distracted by modelling details.
 """
 
-from pandas.tseries.offsets import DateOffset
-
-from tlo import Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
