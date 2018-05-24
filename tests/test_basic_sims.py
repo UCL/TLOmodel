@@ -16,7 +16,7 @@ def test_individual_death():
     # Note: this approach would allow us to give a different name if desired,
     # so the same module could appear twice, e.g. with different parameters.
     # Not sure if that would be helpful, but...!
-    rd = random_death.RandomDeath()
+    rd = random_death.RandomDeath(name='rd')
     sim.register(rd)
     assert sim.modules['rd'] is rd
     sim.modules['rd'].parameters['death_probability'] = 0.1
