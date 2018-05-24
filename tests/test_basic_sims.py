@@ -35,6 +35,7 @@ def test_individual_death():
     # Test individual-based property access
     assert isinstance(sim.population[0], Person)
     assert sim.population[0].props['is_alive']
+    assert sim.population[0].is_alive
 
     # Test population-based property access
     assert len(sim.population.props['is_alive']) == 2
@@ -42,6 +43,7 @@ def test_individual_death():
     pd.testing.assert_series_equal(
         pd.Series([True, True]),
         sim.population.props['is_alive'])
+    assert sim.population.is_alive is sim.population.props['is_alive']
 
     # Simulate for 10 years
     assert sim.date == date(2010, 1, 1)
