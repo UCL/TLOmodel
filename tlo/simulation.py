@@ -1,6 +1,11 @@
 """The main simulation controller."""
 
+import heapq
+import itertools
+
 import numpy as np
+
+from tlo import Population
 
 
 class Simulation:
@@ -36,6 +41,7 @@ class Simulation:
         self.date = self.start_date = start_date
         self.modules = {}
         self.rng = np.random.RandomState()
+        self.event_queue = EventQueue()
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -47,6 +53,8 @@ class Simulation:
             assert module.name not in self.modules, (
                 'A module named {} has already been registered'.format(module.name))
             self.modules[module.name] = module
+            module.sim = self
+            module.read_parameters('')  # TODO: Use a proper data_folder
 
     def seed_rngs(self, seed):
         """Seed all random number generators with the given seed.
@@ -57,7 +65,7 @@ class Simulation:
         :param seed: the RNG seed to use
         """
         self.rng.seed(seed)
-        for module in self.modules:
+        for module in self.modules.values():
             module.rng.seed(seed)
 
     def make_initial_population(self, *, n):
@@ -66,7 +74,9 @@ class Simulation:
         :param n: the number of individuals to create; must be given as
             a keyword parameter for clarity
         """
-        raise NotImplementedError
+        self.population = Population(self, n)
+        for module in self.modules.values():
+            module.initialise_population(self.population)
 
     def simulate(self, *, end_date):
         """Simulation until the given end date
@@ -75,7 +85,16 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
-        raise NotImplementedError
+        for module in self.modules.values():
+            module.initialise_simulation(self)
+        while self.event_queue:
+            event, date = self.event_queue.next_event()
+            if date >= end_date:
+                self.date = end_date
+                break
+            self.date = date
+            # TODO: Should we pass self explicitly here?
+            event.run()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
@@ -84,4 +103,38 @@ class Simulation:
         :param date: when the event should happen
         """
         assert date >= self.date, 'Cannot schedule events in the past'
-        raise NotImplementedError
+        self.event_queue.schedule(event, date)
+
+
+class EventQueue:
+    """A simple priority queue for events.
+
+    This doesn't really care what events and dates are, provided dates are comparable
+    so we can tell which is least, i.e. earliest.
+    """
+
+    def __init__(self):
+        """Create an empty event queue."""
+        self.counter = itertools.count()
+        self.queue = []
+
+    def schedule(self, event, date):
+        """Schedule a new event.
+
+        :param event: the event to schedule
+        :param date: when it should happen
+        """
+        entry = (date, next(self.counter), event)
+        heapq.heappush(self.queue, entry)
+
+    def next_event(self):
+        """Get the earliest event in the queue.
+
+        :returns: an (event, date) pair
+        """
+        date, count, event = heapq.heappop(self.queue)
+        return event, date
+
+    def __len__(self):
+        """:return: the length of the queue"""
+        return len(self.queue)
