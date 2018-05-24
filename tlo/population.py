@@ -55,6 +55,8 @@ class Person:
     def __setattr__(self, name, value):
         """Set the value of a property of this individual.
 
+        :param name: the name of the property to access
+        :param value: the new value
         """
         try:
             super().__setattr__(name, value)
@@ -79,6 +81,8 @@ class Population:
     `people`
         A list of Person objects representing the individuals in the population
     """
+
+    __slots__ = ('people', 'props', 'sim')
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -112,3 +116,24 @@ class Population:
     def __iter__(self):
         """Iterate over the people in a population."""
         return iter(self.people)
+
+    def __getattr__(self, name):
+        """Get the values of the given property over the population.
+
+        :param name: the name of the property to access
+        """
+        return self.props.loc[:, name]
+
+    def __setattr__(self, name, value):
+        """Set the values of a property over the population.
+
+        :param name: the name of the property to access
+        :param value: the new values
+        """
+        try:
+            super().__setattr__(name, value)
+        except AttributeError:
+            if name in self.props.columns:
+                self.props.loc[:, name] = value
+            else:
+                raise
