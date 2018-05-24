@@ -11,7 +11,7 @@ getting distracted by modelling details.
 from pandas.tseries.offsets import DateOffset
 
 from tlo import Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEvent, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
 class RandomDeath(Module):
@@ -108,7 +108,7 @@ class RandomDeath(Module):
         child.is_alive = True
 
 
-class RandomDeathEvent(RegularEvent, PopulationScopeEvent):
+class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually kills people.
 
     Regular events automatically reschedule themselves at a fixed frequency,
