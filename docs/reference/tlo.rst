@@ -6,4 +6,4 @@ tlo
     from tlo import *
 
 .. automodule:: tlo
-    :members:
+    :imported-members:
