@@ -113,7 +113,7 @@ class Module:
     core functionality linking modules into a simulation. Useful properties available
     on instances are:
 
-    `name`:
+    `name`
         The unique name of this module within the simulation.
 
     `parameters`
