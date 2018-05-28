@@ -99,10 +99,8 @@ class Population:
         """
         self.sim = sim
         # Create empty property arrays
-        props = self.props = pd.DataFrame()
-        for module in sim.modules.values():
-            for prop_name, prop in module.PROPERTIES.items():
-                props[prop_name] = prop.create_series(prop_name, initial_size)
+        self.props = self._create_props(initial_size)
+        self.props.index.name = 'person'
         # Create Person objects to provide individual-based access
         self.people = []
         for i in range(initial_size):
@@ -140,3 +138,28 @@ class Population:
                 self.props.loc[:, name] = value
             else:
                 raise
+
+    def _create_props(self, size):
+        """Internal helper function to create a properties dataframe.
+
+        :param size: the number of rows to create
+        """
+        props = pd.DataFrame()
+        for module in self.sim.modules.values():
+            for prop_name, prop in module.PROPERTIES.items():
+                props[prop_name] = prop.create_series(prop_name, size)
+        return props
+
+    def do_birth(self):
+        """Create a new person within the population.
+
+        TODO: This will over-allocate capacity in the population dataframe for efficiency.
+
+        :return: the new person
+        """
+        new_index = len(self)
+        extra_props = self._create_props(1)
+        self.props = self.props.append(extra_props, ignore_index=True, sort=False)
+        new_person = Person(self, new_index)
+        self.people.append(new_person)
+        return new_person
