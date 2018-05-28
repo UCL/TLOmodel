@@ -41,7 +41,7 @@ def test_individual_death():
         sim.population.props['is_alive'])
     assert sim.population.is_alive is sim.population.props['is_alive']
 
-    # Simulate for 10 years
+    # Simulate for 4 months
     assert sim.date == Date(2010, 1, 1)
     sim.simulate(end_date=Date(2010, 5, 1))
     assert sim.date == Date(2010, 5, 1)

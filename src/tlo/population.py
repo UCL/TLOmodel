@@ -9,10 +9,13 @@ class Person:
     Useful attributes of a person:
 
     `population`
-        The population this person is part of
+        The population this person is part of.
+
+    `index`
+        The index of this person within the population.
 
     `sim`
-        The Simulation instance controlling this population
+        The Simulation instance controlling this population.
 
     `props`
         A single row of the pandas DataFrame with population's properties giving
@@ -29,7 +32,7 @@ class Person:
         """Create a new individual within a population.
 
         :param population: the Population this person is part of
-        :param index: the index of this person with the population
+        :param index: the index of this person within the population
         """
         self.population = population
         self.index = index
@@ -73,13 +76,13 @@ class Population:
     Useful properties of a population:
 
     `sim`
-        The Simulation instance controlling this population
+        The Simulation instance controlling this population.
 
     `props`
-        A pandas DataFrame with the properties of all individuals as columns
+        A pandas DataFrame with the properties of all individuals as columns.
 
     `people`
-        A list of Person objects representing the individuals in the population
+        A list of Person objects representing the individuals in the population.
     """
 
     __slots__ = ('people', 'props', 'sim')
