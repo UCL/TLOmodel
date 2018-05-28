@@ -126,20 +126,23 @@ class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
 
         For efficiency, we use pandas operations to scan the entire population
-        and initiate pregnancies individuals at random.
+        and initiate pregnancies at random.
 
         :param population: the current population
         """
         # Find live and non-pregnant individuals
-        candidates = population[population.is_alive & ~population.is_pregnant]
+        candidates = population.props[population.is_alive & ~population.is_pregnant]
         # OR: candidates = population.props.query('is_alive & ~is_pregnant')
         # Throw a die for each
         rng = self.module.rng
-        for person in candidates.index:
+        birth_date = self.sim.date + DateOffset(months=9)
+        for person_index in candidates.index:
             if rng.rand() < self.pregnancy_probability:
                 # Schedule a birth event for this person
-                birth = DelayedBirthEvent(self.module, population[person])
-                self.sim.schedule_event(birth, self.sim.date + DateOffset(months=9))
+                mother = population[person_index]
+                birth = DelayedBirthEvent(self.module, mother)
+                self.sim.schedule_event(birth, birth_date)
+                mother.is_pregnant = True
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):

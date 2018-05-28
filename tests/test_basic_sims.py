@@ -66,7 +66,7 @@ def test_birth_and_death():
 
     # Register modules
     rb = random_birth.RandomBirth(name='rb')
-    rb.pregnancy_probability = 0.5
+    rb.pregnancy_probability = 0.1
     rd = random_death.RandomDeath(name='rd')
     rd.death_probability = 0.01
     sim.register(rb, rd)
@@ -87,19 +87,19 @@ def test_birth_and_death():
         assert person.is_alive
         assert not person.is_pregnant
 
-    # Simulate for 5 years
+    # Simulate for 2 years
     assert sim.date == Date(1950, 1, 1)
-    sim.simulate(end_date=Date(1955, 1, 1))
-    assert sim.date == Date(1955, 1, 1)
+    sim.simulate(end_date=Date(1952, 1, 1))
+    assert sim.date == Date(1952, 1, 1)
 
     # Check birth stats match reference data
-    assert len(sim.population) == 35
+    assert len(sim.population) == 19
 
     # Check no-one gave birth after dying
     for person in sim.population:
         if not person.is_alive:
             for child in person.children:
-                assert child.date_of_birth < person.date_of_death
+                assert child.date_of_birth <= person.date_of_death
 
     # Check people can't become pregnant while already pregnant
     for person in sim.population:
