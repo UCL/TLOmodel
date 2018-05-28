@@ -37,8 +37,9 @@ def test_individual_death():
     assert len(sim.population.props['is_alive']) == 2
     assert isinstance(sim.population.props['is_alive'], pd.Series)
     pd.testing.assert_series_equal(
-        pd.Series([True, True], name='is_alive'),
-        sim.population.props['is_alive'])
+        pd.Series([True, True]),
+        sim.population.props['is_alive'],
+        check_names=False)
     assert sim.population.is_alive is sim.population.props['is_alive']
 
     # Simulate for 4 months
@@ -48,11 +49,13 @@ def test_individual_death():
 
     # Check death dates match reference data
     pd.testing.assert_series_equal(
-        pd.Series([False, False], name='is_alive'),
-        sim.population.props['is_alive'])
+        pd.Series([False, False]),
+        sim.population.props['is_alive'],
+        check_names=False)
     pd.testing.assert_series_equal(
-        pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)], name='date_of_death'),
-        sim.population.props['date_of_death'])
+        pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)]),
+        sim.population.props['date_of_death'],
+        check_names=False)
 
 
 def test_birth_and_death():
