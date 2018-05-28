@@ -105,6 +105,20 @@ class Simulation:
         assert date >= self.date, 'Cannot schedule events in the past'
         self.event_queue.schedule(event, date)
 
+    def do_birth(self, mother):
+        """Create a new child person.
+
+        We create a new person in the population and then call the `on_birth` method in
+        all modules to initialise the child's properties.
+
+        :param mother: the maternal parent
+        :return: the new child
+        """
+        child = self.population.do_birth()
+        for module in self.modules.values():
+            module.on_birth(mother, child)
+        return child
+
 
 class EventQueue:
     """A simple priority queue for events.
