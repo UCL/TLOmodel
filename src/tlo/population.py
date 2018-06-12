@@ -48,6 +48,12 @@ class Person:
         # Otherwise it would convert the row to a Series
         return self.population.props.loc[[self.index], :]
 
+    def __str__(self):
+        """Return a human-readable summary of this person."""
+        return '<Person {}>'.format(self.index)
+
+    __repr__ = __str__
+
     def __getattr__(self, name):
         """Get the value of the given property of this individual.
 
