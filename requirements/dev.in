@@ -1,0 +1,11 @@
+-r base.txt
+
+# Interactive web-browser interface
+jupyter
+
+# Running tests
+pytest
+tox
+
+# Building requirements files
+pip-tools
