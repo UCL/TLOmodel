@@ -1,0 +1,12 @@
+-r base.txt
+
+# Interactive web-browser interface
+jupyter
+
+# Running tests
+pytest
+virtualenv==15.1.0  # To avoid breaking anaconda on Mac :(
+tox
+
+# Building requirements files
+pip-tools

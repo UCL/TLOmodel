@@ -1,0 +1,6 @@
+# Base requirements file - common packages we use directly
+
+numpy
+pandas
+
+jinja2  # Needed for pandas.Styler

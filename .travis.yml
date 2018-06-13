@@ -8,11 +8,8 @@ env:
   matrix:
     - TOXENV=check
     - TOXENV=docs
-matrix:
-  include:
-    - python: '3.6'
-      env:
-        - TOXENV=py36,report
+    - TOXENV=py36,report
+python: '3.6'
 before_install:
   - python --version
   - uname -a
