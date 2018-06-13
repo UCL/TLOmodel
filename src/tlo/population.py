@@ -129,6 +129,7 @@ class Population:
 
         :param name: the name of the property to access
         """
+        # TODO: If over-allocating make sure to change the end index here and in __setattr__!
         return self.props.loc[:, name]
 
     def __setattr__(self, name, value):
