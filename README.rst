@@ -46,6 +46,14 @@ The generated HTML documentation will appear in `dist/docs`.
 Development
 ===========
 
+To use the software interactively in a Jupyter notebook, run::
+
+    jupyter notebook notebooks &
+
+To run just the Python code tests quickly, use::
+
+    pytest
+
 To run all the tests run::
 
     tox
