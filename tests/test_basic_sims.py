@@ -31,16 +31,16 @@ def test_individual_death():
     # Test individual-based property access
     assert isinstance(sim.population[0], Person)
     assert sim.population[0].is_alive
-    assert sim.population[0].props['is_alive'][0]
+    assert sim.population[0].props['is_alive'][0]  # Treat this as read-only!
 
     # Test population-based property access
-    assert len(sim.population.props['is_alive']) == 2
-    assert isinstance(sim.population.props['is_alive'], pd.Series)
+    assert len(sim.population.is_alive) == 2
+    assert isinstance(sim.population.is_alive, pd.Series)
     pd.testing.assert_series_equal(
         pd.Series([True, True]),
-        sim.population.props['is_alive'],
+        sim.population.is_alive,
         check_names=False)
-    assert sim.population.is_alive is sim.population.props['is_alive']
+    assert sim.population.is_alive is sim.population.props['is_alive']  # For now...
 
     # Simulate for 4 months
     assert sim.date == Date(2010, 1, 1)
@@ -50,11 +50,11 @@ def test_individual_death():
     # Check death dates match reference data
     pd.testing.assert_series_equal(
         pd.Series([False, False]),
-        sim.population.props['is_alive'],
+        sim.population.is_alive,
         check_names=False)
     pd.testing.assert_series_equal(
         pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)]),
-        sim.population.props['date_of_death'],
+        sim.population.date_of_death,
         check_names=False)
 
 
