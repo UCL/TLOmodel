@@ -25,7 +25,8 @@ setup(
     author='Thanzi la Onse team',
     author_email='j.p.cooper@ucl.ac.uk',
     url='https://github.com/UCL/TLOmodel',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
     classifiers=[

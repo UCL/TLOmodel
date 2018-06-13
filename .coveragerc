@@ -1,12 +1,12 @@
 [paths]
 source =
-   tlo
+    src/tlo
+    */site-packages/tlo
 
 [run]
 branch = true
 source =
     tlo
-    tests
 parallel = true
 
 [report]

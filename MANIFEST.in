@@ -1,15 +1,18 @@
 graft docs
 graft src
-graft ci
 graft tests
 
 include .bumpversion.cfg
 include .coveragerc
-include .cookiecutterrc
 include .editorconfig
 
 include README.rst
 
 include tox.ini .travis.yml
 
-global-exclude *.py[cod] __pycache__ *.so *.dylib
+recursive-include notebooks *.ipynb
+recursive-include requirements *.in
+recursive-include requirements *.txt
+recursive-include requirements Makefile
+
+global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/**

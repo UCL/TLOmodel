@@ -24,7 +24,7 @@ To get started quickly, we recommend using Anaconda Python, and installing withi
 
 ::
 
-    conda create -n tlo python=3.6 virtualenv
+    conda create -n tlo python=3.6 virtualenv=15.1.0 pip=9.0.1
     source activate tlo
     pip install -r requirements/dev.txt
     pip install -e .
@@ -41,8 +41,18 @@ To build the documentation, activate your environment as above then run::
 
     tox -e docs
 
+The generated HTML documentation will appear in `dist/docs`.
+
 Development
 ===========
+
+To use the software interactively in a Jupyter notebook, run::
+
+    jupyter notebook notebooks &
+
+To run just the Python code tests quickly, use::
+
+    pytest
 
 To run all the tests run::
 
