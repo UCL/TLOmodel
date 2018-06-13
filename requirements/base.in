@@ -2,3 +2,5 @@
 
 numpy
 pandas
+
+jinja2  # Needed for pandas.Styler
