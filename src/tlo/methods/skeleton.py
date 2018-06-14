@@ -25,14 +25,14 @@ class Skeleton(Module):
     # and longer description.
     PARAMETERS = {
         'parameter_a': Parameter(
-            Types.REAL, 'description of parameter a'),
+            Types.REAL, 'Description of parameter a'),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'description of property a'),
+        'property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
     def read_parameters(self, data_folder):
@@ -62,8 +62,6 @@ class Skeleton(Module):
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
-
-        Here we add our monthly event to poll the population for deaths.
         """
         raise NotImplementedError
 
@@ -75,81 +73,31 @@ class Skeleton(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        child.date_of_birth = self.sim.date
-        child.is_pregnant = False
-        child.children = []
-        mother.children.append(child.index)
+        raise NotImplementedError
 
 
-class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that actually makes people pregnant.
+class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
     and thus implement discrete timestep type behaviour. The frequency is
     specified when calling the base class constructor in our __init__ method.
     """
 
-    def __init__(self, module, pregnancy_probability):
-        """Create a new random pregnancy event.
+    def __init__(self, module):
+        """One line summary here
 
         We need to pass the frequency at which we want to occur to the base class
         constructor using super(). We also pass the module that created this event,
         so that random number generators can be scoped per-module.
 
         :param module: the module that created this event
-        :param pregnancy_probability: the per-person probability of pregnancy each month
         """
-        self.pregnancy_probability = pregnancy_probability
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         """Apply this event to the population.
 
-        For efficiency, we use pandas operations to scan the entire population
-        and initiate pregnancies at random.
-
         :param population: the current population
         """
-        # Find live and non-pregnant individuals
-        candidates = population[population.is_alive & ~population.is_pregnant]
-        # OR: candidates = population.props.query('is_alive & ~is_pregnant')
-        # Throw a die for each
-        rng = self.module.rng
-        birth_date = self.sim.date + DateOffset(months=9)
-        for person_index in candidates.index:
-            if rng.rand() < self.pregnancy_probability:
-                # Schedule a birth event for this person
-                mother = population[person_index]
-                birth = DelayedBirthEvent(self.module, mother)
-                self.sim.schedule_event(birth, birth_date)
-                mother.is_pregnant = True
-
-
-class DelayedBirthEvent(Event, IndividualScopeEventMixin):
-    """A one-off event in which a pregnant mother gives birth.
-
-    For an individual-scoped event we need to specify the person it applies to in
-    the constructor.
-    """
-
-    def __init__(self, module, mother):
-        """Create a new birth event.
-
-        We need to pass the person this event happens to to the base class constructor
-        using super(). We also pass the module that created this event, so that random
-        number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        :param mother: the person giving birth
-        """
-        super().__init__(module, person=mother)
-
-    def apply(self, mother):
-        """Apply this event to the given person.
-
-        Assuming the person is still alive, we ask the simulation to create a new offspring.
-
-        :param person: the person the event happens to, i.e. the mother giving birth
-        """
-        if mother.is_alive:
-            self.sim.do_birth(mother)
+        raise NotImplementedError
