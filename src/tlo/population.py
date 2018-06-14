@@ -121,16 +121,16 @@ class Population:
 
         What is returned depends on the type of key looked up:
 
-        * `int`: a single `Person` object is returned, e.g. `pop[2]`
-        * `str`: a `Series` is returned giving the value of a single named property
-          for the whole population, e.g. `pop['is_alive']`
-        * `slice`: a `DataFrame` is returned giving the values of all properties for
-          the given range of people, e.g. `pop[1:3]`
-        * otherwise (e.g. `tuple`): the key is passed to `props.loc`, to extract a
-          sub-frame of the properties DataFrame, e.g. `pop[1:2, 'is_alive']`
+        * ``int``: a single :py:class:`Person` object is returned, e.g. ``pop[2]``
+        * ``str``: a Series is returned giving the value of a single named property
+          for the whole population, e.g. ``pop['is_alive']``
+        * ``slice``: a DataFrame is returned giving the values of all properties for
+          the given range of people, e.g. ``pop[1:3]``
+        * otherwise (e.g. ``tuple``): the key is passed to ``props.loc``, to extract a
+          sub-frame of the properties DataFrame, e.g. ``pop[1:2, 'is_alive']``
 
         Note that due to the way Pandas labelled indexing works, slices here are
-        *inclusive* of the end point, unlike indexing Python lists. So `pop[0:2]`
+        *inclusive* of the end point, unlike indexing Python lists. So ``pop[0:2]``
         will return properties for *3* people: those at positions 0, 1 and 2.
 
         :param key: the item(s) to look up in the population
