@@ -171,19 +171,19 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_depression.loc[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_depression_chron_cond']
 
         is_newly_depressed = eff_prob_depression > rng.rand(len(eff_prob_depression))
-        newly_depressed = is_newly_depressed[is_newly_depressed == True].index
+        newly_depressed = is_newly_depressed[is_newly_depressed].index
         p[newly_depressed, 'is_depressed'] = True
         p[newly_depressed, 'ever_depressed'] = True
         p[newly_depressed, 'date_init_depression'] = now
         p[newly_depressed, 'date_depression_resolved'] = None
-        p[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(params['depression_resolution_rates'], size=len(newly_depressed))
+        p[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(
+            params['depression_resolution_rates'], size=len(newly_depressed))
 
         # continuation or resolution of depression
         eff_prob_recover = pd.Series(p.prob_3m_resol_depression, index=p[depressed].index)
         eff_prob_recover[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_resol_depress_chron_cond']
         is_resol_depression = eff_prob_recover > rng.rand(len(eff_prob_recover))
-        resolved_depress = is_resol_depression[is_resol_depression == True].index
+        resolved_depress = is_resol_depression[is_resol_depression].index
         p[resolved_depress, 'is_depressed'] = False
         p[resolved_depress, 'date_depression_resolved'] = now
         p[resolved_depress, 'date_init_depression'] = None
-
