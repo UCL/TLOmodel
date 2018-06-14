@@ -68,7 +68,7 @@ class Depression(Module):
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
 
-        Here we do assign parameter values explicitly.
+        Here we just assign parameter values explicitly.
 
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
