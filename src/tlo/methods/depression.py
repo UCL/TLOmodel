@@ -95,8 +95,8 @@ class Depression(Module):
         :param population: the population of individuals
         """
         # No-one is initially depressed (this is wrong, but we don't have data otherwise)
-        population.props.loc[:, 'is_depressed'] = False
-        population.props.loc[:, 'ever_depressed'] = False
+        population.is_depressed = False
+        population.ever_depressed = False
         # Other properties are left uninitialised, i.e. null/NaN/NaT as appropriate
 
     def initialise_simulation(self, sim):
@@ -152,51 +152,38 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
         """
         params = self.module.parameters
         now = self.sim.date
+        rng = self.module.rng
+
         ago_15yr = now - DateOffset(years=15)
         ago_20yr = now - DateOffset(years=20)
         ago_60yr = now - DateOffset(years=60)
         p = population
-        already_depressed = population.props[p.is_depressed]
-        not_depressed = population.props[~p.is_depressed]
-        # First calculate the incidence of depression
-        effective_prob_depression = (
-            # Not yet depressed
-            params['base_3m_prob_depression'] *
-            # Adjust for pregnancy
-            not_depressed.loc[:, 'is_pregnant'].map(
-                {True: params['rr_depression_pregnancy'], False: 1.0}) *
-            # Adjust for previous depression
-            p.ever_depressed.map({True: params['rr_depression_prev_episode'], False: 1.0}) *
-            # Adjust for age bands
-            (ago_15yr > p.date_of_birth > ago_20yr).map(
-                {True: params['rr_depression_age_15_20'], False: 1.0}) *
-            (ago_60yr > p.date_of_birth).map(
-                {True: params['rr_depression_age_60plus'], False: 1.0}) *
-            # Adjust for sex
-            p.sex.map({'male': 1.0, 'female': params['rr_depression_female']})
-        )
-        # Adjust for chronic condition
-        chronic_cond = p.has_hyptension & p.has_chronic_back_pain
-        effective_prob_depression *= chronic_cond.map(
-            {True: params['rr_depression_chron_cond'], False: 1.0})
-        # Now make people newly depressed
-        random_probs = self.module.rng.rand(len(not_depressed))
-        affected = not_depressed[random_probs < effective_prob_depression]
-        population.props[affected, 'is_depressed'] = True
-        affected['is_depressed'] = True
-        affected['ever_depressed'] = True
-        affected['date_init_depression'] = now
-        affected['date_depression_resolved'] = None
-        affected.loc[:, 'prob_3m_resol_depression'] = self.module.rng.choice(
-            params['depression_resolution_rates'], size=len(affected))
 
-        # Continuation or resolution of depression
-        effective_prob_recover = (
-            p.prob_3m_resol_depression *
-            chronic_cond.map({True: params['rr_resol_depress_chron_cond'], False: 1.0})
-        )
-        random_probs = self.module.rng.rand(len(already_depressed))
-        resolved = population.props[random_probs < effective_prob_recover]
-        resolved['is_depressed'] = False
-        resolved['date_depression_resolved'] = now
-        resolved['date_init_depression'] = None
+        depressed = p.is_depressed.copy()
+
+        # calculate the effective probability of depression for not-depressed persons
+        eff_prob_depression = pd.Series(params['base_3m_prob_depression'], index=p[~p.is_depressed].index)
+        eff_prob_depression.loc[p.is_pregnant] *= params['rr_depression_pregnancy']
+        eff_prob_depression.loc[~p.ever_depressed] *= params['rr_depression_prev_episode']
+        eff_prob_depression.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depression_age_15_20']
+        eff_prob_depression.loc[p.date_of_birth > ago_60yr] *= params['rr_depression_age_60plus']
+        eff_prob_depression.loc[p.female] *= params['rr_depression_female']
+        eff_prob_depression.loc[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_depression_chron_cond']
+
+        is_newly_depressed = eff_prob_depression > rng.rand(len(eff_prob_depression))
+        newly_depressed = is_newly_depressed[is_newly_depressed == True].index
+        p[newly_depressed, 'is_depressed'] = True
+        p[newly_depressed, 'ever_depressed'] = True
+        p[newly_depressed, 'date_init_depression'] = now
+        p[newly_depressed, 'date_depression_resolved'] = None
+        p[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(params['depression_resolution_rates'], size=len(newly_depressed))
+
+        # continuation or resolution of depression
+        eff_prob_recover = pd.Series(p.prob_3m_resol_depression, index=p[depressed].index)
+        eff_prob_recover[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_resol_depress_chron_cond']
+        is_resol_depression = eff_prob_recover > rng.rand(len(eff_prob_recover))
+        resolved_depress = is_resol_depression[is_resol_depression == True].index
+        p[resolved_depress, 'is_depressed'] = False
+        p[resolved_depress, 'date_depression_resolved'] = now
+        p[resolved_depress, 'date_init_depression'] = None
+
