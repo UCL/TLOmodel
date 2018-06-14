@@ -141,7 +141,7 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # ('deaths' here is a pandas.Series of True/False values)
         deaths = population.is_alive & (probs < self.death_probability)
         # Record their date of death
-        population.props.loc[deaths, 'date_of_death'] = self.sim.date
+        population[deaths, 'date_of_death'] = self.sim.date
         # Kill them
         population.is_alive &= (probs >= self.death_probability)
         # We could do this more verbosely:

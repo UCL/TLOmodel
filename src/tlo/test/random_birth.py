@@ -131,7 +131,7 @@ class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         # Find live and non-pregnant individuals
-        candidates = population.props[population.is_alive & ~population.is_pregnant]
+        candidates = population[population.is_alive & ~population.is_pregnant]
         # OR: candidates = population.props.query('is_alive & ~is_pregnant')
         # Throw a die for each
         rng = self.module.rng
