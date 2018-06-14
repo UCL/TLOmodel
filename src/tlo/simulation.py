@@ -92,9 +92,7 @@ class Simulation:
             if date >= end_date:
                 self.date = end_date
                 break
-            self.date = date
-            # TODO: Should we pass self explicitly here?
-            event.run()
+            self.fire_single_event(event, date)
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
@@ -104,6 +102,15 @@ class Simulation:
         """
         assert date >= self.date, 'Cannot schedule events in the past'
         self.event_queue.schedule(event, date)
+
+    def fire_single_event(self, event, date):
+        """Fires the event once for the given date
+
+        :param event: :py:class:`Event` to fire
+        :param date: the date of the event
+        """
+        self.date = date
+        event.run()
 
     def do_birth(self, mother):
         """Create a new child person.
