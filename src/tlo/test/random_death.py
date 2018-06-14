@@ -143,6 +143,6 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # Record their date of death
         population[deaths, 'date_of_death'] = self.sim.date
         # Kill them
-        population.is_alive &= (probs >= self.death_probability)
+        population[deaths, 'is_alive'] = False
         # We could do this more verbosely:
         # population.is_alive = population.is_alive & (probs >= self.death_probability)
