@@ -61,20 +61,21 @@ def test_individual_death():
 
 
 def test_single_step_death():
-    # Create a new simulation
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    # This demonstrates how to test the implementation of a single event in isolation
 
+    # Set up minimal simulation
+    sim = Simulation(start_date=Date(2010, 1, 1))
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
-
     sim.seed_rngs(1)
-
     sim.make_initial_population(n=10)
 
+    # Create and fire the event of interest
     event = random_death.RandomDeathEvent(rd, rd.death_probability)
     sim.fire_single_event(event, Date(2010, 2, 1))
 
+    # Check it has behaved as expected
     assert sim.date == Date(2010, 2, 1)
 
     pd.testing.assert_series_equal(
