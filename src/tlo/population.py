@@ -144,6 +144,20 @@ class Population:
         else:
             return self.props.loc[key]
 
+    def __setitem__(self, key, values):
+        """Set properties for people in the population.
+
+        This provides transparent label-based access to change property values in bulk,
+        for improved performance. For example:
+
+        * ``pop[:, ('is_alive', 'is_pregnant')] = False``
+        * ``pop[bool_array, 'is_depressed'] = True``
+
+        :param key: index(es) for the properties to set, as for pandas.DataFrame.loc
+        :param values: the value(s) to set
+        """
+        self.props.loc[key] = values
+
     def __iter__(self):
         """Iterate over the people in a population."""
         return iter(self.people)
