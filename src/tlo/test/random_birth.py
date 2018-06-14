@@ -65,11 +65,11 @@ class RandomBirth(Module):
         """
         # Everyone starts off not pregnant
         # We use 'broadcasting' to set the same value for every individual
-        population.props.loc[:, 'is_pregnant'] = False
+        population.is_pregnant = False
         # We randomly sample birth dates for the initial population during the preceding decade
         start_date = population.sim.date
         dates = pd.date_range(start_date - DateOffset(years=10), start_date, freq='M')
-        population.props.loc[:, 'date_of_birth'] = self.rng.choice(dates, size=len(population))
+        population.date_of_birth = self.rng.choice(dates, size=len(population))
         # No children have yet been born. We iterate over the population to ensure each
         # person gets a distinct list.
         for person in population:
@@ -98,7 +98,7 @@ class RandomBirth(Module):
         child.date_of_birth = self.sim.date
         child.is_pregnant = False
         child.children = []
-        mother.children.append(child)
+        mother.children.append(child.index)
 
 
 class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -131,7 +131,7 @@ class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         # Find live and non-pregnant individuals
-        candidates = population.props[population.is_alive & ~population.is_pregnant]
+        candidates = population[population.is_alive & ~population.is_pregnant]
         # OR: candidates = population.props.query('is_alive & ~is_pregnant')
         # Throw a die for each
         rng = self.module.rng
