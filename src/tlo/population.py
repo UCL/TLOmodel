@@ -221,7 +221,7 @@ class Population:
 
         :param name: the name of the property to add
         :param type_: a member of the :py:class:`Types` enumeration giving the type of
-        the property
+            the property
         """
         from tlo import Property
         prop = Property(type_, 'A test property')
