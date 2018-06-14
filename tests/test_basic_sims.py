@@ -31,7 +31,8 @@ def test_individual_death():
     # Test individual-based property access
     assert isinstance(sim.population[0], Person)
     assert sim.population[0].is_alive
-    assert sim.population[0].props['is_alive'][0]  # Treat this as read-only!
+    assert sim.population[0, 'is_alive']
+    assert sim.population[0].props['is_alive'][0]  # Treat this as read-only! It may be removed.
 
     # Test population-based property access
     assert len(sim.population.is_alive) == 2
@@ -40,6 +41,7 @@ def test_individual_death():
         pd.Series([True, True]),
         sim.population.is_alive,
         check_names=False)
+    assert sim.population.is_alive is sim.population['is_alive']
     assert sim.population.is_alive is sim.population.props['is_alive']  # For now...
 
     # Simulate for 4 months
@@ -91,6 +93,20 @@ def test_birth_and_death():
     assert sim.date == Date(1950, 1, 1)
     sim.simulate(end_date=Date(1952, 1, 1))
     assert sim.date == Date(1952, 1, 1)
+
+    # Test further population indexing
+    pd.testing.assert_series_equal(
+        pd.Series([True, False], index=[4, 5]),
+        sim.population[4:5, 'is_alive'],
+        check_names=False)
+    pd.testing.assert_frame_equal(
+        pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [True, False]}, index=[8, 9]),
+        sim.population[8:9, ('is_alive', 'is_pregnant')],
+        check_names=False)
+    pd.testing.assert_frame_equal(
+        pd.DataFrame({'is_alive': [False], 'is_pregnant': [True]}, index=[6]),
+        sim.population[[6], ('is_alive', 'is_pregnant')],
+        check_names=False)
 
     # Check birth stats match reference data
     assert len(sim.population) == 19
