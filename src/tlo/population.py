@@ -117,8 +117,32 @@ class Population:
         return len(self.people)
 
     def __getitem__(self, key):
-        """Get one or more people from the population."""
-        return self.people[key]
+        """Get a person or set of properties from the population.
+
+        What is returned depends on the type of key looked up:
+
+        * `int`: a single `Person` object is returned, e.g. `pop[2]`
+        * `str`: a `Series` is returned giving the value of a single named property
+          for the whole population, e.g. `pop['is_alive']`
+        * `slice`: a `DataFrame` is returned giving the values of all properties for
+          the given range of people, e.g. `pop[1:3]`
+        * otherwise (e.g. `tuple`): the key is passed to `props.loc`, to extract a
+          sub-frame of the properties DataFrame, e.g. `pop[1:2, 'is_alive']`
+
+        Note that due to the way Pandas labelled indexing works, slices here are
+        *inclusive* of the end point, unlike indexing Python lists. So `pop[0:2]`
+        will return properties for *3* people: those at positions 0, 1 and 2.
+
+        :param key: the item(s) to look up in the population
+        """
+        if isinstance(key, int):
+            return self.people[key]
+        elif isinstance(key, str):
+            return self.props.loc[:, key]
+        elif isinstance(key, slice):
+            return self.props.loc[key, :]
+        else:
+            return self.props.loc[key]
 
     def __iter__(self):
         """Iterate over the people in a population."""
