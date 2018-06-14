@@ -98,13 +98,15 @@ def test_birth_and_death():
     # Check no-one gave birth after dying
     for person in sim.population:
         if not person.is_alive:
-            for child in person.children:
+            for child_index in person.children:
+                child = sim.population[child_index]
                 assert child.date_of_birth <= person.date_of_death
 
     # Check people can't become pregnant while already pregnant
     for person in sim.population:
         # Iterate over pairs of adjacent children
-        for child1, child2 in zip(person.children[:-1], person.children[1:]):
+        for child1i, child2i in zip(person.children[:-1], person.children[1:]):
+            child1, child2 = sim.population[child1i], sim.population[child2i]
             # Children earlier in the list are born earlier
             assert child1.date_of_birth < child2.date_of_birth
             # Birth dates need to be at least 9 months apart

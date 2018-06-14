@@ -98,7 +98,7 @@ class RandomBirth(Module):
         child.date_of_birth = self.sim.date
         child.is_pregnant = False
         child.children = []
-        mother.children.append(child)
+        mother.children.append(child.index)
 
 
 class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
