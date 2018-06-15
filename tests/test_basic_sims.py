@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Person, Simulation
+from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import random_birth, random_death
 
 
@@ -61,25 +61,44 @@ def test_individual_death():
 
 
 def test_single_step_death():
-    # Create a new simulation
-    sim = Simulation(start_date=Date(2010, 1, 1))
+    # This demonstrates how to test the implementation of a single event in isolation
 
+    # Set up minimal simulation
+    sim = Simulation(start_date=Date(2010, 1, 1))
     rd = random_death.RandomDeath(name='rd')
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
-
     sim.seed_rngs(1)
-
     sim.make_initial_population(n=10)
 
+    # Create and fire the event of interest
     event = random_death.RandomDeathEvent(rd, rd.death_probability)
     sim.fire_single_event(event, Date(2010, 2, 1))
 
+    # Check it has behaved as expected
     assert sim.date == Date(2010, 2, 1)
 
     pd.testing.assert_series_equal(
         pd.Series([True, True, False, True, True, False, True, True, True, True]),
         sim.population.is_alive,
+        check_names=False
+    )
+
+
+def test_make_test_property():
+    # This tests the Population.make_test_property method
+    sim = Simulation(start_date=Date(2010, 1, 1))
+    sim.make_initial_population(n=3)
+    # There should be no properties
+    pop = sim.population
+    assert len(pop.props.columns) == 0
+    # Create one
+    pop.make_test_property('test', Types.BOOL)
+    # Check it's there
+    assert len(pop.props.columns) == 1
+    pd.testing.assert_series_equal(
+        pd.Series([False, False, False]),
+        sim.population.test,
         check_names=False
     )
 
