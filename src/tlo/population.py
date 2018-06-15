@@ -208,3 +208,21 @@ class Population:
         new_person = Person(self, new_index)
         self.people.append(new_person)
         return new_person
+
+    def make_test_property(self, name, type_):
+        """Create a new property for test purposes.
+
+        When testing a particular method in isolation, it's helpful to be able to define
+        the properties it reads that would normally be provided by other methods. That is
+        what this is for. It adds an extra column into the property DataFrame for this
+        population, set up with the appropriate type.
+
+        This should only be used in tests, not in your actual module code!
+
+        :param name: the name of the property to add
+        :param type_: a member of the :py:class:`Types` enumeration giving the type of
+            the property
+        """
+        from tlo import Property
+        prop = Property(type_, 'A test property')
+        self.props[name] = prop.create_series(name, len(self))
