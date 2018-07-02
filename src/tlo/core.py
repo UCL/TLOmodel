@@ -104,6 +104,9 @@ class Property(Specifiable):
         :param name: the name for the series
         :param size: the length of the series
         """
+        if self.type_ in [Types.SERIES, Types.DATA_FRAME]:
+            raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
+
         s = pd.Series(
             name=name,
             index=range(size),
