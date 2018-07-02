@@ -29,6 +29,8 @@ class Types(Enum):
     REAL = auto()
     CATEGORICAL = auto()
     LIST = auto()
+    SERIES = auto()
+    DATA_FRAME = auto()
 
 
 class Specifiable:
@@ -42,6 +44,8 @@ class Specifiable:
         Types.REAL: float,
         Types.CATEGORICAL: 'category',
         Types.LIST: object,
+        Types.SERIES: object,
+        Types.DATA_FRAME: object,
     }
 
     """Map our Types to Python types."""
@@ -52,6 +56,8 @@ class Specifiable:
         Types.REAL: float,
         Types.CATEGORICAL: str,
         Types.LIST: list,
+        Types.SERIES: pd.Series,
+        Types.DATA_FRAME: pd.DataFrame,
     }
 
     def __init__(self, type_, description):
@@ -93,11 +99,14 @@ class Property(Specifiable):
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
 
-        The values will be left unitialised.
+        The values will be left uninitialised.
 
         :param name: the name for the series
         :param size: the length of the series
         """
+        if self.type_ in [Types.SERIES, Types.DATA_FRAME]:
+            raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
+
         s = pd.Series(
             name=name,
             index=range(size),
