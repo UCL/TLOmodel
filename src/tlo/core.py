@@ -54,7 +54,7 @@ class Specifiable:
         Types.BOOL: bool,
         Types.INT: int,
         Types.REAL: float,
-        Types.CATEGORICAL: str,
+        Types.CATEGORICAL: pd.Categorical,
         Types.LIST: list,
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
@@ -86,7 +86,7 @@ class Parameter(Specifiable):
 class Property(Specifiable):
     """Used to specify properties of individuals."""
 
-    def __init__(self, type_, description, *, optional=False):
+    def __init__(self, type_, description, optional=False, **kwargs):
         """Create a new property specification.
 
         :param type_: an instance of Types giving the type of allowed values of this property
@@ -95,6 +95,12 @@ class Property(Specifiable):
         """
         super().__init__(type_, description)
         self.optional = optional
+
+        # Save the categories for a categorical property
+        if self.type_ is Types.CATEGORICAL:
+            if 'categories' not in kwargs:
+                raise ValueError("CATEGORICAL types require the 'categories' argument")
+            self.categories = kwargs['categories']
 
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
@@ -107,11 +113,24 @@ class Property(Specifiable):
         if self.type_ in [Types.SERIES, Types.DATA_FRAME]:
             raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
 
-        s = pd.Series(
-            name=name,
-            index=range(size),
-            dtype=self.pandas_type,
-        )
+        # Series of Categorical are setup differently
+        if self.type_ is Types.CATEGORICAL:
+            s = pd.Series(
+                pd.Categorical(
+                    values=np.repeat(np.nan, repeats=size),
+                    categories=self.categories
+                ),
+                name=name,
+                index=range(size),
+                dtype=self.pandas_type
+            )
+        else:
+            s = pd.Series(
+                name=name,
+                index=range(size),
+                dtype=self.pandas_type,
+            )
+
         return s
 
 
