@@ -152,6 +152,32 @@ def initART_inds(inds, current_time):
 
     return inds
 
+
+def get_index(age_low, age_high, status, treated, current_time,
+              length_treatment_low, length_treatment_high,
+              optarg1=None, optarg2=None, optarg3=None):
+
+    # optargs not needed for infant mortality rates (yet)
+    # optarg1 = time from treatment to death lower bound
+    # optarg2 = time from treatment to death upper bound
+    # optarg3 = sex
+
+    if optarg1 != None:
+
+        index = inds.index[(inds.age >= age_low) & (inds.age < age_high) & (inds.sex == optarg3) &
+                           (inds.status == status) & (inds.treat == treated) &
+                           ((current_time - inds.timeTreated) > length_treatment_low) &
+                           ((current_time - inds.timeTreated) <= length_treatment_high) &
+                           (inds.timeDeath - inds.timeTreated >= optarg1) &
+                           (inds.timeDeath - inds.timeTreated < optarg2)]
+    else:
+        index = inds.index[(inds.age >= age_low) & (inds.age < age_high) &
+                           (inds.status == status) & (inds.treat == treated) &
+                           ((current_time - inds.timeTreated) > length_treatment_low) &
+                           ((current_time - inds.timeTreated) <= length_treatment_high)]
+
+    return index
+
 # assign mortality rates for those on ART
 def ART_mort_inds(inds, current_time):
 
@@ -161,258 +187,146 @@ def ART_mort_inds(inds, current_time):
 
     # infants 0-6 months on treatment
     # age < 1
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age < 1) &
-                     ((current_time - inds.timeTreated) <= 0.5)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[0, 2]
+    inds.loc[get_index(0, 1, 'I', 1, current_time, 0, 0.5), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '0_6months') & (paed_mortART.age == '0')]
 
-    # age <3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 1) & (inds.age < 3) &
-                     ((current_time - inds.timeTreated) <= 0.5)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[3, 2]
+    # age 1-2
+    inds.loc[get_index(1, 3, 'I', 1, current_time, 0, 0.5), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '0_6months') & (paed_mortART.age == '1_2')]
 
-    # age >= 3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 3) &
-                     ((current_time - inds.timeTreated) <= 0.5)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[6, 2]
+    # age 3-4
+    inds.loc[get_index(3, 5, 'I', 1, current_time, 0, 0.5), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '0_6months') & (paed_mortART.age == '3_4')]
 
     # infants 7-12 months on treatment by age
     # age < 1
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age < 1) &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[1, 2]
+    inds.loc[get_index(0, 1, 'I', 1, current_time, 0.5, 1), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '7_12months') & (paed_mortART.age == '0')]
 
-    # age < 3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 1) & (inds.age < 3) &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[4, 2]
+    # age 1-2
+    inds.loc[get_index(1, 3, 'I', 1, current_time, 0.5, 1), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '7_12months') & (paed_mortART.age == '1_2')]
 
-    # age >= 3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 3) &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[7, 2]
+    # age 3-4
+    inds.loc[get_index(3, 5, 'I', 1, current_time, 0.5, 1), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '7_12months') & (paed_mortART.age == '3_4')]
 
     # infants >12 months on treatment by age
     # age < 1
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age < 1) &
-                     (current_time - inds.timeTreated > 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[2, 2]
+    inds.loc[get_index(0, 1, 'I', 1, current_time, 1, np.Inf), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '12months') & (paed_mortART.age == '0')]
 
-    # age < 3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 1) & (inds.age < 3) &
-                     (current_time - inds.timeTreated > 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[5, 2]
+    # age 1-2
+    inds.loc[get_index(1, 3, 'I', 1, current_time, 1, np.Inf), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '12months') & (paed_mortART.age == '1_2')]
 
-    # age >= 3
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 3) &
-                     (current_time - inds.timeTreated > 1)]
-    inds.loc[tmp, 'mortality'] = paed_mortART.iloc[8, 2]
+    # age 3-4
+    inds.loc[get_index(3, 5, 'I', 1, current_time, 1, np.Inf), 'mortality'] = \
+        paed_mortART['paed_mort'][(paed_mortART.time_on_ART == '12months') & (paed_mortART.age == '3_4')]
 
     # ADULTS
     # early starters > 2 years to death when starting treatment
     # 0-6 months on treatment by four age groups
     # male age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age > 3) & (inds.age < 25) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[8, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y0_6E')]
 
     # male age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[9, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y0_6E')]
 
     # male age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[10, 3]
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y0_6E')]
 
     # male age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[11, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y0_6E')]
 
     # female age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age > 3) & (inds.age < 25) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[12, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y0_6E')]
 
     # female age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[13, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y0_6E')]
 
     # female age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[14, 3]
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y0_6E')]
 
     # female age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated <= 0.5) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[15, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 0, 0.5, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y0_6E')]
 
     # 7-12 months on treatment by four age groups
     # male age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age > 3) & (inds.age < 25) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[16, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y7_12E')]
 
     # male age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[17, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y7_12E')]
 
     # male age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[18, 3]
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y7_12E')]
 
     # male age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[19, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y7_12E')]
 
     # female age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age > 3) & (inds.age < 25) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[20, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y7_12E')]
 
     # female age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[21, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y7_12E')]
 
     # female age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[22, 3]
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y7_12E')]
 
     # female age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 0.5) & (current_time - inds.timeTreated <= 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[23, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 0.5, 2, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y7_12E')]
 
     # > 12 months on treatment by four age groups
     # male age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age > 3) & (inds.age < 25) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[24, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y12E')]
 
     # male age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[25, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y7_12E')]
 
     # male age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[26, 3]
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y12E')]
 
     # male age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'M') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[27, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y12E')]
 
     # female age <25
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                   (inds.age > 3) & (inds.age < 25) &
-                   (inds.sex == 'F') &
-                   (current_time - inds.timeTreated > 1) &
-                   (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[28, 3]
+    inds.loc[get_index(5, 25, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age15_24') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
 
     # female age 25-34
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 25) & (inds.age < 35) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[29, 3]
+    inds.loc[get_index(25, 35, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age25_34') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
 
     # female age 35-44
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 35) & (inds.age < 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[30, 3]
-
+    inds.loc[get_index(25, 45, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
 
     # female age >= 45
-    tmp = inds.index[(inds.status == 'I') & (inds.treat == 1) &
-                     (inds.age >= 45) &
-                     (inds.sex == 'F') &
-                     (current_time - inds.timeTreated > 1) &
-                     (inds.timeDeath - inds.timeTreated >= 2)]
-    inds.loc[tmp, 'mortality'] = ad_mort.iloc[31, 3]
+    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+        ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
+
+
+
 
     # late starters < 2 years to death when starting treatment
     # 0-6 months on treatment by four age groups
@@ -631,7 +545,7 @@ def init_death_inds(inds, current_time):
             break
 
         # redraw time of death
-        time_of_death_slow.iloc[redraw2] = np.random.weibull(a=s, size=len(redraw2)) * mu
+        time_of_death_slow[redraw2] = np.random.weibull(a=s, size=len(redraw2)) * mu
 
     # subtract time already spent
     inds.loc[hiv_inf, 'timeDeath'] = current_time + time_of_death_slow - (current_time - inds.loc[hiv_inf, 'timeInf'])
@@ -652,7 +566,7 @@ def init_death_inds(inds, current_time):
 
         age_index = hiv_ad[redraw2]
 
-        time_of_death.iloc[redraw2] = np.random.weibull(a=s2, size=len(redraw2)) * np.exp(
+        time_of_death[redraw2] = np.random.weibull(a=s2, size=len(redraw2)) * np.exp(
             log_scale(inds.loc[age_index, 'age']))
 
     # subtract time already spent
@@ -812,3 +726,4 @@ inds.describe(include='all')
 inds['status'].value_counts()
 inds['treat'].value_counts()
 
+# TODO: handle births. link child's risk of HIV to mother's HIV status
