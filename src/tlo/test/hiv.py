@@ -634,3 +634,5 @@ inds['status'].value_counts()
 inds['treat'].value_counts()
 
 # TODO: handle births. link child's risk of HIV to mother's HIV status
+# TODO: separate HIV infection and ART methods
+# TODO: include cotrimoxazole for children
