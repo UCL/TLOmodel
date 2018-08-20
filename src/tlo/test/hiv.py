@@ -107,7 +107,7 @@ def prevalence_inds(inds, current_time):
         prob_i = inds['risk'][(inds.age == i) & (inds.sex == 'F')] / \
                  np.sum(inds['risk'][(inds.age == i) & (inds.sex == 'F')])
 
-        # sample from uninfected population using prevalence from UNAIDS, remember long-listed so index starts at 81
+        # sample from uninfected population using prevalence from UNAIDS
         tmp6 = np.random.choice(inds.index[(inds.age == i) & (inds.sex == 'F')],
                                 size=int((HIV_prev['prevalence'][(HIV_prev.year == 2018) & (HIV_prev.sex == 'F') &
                                                                  (HIV_prev.age == i)]) / sim_size),
@@ -636,3 +636,4 @@ inds['treat'].value_counts()
 # TODO: handle births. link child's risk of HIV to mother's HIV status
 # TODO: separate HIV infection and ART methods
 # TODO: include cotrimoxazole for children
+# TODO: code FOI as separate function from infection function
