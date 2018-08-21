@@ -1,5 +1,7 @@
 """
 Following the skeleton method for HIV
+
+Q: should treatment be in a separate method?
 """
 
 # import any methods from other modules, e.g. for parameter definitions
@@ -63,9 +65,14 @@ class HIV(Module):
         'date_HIV_infection': Property(Types.DATE, 'Date acquired HIV infection'),
         'date_AIDS_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'on_ART': Property(Types.BOOL, 'Currently on ART'),
+        'date_ART_start': Property(Types.DATE, 'Date ART started'),
         'ART_mortality': Property(Types.REAL, 'Mortality rates whilst on ART'),
         'sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk group, high or low'),
     }
+
+    def __init__(self, current_time):
+        self.current_time = current_time  # is this correct as init function?
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -117,8 +124,9 @@ class HIV(Module):
         :param population: the population of individuals
         """
 
-        CD_times = [current_time - 3.2, current_time - 7.8, current_time - 11.0, current_time - 13.9]
-        prob_CD4 = [0.34, 0.31, 0.27, 0.08]
+        self.CD4_times = [self.current_time - 3.2, self.current_time - 7.8,
+                          self.current_time - 11.0, self.current_time - 13.9]
+        self.prob_CD4 = [0.34, 0.31, 0.27, 0.08]
 
         for i in range(0, 81):
             # male
@@ -133,10 +141,10 @@ class HIV(Module):
                                                                 (HIV_prev.age == i)]) / sim_size),
                                     replace=False, p=prob_i)
 
-            population.loc[tmp5, 'has_HIV'] = True  # change status to infected
+            population.loc[tmp5, 'has_HIV'] = 1  # change status to infected
 
-            population.loc[tmp5, 'date_HIV_infection'] = np.random.choice(CD_times, size=len(tmp5),
-                                                                          replace=True, p=prob_CD4)
+            population.loc[tmp5, 'date_HIV_infection'] = np.random.choice(self.CD4_times, size=len(tmp5),
+                                                                          replace=True, p=self.prob_CD4)
 
             # female
             # scale high/low-risk probabilities to sum to 1 for each sub-group
@@ -150,16 +158,48 @@ class HIV(Module):
                                                                 (HIV_prev.age == i)]) / sim_size),
                                     replace=False, p=prob_i)
 
-            population.loc[tmp6, 'has_HIV'] = True  # change status to infected
+            population.loc[tmp6, 'has_HIV'] = 1  # change status to infected
 
-            population.loc[tmp6, 'date_HIV_infection'] = np.random.choice(CD_times, size=len(tmp6),
-                                                                          replace=True, p=prob_CD4)
+            population.loc[tmp6, 'date_HIV_infection'] = np.random.choice(self.CD4_times, size=len(tmp6),
+                                                                          replace=True, p=self.prob_CD4)
 
         # check time infected is less than time alive (especially for infants)
         tmp = population.index[(pd.notna(population.date_HIV_infection)) &
                                ((current_time - population.date_HIV_infection) > population.age)]
         tmp2 = current_time - population.loc[tmp, 'age']
         population.loc[tmp, 'date_HIV_infection'] = tmp2  # replace with year of birth
+
+    # initial number on ART ordered by longest duration of infection
+    # ART numbers are divided by sim_size
+    def initART_inds(self, population):
+        # select data for baseline year 2018 - or replace with self.current_time
+        self.hiv_art_f = HIV_ART['ART'][(HIV_ART.Year == 2018) & (HIV_ART.Sex == 'F')]  # returns vector ordered by age
+        self.hiv_art_m = HIV_ART['ART'][(HIV_ART.Year == 2018) & (HIV_ART.Sex == 'M')]
+
+        for i in range(0, 81):
+            # male
+            # select each age-group
+            subgroup = population[(population.age == i) & (population.has_HIV == 1) & (population.sex == 'M')]
+            # order by longest time infected
+            subgroup.sort_values(by='date_HIV_infection', ascending=False, na_position='last')
+            art_slots = int(self.hiv_art_m.iloc[i] / sim_size)
+            tmp = subgroup.id[0:art_slots]
+            population.loc[tmp, 'on_ART'] = 1
+            population.loc[tmp, 'date_ART_start'] = self.current_time
+
+            # female
+            # select each age-group
+            subgroup2 = population[(population.age == i) & (population.has_HIV == 1) & (population.sex == 'F')]
+            # order by longest time infected
+            subgroup2.sort_values(by='date_HIV_infection', ascending=False, na_position='last')
+            art_slots2 = int(self.hiv_art_f.iloc[i] / sim_size)
+            tmp2 = subgroup2.id[0:art_slots2]
+            population.loc[tmp2, 'on_ART'] = 1
+            population.loc[tmp2, 'date_ART_start'] = self.current_time
+
+
+
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -222,56 +262,6 @@ def log_scale(a0):
 
 
 # Process functions
-
-
-# assign infected status using UNAIDS prevalence 2018 by age
-# randomly allocate time since infection according to CD4 distributions from spectrum
-# should do this separately for infants using CD4%
-# then could include the infant fast progressors
-# currently infant fast progressors will always have time to death shorter than time infected
-def prevalence_inds(inds, current_time):
-    CD_times = [current_time - 3.2, current_time - 7.8, current_time - 11.0, current_time - 13.9]
-    prob_CD4 = [0.34, 0.31, 0.27, 0.08]
-
-    for i in range(0, 81):
-        # male
-        # scale high/low-risk probabilities to sum to 1 for each sub-group
-        prob_i = inds['risk'][(inds.age == i) & (inds.sex == 'M')] / \
-                 np.sum(inds['risk'][(inds.age == i) & (inds.sex == 'M')])
-
-        # sample from uninfected population using prevalence from UNAIDS
-        tmp5 = np.random.choice(inds.index[(inds.age == i) & (inds.sex == 'M')],
-                                size=int((HIV_prev['prevalence'][(HIV_prev.year == 2018) & (HIV_prev.sex == 'M') &
-                                                                 (HIV_prev.age == i)]) / sim_size), replace=False,
-                                p=prob_i)
-
-        inds.loc[tmp5, 'status'] = 'I'  # change status to infected
-
-        inds.loc[tmp5, 'timeInf'] = np.random.choice(CD_times, size=len(tmp5),
-                                                     replace=True, p=prob_CD4)
-
-        # female
-        # scale high/low-risk probabilities to sum to 1 for each sub-group
-        prob_i = inds['risk'][(inds.age == i) & (inds.sex == 'F')] / \
-                 np.sum(inds['risk'][(inds.age == i) & (inds.sex == 'F')])
-
-        # sample from uninfected population using prevalence from UNAIDS
-        tmp6 = np.random.choice(inds.index[(inds.age == i) & (inds.sex == 'F')],
-                                size=int((HIV_prev['prevalence'][(HIV_prev.year == 2018) & (HIV_prev.sex == 'F') &
-                                                                 (HIV_prev.age == i)]) / sim_size),
-                                replace=False, p=prob_i)
-
-        inds.loc[tmp6, 'status'] = 'I'  # change status to infected
-
-        inds.loc[tmp6, 'timeInf'] = np.random.choice(CD_times, size=len(tmp6),
-                                                     replace=True, p=prob_CD4)
-
-    # check time infected is less than time alive (especially for infants)
-    tmp = inds.index[(pd.notna(inds.timeInf)) & ((current_time - inds.timeInf) > inds.age)]
-    tmp2 = current_time - inds.loc[tmp, 'age']
-    inds.loc[tmp, 'timeInf'] = tmp2  # replace with year of birth
-
-    return inds
 
 
 # initial number on ART ordered by longest duration of infection
