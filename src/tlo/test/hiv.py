@@ -42,7 +42,20 @@ class HIV(Module):
         'weibull_shape_mort_adult': Parameter(
             Types.REAL,
             'Weibull shape parameter for mortality in adults'),
+        'proportion_high_sexual_risk_male' : Parameter(
+            Types.REAL,
+            'proportion of men who have high sexual risk behaviour'),
+        'proportion_high_sexual_risk_female': Parameter(
+            Types.REAL,
+            'proportion of women who have high sexual risk behaviour'),
+        'rr_HIV_high_sexual_risk': Parameter(
+            Types.REAL,
+            'relative risk of acquiring HIV with high risk sexual behaviour'),
+        'proportion_on_ART_infectious': Parameter(
+            Types.REAL,
+            'proportion of people on ART contributing to transmission as not virally suppressed'),
     }
+
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -56,16 +69,24 @@ class HIV(Module):
         'sexual_risk_group' : Property(Types.CATEGORICAL, 'Sexual risk group, high or low'),
     }
 
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
-        Here we do nothing.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        pass
+
+        params = self.parameters  # To save typing!
+        params['prob_infant_fast_progressor'] = [0.36, 1-0.36]
+        params['infant_progression_category'] = ['FAST', 'SLOW']
+        params['exp_rate_mort_infant_fast_progressor'] = 1.08
+        params['weibull_scale_mort_infant_slow_progressor'] = 16
+        params['weibull_shape_mort_infant_slow_progressor'] = 2.7
+        params['weibull_shape_mort_adult'] = 2
+        params['proportion_high_sexual_risk_male'] = 0.0913
+        params['proportion_high_sexual_risk_female'] = 0.0095
+        params['rr_HIV_high_sexual_risk'] = 2
+        params['proportion_on_ART_infectious'] = 0.2
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -102,54 +123,36 @@ class HIV(Module):
 
 
 # read in data files #
-HIV_prev = pd.read_csv('Q:\Thanzi la Onse\HIV\python_data\HIVprevalence2018.csv')  # July 1st estimates not full year
+# use function read.parameters in class HIV to do this?
+file_path = 'Q:\Thanzi la Onse\HIV\Method_HIV.xlsx'
 
-HIV_ART = pd.read_csv('Q:/Thanzi la Onse/HIV/python_data/HIV_ART_long.csv')
+HIV_prev = pd.read_excel(file_path, sheet_name='prevalence2018', header=0)  # July 1st estimates not full year
 
-ART_totals = pd.read_csv('Q:/Thanzi la Onse/HIV/python_data/aggregate_number_receiving_ART_long.csv')
+HIV_ART = pd.read_excel(file_path, sheet_name='ART2009_2021', header=0)
 
-HIV_death = pd.read_csv('Q:/Thanzi la Onse/HIV\python_data/HIV_DEATHS_long.csv')
+ART_totals = pd.read_excel(file_path, sheet_name='aggregate_number_ART', header=0)
 
-HIV_inc = pd.read_csv('Q:/Thanzi la Onse/HIV/python_data/HIV_INCIDENCE_long.csv')
+HIV_death = pd.read_excel(file_path, sheet_name='deaths2009_2021', header=0)
 
-ad_mort = pd.read_csv('Q:/Thanzi la Onse/HIV/python_data/mortality_rates.csv')
+HIV_inc = pd.read_excel(file_path, sheet_name='incidence2009_2021', header=0)
 
-paed_mortART = pd.read_csv('Q:/Thanzi la Onse/HIV/python_data/paed_mort_ART_long.csv')
+ad_mort = pd.read_excel(file_path, sheet_name='mortality_rates', header=0)
 
-CD4_base_M = pd.read_csv('Q:/Thanzi la Onse/HIV\python_data/CD4_distribution2018.csv')
+paed_mortART = pd.read_excel(file_path, sheet_name='paediatric_mortality_rates', header=0)
 
-age_distr = pd.read_csv('Q:/Thanzi la Onse\HIV/python_data/age_distribution2018.csv')
+CD4_base_M = pd.read_excel(file_path, sheet_name='CD4_distribution2018', header=0)
+
+age_distr = pd.read_excel(file_path, sheet_name='age_distribution2018', header=0)
 
 inds = pd.read_csv('Q:/Thanzi la Onse/HIV/initial_pop_dataframe2018.csv')
 p = inds.shape[0]  # number of rows in pop (# individuals)
 
-# index data files #
+# # index data files #
 sim_size = int(100)
-
-# Population dynamics parameters #
-birth_rate = 0.0381 * sim_size
-
-alpha = 0.36  # proportion infants fast progressors - only called in one function
-progression_rate = ['fast', 'slow']
-progression_probs = [alpha, (1-alpha)]
-
-# mortality rate parameters for infants, combined perinatal / postnatal
-beta = 1.08  # exp rate param infant mort fast progressors
-mu = 16  # weibull scale infant mort slow progressor
-s = 2.7  # weibull shape infant mort slow progressor
-
-s2 = 2  # weibull shape adult mortality
 
 timestep = 0.25  # run in 3 months time-steps so adjust all rates
 
-# sexual risk behaviour
-high_risk_M = 0.0913  # proportion men high risk behaviour
-high_risk_F = 0.0095  # proportion women high risk behaviour
-RR_HIV_high_risk = 2  # twice as likely to acquire HIV infection if classed as high risk
-
-h = 0.2  # proportion of ART users still infectious (not virally suppressed)
-
-start_time = 2009 # not needed if starting from 2018
+start_time = 2009  # not needed if starting from 2018
 current_time = 2018
 
 
@@ -161,6 +164,7 @@ def log_scale(a0):
 
 # Process functions
 
+# NOTE new parameter names in class HIV
 # assign high risk to M/F over 15 years
 def high_risk_inds(inds):
     tmp = inds.index[(inds.sex == 'M') & (inds.age >= 15)]
