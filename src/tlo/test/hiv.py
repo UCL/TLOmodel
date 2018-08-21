@@ -1,5 +1,105 @@
+"""
+Following the skeleton method for HIV
+"""
+
+# import any methods from other modules, e.g. for parameter definitions
+from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo.events import PopulationScopeEventMixin, RegularEvent
+
+
 import numpy as np
 import pandas as pd
+
+
+class HIV(Module):
+    """Models HIV incidence, treatment and AIDS-mortality.
+
+    Methods required:
+    * `read_parameters(data_folder)`
+    * `initialise_population(population)`
+    * `initialise_simulation(sim)`
+    * `on_birth(mother, child)`
+    """
+
+    # Here we declare parameters for this module. Each parameter has a name, data type,
+    # and longer description.
+    PARAMETERS = {
+        'prob_infant_fast_progressor': Parameter(
+            Types.LIST,
+            'Probabilities that infants are fast or slow progressors'),
+        'infant_progression_category': Parameter(
+            Types.CATEGORICAL,
+            'Classification of infants into fast or slow progressors'),
+        'exp_rate_mort_infant_fast_progressor': Parameter(
+            Types.REAL,
+            'Exponential rate parameter for mortality in infants fast progressors'),
+        'weibull_scale_mort_infant_slow_progressor': Parameter(
+            Types.REAL,
+            'Weibull scale parameter for mortality in infants slow progressors'),
+        'weibull_shape_mort_infant_slow_progressor': Parameter(
+            Types.REAL,
+            'weibull shape parameter for mortality in infants slow progressors'),
+        'weibull_shape_mort_adult': Parameter(
+            Types.REAL,
+            'Weibull shape parameter for mortality in adults'),
+    }
+
+    # Next we declare the properties of individuals that this module provides.
+    # Again each has a name, type and description. In addition, properties may be marked
+    # as optional if they can be undefined for a given individual.
+    PROPERTIES = {
+        'has_HIV': Property(Types.BOOL, 'HIV status'),
+        'date_HIV_infection': Property(Types.DATE, 'Date acquired HIV infection'),
+        'date_AIDS_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
+        'on_ART': Property(Types.BOOL, 'Currently on ART'),
+        'ART_mortality' : Property(Types.REAL, 'Mortality rates whilst on ART'),
+        'sexual_risk_group' : Property(Types.CATEGORICAL, 'Sexual risk group, high or low'),
+    }
+
+
+    def read_parameters(self, data_folder):
+        """Read parameter values from file, if required.
+
+        Here we do nothing.
+
+        :param data_folder: path of a folder supplied to the Simulation containing data files.
+          Typically modules would read a particular file within here.
+        """
+        pass
+
+    def initialise_population(self, population):
+        """Set our property values for the initial population.
+
+        This method is called by the simulation when creating the initial population, and is
+        responsible for assigning initial values, for every individual, of those properties
+        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
+
+        :param population: the population of individuals
+        """
+        raise NotImplementedError
+
+    def initialise_simulation(self, sim):
+        """Get ready for simulation start.
+
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+        """
+        raise NotImplementedError
+
+    def on_birth(self, mother, child):
+        """Initialise our properties for a newborn individual.
+
+        This is called by the simulation whenever a new person is born.
+
+        :param mother: the mother for this child
+        :param child: the new child
+        """
+        raise NotImplementedError
+
+
+
+
 
 # read in data files #
 HIV_prev = pd.read_csv('Q:\Thanzi la Onse\HIV\python_data\HIVprevalence2018.csv')  # July 1st estimates not full year
