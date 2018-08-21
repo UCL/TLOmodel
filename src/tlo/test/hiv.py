@@ -6,7 +6,6 @@ Following the skeleton method for HIV
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
-
 import numpy as np
 import pandas as pd
 
@@ -42,7 +41,7 @@ class HIV(Module):
         'weibull_shape_mort_adult': Parameter(
             Types.REAL,
             'Weibull shape parameter for mortality in adults'),
-        'proportion_high_sexual_risk_male' : Parameter(
+        'proportion_high_sexual_risk_male': Parameter(
             Types.REAL,
             'proportion of men who have high sexual risk behaviour'),
         'proportion_high_sexual_risk_female': Parameter(
@@ -56,7 +55,6 @@ class HIV(Module):
             'proportion of people on ART contributing to transmission as not virally suppressed'),
     }
 
-
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
@@ -65,8 +63,8 @@ class HIV(Module):
         'date_HIV_infection': Property(Types.DATE, 'Date acquired HIV infection'),
         'date_AIDS_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'on_ART': Property(Types.BOOL, 'Currently on ART'),
-        'ART_mortality' : Property(Types.REAL, 'Mortality rates whilst on ART'),
-        'sexual_risk_group' : Property(Types.CATEGORICAL, 'Sexual risk group, high or low'),
+        'ART_mortality': Property(Types.REAL, 'Mortality rates whilst on ART'),
+        'sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk group, high or low'),
     }
 
     def read_parameters(self, data_folder):
@@ -76,7 +74,7 @@ class HIV(Module):
         """
 
         params = self.parameters  # To save typing!
-        params['prob_infant_fast_progressor'] = [0.36, 1-0.36]
+        params['prob_infant_fast_progressor'] = [0.36, 1 - 0.36]
         params['infant_progression_category'] = ['FAST', 'SLOW']
         params['exp_rate_mort_infant_fast_progressor'] = 1.08
         params['weibull_scale_mort_infant_slow_progressor'] = 16
@@ -87,7 +85,28 @@ class HIV(Module):
         params['rr_HIV_high_sexual_risk'] = 2
         params['proportion_on_ART_infectious'] = 0.2
 
+    def high_risk(self, population):  # should this be in initialise population?
+        """ Stratify the adult (age >15) population in high or low sexual risk """
 
+        params = self.module.parameters
+
+        tmp = population.index[(population.sex == 'M') & (population.age >= 15)]
+        tmp2 = np.random.choice(tmp, size=int(round(
+            (params['proportion_high_sexual_risk_male'] * len(tmp)))), replace=False)
+
+        tmp3 = population.index[(population.sex == 'F') & (population.age >= 15)]
+        tmp4 = np.random.choice(tmp3, size=int(round(
+            (params['proportion_high_sexual_risk_male'] * len(tmp3)))), replace=False)
+
+        high_risk_index = np.concatenate([tmp2, tmp4])
+
+        population.loc[high_risk_index, 'sexual_risk_group'] = params['rr_HIV_high_sexual_risk']
+
+    # assign infected status using UNAIDS prevalence 2018 by age
+    # randomly allocate time since infection according to CD4 distributions from spectrum
+    # should do this separately for infants using CD4%
+    # then could include the infant fast progressors
+    # currently infant fast progressors will always have time to death shorter than time infected
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -97,7 +116,50 @@ class HIV(Module):
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+
+        CD_times = [current_time - 3.2, current_time - 7.8, current_time - 11.0, current_time - 13.9]
+        prob_CD4 = [0.34, 0.31, 0.27, 0.08]
+
+        for i in range(0, 81):
+            # male
+            # scale high/low-risk probabilities to sum to 1 for each sub-group
+            prob_i = population['sexual_risk_group'][(population.age == i) & (population.sex == 'M')] / \
+                     np.sum(population['sexual_risk_group'][(population.age == i) & (population.sex == 'M')])
+
+            # sample from uninfected population using prevalence from UNAIDS
+            tmp5 = np.random.choice(population.index[(population.age == i) & (population.sex == 'M')],
+                                    size=int(
+                                        (HIV_prev['prevalence'][(HIV_prev.year == 2018) & (HIV_prev.sex == 'M') &
+                                                                (HIV_prev.age == i)]) / sim_size),
+                                    replace=False, p=prob_i)
+
+            population.loc[tmp5, 'has_HIV'] = True  # change status to infected
+
+            population.loc[tmp5, 'date_HIV_infection'] = np.random.choice(CD_times, size=len(tmp5),
+                                                                          replace=True, p=prob_CD4)
+
+            # female
+            # scale high/low-risk probabilities to sum to 1 for each sub-group
+            prob_i = population['sexual_risk_group'][(population.age == i) & (population.sex == 'F')] / \
+                     np.sum(population['sexual_risk_group'][(population.age == i) & (population.sex == 'F')])
+
+            # sample from uninfected population using prevalence from UNAIDS
+            tmp6 = np.random.choice(population.index[(population.age == i) & (population.sex == 'F')],
+                                    size=int(
+                                        (HIV_prev['prevalence'][(HIV_prev.year == 2018) & (HIV_prev.sex == 'F') &
+                                                                (HIV_prev.age == i)]) / sim_size),
+                                    replace=False, p=prob_i)
+
+            population.loc[tmp6, 'has_HIV'] = True  # change status to infected
+
+            population.loc[tmp6, 'date_HIV_infection'] = np.random.choice(CD_times, size=len(tmp6),
+                                                                          replace=True, p=prob_CD4)
+
+        # check time infected is less than time alive (especially for infants)
+        tmp = population.index[(pd.notna(population.date_HIV_infection)) &
+                               ((current_time - population.date_HIV_infection) > population.age)]
+        tmp2 = current_time - population.loc[tmp, 'age']
+        population.loc[tmp, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -117,9 +179,6 @@ class HIV(Module):
         :param child: the new child
         """
         raise NotImplementedError
-
-
-
 
 
 # read in data files #
@@ -163,21 +222,6 @@ def log_scale(a0):
 
 
 # Process functions
-
-# NOTE new parameter names in class HIV
-# assign high risk to M/F over 15 years
-def high_risk_inds(inds):
-    tmp = inds.index[(inds.sex == 'M') & (inds.age >= 15)]
-    tmp2 = np.random.choice(tmp, size=int(round((high_risk_M * len(tmp)))), replace=False)
-
-    tmp3 = inds.index[(inds.sex == 'F') & (inds.age >= 15)]
-    tmp4 = np.random.choice(tmp3, size=int(round((high_risk_F * len(tmp3)))), replace=False)
-
-    high_risk_index = np.concatenate([tmp2, tmp4])
-
-    inds.loc[high_risk_index, 'risk'] = RR_HIV_high_risk
-
-    return inds
 
 
 # assign infected status using UNAIDS prevalence 2018 by age
@@ -233,13 +277,11 @@ def prevalence_inds(inds, current_time):
 # initial number on ART ordered by longest duration of infection
 # ART numbers are divided by sim_size
 def initART_inds(inds, current_time):
-
     # select data for baseline year 2018
     hiv_art_f = HIV_ART['ART'][(HIV_ART.Year == 2018) & (HIV_ART.Sex == 'F')]  # returns vector ordered by age
     hiv_art_m = HIV_ART['ART'][(HIV_ART.Year == 2018) & (HIV_ART.Sex == 'M')]
 
     for i in range(0, 81):
-
         # male
         subgroup = inds[(inds.age == i) & (inds.status == 'I') & (inds.sex == 'M')]  # select each age-group
         subgroup.sort_values(by='timeInf', ascending=False, na_position='last')  # order by longest time infected
@@ -262,7 +304,6 @@ def initART_inds(inds, current_time):
 def get_index(age_low, age_high, status, treated, current_time,
               length_treatment_low, length_treatment_high,
               optarg1=None, optarg2=None, optarg3=None):
-
     # optargs not needed for infant mortality rates (yet)
     # optarg1 = time from treatment start to death lower bound
     # optarg2 = time from treatment start to death upper bound
@@ -284,9 +325,9 @@ def get_index(age_low, age_high, status, treated, current_time,
 
     return index
 
+
 # assign mortality rates for those on ART
 def ART_mort_inds(inds, current_time):
-
     # INFANTS
     # treated infant mortality averaged over all CD4%
     # could stratify by early / late treatment
@@ -412,7 +453,8 @@ def ART_mort_inds(inds, current_time):
         ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y12E')]
 
     # male age >= 45
-    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
+    inds.loc[
+        get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='M'), 'mortality'] = \
         ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'M') & (ad_mort.ART == 'Y12E')]
 
     # female age <25
@@ -428,7 +470,8 @@ def ART_mort_inds(inds, current_time):
         ad_mort['rate'][(ad_mort.age == 'age35_44') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
 
     # female age >= 45
-    inds.loc[get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
+    inds.loc[
+        get_index(45, np.Inf, 'I', 1, current_time, 2, np.Inf, optarg1=2, optarg2=np.Inf, optarg3='F'), 'mortality'] = \
         ad_mort['rate'][(ad_mort.age == 'age45') & (ad_mort.sex == 'F') & (ad_mort.ART == 'Y12E')]
 
     # late starters < 2 years to death when starting treatment
@@ -544,7 +587,7 @@ def init_death_inds(inds, current_time):
 
     # while time of death is shorter than time infected keep redrawing (only for the entries that need it)
     while np.any(
-            time_of_death_slow < (current_time - inds.loc[hiv_inf, 'timeInf'])):  # if any condition=TRUE for any rows
+        time_of_death_slow < (current_time - inds.loc[hiv_inf, 'timeInf'])):  # if any condition=TRUE for any rows
 
         redraw = np.argwhere(time_of_death_slow < (current_time - inds.loc[hiv_inf, 'timeInf']))
         redraw2 = redraw.ravel()
@@ -600,7 +643,7 @@ def inf_inds_ad(inds, current_time, beta_ad):
     foi_f = foi * age_distr['age_distribution'][(age_distr.year == 2018) & (age_distr.sex == 'F')]
 
     for i in range(66):  # ages 15-80
-        age_value = i + 14 # adults only FOI
+        age_value = i + 14  # adults only FOI
 
         # males
         susceptible_age = len(inds[(inds.age == age_value) & (inds.sex == 'M') & (inds.status == 'U')])
@@ -611,7 +654,7 @@ def inf_inds_ad(inds, current_time, beta_ad):
         # allocate infections to people with high/low risk
         # scale high/low-risk probabilities to sum to 1 for each sub-group
         risk = inds['risk'][(inds.age == age_value) & (inds.sex == 'M') & (inds.status == 'U')] / \
-            np.sum(inds['risk'][(inds.age == age_value) & (inds.sex == 'M') & (inds.status == 'U')])
+               np.sum(inds['risk'][(inds.age == age_value) & (inds.sex == 'M') & (inds.status == 'U')])
 
         tmp2 = np.random.choice(inds.index[(inds.age == age_value) & (inds.sex == 'M') & (inds.status == 'U')],
                                 size=len(tmp1), p=risk, replace=False)
@@ -620,7 +663,7 @@ def inf_inds_ad(inds, current_time, beta_ad):
         inds.loc[tmp2, 'timeInf'] = current_time
 
         inds.loc[tmp2, 'timeDeath'] = current_time + (
-                    np.random.weibull(a=s2, size=len(tmp2)) * np.exp(log_scale(inds.age.iloc[tmp2])))
+            np.random.weibull(a=s2, size=len(tmp2)) * np.exp(log_scale(inds.age.iloc[tmp2])))
 
         # females
         susceptible_age = len(inds[(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')])
@@ -630,8 +673,8 @@ def inf_inds_ad(inds, current_time, beta_ad):
 
         # allocate infections to people with high/low risk
         # scale high/low-risk probabilities to sum to 1 for each sub-group
-        risk = inds['risk'][(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')] /\
-            np.sum(inds['risk'][(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')])
+        risk = inds['risk'][(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')] / \
+               np.sum(inds['risk'][(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')])
 
         tmp4 = np.random.choice(inds.index[(inds.age == age_value) & (inds.sex == 'F') & (inds.status == 'U')],
                                 size=len(tmp3), p=risk, replace=False)
@@ -640,7 +683,7 @@ def inf_inds_ad(inds, current_time, beta_ad):
         inds.loc[tmp4, 'timeInf'] = current_time
 
         inds.loc[tmp2, 'timeDeath'] = current_time + (
-                    np.random.weibull(a=s2, size=len(tmp4)) * np.exp(log_scale(inds.age.iloc[tmp4])))
+            np.random.weibull(a=s2, size=len(tmp4)) * np.exp(log_scale(inds.age.iloc[tmp4])))
 
     return inds
 
@@ -679,7 +722,8 @@ def ART_inds(inds, current_time):
         diff_ad = 0  # replace negative values with zero
 
     subgroup2 = inds[(inds.age >= 15) & (inds.treat == 0) & (inds.status == 'I')]
-    subgroup2 = subgroup2.sort_values(by='timeInf', ascending=True, na_position='last')  # order by earliest time infected
+    subgroup2 = subgroup2.sort_values(by='timeInf', ascending=True,
+                                      na_position='last')  # order by earliest time infected
     tmp4 = subgroup2.id[0:(diff_ad + 1)]
     inds.loc[tmp4, 'treat'] = 1
     inds.loc[tmp4, 'timeTreated'] = current_time
@@ -724,7 +768,6 @@ inds.head(20)
 inds.describe(include='all')
 inds['status'].value_counts()
 inds['treat'].value_counts()
-
 
 # to run projections set up these commands in a loop
 # example for 2019 projections with placeholder transmission rate beta_ad=0.12
