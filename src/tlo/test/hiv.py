@@ -249,7 +249,7 @@ class HIV(Module):
 
     # initial number on ART ordered by longest duration of infection
     # ART numbers are divided by sim_size
-    def initART_inds(self, df, current_time):
+    def initial_ART_allocation(self, df, current_time):
 
         self.current_time = current_time
 
@@ -623,7 +623,7 @@ class HIV(Module):
 
         return df
 
-    def init_death_population(self, df, current_time):
+    def initial_pop_deaths(self, df, current_time):
 
         self.current_time = current_time
 
@@ -813,7 +813,7 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
 
 
-    def ART_population(self, df, current_time):
+    def allocate_ART(self, df, current_time):
         # look at how many slots are currently taken
         # then check number available for current year
         # remember to divide by sim_size
