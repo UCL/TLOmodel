@@ -4,8 +4,9 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
+# need to import HIV, HIV_Event, ART, ART_Event, BCG vaccine
 
-# NOTES: how to model baseline prevalence of latent infection?
+# IPT and rifampicin as separate methods
 
 
 # initial pop data #
@@ -17,9 +18,10 @@ latent_TB_prevalence_total = 3170000  # Houben model paper
 latent_TB_prevalence_children = 525000
 latent_TB_prevalence_adults = latent_TB_prevalence_total - latent_TB_prevalence_children
 
+
 # this class contains all the methods required to set up the baseline population
 class TB(Module):
-    """Models baseline TB prevalence.
+    """ Sets up baseline TB prevalence.
 
     Methods required:
     * `read_parameters(data_folder)`
@@ -87,6 +89,7 @@ class TB(Module):
         params['prop_fast_progressor'] = 0.14
         params['transmission_rate'] = 7.2
         params['progression_to_active_rate'] = 0.5
+
         params['rr_TB_with_HIV_stages'] = [3.44, 6.76, 13.28, 26.06]
         params['rr_ART'] = 0.39
         params['rr_TB_malnourished'] = 2.1
@@ -94,6 +97,7 @@ class TB(Module):
         params['rr_TB_alcohol'] = 2.9
         params['rr_TB_smoking'] = 2.6
         params['rr_TB_pollution'] = 1.5
+
         params['rr_infectiousness_HIV'] = 0.52
         params['recovery'] = 2
         params['TB_mortality_rate'] = 0.15
@@ -102,6 +106,8 @@ class TB(Module):
     # baseline population
     # assign infected status using WHO prevalence 2016 by 2 x age-groups
     def prevalence_active_TB(self, df):
+        """ assign cases of active TB using weights to prioritise highest risk
+        """
 
         params = self.module.parameters
 
@@ -127,7 +133,7 @@ class TB(Module):
         df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage3)] *= \
             params['rr_TB_with_HIV_stages'][3]
 
-        df['tmp'][df.on_ART == 1] *= params['rr_ART']  # this modifies the RR by CD4 stages
+        df['tmp'][df.on_ART == 1] *= params['rr_ART']  # this modifies the RR by ART status
 
         # RR lifestyle - not implemented yet
         df['tmp'][df.is_malnourished == 1] *= params['rr_TB_malnourished']
@@ -174,8 +180,7 @@ class TB(Module):
         return df
 
     def prevalence_latent_TB(self, df):
-        """
-        prevalence of latent TB infection is randomly assigned to the whole
+        """ prevalence of latent TB infection is randomly assigned to the whole susceptible
         population with the exception of those with has_tb='A
         """
         tmp = df.sample(df.index[(df.has_tb == 'U') & (df.age < 15)], n=latent_TB_prevalence_children,
@@ -183,13 +188,10 @@ class TB(Module):
         df.loc[tmp, 'has_tb'] = 'L'  # change status to latent infection
 
         tmp2 = df.sample(df.index[(df.has_tb == 'U') & (df.age >= 15)], n=latent_TB_prevalence_adults,
-                        replace=False)
+                         replace=False)
         df.loc[tmp2, 'has_tb'] = 'L'  # change status to latent infection
 
         return df
-
-
-
 
 
 # functions to be implemented
@@ -229,4 +231,3 @@ def recover_tb(inds):
     # apply combined diagnosis / treatment / self-cure rates to TB cases
 
     return inds
-
