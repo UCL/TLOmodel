@@ -231,3 +231,6 @@ def recover_tb(inds):
     # apply combined diagnosis / treatment / self-cure rates to TB cases
 
     return inds
+
+# TODO: isoniazid preventive therapy
+# TODO: rifampicin / alternative TB treatment
