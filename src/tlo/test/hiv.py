@@ -36,7 +36,11 @@ ad_mort = pd.read_excel(file_path, sheet_name='mortality_rates', header=0)
 
 paed_mortART = pd.read_excel(file_path, sheet_name='paediatric_mortality_rates', header=0)
 
-CD4_base_M = pd.read_excel(file_path, sheet_name='CD4_distribution2018', header=0)
+CD4_base = pd.read_excel(file_path, sheet_name='CD4_distribution2018', header=0)
+
+time_CD4 = pd.read_excel(file_path, sheet_name='Time_spent_by_CD4', header=0)
+
+initial_state_probs = pd.read_excel(file_path, sheet_name='Initial_state_probs', header=0)
 
 age_distr = pd.read_excel(file_path, sheet_name='age_distribution2018', header=0)
 
@@ -46,7 +50,6 @@ p = inds.shape[0]  # number of rows in pop (# individuals)
 
 # sim_size = int(100)
 # current_time = 2018
-
 
 # HELPER FUNCTION - should these go in class(HIV)?
 # are they static methods?
@@ -85,7 +88,7 @@ class HIV(Module):
             'Weibull scale parameter for mortality in infants slow progressors'),
         'weibull_shape_mort_infant_slow_progressor': Parameter(
             Types.REAL,
-            'weibull shape parameter for mortality in infants slow progressors'),
+            'Weibull shape parameter for mortality in infants slow progressors'),
         'weibull_shape_mort_adult': Parameter(
             Types.REAL,
             'Weibull shape parameter for mortality in adults'),
@@ -157,6 +160,18 @@ class HIV(Module):
     # should do this separately for infants using CD4%
     # then could include the infant fast progressors
     # currently infant fast progressors will always have time to death shorter than time infected
+
+    # HELPER FUNCTION - should these go in class(HIV)?
+    def get_index(self, df, has_hiv, sex, age_low, age_high, CD4_state):
+
+        index = df.index[
+            (df.has_hiv == 1) &
+            (df.sex == sex) &
+            (df.age >= age_low) & (df.age < age_high) &
+            (df.CD4_state == CD4_state)]
+
+        return index
+
     def prevalence(self, df, current_time):
         """Set our property values for the initial population.
 
@@ -166,12 +181,12 @@ class HIV(Module):
 
         :param population: the population of individuals
         """
-
         self.current_time = current_time
 
-        self.CD4_times = [self.current_time - 3.2, self.current_time - 7.8,
-                          self.current_time - 11.0, self.current_time - 13.9]
-        self.prob_CD4 = [0.34, 0.31, 0.27, 0.08]
+        self.CD4_states = [500, 350, 250, 200, 100, 50, 0]
+
+        self.prob_CD4_M = CD4_base['CD4_distribution2018'][CD4_base.sex == 'M']
+        self.prob_CD4_F = CD4_base['CD4_distribution2018'][CD4_base.sex == 'F']
 
         for i in range(0, 81):
             # male
@@ -189,13 +204,10 @@ class HIV(Module):
 
             df.loc[tmp5, 'has_HIV'] = 1  # change status to infected
 
-            df.loc[tmp5, 'date_HIV_infection'] = np.random.choice(self.CD4_times, size=len(tmp5),
-                                                                          replace=True, p=self.prob_CD4)
-
             # female
             # scale high/low-risk probabilities to sum to 1 for each sub-group
             prob_i = df['sexual_risk_group'][(df.age == i) & (df.sex == 'F')] / \
-                     np.sum(df['sexual_risk_group'][(df.age == i) & (df.sex == 'F')])
+                np.sum(df['sexual_risk_group'][(df.age == i) & (df.sex == 'F')])
 
             # sample from uninfected df using prevalence from UNAIDS
             tmp6 = np.random.choice(df.index[(df.age == i) & (df.sex == 'F')],
@@ -207,17 +219,560 @@ class HIV(Module):
 
             df.loc[tmp6, 'has_HIV'] = 1  # change status to infected
 
-            df.loc[tmp6, 'date_HIV_infection'] = np.random.choice(self.CD4_times, size=len(tmp6),
-                                                                          replace=True, p=self.prob_CD4)
+            return df
+
+    def time_since_infection(self, df, current_time):
+
+        self.current_time = current_time
+        ip = initial_state_probs
+
+        # temporary column to assign current CD4 state, used to infer time since infection
+        # assign CD4 states to males
+        df.loc['CD4_state'][df.has_HIV == 1][df.sex == 'M'] = np.random.choice(self.CD4_states,
+                                                                               size=len(df[(df.has_HIV == 1) & (
+                                                                                   df.sex == 'M')]),
+                                                                               replace=True, p=self.prob_CD4_M)
+
+        # assign CD4 states to females
+        df.loc['CD4_state'][df.has_HIV == 1][df.sex == 'F'] = np.random.choice(self.CD4_states,
+                                                                               size=len(df[(df.has_HIV == 1) & (
+                                                                                   df.sex == 'F')]),
+                                                                               replace=True, p=self.prob_CD4_F)
+
+        # male age 15-24
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # CD4 200-250
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 15, 25, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'M', 15, 25, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'M')]]))
+
+        # male age 25-34
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # CD4 200-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 25, 35, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'M', 25, 35, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'M')]]))
+
+        # male age 35-44
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # CD4 200-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf450'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 35, 45, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'M', 35, 45, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'M')]]))
+
+        # male age 45-80
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # CD4 200-250
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'M', 45, 80, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'M') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'M', 45, 80, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'M')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'M')]]))
+
+        # female age 15-24
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # CD4 200-250
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 15, 25, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '15-24')]]), size=len(
+                df[self.get_index(self, 1, 'F', 15, 25, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '15-24') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '15-24') & (ip.Sex == 'F')]]))
+
+        # female age 25-34
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # CD4 350-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # CD4 200-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 25, 35, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '25-34')]]), size=len(
+                df[self.get_index(self, 1, 'F', 25, 35, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '25-34') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '25-34') & (ip.Sex == 'F')]]))
+
+        # female age 35-44
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 4250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # CD4 200-250
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 35, 45, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '35-44')]]), size=len(
+                df[self.get_index(self, 1, 'F', 35, 45, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '35-44') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '35-44') & (ip.Sex == 'F')]]))
+
+        # female age 45-80
+        # CD4 > 500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 500)] = time_CD4['time_inf500'][
+            (time_CD4.CD4 == 500) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]
+
+        # CD4 350-500
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 350)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 350) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 350)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # CD4 250-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 250)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 250) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 250)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # CD4 200-350
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 200)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 200) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 200)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # CD4 100-200
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 100)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 100) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 100)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # CD4 50-100
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 50)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 50) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 50)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # CD4 0-50
+        df.loc['time_infected'][self.get_index(self, 1, 'F', 45, 80, 0)] = np.random.choice(
+            np.concatenate([time_CD4['time_inf500'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')],
+                            time_CD4['time_inf350'][
+                                (time_CD4.CD4 == 0) & (time_CD4.Sex == 'F') & (time_CD4.Age == '45-54')]]), size=len(
+                df[self.get_index(self, 1, 'F', 45, 80, 0)]), replace=True, p=np.concatenate([
+                    ip.Initial_state500[(ip.Age == '45-54') & (ip.Sex == 'F')],
+                    ip.Initial_state350[(ip.Age == '45-54') & (ip.Sex == 'F')]]))
+
+        # get date of infection from current_time - time since infection
+        df.loc['date_HIV_infection'][df.has_HIV == 1] = self.current_time - df.loc['time_infected'][df.has_HIV == 1]
+
+        # remove temporary columns 'time_infected' and 'CD4_states'
+        del df['time_infected']
+        del df['CD4_states']
 
         # check time infected is less than time alive (especially for infants)
         tmp = df.index[(pd.notna(df.date_HIV_infection)) &
-                               ((current_time - df.date_HIV_infection) > df.age)]
-        tmp2 = current_time - df.loc[tmp, 'age']
+                       ((current_time - df.date_HIV_infection) > df.age)]
+        tmp2 = self.current_time - df.loc[tmp, 'age']
         df.loc[tmp, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
         return df
-
 
     # this function needs the ART mortality rates from ART.py
     def initial_pop_deaths(self, df, current_time):
@@ -232,7 +787,7 @@ class HIV(Module):
         # need a two parameter Weibull with size parameter, multiply by scale instead
         time_of_death_slow = np.random.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                                size=len(self.hiv_inf)) * \
-                             params['weibull_scale_mort_infant_slow_progressor']
+            params['weibull_scale_mort_infant_slow_progressor']
 
         # while time of death is shorter than time infected keep redrawing (only for the entries that need it)
         while np.any(
@@ -249,7 +804,7 @@ class HIV(Module):
             # redraw time of death
             time_of_death_slow[redraw2] = np.random.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                                             size=len(redraw2)) * \
-                                          params['weibull_scale_mort_infant_slow_progressor']
+                params['weibull_scale_mort_infant_slow_progressor']
 
         # subtract time already spent
         df.loc[self.hiv_inf, 'date_AIDS_death'] = self.current_time + time_of_death_slow - (
@@ -259,7 +814,7 @@ class HIV(Module):
         self.hiv_ad = df.index[(df.has_HIV == 1) & (df.on_ART == 0) & (df.age >= 3)]
 
         time_of_death = np.random.weibull(a=params['weibull_shape_mort_adult'], size=len(self.hiv_ad)) * \
-                        np.exp(log_scale(df.loc[self.hiv_ad, 'age']))
+            np.exp(log_scale(df.loc[self.hiv_ad, 'age']))
 
         # while time of death is shorter than time infected keep redrawing (only for entries that need it)
         while np.any(
@@ -276,12 +831,11 @@ class HIV(Module):
             age_index = self.hiv_ad[redraw2]
 
             time_of_death[redraw2] = np.random.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw2)) * \
-                                     np.exp(log_scale(df.loc[age_index, 'age']))
+                np.exp(log_scale(df.loc[age_index, 'age']))
 
         # subtract time already spent
         df.loc[self.hiv_ad, 'date_AIDS_death'] = self.current_time + time_of_death - \
-                                                         (self.current_time - df.loc[
-                                                             self.hiv_ad, 'date_HIV_infection'])
+            (self.current_time - df.loc[self.hiv_ad, 'date_HIV_infection'])
 
         # assign mortality rates on ART
         df['ART_mortality'] = self.ART_mortality_rates(df, self.current_time)
@@ -338,11 +892,11 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
         infected = len(
             df[(df.has_HIV == 1) & (df.on_ART == 0) & (
-                    df.age >= 15)])  # number infected untreated
+                df.age >= 15)])  # number infected untreated
 
         h_infected = params['proportion_on_ART_infectious'] * len(
             df[(df.has_HIV == 1) & (df.on_ART == 1) & (
-                    df.age >= 15)])  # number infected treated
+                df.age >= 15)])  # number infected treated
 
         total_pop = len(df[(df.age >= 15)])  # whole df over 15 years
 
@@ -367,7 +921,7 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
             # scale high/low-risk probabilities to sum to 1 for each sub-group
             risk = df['sexual_risk_group'][
                        (df.age == age_value) & (df.sex == 'M') & (df.has_HIV == 0)] / \
-                   np.sum(df['sexual_risk_group'][
+                np.sum(df['sexual_risk_group'][
                               (df.age == age_value) & (df.sex == 'M') & (df.has_HIV == 0)])
 
             tmp2 = np.random.choice(
@@ -379,7 +933,7 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
             df.loc[tmp2, 'date_AIDS_death'] = self.current_time + (
                 np.random.weibull(a=params['weibull_shape_mort_adult'], size=len(tmp2)) * np.exp(
-                log_scale(df.age.iloc[tmp2])))
+                    log_scale(df.age.iloc[tmp2])))
 
             # females
             susceptible_age = len(
@@ -392,7 +946,7 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
             # scale high/low-risk probabilities to sum to 1 for each sub-group
             risk = df['sexual_risk_group'][
                        (df.age == age_value) & (df.sex == 'F') & (df.has_HIV == 0)] / \
-                   np.sum(df['sexual_risk_group'][
+                np.sum(df['sexual_risk_group'][
                               (df.age == age_value) & (df.sex == 'F') & (df.has_HIV == 0)])
 
             tmp4 = np.random.choice(
@@ -404,14 +958,12 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
             df.loc[tmp2, 'date_AIDS_death'] = self.current_time + (
                 np.random.weibull(a=params['weibull_shape_mort_adult'], size=len(tmp4)) * np.exp(
-                log_scale(df.age.iloc[tmp4])))
+                    log_scale(df.age.iloc[tmp4])))
 
         return df
 
-
     # run the death functions once a year
     def AIDS_death(self, df, current_time):
-
         self.current_time = current_time
 
         # choose which ones die at current_time
@@ -423,18 +975,15 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
         return df
 
-
     def AIDS_death_on_ART(self, df):
-
         tmp1 = np.random.uniform(low=0, high=1, size=df.shape[0])  # random number for every entry
 
         tmp2 = df.index[(pd.notna(df.ART_mortality)) & (tmp1 < df['mortality']) &
-                          (df.has_HIV == 1) & (df.on_ART == 1)]
+                        (df.has_HIV == 1) & (df.on_ART == 1)]
 
         df.loc[tmp2, 'date_death'] = self.current_time
 
         return df
-
 
 # # to set up the baseline population
 # inds.head(20)
@@ -462,8 +1011,7 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 # inds['status'].value_counts()
 # inds['treat'].value_counts()
 
-# TODO: handle births. link child's risk of HIV to mother's HIV status
+# TODO: handle births, link child's risk of HIV to mother's HIV status
 # TODO: include cotrimoxazole for children
 # TODO: code FOI as separate function from infection function
 # TODO: incorporate TB as a risk for HIV progression/mortality
-
