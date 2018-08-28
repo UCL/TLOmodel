@@ -42,8 +42,8 @@ p = inds.shape[0]  # number of rows in pop (# individuals)
 # current_time = 2018
 
 
-# HELPER FUNCTION - should these go in class(HIV)?
-def get_index(df, age_low, age_high, has_HIV, on_ART, current_time,
+# HELPER FUNCTION - should these go in class(ART)?
+def get_index(df, age_low, age_high, has_hiv, on_ART, current_time,
               length_treatment_low, length_treatment_high,
               optarg1=None, optarg2=None, optarg3=None):
     # optargs not needed for infant mortality rates (yet)
@@ -55,14 +55,14 @@ def get_index(df, age_low, age_high, has_HIV, on_ART, current_time,
 
         index = df.index[
             (df.age >= age_low) & (df.age < age_high) & (df.sex == optarg3) &
-            (df.has_HIV == has_HIV) & (df.on_ART == on_ART) &
+            (df.has_hiv == 1) & (df.on_ART == on_ART) &
             ((current_time - df.date_ART_start) > length_treatment_low) &
             ((current_time - df.date_ART_start) <= length_treatment_high) &
             (df.date_AIDS_death - df.date_ART_start >= optarg1) &
             (df.date_AIDS_death - df.date_ART_start < optarg2)]
     else:
         index = df.index[(df.age >= age_low) & (df.age < age_high) &
-                         (df.has_HIV == has_HIV) & (df.on_ART == on_ART) &
+                         (df.has_hiv == has_hiv) & (df.on_ART == on_ART) &
                          ((current_time - df.date_ART_start) > length_treatment_low) &
                          ((current_time - df.date_ART_start) <= length_treatment_high)]
 
@@ -589,7 +589,5 @@ class ART_Event(RegularEvent, PopulationScopeEventMixin):
 # inds['status'].value_counts()
 # inds['treat'].value_counts()
 
-# TODO: handle births. link child's risk of HIV to mother's HIV status
-# TODO: separate HIV infection and ART methods
-# TODO: include cotrimoxazole for children
-# TODO: code FOI as separate function from infection function
+# TODO: ART allocation for infants - influenced by mother's ART status
+
