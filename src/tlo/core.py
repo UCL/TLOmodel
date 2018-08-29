@@ -86,7 +86,7 @@ class Parameter(Specifiable):
 class Property(Specifiable):
     """Used to specify properties of individuals."""
 
-    def __init__(self, type_, description, optional=False, **kwargs):
+    def __init__(self, type_, description, categories=None, *, optional=False):
         """Create a new property specification.
 
         :param type_: an instance of Types giving the type of allowed values of this property
@@ -98,9 +98,9 @@ class Property(Specifiable):
 
         # Save the categories for a categorical property
         if self.type_ is Types.CATEGORICAL:
-            if 'categories' not in kwargs:
+            if not categories:
                 raise ValueError("CATEGORICAL types require the 'categories' argument")
-            self.categories = kwargs['categories']
+            self.categories = categories
 
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
