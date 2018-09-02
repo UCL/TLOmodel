@@ -24,7 +24,10 @@ import pandas as pd
 
 # read in data files #
 # use function read.parameters in class HIV to do this?
-file_path = 'Q:\Thanzi la Onse\HIV\Method_HIV.xlsx'
+# file_path = 'Q:\Thanzi la Onse\HIV\Method_HIV.xlsx'
+
+file_path = '/Users/Tara/Documents/Method_HIV.xlsx'
+file_path2 = '/Users/Tara/Documents/Method_ART.xlsx'
 
 HIV_prev = pd.read_excel(file_path, sheet_name='prevalence2018', header=0)  # July 1st estimates not full year
 
@@ -32,9 +35,9 @@ HIV_death = pd.read_excel(file_path, sheet_name='deaths2009_2021', header=0)
 
 HIV_inc = pd.read_excel(file_path, sheet_name='incidence2009_2021', header=0)
 
-ad_mort = pd.read_excel(file_path, sheet_name='mortality_rates', header=0)
+ad_mort = pd.read_excel(file_path2, sheet_name='mortality_on_ART', header=0)
 
-paed_mortART = pd.read_excel(file_path, sheet_name='paediatric_mortality_rates', header=0)
+paed_mortART = pd.read_excel(file_path2, sheet_name='paed_mortality_on_ART', header=0)
 
 CD4_base = pd.read_excel(file_path, sheet_name='CD4_distribution2018', header=0)
 
