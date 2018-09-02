@@ -75,7 +75,7 @@ class TB(Module):
         'date_TB_infection': Property(Types.DATE, 'Date acquired TB infection'),
         'date_TB_death': Property(Types.DATE, 'Projected time of TB death if untreated'),
         'on_treatment': Property(Types.BOOL, 'Currently on treatment for TB'),
-        'date_TB_treatment_start': Property(Types.DATE, 'Date treatment started'),
+        'date_ART_treatment_start': Property(Types.DATE, 'Date treatment started'),
         'date_death': Property(Types.DATE, 'Date of death'),
     }
 
@@ -104,48 +104,94 @@ class TB(Module):
         params['rr_TB_mortality_HIV'] = 17.1
 
     # baseline population
-    def initialise_population(self, population):
-        """Set our property values for the initial population.
-
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        :param population: the population of individuals
+    # assign infected status using WHO prevalence 2016 by 2 x age-groups
+    def prevalence_active_TB(self, df):
+        """ assign cases of active TB using weights to prioritise highest risk
         """
-        # create a population where no-one has TB
-        has_TB = 'Uninfected'
-        date_TB_infection = None
-        date_TB_death = None
-        on_treatment = False
-        date_TB_treatment_start = None
-        date_TB_death = False
 
+        params = self.module.parameters
 
+        self.HIVstage1 = 3.33  # Williams equal duration HIV stages (x4)
+        self.HIVstage2 = 6.67
+        self.HIVstage3 = 10
 
-    def initialise_simulation(self, sim):
-        """Get ready for simulation start.
+        # create a vector of probabilities depending on HIV status and time since seroconversion
+        # these probabilities need to include multiple risk factors (multiply RR unless strong confounding)
+        # calculate the combined relative risk for every risk factor
+        # then scale as probabilities need to sum to 1
+        # then sample with probabilities for all susceptible people
+        # all population without active TB then randomly assigned latent TB
+        df['tmp'] = 1  # baseline risk group, no risk factors
 
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
+        # RR HIV
+        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection <= self.HIVstage1)] *= \
+            params['rr_TB_with_HIV_stages'][0]
+        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage1) & (
+            self.current_time - df.date_HIV_infection <= self.HIVstage2)] *= params['rr_TB_with_HIV_stages'][1]
+        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage2) & (
+            self.current_time - df.date_HIV_infection <= self.HIVstage3)] *= params['rr_TB_with_HIV_stages'][2]
+        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage3)] *= \
+            params['rr_TB_with_HIV_stages'][3]
+
+        df['tmp'][df.on_ART == 1] *= params['rr_ART']  # this modifies the RR by ART status
+
+        # RR lifestyle - not implemented yet
+        df['tmp'][df.is_malnourished == 1] *= params['rr_TB_malnourished']
+        df['tmp'][df.has_diabetes1 == 1] *= params['rr_TB_diabetes1']
+        df['tmp'][df.heavy_alcohol == 1] *= params['rr_TB_alcohol']
+        df['tmp'][df.smoker == 1] *= params['rr_TB_smoking']
+        df['tmp'][df.indoor_pollution == 1] *= params['rr_TB_pollution']
+
+        # sample from uninfected population using WHO incidence and relative risk as weights
+        # male age 0-14
+        tmp1 = df.sample(df.index[(df.age < 15) & (df.sex == 'M')],
+                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
+                                                              (TBincidence.Sex == 'M') &
+                                                              (TBincidence.Age == '0_14')])),
+                         replace=False, weights=df.tmp[(df.age < 15) & (df.sex == 'M')])
+        df.loc[tmp1, 'has_tb'] = 'A'  # change status to active infection
+
+        # female age 0-14
+        tmp2 = df.sample(df.index[(df.age < 15) & (df.sex == 'F')],
+                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
+                                                              (TBincidence.Sex == 'F') &
+                                                              (TBincidence.Age == '0_14')])),
+                         replace=False, weights=df.tmp[(df.age < 15) & (df.sex == 'F')])
+        df.loc[tmp2, 'has_tb'] = 'A'  # change status to infected
+
+        # male age >=15
+        tmp3 = df.sample(df.index[(df.age >= 15) & (df.sex == 'M')],
+                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
+                                                              (TBincidence.Sex == 'M') &
+                                                              (TBincidence.Age == '15_80')])),
+                         replace=False, weights=df.tmp[(df.age >= 15) & (df.sex == 'M')])
+        df.loc[tmp3, 'has_tb'] = 'A'  # change status to infected
+
+        # female age >=15
+        tmp4 = df.sample(df.index[(df.age >= 15) & (df.sex == 'F')],
+                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
+                                                              (TBincidence.Sex == 'F') &
+                                                              (TBincidence.Age == '15_80')])),
+                         replace=False, weights=df.tmp[(df.age >= 15) & (df.sex == 'F')])
+        df.loc[tmp4, 'has_tb'] = 'A'  # change status to infected
+
+        del df['tmp']  # remove temporary column of combined relative risks, will change with time
+
+        return df
+
+    def prevalence_latent_TB(self, df):
+        """ prevalence of latent TB infection is randomly assigned to the whole susceptible
+        population with the exception of those with has_tb='A
         """
-        raise NotImplementedError
+        tmp = df.sample(df.index[(df.has_tb == 'U') & (df.age < 15)], n=latent_TB_prevalence_children,
+                        replace=False)
+        df.loc[tmp, 'has_tb'] = 'L'  # change status to latent infection
 
-    def on_birth(self, mother, child):
-        """Initialise our properties for a newborn individual.
+        tmp2 = df.sample(df.index[(df.has_tb == 'U') & (df.age >= 15)], n=latent_TB_prevalence_adults,
+                         replace=False)
+        df.loc[tmp2, 'has_tb'] = 'L'  # change status to latent infection
 
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
-        """
-        raise NotImplementedError
-
-
-
-
-
+        return df
 
 
 # functions to be implemented
