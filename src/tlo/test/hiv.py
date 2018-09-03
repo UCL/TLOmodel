@@ -89,9 +89,11 @@ class HIV(Module):
         'weibull_shape_mort_infant_slow_progressor': Parameter(
             Types.REAL,
             'Weibull shape parameter for mortality in infants slow progressors'),
+
         'weibull_shape_mort_adult': Parameter(
             Types.REAL,
             'Weibull shape parameter for mortality in adults'),
+
         'proportion_high_sexual_risk_male': Parameter(
             Types.REAL,
             'proportion of men who have high sexual risk behaviour'),
@@ -101,9 +103,29 @@ class HIV(Module):
         'rr_HIV_high_sexual_risk': Parameter(
             Types.REAL,
             'relative risk of acquiring HIV with high risk sexual behaviour'),
+
+        'rr_STI': Parameter(
+            Types.REAL,
+            'relative risk of acquiring HIV with concurrent STI'),
+        'impact_condom_HIV_transmission': Parameter(
+            Types.REAL,
+            'efficacy of condoms in reducing HIV transmission'),
+        'impact_VMMC_HIV_transmission': Parameter(
+            Types.REAL,
+            'efficacy of VMMV in reducing HIV transmission'),
+        'impact_PrEP_HIV_transmission': Parameter(
+            Types.REAL,
+            'efficacy of PrEP in reducing HIV transmission'),
+        'impact_microbicide_HIV_transmission': Parameter(
+            Types.REAL,
+            'efficacy of microbicide in reducing HIV transmission'),
+
         'proportion_on_ART_infectious': Parameter(
             Types.REAL,
             'proportion of people on ART contributing to transmission as not virally suppressed'),
+        'rel_infectiousness_ART': Parameter(
+            Types.REAL,
+            'relative infectiousness of those on ART'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -136,7 +158,14 @@ class HIV(Module):
         params['proportion_high_sexual_risk_male'] = 0.0913
         params['proportion_high_sexual_risk_female'] = 0.0095
         params['rr_HIV_high_sexual_risk'] = 2
+        params['rr_STI'] = 8
+        params['impact_condom_HIV_transmission'] = 0.8
+        params['impact_VMMC_HIV_transmission'] = 0.6
+        params['impact_PrEP_HIV_transmission'] = 0.6
+        params['impact_microbicide_HIV_transmission'] = 0.6
         params['proportion_on_ART_infectious'] = 0.2
+        params['rel_infectiousness_ART'] = 0.06
+
 
     def high_risk(self, df):  # should this be in initialise population?
         """ Stratify the adult (age >15) population in high or low sexual risk """
@@ -161,11 +190,13 @@ class HIV(Module):
     # then could include the infant fast progressors
     # currently infant fast progressors will always have time to death shorter than time infected
 
-    # HELPER FUNCTION - should these go in class(HIV)?
-    def get_index(self, df, has_hiv, sex, age_low, age_high, CD4_state):
+    # HELPER FUNCTION - should this go in class(HIV)?
+    # should this be a static method?
+    @staticmethod
+    def get_index(df, has_hiv, sex, age_low, age_high, CD4_state):
 
         index = df.index[
-            (df.has_hiv == 1) &
+            (df.has_hiv == has_hiv) &
             (df.sex == sex) &
             (df.age >= age_low) & (df.age < age_high) &
             (df.CD4_state == CD4_state)]

@@ -1,33 +1,19 @@
-import numpy as np
+"""
+TB model
+"""
+
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
-# need to import HIV, HIV_Event, ART, ART_Event, BCG vaccine
 
-# IPT and rifampicin as separate methods
+TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='Active_TB_Incidence', header=0)
 
+class TB_baseline(Module):
+    """ Set up the baseline population with TB prevalence
 
-# initial pop data #
-inds = pd.read_csv('Q:/Thanzi la Onse/HIV/initial_pop_dataframe2018.csv')
-
-TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='TB_incidence', header=0)
-
-latent_TB_prevalence_total = 3170000  # Houben model paper
-latent_TB_prevalence_children = 525000
-latent_TB_prevalence_adults = latent_TB_prevalence_total - latent_TB_prevalence_children
-
-
-# this class contains all the methods required to set up the baseline population
-class TB(Module):
-    """ Sets up baseline TB prevalence.
-
-    Methods required:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -65,6 +51,12 @@ class TB(Module):
         'rr_TB_mortality_HIV': Parameter(
             Types.REAL,
             'relative risk of mortality from TB in HIV+ compared with HIV-'),
+        'prob_latent_TB': Parameter(
+            Types.REAL,
+            'probability of latent TB in baseline pop averaged over whole pop'),
+        'force_of_infection': Parameter(
+            Types.REAL,
+            'force of infection for new latent infections applied across whole pop'), # dummy value
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -75,16 +67,17 @@ class TB(Module):
         'date_TB_infection': Property(Types.DATE, 'Date acquired TB infection'),
         'date_TB_death': Property(Types.DATE, 'Projected time of TB death if untreated'),
         'on_treatment': Property(Types.BOOL, 'Currently on treatment for TB'),
-        'date_ART_treatment start': Property(Types.DATE, 'Date treatment started'),
-        'date_death': Property(Types.DATE, 'Date of death'),
     }
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
+
+        Here we do nothing.
+
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
         params = self.parameters
         params['prop_fast_progressor'] = 0.14
         params['transmission_rate'] = 7.2
@@ -102,135 +95,125 @@ class TB(Module):
         params['recovery'] = 2
         params['TB_mortality_rate'] = 0.15
         params['rr_TB_mortality_HIV'] = 17.1
+        params['prob_latent_TB'] = 0.0015
+        params['force_of_infection'] = 0.0015 # dummy value
 
-    # baseline population
-    # assign infected status using WHO prevalence 2016 by 2 x age-groups
-    def prevalence_active_TB(self, df):
-        """ assign cases of active TB using weights to prioritise highest risk
+
+    def initialise_population(self, population):
+        """Set our property values for the initial population.
+
+        This method is called by the simulation when creating the initial population, and is
+        responsible for assigning initial values, for every individual, of those properties
+        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
+
+        :param population: the population of individuals
+        """
+
+        p = population
+
+        # set-up baseline population
+        p.has_TB = 'Uninfected'
+        p.date_TB_infection = False
+
+        # assign active infections
+        # include RR here for other attributes e.g. HIV, diabetes etc.
+        eff_prob_active_TB = pd.Series(TBincidence.probability_infection)
+        has_active_TB = eff_prob_active_TB > self.rng.rand(len(eff_prob_active_TB))
+        assign_active_TB = has_active_TB[has_active_TB].index
+        p[assign_active_TB, 'has_TB'] = 'Active'
+
+
+        # assign latent infections, no age data available yet
+        eff_prob_latent_TB = pd.Series(self.parameters['prob_latent_TB'], index=p[p.has_TB == 'Uninfected'].index)
+        has_latent_TB = eff_prob_latent_TB > self.rng.rand(len(eff_prob_latent_TB))
+        assign_latent_TB = has_latent_TB[has_latent_TB].index
+        p[assign_latent_TB, 'has_TB'] = 'Latent'
+
+
+    def initialise_simulation(self, sim):
+        """Get ready for simulation start.
+
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+        """
+
+        TB_poll = TB_Event(self)
+        # first TB_event happens in 12 months, i.e. 2019
+        sim.schedule_event(TB_poll, sim.date + DateOffset(months=12))
+
+
+    def on_birth(self, mother, child):
+        """Initialise our properties for a newborn individual.
+
+        This is called by the simulation whenever a new person is born.
+
+        :param mother: the mother for this child
+        :param child: the new child
+        """
+        raise NotImplementedError
+
+
+class TB_Event(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
+
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """One line summary here
+
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=1))  # every month
+        # make sure any rates are monthly if frequency of event occurs monthly
+
+    def apply(self, population):
+        """Apply this event to the population.
+
+        :param population: the current population
         """
 
         params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
 
-        self.HIVstage1 = 3.33  # Williams equal duration HIV stages (x4)
-        self.HIVstage2 = 6.67
-        self.HIVstage3 = 10
+        p = population
 
-        # create a vector of probabilities depending on HIV status and time since seroconversion
-        # these probabilities need to include multiple risk factors (multiply RR unless strong confounding)
-        # calculate the combined relative risk for every risk factor
-        # then scale as probabilities need to sum to 1
-        # then sample with probabilities for all susceptible people
-        # all population without active TB then randomly assigned latent TB
-        df['tmp'] = 1  # baseline risk group, no risk factors
-
-        # RR HIV
-        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection <= self.HIVstage1)] *= \
-            params['rr_TB_with_HIV_stages'][0]
-        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage1) & (
-            self.current_time - df.date_HIV_infection <= self.HIVstage2)] *= params['rr_TB_with_HIV_stages'][1]
-        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage2) & (
-            self.current_time - df.date_HIV_infection <= self.HIVstage3)] *= params['rr_TB_with_HIV_stages'][2]
-        df['tmp'][(df.has_HIV == 1) & (self.current_time - df.date_HIV_infection > self.HIVstage3)] *= \
-            params['rr_TB_with_HIV_stages'][3]
-
-        df['tmp'][df.on_ART == 1] *= params['rr_ART']  # this modifies the RR by ART status
-
-        # RR lifestyle - not implemented yet
-        df['tmp'][df.is_malnourished == 1] *= params['rr_TB_malnourished']
-        df['tmp'][df.has_diabetes1 == 1] *= params['rr_TB_diabetes1']
-        df['tmp'][df.heavy_alcohol == 1] *= params['rr_TB_alcohol']
-        df['tmp'][df.smoker == 1] *= params['rr_TB_smoking']
-        df['tmp'][df.indoor_pollution == 1] *= params['rr_TB_pollution']
-
-        # sample from uninfected population using WHO incidence and relative risk as weights
-        # male age 0-14
-        tmp1 = df.sample(df.index[(df.age < 15) & (df.sex == 'M')],
-                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
-                                                              (TBincidence.Sex == 'M') &
-                                                              (TBincidence.Age == '0_14')])),
-                         replace=False, weights=df.tmp[(df.age < 15) & (df.sex == 'M')])
-        df.loc[tmp1, 'has_tb'] = 'A'  # change status to active infection
-
-        # female age 0-14
-        tmp2 = df.sample(df.index[(df.age < 15) & (df.sex == 'F')],
-                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
-                                                              (TBincidence.Sex == 'F') &
-                                                              (TBincidence.Age == '0_14')])),
-                         replace=False, weights=df.tmp[(df.age < 15) & (df.sex == 'F')])
-        df.loc[tmp2, 'has_tb'] = 'A'  # change status to infected
-
-        # male age >=15
-        tmp3 = df.sample(df.index[(df.age >= 15) & (df.sex == 'M')],
-                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
-                                                              (TBincidence.Sex == 'M') &
-                                                              (TBincidence.Age == '15_80')])),
-                         replace=False, weights=df.tmp[(df.age >= 15) & (df.sex == 'M')])
-        df.loc[tmp3, 'has_tb'] = 'A'  # change status to infected
-
-        # female age >=15
-        tmp4 = df.sample(df.index[(df.age >= 15) & (df.sex == 'F')],
-                         n=int((TBincidence['Incident cases'][(TBincidence.Year == 2016) &
-                                                              (TBincidence.Sex == 'F') &
-                                                              (TBincidence.Age == '15_80')])),
-                         replace=False, weights=df.tmp[(df.age >= 15) & (df.sex == 'F')])
-        df.loc[tmp4, 'has_tb'] = 'A'  # change status to infected
-
-        del df['tmp']  # remove temporary column of combined relative risks, will change with time
-
-        return df
-
-    def prevalence_latent_TB(self, df):
-        """ prevalence of latent TB infection is randomly assigned to the whole susceptible
-        population with the exception of those with has_tb='A
-        """
-        tmp = df.sample(df.index[(df.has_tb == 'U') & (df.age < 15)], n=latent_TB_prevalence_children,
-                        replace=False)
-        df.loc[tmp, 'has_tb'] = 'L'  # change status to latent infection
-
-        tmp2 = df.sample(df.index[(df.has_tb == 'U') & (df.age >= 15)], n=latent_TB_prevalence_adults,
-                         replace=False)
-        df.loc[tmp2, 'has_tb'] = 'L'  # change status to latent infection
-
-        return df
+        # apply a force of infection to produce new latent cases
+        # remember event is occurring each month so scale rates accordingly
+        prob_TB_new = pd.Series(params['force_of_infection'], index=p[p.has_TB == 'Uninfected'].index)
+        is_newly_infected = prob_TB_new > rng.rand(len(prob_TB_new))
+        new_case = is_newly_infected[is_newly_infected].index
+        p[new_case, 'has_TB'] = 'Latent'
 
 
-# functions to be implemented
 
-def force_of_infection_tb(inds):
-    infected = len(inds[(inds.tb_status == 'I') & (inds.tb_treat == 0)])  # number infected untreated
-
-    # number co-infected with HIV * relative infectiousness (lower)
-    hiv_infected = rel_infectiousness_HIV * len(inds[(inds.tb_status == 'I') & (inds.status == 'I')])
-
-    total_pop = len(inds[(inds.status != 'DH') & (inds.status != 'D')])  # whole population currently alive
-
-    foi = beta * ((infected + hiv_infected) / total_pop)  # force of infection for adults
-
-    return foi
+        # 14% of latent cases become active directly
 
 
-def inf_tb(inds):
-    # apply foi to uninfected pop -> latent infection
+        # slow progressors with latent TB become active at estimated rate
+        # only those with latent TB can develop active TB
+        prob_TB_active = pd.Series(params['progression_to_active_rate'], index=p[p.has_TB == 'Latent'].index)
 
-    return inds
+        prog_to_active = prob_TB_active > rng.rand(len(prob_TB_active))
+        new_active_case = prog_to_active[prog_to_active].index
+        p[new_active_case, 'has_TB'] = 'Active'
+        p[new_active_case, 'date_TB_infection'] = now
 
-
-def tb_treatment(inds):
-    # apply diagnosis / treatment / self-cure combined rates
-
-    return inds
-
-
-def progression_tb(inds):
-    # apply combined progression / relapse / reinfection rates to infected pop
-
-    return inds
+        # include treatment / recovery
+        # move back from active to latent
 
 
-def recover_tb(inds):
-    # apply combined diagnosis / treatment / self-cure rates to TB cases
 
-    return inds
 
-# TODO: isoniazid preventive therapy
-# TODO: rifampicin / alternative TB treatment
+
+
+
+
