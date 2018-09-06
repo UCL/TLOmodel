@@ -55,7 +55,7 @@ def get_index(df, age_low, age_high, has_hiv, on_ART, current_time,
 
         index = df.index[
             (df.age >= age_low) & (df.age < age_high) & (df.sex == optarg3) &
-            (df.has_hiv == 1) & (df.on_ART == on_ART) &
+            (df.has_hiv == has_hiv) & (df.on_ART == on_ART) &
             ((current_time - df.date_ART_start) > length_treatment_low) &
             ((current_time - df.date_ART_start) <= length_treatment_high) &
             (df.date_AIDS_death - df.date_ART_start >= optarg1) &
