@@ -1,33 +1,19 @@
-import numpy as np
+"""
+TB model
+"""
+
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
-# need to import HIV, HIV_Event, ART, ART_Event, BCG vaccine
 
-# IPT and rifampicin as separate methods
+TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='Active_TB_Incidence', header=0)
 
+class TB_baseline(Module):
+    """ Set up the baseline population with TB prevalence
 
-# initial pop data #
-inds = pd.read_csv('Q:/Thanzi la Onse/HIV/initial_pop_dataframe2018.csv')
-
-TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='TB_incidence', header=0)
-
-latent_TB_prevalence_total = 3170000  # Houben model paper
-latent_TB_prevalence_children = 525000
-latent_TB_prevalence_adults = latent_TB_prevalence_total - latent_TB_prevalence_children
-
-
-# this class contains all the methods required to set up the baseline population
-class TB(Module):
-    """ Sets up baseline TB prevalence.
-
-    Methods required:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -65,6 +51,12 @@ class TB(Module):
         'rr_TB_mortality_HIV': Parameter(
             Types.REAL,
             'relative risk of mortality from TB in HIV+ compared with HIV-'),
+        'prob_latent_TB': Parameter(
+            Types.REAL,
+            'probability of latent TB in baseline pop averaged over whole pop'),
+        'force_of_infection': Parameter(
+            Types.REAL,
+            'force of infection for new latent infections applied across whole pop'), # dummy value
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -75,16 +67,17 @@ class TB(Module):
         'date_TB_infection': Property(Types.DATE, 'Date acquired TB infection'),
         'date_TB_death': Property(Types.DATE, 'Projected time of TB death if untreated'),
         'on_treatment': Property(Types.BOOL, 'Currently on treatment for TB'),
-        'date_TB_treatment_start': Property(Types.DATE, 'Date treatment started'),
-        'date_death': Property(Types.DATE, 'Date of death'),
     }
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
+
+        Here we do nothing.
+
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
         params = self.parameters
         params['prop_fast_progressor'] = 0.14
         params['transmission_rate'] = 7.2
@@ -102,8 +95,10 @@ class TB(Module):
         params['recovery'] = 2
         params['TB_mortality_rate'] = 0.15
         params['rr_TB_mortality_HIV'] = 17.1
+        params['prob_latent_TB'] = 0.0015
+        params['force_of_infection'] = 0.0015 # dummy value
 
-    # baseline population
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -113,14 +108,26 @@ class TB(Module):
 
         :param population: the population of individuals
         """
-        # create a population where no-one has TB
-        has_TB = 'Uninfected'
-        date_TB_infection = None
-        date_TB_death = None
-        on_treatment = False
-        date_TB_treatment_start = None
-        date_TB_death = False
 
+        p = population
+
+        # set-up baseline population
+        p.has_TB = 'Uninfected'
+        p.date_TB_infection = False
+
+        # assign active infections
+        # include RR here for other attributes e.g. HIV, diabetes etc.
+        eff_prob_active_TB = pd.Series(TBincidence.probability_infection)
+        has_active_TB = eff_prob_active_TB > self.rng.rand(len(eff_prob_active_TB))
+        assign_active_TB = has_active_TB[has_active_TB].index
+        p[assign_active_TB, 'has_TB'] = 'Active'
+
+
+        # assign latent infections, no age data available yet
+        eff_prob_latent_TB = pd.Series(self.parameters['prob_latent_TB'], index=p[p.has_TB == 'Uninfected'].index)
+        has_latent_TB = eff_prob_latent_TB > self.rng.rand(len(eff_prob_latent_TB))
+        assign_latent_TB = has_latent_TB[has_latent_TB].index
+        p[assign_latent_TB, 'has_TB'] = 'Latent'
 
 
     def initialise_simulation(self, sim):
@@ -130,7 +137,11 @@ class TB(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        raise NotImplementedError
+
+        TB_poll = TB_Event(self)
+        # first TB_event happens in 12 months, i.e. 2019
+        sim.schedule_event(TB_poll, sim.date + DateOffset(months=12))
+
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -143,48 +154,66 @@ class TB(Module):
         raise NotImplementedError
 
 
+class TB_Event(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
+
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """One line summary here
+
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=1))  # every month
+        # make sure any rates are monthly if frequency of event occurs monthly
+
+    def apply(self, population):
+        """Apply this event to the population.
+
+        :param population: the current population
+        """
+
+        params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
+
+        p = population
+
+        # apply a force of infection to produce new latent cases
+        # remember event is occurring each month so scale rates accordingly
+        prob_TB_new = pd.Series(params['force_of_infection'], index=p[p.has_TB == 'Uninfected'].index)
+        is_newly_infected = prob_TB_new > rng.rand(len(prob_TB_new))
+        new_case = is_newly_infected[is_newly_infected].index
+        p[new_case, 'has_TB'] = 'Latent'
+
+
+
+        # 14% of latent cases become active directly
+
+
+        # slow progressors with latent TB become active at estimated rate
+        # only those with latent TB can develop active TB
+        prob_TB_active = pd.Series(params['progression_to_active_rate'], index=p[p.has_TB == 'Latent'].index)
+
+        prog_to_active = prob_TB_active > rng.rand(len(prob_TB_active))
+        new_active_case = prog_to_active[prog_to_active].index
+        p[new_active_case, 'has_TB'] = 'Active'
+        p[new_active_case, 'date_TB_infection'] = now
+
+        # include treatment / recovery
+        # move back from active to latent
 
 
 
 
 
-# functions to be implemented
-
-def force_of_infection_tb(inds):
-    infected = len(inds[(inds.tb_status == 'I') & (inds.tb_treat == 0)])  # number infected untreated
-
-    # number co-infected with HIV * relative infectiousness (lower)
-    hiv_infected = rel_infectiousness_HIV * len(inds[(inds.tb_status == 'I') & (inds.status == 'I')])
-
-    total_pop = len(inds[(inds.status != 'DH') & (inds.status != 'D')])  # whole population currently alive
-
-    foi = beta * ((infected + hiv_infected) / total_pop)  # force of infection for adults
-
-    return foi
 
 
-def inf_tb(inds):
-    # apply foi to uninfected pop -> latent infection
 
-    return inds
-
-
-def tb_treatment(inds):
-    # apply diagnosis / treatment / self-cure combined rates
-
-    return inds
-
-
-def progression_tb(inds):
-    # apply combined progression / relapse / reinfection rates to infected pop
-
-    return inds
-
-
-def recover_tb(inds):
-    # apply combined diagnosis / treatment / self-cure rates to TB cases
-
-    return inds
-
-# TODO: isoniazid preventive therapy
-# TODO: rifampicin / alternative TB treatment
