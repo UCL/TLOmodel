@@ -5,10 +5,6 @@ Q: should treatment be in a separate method?
 """
 
 # import any methods from other modules, e.g. for parameter definitions
-from typing import Any, Union
-
-from pandas.tseries.offsets import Day
-
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -153,7 +149,7 @@ class HIV(Module):
         x.to_csv("~/Documents/output.csv")
 
     def get_age(self, date_of_birth):
-        return ((self.sim.date - date_of_birth).apply(lambda x: x.days)) / 365.25
+        return (self.sim.date - date_of_birth).dt.days / 365.25
 
     def high_risk(self, population):
         # should this be in initialise population?
@@ -230,14 +226,12 @@ class HIV(Module):
                 female_infected = population[idx].sample(frac=fraction_infected, weights=prob_i).index
                 population[female_infected, 'has_HIV'] = True
 
-
     def time_since_infection(self, population):
         now = self.sim.date
 
         cd4_states = [500, 350, 250, 200, 100, 50, 0]
 
         population.props['age'] = self.get_age(population.date_of_birth)
-        population.props['age_int'] = population.props['age'].astype(int)
 
         for sex in ['M', 'F']:
             idx = (population.has_HIV == True) & (population.sex == sex)
@@ -251,29 +245,32 @@ class HIV(Module):
 
         time_infected_lookup = dict()
 
-        def add(row):
-            time_infected_lookup[(row.CD4_state, row.sex, row.age)] = [(row.years1, row.years2),
+        def add_to_lookup(row):
+            time_infected_lookup[(row.CD4_state, row.sex, row.age)] = [(row.days1, row.days2),
                                                                        (row.prob1, row.prob2)]
 
-        pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv'
-                    ).apply(lambda row: add(row), axis=1)
+        cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        cd4_unrolled['days1'] = pd.to_timedelta((cd4_unrolled.years1 * 365.25).astype(int), unit='d')
+        cd4_unrolled['days2'] = pd.to_timedelta((cd4_unrolled.years2 * 365.25).astype(int), unit='d')
+        cd4_unrolled.apply(add_to_lookup, axis=1)
 
         def get_time_infected(row):
-            lookup = time_infected_lookup[(row.CD4_state, row.sex, row.age)]
+            lookup = time_infected_lookup[(row.CD4_state, row.sex, int(row.age))]
             return np.random.choice(lookup[0], p=lookup[1])
 
-        time_infected: pd.Series = population[population.has_HIV].apply(lambda row: get_time_infected(row), axis=1)
+        time_infected: pd.Series = population[population.has_HIV].apply(get_time_infected, axis=1)
 
-        # convert to date in the past
-        time_infected = time_infected.apply(lambda x: (now - DateOffset(days=int(x * 365.25))))
-        population.props.loc[time_infected.index, 'date_HIV_infection'] = time_infected
+        # NOTE: why don't we use years? because:
+        # "ValueError: Non-integer years and months are ambiguous and not currently supported.
+        date_infected = now - time_infected
+        population.props.loc[date_infected.index, 'date_HIV_infection'] = date_infected
+        # print(population.props.loc[date_infected.index, ['date_of_birth', 'date_HIV_infection']])
 
-        # remove temporary columns 'time_infected' and 'CD4_states'
-        # del population.props['CD4_state']
+        del population.props['CD4_state']
 
         # check time infected is less than time alive (especially for infants)
         # tmp = population.props.index[(pd.notna(population.date_HIV_infection)) & ((current_time - population.date_HIV_infection).years > population.age)]
-        early_doi = ((now - time_infected).dt.days / 365.25) > population.props.loc[time_infected.index, 'age'] # time infected earlier than time alive!
+        early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[date_infected.index, 'age'] # time infected earlier than time alive!
 
         if early_doi.any():
             tmp2 = now - DateOffset(years=population.props.loc[early_doi, 'age'])
@@ -297,11 +294,9 @@ class HIV(Module):
 
 
         # while time of death is shorter than time infected keep redrawing (only for the entries that need it)
-        while np.any(
-            time_of_death_slow < (current_time - df.props.loc[hiv_inf, 'date_HIV_infection'])):  # if any condition=TRUE for any rows
+        while np.any(time_of_death_slow < (current_time - df.props.loc[hiv_inf, 'date_HIV_infection'])):  # if any condition=TRUE for any rows
 
-            redraw = np.argwhere(
-                time_of_death_slow < (current_time - df.props.loc[self.hiv_inf, 'date_HIV_infection']))
+            redraw = np.argwhere(time_of_death_slow < (current_time - df.props.loc[self.hiv_inf, 'date_HIV_infection']))
             redraw2 = redraw.ravel()
 
             if len(redraw) == 0:
@@ -309,8 +304,7 @@ class HIV(Module):
 
             # redraw time of death
             time_of_death_slow[redraw2] = np.random.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
-                                                            size=len(redraw2)) * \
-                params['weibull_scale_mort_infant_slow_progressor']
+                                                            size=len(redraw2)) * params['weibull_scale_mort_infant_slow_progressor']
 
         # subtract time already spent
         time_of_death_slow = pd.to_timedelta(time_of_death_slow * 365.25, unit='d')
