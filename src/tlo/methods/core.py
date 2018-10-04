@@ -1,8 +1,6 @@
 """
 A skeleton template for disease methods.
 """
-from functools import lru_cache
-
 import numpy as np
 import pandas as pd
 
@@ -11,15 +9,8 @@ from tlo import Module, Parameter, Property, Types
 
 class Core(Module):
     """
-    One line summary goes here...
-
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    The core demography modules handling age and sex of individuals. Also is responsible for their
+    'is_alive' status
     """
 
     def __init__(self, name=None, workbook_path=None):
@@ -78,19 +69,8 @@ class Core(Module):
         df = population.props
         df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
         df.sex = pd.Categorical(pop_sample['gender'].apply(lambda x: 'F' if x == 'female' else 'M'))
-        df.mother_id = np.NaN
+        df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
-
-    @lru_cache(maxsize=1)
-    def __get_age(self, timestamp):
-        age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
-        age.index.name = 'person'
-        age['years_exact'] = age.days / np.timedelta64(1, 'Y')
-        age['years'] = np.floor(age.years_exact)
-        return age
-
-    def age(self):
-        return self.__get_age(self.sim.date)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
