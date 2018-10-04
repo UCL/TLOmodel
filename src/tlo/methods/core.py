@@ -1,6 +1,8 @@
 """
 A skeleton template for disease methods.
 """
+from functools import lru_cache
+
 import numpy as np
 import pandas as pd
 
@@ -20,10 +22,14 @@ class Core(Module):
     * `on_birth(mother, child)`
     """
 
+    def __init__(self, name=None, workbook_path=None):
+        super().__init__(name)
+        self.workbook_path = workbook_path
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'prop_male': Parameter(Types.REAL, 'Proportion of population that is male'),
+        'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -44,7 +50,8 @@ class Core(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        self.parameters['prop_male'] = 0.505
+        self.parameters['interpolated_pop'] = pd.read_excel(self.workbook_path,
+                                                            sheet_name='Interpolated Pop Structure')
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -55,20 +62,35 @@ class Core(Module):
 
         :param population: the population of individuals
         """
+
+        worksheet = self.parameters['interpolated_pop']
+
+        # get a subset of the rows from the worksheet
+        intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
+        intpop['probability'] = intpop.value / intpop.value.sum()
+        intpop['month_range'] = 12
+        intpop.loc[intpop['age_to'] != intpop['age_from'], 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
+
+        pop_sample = intpop.iloc[np.random.choice(intpop.index.values, size=len(population), p=intpop.probability.values)]
+        pop_sample = pop_sample.reset_index()
+        months = pd.Series(pd.to_timedelta(np.random.randint(low=0, high=12, size=len(population)), unit='M', box=False))
+
         df = population.props
-        df.mother_id = None
+        df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
+        df.sex = pd.Categorical(pop_sample['gender'].apply(lambda x: 'F' if x == 'female' else 'M'))
+        df.mother_id = np.NaN
         df.is_alive = True
 
-        # date_of_birth is uniform sample from ages 0 to 100
-        df.date_of_birth = pd.NaT
-        age = pd.to_timedelta(np.random.sample(size=len(df)) * 100, unit='Y')
-        df.date_of_birth = pd.Timestamp.now() - age
+    @lru_cache(maxsize=1)
+    def __get_age(self, timestamp):
+        age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
+        age.index.name = 'person'
+        age['years_exact'] = age.days / np.timedelta64(1, 'Y')
+        age['years'] = np.floor(age.years_exact)
+        return age
 
-        # sex
-        df.sex = np.nan  # this is how to initialise a Categorical property
-        prop_male = self.parameters['prop_male']
-        prop_female = 1 - prop_male
-        df.sex = np.random.choice(['M', 'F'], size=len(df), p=[prop_male, prop_female])
+    def age(self):
+        return self.__get_age(self.sim.date)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -87,5 +109,8 @@ class Core(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        pass
+        child.date_of_birth = self.sim.date
+        child.sex = np.random.choice(['M', 'F'])
+        child.mother_id = mother.index
+        child.is_alive = True
 
