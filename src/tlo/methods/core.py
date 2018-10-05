@@ -60,11 +60,18 @@ class Core(Module):
         intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
         intpop['probability'] = intpop.value / intpop.value.sum()
         intpop['month_range'] = 12
-        intpop.loc[intpop['age_to'] != intpop['age_from'], 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
+        is_age_range = (intpop['age_to'] != intpop['age_from'])
+        intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
 
-        pop_sample = intpop.iloc[np.random.choice(intpop.index.values, size=len(population), p=intpop.probability.values)]
+        pop_sample = intpop.iloc[np.random.choice(intpop.index.values,
+                                                  size=len(population),
+                                                  p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
-        months = pd.Series(pd.to_timedelta(np.random.randint(low=0, high=12, size=len(population)), unit='M', box=False))
+        months = pd.Series(pd.to_timedelta(np.random.randint(low=0,
+                                                             high=12,
+                                                             size=len(population)),
+                                           unit='M',
+                                           box=False))
 
         df = population.props
         df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
@@ -93,4 +100,3 @@ class Core(Module):
         child.sex = np.random.choice(['M', 'F'])
         child.mother_id = mother.index
         child.is_alive = True
-
