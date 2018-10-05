@@ -1,5 +1,5 @@
 """
-TB model
+TB infections
 """
 
 import pandas as pd
@@ -8,10 +8,11 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
+file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'
+tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
+Active_tb_prop, Latent_tb_prop = tb_data['Active_tb_prop'], tb_data['Latent_tb_prop']
 
-TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='Active_TB_Incidence', header=0)
-
-class TB_baseline(Module):
+class tb_baseline(Module):
     """ Set up the baseline population with TB prevalence
 
     """
@@ -28,45 +29,43 @@ class TB_baseline(Module):
         'progression_to_active_rate': Parameter(
             Types.REAL,
             'Combined rate of progression/reinfection/relapse from Juan'),
-        'rr_TB_HIV_stages': Parameter(
+        'rr_tb_hiv_stages': Parameter(
             Types.REAL,
-            'relative risk of TB hin HIV+ compared with HIV- by CD4 stage'),
-        'rr_TB_ART': Parameter(
+            'relative risk of tb in hiv+ compared with hiv- by cd4 stage'),
+        'rr_tb_art': Parameter(
             Types.REAL,
-            'relative risk of TB in HIV+ on ART'),
-        'rr_TB_malnourished': Parameter(Types.REAL, 'relative risk of TB with malnourishment'),
-        'rr_TB_diabetes1': Parameter(Types.REAL, 'relative risk of TB with diabetes type 1'),
-        'rr_TB_alcohol': Parameter(Types.REAL, 'relative risk of TB with heavy alcohol use'),
-        'rr_TB_smoking': Parameter(Types.REAL, 'relative risk of TB with smoking'),
-        'rr_TB_pollution': Parameter(Types.REAL, 'relative risk of TB with indoor air pollution'),
-        'rr_infectiousness_HIV': Parameter(
+            'relative risk of tb in hiv+ on art'),
+        'rr_tb_malnourished': Parameter(Types.REAL, 'relative risk of tb with malnourishment'),
+        'rr_tb_diabetes1': Parameter(Types.REAL, 'relative risk of tb with diabetes type 1'),
+        'rr_tb_alcohol': Parameter(Types.REAL, 'relative risk of tb with heavy alcohol use'),
+        'rr_tb_smoking': Parameter(Types.REAL, 'relative risk of tb with smoking'),
+        'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
+        'rr_infectiousness_hiv': Parameter(
             Types.REAL,
-            'relative infectiousness of TB in HIV+ compared with HIV-'),
+            'relative infectiousness of tb in hiv+ compared with hiv-'),
         'recovery': Parameter(
             Types.REAL,
             'combined rate of diagnosis, treatment and self-cure, from Juan'),
-        'TB_mortality_rate': Parameter(
+        'tb_mortality_rate': Parameter(
             Types.REAL,
-            'mortality rate with active TB'),
-        'rr_TB_mortality_HIV': Parameter(
+            'mortality rate with active tb'),
+        'rr_tb_mortality_hiv': Parameter(
             Types.REAL,
-            'relative risk of mortality from TB in HIV+ compared with HIV-'),
-        'prob_latent_TB': Parameter(
-            Types.REAL,
-            'probability of latent TB in baseline pop averaged over whole pop'),
+            'relative risk of mortality from tb in hiv+ compared with hiv-'),
         'force_of_infection': Parameter(
             Types.REAL,
-            'force of infection for new latent infections applied across whole pop'), # dummy value
+            'force of infection for new latent infections applied across whole pop')  # dummy value
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'has_TB': Property(Types.CATEGORICAL, 'TB status: Uninfected, Latent, Active'),
-        'date_TB_infection': Property(Types.DATE, 'Date acquired TB infection'),
-        'date_TB_death': Property(Types.DATE, 'Projected time of TB death if untreated'),
-        'on_treatment': Property(Types.BOOL, 'Currently on treatment for TB'),
+        'has_tb': Property(Types.CATEGORICAL, 'tb status: Uninfected, Latent, Active'),
+        'date_active_tb': Property(Types.DATE, 'Date active tb infection started'),
+        'date_latent_tb': Property(Types.DATE, 'Date acquired tb infection (latent stage)'),
+        'date_tb_death': Property(Types.DATE, 'Projected time of tb death if untreated'),
+        'on_treatment': Property(Types.BOOL, 'Currently on treatment for tb'),
     }
 
 
@@ -83,20 +82,22 @@ class TB_baseline(Module):
         params['transmission_rate'] = 7.2
         params['progression_to_active_rate'] = 0.5
 
-        params['rr_TB_with_HIV_stages'] = [3.44, 6.76, 13.28, 26.06]
-        params['rr_ART'] = 0.39
-        params['rr_TB_malnourished'] = 2.1
-        params['rr_TB_diabetes1'] = 3
-        params['rr_TB_alcohol'] = 2.9
-        params['rr_TB_smoking'] = 2.6
-        params['rr_TB_pollution'] = 1.5
+        params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]
+        params['rr_art'] = 0.39
+        params['rr_tb_malnourished'] = 2.1
+        params['rr_tb_diabetes1'] = 3
+        params['rr_tb_alcohol'] = 2.9
+        params['rr_tb_smoking'] = 2.6
+        params['rr_tb_pollution'] = 1.5
 
-        params['rr_infectiousness_HIV'] = 0.52
+        params['rr_infectiousness_hiv'] = 0.52
         params['recovery'] = 2
-        params['TB_mortality_rate'] = 0.15
-        params['rr_TB_mortality_HIV'] = 17.1
-        params['prob_latent_TB'] = 0.0015
-        params['force_of_infection'] = 0.0015 # dummy value
+        params['tb_mortality_rate'] = 0.15
+        params['rr_tb_mortality_HIV'] = 17.1
+        params['force_of_infection'] = 0.0015  # dummy value
+
+    def get_age(self, date_of_birth):
+        return (self.sim.date - date_of_birth).dt.days / 365.25
 
 
     def initialise_population(self, population):
@@ -107,27 +108,63 @@ class TB_baseline(Module):
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
         :param population: the population of individuals
-        """
 
+        initial pop is 2014
+        then 2015-2018 needs to run with beta in the FOI
+
+        """
         p = population
 
-        # set-up baseline population
-        p.has_TB = 'Uninfected'
-        p.date_TB_infection = False
+        now = self.sim.date
+        age = self.get_age(p.date_of_birth)
 
-        # assign active infections
-        # include RR here for other attributes e.g. HIV, diabetes etc.
-        eff_prob_active_TB = pd.Series(TBincidence.probability_infection)
-        has_active_TB = eff_prob_active_TB > self.rng.rand(len(eff_prob_active_TB))
-        assign_active_TB = has_active_TB[has_active_TB].index
-        p[assign_active_TB, 'has_TB'] = 'Active'
+        # set-up 2014 population
+        p.has_tb = 'Uninfected'
+        p.date_active_tb = False
+        p.date_latent_tb = False
+
+        # TB infections - active / latent
+        # 2014 infections not weighted by RR, randomly assigned
+        # can include RR values in the sample command (weights)
+        for i in range(0, 81):
+            # male
+            idx = (age == i) & (p.sex == 'M')
+
+            if idx.any():
+                # sample from uninfected population using WHO prevalence
+                fraction_latent_tb = Latent_tb_prop.loc[(Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prop_latent_tb']
+                male_latent_tb = p[idx].sample(frac=fraction_latent_tb).index
+                p[male_latent_tb, 'has_tb'] = 'Latent'
+                p[male_latent_tb, 'date_latent_tb'] = now
+
+                idx_uninfected = (age == i) & (p.sex == 'M') & (p.has_tb == 'Uninfected')
+
+                fraction_active_tb = Active_tb_prop.loc[(Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prop_active_tb']
+                male_active_tb = p[idx_uninfected].sample(frac=fraction_active_tb).index
+                p[male_active_tb, 'has_tb'] = 'Active'
+                p[male_active_tb, 'date_active_tb'] = now
+
+            # female
+            idx = (age == i) & (p.sex == 'F')
+
+            if idx.any():
+                # sample from uninfected population using WHO prevalence
+                fraction_latent_tb = Latent_tb_prop.loc[(Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prop_latent_tb']
+                female_latent_tb = p[idx].sample(frac=fraction_latent_tb).index
+                p[female_latent_tb, 'has_tb'] = 'Latent'
+                p[female_latent_tb, 'date_latent_tb'] = now
+
+                idx_uninfected = (age == i) & (p.sex == 'F') & (p.has_tb == 'Uninfected')
+
+                fraction_active_tb = Active_tb_prop.loc[(Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prop_active_tb']
+                female_active_tb = p[idx_uninfected].sample(frac=fraction_active_tb).index
+                p[female_active_tb, 'has_tb'] = 'Active'
+                p[female_active_tb, 'date_active_tb'] = now
 
 
-        # assign latent infections, no age data available yet
-        eff_prob_latent_TB = pd.Series(self.parameters['prob_latent_TB'], index=p[p.has_TB == 'Uninfected'].index)
-        has_latent_TB = eff_prob_latent_TB > self.rng.rand(len(eff_prob_latent_TB))
-        assign_latent_TB = has_latent_TB[has_latent_TB].index
-        p[assign_latent_TB, 'has_TB'] = 'Latent'
+    def run_baseline_population(self, sim):
+        """run the infection process for 2015-2018 to produce baseline pop
+        """
 
 
     def initialise_simulation(self, sim):
