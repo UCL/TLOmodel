@@ -43,9 +43,12 @@ class tb_baseline(Module):
         'rr_infectiousness_hiv': Parameter(
             Types.REAL,
             'relative infectiousness of tb in hiv+ compared with hiv-'),
-        'recovery': Parameter(
+        'prob_self_cure': Parameter(
             Types.REAL,
-            'combined rate of diagnosis, treatment and self-cure, from Juan'),
+            'probability of self-cure'),
+        'self_cure': Parameter(
+            Types.REAL,
+            'annual rate of self-cure'),
         'tb_mortality_rate': Parameter(
             Types.REAL,
             'mortality rate with active tb'),
@@ -83,7 +86,7 @@ class tb_baseline(Module):
         params['progression_to_active_rate'] = 0.5
 
         params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]
-        params['rr_art'] = 0.39
+        params['rr_tb_art'] = 0.39
         params['rr_tb_malnourished'] = 2.1
         params['rr_tb_diabetes1'] = 3
         params['rr_tb_alcohol'] = 2.9
@@ -91,7 +94,8 @@ class tb_baseline(Module):
         params['rr_tb_pollution'] = 1.5
 
         params['rr_infectiousness_hiv'] = 0.52
-        params['recovery'] = 2
+        params['prob_self_cure'] = 0.15
+        params['self_cure'] = 2
         params['tb_mortality_rate'] = 0.15
         params['rr_tb_mortality_HIV'] = 17.1
         params['force_of_infection'] = 0.0015  # dummy value
@@ -132,14 +136,16 @@ class tb_baseline(Module):
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
-                fraction_latent_tb = Latent_tb_prop.loc[(Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prop_latent_tb']
+                fraction_latent_tb = Latent_tb_prop.loc[
+                    (Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prop_latent_tb']
                 male_latent_tb = p[idx].sample(frac=fraction_latent_tb).index
                 p[male_latent_tb, 'has_tb'] = 'Latent'
                 p[male_latent_tb, 'date_latent_tb'] = now
 
                 idx_uninfected = (age == i) & (p.sex == 'M') & (p.has_tb == 'Uninfected')
 
-                fraction_active_tb = Active_tb_prop.loc[(Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prop_active_tb']
+                fraction_active_tb = Active_tb_prop.loc[
+                    (Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prop_active_tb']
                 male_active_tb = p[idx_uninfected].sample(frac=fraction_active_tb).index
                 p[male_active_tb, 'has_tb'] = 'Active'
                 p[male_active_tb, 'date_active_tb'] = now
@@ -149,22 +155,19 @@ class tb_baseline(Module):
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
-                fraction_latent_tb = Latent_tb_prop.loc[(Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prop_latent_tb']
+                fraction_latent_tb = Latent_tb_prop.loc[
+                    (Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prop_latent_tb']
                 female_latent_tb = p[idx].sample(frac=fraction_latent_tb).index
                 p[female_latent_tb, 'has_tb'] = 'Latent'
                 p[female_latent_tb, 'date_latent_tb'] = now
 
                 idx_uninfected = (age == i) & (p.sex == 'F') & (p.has_tb == 'Uninfected')
 
-                fraction_active_tb = Active_tb_prop.loc[(Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prop_active_tb']
+                fraction_active_tb = Active_tb_prop.loc[
+                    (Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prop_active_tb']
                 female_active_tb = p[idx_uninfected].sample(frac=fraction_active_tb).index
                 p[female_active_tb, 'has_tb'] = 'Active'
                 p[female_active_tb, 'date_active_tb'] = now
-
-
-    def run_baseline_population(self, sim):
-        """run the infection process for 2015-2018 to produce baseline pop
-        """
 
 
     def initialise_simulation(self, sim):
@@ -176,7 +179,7 @@ class tb_baseline(Module):
         """
 
         TB_poll = TB_Event(self)
-        # first TB_event happens in 12 months, i.e. 2019
+        # first TB_event happens in 12 months, i.e. 2015
         sim.schedule_event(TB_poll, sim.date + DateOffset(months=12))
 
 
@@ -208,8 +211,8 @@ class TB_Event(RegularEvent, PopulationScopeEventMixin):
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=1))  # every month
-        # make sure any rates are monthly if frequency of event occurs monthly
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+        # make sure any rates are annual if frequency of event is annual
 
     def apply(self, population):
         """Apply this event to the population.
@@ -224,28 +227,44 @@ class TB_Event(RegularEvent, PopulationScopeEventMixin):
         p = population
 
         # apply a force of infection to produce new latent cases
+        # no age distribution for FOI but the relative risks would affect distribution of active infection
         # remember event is occurring each month so scale rates accordingly
         prob_TB_new = pd.Series(params['force_of_infection'], index=p[p.has_TB == 'Uninfected'].index)
         is_newly_infected = prob_TB_new > rng.rand(len(prob_TB_new))
         new_case = is_newly_infected[is_newly_infected].index
         p[new_case, 'has_TB'] = 'Latent'
+        p[new_case, 'date_active_tb'] = now
+
+        # 14% of newly infected latent cases become active directly
+        fast_progression = p.loc[(p.has_tb == 'Latent') & (p.date_active_tb == now)].sample(
+            frac=params['prop_fast_progressor']).index
+        p[fast_progression, 'has_tb'] = 'Active'
+        p[fast_progression, 'date_active_tb'] = now
 
 
+        # slow progressors with latent TB become active
+        # needs to be a random sample with weights for RR of active disease
+        eff_prob_active_tb = pd.Series(params['progression_to_active_rate'], index=p[p.has_tb == 'Latent'].index)
+        # eff_prob_active_tb.loc[p.has_hiv] *= params['rr_tb_hiv']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_art']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_malnourished']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_diabetes1']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_alcohol']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_smoking']
+        # eff_prob_active_tb.loc[p.on_art] *= params['rr_tb_pollution']
 
-        # 14% of latent cases become active directly
-
-
-        # slow progressors with latent TB become active at estimated rate
-        # only those with latent TB can develop active TB
-        prob_TB_active = pd.Series(params['progression_to_active_rate'], index=p[p.has_TB == 'Latent'].index)
-
-        prog_to_active = prob_TB_active > rng.rand(len(prob_TB_active))
+        prog_to_active = eff_prob_active_tb > rng.rand(len(eff_prob_active_tb))
         new_active_case = prog_to_active[prog_to_active].index
-        p[new_active_case, 'has_TB'] = 'Active'
-        p[new_active_case, 'date_TB_infection'] = now
+        p[new_active_case, 'has_tb'] = 'Active'
+        p[new_active_case, 'date_active_tb'] = now
 
-        # include treatment / recovery
-        # move back from active to latent
+        # self-cure - move back from active to latent
+        self_cure_tb = p[p.has_tb == 'Active'].sample(frac=params['prob_self_cure']*params['self_cure']).index
+        p[self_cure_tb, 'has_tb'] = 'Latent'
+
+
+
+
 
 
 
