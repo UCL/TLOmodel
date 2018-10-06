@@ -1,5 +1,7 @@
 """The Person and Population classes."""
+from functools import lru_cache
 
+import numpy as np
 import pandas as pd
 
 
@@ -194,6 +196,18 @@ class Population:
             for prop_name, prop in module.PROPERTIES.items():
                 props[prop_name] = prop.create_series(prop_name, size)
         return props
+
+    @lru_cache(maxsize=1)
+    def __get_age(self, timestamp):
+        age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
+        age.index.name = 'person'
+        age['years_exact'] = age.days / np.timedelta64(1, 'Y')
+        age['years'] = np.floor(age.years_exact)
+        return age
+
+    @property
+    def age(self):
+        return self.__get_age(self.sim.date)
 
     def do_birth(self):
         """Create a new person within the population.
