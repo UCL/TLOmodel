@@ -1,7 +1,11 @@
-__version__ = '0.1.0'
+"""
+The top-level TLO framework module.
 
-# We import our key classes so they're available in the main namespace.
-# Pandas' Timestamp is used as our main date type (even though it has nanosecond resolution...)
+We import our key classes so they're available in the main namespace.
+
+Pandas' Timestamp is used as our main date type (even though it has nanosecond resolution...)
+"""
+__version__ = '0.1.0'
 
 from pandas import Timestamp as Date  # noqa
 from pandas.tseries.offsets import DateOffset  # noqa
