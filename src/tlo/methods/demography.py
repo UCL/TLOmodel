@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Module, Parameter, Property, Types
 
 
-class Core(Module):
+class Demography(Module):
     """
     The core demography modules handling age and sex of individuals. Also is responsible for their
     'is_alive' status
