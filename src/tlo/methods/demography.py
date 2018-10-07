@@ -1,5 +1,8 @@
 """
-A skeleton template for disease methods.
+The core demography module and its associated events.
+
+Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
+population structure' worksheet within to initialise the age & sex distribution of population.
 """
 import numpy as np
 import pandas as pd
@@ -36,7 +39,7 @@ class Demography(Module):
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
 
-        Here we do nothing.
+        Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
 
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
@@ -75,7 +78,7 @@ class Demography(Module):
 
         df = population.props
         df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
-        df.sex = pd.Categorical(pop_sample['gender'].apply(lambda x: 'F' if x == 'female' else 'M'))
+        df.sex = pd.Categorical(pop_sample['gender'].map({'female': 'F', 'male': 'M'}))
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
 

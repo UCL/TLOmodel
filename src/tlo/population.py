@@ -199,6 +199,18 @@ class Population:
 
     @lru_cache(maxsize=1)
     def __get_age(self, timestamp):
+        """
+        Creates a dataframe holding age information. This private method is decorated with an LRU
+        cache of size 1. This means the age dataframe for the most recent timestamp is cached.
+
+        Module/events can repeatedly access the population.age property as the simulation runs
+        forward in time, the age for the current timestemp will only be calculated once.
+
+        See the 'age()' method.
+
+        :param timestamp: a numpy datetime
+        :return: Pandas dataframe with age of individuals in population
+        """
         age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
         age.index.name = 'person'
         age['years_exact'] = age.days / np.timedelta64(1, 'Y')
@@ -207,6 +219,14 @@ class Population:
 
     @property
     def age(self):
+        """
+        Returns age of individuals based on the current simulation date. The dataframe returned
+        has columns 'days', 'years_exact' and 'years' (whole years).
+
+        The index of the age dataframe is the same as the population dataframe.
+
+        :return: A Pandas dataframe of age information of the population
+        """
         return self.__get_age(self.sim.date)
 
     def do_birth(self):
