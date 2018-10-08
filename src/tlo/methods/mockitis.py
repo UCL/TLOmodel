@@ -22,15 +22,22 @@ class Mockitis(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'parameter_a': Parameter(
-            Types.REAL, 'Description of parameter a'),
+        'p_infection': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
+        'p_cure': Parameter(Types.REAL, 'Probability that an infected individual is cured'),
+        'initial_prevalence': Parameter(Types.REAL, 'Prevalence of the disease in the initial population')
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'Description of property a'),
+        'mi_is_infected': Property(Types.BOOL, 'Current status of mockitis'),
+        'mi_status': Property(Types.CATEGORICAL,
+                              'Historical status: N=never; T1=type 1; T2=type 2; P=previously',
+                              categories=['N', 'T1', 'T2', 'P', 'NT1', 'NT2']),
+        'mi_date_infected': Property(Types.DATE, 'Date of latest infection'),
+        'mi_date_death': Property(Types.DATE, 'Date of death of infected individual'),
+        'mi_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
     }
 
     def read_parameters(self, data_folder):
@@ -52,7 +59,7 @@ class Mockitis(Module):
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        pass
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -61,7 +68,7 @@ class Mockitis(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        raise NotImplementedError
+        pass
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -71,7 +78,7 @@ class Mockitis(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        raise NotImplementedError
+        pass
 
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
@@ -98,4 +105,4 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
-        raise NotImplementedError
+        pass
