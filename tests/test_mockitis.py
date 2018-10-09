@@ -27,3 +27,9 @@ def test_mockitis_simulation(simulation):
 if __name__ == '__main__':
     simulation = simulation()
     test_mockitis_simulation(simulation)
+
+    stats = simulation.modules['Mockitis'].store
+    import matplotlib.pyplot as plt
+    import numpy as np
+    plt.plot(np.arange(0, len(stats)), stats)
+    plt.show()
