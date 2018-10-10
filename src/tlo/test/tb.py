@@ -117,6 +117,7 @@ class tb_baseline(Module):
         df['has_tb'].values[:] = 'Uninfected'
         df['date_active_tb'] = pd.NaT
         df['date_latent_tb'] = pd.NaT
+        df['date_tb_death'] = pd.NaT
 
         # TB infections - active / latent
         # 2014 infections not weighted by RR, randomly assigned
@@ -165,6 +166,21 @@ class tb_baseline(Module):
                 df.loc[female_active_tb, 'has_tb'] = 'Active'
                 df.loc[female_active_tb, 'date_active_tb'] = self.sim.date
 
+        # date of death of the infected individuals (in the future)
+        infected_count = len(df[(df.has_tb == 'Active') & df.is_alive])  # get all the infected alive individuals
+
+        death_years_ahead = np.random.exponential(scale=5, size=infected_count)
+        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+
+        # set the properties of infected individuals
+        test = self.sim.date
+        test2 = self.sim.date + death_td_ahead
+        df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = self.sim.date + death_td_ahead
+
+        df.loc[df.mi_is_infected & (age.years <= 15), 'mi_status'] = 'T2'
+        df.loc[df.mi_is_infected, 'mi_date_death'] = self.sim.date + death_td_ahead
+
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -186,7 +202,6 @@ class tb_baseline(Module):
             individual = self.sim.population[index]
             death_event = tb_death_event(self, individual)
             self.sim.schedule_event(death_event, individual.date_tb_death)
-
 
 
     def on_birth(self, mother, child):
