@@ -52,7 +52,7 @@ class Lifestyle(Module):
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        pass
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -61,7 +61,7 @@ class Lifestyle(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        raise NotImplementedError
+        pass
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -71,7 +71,7 @@ class Lifestyle(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        raise NotImplementedError
+        pass
 
 
 class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
@@ -98,4 +98,4 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
-        raise NotImplementedError
+        pass
