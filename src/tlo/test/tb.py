@@ -126,7 +126,7 @@ class tb_baseline(Module):
         # can include RR values in the sample command (weights)
         for i in range(0, 81):
             # male
-            idx = (age == i) & (df.sex == 'M')
+            idx = (age.years == i) & (df.sex == 'M')
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -136,7 +136,7 @@ class tb_baseline(Module):
                 df[male_latent_tb, 'has_tb'] = 'Latent'
                 df[male_latent_tb, 'date_latent_tb'] = self.sim.date
 
-                idx_uninfected = (age == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
+                idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
 
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prob_active_tb']
@@ -145,7 +145,7 @@ class tb_baseline(Module):
                 df[male_active_tb, 'date_active_tb'] = self.sim.date
 
             # female
-            idx = (age == i) & (df.sex == 'F')
+            idx = (age.years == i) & (df.sex == 'F')
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -155,7 +155,7 @@ class tb_baseline(Module):
                 df[female_latent_tb, 'has_tb'] = 'Latent'
                 df[female_latent_tb, 'date_latent_tb'] = self.sim.date
 
-                idx_uninfected = (age == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
+                idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
 
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prob_active_tb']
@@ -179,7 +179,7 @@ class tb_baseline(Module):
 
         # add the death event of infected individuals
         df = sim.population.props
-        infected_individuals = df[df.has_tb == 'Active'].index
+        infected_individuals = df[(df.has_tb == 'Active') & df.is_alive].index
         for index in infected_individuals:
             individual = self.sim.population[index]
             death_event = tb_death_event(self, individual)
