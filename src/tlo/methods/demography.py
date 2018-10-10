@@ -7,7 +7,7 @@ population structure' worksheet within to initialise the age & sex distribution 
 import numpy as np
 import pandas as pd
 
-from tlo import Module, Parameter, Property, Types
+from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
@@ -105,6 +105,7 @@ class Demography(Module):
         adults=(population.age.years>=18)
         df.loc[adults,'is_married']=np.random.choice([True,False],size=adults.sum(),p=[0.5,0.5])
 
+        df.contraception.values[:]='Not using'
 
 
         # assign that none of the adult (woman) population is pregnant
@@ -121,7 +122,7 @@ class Demography(Module):
         """
 
         event=InitiatePregnancy(self)
-        sim.schedule_event(event,sim.date+DateOffSet(months=1))
+        sim.schedule_event(event,sim.date+DateOffset(months=1))
 
 
 
@@ -143,7 +144,7 @@ class Demography(Module):
 
 class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=pd.DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
 
@@ -151,7 +152,28 @@ class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
         women=df[df.sex=='F']
 
         probpregnant=pd.Series(0.0,index=df.index[df.sex=='F'])
-        probpregnant
+
+        female=df.loc[df.sex=='F',['contraception','is_married']]
+        print(len(female))
+
+        female=pd.merge(female, population.age,left_index=True,right_index=True)
+
+        print(len(female))
+
+        s=self.module.parameters['fertility_schedule']
+        s=s.loc[s.year==self.sim.date.year]
+
+        #female=pd.merge(female, s, left_on=['years','contraception','is_married'], right_on=['age','cmeth','married'], how='inner', left_index=False, right_index=False)
+        female = female.reset_index().merge(s, left_on=['years','contraception','is_married'], right_on=['age','cmeth','married'], how='left').set_index('person')
+        print(len(female))
+
+        female = female[female.age.notna()]
+
+        outcome=(np.random.random(size=len(female))<female.value)
+
+        df.loc[female.index, 'is_pregnant'] = outcome
+
+
 
         pass
 
