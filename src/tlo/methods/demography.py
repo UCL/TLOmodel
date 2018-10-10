@@ -91,6 +91,8 @@ class Demography(Module):
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
 
+
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
