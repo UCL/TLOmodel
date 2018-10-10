@@ -96,9 +96,6 @@ class tb_baseline(Module):
         params['rr_tb_mortality_HIV'] = 17.1
         params['transmission_rate'] = 7.2  # dummy value
 
-    def get_age(self, date_of_birth):
-        return (self.sim.date - date_of_birth).dt.days / 365.25
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -117,7 +114,7 @@ class tb_baseline(Module):
         age = population.age
 
         # set-up baseline population
-        df['has_tb'] = 'N'
+        df['has_tb'].values[:] = 'Uninfected'
         df['date_active_tb'] = pd.NaT
         df['date_latent_tb'] = pd.NaT
 
@@ -126,42 +123,47 @@ class tb_baseline(Module):
         # can include RR values in the sample command (weights)
         for i in range(0, 81):
             # male
-            idx = (age.years == i) & (df.sex == 'M')
+            idx = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
                 fraction_latent_tb = Latent_tb_prop.loc[
                     (Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prob_latent_tb']
                 male_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
-                df[male_latent_tb, 'has_tb'] = 'Latent'
-                df[male_latent_tb, 'date_latent_tb'] = self.sim.date
+                df.loc[male_latent_tb, 'has_tb'] = 'Latent'
+                df.loc[male_latent_tb, 'date_latent_tb'] = self.sim.date
 
-                idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
+            idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
+
+            if idx_uninfected.any():
 
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prob_active_tb']
                 male_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
-                df[male_active_tb, 'has_tb'] = 'Active'
-                df[male_active_tb, 'date_active_tb'] = self.sim.date
+                df.loc[male_active_tb, 'has_tb'] = 'Active'
+                df.loc[male_active_tb, 'date_active_tb'] = self.sim.date
 
             # female
-            idx = (age.years == i) & (df.sex == 'F')
+            idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
 
             if idx.any():
-                # sample from uninfected population using WHO prevalence
+
+                 # sample from uninfected population using WHO prevalence
                 fraction_latent_tb = Latent_tb_prop.loc[
                     (Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
-                df[female_latent_tb, 'has_tb'] = 'Latent'
-                df[female_latent_tb, 'date_latent_tb'] = self.sim.date
+                df.loc[female_latent_tb, 'has_tb'] = 'Latent'
+                df.loc[female_latent_tb, 'date_latent_tb'] = self.sim.date
 
-                idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
+            idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
+
+            if idx.any():
 
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prob_active_tb']
                 female_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
-                df[female_active_tb, 'has_tb'] = 'Active'
-                df[female_active_tb, 'date_active_tb'] = self.sim.date
+                df.loc[female_active_tb, 'has_tb'] = 'Active'
+                df.loc[female_active_tb, 'date_active_tb'] = self.sim.date
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -175,7 +177,7 @@ class tb_baseline(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(tb_logging_event(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(tb_logging_event(self), sim.date + DateOffset(months=12))
 
         # add the death event of infected individuals
         df = sim.population.props
@@ -243,14 +245,14 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         prob_tb_new = pd.Series(force_of_infection, index=df[(df.has_tb == 'Uninfected') & df.is_alive].index)
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
-        df[new_case, 'has_tb'] = 'Latent'
-        df[new_case, 'date_latent_tb'] = now
+        df.loc[new_case, 'has_tb'] = 'Latent'
+        df.loc[new_case, 'date_latent_tb'] = now
 
         # 14% of newly infected latent cases become active directly
         fast_progression = df[(df.has_tb == 'Latent') & (df.date_latent_tb == now) & df.is_alive].sample(
             frac=params['prop_fast_progressor']).index
-        df[fast_progression, 'has_tb'] = 'Active'
-        df[fast_progression, 'date_active_tb'] = now
+        df.loc[fast_progression, 'has_tb'] = 'Active'
+        df.loc[fast_progression, 'date_active_tb'] = now
 
         # slow progressors with latent TB become active
         # needs to be a random sample with weights for RR of active disease
@@ -265,12 +267,13 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
         prog_to_active = eff_prob_active_tb > rng.rand(len(eff_prob_active_tb))
         new_active_case = prog_to_active[prog_to_active].index
-        df[new_active_case, 'has_tb'] = 'Active'
-        df[new_active_case, 'date_active_tb'] = now
+        df.loc[new_active_case, 'has_tb'] = 'Active'
+        df.loc[new_active_case, 'date_active_tb'] = now
 
         # self-cure - move back from active to latent
         self_cure_tb = df[df.has_tb == 'Active'].sample(frac=(params['prob_self_cure'] * params['self_cure'])).index
-        df[self_cure_tb, 'has_tb'] = 'Latent'
+        df.loc[self_cure_tb, 'has_tb'] = 'Latent'
+
 
 # need to pass the individual to this class not just the population dataframe
 class tb_death_event(Event, IndividualScopeEventMixin):
