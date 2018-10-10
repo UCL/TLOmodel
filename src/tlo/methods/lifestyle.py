@@ -4,7 +4,8 @@ A skeleton template for disease methods.
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-
+import numpy as np
+import pandas as pd
 
 class Lifestyle(Module):
     """
@@ -22,15 +23,16 @@ class Lifestyle(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'parameter_a': Parameter(
-            Types.REAL, 'Description of parameter a'),
+        'r_urban': Parameter(Types.REAL, 'rate of change from rural to urban'),
+        'r_rural': Parameter(Types.REAL, 'rate of change from urban to rural'),
+        'initial_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'Description of property a'),
+        'li_urban': Property(Types.BOOL, 'Currently urban'),
     }
 
     def read_parameters(self, data_folder):
@@ -41,7 +43,9 @@ class Lifestyle(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        pass
+        self.parameters['r_urban'] = 0.05
+        self.parameters['r_rural'] = 0.01
+        self.parameters['initial_urban'] = 0.17
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -52,7 +56,15 @@ class Lifestyle(Module):
 
         :param population: the population of individuals
         """
-        pass
+
+        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df['li_urban'] = False  # default: all individuals urban
+
+        # randomly selected some individuals as urban
+        initial_urban = self.parameters['initial_urban']
+        initial_rural = 1 - initial_urban
+        df['li_urban'] = np.random.choice([True, False], size=len(df), p=[initial_urban, initial_rural])
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
