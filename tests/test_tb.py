@@ -1,13 +1,14 @@
 
-import pytest
+import pytest  # this is the library for testing
+
 from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import tb
 from tlo.methods import demography
 
 path = '/Users/Tara/Desktop/TLO/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
-start_date = Date(2010, 1, 1)
+start_date = Date(2014, 1, 1)
 end_date = Date(2020, 1, 1)
-popsize = 1000
+popsize = 100000
 
 
 @pytest.fixture
