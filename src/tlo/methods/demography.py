@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
 class Demography(Module):
@@ -36,6 +37,11 @@ class Demography(Module):
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
+        'is_pregnant': Property(Types.BOOL,'Whether this individual is currently pregnant'),
+        'is_married': Property(Types.BOOL,'Whether this individual is currently married'),
+        'contraception': Property(Types.CATEGORICAL, 'Contraception method',
+                 categories=['Not using','Pill','iud','Injections','Condom','Female Sterilization',
+                             'Male Sterilization','Periodic Abstinence','Withdrawal','Other','Norplant'])
     }
 
     def read_parameters(self, data_folder):
@@ -46,11 +52,12 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
+        #TODO: Read in excel file only once
         self.parameters['interpolated_pop'] = pd.read_excel(self.workbook_path,
                                                             sheet_name='Interpolated Pop Structure')
 
         self.parameters['fertility_schedule'] = pd.read_excel(self.workbook_path,
-                                                        sheet_name='Age-spec fertility')
+                                                        sheet_name='Age_spec fertility')
 
         self.parameters['mortality_schedule'] = pd.read_excel(self.workbook_path,
                                                         sheet_name='Mortality Rate')
@@ -92,6 +99,18 @@ class Demography(Module):
         df.is_alive = True
 
 
+        # assign that half the adult population is married (will be done in lifestyle module)
+        df.is_married=False
+
+        adults=(population.age.years>=18)
+        df.loc[adults,'is_married']=np.random.choice([True,False],size=adults.sum(),p=[0.5,0.5])
+
+
+
+        # assign that none of the adult (woman) population is pregnant
+        df.is_pregnant = False
+
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -100,6 +119,12 @@ class Demography(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
+
+        event=InitiatePregnancy(self)
+        sim.schedule_event(event,sim.date+DateOffSet(months=1))
+
+
+
         pass
 
     def on_birth(self, mother, child):
@@ -114,3 +139,19 @@ class Demography(Module):
         child.sex = np.random.choice(['M', 'F'])
         child.mother_id = mother.index
         child.is_alive = True
+
+
+class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=pd.DateOffset(months=1))
+
+    def apply(self, population):
+
+        df=population.props
+        women=df[df.sex=='F']
+
+        probpregnant=pd.Series(0.0,index=df.index[df.sex=='F'])
+        probpregnant
+
+        pass
+
