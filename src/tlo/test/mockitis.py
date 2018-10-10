@@ -133,30 +133,53 @@ class Mockitis(Module):
 
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
-    """A skeleton class for an event
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
-    """
 
     def __init__(self, module):
-        """One line summary here
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        """
         super().__init__(module, frequency=DateOffset(months=1))
+        self.p_infection = module.parameters['p_infection']
+        self.p_cure = module.parameters['p_cure']
 
     def apply(self, population):
-        """Apply this event to the population.
+        df = population.props
 
-        :param population: the current population
-        """
-        pass
+        # 1. get (and hold) index of currently infected and uninfected individuals
+        currently_infected = df.index[df.mi_is_infected & df.is_alive]
+        currently_uninfected = df.index[~df.mi_is_infected & df.is_alive]
+
+        # 2. handle new infections
+        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
+                                        p=[self.p_infection, 1 - self.p_infection])
+        # if any are infected
+        if now_infected.sum():
+            infected_idx = currently_uninfected[now_infected]
+
+            df.loc[infected_idx, 'mi_date_infected'] = self.sim.date
+            df.loc[infected_idx, 'mi_date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
+            df.loc[infected_idx, 'mi_date_cure'] = pd.NaT
+            df.loc[infected_idx, 'mi_is_infected'] = True
+
+            infected_age = population.age.loc[infected_idx]
+            infected_lte_15 = infected_idx.intersection(infected_age.index[infected_age.years <= 15])
+            infected_gt_15 = infected_idx.intersection(infected_age.index[infected_age.years > 15])
+
+            df.loc[infected_gt_15, 'mi_status'] = 'NT1'
+            df.loc[infected_lte_15, 'mi_status'] = 'NT2'
+
+            # schedule death events for newly infected individuals
+            for index in infected_idx:
+                individual = self.sim.population[index]
+                death_event = MockitisDeathEvent(self, individual)
+                self.sim.schedule_event(death_event, individual.mi_date_death)
+
+        # 3. handle cures
+        cured = np.random.choice([True, False], size=len(currently_infected), p=[self.p_cure, 1 - self.p_cure])
+
+        if cured.sum():
+            cured = currently_infected[cured]
+            df.loc[cured, 'mi_is_infected'] = False
+            df.loc[cured, 'mi_status'] = 'P'
+            df.loc[cured, 'mi_date_death'] = pd.NaT
+            df.loc[cured, 'mi_date_cure'] = self.sim.date
 
 
 # need to pass the individual to this class not just the population dataframe
@@ -170,7 +193,36 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        """comments...
+        """
+        # run this event every month
+        self.repeat = 6
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        pass
+        # get some summary statistics
+        df = population.props
+
+        infected_total = df.mi_is_infected.sum()
+        proportion_infected = infected_total / len(df)
+
+        mask = (df['mi_date_infected'] > self.sim.date - DateOffset(months=self.repeat))
+        infected_in_last_month = mask.sum()
+        mask = (df['mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
+        cured_in_last_month = mask.sum()
+
+        counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
+        counts.update(df['mi_status'].value_counts().to_dict())
+        status = 'Status: { N: %(N)d; T1: %(T1)d; T2: %(T2)d; P: %(P)d }' % counts
+
+        self.module.store.append(proportion_infected)
+
+        print('%s - Mockitis: {TotInf: %d; PropInf: %.3f; PrevMonth: {Inf: %d; Cured: %d}; %s }' %
+              (self.sim.date,
+               infected_total,
+               proportion_infected,
+               infected_in_last_month,
+               cured_in_last_month,
+               status), flush=True)
+
+
