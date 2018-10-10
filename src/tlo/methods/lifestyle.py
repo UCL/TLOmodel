@@ -73,7 +73,8 @@ class Lifestyle(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        pass
+        event = UrbanEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=3))
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -103,11 +104,40 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=3))
+        self.r_urban = module.parameters['r_urban']
+        self.r_rural = module.parameters['r_rural']
 
     def apply(self, population):
         """Apply this event to the population.
 
         :param population: the current population
         """
-        pass
+        df = population.props
+
+        # 1. get (and hold) index of current urban rural status
+        currently_rural = df.index[~df.li_urban & df.is_alive]
+        currently_urban = df.index[df.li_urban & df.is_alive]
+
+        # 2. handle new transitions
+        now_urban = np.random.choice([True, False], size=len(currently_rural),
+                                        p=[self.r_urban, 1 - self.r_urban])
+        # if any have transitioned to urban
+        if now_urban.sum():
+            urban_idx = currently_rural[now_urban]
+
+            df.loc[urban_idx, 'li_urban'] = True
+
+        # 2. handle new transitions
+        now_rural = np.random.choice([True, False], size=len(currently_urban),
+                                        p=[self.r_rural, 1 - self.r_rural])
+        # if any have transitioned to rural
+        if now_rural.sum():
+            rural_idx = currently_urban[now_rural]
+
+            df.loc[rural_idx, 'li_urban'] = False
+
+
+
+
+
