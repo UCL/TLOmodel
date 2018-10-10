@@ -23,9 +23,14 @@ class Lifestyle(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'r_urban': Parameter(Types.REAL, 'rate of change from rural to urban'),
-        'r_rural': Parameter(Types.REAL, 'rate of change from urban to rural'),
-        'initial_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
+        'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
+        'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
+        'initial_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
+        'initial_p_wealth_1': Parameter(Types.REAL, 'pr wealth level 1'),
+        'initial_p_wealth_2': Parameter(Types.REAL, 'pr wealth level 2'),
+        'initial_p_wealth_3': Parameter(Types.REAL, 'pr wealth level 3'),
+        'initial_p_wealth_4': Parameter(Types.REAL, 'pr wealth level 4'),
+        'initial_p_wealth_5': Parameter(Types.REAL, 'pr wealth level 5'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -34,6 +39,8 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
+        'li_wealth': Property(Types.CATEGORICAL,categories=['1', '2', '3', '4', '5'])
+
     }
 
     def read_parameters(self, data_folder):
@@ -46,7 +53,17 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.05
         self.parameters['r_rural'] = 0.01
-        self.parameters['initial_urban'] = 0.17
+        self.parameters['initial_p_urban'] = 0.17
+        self.parameters['initial_p_wealth_1_if_urban'] = 0.75
+        self.parameters['initial_p_wealth_2_if_urban'] = 0.16
+        self.parameters['initial_p_wealth_3_if_urban'] = 0.05
+        self.parameters['initial_p_wealth_4_if_urban'] = 0.02
+        self.parameters['initial_p_wealth_5_if_urban'] = 0.02
+        self.parameters['initial_p_wealth_1_if_rural'] = 0.11
+        self.parameters['initial_p_wealth_2_if_rural'] = 0.21
+        self.parameters['initial_p_wealth_3_if_rural'] = 0.22
+        self.parameters['initial_p_wealth_4_if_rural'] = 0.23
+        self.parameters['initial_p_wealth_5_if_rural'] = 0.23
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -59,13 +76,37 @@ class Lifestyle(Module):
         """
 
         df = population.props  # a shortcut to the dataframe storing data for individiuals
-        df['li_urban'] = False  # default: all individuals urban
+        df['li_urban'] = False  # default: all individuals rural
         df['li_date_trans_to_urban'] = pd.NaT
+        df['li_wealth'] = 3  # default: all individuals wealth 3
 
         # randomly selected some individuals as urban
-        initial_urban = self.parameters['initial_urban']
+        initial_urban = self.parameters['initial_p_urban']
         initial_rural = 1 - initial_urban
         df['li_urban'] = np.random.choice([True, False], size=len(df), p=[initial_urban, initial_rural])
+
+        wealth_level_probs_urban = self.parameters['initial_p_wealth_1_if_urban','initial_p_wealth_2_if_urban',
+                                    'initial_p_wealth_3_if_urban','initial_p_wealth_4_if_urban',
+                                    'initial_p_wealth_5_if_urban']
+
+        wealth_level_probs_rural = self.parameters['initial_p_wealth_1_if_rural','initial_p_wealth_2_if_rural',
+                                    'initial_p_wealth_3_if_rural','initial_p_wealth_4_if_rural',
+                                    'initial_p_wealth_5_if_rural']
+
+        # assign wealth status
+
+        urban_idx = initial_urban
+
+        for index in urban_idx:
+            df['li_wealth'] = np.random.choice(['1', '2', '3', '4', '5'], size=urban_idx.sum(),replace=True, p=wealth_level_probs_urban.values)
+
+        rural_idx = initial_rural
+
+        for index in rural_idx:
+            df['li_wealth'] = np.random.choice(['1', '2', '3', '4', '5'], size=rural_idx.sum(),replace=True, p=wealth_level_probs_rural.values)
+
+
+
 
 
     def initialise_simulation(self, sim):
