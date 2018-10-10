@@ -1,40 +1,36 @@
 import pandas as pd
 
+import pytest
 from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import TB
+from tlo.methods import demography
+
+path = '/Users/Tara/Desktop/TLO/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
+start_date = Date(2010, 1, 1)
+end_date = Date(2020, 1, 1)
+popsize = 1000
 
 
-def test_TB():
-    # Create a new simulation
-    sim = Simulation(start_date=Date(2014, 1, 1))
-    tb = TB.tb_baseline(name='tb')
-    sim.register(tb)
-    assert sim.modules['tb'] is tb  # checks - this will cause error if false
+@pytest.fixture
+def simulation():
+    sim = Simulation(start_date=start_date)
+    core_module = demography.Demography(workbook_path=path)
+    #tb = TB.tb_baseline(name='tb')
 
-    # Seed the random number generators
-    sim.seed_rngs(1)
+    sim.register(core_module)
+    #sim.register(tb)
 
-    # Create a population of 2 individuals
-    sim.make_initial_population(n=100000)
-    assert len(sim.population) == 100000
-
-    # Decide how long to simulate - initialise_simulation has offset 12 months
-    assert sim.date == Date(2014, 1, 1)  # double check start date
-    sim.simulate(end_date=Date(2014, 12, 1))
-
-    df = pd.DataFrame(sim.population.props)
-    # df.to_csv('Q:/Thanzi la Onse/TB/test_dataframe.csv')
-    # df.to_csv('/Users/Tara/Documents/test_dataframe.csv')
-
-    print(df['has_tb'].value_counts())
+    return sim
 
 
-# check outputs in console
+def test_tb_simulation(simulation):
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
 
-outputs = pd.read_csv('/Users/Tara/Documents/test_dataframe.csv', header=0, sep=',')
+
+if __name__ == '__main__':
+    simulation = simulation()
+    test_tb_simulation(simulation)
 
 
-# outputs = pd.read_csv('Q:/Thanzi la Onse/TB/test_dataframe.csv', header=0, sep=',')
-#outputs.head(20)
-#outputs.describe(include='all')
-#outputs['has_tb'].value_counts()
+
