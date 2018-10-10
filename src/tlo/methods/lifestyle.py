@@ -33,6 +33,7 @@ class Lifestyle(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
+        'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
     }
 
     def read_parameters(self, data_folder):
@@ -59,6 +60,7 @@ class Lifestyle(Module):
 
         df = population.props  # a shortcut to the dataframe storing data for individiuals
         df['li_urban'] = False  # default: all individuals urban
+        df['li_date_trans_to_urban'] = pd.NaT
 
         # randomly selected some individuals as urban
         initial_urban = self.parameters['initial_urban']
@@ -74,6 +76,9 @@ class Lifestyle(Module):
         It is a good place to add initial events to the event queue.
         """
         event = UrbanEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=3))
+
+        event = LifestylesLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
     def on_birth(self, mother, child):
@@ -127,6 +132,7 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
             urban_idx = currently_rural[now_urban]
 
             df.loc[urban_idx, 'li_urban'] = True
+            df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
         # 2. handle new transitions
         now_rural = np.random.choice([True, False], size=len(currently_urban),
@@ -137,7 +143,26 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
 
             df.loc[rural_idx, 'li_urban'] = False
 
+class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """comments...
+        """
+        # run this event every 3 month
+        self.repeat = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        urban_total = df.li_urban.sum()
+        proportion_urban = urban_total / len(df)
+
+        mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
+        newly_urban_in_last_3mths = mask.sum()
+
+        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d    ' %
+              (self.sim.date,urban_total,proportion_urban, newly_urban_in_last_3mths), flush=True)
 
 
 
