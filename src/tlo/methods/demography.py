@@ -23,7 +23,9 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure')
+        'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
+        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
+        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -46,6 +48,13 @@ class Demography(Module):
         """
         self.parameters['interpolated_pop'] = pd.read_excel(self.workbook_path,
                                                             sheet_name='Interpolated Pop Structure')
+
+        self.parameters['fertility_schedule'] = pd.read_excel(self.workbook_path,
+                                                        sheet_name='Age-spec fertility')
+
+        self.parameters['mortality_schedule'] = pd.read_excel(self.workbook_path,
+                                                        sheet_name='Mortality Rate')
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
