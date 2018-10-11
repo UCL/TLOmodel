@@ -47,12 +47,11 @@ class HT(Module):
                                        'Historical status: N=never; C=Current, P=Previous',
                                        categories=['N', 'C', 'P']),
         'ht_date_case': Property(Types.DATE, 'Date of latest hypertension'),
-        'ht_date_death': Property(Types.DATE, 'Date of hypertension death'),
+        # 'ht_date_death': Property(Types.DATE, 'Date of hypertension death'),
         # 'ht_treatment status':Property(Types.CATEGORICAL,
         #                                'Historical status: N=never; C=Current, P=Previous',
         #                                categories = ['N', 'C', 'P']),
         #  'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
-
     }
 
     def read_parameters(self, data_folder):
@@ -66,8 +65,6 @@ class HT(Module):
         params = self.parameters
         params['parameter_initial_prevalence'] = 0.01
         params['parameter_onset'] = 0.01
-
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -110,8 +107,6 @@ class HT(Module):
         df.loc[df.ht_current_status, 'ht_date_death'] = self.sim.date + death_td_ahead
 
         age = population.age
-
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -232,4 +227,3 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                ht_total,
                proportion_ht,
                ), flush=True)
-
