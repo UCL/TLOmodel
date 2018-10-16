@@ -147,34 +147,34 @@ class Demography(Module):
 
 
 class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
+    """
+    This event looks across each woman in the population to determine who will become pregnant
+    """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
 
-        print('Check to see if anyone should become pregnant....')
+        print('Checking to see if anyone should become pregnant....')
 
 
-        df=population.props
+        df=population.props # get the population dataframe
 
-        probpregnant=pd.Series(0.0,index=df.index[df.sex=='F'])
+        female=df.loc[df.sex=='F',['contraception','is_married','is_pregnant']]  # get the subset of women from the population dataframe and relevant characteristics
+        female=pd.merge(female, population.age,left_index=True,right_index=True)  # merge in the ages
 
-        female=df.loc[df.sex=='F',['contraception','is_married','is_pregnant']]
-
-        female=pd.merge(female, population.age,left_index=True,right_index=True)
-
-        s=self.module.parameters['fertility_schedule']
-        s=s.loc[s.year==self.sim.date.year]
+        fert_schedule=self.module.parameters['fertility_schedule']  # load the fertility schedule (imported datasheet from excel workbook)
+        fert_schedule=fert_schedule.loc[fert_schedule.year==self.sim.date.year] # get the subset of fertility rates for this year.
 
 
         # add age-groups to each dataframe (this to be done by the population object later)
         # TODO: add age-group cateogory to population method so that this isn't done here
-
-        female['agegrp']=pd.Series(0.0)
+        female['agegrp']=0
         female['agegrp']=np.floor(female['years']/5)
 
-        s['agegrp']=pd.Series(0.0,index=s.index)
-        s['agegrp']=np.floor(s['age_from']/5)
+        fert_schedule['agegrp']=0
+        fert_schedule['agegrp']=np.floor(fert_schedule['age_from']/5)
 
         female=pd.merge(female, s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='inner', left_index=False, right_index=False)
 
@@ -204,7 +204,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         for i in pregnantwomen:
 
             print('Woman number: ',i)
-            print('Her age is:', female.loc[i,'years'])
+            print('Her age is:', df.loc[i,'years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*np.random.random())
@@ -247,4 +247,8 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         print("The time is", self.sim.date)
         if mother.is_alive:
             self.sim.do_birth(mother)
+
+        # Reset the mother's is_pregnant status showing that she is no longer pregnant
+        mother.is_pregnant=False
+
 
