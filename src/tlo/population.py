@@ -123,8 +123,9 @@ class Population:
 
     @staticmethod
     def make_age_range_lookup():
-        # Create a mapping from age (in years) to age range
-        # i.e. { 0: '0-4', 1: '0-4', ..., 119: '115-119', 120: '120-120' }
+        """Returns a dictionary mapping age (in years) to age range
+        i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+        """
         def chunks(items, n):
             """Takes a list and divides it into parts of size n"""
             for index in range(0, len(items), n):
