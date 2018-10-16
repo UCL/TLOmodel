@@ -167,31 +167,30 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         fert_schedule=self.module.parameters['fertility_schedule']  # load the fertility schedule (imported datasheet from excel workbook)
         fert_schedule=fert_schedule.loc[fert_schedule.year==self.sim.date.year] # get the subset of fertility rates for this year.
 
-
+        # --------
         # add age-groups to each dataframe (this to be done by the population object later)
+        # (NB. Why does fert_schedule['agegrp']=0 create a warning when the same line on 'females' doesn't)
         # TODO: add age-group cateogory to population method so that this isn't done here
         female['agegrp']=0
         female['agegrp']=np.floor(female['years']/5)
-
         fert_schedule['agegrp']=0
         fert_schedule['agegrp']=np.floor(fert_schedule['age_from']/5)
+        # --------
 
-        female=pd.merge(female, s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='inner', left_index=False, right_index=False)
+        # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
+        female=pd.merge(female, fert_schedule, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='inner', left_index=False, right_index=False)
 
-        # TODO: TH took the following line out as it didn't work and the above stuff is working ok for now.
-        # female=female.reset_index().merge(s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='left').set_index('person')
-        # female=female[female.age.notna()]
+        # TODO: The following line doesn't work --- and the indexing is causing problems in what follows...
+        female=female.reset_index().merge(fert_schedule, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='left').set_index('person')
+        female=female[female.age.notna()]
 
-        # zero-out risk of pregnancy if already pregnant
-        female.loc[female['is_pregnant']==True,'value']=0
+
+        female.loc[female['is_pregnant']==True,'value']=0 # zero-out risk of pregnancy if already pregnant
 
         outcome=(np.random.random(size=len(female))<female.value)  # flipping the coin to determine if this woman will become pregnant
+        df.loc[female.index, 'is_pregnant'] = outcome # updating the pregancy status for women
 
-        df.loc[female.index, 'is_pregnant'] = outcome
 
-
-        #
-        # print(df[df['is_pregnant'] == True])
 
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
