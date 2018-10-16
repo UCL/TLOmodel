@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, DateOffset
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 
 class Demography(Module):
@@ -121,7 +121,7 @@ class Demography(Module):
         It is a good place to add initial events to the event queue.
         """
 
-        event=InitiatePregnancy(self)
+        event=PregnancyPoll(self)
 
         sim.schedule_event(event,sim.date+DateOffset(months=1)) # check all population to determine if pregnancy should be triggered
 
@@ -137,13 +137,16 @@ class Demography(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        # child.date_of_birth = self.sim.date
-        # child.sex = np.random.choice(['M', 'F'])
-        # child.mother_id = mother.index
-        # child.is_alive = True
+        child.date_of_birth = self.sim.date
+        child.sex = np.random.choice(['M', 'F'])
+        child.mother_id = mother.index
+        child.is_alive = True
+
+        print("A new child has been born:",child.index)
 
 
-class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
+
+class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -151,12 +154,12 @@ class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
 
         print('Check to see if anyone should become pregnant....')
 
+
         df=population.props
-        women=df[df.sex=='F']
 
         probpregnant=pd.Series(0.0,index=df.index[df.sex=='F'])
 
-        female=df.loc[df.sex=='F',['contraception','is_married']]
+        female=df.loc[df.sex=='F',['contraception','is_married','is_pregnant']]
 
         female=pd.merge(female, population.age,left_index=True,right_index=True)
 
@@ -167,21 +170,81 @@ class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
         # add age-groups to each dataframe (this to be done by the population object later)
         # TODO: add age-group cateogory to population method so that this isn't done here
 
+        female['agegrp']=pd.Series(0.0)
         female['agegrp']=np.floor(female['years']/5)
 
+        s['agegrp']=pd.Series(0.0,index=s.index)
         s['agegrp']=np.floor(s['age_from']/5)
 
         female=pd.merge(female, s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='inner', left_index=False, right_index=False)
 
-        female =female.reset_index().merge(s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='left').set_index('person')
+        # TODO: TH took the following line out as it didn't work and the above stuff is working ok for now.
+        # female=female.reset_index().merge(s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='left').set_index('person')
+        # female=female[female.age.notna()]
 
-        female = female[female.age.notna()]
+        # zero-out risk of pregnancy if already pregnant
+        female.loc[female['is_pregnant']==True,'value']=0
 
         outcome=(np.random.random(size=len(female))<female.value)  # flipping the coin to determine if this woman will become pregnant
 
         df.loc[female.index, 'is_pregnant'] = outcome
 
-        print("The following women are now pregnnat....")
 
-        pass
+        #
+        # print(df[df['is_pregnant'] == True])
+
+
+        # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
+
+        # get indicies for the pregnant women
+        pregnantwomen=(df[df['is_pregnant']==True]).index
+
+        print("The time is now",self.sim.date)
+        print("The following women are now pregnnat....")
+        for i in pregnantwomen:
+
+            print('Woman number: ',i)
+            print('Her age is:', female.loc[i,'years'])
+
+            # schedule the birth event for this woman (9 months plus/minus 2 wks)
+            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*np.random.random())
+
+            mother = population[i]
+            birth = DelayedBirthEvent(self.module, mother)
+            self.sim.schedule_event(birth, birth_date_of_child)
+
+            print("The birth is now booked for: ", birth_date_of_child)
+
+
+
+
+
+
+
+class DelayedBirthEvent(Event, IndividualScopeEventMixin):
+    """A one-off event in which a pregnant mother gives birth.
+    """
+
+    def __init__(self, module, mother):
+        """Create a new birth event.
+
+        We need to pass the person this event happens to to the base class constructor
+        using super(). We also pass the module that created this event, so that random
+        number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        :param mother: the person giving birth
+        """
+        super().__init__(module, person=mother)
+
+    def apply(self, mother):
+        """Apply this event to the given person.
+        Assuming the person is still alive, we ask the simulation to create a new offspring.
+        :param person: the person the event happens to, i.e. the mother giving birth
+        """
+
+        print("@@@@ A Birth is now occuring, to mother", mother)
+        print("The time is", self.sim.date)
+        if mother.is_alive:
+            self.sim.do_birth(mother)
 

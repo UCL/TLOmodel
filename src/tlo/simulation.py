@@ -121,10 +121,13 @@ class Simulation:
         :param mother: the maternal parent
         :return: the new child
         """
+
+        print("We are now in simulation.do_birth()")
         child = self.population.do_birth()
         for module in self.modules.values():
             module.on_birth(mother, child)
         return child
+
 
 
 class EventQueue:
