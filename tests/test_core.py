@@ -37,5 +37,7 @@ def test_age():
     ages_out = sim.population.age.years
     assert list(ages_out) == list(ages_in)
 
+    assert sim.population.age.age_range.dtypes == 'category'
+
     age_ranges = ['0-4', '0-4', '0-4', '5-9', '15-19', '30-34', '50-54', '60-64', '100+', '100+']
     assert age_ranges == list(sim.population.age.age_range)
