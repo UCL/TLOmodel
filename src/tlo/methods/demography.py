@@ -122,7 +122,8 @@ class Demography(Module):
         """
 
         event=InitiatePregnancy(self)
-        sim.schedule_event(event,sim.date+DateOffset(months=1))
+
+        sim.schedule_event(event,sim.date+DateOffset(months=1)) # check all population to determine if pregnancy should be triggered
 
 
 
@@ -136,10 +137,10 @@ class Demography(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        child.date_of_birth = self.sim.date
-        child.sex = np.random.choice(['M', 'F'])
-        child.mother_id = mother.index
-        child.is_alive = True
+        # child.date_of_birth = self.sim.date
+        # child.sex = np.random.choice(['M', 'F'])
+        # child.mother_id = mother.index
+        # child.is_alive = True
 
 
 class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
@@ -148,30 +149,39 @@ class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
 
     def apply(self, population):
 
+        print('Check to see if anyone should become pregnant....')
+
         df=population.props
         women=df[df.sex=='F']
 
         probpregnant=pd.Series(0.0,index=df.index[df.sex=='F'])
 
         female=df.loc[df.sex=='F',['contraception','is_married']]
-        print(len(female))
 
         female=pd.merge(female, population.age,left_index=True,right_index=True)
-
-        print(len(female))
 
         s=self.module.parameters['fertility_schedule']
         s=s.loc[s.year==self.sim.date.year]
 
-        #female=pd.merge(female, s, left_on=['years','contraception','is_married'], right_on=['age','cmeth','married'], how='inner', left_index=False, right_index=False)
-        female = female.reset_index().merge(s, left_on=['years','contraception','is_married'], right_on=['age','cmeth','married'], how='left').set_index('person')
-        print(len(female))
+
+        # add age-groups to each dataframe (this to be done by the population object later)
+        # TODO: add age-group cateogory to population method so that this isn't done here
+
+        female['agegrp']=np.floor(female['years']/5)
+
+        s['agegrp']=np.floor(s['age_from']/5)
+
+        female=pd.merge(female, s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='inner', left_index=False, right_index=False)
+
+        female =female.reset_index().merge(s, left_on=['agegrp','contraception','is_married'], right_on=['agegrp','cmeth','married'], how='left').set_index('person')
 
         female = female[female.age.notna()]
 
-        outcome=(np.random.random(size=len(female))<female.value)
+        outcome=(np.random.random(size=len(female))<female.value)  # flipping the coin to determine if this woman will become pregnant
 
         df.loc[female.index, 'is_pregnant'] = outcome
+
+        print("The following women are now pregnnat....")
 
         pass
 

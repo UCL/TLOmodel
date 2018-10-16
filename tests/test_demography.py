@@ -3,7 +3,7 @@ import pytest
 from tlo import Simulation, Date
 from tlo.methods import demography
 
-path = '/Users/tbh03/TempData/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
+path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
 end_date = Date(2060, 1, 1)
 popsize = 1000
