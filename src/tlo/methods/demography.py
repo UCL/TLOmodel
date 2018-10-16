@@ -173,7 +173,5 @@ class InitiatePregnancy(RegularEvent,PopulationScopeEventMixin):
 
         df.loc[female.index, 'is_pregnant'] = outcome
 
-
-
         pass
 
