@@ -243,6 +243,9 @@ class Population:
         self.people.append(new_person)
         return new_person
 
+
+
+
     def make_test_property(self, name, type_):
         """Create a new property for test purposes.
 
