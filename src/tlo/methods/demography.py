@@ -27,7 +27,7 @@ class Demography(Module):
         'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
-        'birth_sex_ratio': Parameter(Types.DATA_FRAME, 'Birth Sex Ratio')
+        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -39,6 +39,7 @@ class Demography(Module):
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'is_pregnant': Property(Types.BOOL,'Whether this individual is currently pregnant'),
+        'date_of_last_pregnancy': Property(Types.DATE,'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL,'Whether this individual is currently married'),
         'contraception': Property(Types.CATEGORICAL, 'Contraception method',
                  categories=['Not using','Pill','iud','Injections','Condom','Female Sterilization',
@@ -63,7 +64,7 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = pd.read_excel(self.workbook_path,
                                                         sheet_name='Mortality Rate')
 
-        # self.parameters['birth_sex_ratio'] = pd.Series(0,1000)
+        self.parameters['fraction_of_births_male'] = 0.5
 
 
     def initialise_population(self, population):
@@ -109,9 +110,9 @@ class Demography(Module):
 
         df.contraception.values[:]='Not using'
 
-
         # assign that none of the adult (woman) population is pregnant
         df.is_pregnant = False
+        df.date_of_last_pregnancy = pd.DateOffset(months=0)
 
 
     def initialise_simulation(self, sim):
@@ -140,7 +141,7 @@ class Demography(Module):
         :param child: the new child
         """
         child.date_of_birth = self.sim.date
-        child.sex = np.random.choice(['M', 'F'])
+        child.sex = np.random.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
         child.mother_id = mother.index
         child.is_alive = True
 
@@ -184,32 +185,26 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
 
         female.loc[female['is_pregnant']==True,'value']=0 # zero-out risk of pregnancy if already pregnant
 
-        outcome=(np.random.random(size=len(female))<female.value/12)  # flipping the coin to determine if this woman will become pregnant
-                                                                      # the imported number is a yearly proportion. So adjust the rate according
-                                                                      # to the frequency with which the event is recurring
-                                                                      # TODO: this should be linked to the self.frequency value
-        df.loc[female.index, 'is_pregnant'] = outcome # updating the pregancy status for women
+        newlypregnant=(np.random.random(size=len(female))<female.value/12)          # flipping the coin to determine if this woman will become pregnant
+                                                                                    # the imported number is a yearly proportion. So adjust the rate according
+                                                                                    # to the frequency with which the event is recurring
+                                                                                    # TODO: this should be linked to the self.frequency value
 
-
+        df.loc[female.index[newlypregnant], 'is_pregnant'] = True             # updating the pregancy status for that women
+        df.loc[female.index[newlypregnant], 'date_of_last_pregnancy']= self.sim.date
 
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
+        personnumbers_of_newlypregnant=female.index[newlypregnant]
+        for personnumber in personnumbers_of_newlypregnant:
 
-        # get indicies for the pregnant women
-        pregnantwomen=(df[df['is_pregnant']==True]).index
-
-        if pregnant
-
-
-        for i in pregnantwomen:
-
-            print('Woman number: ',i)
-            print('Her age is:', female.loc[i,'years'])
+            print('Woman number: ',population[personnumber])
+            print('Her age is:', female.loc[personnumber,'years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*np.random.random())
 
-            mother = population[i] # get the index of the mother (**Q: what data type is this....)
+            mother = population[personnumber] # get the index of the mother (**Q: what data type is this....)
             birth = DelayedBirthEvent(self.module, mother)  # prepare for that birth event
             self.sim.schedule_event(birth, birth_date_of_child)
 

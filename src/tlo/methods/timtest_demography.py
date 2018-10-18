@@ -6,7 +6,7 @@ from tlo.methods import demography
 path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
 end_date = Date(2060, 1, 1)
-popsize = 10
+popsize = 1000
 
 sim = Simulation(start_date=start_date)
 core_module = demography.Demography(workbook_path=path)
