@@ -26,7 +26,8 @@ class Demography(Module):
     PARAMETERS = {
         'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
-        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates')
+        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
+        'birth_sex_ratio': Parameter(Types.DATA_FRAME, 'Birth Sex Ratio')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -61,6 +62,8 @@ class Demography(Module):
 
         self.parameters['mortality_schedule'] = pd.read_excel(self.workbook_path,
                                                         sheet_name='Mortality Rate')
+
+        # self.parameters['birth_sex_ratio'] = pd.Series(0,1000)
 
 
     def initialise_population(self, population):
@@ -98,7 +101,6 @@ class Demography(Module):
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
 
-
         # assign that half the adult population is married (will be done in lifestyle module)
         df.is_married=False
 
@@ -110,7 +112,6 @@ class Demography(Module):
 
         # assign that none of the adult (woman) population is pregnant
         df.is_pregnant = False
-
 
 
     def initialise_simulation(self, sim):
@@ -129,7 +130,6 @@ class Demography(Module):
         sim.schedule_event(DemographyLoggingEvent(self),sim.date+DateOffset(months=12))
 
 
-        pass
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -159,7 +159,6 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
     def apply(self, population):
 
         print('Checking to see if anyone should become pregnant....')
-
 
         df=population.props # get the population dataframe
 
@@ -199,8 +198,9 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         # get indicies for the pregnant women
         pregnantwomen=(df[df['is_pregnant']==True]).index
 
-        print("The time is now",self.sim.date)
-        print("The following women are now pregnnat....")
+        if pregnant
+
+
         for i in pregnantwomen:
 
             print('Woman number: ',i)
@@ -240,7 +240,6 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         """
 
         print("@@@@ A Birth is now occuring, to mother", mother)
-        print("The time is", self.sim.date)
         if mother.is_alive:
             self.sim.do_birth(mother)
 
@@ -261,7 +260,6 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        print("The time is now", self.sim.date)
         print("Checking to see if anyone should die....")
 
         #get the mortality schedule for now...
@@ -319,7 +317,6 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, individual):
         print("@@@@ A Death is now occuring, to person", individual)
-        print("The time is", self.sim.date)
         if individual.is_alive:
             # here comes the death..
             individual.is_alive = False
@@ -341,31 +338,18 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        Num_Women=((df['sex']=='F') & (df['is_alive']==True)).sum()
+        Num_Men=((df['sex']=='M') & (df['is_alive']==True)).sum()
+        Num_Total=(df['is_alive']==True).sum()
 
-
-
-
-        # infected_total = df.mi_is_infected.sum()
-        # proportion_infected = infected_total / len(df)
-        #
-        # mask = (df['mi_date_infected'] > self.sim.date - DateOffset(months=self.repeat))
-        # infected_in_last_month = mask.sum()
-        # mask = (df['mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
-        # cured_in_last_month = mask.sum()
-        #
-        # counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
+        counts = {'Num_Women': Num_Women, 'Num_Men': Num_Men, 'Num_Total': Num_Total}
         # counts.update(df['mi_status'].value_counts().to_dict())
         # status = 'Status: { N: %(N)d; T1: %(T1)d; T2: %(T2)d; P: %(P)d }' % counts
         #
         # self.module.store.append(proportion_infected)
         #
-        # print('%s - Mockitis: {TotInf: %d; PropInf: %.3f; PrevMonth: {Inf: %d; Cured: %d}; %s }' %
-        #       (self.sim.date,
-        #        infected_total,
-        #        proportion_infected,
-        #        infected_in_last_month,
-        #        cured_in_last_month,
-        #        status), flush=True)
+        print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
+              (self.sim.date,Num_Women,Num_Men,Num_Total), flush=True)
 
 
 
