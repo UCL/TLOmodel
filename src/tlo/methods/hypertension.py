@@ -15,6 +15,19 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 
+# Read in data
+file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
+method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
+HT_prevalence, HT_incidence, HT_treatment, \
+age_distribution = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+                   method_ht_data['treatment_parameters']
+
+file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
+method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
+HT_prev, HT_inc, HT_treat, \
+age_distr = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+            method_ht_data['treatment_parameters']
+
 class HT(Module):
     """
     This is the hypertension module
@@ -63,7 +76,6 @@ class HT(Module):
           Typically modules would read a particular file within here.
         """
 
-        #params = self.parameters
         self.parameters['parameter_initial_prevalence'] = 0.5
         self.parameters['parameter_onset'] = 0.02
         self.parameters['parameter_treatment'] = 0.01
