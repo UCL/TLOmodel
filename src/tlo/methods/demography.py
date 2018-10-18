@@ -9,6 +9,7 @@ import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo.methods.pregnancy_and_newborn_supervisor import Pregnancy_And_Newborn_Supervisor_Event
 
 
 class Demography(Module):
@@ -20,6 +21,7 @@ class Demography(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+        self.store={'Time':[], 'Population_Total':[], 'Population_Men':[], 'Population0-5':[],'Population5-10':[]}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -205,11 +207,15 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*np.random.random())
 
             mother = population[personnumber] # get the index of the mother (**Q: what data type is this....)
+
+            # Schedule the Birth
             birth = DelayedBirthEvent(self.module, mother)  # prepare for that birth event
             self.sim.schedule_event(birth, birth_date_of_child)
-
             print("The birth is now booked for: ", birth_date_of_child)
 
+            # Launch the Pregnancy_And_Newborn_Supervisor
+            p_and_n_supervisor=Pregnancy_And_Newborn_Supervisor_Event(self.module,mother)
+            self.sim.schedule_event(p_and_n_supervisor, DateOffset(weeks=1))
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -292,7 +298,7 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         cause='other'
         for i in willdie:
             person=population[i]
-            death = InstantaneousDeath(self.module, person)  # make that death event
+            death = InstantaneousDeath(self.module, person,cause='Other')  # make that death event
             self.sim.schedule_event(death, self.sim.date) # schedule the death for "now"
 
 
@@ -306,9 +312,9 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
 
     """
 
-    def __init__(self, module, individual):
+    def __init__(self, module, individual,cause):
         super().__init__(module, person=individual)
-
+        self.cause=cause
 
     def apply(self, individual):
         print("@@@@ A Death is now occuring, to person", individual)
@@ -317,7 +323,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             individual.is_alive = False
 
             # the person is now dead
-            print("*******************************************The person", individual, "is now officially dead.")
+            print("*******************************************The person", individual, "is now officially dead and has died of :", self.cause)
 
 
 
@@ -338,15 +344,12 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         Num_Total=(df['is_alive']==True).sum()
 
         counts = {'Num_Women': Num_Women, 'Num_Men': Num_Men, 'Num_Total': Num_Total}
-        # counts.update(df['mi_status'].value_counts().to_dict())
-        # status = 'Status: { N: %(N)d; T1: %(T1)d; T2: %(T2)d; P: %(P)d }' % counts
-        #
-        # self.module.store.append(proportion_infected)
-        #
+
         print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
               (self.sim.date,Num_Women,Num_Men,Num_Total), flush=True)
 
-
+        self.module.store['Time']=self.sim.date
+        self.module.store['Population_Total'].append(Num_Total)
 
 
 
