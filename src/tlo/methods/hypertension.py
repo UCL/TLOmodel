@@ -14,19 +14,18 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
-
 # Read in data
-file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
+file_path = '/Users/mc1405/Desktop/Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prevalence, HT_incidence, HT_treatment, \
-age_distribution = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                   method_ht_data['treatment_parameters']
+HT_prevalence, HT_incidence, HT_treatment = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+                                            method_ht_data['treatment_parameters']
 
-file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
-method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prev, HT_inc, HT_treat, \
-age_distr = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-            method_ht_data['treatment_parameters']
+
+# test = 13
+# HT_prevalence = pd.read_excel(file_path, sheet_name='prevalence2018')
+# HT_incidence = pd.read_excel(file_path, sheet_name='incidence2018_plus')
+# HT_treatment = pd.read_excel(file_path, sheet_name='treatment_parameters')
+
 
 class HT(Module):
     """
@@ -62,14 +61,13 @@ class HT(Module):
         'ht_date_case': Property(Types.DATE, 'Date of latest hypertension'),
         'ht_treatment_status': Property(Types.CATEGORICAL,
                                         'Historical status: N=never; C=Current, P=Previous',
-                                        categories = ['N', 'C', 'P']),
+                                        categories=['N', 'C', 'P']),
         'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
         'date_death': Property(Types.DATE, 'Date of hypertension death'),
 
     }
 
     def read_parameters(self, data_folder):
-
         """Will need to update this to read parameter values from file.
 
         :param data_folder: path of a folder supplied to the Simulation containing data files.
@@ -92,13 +90,14 @@ class HT(Module):
         """
 
         df = population.props  # a shortcut to the dataframe(df) storing data on individuals
+        now = self.sim.date
 
         # Set default values for all variables to be initialised
-        df['ht_current_status'] = False     # Default setting: no one has hypertension
-        df['ht_historic_status'] = 'N'      # Default setting: no one has hypertension
-        df['ht_date_case'] = pd.NaT         # Default setting: no one has a date for hypertension
-        df['ht_treatment_status'] = 'N'     # Default setting: no one is treated
-        df['ht_date_treatment'] = pd.NaT    # Defailt setting: no one has a date of treatment
+        df['ht_current_status'] = False  # Default setting: no one has hypertension
+        df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
+        df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
+        df['ht_treatment_status'] = 'N'  # Default setting: no one is treated
+        df['ht_date_treatment'] = pd.NaT  # Defailt setting: no one has a date of treatment
         # df['date_death'] = pd.NaT  # Default setting: no one dies from hypertension
 
         # Randomly assign hypertension at the start of the model]
@@ -128,6 +127,20 @@ class HT(Module):
 
         df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
 
+        # Lets try to overwrite the initial population with the actual data
+        self.prevalence(population)
+
+    #def prevalence(self, population):
+
+    #    now = self.sim.date
+
+     #   prevalence = HT_prevalence.loc[HT_prevalence.year == now.year, ['age', 'prevalence']]
+     #   initial_pop_data = population
+     #   initial_age: pd.DataFrame = initial_pop_data.groupby(['age']).size().reset_index(name='counts')
+     #   prevalence = pd.merge(initial_age, prevalence, how='inner', left_on=['age'], right_on=['age'])
+     #   prevalence['proportion'] = prevalence.prevalence/100/prevalence.counts
+
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -143,9 +156,9 @@ class HT(Module):
         sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # Add death event
-        #df = sim.population.props
-        #hypertension_individuals = df[df.ht_current_status].index
-        #for index in hypertension_individuals:
+        # df = sim.population.props
+        # hypertension_individuals = df[df.ht_current_status].index
+        # for index in hypertension_individuals:
         #    individual = self.sim.population[index]
         #    death_event = HTDeathEvent(self, individual)
         #    self.sim.schedule_event(death_event, individual.date_death)
@@ -199,7 +212,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 2. Handle new cases of hypertension
         now_hypertensive = np.random.choice([True, False], size=len(currently_ht_no),
-                                            p=[self.parameter_onset, 1-self.parameter_onset])
+                                            p=[self.parameter_onset, 1 - self.parameter_onset])
 
         # if any are hypertensive
         if now_hypertensive.sum():
@@ -207,7 +220,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
             df.loc[ht_idx, 'ht_current_status'] = True
             df.loc[ht_idx, 'ht_historic_status'] = 'C'
-            df.loc[ht_idx, 'ht_date_case'] = self. sim.date
+            df.loc[ht_idx, 'ht_date_case'] = self.sim.date
             # df.loc[ht_idx, 'date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
 
             # Schedule death for those infected
@@ -218,7 +231,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 3. Handle cure
         treated = np.random.choice([True, False], size=len(currently_ht_yes),
-                                   p=[self.parameter_treatment, 1-self.parameter_treatment])
+                                   p=[self.parameter_treatment, 1 - self.parameter_treatment])
 
         if treated.sum():
             treated = currently_ht_yes[treated]
@@ -228,7 +241,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[treated, 'ht_date_treatment'] = self.sim.date
 
 
-#class HTDeathEvent(Event, IndividualScopeEventMixin):
+# class HTDeathEvent(Event, IndividualScopeEventMixin):
 #    def __init__(self, module, individual):
 #        super().__init__(module, person=individual)
 #
