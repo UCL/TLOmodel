@@ -8,6 +8,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2060, 1, 1)
 popsize = 1000
 
+
 @pytest.fixture
 def simulation():
     sim = Simulation(start_date=start_date)
@@ -23,6 +24,7 @@ def simulation():
 def test_hypertension_simulation(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+
 
 if __name__ == '__main__':
     simulation = simulation()

@@ -67,8 +67,6 @@ class HT(Module):
         params['parameter_initial_prevalence'] = 0.01
         params['parameter_onset'] = 0.01
 
-
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -110,8 +108,6 @@ class HT(Module):
         df.loc[df.ht_current_status, 'ht_date_death'] = self.sim.date + death_td_ahead
 
         age = population.age
-
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -204,6 +200,7 @@ class HTDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual):
         pass
+
 
 class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
