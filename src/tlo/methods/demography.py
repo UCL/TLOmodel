@@ -121,9 +121,12 @@ class Demography(Module):
         It is a good place to add initial events to the event queue.
         """
 
-
+        # Launch the repeating events for demoraphy...
         sim.schedule_event(PregnancyPoll(self),sim.date+DateOffset(months=1))       # check all population to determine if pregnancy should be triggered (repeats every month)
-        sim.schedule_event(OtherDeathPoll(self),sim.date+DateOffset(months=1))   # check all population to determine if person should die (from causes other than those explicitly modelled) (repeats every month)
+        sim.schedule_event(OtherDeathPoll(self),sim.date+DateOffset(months=1))      # check all population to determine if person should die (from causes other than those explicitly modelled) (repeats every month)
+
+        # Launch the repeating event that will store statistics about the population structure
+        sim.schedule_event(DemographyLoggingEvent(self),sim.date+DateOffset(months=12))
 
 
         pass
@@ -294,45 +297,75 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         # loop through to see who is going to die:
         willdie = (df[outcome == True]).index
         cause='other'
-        # for i in willdie:
-            #TODO: Make the event, passing in person,cause; then book the event for "now"
-            #event = InstantaneousDeath(population[i],cause)
-            #self.sim.schedule_event(InstantaneousDeath, "now")
-
-
+        for i in willdie:
+            person=population[i]
+            death = InstantaneousDeath(self.module, person)  # make that death event
+            self.sim.schedule_event(death, self.sim.date) # schedule the death for "now"
 
 
 
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
-    """A one-off event in which a pregnant mother gives birth.
+
+    """
+    Performs the Death operation on an individual and logs it.
+
     """
 
-    def __init__(self, module, person, cause):
-        """Create a new death event.
+    def __init__(self, module, individual):
+        super().__init__(module, person=individual)
 
-        We need to pass the person this event happens to to the base class constructor
-        using super(). We also pass the module that created this event, so that random
-        number generators can be scoped per-module.
 
-        :param module: the module that created this event
-        :param mother: the person giving birth
-        """
-        super().__init__(module, person=person)
-
-    def apply(self, person, cause):
-        """This person will now die and the cause can be logged
-        """
-
-        print("@@@@ A Death is now occuring, to person", person)
+    def apply(self, individual):
+        print("@@@@ A Death is now occuring, to person", individual)
         print("The time is", self.sim.date)
-        if person.is_alive:
+        if individual.is_alive:
             # here comes the death..
-            person.is_alive=False
+            individual.is_alive = False
 
             # the person is now dead
-            print("The person", person, "is now officially dead.")
+            print("*******************************************The person", individual, "is now officially dead.")
+
+
+
+class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """comments...
+        """
+        # run this event every 12 months (every year)
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+
+
+
+
+        # infected_total = df.mi_is_infected.sum()
+        # proportion_infected = infected_total / len(df)
+        #
+        # mask = (df['mi_date_infected'] > self.sim.date - DateOffset(months=self.repeat))
+        # infected_in_last_month = mask.sum()
+        # mask = (df['mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
+        # cured_in_last_month = mask.sum()
+        #
+        # counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
+        # counts.update(df['mi_status'].value_counts().to_dict())
+        # status = 'Status: { N: %(N)d; T1: %(T1)d; T2: %(T2)d; P: %(P)d }' % counts
+        #
+        # self.module.store.append(proportion_infected)
+        #
+        # print('%s - Mockitis: {TotInf: %d; PropInf: %.3f; PrevMonth: {Inf: %d; Cured: %d}; %s }' %
+        #       (self.sim.date,
+        #        infected_total,
+        #        proportion_infected,
+        #        infected_in_last_month,
+        #        cured_in_last_month,
+        #        status), flush=True)
 
 
 
