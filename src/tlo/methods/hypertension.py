@@ -43,15 +43,16 @@ class HT(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'ht_current_status': Property(Types.BOOL, 'Current hypertension status'),
-        'ht_historic status': Property(Types.CATEGORICAL,
+        'ht_historic_status': Property(Types.CATEGORICAL,
                                        'Historical status: N=never; C=Current, P=Previous',
                                        categories=['N', 'C', 'P']),
         'ht_date_case': Property(Types.DATE, 'Date of latest hypertension'),
-        # 'ht_date_death': Property(Types.DATE, 'Date of hypertension death'),
-        # 'ht_treatment status':Property(Types.CATEGORICAL,
-        #                                'Historical status: N=never; C=Current, P=Previous',
-        #                                categories = ['N', 'C', 'P']),
-        #  'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
+        'ht_treatment_status': Property(Types.CATEGORICAL,
+                                        'Historical status: N=never; C=Current, P=Previous',
+                                        categories = ['N', 'C', 'P']),
+        'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
+        'date_death': Property(Types.DATE, 'Date of hypertension death'),
+
     }
 
     def read_parameters(self, data_folder):
@@ -62,9 +63,11 @@ class HT(Module):
           Typically modules would read a particular file within here.
         """
 
-        params = self.parameters
-        params['parameter_initial_prevalence'] = 0.01
-        params['parameter_onset'] = 0.01
+        #params = self.parameters
+        self.parameters['parameter_initial_prevalence'] = 0.5
+        self.parameters['parameter_onset'] = 0.02
+        self.parameters['parameter_treatment'] = 0.01
+        # self.parameters['param_mortality'] = 0.008
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -76,13 +79,15 @@ class HT(Module):
         :param population: the population of individuals
         """
 
-        df = population.props  # a shortcut to the dataframe (df) storing data on individuals
+        df = population.props  # a shortcut to the dataframe(df) storing data on individuals
 
         # Set default values for all variables to be initialised
-        df['ht_current_status'] = False  # Default setting: no one has hypertension
-        df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
-        df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
-        df['ht_date_death'] = pd.NaT  # Default setting: no one dies from hypertension
+        df['ht_current_status'] = False     # Default setting: no one has hypertension
+        df['ht_historic_status'] = 'N'      # Default setting: no one has hypertension
+        df['ht_date_case'] = pd.NaT         # Default setting: no one has a date for hypertension
+        df['ht_treatment_status'] = 'N'     # Default setting: no one is treated
+        df['ht_date_treatment'] = pd.NaT    # Defailt setting: no one has a date of treatment
+        # df['date_death'] = pd.NaT  # Default setting: no one dies from hypertension
 
         # Randomly assign hypertension at the start of the model]
         hypertension_yes_atstart = self.parameters['parameter_initial_prevalence']
@@ -91,22 +96,25 @@ class HT(Module):
                                                    size=len(df),
                                                    p=[hypertension_yes_atstart, hypertension_no_atstart])
 
-        # Count all individuals with hypertension at the start
+        # Count all individuals by status at the start
         hypertension_count = df.ht_current_status.sum()
+        pop_count = len(df.ht_current_status)
 
         # Set date of hypertension amongst those with prevalent cases
         ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
         infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
 
-        # Set date of hypertension death amongst those with prevalent cases
-        death_years_ahead = np.random.exponential(scale=2, size=hypertension_count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        # Set date of background death amongst those with prevalent cases
+        # death_years_ahead = np.random.exponential(scale=2, size=pop_count)
+        # death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # Set the properties of those with prevalent hypertension
         df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
-        df.loc[df.ht_current_status, 'ht_date_death'] = self.sim.date + death_td_ahead
+        # df['date_death'] = self.sim.date + death_td_ahead
 
         age = population.age
+
+        df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -123,12 +131,12 @@ class HT(Module):
         sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # Add death event
-        df = sim.population.props
-        hypertension_individuals = df[df.ht_current_status].index
-        for index in hypertension_individuals:
-            individual = self.sim.population[index]
-            death_event = HTDeathEvent(self, individual)
-            self.sim.schedule_event(death_event, individual.ht_date_death)
+        #df = sim.population.props
+        #hypertension_individuals = df[df.ht_current_status].index
+        #for index in hypertension_individuals:
+        #    individual = self.sim.population[index]
+        #    death_event = HTDeathEvent(self, individual)
+        #    self.sim.schedule_event(death_event, individual.date_death)
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -160,6 +168,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=1))
         self.parameter_onset = module.parameters['parameter_onset']
+        self.parameter_treatment = module.parameters['parameter_treatment']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -169,36 +178,50 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
+        ht_total = df.ht_current_status.sum()
+        proportion_ht = ht_total / len(df)
+
         # 1. Get (and hold) index of people with and w/o hypertension
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
 
         # 2. Handle new cases of hypertension
-        now_hypertensive = np.random.choice([True, False], size=len(currently_ht_no,),
+        now_hypertensive = np.random.choice([True, False], size=len(currently_ht_no),
                                             p=[self.parameter_onset, 1-self.parameter_onset])
 
         # if any are hypertensive
         if now_hypertensive.sum():
             ht_idx = currently_ht_no[now_hypertensive]
 
-            df.loc[ht_idx, 'ht_date_case'] = self. sim.date
-            df.loc[ht_idx, 'ht_date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
             df.loc[ht_idx, 'ht_current_status'] = True
-            df.loc[ht_idx, 'ht_historic status'] = 'C'
+            df.loc[ht_idx, 'ht_historic_status'] = 'C'
+            df.loc[ht_idx, 'ht_date_case'] = self. sim.date
+            # df.loc[ht_idx, 'date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
 
             # Schedule death for those infected
-            for index in ht_idx:
-                individual = self.sim.population[index]
-                death_event = HTDeathEvent(self.module, individual)
-                self.sim.schedule_event(death_event, individual.ht_date_death)
+            # for index in ht_idx:
+            #    individual = self.sim.population[index]
+            #    death_event = HTDeathEvent(self, individual)
+            #    self.sim.schedule_event(death_event, individual.date_death)
+
+        # 3. Handle cure
+        treated = np.random.choice([True, False], size=len(currently_ht_yes),
+                                   p=[self.parameter_treatment, 1-self.parameter_treatment])
+
+        if treated.sum():
+            treated = currently_ht_yes[treated]
+            df.loc[treated, 'ht_current_status'] = False
+            df.loc[treated, 'ht_historic_status'] = 'P'
+            df.loc[treated, 'ht_treatment_status'] = 'C'
+            df.loc[treated, 'ht_date_treatment'] = self.sim.date
 
 
-class HTDeathEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
-
-    def apply(self, individual):
-        pass
+#class HTDeathEvent(Event, IndividualScopeEventMixin):
+#    def __init__(self, module, individual):
+#        super().__init__(module, person=individual)
+#
+#    def apply(self, individual):
+#        pass
 
 
 class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -217,14 +240,18 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         proportion_ht = ht_total / len(df)
 
         mask = (df['ht_date_case'] > self.sim.date - DateOffset(months=self.repeat))
-        infected_in_last_month = mask.sum()
+        positive_in_last_month = mask.sum()
+        mask = (df['ht_date_treatment'] > self.sim.date - DateOffset(months=self.repeat))
+        cured_in_last_month = mask.sum()
 
         counts = {'N': 0, 'C': 0, 'P': 0}
-        counts.update(df['ht_current_status'].value_counts().to_dict())
+        counts.update(df['ht_historic_status'].value_counts().to_dict())
         status = 'Status: { N: %(N)d; C: %(C)d; P: %(P)d }' % counts
 
-        print('%s - Hypertension: {TotHT: %d; PropHT: %.3f }' %
+        print('%s - Hypertension: {TotHT: %d; PropHT: %.3f; PrevMonth: {New: %d; Cured: %d}; %s }' %
               (self.sim.date,
                ht_total,
                proportion_ht,
-               ), flush=True)
+               positive_in_last_month,
+               cured_in_last_month,
+               status), flush=True)

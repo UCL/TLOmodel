@@ -14,10 +14,8 @@ def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
     hypertension_module = hypertension.HT()               # This will load method for hypertension
-
     sim.register(core_module)
     sim.register(hypertension_module)                     # This will register method for hypertension
-
     return sim
 
 
