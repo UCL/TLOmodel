@@ -47,12 +47,11 @@ class HT(Module):
                                        'Historical status: N=never; C=Current, P=Previous',
                                        categories=['N', 'C', 'P']),
         'ht_date_case': Property(Types.DATE, 'Date of latest hypertension'),
-        'ht_date_death': Property(Types.DATE, 'Date of hypertension death'),
+        # 'ht_date_death': Property(Types.DATE, 'Date of hypertension death'),
         # 'ht_treatment status':Property(Types.CATEGORICAL,
         #                                'Historical status: N=never; C=Current, P=Previous',
         #                                categories = ['N', 'C', 'P']),
         #  'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
-
     }
 
     def read_parameters(self, data_folder):
@@ -229,4 +228,3 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                ht_total,
                proportion_ht,
                ), flush=True)
-
