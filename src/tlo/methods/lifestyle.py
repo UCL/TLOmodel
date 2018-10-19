@@ -43,10 +43,12 @@ class Lifestyle(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
-        'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban')
+        'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
+        'li_wealth': Property(Types.INT, 'wealth level'),
+ #      'li_wealth': Property(Types.CATEGORICAL,'wealth level', categories=['1', '2', '3', '4', '5']),
+        'date_death': Property(Types.DATE, 'date of death'),
+        'is_alive': Property(Types.BOOL, 'currently alive')
     }
-
-    #  , 'li_wealth': Property(Types.CATEGORICAL, categories=['1', '2', '3', '4', '5'])
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -58,17 +60,18 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.05
         self.parameters['r_rural'] = 0.01
+        self.parameters['death_rate'] = 0.005
         self.parameters['initial_p_urban'] = 0.17
-     #   self.parameters['initial_p_wealth_1_if_urban'] = 0.75
-     #   self.parameters['initial_p_wealth_2_if_urban'] = 0.16
-     #   self.parameters['initial_p_wealth_3_if_urban'] = 0.05
-     #   self.parameters['initial_p_wealth_4_if_urban'] = 0.02
-     #   self.parameters['initial_p_wealth_5_if_urban'] = 0.02
-     #   self.parameters['initial_p_wealth_1_if_rural'] = 0.11
-     #   self.parameters['initial_p_wealth_2_if_rural'] = 0.21
-     #   self.parameters['initial_p_wealth_3_if_rural'] = 0.22
-     #   self.parameters['initial_p_wealth_4_if_rural'] = 0.23
-     #   self.parameters['initial_p_wealth_5_if_rural'] = 0.23
+        self.parameters['initial_p_wealth_1_if_urban'] = 0.75
+        self.parameters['initial_p_wealth_2_if_urban'] = 0.16
+        self.parameters['initial_p_wealth_3_if_urban'] = 0.05
+        self.parameters['initial_p_wealth_4_if_urban'] = 0.02
+        self.parameters['initial_p_wealth_5_if_urban'] = 0.02
+        self.parameters['initial_p_wealth_1_if_rural'] = 0.11
+        self.parameters['initial_p_wealth_2_if_rural'] = 0.21
+        self.parameters['initial_p_wealth_3_if_rural'] = 0.22
+        self.parameters['initial_p_wealth_4_if_rural'] = 0.23
+        self.parameters['initial_p_wealth_5_if_rural'] = 0.23
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -83,30 +86,30 @@ class Lifestyle(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['li_urban'] = False  # default: all individuals rural
         df['li_date_trans_to_urban'] = pd.NaT
-     #   df['li_wealth'] = 3  # default: all individuals wealth 3
+        df['li_wealth'] = 3  # default: all individuals wealth 3
+        df['is_alive'] = True  # default: all individuals alive
 
         # randomly selected some individuals as urban
         initial_urban = self.parameters['initial_p_urban']
         initial_rural = 1 - initial_urban
         df['li_urban'] = np.random.choice([True, False], size=len(df), p=[initial_urban, initial_rural])
+        in_p_wealth_1_urban = self.parameters['initial_p_wealth_1_if_urban']
+        in_p_wealth_2_urban = self.parameters['initial_p_wealth_2_if_urban']
+        in_p_wealth_3_urban = self.parameters['initial_p_wealth_3_if_urban']
+        in_p_wealth_4_urban = self.parameters['initial_p_wealth_4_if_urban']
+        in_p_wealth_5_urban = self.parameters['initial_p_wealth_5_if_urban']
 
-     #   wealth_level_probs_urban = self.parameters['initial_p_wealth_1_if_urban', 'initial_p_wealth_2_if_urban',
-     #                                              'initial_p_wealth_3_if_urban', 'initial_p_wealth_4_if_urban',
-     #                                              'initial_p_wealth_5_if_urban']
+        urban_count = df.li_urban.sum()
 
-     #   wealth_level_probs_rural = self.parameters['initial_p_wealth_1_if_rural', 'initial_p_wealth_2_if_rural',
-     #                                              'initial_p_wealth_3_if_rural', 'initial_p_wealth_4_if_rural',
-     #                                              'initial_p_wealth_5_if_rural']
+  #     df['li_wealth'] = np.random.choice([1, 2, 3, 4, 5], size=len(df), p=[in_p_wealth_1_urban, in_p_wealth_2_urban,
+  #                                                                           in_p_wealth_3_urban, in_p_wealth_4_urban,
+  #                                                                           in_p_wealth_5_urban])
 
-        # assign wealth status
+        for 'li_urban' = True:
+        df['li_wealth'] = np.random.choice([1, 2, 3, 4, 5], size=len(df), p=[in_p_wealth_1_urban, in_p_wealth_2_urban,
+                                                                             in_p_wealth_3_urban, in_p_wealth_4_urban,
+                                                                             in_p_wealth_5_urban])
 
-        #   for initial_urban = True:
-        #   df['li_wealth'] = np.random.choice(['1', '2', '3', '4', '5'], size=urban_idx.sum(),replace=True,
-        #                                   p=wealth_level_probs_urban.values)
-
-        #   for index in rural_idx:
-        #   df['li_wealth'] = np.random.choice(['1', '2', '3', '4', '5'], size=rural_idx.sum(),replace=True,
-        #                                   p=wealth_level_probs_rural.values)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -195,14 +198,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        wealth = df.li_wealth.sum() / len(df)
         urban_total = df.li_urban.sum()
         proportion_urban = urban_total / len(df)
 
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
-        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d    ' %
-              (self.sim.date,urban_total,proportion_urban, newly_urban_in_last_3mths), flush=True)
+        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d , wealth %d' %
+              (self.sim.date,urban_total,proportion_urban, newly_urban_in_last_3mths, wealth), flush=True)
 
 
 
