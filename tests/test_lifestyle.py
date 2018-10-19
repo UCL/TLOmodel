@@ -27,3 +27,11 @@ def test_lifestyle_simulation(simulation):
 if __name__ == '__main__':
     simulation = simulation()
     test_lifestyle_simulation(simulation)
+
+    # plot the urban total history
+    stats = simulation.modules['Lifestyle'].store['urban_total']
+
+    import matplotlib.pyplot as plt
+    import numpy as np
+    plt.plot(np.arange(0, len(stats)), stats)
+    plt.show()

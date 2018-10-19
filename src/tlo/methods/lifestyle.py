@@ -26,16 +26,8 @@ class Lifestyle(Module):
         'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
         'initial_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
-        'initial_p_wealth_1_if_urban': Parameter(Types.REAL, 'initial_p_wealth_1_if_urban'),
-        'initial_p_wealth_2_if_urban': Parameter(Types.REAL, 'initial_p_wealth_2_if_urban'),
-        'initial_p_wealth_3_if_urban': Parameter(Types.REAL, 'initial_p_wealth_3_if_urban'),
-        'initial_p_wealth_4_if_urban': Parameter(Types.REAL, 'initial_p_wealth_4_if_urban'),
-        'initial_p_wealth_5_if_urban': Parameter(Types.REAL, 'initial_p_wealth_5_if_urban'),
-        'initial_p_wealth_1_if_rural': Parameter(Types.REAL, 'initial_p_wealth_1_if_rural'),
-        'initial_p_wealth_2_if_rural': Parameter(Types.REAL, 'initial_p_wealth_2_if_rural'),
-        'initial_p_wealth_3_if_rural': Parameter(Types.REAL, 'initial_p_wealth_3_if_rural'),
-        'initial_p_wealth_4_if_rural': Parameter(Types.REAL, 'initial_p_wealth_4_if_rural'),
-        'initial_p_wealth_5_if_rural': Parameter(Types.REAL, 'initial_p_wealth_5_if_rural')
+        'initial_p_wealth_if_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
+        'initial_p_wealth_if_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -44,11 +36,13 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
-        'li_wealth': Property(Types.INT, 'wealth level'),
- #      'li_wealth': Property(Types.CATEGORICAL,'wealth level', categories=['1', '2', '3', '4', '5']),
+        'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'date_death': Property(Types.DATE, 'date of death'),
-        'is_alive': Property(Types.BOOL, 'currently alive')
     }
+
+    def __init__(self):
+        super().__init__()
+        self.store = {'urban_total': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -62,16 +56,8 @@ class Lifestyle(Module):
         self.parameters['r_rural'] = 0.01
         self.parameters['death_rate'] = 0.005
         self.parameters['initial_p_urban'] = 0.17
-        self.parameters['initial_p_wealth_1_if_urban'] = 0.75
-        self.parameters['initial_p_wealth_2_if_urban'] = 0.16
-        self.parameters['initial_p_wealth_3_if_urban'] = 0.05
-        self.parameters['initial_p_wealth_4_if_urban'] = 0.02
-        self.parameters['initial_p_wealth_5_if_urban'] = 0.02
-        self.parameters['initial_p_wealth_1_if_rural'] = 0.11
-        self.parameters['initial_p_wealth_2_if_rural'] = 0.21
-        self.parameters['initial_p_wealth_3_if_rural'] = 0.22
-        self.parameters['initial_p_wealth_4_if_rural'] = 0.23
-        self.parameters['initial_p_wealth_5_if_rural'] = 0.23
+        self.parameters['initial_p_wealth_if_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
+        self.parameters['initial_p_wealth_if_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -82,34 +68,28 @@ class Lifestyle(Module):
 
         :param population: the population of individuals
         """
-
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['li_urban'] = False  # default: all individuals rural
         df['li_date_trans_to_urban'] = pd.NaT
-        df['li_wealth'] = 3  # default: all individuals wealth 3
-        df['is_alive'] = True  # default: all individuals alive
+        df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
 
         # randomly selected some individuals as urban
         initial_urban = self.parameters['initial_p_urban']
         initial_rural = 1 - initial_urban
         df['li_urban'] = np.random.choice([True, False], size=len(df), p=[initial_urban, initial_rural])
-        in_p_wealth_1_urban = self.parameters['initial_p_wealth_1_if_urban']
-        in_p_wealth_2_urban = self.parameters['initial_p_wealth_2_if_urban']
-        in_p_wealth_3_urban = self.parameters['initial_p_wealth_3_if_urban']
-        in_p_wealth_4_urban = self.parameters['initial_p_wealth_4_if_urban']
-        in_p_wealth_5_urban = self.parameters['initial_p_wealth_5_if_urban']
 
-        urban_count = df.li_urban.sum()
+        # get the indices of all individuals who are urban
+        urban_index = df.index[df.li_urban]
+        # randomly sample wealth category according to urban wealth probs and assign to urban ind.
+        df.loc[urban_index, 'li_wealth'] = np.random.choice([1, 2, 3, 4, 5],
+                                                            size=len(urban_index),
+                                                            p=self.parameters['initial_p_wealth_if_urban'])
 
-  #     df['li_wealth'] = np.random.choice([1, 2, 3, 4, 5], size=len(df), p=[in_p_wealth_1_urban, in_p_wealth_2_urban,
-  #                                                                           in_p_wealth_3_urban, in_p_wealth_4_urban,
-  #                                                                           in_p_wealth_5_urban])
-
-        for 'li_urban' = True:
-        df['li_wealth'] = np.random.choice([1, 2, 3, 4, 5], size=len(df), p=[in_p_wealth_1_urban, in_p_wealth_2_urban,
-                                                                             in_p_wealth_3_urban, in_p_wealth_4_urban,
-                                                                             in_p_wealth_5_urban])
-
+        # get the indicies of all individual who are rural (i.e. not urban)
+        rural_index = df.index[~df.li_urban]
+        df.loc[rural_index, 'li_wealth'] = np.random.choice([1, 2, 3, 4, 5],
+                                                            size=len(rural_index),
+                                                            p=self.parameters['initial_p_wealth_if_rural'])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -142,7 +122,6 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
     and thus implement discrete timestep type behaviour. The frequency is
     specified when calling the base class constructor in our __init__ method.
     """
-
     def __init__(self, module):
         """One line summary here
 
@@ -163,26 +142,31 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
 
+        # TODO: remove in live code!
+        currently_alive = df[df.is_alive]
+        people_to_kill = currently_alive.sample(n=int(len(currently_alive) * 0.01)).index
+        if len(people_to_kill):
+            df.loc[people_to_kill, 'is_alive'] = False
+
         # 1. get (and hold) index of current urban rural status
         currently_rural = df.index[~df.li_urban & df.is_alive]
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # 2. handle new transitions
-        now_urban = np.random.choice([True, False], size=len(currently_rural),
-                                        p=[self.r_urban, 1 - self.r_urban])
+        now_urban = np.random.choice([True, False],
+                                     size=len(currently_rural),
+                                     p=[self.r_urban, 1 - self.r_urban])
         # if any have transitioned to urban
         if now_urban.sum():
             urban_idx = currently_rural[now_urban]
-
             df.loc[urban_idx, 'li_urban'] = True
             df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
-        # 2. handle new transitions
+        # 3. handle new transitions to rural
         now_rural = np.random.choice([True, False], size=len(currently_urban), p=[self.r_rural, 1 - self.r_rural])
         # if any have transitioned to rural
         if now_rural.sum():
             rural_idx = currently_urban[now_rural]
-
             df.loc[rural_idx, 'li_urban'] = False
 
 
@@ -198,15 +182,21 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        wealth = df.li_wealth.sum() / len(df)
         urban_total = df.li_urban.sum()
-        proportion_urban = urban_total / len(df)
+
+        urban_alive = (df.is_alive & df.li_urban).sum()
+        self.module.store['urban_total'].append(urban_alive)
+
+        proportion_urban = urban_alive / (df.is_alive.sum())
+        rural_alive = (df.is_alive & (~df.li_urban)).sum()
 
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
-        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d , wealth %d' %
-              (self.sim.date,urban_total,proportion_urban, newly_urban_in_last_3mths, wealth), flush=True)
+        wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
+
+        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d, wealth: %s' %
+              (self.sim.date, urban_alive, proportion_urban, newly_urban_in_last_3mths, list(wealth_count_alive)), flush=True)
 
 
 
