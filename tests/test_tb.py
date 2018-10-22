@@ -7,7 +7,7 @@ from tlo.methods import demography
 
 path = '/Users/Tara/Desktop/TLO/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2014, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 100000
 
 
