@@ -19,21 +19,19 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 
-sim.modules['Demography'].store['Population_Total']
 
 # Make a nice plot;
-#
-# import matplotlib.pyplot as plt
-# import numpy as np
-#
-#
-# stats = simulation.modules['Demography'].store['Population_Total']
-# time=simulation.modules['Demography'].store['Time']
-#
-# # plt.plot(np.arange(0, len(stats)), stats)
-#
-# plt.plot(time, stats)
-#
-# plt.show()
-#
+
+import matplotlib.pyplot as plt
+
+
+stats = sim.modules['Demography'].store['Population_Total']
+time=sim.modules['Demography'].store['Time']
+
+# plt.plot(np.arange(0, len(stats)), stats)
+
+plt.plot(time, stats)
+
+plt.show()
+
 
