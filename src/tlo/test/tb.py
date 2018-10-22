@@ -78,7 +78,7 @@ class tb_baseline(Module):
         """
         params = self.parameters
         params['prop_fast_progressor'] = 0.14
-        params['transmission_rate'] = 7.2
+        params['transmission_rate'] = 0.007  # 4.9 (Juan) but no treatment yet so too high for test runs
         params['progression_to_active_rate'] = 0.5
 
         params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]
@@ -137,7 +137,6 @@ class tb_baseline(Module):
             idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
 
             if idx_uninfected.any():
-
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'M') & (Active_tb_prop.age == i), 'prob_active_tb']
                 male_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
@@ -148,8 +147,7 @@ class tb_baseline(Module):
             idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
 
             if idx.any():
-
-                 # sample from uninfected population using WHO prevalence
+                # sample from uninfected population using WHO prevalence
                 fraction_latent_tb = Latent_tb_prop.loc[
                     (Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
@@ -159,7 +157,6 @@ class tb_baseline(Module):
             idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
 
             if idx.any():
-
                 fraction_active_tb = Active_tb_prop.loc[
                     (Active_tb_prop.sex == 'F') & (Active_tb_prop.age == i), 'prob_active_tb']
                 female_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
@@ -173,13 +170,9 @@ class tb_baseline(Module):
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
-        test = self.sim.date
-        test2 = self.sim.date + death_td_ahead
         df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = self.sim.date + death_td_ahead
 
-        df.loc[df.mi_is_infected & (age.years <= 15), 'mi_status'] = 'T2'
-        df.loc[df.mi_is_infected, 'mi_date_death'] = self.sim.date + death_td_ahead
-
+        # print('hello world')  # use this when debugging just as a stop point
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -202,7 +195,6 @@ class tb_baseline(Module):
             individual = self.sim.population[index]
             death_event = tb_death_event(self, individual)
             self.sim.schedule_event(death_event, individual.date_tb_death)
-
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -257,6 +249,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
         force_of_infection = (params['transmission_rate'] * active_total * uninfected_total) / total_population
 
+        # this prob_tb_new = 584, therefore random draw will produce all TRUE values
         prob_tb_new = pd.Series(force_of_infection, index=df[(df.has_tb == 'Uninfected') & df.is_alive].index)
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
@@ -285,8 +278,9 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_active_case, 'has_tb'] = 'Active'
         df.loc[new_active_case, 'date_active_tb'] = now
 
-        # self-cure - move back from active to latent
-        self_cure_tb = df[df.has_tb == 'Active'].sample(frac=(params['prob_self_cure'] * params['self_cure'])).index
+        # self-cure - move back from active to latent, make sure it's not the ones that just became active
+        self_cure_tb = df[(df.has_tb == 'Active') & (df.date_active_tb < now)].sample(
+            frac=(params['prob_self_cure'] * params['self_cure'])).index
         df.loc[self_cure_tb, 'has_tb'] = 'Latent'
 
 
