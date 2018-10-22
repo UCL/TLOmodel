@@ -277,7 +277,7 @@ class HIV(Module):
             population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
 
-    # this function needs the ART mortality rates from art.py
+    # this function needs the ART mortality rates from ART.py
     def initial_pop_deaths(self, df):
 
         current_time = self.sim.date
@@ -346,7 +346,7 @@ class HIV(Module):
        #§§h(current_time - df.props.loc[hiv_ad, 'date_HIV_infection'])
 
         # assign mortality rates on ART
-        # NOTE: see art.py
+        # NOTE: see ART.py
         # df['ART_mortality'] = self.ART_mortality_rates(df, self.current_time)
 
     def initialise_simulation(self, sim):
