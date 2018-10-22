@@ -172,4 +172,4 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         :param person: the person the event happens to, i.e. the mother giving birth
         """
         if mother.is_alive:
-            self.sim.do_birth(mother)
+            self.sim.do_birth

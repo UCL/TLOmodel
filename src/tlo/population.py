@@ -229,6 +229,7 @@ class Population:
         """
         return self.__get_age(self.sim.date)
 
+    @property
     def do_birth(self):
         """Create a new person within the population.
 
@@ -241,6 +242,7 @@ class Population:
         self.props = self.props.append(extra_props, ignore_index=True, sort=False)
         new_person = Person(self, new_index)
         self.people.append(new_person)
+     # self.props.index.name =person
         return new_person
 
 

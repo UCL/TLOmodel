@@ -64,19 +64,19 @@ class Pregnancy_And_Newborn_Supervisor(Module):
 
 
 
-
-class Pregnancy_And_Newborn_Supervisor_Event(RegularEvent,IndividualScopeEventMixin):
-    """
-    This is called every week during a woman's pregnancy and until their child is 4 weeks old
-
-    """
-
-    def __init__(self, module, individual):
-        # set this event to repeat weekly
-        super().__init__(module, person=individual, frequency=DateOffset(weeks=1))
-
-
-    def apply(self, person):
-        # print("We are checking up on the pregnancy of ", person, "....")
-
-
+#
+# class Pregnancy_And_Newborn_Supervisor_Event(RegularEvent,IndividualScopeEventMixin):
+#     """
+#     This is called every week during a woman's pregnancy and until their child is 4 weeks old
+#
+#     """
+#
+#     def __init__(self, module, individual):
+#         # set this event to repeat weekly
+#         super().__init__(module, person=individual, frequency=DateOffset(weeks=1))
+#
+#
+#     def apply(self, person):
+#         # print("We are checking up on the pregnancy of ", person, "....")
+#
+#

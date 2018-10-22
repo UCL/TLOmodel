@@ -9,7 +9,7 @@ import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-from tlo.methods.pregnancy_and_newborn_supervisor import Pregnancy_And_Newborn_Supervisor_Event
+# from tlo.methods.pregnancy_and_newborn_supervisor import Pregnancy_And_Newborn_Supervisor_Event
 
 
 class Demography(Module):
@@ -88,11 +88,11 @@ class Demography(Module):
         is_age_range = (intpop['age_to'] != intpop['age_from'])
         intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
 
-        pop_sample = intpop.iloc[np.random.choice(intpop.index.values,
+        pop_sample = intpop.iloc[self.sim.rng.choice(intpop.index.values,
                                                   size=len(population),
                                                   p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
-        months = pd.Series(pd.to_timedelta(np.random.randint(low=0,
+        months = pd.Series(pd.to_timedelta(self.sim.rng.randint(low=0,
                                                              high=12,
                                                              size=len(population)),
                                            unit='M',
@@ -108,7 +108,7 @@ class Demography(Module):
         df.is_married=False
 
         adults=(population.age.years>=18)
-        df.loc[adults,'is_married']=np.random.choice([True,False],size=adults.sum(),p=[0.5,0.5])
+        df.loc[adults,'is_married']=self.sim.rng.choice([True,False],size=adults.sum(),p=[0.5,0.5])
 
         df.contraception.values[:]='Not using'
 
@@ -143,7 +143,7 @@ class Demography(Module):
         :param child: the new child
         """
         child.date_of_birth = self.sim.date
-        child.sex = np.random.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
+        child.sex = sim.rng.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
         child.mother_id = mother.index
         child.is_alive = True
 
@@ -187,7 +187,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
 
         female.loc[female['is_pregnant']==True,'value']=0 # zero-out risk of pregnancy if already pregnant
 
-        newlypregnant=(np.random.random(size=len(female))<female.value/12)          # flipping the coin to determine if this woman will become pregnant
+        newlypregnant=(self.sim.rng.random_sample(size=len(female))<female.value/12)          # flipping the coin to determine if this woman will become pregnant
                                                                                     # the imported number is a yearly proportion. So adjust the rate according
                                                                                     # to the frequency with which the event is recurring
                                                                                     # TODO: this should be linked to the self.frequency value
@@ -204,7 +204,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             print('Her age is:', female.loc[personnumber,'years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*np.random.random())
+            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*self.sim.rng.random_sample())
 
             mother = population[personnumber] # get the index of the mother (**Q: what data type is this....)
 
@@ -214,8 +214,8 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             print("The birth is now booked for: ", birth_date_of_child)
 
             # Launch the Pregnancy_And_Newborn_Supervisor
-            p_and_n_supervisor=Pregnancy_And_Newborn_Supervisor_Event(self.module,mother)
-            self.sim.schedule_event(p_and_n_supervisor, DateOffset(weeks=1))
+            # p_and_n_supervisor=Pregnancy_And_Newborn_Supervisor_Event(self.module,mother)
+            # self.sim.schedule_event(p_and_n_supervisor, DateOffset(weeks=1))
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -242,7 +242,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
         print("@@@@ A Birth is now occuring, to mother", mother)
         if mother.is_alive:
-            self.sim.do_birth(mother)
+            self.sim.do_birth
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         mother.is_pregnant=False
@@ -288,7 +288,7 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of mortality for each person in the model
         df=df.reset_index().merge(mort_schedule, left_on=['agegrp','sex'], right_on=['agegrp','sex'], how='left').set_index('person')
 
-        outcome = (np.random.random(size=len(df)) < df.value / 12)  # flipping the coin to determine if this woman will die
+        outcome = (self.sim.rng.random_sample(size=len(df)) < df.value / 12)  # flipping the coin to determine if this woman will die
                                                             # the imported number is a yearly proportion. So adjust the rate according
                                                             # to the frequency with which the event is recurring
                                                             # TODO: this should be linked to the self.frequency value
@@ -348,7 +348,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
               (self.sim.date,Num_Women,Num_Men,Num_Total), flush=True)
 
-        self.module.store['Time']=self.sim.date
+        self.module.store['Time'].append(self.sim.date)
         self.module.store['Population_Total'].append(Num_Total)
 
 
