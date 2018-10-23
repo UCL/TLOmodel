@@ -18,7 +18,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 file_path = '/Users/mc1405/Desktop/Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HT_prevalence, HT_incidence, HT_treatment = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                                            method_ht_data['treatment_parameters']
+                                           method_ht_data['treatment_parameters']
 
 
 # test = 13
@@ -92,7 +92,7 @@ class HT(Module):
         df = population.props  # a shortcut to the dataframe(df) storing data on individuals
         now = self.sim.date
 
-        # Set default values for all variables to be initialised
+        # 1. Set default values for all variables to be initialised
         df['ht_current_status'] = False  # Default setting: no one has hypertension
         df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
         df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
@@ -101,45 +101,58 @@ class HT(Module):
         # df['date_death'] = pd.NaT  # Default setting: no one dies from hypertension
 
         # Randomly assign hypertension at the start of the model]
-        hypertension_yes_atstart = self.parameters['parameter_initial_prevalence']
-        hypertension_no_atstart = 1 - hypertension_yes_atstart
-        df['ht_current_status'] = np.random.choice([True, False],
-                                                   size=len(df),
-                                                   p=[hypertension_yes_atstart, hypertension_no_atstart])
+        # hypertension_yes_atstart = self.parameters['parameter_initial_prevalence']
+        # hypertension_no_atstart = 1 - hypertension_yes_atstart
+        # df['ht_current_status'] = np.random.choice([True, False],
+        #                                            size=len(df),
+        #                                            p=[hypertension_yes_atstart, hypertension_no_atstart])
+        #
+        # # Count all individuals by status at the start
+        # hypertension_count = df.ht_current_status.sum()
+        # pop_count = len(df.ht_current_status)
+        #
+        # # Set date of hypertension amongst those with prevalent cases
+        # ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
+        # infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
+        #
+        # # Set date of background death amongst those with prevalent cases
+        # # death_years_ahead = np.random.exponential(scale=2, size=pop_count)
+        # # death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        #
+        # # Set the properties of those with prevalent hypertension
+        # df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
+        # # df['date_death'] = self.sim.date + death_td_ahead
+        #
+        #
+        # df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
 
-        # Count all individuals by status at the start
+        # 2. Assign prevalence as per data, by using probability by age
+        joined = pd.merge(population.age, HT_prevalence, left_on=['years'], right_on=['age'], how='left')
+        random_numbers = np.random.rand(len(df))
+        df['ht_current_status'] = (joined.probability > random_numbers)
+
+        # 2.1 Ways to check what's happening
+        # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
+        # temp = pd.DataFrame([population.age.years, joined.Proportion, random_numbers, df['ht_current_status']])
+
+        # 3. Count all individuals by status at the start
         hypertension_count = df.ht_current_status.sum()
         pop_count = len(df.ht_current_status)
 
-        # Set date of hypertension amongst those with prevalent cases
+        # 4. Set date of hypertension amongst those with prevalent cases
         ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
         infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
 
-        # Set date of background death amongst those with prevalent cases
+        # 4.1 Set date of background death amongst those with prevalent cases
         # death_years_ahead = np.random.exponential(scale=2, size=pop_count)
         # death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
-        # Set the properties of those with prevalent hypertension
+        # 4.2 Set the properties of those with prevalent hypertension
         df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
+        df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
         # df['date_death'] = self.sim.date + death_td_ahead
 
-        age = population.age
-
-        df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
-
-        # Lets try to overwrite the initial population with the actual data
-        self.prevalence(population)
-
-    #def prevalence(self, population):
-
-    #    now = self.sim.date
-
-     #   prevalence = HT_prevalence.loc[HT_prevalence.year == now.year, ['age', 'prevalence']]
-     #   initial_pop_data = population
-     #   initial_age: pd.DataFrame = initial_pop_data.groupby(['age']).size().reset_index(name='counts')
-     #   prevalence = pd.merge(initial_age, prevalence, how='inner', left_on=['age'], right_on=['age'])
-     #   prevalence['proportion'] = prevalence.prevalence/100/prevalence.counts
-
+        print("hello")
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -192,6 +205,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
+        # QUESTION: Do I need to add parameters here too?
         self.parameter_onset = module.parameters['parameter_onset']
         self.parameter_treatment = module.parameters['parameter_treatment']
 
@@ -201,16 +215,54 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
+        # 1. Basic items and output
         df = population.props
-
         ht_total = df.ht_current_status.sum()
         proportion_ht = ht_total / len(df)
 
-        # 1. Get (and hold) index of people with and w/o hypertension
+        # 2. Get (and hold) index of people with and w/o hypertension
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
 
-        # 2. Handle new cases of hypertension
+        # 3. Handle new cases of hypertension
+        ages_of_no_ht = population.age.loc[currently_ht_no]
+
+        joined = pd.merge(ages_of_no_ht.reset_index(), HT_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
+        random_numbers = np.random.rand(len(joined))
+        now_hypertensive = (joined.probability > random_numbers)
+
+        # 3.1 Ways to check what's happening
+        temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
+        temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])
+
+        # 4. If newly hypertensive
+        if now_hypertensive.sum():
+
+            ht_idx = currently_ht_no[now_hypertensive]
+
+            df.loc[ht_idx, 'ht_current_status'] = True
+            df.loc[ht_idx, 'ht_historic_status'] = 'C'
+            df.loc[ht_idx, 'ht_date_case'] = self.sim.date
+            # df.loc[ht_idx, 'date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
+
+            # Schedule death for those infected
+            # for index in ht_idx:
+            #    individual = self.sim.population[index]
+            #    death_event = HTDeathEvent(self, individual)
+            #    self.sim.schedule_event(death_event, individual.date_death)
+
+        # 4. Set date of hypertension amongst those with prevalent cases
+        ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
+        infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
+
+        # 4.1 Set date of background death amongst those with prevalent cases
+        # death_years_ahead = np.random.exponential(scale=2, size=pop_count)
+        # death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+
+        # 4.2 Set the properties of those with prevalent hypertension
+        df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
+        df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
+        # df['date_death'] = self.sim.date + death_td_ahead
         now_hypertensive = np.random.choice([True, False], size=len(currently_ht_no),
                                             p=[self.parameter_onset, 1 - self.parameter_onset])
 
