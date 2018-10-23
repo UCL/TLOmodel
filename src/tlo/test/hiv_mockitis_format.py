@@ -8,6 +8,17 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 
+# read in data files #
+# use function read.parameters in class HIV to do this?
+file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'
+method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
+HIV_prev, HIV_death, HIV_inc, CD4_base, time_CD4, initial_state_probs, \
+age_distr = method_hiv_data['prevalence2018'], method_hiv_data['deaths2009_2021'], \
+            method_hiv_data['incidence2009_2021'], \
+            method_hiv_data['CD4_distribution2018'], method_hiv_data['Time_spent_by_CD4'], \
+            method_hiv_data['Initial_state_probs'], method_hiv_data['age_distribution2018']
+
+
 class hiv_mock(Module):
     """
     One line summary goes here...
@@ -94,13 +105,58 @@ class hiv_mock(Module):
         :param population: the population of individuals
         """
 
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df = population.props
+        age = population.age
 
         df['has_HIV'] = False
         df['date_HIV_infection'] = pd.NaT
         df['date_AIDS_death'] = pd.NaT
         df['sexual_risk_group'] = 1
 
+        print('hello')
+
+        # randomly selected some individuals as infected
+        initial_infected = 0.3
+        initial_uninfected = 1 - initial_infected
+        df['has_HIV'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
+
+        # assign high/low sexual risk
+        # male_sample = df[(df.sex == 'M') & (age > 15)].sample(
+        #     frac=self.parameters['proportion_high_sexual_risk_male']).index
+        # female_sample = df[(df.sex == 'F') & (age > 15)].sample(
+        #     frac=self.parameters['proportion_high_sexual_risk_female']).index
+
+        # # these individuals have higher risk of hiv
+        # df[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
+        #
+        # # assign baseline prevalence
+        # now = self.sim.date
+        # prevalence = HIV_prev.loc[HIV_prev.year == now.year, ['age', 'sex', 'prevalence']]
+        #
+        # for i in range(0, 81):
+        #     # male
+        #     # scale high/low-risk probabilities to sum to 1 for each sub-group
+        #     idx = (age == i) & (df.sex == 'M')
+        #
+        #     if idx.any():
+        #         prob_i = df[idx, 'sexual_risk_group']
+        #
+        #         # sample from uninfected df using prevalence from UNAIDS
+        #         fraction_infected = prevalence.loc[(prevalence.sex == 'M') & (prevalence.age == i), 'proportion']
+        #         male_infected = df[idx].sample(frac=fraction_infected, weights=prob_i).index
+        #         df[male_infected, 'has_HIV'] = True
+        #
+        #     # female
+        #     # scale high/low-risk probabilities to sum to 1 for each sub-group
+        #     idx = (age == i) & (df.sex == 'F')
+        #
+        #     if idx.any():
+        #         prob_i = df[idx, 'sexual_risk_group']
+        #
+        #         # sample from uninfected df using prevalence from UNAIDS
+        #         fraction_infected = prevalence.loc[(prevalence.sex == 'F') & (prevalence.age == i), 'proportion']
+        #         female_infected = df[idx].sample(frac=fraction_infected, weights=prob_i).index
+        #         df[female_infected, 'has_HIV'] = True
 
 
     def initialise_simulation(self, sim):
@@ -110,7 +166,8 @@ class hiv_mock(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        pass
+        event = hiv_event(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=12))
 
 
     def on_birth(self, mother, child):
@@ -122,4 +179,29 @@ class hiv_mock(Module):
         :param child: the new child
         """
         pass
+
+
+class hiv_event(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """One line summary here
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+
+    def apply(self, population):
+        """Apply this event to the population.
+        :param population: the current population
+        """
+        pass
+
+
 
