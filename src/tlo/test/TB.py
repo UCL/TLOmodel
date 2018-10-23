@@ -9,7 +9,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
-TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method Template TB.xlsx', sheet_name='Active_TB_Incidence', header=0)
+TBincidence = pd.read_excel('Q:/Thanzi la Onse/TB/Method_TB.xlsx', sheet_name='Active_TB_Incidence', header=0)
 
 class TB_baseline(Module):
     """ Set up the baseline population with TB prevalence
@@ -56,7 +56,7 @@ class TB_baseline(Module):
             'probability of latent TB in baseline pop averaged over whole pop'),
         'force_of_infection': Parameter(
             Types.REAL,
-            'force of infection for new latent infections applied across whole pop'), # dummy value
+            'force of infection for new latent infections applied across whole pop'),  # dummy value
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -96,7 +96,7 @@ class TB_baseline(Module):
         params['TB_mortality_rate'] = 0.15
         params['rr_TB_mortality_HIV'] = 17.1
         params['prob_latent_TB'] = 0.0015
-        params['force_of_infection'] = 0.0015 # dummy value
+        params['force_of_infection'] = 0.0015  # dummy value
 
 
     def initialise_population(self, population):
@@ -110,6 +110,7 @@ class TB_baseline(Module):
         """
 
         p = population
+        now = self.sim.date
 
         # set-up baseline population
         p.has_TB = 'Uninfected'
@@ -121,6 +122,8 @@ class TB_baseline(Module):
         has_active_TB = eff_prob_active_TB > self.rng.rand(len(eff_prob_active_TB))
         assign_active_TB = has_active_TB[has_active_TB].index
         p[assign_active_TB, 'has_TB'] = 'Active'
+        p[assign_active_TB, 'date_TB_infection'] = now
+
 
 
         # assign latent infections, no age data available yet
@@ -191,11 +194,12 @@ class TB_Event(RegularEvent, PopulationScopeEventMixin):
         prob_TB_new = pd.Series(params['force_of_infection'], index=p[p.has_TB == 'Uninfected'].index)
         is_newly_infected = prob_TB_new > rng.rand(len(prob_TB_new))
         new_case = is_newly_infected[is_newly_infected].index
-        p[new_case, 'has_TB'] = 'Latent'
 
+        # 14% of new cases become active directly
+        p[new_case, 'has_TB'] = np.random.choice(['Latent', 'Active'], size=len(new_case),
+                                                 replace=True,
+                                                 p=[1 - params['prop_fast_progressor'], params['prop_fast_progressor']])
 
-
-        # 14% of latent cases become active directly
 
 
         # slow progressors with latent TB become active at estimated rate

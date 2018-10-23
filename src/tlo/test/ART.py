@@ -563,31 +563,10 @@ class ART_Event(RegularEvent, PopulationScopeEventMixin):
         return df
 
 
-# # to set up the baseline population
-# inds.head(20)
-# inds.describe(include='all')
-# inds['status'].value_counts()
-#
-# inds = high_risk_inds(inds)
-# inds = prevalence_inds(inds, current_time)
-# inds = initART_inds(inds, current_time)
-# inds = init_death_inds(inds, current_time)
-#
-# inds.head(20)
-# inds.describe(include='all')
-# inds['status'].value_counts()
-# inds['treat'].value_counts()
-#
-# # to run projections set up these commands in a loop
-# # example for 2019 projections with placeholder transmission rate beta_ad=0.12
-# inds = inf_inds_ad(inds, 2019, 0.12)
-# inds = ART_inds(inds, 2019)
-# inds = killHIV_inds(inds, 2019)
-# inds = killHIV_ART_inds(inds)
-#
 # inds.describe(include='all')
 # inds['status'].value_counts()
 # inds['treat'].value_counts()
 
 # TODO: ART allocation for infants - influenced by mother's ART status
+# TODO: include ART start date if possible - would influence next year's deaths
 
