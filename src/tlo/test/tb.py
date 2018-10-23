@@ -15,7 +15,6 @@ Active_tb_prop, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_p
 
 class tb_baseline(Module):
     """ Set up the baseline population with TB prevalence
-
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -70,9 +69,7 @@ class tb_baseline(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
         Here we do nothing.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
@@ -98,16 +95,12 @@ class tb_baseline(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
-
         initial pop is 2014
         then 2015-2018+ needs to run with beta in the FOI
-
         """
         df = population.props
 
@@ -176,7 +169,6 @@ class tb_baseline(Module):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
@@ -198,9 +190,7 @@ class tb_baseline(Module):
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
-
         This is called by the simulation whenever a new person is born.
-
         :param mother: the mother for this child
         :param child: the new child
         """
@@ -209,7 +199,6 @@ class tb_baseline(Module):
 
 class tb_event(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
-
     Regular events automatically reschedule themselves at a fixed frequency,
     and thus implement discrete timestep type behaviour. The frequency is
     specified when calling the base class constructor in our __init__ method.
@@ -217,11 +206,9 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         """One line summary here
-
         We need to pass the frequency at which we want to occur to the base class
         constructor using super(). We also pass the module that created this event,
         so that random number generators can be scoped per-module.
-
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
@@ -229,7 +216,6 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         """Apply this event to the population.
-
         :param population: the current population
         """
 
