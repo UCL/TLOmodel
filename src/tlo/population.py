@@ -1,5 +1,7 @@
 """The Person and Population classes."""
+from functools import lru_cache
 
+import numpy as np
 import pandas as pd
 
 
@@ -91,7 +93,12 @@ class Population:
         A list of Person objects representing the individuals in the population.
     """
 
-    __slots__ = ('people', 'props', 'sim')
+    __slots__ = ('people', 'props', 'sim', 'age_ranges')
+
+    MINIMUM_AGE = 0
+    MAXIMUM_AGE = 120
+    AGE_RANGE_SIZE = 5
+    AGE_RANGE_LIMIT = 100
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -111,6 +118,36 @@ class Population:
         self.people = []
         for i in range(initial_size):
             self.people.append(Person(self, i))
+
+        self.age_ranges = Population.make_age_range_lookup()
+
+    @staticmethod
+    def make_age_range_lookup():
+        """Returns a dictionary mapping age (in years) to age range
+        i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+        """
+        def chunks(items, n):
+            """Takes a list and divides it into parts of size n"""
+            for index in range(0, len(items), n):
+                yield items[index:index + n]
+
+        # split all the ages from min to limit (100 years) into 5 year ranges
+        parts = chunks(range(Population.MINIMUM_AGE, Population.AGE_RANGE_LIMIT),
+                       Population.AGE_RANGE_SIZE)
+        age_ranges = {}
+        # loop over each range and map all ages falling within the range to the range
+        for part in parts:
+            start = part.start
+            end = part.stop - 1
+            value = '%s-%s' % (start, end)
+            for i in range(start, part.stop):
+                age_ranges[i] = value
+
+        # all ages over the limit (100 years) get the same age range category
+        for i in range(Population.AGE_RANGE_LIMIT, Population.MAXIMUM_AGE + 1):
+            age_ranges[i] = '%s+' % Population.AGE_RANGE_LIMIT
+
+        return age_ranges
 
     def __len__(self):
         """:return: the size of the population."""
@@ -168,7 +205,10 @@ class Population:
         :param name: the name of the property to access
         """
         # TODO: If over-allocating make sure to change the end index here and in __setattr__!
-        return self.props.loc[:, name]
+        if name in self.props.columns:
+            return self.props.loc[:, name]
+        else:
+            return getattr(self.props, name)
 
     def __setattr__(self, name, value):
         """Set the values of a property over the population.
@@ -194,6 +234,39 @@ class Population:
             for prop_name, prop in module.PROPERTIES.items():
                 props[prop_name] = prop.create_series(prop_name, size)
         return props
+
+    @lru_cache(maxsize=1)
+    def __get_age(self, timestamp):
+        """
+        Creates a dataframe holding age information. This private method is decorated with an LRU
+        cache of size 1. This means the age dataframe for the most recent timestamp is cached.
+
+        Module/events can repeatedly access the population.age property as the simulation runs
+        forward in time, the age for the current timestemp will only be calculated once.
+
+        See the 'age()' method.
+
+        :param timestamp: a numpy datetime
+        :return: Pandas dataframe with age of individuals in population
+        """
+        age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
+        age.index.name = 'person'
+        age['years_exact'] = age.days / np.timedelta64(1, 'Y')
+        age['years'] = age.years_exact.astype(int)
+        age['age_range'] = age.years.map(self.age_ranges).astype('category')
+        return age
+
+    @property
+    def age(self):
+        """
+        Returns age of individuals based on the current simulation date. The dataframe returned
+        has columns 'days', 'years_exact' and 'years' (whole years).
+
+        The index of the age dataframe is the same as the population dataframe.
+
+        :return: A Pandas dataframe of age information of the population
+        """
+        return self.__get_age(self.sim.date)
 
     def do_birth(self):
         """Create a new person within the population.
