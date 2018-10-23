@@ -24,6 +24,9 @@ class Lifestyle(Module):
     PARAMETERS = {
         'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
+        'r_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from not_overwt to overwt if male'),
+        'r_not_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from overwt to not overwt'),
+        'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overwt if female rather than male'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -31,9 +34,7 @@ class Lifestyle(Module):
         'init_p_overwt_f_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female urban agege15'),
         'init_p_overwt_m_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male rural agege15'),
         'init_p_overwt_m_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male urban agege15'),
-        'r_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from not_overwt to overwt')
     }
-
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
@@ -56,7 +57,9 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.00001
+        self.parameters['r_overwt'] = 0.001
+        self.parameters['r_not_overwt'] = 0.001
+        self.parameters['rr_overwt_f'] = 1
         self.parameters['init_p_urban'] = 0.17
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
@@ -65,6 +68,9 @@ class Lifestyle(Module):
         self.parameters['init_p_overwt_f_urban_agege15'] = 0.32
         self.parameters['init_p_overwt_m_rural_agege15'] = 0.27
         self.parameters['init_p_overwt_m_urban_agege15'] = 0.46
+
+
+
 
 
     def initialise_population(self, population):
@@ -112,26 +118,25 @@ class Lifestyle(Module):
 
         agelt15_index = df.index[age.years < 15]
 
-
-        agege15_m_rural_index = df.index[age.years >= 15 & ~df.li_urban & df.sex == 'M']
- #      agege15_m_urban_index = df.index[age.years >= 15 & df.sex == 'M' & df.li_urban]
- #      agege15_f_rural_index = df.index[age.years >= 15 & df.sex == 'F' & ~df.li_urban]
- #      agege15_f_urban_index = df.index[age.years >= 15 & df.sex == 'F' & df.li_urban]
+        agege15_m_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'M')]
+        agege15_f_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'F')]
+        agege15_m_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'M')]
+        agege15_f_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'F')]
 
         df.loc[agelt15_index, 'li_overwt'] = False
 
         df.loc[agege15_m_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_rural_index),
                                                                       p=[i_p_overwt_m_rural_agege15,
                                                                          i_p_not_overwt_m_rural_agege15])
- #      df.loc[agege15_m_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
- #                                                                    p=[i_p_overwt_m_urban_agege15,
- #                                                                       i_p_not_overwt_m_urban_agege15])
- #      df.loc[agege15_f_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
- #                                                                    p=[i_p_overwt_f_rural_agege15,
- #                                                                       i_p_not_overwt_f_rural_agege15])
- #      df.loc[agege15_f_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
- #                                                                    p=[i_p_overwt_f_urban_agege15,
- #                                                                       i_p_not_overwt_f_urban_agege15])
+        df.loc[agege15_m_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
+                                                                      p=[i_p_overwt_m_urban_agege15,
+                                                                         i_p_not_overwt_m_urban_agege15])
+        df.loc[agege15_f_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
+                                                                      p=[i_p_overwt_f_rural_agege15,
+                                                                         i_p_not_overwt_f_rural_agege15])
+        df.loc[agege15_f_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
+                                                                      p=[i_p_overwt_f_urban_agege15,
+                                                                         i_p_not_overwt_f_urban_agege15])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -139,7 +144,7 @@ class Lifestyle(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        event = UrbanEvent(self)
+        event = LifestyleEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
         event = LifestylesLoggingEvent(self)
@@ -154,7 +159,7 @@ class Lifestyle(Module):
         pass
 
 
-class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
+class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
     Regular events automatically reschedule themselves at a fixed frequency,
     and thus implement discrete timestep type behaviour. The frequency is
@@ -170,6 +175,9 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=3))
         self.r_urban = module.parameters['r_urban']
         self.r_rural = module.parameters['r_rural']
+        self.r_overwt = module.parameters['r_overwt']
+        self.r_not_overwt = module.parameters['r_not_overwt']
+        self.rr_overwt_f = module.parameters['rr_overwt_f']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -203,6 +211,36 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
         if now_rural.sum():
             rural_idx = currently_urban[now_rural]
             df.loc[rural_idx, 'li_urban'] = False
+
+        # as above - transition between overwt and not overwt
+        # transition to ovrwt depends on sex
+
+        currently_not_overwt_f = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F')]
+        currently_not_overwt_m = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M')]
+        currently_overwt = df.index[df.li_overwt & df.is_alive]
+
+        ri_overwt_f = self.r_overwt*self.rr_overwt_f
+        ri_overwt_m = self.r_overwt
+
+        now_overwt_f = np.random.choice([True, False],
+                                        size=len(currently_not_overwt_f),
+                                        p=[ri_overwt_f, 1 - ri_overwt_f])
+        if now_overwt_f.sum():
+            overwt_f_idx = currently_not_overwt_f[now_overwt_f]
+            df.loc[overwt_f_idx, 'li_overwt'] = True
+
+        now_overwt_m = np.random.choice([True, False],
+                                        size=len(currently_not_overwt_m),
+                                        p=[ri_overwt_m, 1 - ri_overwt_m])
+        if now_overwt_m.sum():
+            overwt_m_idx = currently_not_overwt_m[now_overwt_m]
+            df.loc[overwt_m_idx, 'li_overwt'] = True
+
+        now_not_overwt = np.random.choice([True, False], size=len(currently_overwt),
+                                          p=[self.r_not_overwt, 1 - self.r_not_overwt])
+        if now_not_overwt.sum():
+            not_overwt_idx = currently_overwt[now_not_overwt]
+            df.loc[not_overwt_idx, 'li_overwt'] = False
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
