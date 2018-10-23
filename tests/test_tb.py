@@ -1,13 +1,12 @@
-
 import pytest  # this is the library for testing
 
 from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import tb
 from tlo.methods import demography
 
-path = '/Users/Tara/Desktop/TLO/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
-start_date = Date(2014, 1, 1)
-end_date = Date(2016, 1, 1)
+path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
+start_date = Date(2018, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 100000
 
 
@@ -30,6 +29,3 @@ def test_tb_simulation(simulation):
 if __name__ == '__main__':
     simulation = simulation()
     test_tb_simulation(simulation)
-
-
-

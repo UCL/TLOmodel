@@ -8,7 +8,9 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
-file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'
+# file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'
+file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
+
 tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
 Active_tb_prop, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_prob']
 
@@ -91,7 +93,7 @@ class tb_baseline(Module):
         params['self_cure'] = 0.33  # tiemersma plos one 2011, self-cure/death in 3 yrs
         params['tb_mortality_rate'] = 0.15
         params['rr_tb_mortality_HIV'] = 17.1
-        params['transmission_rate'] = 7.2  # dummy value
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -165,7 +167,7 @@ class tb_baseline(Module):
         # set the properties of infected individuals
         df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = self.sim.date + death_td_ahead
 
-        # print('hello world')  # use this when debugging just as a stop point
+        print('hello world')  # use this when debugging just as a stop point
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -194,6 +196,14 @@ class tb_baseline(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
+
+        # assign properties at birth linked with this module
+        # set-up baseline population
+        # df['has_tb'].values[:] = 'Uninfected'
+        # df['date_active_tb'] = pd.NaT
+        # df['date_latent_tb'] = pd.NaT
+        # df['date_tb_death'] = pd.NaT
+
         raise NotImplementedError
 
 
