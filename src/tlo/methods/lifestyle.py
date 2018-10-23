@@ -24,9 +24,14 @@ class Lifestyle(Module):
     PARAMETERS = {
         'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
-        'initial_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
-        'initial_p_wealth_if_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
-        'initial_p_wealth_if_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+        'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
+        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
+        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+        'init_p_overwt_f_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female rural agege15'),
+        'init_p_overwt_f_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female urban agege15'),
+        'init_p_overwt_m_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male rural agege15'),
+        'init_p_overwt_m_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male urban agege15'),
+        'r_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from not_overwt to overwt')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -36,12 +41,12 @@ class Lifestyle(Module):
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
-        'date_death': Property(Types.DATE, 'date of death'),
+        'li_overwt': Property(Types.BOOL, 'currently overweight'),
     }
 
     def __init__(self):
         super().__init__()
-        self.store = {'urban_total': []}
+        self.store = {'alive': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -49,12 +54,18 @@ class Lifestyle(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        self.parameters['r_urban'] = 0.05
-        self.parameters['r_rural'] = 0.01
-        self.parameters['death_rate'] = 0.005
-        self.parameters['initial_p_urban'] = 0.17
-        self.parameters['initial_p_wealth_if_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
-        self.parameters['initial_p_wealth_if_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
+        self.parameters['r_urban'] = 0.000625
+        self.parameters['r_rural'] = 0.00001
+        self.parameters['r_overwt'] = 0.00001
+        self.parameters['init_p_urban'] = 0.17
+        self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
+        self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
+        self.parameters['init_p_overwt_agelt15'] = [0.0]
+        self.parameters['init_p_overwt_f_rural_agege15'] = 0.17
+        self.parameters['init_p_overwt_f_urban_agege15'] = 0.32
+        self.parameters['init_p_overwt_m_rural_agege15'] = 0.27
+        self.parameters['init_p_overwt_m_urban_agege15'] = 0.46
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -67,9 +78,13 @@ class Lifestyle(Module):
         df['li_urban'] = False  # default: all individuals rural
         df['li_date_trans_to_urban'] = pd.NaT
         df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
+        df['li_overwt'] = False  # default: all not overwt
+
+        #  this below calls the age dataframe / call age.years to get age in years
+        age = population.age
 
         # randomly selected some individuals as urban
-        initial_urban = self.parameters['initial_p_urban']
+        initial_urban = self.parameters['init_p_urban']
         initial_rural = 1 - initial_urban
         df['li_urban'] = np.random.choice([True, False], size=len(df), p=[initial_urban, initial_rural])
 
@@ -78,13 +93,45 @@ class Lifestyle(Module):
         # randomly sample wealth category according to urban wealth probs and assign to urban ind.
         df.loc[urban_index, 'li_wealth'] = np.random.choice([1, 2, 3, 4, 5],
                                                             size=len(urban_index),
-                                                            p=self.parameters['initial_p_wealth_if_urban'])
+                                                            p=self.parameters['init_p_wealth_urban'])
 
         # get the indicies of all individual who are rural (i.e. not urban)
         rural_index = df.index[~df.li_urban]
         df.loc[rural_index, 'li_wealth'] = np.random.choice([1, 2, 3, 4, 5],
                                                             size=len(rural_index),
-                                                            p=self.parameters['initial_p_wealth_if_rural'])
+                                                            p=self.parameters['init_p_wealth_rural'])
+
+        i_p_overwt_m_rural_agege15 = self.parameters['init_p_overwt_m_rural_agege15']
+        i_p_not_overwt_m_rural_agege15 = 1 - i_p_overwt_m_rural_agege15
+        i_p_overwt_m_urban_agege15 = self.parameters['init_p_overwt_m_urban_agege15']
+        i_p_not_overwt_m_urban_agege15 = 1 - i_p_overwt_m_urban_agege15
+        i_p_overwt_f_rural_agege15 = self.parameters['init_p_overwt_f_rural_agege15']
+        i_p_not_overwt_f_rural_agege15 = 1 - i_p_overwt_f_rural_agege15
+        i_p_overwt_f_urban_agege15 = self.parameters['init_p_overwt_f_urban_agege15']
+        i_p_not_overwt_f_urban_agege15 = 1 - i_p_overwt_f_urban_agege15
+
+        agelt15_index = df.index[age.years < 15]
+
+
+        agege15_m_rural_index = df.index[age.years >= 15 & ~df.li_urban & df.sex == 'M']
+ #      agege15_m_urban_index = df.index[age.years >= 15 & df.sex == 'M' & df.li_urban]
+ #      agege15_f_rural_index = df.index[age.years >= 15 & df.sex == 'F' & ~df.li_urban]
+ #      agege15_f_urban_index = df.index[age.years >= 15 & df.sex == 'F' & df.li_urban]
+
+        df.loc[agelt15_index, 'li_overwt'] = False
+
+        df.loc[agege15_m_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_rural_index),
+                                                                      p=[i_p_overwt_m_rural_agege15,
+                                                                         i_p_not_overwt_m_rural_agege15])
+ #      df.loc[agege15_m_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
+ #                                                                    p=[i_p_overwt_m_urban_agege15,
+ #                                                                       i_p_not_overwt_m_urban_agege15])
+ #      df.loc[agege15_f_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
+ #                                                                    p=[i_p_overwt_f_rural_agege15,
+ #                                                                       i_p_not_overwt_f_rural_agege15])
+ #      df.loc[agege15_f_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
+ #                                                                    p=[i_p_overwt_f_urban_agege15,
+ #                                                                       i_p_not_overwt_f_urban_agege15])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -132,9 +179,9 @@ class UrbanEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: remove in live code!
         currently_alive = df[df.is_alive]
-        people_to_kill = currently_alive.sample(n=int(len(currently_alive) * 0.01)).index
-        if len(people_to_kill):
-            df.loc[people_to_kill, 'is_alive'] = False
+        people_to_die = currently_alive.sample(n=int(len(currently_alive) * 0.005)).index
+        if len(people_to_die):
+            df.loc[people_to_die, 'is_alive'] = False
 
         # 1. get (and hold) index of current urban rural status
         currently_rural = df.index[~df.li_urban & df.is_alive]
@@ -170,10 +217,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        urban_total = df.li_urban.sum()
-
         urban_alive = (df.is_alive & df.li_urban).sum()
-        self.module.store['urban_total'].append(urban_alive)
+     #   self.module.store['urban_total'].append(urban_alive)
+        alive = df.is_alive.sum()
+
+        self.module.store['alive'].append(alive)
 
         proportion_urban = urban_alive / (df.is_alive.sum())
         rural_alive = (df.is_alive & (~df.li_urban)).sum()
