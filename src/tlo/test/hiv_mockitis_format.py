@@ -215,3 +215,4 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'has_hiv'] = True
             df.loc[infected_idx, 'date_hiv_infection'] = self.sim.date
 
+
