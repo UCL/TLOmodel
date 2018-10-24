@@ -8,6 +8,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 
+# TODO update Methods_HIV for 2010 baseline
+
+
 # read in data files #
 # use function read.parameters in class HIV to do this?
 # file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx' # for desktop
@@ -68,8 +71,7 @@ class hiv_mock(Module):
         'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
-        'CD4_state': Property(Types.CATEGORICAL, 'CD4 state: >500; 350-500; 200-350; 0-200',
-                              categories=['state1', 'state2', 'state3', 'state4']),
+        'CD4_state': Property(Types.CATEGORICAL, 'CD4 state', categories=[500, 350, 250, 200, 100, 50, 0]),
     }
 
     def read_parameters(self, data_folder):
@@ -112,50 +114,59 @@ class hiv_mock(Module):
         df['date_aids_death'] = pd.NaT
         df['sexual_risk_group'] = 1
 
-        print('hello')
+        # print('hello')
+        self.high_risk(population)
+        self.prevalence(population)
 
-        # randomly selected some individuals as infected
+        # # randomly selected some individuals as infected
         initial_infected = 0.3
         initial_uninfected = 1 - initial_infected
-        df['has_hiv'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
+        df['has_hiv'] = self.sim.rng.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
 
-        # assign high/low sexual risk
-        # male_sample = df[(df.sex == 'M') & (age > 15)].sample(
-        #     frac=self.parameters['proportion_high_sexual_risk_male']).index
-        # female_sample = df[(df.sex == 'F') & (age > 15)].sample(
-        #     frac=self.parameters['proportion_high_sexual_risk_female']).index
 
-        # # these individuals have higher risk of hiv
-        # df[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
-        #
-        # # assign baseline prevalence
-        # now = self.sim.date
-        # prevalence = HIV_prev.loc[HIV_prev.year == now.year, ['age', 'sex', 'prevalence']]
-        #
-        # for i in range(0, 81):
-        #     # male
-        #     # scale high/low-risk probabilities to sum to 1 for each sub-group
-        #     idx = (age == i) & (df.sex == 'M')
-        #
-        #     if idx.any():
-        #         prob_i = df[idx, 'sexual_risk_group']
-        #
-        #         # sample from uninfected df using prevalence from UNAIDS
-        #         fraction_infected = prevalence.loc[(prevalence.sex == 'M') & (prevalence.age == i), 'proportion']
-        #         male_infected = df[idx].sample(frac=fraction_infected, weights=prob_i).index
-        #         df[male_infected, 'has_HIV'] = True
-        #
-        #     # female
-        #     # scale high/low-risk probabilities to sum to 1 for each sub-group
-        #     idx = (age == i) & (df.sex == 'F')
-        #
-        #     if idx.any():
-        #         prob_i = df[idx, 'sexual_risk_group']
-        #
-        #         # sample from uninfected df using prevalence from UNAIDS
-        #         fraction_infected = prevalence.loc[(prevalence.sex == 'F') & (prevalence.age == i), 'proportion']
-        #         female_infected = df[idx].sample(frac=fraction_infected, weights=prob_i).index
-        #         df[female_infected, 'has_HIV'] = True
+    def high_risk(self, population):
+        """ Stratify the adult (age >15) population in high or low sexual risk """
+
+        df = population.props
+        age = population.age
+
+        male_sample = df[(df.sex == 'M') & (age.years >= 15)].sample(
+            frac=self.parameters['proportion_high_sexual_risk_male']).index
+        female_sample = df[(df.sex == 'F') & (age.years >= 15)].sample(
+            frac=self.parameters['proportion_high_sexual_risk_female']).index
+
+        # these individuals have higher risk of hiv
+        df.loc[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
+
+        print('hurray it works')
+
+    def get_index(self, population, has_hiv, sex, age_low, age_high, CD4_state):
+
+        df = population.props
+        age = population.age
+
+        index = df.index[
+            df.has_hiv &
+            (df.sex == sex) &
+            (age.years >= age_low) & (age.years < age_high) &
+            (df.CD4_state == CD4_state)]
+
+        return index
+
+    def prevalence(self, population):
+        """
+        """
+
+        now = self.sim.date
+        df = population.props
+        age = population.age
+
+        prevalence = HIV_prev.loc[HIV_prev.year == now.year, ['age', 'sex', 'prevalence']]
+
+        # add age to population.props
+        df_with_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
+        print(df_with_age.head(10))
 
 
     def initialise_simulation(self, sim):

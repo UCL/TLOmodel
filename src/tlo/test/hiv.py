@@ -35,6 +35,7 @@ def log_scale(a0):
 # read in data files #
 # use function read.parameters in class HIV to do this?
 file_path = '/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/Method_HIV.xlsx'
+file_path = '/Users/tamuri/Downloads/Method_HIV.xlsx'
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HIV_prev, HIV_death, HIV_inc, CD4_base, time_CD4, initial_state_probs, \
 age_distr = method_hiv_data['prevalence2018'], method_hiv_data['deaths2009_2021'], \
@@ -91,6 +92,7 @@ class HIV(Module):
         'ART_mortality': Property(Types.REAL, 'Mortality rates whilst on ART'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
+        'CD4_state': Property(Types.CATEGORICAL, 'CD4 state', categories=[500, 350, 250, 200, 100, 50, 0]),
         'CD4_state': Property(Types.INT, ''),
 
         # should be handled by other modules TODO: remove from here
@@ -241,7 +243,7 @@ class HIV(Module):
                                                                       replace=True,
                                                                       p=cd4_probs.values)
 
-        population.props['CD4_state'] = population.props['CD4_state'].astype(int)
+        population.props['CD4_state'] = population.props['CD4_state'].astype(int) # change cd4 state to categorical
 
         time_infected_lookup = dict()
 
@@ -254,11 +256,28 @@ class HIV(Module):
         cd4_unrolled['days2'] = pd.to_timedelta((cd4_unrolled.years2 * 365.25).astype(int), unit='d')
         cd4_unrolled.apply(add_to_lookup, axis=1)
 
-        def get_time_infected(row):
-            lookup = time_infected_lookup[(row.CD4_state, row.sex, int(row.age))]
-            return np.random.choice(lookup[0], p=lookup[1])
 
-        time_infected: pd.Series = population[population.has_HIV].apply(get_time_infected, axis=1)
+
+        df = population.props
+        cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        #cd4_unrolled['years1'] = pd.to_timedelta(cd4_unrolled['years1'], unit='Y')
+        #cd4_unrolled['years2'] = pd.to_timedelta(cd4_unrolled['years2'], unit='Y')
+
+        infected = df.loc[df.has_hiv]
+        infected_with_age = pd.merge(infected, population.age, left_index=True, right_index=True, how='left')
+
+        cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        infected_with_age_and_cd4_info = pd.merge(infected_with_age.reset_index(),
+                                                  cd4_unrolled,
+                                                  left_on=['CD4_state', 'sex', 'years'],
+                                                  right_on=['CD4_state', 'sex', 'age'],
+                                                  how='left').set_index('person')
+
+        def get_time_infected(row):
+            return np.random.choice([row.years1, row.years2], p=[row.prob1, row.prob2])
+
+        time_infected = infected_with_age_and_cd4_info.apply(get_time_infected, axis=1)
+        time_infected = pd.to_timedelta(time_infected, unit='Y')
 
         # NOTE: why don't we use years? because:
         # "ValueError: Non-integer years and months are ambiguous and not currently supported.
@@ -506,33 +525,3 @@ class HIV_Event(RegularEvent, PopulationScopeEventMixin):
 
         return df
 
-# # to set up the baseline population
-# inds.head(20)
-# inds.describe(include='all')
-# inds['status'].value_counts()
-#
-# inds = high_risk_inds(inds)
-# inds = prevalence_inds(inds, current_time)
-# inds = initART_inds(inds, current_time)
-# inds = init_death_inds(inds, current_time)
-#
-# inds.head(20)
-# inds.describe(include='all')
-# inds['status'].value_counts()
-# inds['treat'].value_counts()
-#
-# # to run projections set up these commands in a loop
-# # example for 2019 projections with placeholder transmission rate beta_ad=0.12
-# inds = inf_inds_ad(inds, 2019, 0.12)
-# inds = ART_inds(inds, 2019)
-# inds = killHIV_inds(inds, 2019)
-# inds = killHIV_ART_inds(inds)
-#
-# inds.describe(include='all')
-# inds['status'].value_counts()
-# inds['treat'].value_counts()
-
-# TODO: handle births, link child's risk of HIV to mother's HIV status
-# TODO: include cotrimoxazole for children
-# TODO: code FOI as separate function from infection function
-# TODO: incorporate TB as a risk for HIV progression/mortality
