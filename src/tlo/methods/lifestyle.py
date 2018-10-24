@@ -29,6 +29,8 @@ class Lifestyle(Module):
         'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overwt if female rather than male'),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from not low ex to low ex'),
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
+        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob'),
+        'r_not_tob': Parameter(Types.REAL, 'probability per 3 mths of change from tob to not tob'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -36,6 +38,21 @@ class Lifestyle(Module):
         'init_p_overwt_f_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female urban agege15'),
         'init_p_overwt_m_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male rural agege15'),
         'init_p_overwt_m_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male urban agege15'),
+        'init_p_tob_m_wealth1_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 age1519'),
+        'init_p_tob_m_wealth1_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 age2039'),
+        'init_p_tob_m_wealth1_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 agege40'),
+        'init_p_tob_m_wealth2_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 age1519'),
+        'init_p_tob_m_wealth2_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 age2039'),
+        'init_p_tob_m_wealth2_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 agege40'),
+        'init_p_tob_m_wealth3_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 age1519'),
+        'init_p_tob_m_wealth3_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 age2039'),
+        'init_p_tob_m_wealth3_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 agege40'),
+        'init_p_tob_m_wealth4_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 age1519'),
+        'init_p_tob_m_wealth4_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 age2039'),
+        'init_p_tob_m_wealth4_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 agege40'),
+        'init_p_tob_m_wealth5_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age1519'),
+        'init_p_tob_m_wealth5_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age2039'),
+        'init_p_tob_m_wealth5_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 agege40'),
     }
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -45,7 +62,8 @@ class Lifestyle(Module):
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
-        'li_low_ex': Property(Types.BOOL, 'currently low ex')
+        'li_low_ex': Property(Types.BOOL, 'currently low ex'),
+        'li_tob': Property(Types.BOOL, 'current using tobacco')
     }
 
     def __init__(self):
@@ -65,10 +83,12 @@ class Lifestyle(Module):
         self.parameters['rr_overwt_f'] = 1
         self.parameters['r_low_ex'] = 0.000
         self.parameters['r_not_low_ex'] = 0.000
+        self.parameters['r_tob'] = 0.000
+        self.parameters['r_not_tob'] = 0.000
         self.parameters['init_p_urban'] = 0.17
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
-        self.parameters['init_p_overwt_agelt15'] = [0.0]
+        self.parameters['init_p_overwt_agelt15'] = 0.0
         self.parameters['init_p_overwt_f_rural_agege15'] = 0.17
         self.parameters['init_p_overwt_f_urban_agege15'] = 0.32
         self.parameters['init_p_overwt_m_rural_agege15'] = 0.27
@@ -77,6 +97,21 @@ class Lifestyle(Module):
         self.parameters['init_p_low_ex_f_urban_agege15'] = 0.18
         self.parameters['init_p_low_ex_m_rural_agege15'] = 0.11
         self.parameters['init_p_low_ex_m_urban_agege15'] = 0.32
+        self.parameters['init_p_tob_m_wealth1_age1519'] = 0.01
+        self.parameters['init_p_tob_m_wealth1_age2039'] = 0.04
+        self.parameters['init_p_tob_m_wealth1_agege40'] = 0.06
+        self.parameters['init_p_tob_m_wealth2_age1519'] = 0.02
+        self.parameters['init_p_tob_m_wealth2_age2039'] = 0.08
+        self.parameters['init_p_tob_m_wealth2_agege40'] = 0.12
+        self.parameters['init_p_tob_m_wealth3_age1519'] = 0.03
+        self.parameters['init_p_tob_m_wealth3_age2039'] = 0.12
+        self.parameters['init_p_tob_m_wealth3_agege40'] = 0.18
+        self.parameters['init_p_tob_m_wealth4_age1519'] = 0.04
+        self.parameters['init_p_tob_m_wealth4_age2039'] = 0.16
+        self.parameters['init_p_tob_m_wealth4_agege40'] = 0.24
+        self.parameters['init_p_tob_m_wealth5_age1519'] = 0.05
+        self.parameters['init_p_tob_m_wealth5_age2039'] = 0.2
+        self.parameters['init_p_tob_m_wealth5_agege40'] = 0.3
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -91,6 +126,7 @@ class Lifestyle(Module):
         df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
         df['li_overwt'] = False  # default: all not overwt
         df['li_low_ex'] = False  # default all not low ex
+        df['li_tob'] = False  # default all not tob
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
@@ -176,6 +212,120 @@ class Lifestyle(Module):
                                                                       p=[i_p_low_ex_f_urban_agege15,
                                                                          i_p_not_low_ex_f_urban_agege15])
 
+        # tob ;
+        df.loc[agelt15_index, 'li_tob'] = False
+
+        i_p_tob_m_wealth1_age1519 = self.parameters['init_p_tob_m_wealth1_age1519']
+        i_p_not_tob_m_wealth1_age1519 = 1 - i_p_tob_m_wealth1_age1519
+        age1519_m_wealth1_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 1) &
+                                           (df.sex == 'M')]
+        df.loc[age1519_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth1_index),
+                                                                     p=[i_p_tob_m_wealth1_age1519,
+                                                                        i_p_not_tob_m_wealth1_age1519])
+        i_p_tob_m_wealth1_age2039 = self.parameters['init_p_tob_m_wealth1_age2039']
+        i_p_not_tob_m_wealth1_age2039 = 1 - i_p_tob_m_wealth1_age2039
+        age2039_m_wealth1_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 1) &
+                                           (df.sex == 'M')]
+        df.loc[age2039_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth1_index),
+                                                                     p=[i_p_tob_m_wealth1_age2039,
+                                                                         i_p_not_tob_m_wealth1_age2039])
+        i_p_tob_m_wealth1_agege40 = self.parameters['init_p_tob_m_wealth1_agege40']
+        i_p_not_tob_m_wealth1_agege40 = 1 - i_p_tob_m_wealth1_agege40
+        agege40_m_wealth1_index = df.index[(age.years >= 40) & (df.li_wealth == 1) &
+                                           (df.sex == 'M')]
+        df.loc[agege40_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth1_index),
+                                                                     p=[i_p_tob_m_wealth1_agege40,
+                                                                         i_p_not_tob_m_wealth1_agege40])
+
+        i_p_tob_m_wealth2_age1519 = self.parameters['init_p_tob_m_wealth2_age1519']
+        i_p_not_tob_m_wealth2_age1519 = 1 - i_p_tob_m_wealth2_age1519
+        age1519_m_wealth2_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 2) &
+                                           (df.sex == 'M')]
+        df.loc[age1519_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth2_index),
+                                                                     p=[i_p_tob_m_wealth2_age1519,
+                                                                        i_p_not_tob_m_wealth2_age1519])
+        i_p_tob_m_wealth2_age2039 = self.parameters['init_p_tob_m_wealth2_age2039']
+        i_p_not_tob_m_wealth2_age2039 = 1 - i_p_tob_m_wealth2_age2039
+        age2039_m_wealth2_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 2) &
+                                           (df.sex == 'M')]
+        df.loc[age2039_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth2_index),
+                                                                     p=[i_p_tob_m_wealth2_age2039,
+                                                                         i_p_not_tob_m_wealth2_age2039])
+        i_p_tob_m_wealth2_agege40 = self.parameters['init_p_tob_m_wealth2_agege40']
+        i_p_not_tob_m_wealth2_agege40 = 1 - i_p_tob_m_wealth2_agege40
+        agege40_m_wealth2_index = df.index[(age.years >= 40) & (df.li_wealth == 2) &
+                                           (df.sex == 'M')]
+        df.loc[agege40_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth2_index),
+                                                                     p=[i_p_tob_m_wealth2_agege40,
+                                                                         i_p_not_tob_m_wealth2_agege40])
+
+        i_p_tob_m_wealth3_age1519 = self.parameters['init_p_tob_m_wealth3_age1519']
+        i_p_not_tob_m_wealth3_age1519 = 1 - i_p_tob_m_wealth3_age1519
+        age1519_m_wealth3_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 3) &
+                                           (df.sex == 'M')]
+        df.loc[age1519_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth3_index),
+                                                                     p=[i_p_tob_m_wealth3_age1519,
+                                                                        i_p_not_tob_m_wealth3_age1519])
+        i_p_tob_m_wealth3_age2039 = self.parameters['init_p_tob_m_wealth3_age2039']
+        i_p_not_tob_m_wealth3_age2039 = 1 - i_p_tob_m_wealth3_age2039
+        age2039_m_wealth3_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 3) &
+                                           (df.sex == 'M')]
+        df.loc[age2039_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth3_index),
+                                                                     p=[i_p_tob_m_wealth3_age2039,
+                                                                         i_p_not_tob_m_wealth3_age2039])
+        i_p_tob_m_wealth3_agege40 = self.parameters['init_p_tob_m_wealth3_agege40']
+        i_p_not_tob_m_wealth3_agege40 = 1 - i_p_tob_m_wealth3_agege40
+        agege40_m_wealth3_index = df.index[(age.years >= 40) & (df.li_wealth == 3) &
+                                           (df.sex == 'M')]
+        df.loc[agege40_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth3_index),
+                                                                     p=[i_p_tob_m_wealth3_agege40,
+                                                                         i_p_not_tob_m_wealth3_agege40])
+        
+        i_p_tob_m_wealth4_age1519 = self.parameters['init_p_tob_m_wealth4_age1519']
+        i_p_not_tob_m_wealth4_age1519 = 1 - i_p_tob_m_wealth4_age1519
+        age1519_m_wealth4_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 4) &
+                                           (df.sex == 'M')]
+        df.loc[age1519_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth4_index),
+                                                                     p=[i_p_tob_m_wealth4_age1519,
+                                                                        i_p_not_tob_m_wealth4_age1519])
+        i_p_tob_m_wealth4_age2039 = self.parameters['init_p_tob_m_wealth4_age2039']
+        i_p_not_tob_m_wealth4_age2039 = 1 - i_p_tob_m_wealth4_age2039
+        age2039_m_wealth4_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 4) &
+                                           (df.sex == 'M')]
+        df.loc[age2039_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth4_index),
+                                                                     p=[i_p_tob_m_wealth4_age2039,
+                                                                         i_p_not_tob_m_wealth4_age2039])
+        i_p_tob_m_wealth4_agege40 = self.parameters['init_p_tob_m_wealth4_agege40']
+        i_p_not_tob_m_wealth4_agege40 = 1 - i_p_tob_m_wealth4_agege40
+        agege40_m_wealth4_index = df.index[(age.years >= 40) & (df.li_wealth == 4) &
+                                           (df.sex == 'M')]
+        df.loc[agege40_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth4_index),
+                                                                     p=[i_p_tob_m_wealth4_agege40,
+                                                                         i_p_not_tob_m_wealth4_agege40])
+
+        i_p_tob_m_wealth5_age1519 = self.parameters['init_p_tob_m_wealth5_age1519']
+        i_p_not_tob_m_wealth5_age1519 = 1 - i_p_tob_m_wealth5_age1519
+        age1519_m_wealth5_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 5) &
+                                           (df.sex == 'M')]
+        df.loc[age1519_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth5_index),
+                                                                     p=[i_p_tob_m_wealth5_age1519,
+                                                                        i_p_not_tob_m_wealth5_age1519])
+        i_p_tob_m_wealth5_age2039 = self.parameters['init_p_tob_m_wealth5_age2039']
+        i_p_not_tob_m_wealth5_age2039 = 1 - i_p_tob_m_wealth5_age2039
+        age2039_m_wealth5_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 5) &
+                                           (df.sex == 'M')]
+        df.loc[age2039_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth5_index),
+                                                                     p=[i_p_tob_m_wealth5_age2039,
+                                                                         i_p_not_tob_m_wealth5_age2039])
+        i_p_tob_m_wealth5_agege40 = self.parameters['init_p_tob_m_wealth5_agege40']
+        i_p_not_tob_m_wealth5_agege40 = 1 - i_p_tob_m_wealth5_agege40
+        agege40_m_wealth5_index = df.index[(age.years >= 40) & (df.li_wealth == 5) &
+                                           (df.sex == 'M')]
+        df.loc[agege40_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth5_index),
+                                                                     p=[i_p_tob_m_wealth5_agege40,
+                                                                        i_p_not_tob_m_wealth5_agege40])
+
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         This method is called just before the main simulation loop begins, and after all
@@ -218,7 +368,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_overwt_f = module.parameters['rr_overwt_f']
         self.r_low_ex = module.parameters['r_low_ex']
         self.r_not_low_ex = module.parameters['r_not_low_ex']
-
+        self.r_tob = module.parameters['r_tob']
+        self.r_not_tob = module.parameters['r_not_tob']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -301,6 +452,25 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_low_ex.sum():
             not_low_ex_idx = currently_low_ex[now_not_low_ex]
             df.loc[not_low_ex_idx, 'li_low_ex'] = False
+
+        # transition between not tob and tob (rates are currently zero
+        currently_not_tob = df.index[~df.li_tob & df.is_alive]
+        currently_tob = df.index[df.li_tob & df.is_alive]
+
+        ri_tob = self.r_tob
+
+        now_tob = np.random.choice([True, False],
+                                   size=len(currently_not_tob),
+                                   p=[ri_tob, 1 - ri_tob])
+        if now_tob.sum():
+            tob_idx = currently_not_tob[now_tob]
+            df.loc[tob_idx, 'li_tob'] = True
+
+        now_not_tob = np.random.choice([True, False], size=len(currently_tob),
+                                       p=[self.r_not_tob, 1 - self.r_not_tob])
+        if now_not_tob.sum():
+            not_tob_idx = currently_tob[now_not_tob]
+            df.loc[not_tob_idx, 'li_tob'] = False
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
