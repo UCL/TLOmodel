@@ -8,8 +8,8 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
-# file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'
-file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
+file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'  # laptop
+# file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
 
 tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
 Active_tb_prop, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_prob']
