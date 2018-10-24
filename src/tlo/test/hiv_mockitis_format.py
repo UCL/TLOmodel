@@ -10,7 +10,9 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 
 # read in data files #
 # use function read.parameters in class HIV to do this?
-file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'
+# file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx' # for desktop
+file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
+
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HIV_prev, HIV_death, HIV_inc, CD4_base, time_CD4, initial_state_probs, \
 age_distr = method_hiv_data['prevalence2018'], method_hiv_data['deaths2009_2021'], \
@@ -61,12 +63,9 @@ class hiv_mock(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'has_HIV': Property(Types.BOOL, 'HIV status'),
-        'date_HIV_infection': Property(Types.DATE, 'Date acquired HIV infection'),
-        'date_AIDS_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
-        'on_ART': Property(Types.BOOL, 'Currently on ART'),
-        'date_ART_start': Property(Types.DATE, 'Date ART started'),
-        'ART_mortality': Property(Types.REAL, 'Mortality rates whilst on ART'),
+        'has_hiv': Property(Types.BOOL, 'HIV status'),
+        'date_hiv_infection': Property(Types.DATE, 'Date acquired HIV infection'),
+        'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
         'CD4_state': Property(Types.CATEGORICAL, 'CD4 state: >500; 350-500; 200-350; 0-200',
@@ -108,9 +107,9 @@ class hiv_mock(Module):
         df = population.props
         age = population.age
 
-        df['has_HIV'] = False
-        df['date_HIV_infection'] = pd.NaT
-        df['date_AIDS_death'] = pd.NaT
+        df['has_hiv'] = False
+        df['date_hiv_infection'] = pd.NaT
+        df['date_aids_death'] = pd.NaT
         df['sexual_risk_group'] = 1
 
         print('hello')
@@ -118,7 +117,7 @@ class hiv_mock(Module):
         # randomly selected some individuals as infected
         initial_infected = 0.3
         initial_uninfected = 1 - initial_infected
-        df['has_HIV'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
+        df['has_hiv'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
 
         # assign high/low sexual risk
         # male_sample = df[(df.sex == 'M') & (age > 15)].sample(
@@ -201,7 +200,18 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        pass
+        df = population.props
 
+        # 1. get (and hold) index of currently uninfected individuals
+        currently_uninfected = df.index[~df.has_hiv]
 
+        # 2. handle new infections
+        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
+                                        p=[0.1, 0.9])
+        # if any are infected
+        if now_infected.sum():
+            infected_idx = currently_uninfected[now_infected]
+
+            df.loc[infected_idx, 'has_hiv'] = True
+            df.loc[infected_idx, 'date_hiv_infection'] = self.sim.date
 
