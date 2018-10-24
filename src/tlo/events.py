@@ -1,6 +1,6 @@
 """Support for creating different kinds of events."""
 
-from tlo import DateOffset
+from tlo import Date, DateOffset
 
 
 class Event:
@@ -38,7 +38,7 @@ class Event:
 class RegularEvent(Event):
     """An event that automatically reschedules itself at a fixed frequency."""
 
-    def __init__(self, module, *, frequency):
+    def __init__(self, module, *, frequency, end_date=None):
         """Create a new regular event.
 
         :param module: the module that created this event
@@ -49,10 +49,13 @@ class RegularEvent(Event):
         super().__init__(module)
         assert isinstance(frequency, DateOffset)
         self.frequency = frequency
+        self.end_date = end_date
 
     def post_apply_hook(self):
         """Schedule the next occurrence of this event."""
-        self.sim.schedule_event(self, self.sim.date + self.frequency)
+        next_apply_date = self.sim.date + self.frequency
+        if not self.end_date or next_apply_date <= self.end_date:
+            self.sim.schedule_event(self, next_apply_date)
 
 
 class PopulationScopeEventMixin:
