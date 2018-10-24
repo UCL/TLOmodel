@@ -27,6 +27,8 @@ class Lifestyle(Module):
         'r_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from not_overwt to overwt if male'),
         'r_not_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from overwt to not overwt'),
         'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overwt if female rather than male'),
+        'r_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from not low ex to low ex'),
+        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -43,6 +45,7 @@ class Lifestyle(Module):
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
+        'li_low_ex': Property(Types.BOOL, 'currently low ex')
     }
 
     def __init__(self):
@@ -57,9 +60,11 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.001
-        self.parameters['r_not_overwt'] = 0.001
+        self.parameters['r_overwt'] = 0.000
+        self.parameters['r_not_overwt'] = 0.000
         self.parameters['rr_overwt_f'] = 1
+        self.parameters['r_low_ex'] = 0.000
+        self.parameters['r_not_low_ex'] = 0.000
         self.parameters['init_p_urban'] = 0.17
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
@@ -68,10 +73,10 @@ class Lifestyle(Module):
         self.parameters['init_p_overwt_f_urban_agege15'] = 0.32
         self.parameters['init_p_overwt_m_rural_agege15'] = 0.27
         self.parameters['init_p_overwt_m_urban_agege15'] = 0.46
-
-
-
-
+        self.parameters['init_p_low_ex_f_rural_agege15'] = 0.07
+        self.parameters['init_p_low_ex_f_urban_agege15'] = 0.18
+        self.parameters['init_p_low_ex_m_rural_agege15'] = 0.11
+        self.parameters['init_p_low_ex_m_urban_agege15'] = 0.32
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -85,10 +90,14 @@ class Lifestyle(Module):
         df['li_date_trans_to_urban'] = pd.NaT
         df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
         df['li_overwt'] = False  # default: all not overwt
+        df['li_low_ex'] = False  # default all not low ex
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
 
+        agelt15_index = df.index[age.years < 15]
+
+        # urban
         # randomly selected some individuals as urban
         initial_urban = self.parameters['init_p_urban']
         initial_rural = 1 - initial_urban
@@ -107,6 +116,7 @@ class Lifestyle(Module):
                                                             size=len(rural_index),
                                                             p=self.parameters['init_p_wealth_rural'])
 
+        # overwt;
         i_p_overwt_m_rural_agege15 = self.parameters['init_p_overwt_m_rural_agege15']
         i_p_not_overwt_m_rural_agege15 = 1 - i_p_overwt_m_rural_agege15
         i_p_overwt_m_urban_agege15 = self.parameters['init_p_overwt_m_urban_agege15']
@@ -115,8 +125,6 @@ class Lifestyle(Module):
         i_p_not_overwt_f_rural_agege15 = 1 - i_p_overwt_f_rural_agege15
         i_p_overwt_f_urban_agege15 = self.parameters['init_p_overwt_f_urban_agege15']
         i_p_not_overwt_f_urban_agege15 = 1 - i_p_overwt_f_urban_agege15
-
-        agelt15_index = df.index[age.years < 15]
 
         agege15_m_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'M')]
         agege15_f_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'F')]
@@ -137,6 +145,36 @@ class Lifestyle(Module):
         df.loc[agege15_f_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
                                                                       p=[i_p_overwt_f_urban_agege15,
                                                                          i_p_not_overwt_f_urban_agege15])
+
+        # low_ex;
+        i_p_low_ex_m_rural_agege15 = self.parameters['init_p_low_ex_m_rural_agege15']
+        i_p_not_low_ex_m_rural_agege15 = 1 - i_p_low_ex_m_rural_agege15
+        i_p_low_ex_m_urban_agege15 = self.parameters['init_p_low_ex_m_urban_agege15']
+        i_p_not_low_ex_m_urban_agege15 = 1 - i_p_low_ex_m_urban_agege15
+        i_p_low_ex_f_rural_agege15 = self.parameters['init_p_low_ex_f_rural_agege15']
+        i_p_not_low_ex_f_rural_agege15 = 1 - i_p_low_ex_f_rural_agege15
+        i_p_low_ex_f_urban_agege15 = self.parameters['init_p_low_ex_f_urban_agege15']
+        i_p_not_low_ex_f_urban_agege15 = 1 - i_p_low_ex_f_urban_agege15
+
+        agege15_m_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'M')]
+        agege15_f_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'F')]
+        agege15_m_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'M')]
+        agege15_f_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'F')]
+
+        df.loc[agelt15_index, 'li_low_ex'] = False
+
+        df.loc[agege15_m_rural_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_m_rural_index),
+                                                                      p=[i_p_low_ex_m_rural_agege15,
+                                                                         i_p_not_low_ex_m_rural_agege15])
+        df.loc[agege15_m_urban_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
+                                                                      p=[i_p_low_ex_m_urban_agege15,
+                                                                         i_p_not_low_ex_m_urban_agege15])
+        df.loc[agege15_f_rural_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
+                                                                      p=[i_p_low_ex_f_rural_agege15,
+                                                                         i_p_not_low_ex_f_rural_agege15])
+        df.loc[agege15_f_urban_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
+                                                                      p=[i_p_low_ex_f_urban_agege15,
+                                                                         i_p_not_low_ex_f_urban_agege15])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -178,6 +216,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_overwt = module.parameters['r_overwt']
         self.r_not_overwt = module.parameters['r_not_overwt']
         self.rr_overwt_f = module.parameters['rr_overwt_f']
+        self.r_low_ex = module.parameters['r_low_ex']
+        self.r_not_low_ex = module.parameters['r_not_low_ex']
+
 
     def apply(self, population):
         """Apply this event to the population.
@@ -241,6 +282,25 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_overwt.sum():
             not_overwt_idx = currently_overwt[now_not_overwt]
             df.loc[not_overwt_idx, 'li_overwt'] = False
+
+        # transition between low ex and not low ex (rates are currently zero
+        currently_not_low_ex = df.index[~df.li_low_ex & df.is_alive]
+        currently_low_ex = df.index[df.li_low_ex & df.is_alive]
+
+        ri_low_ex = self.r_low_ex
+
+        now_low_ex = np.random.choice([True, False],
+                                      size=len(currently_not_low_ex),
+                                      p=[ri_low_ex, 1 - ri_low_ex])
+        if now_low_ex.sum():
+            low_ex_idx = currently_not_low_ex[now_low_ex]
+            df.loc[low_ex_idx, 'li_low_ex'] = True
+
+        now_not_low_ex = np.random.choice([True, False], size=len(currently_low_ex),
+                                          p=[self.r_not_low_ex, 1 - self.r_not_low_ex])
+        if now_not_low_ex.sum():
+            not_low_ex_idx = currently_low_ex[now_not_low_ex]
+            df.loc[not_low_ex_idx, 'li_low_ex'] = False
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
