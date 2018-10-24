@@ -31,6 +31,8 @@ class Lifestyle(Module):
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
         'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob'),
         'r_not_tob': Parameter(Types.REAL, 'probability per 3 mths of change from tob to not tob'),
+        'r_excess_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
+        'r_not_excess_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -53,7 +55,11 @@ class Lifestyle(Module):
         'init_p_tob_m_wealth5_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age1519'),
         'init_p_tob_m_wealth5_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age2039'),
         'init_p_tob_m_wealth5_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 agege40'),
+        'init_p_ex_alc_m': Parameter(Types.LIST, 'proportion ex alc at baseline in males'),
+        'init_p_ex_alc_f': Parameter(Types.LIST, 'proportion ex alc at baseline in femaies'),
+        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
     }
+
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
@@ -63,7 +69,8 @@ class Lifestyle(Module):
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
         'li_low_ex': Property(Types.BOOL, 'currently low ex'),
-        'li_tob': Property(Types.BOOL, 'current using tobacco')
+        'li_tob': Property(Types.BOOL, 'current using tobacco'),
+        'li_ex_alc': Property(Types.BOOL, 'current excess alcohol')
     }
 
     def __init__(self):
@@ -85,6 +92,9 @@ class Lifestyle(Module):
         self.parameters['r_not_low_ex'] = 0.000
         self.parameters['r_tob'] = 0.000
         self.parameters['r_not_tob'] = 0.000
+        self.parameters['r_ex_alc'] = 0.000
+        self.parameters['r_not_ex_alc'] = 0.000
+        self.parameters['rr_ex_alc_f'] = 1
         self.parameters['init_p_urban'] = 0.17
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
@@ -112,6 +122,8 @@ class Lifestyle(Module):
         self.parameters['init_p_tob_m_wealth5_age1519'] = 0.05
         self.parameters['init_p_tob_m_wealth5_age2039'] = 0.2
         self.parameters['init_p_tob_m_wealth5_agege40'] = 0.3
+        self.parameters['init_p_ex_alc_m'] = 0.15
+        self.parameters['init_p_ex_alc_f'] = 0.01
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -127,6 +139,7 @@ class Lifestyle(Module):
         df['li_overwt'] = False  # default: all not overwt
         df['li_low_ex'] = False  # default all not low ex
         df['li_tob'] = False  # default all not tob
+        df['li_ex_alc'] = False  # default all not ex alc
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
@@ -324,7 +337,21 @@ class Lifestyle(Module):
         df.loc[agege40_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth5_index),
                                                                      p=[i_p_tob_m_wealth5_agege40,
                                                                         i_p_not_tob_m_wealth5_agege40])
+        # ex alc;
+        df.loc[agelt15_index, 'li_ex_alc'] = False
 
+        i_p_ex_alc_m = self.parameters['init_p_ex_alc_m']
+        i_p_not_ex_alc_m = 1 - i_p_ex_alc_m
+        i_p_ex_alc_f = self.parameters['init_p_ex_alc_f']
+        i_p_not_ex_alc_f = 1 - i_p_ex_alc_f
+
+        m_agege15_index = df.index[(age.years >= 15) & (df.sex == 'M')]
+        f_agege15_index = df.index[(age.years >= 15) & (df.sex == 'F')]
+
+        df.loc[m_agege15_index, 'li_ex_alc'] = np.random.choice([True, False], size=len(m_agege15_index),
+                                                                p=[i_p_ex_alc_m, i_p_not_ex_alc_m])
+        df.loc[f_agege15_index, 'li_ex_alc'] = np.random.choice([True, False], size=len(f_agege15_index),
+                                                                p=[i_p_ex_alc_f, i_p_not_ex_alc_f])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -370,6 +397,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_not_low_ex = module.parameters['r_not_low_ex']
         self.r_tob = module.parameters['r_tob']
         self.r_not_tob = module.parameters['r_not_tob']
+        self.r_ex_alc = module.parameters['r_ex_alc']
+        self.r_not_ex_alc = module.parameters['r_not_ex_alc']
+        self.rr_ex_alc_f = module.parameters['rr_ex_alc_f']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -471,6 +501,36 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_tob.sum():
             not_tob_idx = currently_tob[now_not_tob]
             df.loc[not_tob_idx, 'li_tob'] = False
+
+        # transition to ex alc depends on sex (rates are currently zero)
+
+        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F')]
+        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M')]
+        currently_ex_alc = df.index[df.li_ex_alc & df.is_alive]
+
+        ri_ex_alc_f = self.r_ex_alc*self.rr_ex_alc_f
+        ri_ex_alc_m = self.r_ex_alc
+
+        now_ex_alc_f = np.random.choice([True, False],
+                                        size=len(currently_not_ex_alc_f),
+                                        p=[ri_ex_alc_f, 1 - ri_ex_alc_f])
+        if now_ex_alc_f.sum():
+            ex_alc_f_idx = currently_not_ex_alc_f[now_ex_alc_f]
+            df.loc[ex_alc_f_idx, 'li_ex_alc'] = True
+
+        now_ex_alc_m = np.random.choice([True, False],
+                                        size=len(currently_not_ex_alc_m),
+                                        p=[ri_ex_alc_m, 1 - ri_ex_alc_m])
+        if now_ex_alc_m.sum():
+            ex_alc_m_idx = currently_not_ex_alc_m[now_ex_alc_m]
+            df.loc[ex_alc_m_idx, 'li_ex_alc'] = True
+
+        now_not_ex_alc = np.random.choice([True, False], size=len(currently_ex_alc),
+                                          p=[self.r_not_ex_alc, 1 - self.r_not_ex_alc])
+        if now_not_ex_alc.sum():
+            not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
+            df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
+
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
