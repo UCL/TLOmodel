@@ -165,178 +165,97 @@ class Lifestyle(Module):
                                                             size=len(rural_index),
                                                             p=self.parameters['init_p_wealth_rural'])
 
+        # get indices of all individuals over 15 years
+        gte_15 = df.index[age.years >= 15]
+
         # overwt;
-        i_p_overwt_m_rural_agege15 = self.parameters['init_p_overwt_m_rural_agege15']
-        i_p_not_overwt_m_rural_agege15 = 1 - i_p_overwt_m_rural_agege15
-        i_p_overwt_m_urban_agege15 = self.parameters['init_p_overwt_m_urban_agege15']
-        i_p_not_overwt_m_urban_agege15 = 1 - i_p_overwt_m_urban_agege15
-        i_p_overwt_f_rural_agege15 = self.parameters['init_p_overwt_f_rural_agege15']
-        i_p_not_overwt_f_rural_agege15 = 1 - i_p_overwt_f_rural_agege15
-        i_p_overwt_f_urban_agege15 = self.parameters['init_p_overwt_f_urban_agege15']
-        i_p_not_overwt_f_urban_agege15 = 1 - i_p_overwt_f_urban_agege15
+        overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
+                                               ('M', False, 0.27),
+                                               ('F', True, 0.32),
+                                               ('F', False, 0.17) ],
+                                         columns=['sex', 'is_urban', 'p_ow'])
 
-        agege15_m_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'M')]
-        agege15_f_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'F')]
-        agege15_m_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'M')]
-        agege15_f_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'F')]
+        overweight_probs = df.loc[gte_15, ['sex', 'li_urban']].merge(overweight_lookup,
+                                                                     left_on=['sex', 'li_urban'],
+                                                                     right_on=['sex', 'is_urban'],
+                                                                     how='left')['p_ow']
 
-        df.loc[agelt15_index, 'li_overwt'] = False
-
-        df.loc[agege15_m_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_rural_index),
-                                                                      p=[i_p_overwt_m_rural_agege15,
-                                                                         i_p_not_overwt_m_rural_agege15])
-        df.loc[agege15_m_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
-                                                                      p=[i_p_overwt_m_urban_agege15,
-                                                                         i_p_not_overwt_m_urban_agege15])
-        df.loc[agege15_f_rural_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
-                                                                      p=[i_p_overwt_f_rural_agege15,
-                                                                         i_p_not_overwt_f_rural_agege15])
-        df.loc[agege15_f_urban_index, 'li_overwt'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
-                                                                      p=[i_p_overwt_f_urban_agege15,
-                                                                         i_p_not_overwt_f_urban_agege15])
+        random_draw = self.rng.random_sample(size=len(gte_15))
+        df.loc[gte_15, 'li_overwt'] = (overweight_probs.values < random_draw)
 
         # low_ex;
-        i_p_low_ex_m_rural_agege15 = self.parameters['init_p_low_ex_m_rural_agege15']
-        i_p_not_low_ex_m_rural_agege15 = 1 - i_p_low_ex_m_rural_agege15
-        i_p_low_ex_m_urban_agege15 = self.parameters['init_p_low_ex_m_urban_agege15']
-        i_p_not_low_ex_m_urban_agege15 = 1 - i_p_low_ex_m_urban_agege15
-        i_p_low_ex_f_rural_agege15 = self.parameters['init_p_low_ex_f_rural_agege15']
-        i_p_not_low_ex_f_rural_agege15 = 1 - i_p_low_ex_f_rural_agege15
-        i_p_low_ex_f_urban_agege15 = self.parameters['init_p_low_ex_f_urban_agege15']
-        i_p_not_low_ex_f_urban_agege15 = 1 - i_p_low_ex_f_urban_agege15
+        low_ex_lookup = pd.DataFrame(data=[('M', True, 0.32),
+                                           ('M', False, 0.11),
+                                           ('F', True, 0.18),
+                                           ('F', False, 0.07)],
+                                     columns=['sex', 'is_urban', 'p_low_ex'])
 
-        agege15_m_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'M')]
-        agege15_f_rural_index = df.index[(age.years >= 15) & (~df.li_urban) & (df.sex == 'F')]
-        agege15_m_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'M')]
-        agege15_f_urban_index = df.index[(age.years >= 15) & df.li_urban & (df.sex == 'F')]
+        low_ex_probs = df.loc[gte_15, ['sex', 'li_urban']].merge(low_ex_lookup,
+                                                                 left_on=['sex', 'li_urban'],
+                                                                 right_on=['sex', 'is_urban'],
+                                                                 how='left')['p_low_ex']
 
-        df.loc[agelt15_index, 'li_low_ex'] = False
-
-        df.loc[agege15_m_rural_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_m_rural_index),
-                                                                      p=[i_p_low_ex_m_rural_agege15,
-                                                                         i_p_not_low_ex_m_rural_agege15])
-        df.loc[agege15_m_urban_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_m_urban_index),
-                                                                      p=[i_p_low_ex_m_urban_agege15,
-                                                                         i_p_not_low_ex_m_urban_agege15])
-        df.loc[agege15_f_rural_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_f_rural_index),
-                                                                      p=[i_p_low_ex_f_rural_agege15,
-                                                                         i_p_not_low_ex_f_rural_agege15])
-        df.loc[agege15_f_urban_index, 'li_low_ex'] = np.random.choice([True, False], size=len(agege15_f_urban_index),
-                                                                      p=[i_p_low_ex_f_urban_agege15,
-                                                                         i_p_not_low_ex_f_urban_agege15])
+        random_draw = self.rng.random_sample(size=len(gte_15))
+        df.loc[gte_15, 'li_low_ex'] = (low_ex_probs.values < random_draw)
 
         # tob ;
-        df.loc[agelt15_index, 'li_tob'] = False
+        tob_lookup = pd.DataFrame([('M', '15-19', 0.01),
+                                   ('M', '20-24', 0.04),
+                                   ('M', '25-29', 0.04),
+                                   ('M', '30-34', 0.04),
+                                   ('M', '35-39', 0.04),
+                                   ('M', '40-44', 0.06),
+                                   ('M', '45-49', 0.06),
+                                   ('M', '50-54', 0.06),
+                                   ('M', '55-59', 0.06),
+                                   ('M', '60-64', 0.06),
+                                   ('M', '65-69', 0.06),
+                                   ('M', '70-74', 0.06),
+                                   ('M', '75-79', 0.06),
+                                   ('M', '80-84', 0.06),
+                                   ('M', '85-89', 0.06),
+                                   ('M', '90-94', 0.06),
+                                   ('M', '95-99', 0.06),
+                                   ('M', '100+',  0.06),
 
-        i_p_tob_m_wealth1_age1519 = self.parameters['init_p_tob_m_wealth1_age1519']
-        i_p_not_tob_m_wealth1_age1519 = 1 - i_p_tob_m_wealth1_age1519
-        age1519_m_wealth1_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 1) &
-                                           (df.sex == 'M')]
-        df.loc[age1519_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth1_index),
-                                                                     p=[i_p_tob_m_wealth1_age1519,
-                                                                        i_p_not_tob_m_wealth1_age1519])
-        i_p_tob_m_wealth1_age2039 = self.parameters['init_p_tob_m_wealth1_age2039']
-        i_p_not_tob_m_wealth1_age2039 = 1 - i_p_tob_m_wealth1_age2039
-        age2039_m_wealth1_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 1) &
-                                           (df.sex == 'M')]
-        df.loc[age2039_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth1_index),
-                                                                     p=[i_p_tob_m_wealth1_age2039,
-                                                                         i_p_not_tob_m_wealth1_age2039])
-        i_p_tob_m_wealth1_agege40 = self.parameters['init_p_tob_m_wealth1_agege40']
-        i_p_not_tob_m_wealth1_agege40 = 1 - i_p_tob_m_wealth1_agege40
-        agege40_m_wealth1_index = df.index[(age.years >= 40) & (df.li_wealth == 1) &
-                                           (df.sex == 'M')]
-        df.loc[agege40_m_wealth1_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth1_index),
-                                                                     p=[i_p_tob_m_wealth1_agege40,
-                                                                         i_p_not_tob_m_wealth1_agege40])
+                                   ('F', '15-19', 0.002),
+                                   ('F', '20-24', 0.002),
+                                   ('F', '25-29', 0.002),
+                                   ('F', '30-34', 0.002),
+                                   ('F', '35-39', 0.002),
+                                   ('F', '40-44', 0.002),
+                                   ('F', '45-49', 0.002),
+                                   ('F', '50-54', 0.002),
+                                   ('F', '55-59', 0.002),
+                                   ('F', '60-64', 0.002),
+                                   ('F', '65-69', 0.002),
+                                   ('F', '70-74', 0.002),
+                                   ('F', '75-79', 0.002),
+                                   ('F', '80-84', 0.002),
+                                   ('F', '85-89', 0.002),
+                                   ('F', '90-94', 0.002),
+                                   ('F', '95-99', 0.002),
+                                   ('F', '100+',  0.002)],
+                                  columns=['sex', 'age_range', 'p_tob'])
 
-        i_p_tob_m_wealth2_age1519 = self.parameters['init_p_tob_m_wealth2_age1519']
-        i_p_not_tob_m_wealth2_age1519 = 1 - i_p_tob_m_wealth2_age1519
-        age1519_m_wealth2_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 2) &
-                                           (df.sex == 'M')]
-        df.loc[age1519_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth2_index),
-                                                                     p=[i_p_tob_m_wealth2_age1519,
-                                                                        i_p_not_tob_m_wealth2_age1519])
-        i_p_tob_m_wealth2_age2039 = self.parameters['init_p_tob_m_wealth2_age2039']
-        i_p_not_tob_m_wealth2_age2039 = 1 - i_p_tob_m_wealth2_age2039
-        age2039_m_wealth2_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 2) &
-                                           (df.sex == 'M')]
-        df.loc[age2039_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth2_index),
-                                                                     p=[i_p_tob_m_wealth2_age2039,
-                                                                         i_p_not_tob_m_wealth2_age2039])
-        i_p_tob_m_wealth2_agege40 = self.parameters['init_p_tob_m_wealth2_agege40']
-        i_p_not_tob_m_wealth2_agege40 = 1 - i_p_tob_m_wealth2_agege40
-        agege40_m_wealth2_index = df.index[(age.years >= 40) & (df.li_wealth == 2) &
-                                           (df.sex == 'M')]
-        df.loc[agege40_m_wealth2_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth2_index),
-                                                                     p=[i_p_tob_m_wealth2_agege40,
-                                                                         i_p_not_tob_m_wealth2_agege40])
+        # join the population dataframe with age information (we need them both together)
+        df_with_age = df.loc[gte_15, ['sex', 'li_wealth']].merge(age, left_index=True, right_index=True, how='inner')
 
-        i_p_tob_m_wealth3_age1519 = self.parameters['init_p_tob_m_wealth3_age1519']
-        i_p_not_tob_m_wealth3_age1519 = 1 - i_p_tob_m_wealth3_age1519
-        age1519_m_wealth3_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 3) &
-                                           (df.sex == 'M')]
-        df.loc[age1519_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth3_index),
-                                                                     p=[i_p_tob_m_wealth3_age1519,
-                                                                        i_p_not_tob_m_wealth3_age1519])
-        i_p_tob_m_wealth3_age2039 = self.parameters['init_p_tob_m_wealth3_age2039']
-        i_p_not_tob_m_wealth3_age2039 = 1 - i_p_tob_m_wealth3_age2039
-        age2039_m_wealth3_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 3) &
-                                           (df.sex == 'M')]
-        df.loc[age2039_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth3_index),
-                                                                     p=[i_p_tob_m_wealth3_age2039,
-                                                                         i_p_not_tob_m_wealth3_age2039])
-        i_p_tob_m_wealth3_agege40 = self.parameters['init_p_tob_m_wealth3_agege40']
-        i_p_not_tob_m_wealth3_agege40 = 1 - i_p_tob_m_wealth3_agege40
-        agege40_m_wealth3_index = df.index[(age.years >= 40) & (df.li_wealth == 3) &
-                                           (df.sex == 'M')]
-        df.loc[agege40_m_wealth3_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth3_index),
-                                                                     p=[i_p_tob_m_wealth3_agege40,
-                                                                         i_p_not_tob_m_wealth3_agege40])
-        
-        i_p_tob_m_wealth4_age1519 = self.parameters['init_p_tob_m_wealth4_age1519']
-        i_p_not_tob_m_wealth4_age1519 = 1 - i_p_tob_m_wealth4_age1519
-        age1519_m_wealth4_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 4) &
-                                           (df.sex == 'M')]
-        df.loc[age1519_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth4_index),
-                                                                     p=[i_p_tob_m_wealth4_age1519,
-                                                                        i_p_not_tob_m_wealth4_age1519])
-        i_p_tob_m_wealth4_age2039 = self.parameters['init_p_tob_m_wealth4_age2039']
-        i_p_not_tob_m_wealth4_age2039 = 1 - i_p_tob_m_wealth4_age2039
-        age2039_m_wealth4_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 4) &
-                                           (df.sex == 'M')]
-        df.loc[age2039_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth4_index),
-                                                                     p=[i_p_tob_m_wealth4_age2039,
-                                                                         i_p_not_tob_m_wealth4_age2039])
-        i_p_tob_m_wealth4_agege40 = self.parameters['init_p_tob_m_wealth4_agege40']
-        i_p_not_tob_m_wealth4_agege40 = 1 - i_p_tob_m_wealth4_agege40
-        agege40_m_wealth4_index = df.index[(age.years >= 40) & (df.li_wealth == 4) &
-                                           (df.sex == 'M')]
-        df.loc[agege40_m_wealth4_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth4_index),
-                                                                     p=[i_p_tob_m_wealth4_agege40,
-                                                                         i_p_not_tob_m_wealth4_agege40])
+        # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
+        tob_probs = df_with_age.merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'], how='left')
 
-        i_p_tob_m_wealth5_age1519 = self.parameters['init_p_tob_m_wealth5_age1519']
-        i_p_not_tob_m_wealth5_age1519 = 1 - i_p_tob_m_wealth5_age1519
-        age1519_m_wealth5_index = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 5) &
-                                           (df.sex == 'M')]
-        df.loc[age1519_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(age1519_m_wealth5_index),
-                                                                     p=[i_p_tob_m_wealth5_age1519,
-                                                                        i_p_not_tob_m_wealth5_age1519])
-        i_p_tob_m_wealth5_age2039 = self.parameters['init_p_tob_m_wealth5_age2039']
-        i_p_not_tob_m_wealth5_age2039 = 1 - i_p_tob_m_wealth5_age2039
-        age2039_m_wealth5_index = df.index[(age.years >= 20) & (age.years < 40) & (df.li_wealth == 5) &
-                                           (df.sex == 'M')]
-        df.loc[age2039_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(age2039_m_wealth5_index),
-                                                                     p=[i_p_tob_m_wealth5_age2039,
-                                                                         i_p_not_tob_m_wealth5_age2039])
-        i_p_tob_m_wealth5_agege40 = self.parameters['init_p_tob_m_wealth5_agege40']
-        i_p_not_tob_m_wealth5_agege40 = 1 - i_p_tob_m_wealth5_agege40
-        agege40_m_wealth5_index = df.index[(age.years >= 40) & (df.li_wealth == 5) &
-                                           (df.sex == 'M')]
-        df.loc[agege40_m_wealth5_index, 'li_tob'] = np.random.choice([True, False], size=len(agege40_m_wealth5_index),
-                                                                     p=[i_p_tob_m_wealth5_agege40,
-                                                                        i_p_not_tob_m_wealth5_agege40])
+        # each individual has a baseline probability
+        # multiply this probability by the wealth level. wealth is a category, so convert to integer
+        tob_probs = tob_probs['li_wealth'].astype(int) * tob_probs['p_tob']
+
+        # we now have the probability of tobacco use for each individual where age >= 15
+        # draw a random number between 0 and 1 for all of them
+        random_draw = self.rng.random_sample(size=len(gte_15))
+
+        # decide on tobacco use based on the individual probability is greater than random draw
+        # this is a list of True/False. assign to li_tob
+        df.loc[gte_15, 'li_tob'] = (tob_probs.values > random_draw)
+
         # ex alc;
         df.loc[agelt15_index, 'li_ex_alc'] = False
 
