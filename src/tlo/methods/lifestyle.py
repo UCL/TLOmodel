@@ -240,9 +240,13 @@ class Lifestyle(Module):
 
         # join the population dataframe with age information (we need them both together)
         df_with_age = df.loc[gte_15, ['sex', 'li_wealth']].merge(age, left_index=True, right_index=True, how='inner')
+        assert len(df_with_age) == len(gte_15)  # check we have the same number of individuals after the merge
 
         # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
         tob_probs = df_with_age.merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'], how='left')
+
+        assert np.array_equal(tob_probs.years_exact, df_with_age.years_exact)  # check the order of individuals is the same by comparing exact ages
+        assert tob_probs.p_tob.isna().sum() == 0  # ensure we found a p_tob for every individual
 
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
