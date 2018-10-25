@@ -1,6 +1,6 @@
 """Support for creating different kinds of events."""
 
-from tlo import Date, DateOffset
+from tlo import DateOffset
 
 
 class Event:
