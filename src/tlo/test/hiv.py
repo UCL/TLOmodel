@@ -245,55 +245,135 @@ class HIV(Module):
 
         population.props['CD4_state'] = population.props['CD4_state'].astype(int) # change cd4 state to categorical
 
-        time_infected_lookup = dict()
+        # time_infected_lookup = dict()
+        #
+        # def add_to_lookup(row):
+        #     time_infected_lookup[(row.CD4_state, row.sex, row.age)] = [(row.days1, row.days2),
+        #                                                                (row.prob1, row.prob2)]
+        #
+        # cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        # cd4_unrolled['days1'] = pd.to_timedelta((cd4_unrolled.years1 * 365.25).astype(int), unit='d')
+        # cd4_unrolled['days2'] = pd.to_timedelta((cd4_unrolled.years2 * 365.25).astype(int), unit='d')
+        # cd4_unrolled.apply(add_to_lookup, axis=1)
+        #
+        #
+        #
+        # df = population.props
+        # cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        # #cd4_unrolled['years1'] = pd.to_timedelta(cd4_unrolled['years1'], unit='Y')
+        # #cd4_unrolled['years2'] = pd.to_timedelta(cd4_unrolled['years2'], unit='Y')
+        #
+        # infected = df.loc[df.has_hiv]
+        # infected_with_age = pd.merge(infected, population.age, left_index=True, right_index=True, how='left')
+        #
+        # cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
+        # infected_with_age_and_cd4_info = pd.merge(infected_with_age.reset_index(),
+        #                                           cd4_unrolled,
+        #                                           left_on=['CD4_state', 'sex', 'years'],
+        #                                           right_on=['CD4_state', 'sex', 'age'],
+        #                                           how='left').set_index('person')
+        #
+        # def get_time_infected(row):
+        #     return np.random.choice([row.years1, row.years2], p=[row.prob1, row.prob2])
+        #
+        # time_infected = infected_with_age_and_cd4_info.apply(get_time_infected, axis=1)
+        # time_infected = pd.to_timedelta(time_infected, unit='Y')
+        #
+        # # NOTE: why don't we use years? because:
+        # # "ValueError: Non-integer years and months are ambiguous and not currently supported.
+        # date_infected = now - time_infected
+        # population.props.loc[date_infected.index, 'date_HIV_infection'] = date_infected
+        # # print(population.props.loc[date_infected.index, ['date_of_birth', 'date_HIV_infection']])
+        #
+        # del population.props['CD4_state']
+        #
+        # # check time infected is less than time alive (especially for infants)
+        # # tmp = population.props.index[(pd.notna(population.date_HIV_infection)) & ((current_time - population.date_HIV_infection).years > population.age)]
+        # early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[date_infected.index, 'age'] # time infected earlier than time alive!
+        #
+        # if early_doi.any():
+        #     tmp2 = now - DateOffset(years=population.props.loc[early_doi, 'age'])
+        #     population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
-        def add_to_lookup(row):
-            time_infected_lookup[(row.CD4_state, row.sex, row.age)] = [(row.days1, row.days2),
-                                                                       (row.prob1, row.prob2)]
-
-        cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
-        cd4_unrolled['days1'] = pd.to_timedelta((cd4_unrolled.years1 * 365.25).astype(int), unit='d')
-        cd4_unrolled['days2'] = pd.to_timedelta((cd4_unrolled.years2 * 365.25).astype(int), unit='d')
-        cd4_unrolled.apply(add_to_lookup, axis=1)
 
 
+## new edits from Asif Friday 26th Oct ##
+        # calculate the time since infection based on the CD4_state
 
         df = population.props
+
+        # hold the index of all individuals with hiv
+
+        infctd = df.index[df.has_hiv]
+
+        # merge this subset of individuals with their age information
+
+        infctd_age = df.loc[infctd, ['CD4_state', 'sex', 'years']].merge(population.age,
+
+                                                                         left_index=True,
+
+                                                                         right_index=True,
+
+                                                                         how='inner')
+
+        assert len(infctd) == len(infctd_age)  # check merge happened properly
+
+        # load the unrolled cd4 time data (this should be done in read_parameters!)
+
         cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
-        #cd4_unrolled['years1'] = pd.to_timedelta(cd4_unrolled['years1'], unit='Y')
-        #cd4_unrolled['years2'] = pd.to_timedelta(cd4_unrolled['years2'], unit='Y')
 
-        infected = df.loc[df.has_hiv]
-        infected_with_age = pd.merge(infected, population.age, left_index=True, right_index=True, how='left')
+        # merge all infected individuals with their cd4 infected row based on CD4 state, sex and age
 
-        cd4_unrolled = pd.read_csv('/Users/tamuri/Documents/2018/thanzi/test/HIV_test_run_data/cd4_unrolled.csv')
-        infected_with_age_and_cd4_info = pd.merge(infected_with_age.reset_index(),
-                                                  cd4_unrolled,
-                                                  left_on=['CD4_state', 'sex', 'years'],
-                                                  right_on=['CD4_state', 'sex', 'age'],
-                                                  how='left').set_index('person')
+        infctd_age_cd4 = infctd_age.merge(cd4_unrolled,
 
-        def get_time_infected(row):
-            return np.random.choice([row.years1, row.years2], p=[row.prob1, row.prob2])
+                                          left_on=['CD4_state', 'sex', 'years'],
 
-        time_infected = infected_with_age_and_cd4_info.apply(get_time_infected, axis=1)
+                                          right_on=['CD4_state', 'sex', 'age'],
+
+                                          how='left')
+
+        assert len(infctd_age_cd4) == len(infctd)  # check merged row count
+
+        assert np.array_equal(infctd_age.years_exact, infctd_age_cd4.years_exact)  # check rows are in the same order
+
+        assert infctd_age_cd4.prob1.isna().sum() == 0  # check that we found a probability for every individual
+
+        # because prob2 is 1-prob1, do the choice and assignment like this:
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+
+        random_draw = self.rng.random_sample(size=len(infctd))
+
+        # get a list of time infected which is 'years1' if the random number is less than 'prob1', otherwise 'years2'
+
+        time_infected = infctd_age_cd4.years1.where(infctd_age_cd4.prob1 < random_draw, infctd_age_cd4.years2)
+
+        # convert those years to a date in the past
+
         time_infected = pd.to_timedelta(time_infected, unit='Y')
 
-        # NOTE: why don't we use years? because:
-        # "ValueError: Non-integer years and months are ambiguous and not currently supported.
         date_infected = now - time_infected
-        population.props.loc[date_infected.index, 'date_HIV_infection'] = date_infected
-        # print(population.props.loc[date_infected.index, ['date_of_birth', 'date_HIV_infection']])
+
+        # assign the calculated dates back to the original population dataframe
+
+        # NOTE: we use the '.values' to assign back, ignoring the index of the 'date_infected' series
+
+        df.loc[infctd, 'date_HIV_infection'] = date_infected.values
 
         del population.props['CD4_state']
 
         # check time infected is less than time alive (especially for infants)
+
         # tmp = population.props.index[(pd.notna(population.date_HIV_infection)) & ((current_time - population.date_HIV_infection).years > population.age)]
-        early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[date_infected.index, 'age'] # time infected earlier than time alive!
+
+        early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[
+            date_infected.index, 'age']  # time infected earlier than time alive!
 
         if early_doi.any():
             tmp2 = now - DateOffset(years=population.props.loc[early_doi, 'age'])
+
             population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
+
 
 
     # this function needs the ART mortality rates from ART.py
