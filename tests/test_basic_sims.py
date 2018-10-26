@@ -143,16 +143,16 @@ def test_birth_and_death():
         sim.population[4:5, 'is_alive'],
         check_names=False)
     pd.testing.assert_frame_equal(
-        pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [True, False]}, index=[8, 9]),
+        pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [False, True]}, index=[8, 9]),
         sim.population[8:9, ('is_alive', 'is_pregnant')],
         check_names=False)
     pd.testing.assert_frame_equal(
-        pd.DataFrame({'is_alive': [False], 'is_pregnant': [True]}, index=[6]),
+        pd.DataFrame({'is_alive': [False], 'is_pregnant': [False]}, index=[6]),
         sim.population[[6], ('is_alive', 'is_pregnant')],
         check_names=False)
 
     # Check birth stats match reference data
-    assert len(sim.population) == 19
+    assert len(sim.population) == 20
 
     # Check no-one gave birth after dying
     for person in sim.population:
