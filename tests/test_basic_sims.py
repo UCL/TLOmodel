@@ -194,16 +194,28 @@ def test_regular_event_with_end():
         def apply(self, population):
             population.loc[0, 'last_run'] = population.sim.date
 
+    class MyOtherEvent(PopulationScopeEventMixin, RegularEvent):
+        def __init__(self, module):
+            # This regular event runs every day but ends as specified
+            super().__init__(module=module, frequency=DateOffset(days=1))
+
+        def apply(self, population):
+            pass
+
     sim = Simulation(start_date=Date(2010, 1, 1))
 
     my_module = MyModule()
     sim.register(my_module)
     sim.make_initial_population(n=1)
+
     my_event = MyEvent(my_module, end_date=Date(2010, 3, 1))
+    my_other_event = MyOtherEvent(my_module)
+
     sim.schedule_event(my_event, sim.date + DateOffset(days=1))
+    sim.schedule_event(my_other_event, sim.date + DateOffset(days=1))
     sim.simulate(end_date=Date(2011, 1, 1))
 
-    # The last update to the data frame is the last even run (not the end of the simulation)
+    # The last update to the data frame is the last event run (not the end of the simulation)
     assert sim.population.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
-    # The last event the simulation ran was at the event end date
-    assert sim.date == pd.Timestamp(Date(2010, 3, 1))
+    # The last event the simulation ran was my_other_event that doesn't have end date
+    assert sim.date == pd.Timestamp(Date(2011, 1, 1))
