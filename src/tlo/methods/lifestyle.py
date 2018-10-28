@@ -310,7 +310,6 @@ class Lifestyle(Module):
  #      child.is_alive
 
 
-
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
     Regular events automatically reschedule themselves at a fixed frequency,
