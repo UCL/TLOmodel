@@ -375,7 +375,6 @@ class HIV(Module):
             population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
 
-
     # this function needs the ART mortality rates from ART.py
     def initial_pop_deaths(self, df):
 
