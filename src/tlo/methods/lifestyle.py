@@ -19,6 +19,12 @@ class Lifestyle(Module):
     * `on_birth(mother, child)`
     """
 
+    # TODO add rr_urban_f   r_incr_wealth   r_decr_wealth   rr_incr_wealth_urban
+    # TODO rr_tob according to age group female wealth
+    # TODO rr_overwt  age group  urban  female
+    # TODO rr_low_ex  age group  urban female
+    # TODO rr_ex_alc  age group female
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -85,14 +91,14 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.000
-        self.parameters['r_not_overwt'] = 0.000
+        self.parameters['r_overwt'] = 0.005
+        self.parameters['r_not_overwt'] = 0.001
         self.parameters['rr_overwt_f'] = 1
-        self.parameters['r_low_ex'] = 0.000
-        self.parameters['r_not_low_ex'] = 0.000
-        self.parameters['r_tob'] = 0.000
-        self.parameters['r_not_tob'] = 0.000
-        self.parameters['r_ex_alc'] = 0.000
+        self.parameters['r_low_ex'] = 0.01
+        self.parameters['r_not_low_ex'] = 0.001
+        self.parameters['r_tob'] = 0.001
+        self.parameters['r_not_tob'] = 0.001
+        self.parameters['r_ex_alc'] = 0.001
         self.parameters['r_not_ex_alc'] = 0.000
         self.parameters['rr_ex_alc_f'] = 1
         self.parameters['init_p_urban'] = 0.17
@@ -461,7 +467,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_ex_alc.sum():
             not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
             df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
-
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
