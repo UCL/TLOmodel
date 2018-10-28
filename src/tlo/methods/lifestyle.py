@@ -294,7 +294,15 @@ class Lifestyle(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        pass
+
+        child.li_urban = mother.li_urban
+        child.li_wealth = mother.li_wealth
+
+ #      child.date_of_birth
+ #      child.sex
+ #      child.mother_id
+ #      child.is_alive
+
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
