@@ -2,6 +2,7 @@ import pytest
 
 from tlo import Simulation, Date
 from tlo.methods import demography, lifestyle
+from tlo.test import random_birth
 
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
@@ -14,9 +15,12 @@ popsize = 1000
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
+    random_birth_module = random_birth.RandomBirth()
+    random_birth_module.pregnancy_probability = 0.005
     lifestyle_module = lifestyle.Lifestyle()
     sim.register(core_module)
     sim.register(lifestyle_module)
+    sim.register(random_birth_module)
     return sim
 
 
