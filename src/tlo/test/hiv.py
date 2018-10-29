@@ -243,7 +243,7 @@ class HIV(Module):
                                                                       replace=True,
                                                                       p=cd4_probs.values)
 
-        population.props['CD4_state'] = population.props['CD4_state'].astype(int) # change cd4 state to categorical
+        population.props['CD4_state'] = population.props['CD4_state'].astype(int)  # change cd4 state to categorical
 
         # time_infected_lookup = dict()
         #
