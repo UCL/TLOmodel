@@ -196,7 +196,7 @@ def test_regular_event_with_end():
 
     class MyOtherEvent(PopulationScopeEventMixin, RegularEvent):
         def __init__(self, module):
-            # This regular event runs every day but ends as specified
+            # This regular event runs every day and does not end
             super().__init__(module=module, frequency=DateOffset(days=1))
 
         def apply(self, population):
