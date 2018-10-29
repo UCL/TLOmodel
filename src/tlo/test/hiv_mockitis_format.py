@@ -1,6 +1,7 @@
 """
-A skeleton template for disease methods.
+HIV infection event
 """
+
 import numpy as np
 import pandas as pd
 
@@ -8,33 +9,21 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 
-# TODO update Methods_HIV for 2010 baseline
-
-
 # read in data files #
-# use function read.parameters in class HIV to do this?
-# file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx' # for desktop
-file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
+file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
+# file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
 
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HIV_prev, HIV_death, HIV_inc, CD4_base, time_CD4, initial_state_probs, \
-age_distr = method_hiv_data['prevalence2018'], method_hiv_data['deaths2009_2021'], \
-            method_hiv_data['incidence2009_2021'], \
-            method_hiv_data['CD4_distribution2018'], method_hiv_data['Time_spent_by_CD4'], \
-            method_hiv_data['Initial_state_probs'], method_hiv_data['age_distribution2018']
+hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
+age_distr = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
+            method_hiv_data['incidence'], \
+            method_hiv_data['CD4_distribution'], method_hiv_data['Time_spent_by_CD4'], \
+            method_hiv_data['Initial_state_probs'], method_hiv_data['age_distribution']
 
 
-class hiv_mock(Module):
+class hiv(Module):
     """
-    One line summary goes here...
-
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    baseline hiv infection
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -71,7 +60,7 @@ class hiv_mock(Module):
         'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
-        'CD4_state': Property(Types.CATEGORICAL, 'CD4 state', categories=[500, 350, 250, 200, 100, 50, 0]),
+        'cd4_state': Property(Types.CATEGORICAL, 'CD4 state', categories=[500, 350, 250, 200, 100, 50, 0]),
     }
 
     def read_parameters(self, data_folder):
@@ -115,13 +104,8 @@ class hiv_mock(Module):
         df['sexual_risk_group'] = 1
 
         # print('hello')
-        self.high_risk(population)
-        self.prevalence(population)
-
-        # # randomly selected some individuals as infected
-        initial_infected = 0.3
-        initial_uninfected = 1 - initial_infected
-        df['has_hiv'] = self.sim.rng.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
+        self.high_risk(population)  # assign high sexual risk
+        self.baseline_prevalence(population)  # allocate baseline prevalence
 
 
     def high_risk(self, population):
@@ -140,7 +124,7 @@ class hiv_mock(Module):
 
         print('hurray it works')
 
-    def get_index(self, population, has_hiv, sex, age_low, age_high, CD4_state):
+    def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
 
         df = population.props
         age = population.age
@@ -149,11 +133,11 @@ class hiv_mock(Module):
             df.has_hiv &
             (df.sex == sex) &
             (age.years >= age_low) & (age.years < age_high) &
-            (df.CD4_state == CD4_state)]
+            (df.cd4_state == cd4_state)]
 
         return index
 
-    def prevalence(self, population):
+    def baseline_prevalence(self, population):
         """
         """
 
@@ -161,12 +145,42 @@ class hiv_mock(Module):
         df = population.props
         age = population.age
 
-        prevalence = HIV_prev.loc[HIV_prev.year == now.year, ['age', 'sex', 'prevalence']]
+        prevalence = hiv_prev.loc[hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
 
         # add age to population.props
         df_with_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        print(df_with_age.head(10))
+        # merge all susceptible individuals with their hiv probability based on sex and age
+        df_with_age_hivprob = df_with_age.merge(prevalence,
+
+                                                left_on=['years', 'sex'],
+
+                                                right_on=['age_from', 'sex'],
+
+                                                how='left')
+
+        # no prevalence in ages 80+ so fill missing values with 0
+        df_with_age_hivprob['prev_prop'] = df_with_age_hivprob['prev_prop'].fillna(0)
+
+        # print(df_with_age.head(10))
+        print(df_with_age_hivprob.head(20))
+        # df_with_age_hivprob.to_csv('Q:/Thanzi la Onse/HIV/test.csv', sep=',')  # output a test csv file
+        # print(list(df_with_age_hivprob.head(0)))  # prints list of column names in merged df
+
+        assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check that we found a probability for every individual
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = self.rng.random_sample(size=len(df_with_age_hivprob))
+
+        # if random number < probability of HIV, assign has_hiv = True
+        hiv_index = df_with_age_hivprob.index[(df_with_age_hivprob.prev_prop > random_draw)]
+
+        print(hiv_index)
+        test = hiv_index.isnull().sum()  # sum number of nan
+        print("number of nan: ", test)
+
+        df.loc[hiv_index, 'has_hiv'] = True
+        df.loc[hiv_index, 'date_hiv_infection'] = now
 
 
     def initialise_simulation(self, sim):
