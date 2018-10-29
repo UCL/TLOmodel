@@ -1,4 +1,5 @@
 """The Person and Population classes."""
+from collections import defaultdict
 from functools import lru_cache
 
 import numpy as np
@@ -95,10 +96,9 @@ class Population:
 
     __slots__ = ('people', 'props', 'sim', 'age_ranges')
 
-    MINIMUM_AGE = 0
-    MAXIMUM_AGE = 120
+    MIN_AGE_FOR_RANGE = 0
+    MAX_AGE_FOR_RANGE = 100
     AGE_RANGE_SIZE = 5
-    AGE_RANGE_LIMIT = 100
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -132,9 +132,12 @@ class Population:
                 yield items[index:index + n]
 
         # split all the ages from min to limit (100 years) into 5 year ranges
-        parts = chunks(range(Population.MINIMUM_AGE, Population.AGE_RANGE_LIMIT),
+        parts = chunks(range(Population.MIN_AGE_FOR_RANGE, Population.MAX_AGE_FOR_RANGE),
                        Population.AGE_RANGE_SIZE)
-        age_ranges = {}
+
+        # any ages >= 100 are in the '100+' category
+        age_ranges = defaultdict(lambda: '100+')
+
         # loop over each range and map all ages falling within the range to the range
         for part in parts:
             start = part.start
@@ -142,10 +145,6 @@ class Population:
             value = '%s-%s' % (start, end)
             for i in range(start, part.stop):
                 age_ranges[i] = value
-
-        # all ages over the limit (100 years) get the same age range category
-        for i in range(Population.AGE_RANGE_LIMIT, Population.MAXIMUM_AGE + 1):
-            age_ranges[i] = '%s+' % Population.AGE_RANGE_LIMIT
 
         return age_ranges
 
