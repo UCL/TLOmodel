@@ -26,6 +26,11 @@ class hiv(Module):
     baseline hiv infection
     """
 
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.store = {'Time': [], 'Total_HIV': []}
+
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -122,7 +127,8 @@ class hiv(Module):
         # these individuals have higher risk of hiv
         df.loc[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
 
-        print('hurray it works')
+        # print('hurray it works')
+
 
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
 
@@ -139,6 +145,7 @@ class hiv(Module):
 
     def baseline_prevalence(self, population):
         """
+        assign baseline hiv prevalence
         """
 
         now = self.sim.date
@@ -167,7 +174,7 @@ class hiv(Module):
         # df_with_age_hivprob.to_csv('Q:/Thanzi la Onse/HIV/test.csv', sep=',')  # output a test csv file
         # print(list(df_with_age_hivprob.head(0)))  # prints list of column names in merged df
 
-        assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check that we found a probability for every individual
+        assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_with_age_hivprob))
@@ -192,6 +199,10 @@ class hiv(Module):
         """
         event = hiv_event(self)
         sim.schedule_event(event, sim.date + DateOffset(months=12))
+
+        # add an event to log to screen
+        sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=6))
+
 
 
     def on_birth(self, mother, child):
@@ -240,4 +251,23 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'has_hiv'] = True
             df.loc[infected_idx, 'date_hiv_infection'] = self.sim.date
 
+
+class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """ produce some outputs to check
+        """
+        # run this event every 12 months (every year)
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        infected_total = df.has_hiv.sum()
+
+        self.module.store['Time'].append(self.sim.date)
+        self.module.store['Total_HIV'].append(infected_total)
+
+        print(self.sim.date, infected_total)
 

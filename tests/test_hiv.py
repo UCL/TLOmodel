@@ -1,5 +1,6 @@
 
 import pytest  # this is the library for testing
+import matplotlib.pyplot as plt
 
 from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import hiv_mockitis_format
@@ -11,7 +12,7 @@ path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/De
 # for laptop
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
 
-start_date = Date(2018, 1, 1)
+start_date = Date(2010, 1, 1)
 end_date = Date(2020, 1, 1)
 popsize = 10000
 
@@ -37,4 +38,13 @@ if __name__ == '__main__':
     test_hiv_simulation(simulation)
 
 
+# Make a nice plot;
+stats = simulation.modules['hiv'].store['Total_HIV']
+time = simulation.modules['hiv'].store['Time']
+
+# plt.plot(np.arange(0, len(stats)), stats)
+
+plt.plot(time, stats)
+
+plt.show()
 
