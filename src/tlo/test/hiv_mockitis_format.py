@@ -90,16 +90,9 @@ class hiv(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        :param population: the population of individuals
         """
 
         df = population.props
-        age = population.age
 
         df['has_hiv'] = False
         df['date_hiv_infection'] = pd.NaT
@@ -240,8 +233,7 @@ class hiv(Module):
 
         # assert infctd_age_cd4.prob1.isna().sum() == 0  # check that we found a probability for every individual
 
-        # because prob2 is 1-prob1, do the choice and assignment like this:
-
+        # note prob2 is 1-prob1
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(infected))
 
@@ -274,6 +266,40 @@ class hiv(Module):
         if early_doi.any():
             tmp2 = df.loc[early_doi, 'date_of_birth']
             df.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
+
+
+    def initial_pop_deaths(self, population):
+        """ assign death dates to baseline hiv-infected population
+        """
+        df = population.props
+        now = self.sim.date
+        age = population.age
+        params = self.parameters
+
+        # PAEDIATRIC time of death - untreated
+        hiv_inf = df.index[df.has_hiv & (df.age < 3)]
+
+        # need a two parameter Weibull with size parameter, multiply by scale instead
+        time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
+                                           size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
+
+        # while time of death is shorter than time infected keep redrawing (only for the entries that need it)
+        while np.any(time_death_slow < (now - df.loc[hiv_inf, 'date_hiv_infection'])):
+
+            redraw = np.argwhere(time_death_slow < (now - df.loc[hiv_inf, 'date_hiv_infection']))
+            redraw2 = redraw.ravel()
+
+            if len(redraw) == 0:
+                break
+
+            # redraw time of death
+            time_death_slow[redraw2] = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
+                                                        size=len(redraw2)) * params[
+                                           'weibull_scale_mort_infant_slow_progressor']
+
+
+
+
 
 
     def initialise_simulation(self, sim):
