@@ -13,7 +13,7 @@ path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/De
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 
