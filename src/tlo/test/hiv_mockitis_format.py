@@ -17,7 +17,7 @@ method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
 hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
 age_distr = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
             method_hiv_data['incidence'], \
-            method_hiv_data['CD4_distribution'], method_hiv_data['Time_spent_by_CD4'], \
+            method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
             method_hiv_data['Initial_state_probs'], method_hiv_data['age_distribution']
 
 
@@ -65,7 +65,8 @@ class hiv(Module):
         'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
-        'cd4_state': Property(Types.CATEGORICAL, 'CD4 state', categories=[500, 350, 250, 200, 100, 50, 0]),
+        'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
+                              categories=['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']),
     }
 
     def read_parameters(self, data_folder):
@@ -111,6 +112,7 @@ class hiv(Module):
         # print('hello')
         self.high_risk(population)  # assign high sexual risk
         self.baseline_prevalence(population)  # allocate baseline prevalence
+        self.time_since_infection(population)  # find time since infection using CD4 distribution
 
 
     def high_risk(self, population):
@@ -170,11 +172,11 @@ class hiv(Module):
         df_with_age_hivprob['prev_prop'] = df_with_age_hivprob['prev_prop'].fillna(0)
 
         # print(df_with_age.head(10))
-        print(df_with_age_hivprob.head(20))
+        # print(df_with_age_hivprob.head(20))
         # df_with_age_hivprob.to_csv('Q:/Thanzi la Onse/HIV/test.csv', sep=',')  # output a test csv file
         # print(list(df_with_age_hivprob.head(0)))  # prints list of column names in merged df
 
-        assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check there is a probability for every individual
+        # assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_with_age_hivprob))
@@ -182,12 +184,104 @@ class hiv(Module):
         # if random number < probability of HIV, assign has_hiv = True
         hiv_index = df_with_age_hivprob.index[(df_with_age_hivprob.prev_prop > random_draw)]
 
-        print(hiv_index)
-        test = hiv_index.isnull().sum()  # sum number of nan
-        print("number of nan: ", test)
+        # print(hiv_index)
+        # test = hiv_index.isnull().sum()  # sum number of nan
+        # print("number of nan: ", test)
 
         df.loc[hiv_index, 'has_hiv'] = True
         df.loc[hiv_index, 'date_hiv_infection'] = now
+
+
+    def time_since_infection(self, population):
+        """
+        calculate the time since infection based on the CD4_state
+        this only applies for those aged >=15 years
+        assume everyone <15 was infected at birth
+        """
+
+        df = population.props
+        now = self.sim.date
+
+        # for those aged >= 15 years
+        # add age to population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
+        print(df_age.head(20))
+
+
+        cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
+
+        for sex in ['M', 'F']:
+            idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
+            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year), 'probability']
+            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
+                                                              size=len(idx),
+                                                              replace=True,
+                                                              p=cd4_probs.values)
+
+        # print(cd4_probs)
+
+        # print(df.head(20))
+
+        # hold the index of all individuals with hiv
+        infected = df_age.index[df_age.has_hiv & (df_age.years >= 15)]
+
+        # select all individuals with hiv and over 15 years of age
+        infected_age = df_age.loc[infected, ['cd4_state', 'sex', 'years']]
+
+        print(infected_age.head(10))
+
+        # merge all infected individuals with their cd4 infected row based on CD4 state, sex and age
+        infected_age_cd4 = infected_age.merge(time_cd4,
+                                              left_on=['cd4_state', 'sex', 'years'],
+                                              right_on=['cd4_state', 'sex', 'age'],
+                                              how='left')
+
+        assert len(infected_age_cd4) == len(infected)  # check merged row count
+
+        # print(time_cd4)
+        print(infected_age_cd4.head(20))
+        # infected_age_cd4.to_csv('Q:/Thanzi la Onse/HIV/test2.csv', sep=',')  # output a test csv file
+
+        #assert np.array_equal(infected_age.years_exact,
+        #                      infected_age_cd4.years_exact)  # check rows are in the same order
+
+        # assert infctd_age_cd4.prob1.isna().sum() == 0  # check that we found a probability for every individual
+
+        # because prob2 is 1-prob1, do the choice and assignment like this:
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = self.rng.random_sample(size=len(infected))
+
+        # get a list of time infected which is 'years1' if the random number is less than 'prob1', otherwise 'years2'
+        time_infected = infected_age_cd4.years1.where(infected_age_cd4.prob1 < random_draw,
+                                                      infected_age_cd4.years2)
+
+        # convert those years to a date in the past
+        time_infected = pd.to_timedelta(time_infected, unit='Y')
+        date_infected = now - time_infected
+
+        # assign the calculated dates back to the original population dataframe        #
+        # NOTE: we use the '.values' to assign back, ignoring the index of the 'date_infected' series
+        df.loc[infected, 'date_hiv_infection'] = date_infected.values
+
+        del df['cd4_state']  # this doesn't delete the column, just the values in it
+
+        # assign time of infection for children <15 years
+
+
+        # check time infected is less than time alive
+        #
+        # # tmp = population.props.index[(pd.notna(population.date_HIV_infection)) & ((current_time - population.date_HIV_infection).years > population.age)]
+        #
+        # early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[
+        #     date_infected.index, 'age']  # time infected earlier than time alive!
+        #
+        # if early_doi.any():
+        #     tmp2 = now - DateOffset(years=population.props.loc[early_doi, 'age'])
+        #
+        #     population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
+
 
 
     def initialise_simulation(self, sim):
