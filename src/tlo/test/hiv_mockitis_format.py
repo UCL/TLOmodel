@@ -8,7 +8,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
-
 # read in data files #
 file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
 # file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
@@ -29,7 +28,6 @@ class hiv(Module):
     def __init__(self, name=None):
         super().__init__(name)
         self.store = {'Time': [], 'Total_HIV': []}
-
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -90,7 +88,6 @@ class hiv(Module):
         params['rr_HIV_high_sexual_risk'] = 2
         params['proportion_on_ART_infectious'] = 0.2
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -114,7 +111,6 @@ class hiv(Module):
         self.baseline_prevalence(population)  # allocate baseline prevalence
         self.time_since_infection(population)  # find time since infection using CD4 distribution
 
-
     def high_risk(self, population):
         """ Stratify the adult (age >15) population in high or low sexual risk """
 
@@ -131,9 +127,7 @@ class hiv(Module):
 
         # print('hurray it works')
 
-
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
-
         df = population.props
         age = population.age
 
@@ -191,7 +185,6 @@ class hiv(Module):
         df.loc[hiv_index, 'has_hiv'] = True
         df.loc[hiv_index, 'date_hiv_infection'] = now
 
-
     def time_since_infection(self, population):
         """
         calculate the time since infection based on the CD4_state
@@ -206,8 +199,7 @@ class hiv(Module):
         # add age to population.props
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        print(df_age.head(20))
-
+        # print(df_age.head(20))
 
         cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
 
@@ -215,9 +207,9 @@ class hiv(Module):
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
             cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year), 'probability']
             df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
-                                                              size=len(idx),
-                                                              replace=True,
-                                                              p=cd4_probs.values)
+                                                            size=len(idx),
+                                                            replace=True,
+                                                            p=cd4_probs.values)
 
         # print(cd4_probs)
 
@@ -229,7 +221,7 @@ class hiv(Module):
         # select all individuals with hiv and over 15 years of age
         infected_age = df_age.loc[infected, ['cd4_state', 'sex', 'years']]
 
-        print(infected_age.head(10))
+        # print(infected_age.head(10))
 
         # merge all infected individuals with their cd4 infected row based on CD4 state, sex and age
         infected_age_cd4 = infected_age.merge(time_cd4,
@@ -240,10 +232,10 @@ class hiv(Module):
         assert len(infected_age_cd4) == len(infected)  # check merged row count
 
         # print(time_cd4)
-        print(infected_age_cd4.head(20))
+        # print(infected_age_cd4.head(20))
         # infected_age_cd4.to_csv('Q:/Thanzi la Onse/HIV/test2.csv', sep=',')  # output a test csv file
 
-        #assert np.array_equal(infected_age.years_exact,
+        # assert np.array_equal(infected_age.years_exact,
         #                      infected_age_cd4.years_exact)  # check rows are in the same order
 
         # assert infctd_age_cd4.prob1.isna().sum() == 0  # check that we found a probability for every individual
@@ -268,20 +260,20 @@ class hiv(Module):
         del df['cd4_state']  # this doesn't delete the column, just the values in it
 
         # assign time of infection for children <15 years
+        inf_child = df_age.index[df_age.has_hiv & (df_age.years < 15)]
+        df.loc[inf_child, 'date_hiv_infection'] = df.date_of_birth.values[inf_child]
 
+        # print(inf_child)
 
         # check time infected is less than time alive
-        #
-        # # tmp = population.props.index[(pd.notna(population.date_HIV_infection)) & ((current_time - population.date_HIV_infection).years > population.age)]
-        #
-        # early_doi = ((now - date_infected).dt.days / 365.25) > population.props.loc[
-        #     date_infected.index, 'age']  # time infected earlier than time alive!
-        #
-        # if early_doi.any():
-        #     tmp2 = now - DateOffset(years=population.props.loc[early_doi, 'age'])
-        #
-        #     population.props.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
+        early_doi = ((now - df.date_hiv_infection).dt.days / 365.25) > \
+                    ((now - df.date_of_birth).dt.days / 365.25)  # time infected earlier than time alive!
 
+        # early_doi.to_csv('Q:/Thanzi la Onse/HIV/test3.csv', sep=',')
+
+        if early_doi.any():
+            tmp2 = df.loc[early_doi, 'date_of_birth']
+            df.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
 
     def initialise_simulation(self, sim):
@@ -296,8 +288,6 @@ class hiv(Module):
 
         # add an event to log to screen
         sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=6))
-
-
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -364,4 +354,3 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Total_HIV'].append(infected_total)
 
         print(self.sim.date, infected_total)
-
