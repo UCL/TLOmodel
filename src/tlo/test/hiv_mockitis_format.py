@@ -103,6 +103,7 @@ class hiv(Module):
         self.high_risk(population)  # assign high sexual risk
         self.baseline_prevalence(population)  # allocate baseline prevalence
         self.time_since_infection(population)  # find time since infection using CD4 distribution
+        self.initial_pop_deaths_children(population)  # add death dates for children
 
     def high_risk(self, population):
         """ Stratify the adult (age >15) population in high or low sexual risk """
@@ -268,7 +269,7 @@ class hiv(Module):
             df.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
 
-    def initial_pop_deaths(self, population):
+    def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population
         """
         df = population.props
@@ -277,25 +278,51 @@ class hiv(Module):
         params = self.parameters
 
         # PAEDIATRIC time of death - untreated
-        hiv_inf = df.index[df.has_hiv & (df.age < 3)]
+        hiv_inf = df.index[df.has_hiv & (age.years < 3)]
 
         # need a two parameter Weibull with size parameter, multiply by scale instead
         time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                            size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
 
-        # while time of death is shorter than time infected keep redrawing (only for the entries that need it)
-        while np.any(time_death_slow < (now - df.loc[hiv_inf, 'date_hiv_infection'])):
+        time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
 
-            redraw = np.argwhere(time_death_slow < (now - df.loc[hiv_inf, 'date_hiv_infection']))
+        time_infected = now - df.loc[hiv_inf, 'date_hiv_infection']
+        print(time_infected)
+        print(time_death_slow)
+
+
+        # while time of death is shorter than time infected - redraw
+        test = time_infected > time_death_slow  # produces boolean
+        test.to_csv('Q:/Thanzi la Onse/HIV/test3.csv', sep=',')
+
+        if np.any(time_infected > time_death_slow):
+            redraw = np.argwhere(time_infected > time_death_slow)
             redraw2 = redraw.ravel()
+            print(redraw2)
 
-            if len(redraw) == 0:
-                break
+            new_time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
+                                                   size=len(redraw2)) * params[
+                                      'weibull_scale_mort_infant_slow_progressor']
 
-            # redraw time of death
-            time_death_slow[redraw2] = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
-                                                        size=len(redraw2)) * params[
-                                           'weibull_scale_mort_infant_slow_progressor']
+            new_time_death_slow = pd.to_timedelta(new_time_death_slow * 365.25, unit='d')
+
+            time_death_slow[redraw2] = new_time_death_slow
+
+
+
+        # time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
+        # print(time_death_slow)
+
+        # remove microseconds
+        time_death_slow = pd.to_timedelta(time_death_slow).values.astype('timedelta64[s]')
+        # print(time_death_slow)
+
+        df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
+
+        test2 = df.loc[hiv_inf]
+
+        test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')
+
 
 
 
