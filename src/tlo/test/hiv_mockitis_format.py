@@ -284,31 +284,35 @@ class hiv(Module):
 
         # PAEDIATRIC time of death - untreated
         hiv_inf = df.index[df.has_hiv & (age.years < 3)]
+        print('hiv_inf: ', hiv_inf)
 
         # need a two parameter Weibull with size parameter, multiply by scale instead
         time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                            size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
+        print('time_death_slow: ', time_death_slow)
 
-        # time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
+        time_death_slow = pd.Series(time_death_slow, index=hiv_inf)
+        # print('testing_index: ', test)
+
 
         time_infected = now - df.loc[hiv_inf, 'date_hiv_infection']
-        #print(time_infected)
+        # print(time_infected)
         # print(time_death_slow)
 
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
                      (pd.to_timedelta(time_death_slow * 365.25, unit='d'))):
-            redraw = np.argwhere(time_infected >
-                                 (pd.to_timedelta(time_death_slow * 365.25, unit='d')))
 
-            redraw2 = redraw.ravel()
-            #print(redraw2)
+            redraw = time_infected.index[time_infected >
+                                 (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
+            print('redraw: ', redraw)
 
             new_time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
-                                                   size=len(redraw2)) * params[
+                                                   size=len(redraw)) * params[
                                       'weibull_scale_mort_infant_slow_progressor']
+            print('new_time_death: ', new_time_death_slow)
 
-            time_death_slow[redraw2] = new_time_death_slow
+            time_death_slow[redraw] = new_time_death_slow
 
         time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
         # print(time_death_slow)
@@ -340,6 +344,7 @@ class hiv(Module):
 
         time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(hiv_ad)) * \
                         np.exp(self.log_scale(df_age.loc[hiv_ad, 'years']))
+
         print('length time_of_death:', len(time_of_death))
         print('time_death: ', time_of_death)
 
@@ -348,22 +353,19 @@ class hiv(Module):
         # print(time_infected)
 
         # while time of death is shorter than time infected - redraw
-        if np.any(time_infected >
+        while np.any(time_infected >
                      (pd.to_timedelta(time_of_death * 365.25, unit='d'))):
-            redraw = np.argwhere(time_infected >
-                                 (pd.to_timedelta(time_of_death * 365.25, unit='d')))
 
-            redraw2 = redraw.ravel()
-            print("redraw2: ", redraw2)
+            redraw = time_infected.index[time_infected >
+                                 (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
 
-            age_index = hiv_ad[redraw2]
-            print("age_index: ", age_index)
+            print("redraw: ", redraw)
 
-            new_time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw2)) * \
-                        np.exp(self.log_scale(df_age.loc[age_index, 'years']))
+            new_time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw)) * \
+                        np.exp(self.log_scale(df_age.loc[redraw, 'years']))
             print('new_time_of_death:', new_time_of_death)
 
-            time_of_death[redraw2] = new_time_of_death
+            time_of_death[redraw] = new_time_of_death
 
         time_of_death = pd.to_timedelta(time_of_death * 365.25, unit='d')
         # print(time_of_death)
