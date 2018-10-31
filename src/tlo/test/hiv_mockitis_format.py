@@ -268,7 +268,6 @@ class hiv(Module):
             tmp2 = df.loc[early_doi, 'date_of_birth']
             df.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
-
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population
         """
@@ -284,19 +283,18 @@ class hiv(Module):
         time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                            size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
 
-        time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
+        # time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
 
         time_infected = now - df.loc[hiv_inf, 'date_hiv_infection']
         print(time_infected)
-        print(time_death_slow)
-
+        # print(time_death_slow)
 
         # while time of death is shorter than time infected - redraw
-        test = time_infected > time_death_slow  # produces boolean
-        test.to_csv('Q:/Thanzi la Onse/HIV/test3.csv', sep=',')
+        while np.any(time_infected >
+                     (pd.to_timedelta(time_death_slow * 365.25, unit='d'))):
+            redraw = np.argwhere(time_infected >
+                                 (pd.to_timedelta(time_death_slow * 365.25, unit='d')))
 
-        if np.any(time_infected > time_death_slow):
-            redraw = np.argwhere(time_infected > time_death_slow)
             redraw2 = redraw.ravel()
             print(redraw2)
 
@@ -304,13 +302,9 @@ class hiv(Module):
                                                    size=len(redraw2)) * params[
                                       'weibull_scale_mort_infant_slow_progressor']
 
-            new_time_death_slow = pd.to_timedelta(new_time_death_slow * 365.25, unit='d')
-
             time_death_slow[redraw2] = new_time_death_slow
 
-
-
-        # time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
+        time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
         # print(time_death_slow)
 
         # remove microseconds
@@ -319,15 +313,9 @@ class hiv(Module):
 
         df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
 
-        test2 = df.loc[hiv_inf]
+        #test2 = df.loc[hiv_inf]
 
-        test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')
-
-
-
-
-
-
+        #test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for infants
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
