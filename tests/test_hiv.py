@@ -3,7 +3,7 @@ import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 
 from tlo import Date, DateOffset, Person, Simulation, Types
-from tlo.test import hiv_mockitis_format
+from tlo.test import hiv_infection
 from tlo.methods import demography
 
 # for desktop
@@ -21,7 +21,7 @@ popsize = 10000
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
-    hiv_module = hiv_mockitis_format.hiv()
+    hiv_module = hiv_infection.hiv()
     sim.register(core_module)
     sim.register(hiv_module)
 

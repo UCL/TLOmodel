@@ -450,17 +450,32 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         # calculate expected number of new infections and allocate
         new_infections = int(round(foi * len(df.index[~df.has_hiv])))  # foi * number susceptible
-        print('number new infections: ', new_infections)
+        # print('number new infections: ', new_infections)
 
-        # allocate expected number of new infections using weights from irr_age
+        # allocate expected number of new infections using weights from irr_age and sexual risk group
         df_with_irr = df_age.merge(irr_age, left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
         # print('df: ', df_with_irr.head(30))
+        combined_irr = df_with_irr.loc[~df_with_irr.has_hiv, 'comb_irr'] * df_with_irr.loc[
+            ~df_with_irr.has_hiv, 'sexual_risk_group']
+        # print(combined_irr)
+        # weights are automatically scaled so no need to normalise
         new_cases = df_with_irr.loc[~df_with_irr.has_hiv].sample(n=new_infections, replace=False,
-                                                                 weights=df_with_irr.loc[
-                                                                     ~df_with_irr.has_hiv, 'scaled_irr']).index
+                                                                 weights=combined_irr).index
+
+        # time of death
+        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(new_cases)) * \
+                        np.exp(self.module.log_scale(df_age.loc[new_cases, 'years']))
+        print('death dates years: ', death_date)
+
+        death_date = pd.to_timedelta(death_date * 365.25, unit='d')
+        print('death dates as dates: ', death_date)
+
+        # death_date = pd.to_timedelta(death_date).values.astype('timedelta64[s]')
+        # print('death dates remove ms: ', death_date)
 
         df.loc[new_cases, 'has_hiv'] = True
         df.loc[new_cases, 'date_hiv_infection'] = now
+        df.loc[new_cases, 'date_aids_death'] = now + death_date
 
 
 
