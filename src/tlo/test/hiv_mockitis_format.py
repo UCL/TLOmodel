@@ -13,11 +13,11 @@ file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
 # file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
 
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
-hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
-age_distr = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
-            method_hiv_data['incidence'], \
-            method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
-            method_hiv_data['Initial_state_probs'], method_hiv_data['age_distribution']
+hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs,\
+      irr_age = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
+      method_hiv_data['incidence'], \
+      method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
+      method_hiv_data['Initial_state_probs'], method_hiv_data['IRR']
 
 
 class hiv(Module):
@@ -52,6 +52,11 @@ class hiv(Module):
             Parameter(Types.REAL, 'relative risk of acquiring HIV with high risk sexual behaviour'),
         'proportion_on_ART_infectious':
             Parameter(Types.REAL, 'proportion of people on ART contributing to transmission as not virally suppressed'),
+        'beta':
+            Parameter(Types.REAL, 'transmission rate'),
+        'irr_hiv_f':
+            Parameter(Types.REAL, 'incidence rate ratio for females vs males'),
+
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -87,6 +92,8 @@ class hiv(Module):
         params['proportion_high_sexual_risk_female'] = 0.0095
         params['rr_HIV_high_sexual_risk'] = 2
         params['proportion_on_ART_infectious'] = 0.2
+        params['beta'] = 0.01  # dummy value
+        params['irr_hiv_f'] = 1.35
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -175,7 +182,7 @@ class hiv(Module):
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_with_age_hivprob))
 
-        # if random number < probability of HIV, assign has_hiv = True
+        # probability of HIV > random number, assign has_hiv = True
         hiv_index = df_with_age_hivprob.index[(df_with_age_hivprob.prev_prop > random_draw)]
 
         # print(hiv_index)
@@ -284,16 +291,15 @@ class hiv(Module):
 
         # PAEDIATRIC time of death - untreated
         hiv_inf = df.index[df.has_hiv & (age.years < 3)]
-        print('hiv_inf: ', hiv_inf)
+        # print('hiv_inf: ', hiv_inf)
 
         # need a two parameter Weibull with size parameter, multiply by scale instead
         time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                            size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
-        print('time_death_slow: ', time_death_slow)
+        # print('time_death_slow: ', time_death_slow)
 
         time_death_slow = pd.Series(time_death_slow, index=hiv_inf)
         # print('testing_index: ', test)
-
 
         time_infected = now - df.loc[hiv_inf, 'date_hiv_infection']
         # print(time_infected)
@@ -305,12 +311,12 @@ class hiv(Module):
 
             redraw = time_infected.index[time_infected >
                                  (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
-            print('redraw: ', redraw)
+            # print('redraw: ', redraw)
 
             new_time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
                                                    size=len(redraw)) * params[
                                       'weibull_scale_mort_infant_slow_progressor']
-            print('new_time_death: ', new_time_death_slow)
+            # print('new_time_death: ', new_time_death_slow)
 
             time_death_slow[redraw] = new_time_death_slow
 
@@ -340,13 +346,13 @@ class hiv(Module):
 
         # ADULT time of death, adults are all those aged >3
         hiv_ad = df.index[df.has_hiv & (age.years >= 3)]
-        print('hiv_ad: ', hiv_ad)
+        # print('hiv_ad: ', hiv_ad)
 
         time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(hiv_ad)) * \
                         np.exp(self.log_scale(df_age.loc[hiv_ad, 'years']))
 
-        print('length time_of_death:', len(time_of_death))
-        print('time_death: ', time_of_death)
+        # print('length time_of_death:', len(time_of_death))
+        # print('time_death: ', time_of_death)
 
 
         time_infected = now - df.loc[hiv_ad, 'date_hiv_infection']
@@ -359,11 +365,11 @@ class hiv(Module):
             redraw = time_infected.index[time_infected >
                                  (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
 
-            print("redraw: ", redraw)
+            # print("redraw: ", redraw)
 
             new_time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw)) * \
                         np.exp(self.log_scale(df_age.loc[redraw, 'years']))
-            print('new_time_of_death:', new_time_of_death)
+            # print('new_time_of_death:', new_time_of_death)
 
             time_of_death[redraw] = new_time_of_death
 
@@ -421,24 +427,42 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
 
+
     def apply(self, population):
         """Apply this event to the population.
         :param population: the current population
         """
         df = population.props
+        params = self.module.parameters
+        now = self.sim.date
 
-        # 1. get (and hold) index of currently uninfected individuals
-        currently_uninfected = df.index[~df.has_hiv]
+        # add age to population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[0.1, 0.9])
-        # if any are infected
-        if now_infected.sum():
-            infected_idx = currently_uninfected[now_infected]
+        # calculate force of infection, modify for treated when available
+        infected = len(df_age[(df_age.has_hiv == 1) & (df_age.years >= 15)])  # number infected untreated
+        # infected_treated = params['proportion_on_ART_infectious'] * len(
+        #     df_age[(df_age.has_HIV == 1) & (df_age.on_ART == 1) & (
+        #         df_age.age.years >= 15)])  # number infected & treated
 
-            df.loc[infected_idx, 'has_hiv'] = True
-            df.loc[infected_idx, 'date_hiv_infection'] = self.sim.date
+        total_pop = len(df_age[(df_age.years >= 15)])
+        foi = params['beta'] * infected / total_pop
+
+        # calculate expected number of new infections and allocate
+        new_infections = int(round(foi * len(df.index[~df.has_hiv])))  # foi * number susceptible
+        print('number new infections: ', new_infections)
+
+        # allocate expected number of new infections using weights from irr_age
+        df_with_irr = df_age.merge(irr_age, left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
+        # print('df: ', df_with_irr.head(30))
+        new_cases = df_with_irr.loc[~df_with_irr.has_hiv].sample(n=new_infections, replace=False,
+                                                                 weights=df_with_irr.loc[
+                                                                     ~df_with_irr.has_hiv, 'scaled_irr']).index
+
+        df.loc[new_cases, 'has_hiv'] = True
+        df.loc[new_cases, 'date_hiv_infection'] = now
+
+
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
