@@ -47,7 +47,7 @@ if __name__ == '__main__':
     xvals = np.arange(0, len(stats2))
     yvals = stats2
   #  plt.xlim(0, 200)
-    plt.ylim(0, 1000)
+    plt.ylim(0, 5000)
     plt.plot(xvals, yvals)
 
     plt.show()
