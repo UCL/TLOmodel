@@ -91,14 +91,14 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.005
-        self.parameters['r_not_overwt'] = 0.001
+        self.parameters['r_overwt'] = 0.000
+        self.parameters['r_not_overwt'] = 0.000
         self.parameters['rr_overwt_f'] = 1
-        self.parameters['r_low_ex'] = 0.01
-        self.parameters['r_not_low_ex'] = 0.001
-        self.parameters['r_tob'] = 0.001
-        self.parameters['r_not_tob'] = 0.001
-        self.parameters['r_ex_alc'] = 0.001
+        self.parameters['r_low_ex'] = 0.00
+        self.parameters['r_not_low_ex'] = 0.000
+        self.parameters['r_tob'] = 0.000
+        self.parameters['r_not_tob'] = 0.000
+        self.parameters['r_ex_alc'] = 0.000
         self.parameters['r_not_ex_alc'] = 0.000
         self.parameters['rr_ex_alc_f'] = 1
         self.parameters['init_p_urban'] = 0.17
@@ -480,8 +480,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+    # TODO
+    # create an output of the proportion of people age over 15 who are overwt (for example) I'm struggling with
+    # the age
+
         urban_alive = (df.is_alive & df.li_urban).sum()
-     #   self.module.store['urban_total'].append(urban_alive)
+        n_overwt_alive = (df.is_alive & df.li_overwt).sum()
+     #  self.module.store['urban_total'].append(urban_alive)
         alive = df.is_alive.sum()
 
         self.module.store['alive'].append(alive)
@@ -494,7 +499,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle urban total:%d , proportion_urban: %f , newly urban: %d, wealth: %s' %
-              (self.sim.date, urban_alive, proportion_urban, newly_urban_in_last_3mths, list(wealth_count_alive)), flush=True)
+        print('%s lifestyle urban alive:%d , proportion_urban: %f , newly urban: %d, wealth: %s' %
+              (self.sim.date, urban_alive, proportion_urban, newly_urban_in_last_3mths, list(wealth_count_alive)),
+              flush=True)
 
 
