@@ -46,7 +46,7 @@ class tb_baseline(Module):
         'rr_tb_alcohol': Parameter(Types.REAL, 'relative risk of tb with heavy alcohol use'),
         'rr_tb_smoking': Parameter(Types.REAL, 'relative risk of tb with smoking'),
         'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
-        'rr_infectiousness_hiv': Parameter(
+        'rel_infectiousness_hiv': Parameter(
             Types.REAL,
             'relative infectiousness of tb in hiv+ compared with hiv-'),
         'prob_self_cure': Parameter(
@@ -92,12 +92,11 @@ class tb_baseline(Module):
         params['rr_tb_smoking'] = 2.6
         params['rr_tb_pollution'] = 1.5
 
-        params['rr_infectiousness_hiv'] = 0.52
+        params['rel_infectiousness_hiv'] = 0.68  # Juan
         params['prob_self_cure'] = 0.15
         params['self_cure'] = 0.33  # tiemersma plos one 2011, self-cure/death in 3 yrs
         params['tb_mortality_rate'] = 0.15
         params['rr_tb_mortality_HIV'] = 17.1
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -122,7 +121,8 @@ class tb_baseline(Module):
         # baseline infections not weighted by RR, randomly assigned
         # can include RR values in the sample command (weights)
 
-        active_tb_prob_year = Active_tb_prob.loc[Active_tb_prob.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
+        active_tb_prob_year = Active_tb_prob.loc[
+            Active_tb_prob.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
 
         for i in range(0, 81):
             # male
@@ -178,7 +178,6 @@ class tb_baseline(Module):
 
         # set the properties of infected individuals
         df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = now + death_td_ahead
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -245,15 +244,15 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infection
         # remember event is occurring annually so scale rates accordingly
-
-        active_total = len(df[(df.has_tb == 'Active') & df.is_alive])
+        active_hiv_neg = len(df[(df.has_tb == 'Active') & ~df.has_hiv & df.is_alive])
+        active_hiv_pos = len(df[(df.has_tb == 'Active') & df.has_hiv & df.is_alive])
         uninfected_total = len(df[(df.has_tb == 'Uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
-        force_of_infection = (params['transmission_rate'] * active_total * uninfected_total) / total_population
+        force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
+            'rel_infectiousness_hiv']) * uninfected_total) / total_population
         # print('force_of_infection: ', force_of_infection)
 
-        # this prob_tb_new = 584, therefore random draw will produce all TRUE values
         prob_tb_new = pd.Series(force_of_infection, index=df[(df.has_tb == 'Uninfected') & df.is_alive].index)
         # print('prob_tb_new: ', prob_tb_new)
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
@@ -271,11 +270,35 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[fast_progression, 'has_tb'] = 'Active'
             df.loc[fast_progression, 'date_active_tb'] = now
 
-
         # slow progressors with latent TB become active
         # needs to be a random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(params['progression_to_active_rate'], index=df[df.has_tb == 'Latent'].index)
-        # eff_prob_active_tb.loc[df.has_hiv] *= params['rr_tb_hiv'] # this will be further staged
+        print('eff_prob_active_tb: ', eff_prob_active_tb)
+
+        hiv_stage1 = df.index[df.has_hiv &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) < 3.33)]
+        print('hiv_stage1', hiv_stage1)
+
+        hiv_stage2 = df.index[df.has_hiv &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 3.33) &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) < 6.67)]
+        print('hiv_stage2', hiv_stage2)
+
+        hiv_stage3 = df.index[df.has_hiv &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 6.67) &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) < 10)]
+        print('hiv_stage3', hiv_stage3)
+
+        hiv_stage4 = df.index[df.has_hiv &
+                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 10)]
+        print('hiv_stage4', hiv_stage4)
+
+        eff_prob_active_tb.loc[hiv_stage1] *= params['rr_tb_with_hiv_stages'][0]
+        eff_prob_active_tb.loc[hiv_stage2] *= params['rr_tb_with_hiv_stages'][1]
+        eff_prob_active_tb.loc[hiv_stage3] *= params['rr_tb_with_hiv_stages'][2]
+        eff_prob_active_tb.loc[hiv_stage4] *= params['rr_tb_with_hiv_stages'][3]
+        print('eff_prob_active_tb: ', eff_prob_active_tb)
+
         # eff_prob_active_tb.loc[df.on_art] *= params['rr_tb_art']
         # eff_prob_active_tb.loc[df.is_malnourished] *= params['rr_tb_malnourished']
         # eff_prob_active_tb.loc[df.has_diabetes1] *= params['rr_tb_diabetes1']
