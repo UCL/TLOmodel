@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # plot the urban total history
   #  stats = simulation.modules['Lifestyle'].store['urban_total']
     stats2 = simulation.modules['Lifestyle'].store['alive']
-    stats3 = simulation.modules['Lifestyle'].store2['proportion_m_overwt']
+    stats3 = simulation.modules['Lifestyle'].store2['prop_m_urban_overwt']
 
     import matplotlib.pyplot as plt
     import numpy as np
