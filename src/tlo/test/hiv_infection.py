@@ -324,7 +324,10 @@ class hiv(Module):
         # print(time_death_slow)
 
         # remove microseconds
-        time_death_slow = pd.to_timedelta(time_death_slow).values.astype('timedelta64[s]')
+        # time_death_slow = pd.to_timedelta(time_death_slow).values.astype('timedelta64[s]')
+        # time_death_slow = time_death_slow.floor('s')
+        time_death_slow = pd.Series(time_death_slow).dt.floor("S")
+
         # print(time_death_slow)
 
         df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
@@ -375,7 +378,10 @@ class hiv(Module):
         # print(time_of_death)
 
         # remove microseconds
-        time_of_death = pd.to_timedelta(time_of_death).values.astype('timedelta64[s]')
+        # time_of_death = pd.to_timedelta(time_of_death).values.astype('timedelta64[s]')
+        # time_of_death = time_of_death.floor('s')
+        time_of_death = pd.Series(time_of_death).dt.floor("S")
+
         # print(time_death_slow)
 
         df.loc[hiv_ad, 'date_aids_death'] = df.loc[hiv_ad, 'date_hiv_infection'] + time_of_death
@@ -395,7 +401,7 @@ class hiv(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -468,14 +474,14 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
         # print('death dates as dates: ', death_date)
 
+        # death_date = death_date.floor('s')  # remove microseconds
         # death_date = pd.to_timedelta(death_date).values.astype('timedelta64[s]')
-        # print('death dates remove ms: ', death_date)
+        death_date = pd.Series(death_date).dt.floor("S")
+        # print('death dates without ns: ', death_date)
 
         df.loc[new_cases, 'has_hiv'] = True
         df.loc[new_cases, 'date_hiv_infection'] = now
         df.loc[new_cases, 'date_aids_death'] = now + death_date
-
-
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -495,4 +501,4 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
 
-        print(self.sim.date, infected_total)
+        print('hiv outputs: ', self.sim.date, infected_total)

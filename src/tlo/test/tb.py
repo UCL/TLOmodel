@@ -19,6 +19,10 @@ class tb_baseline(Module):
     """ Set up the baseline population with TB prevalence
     """
 
+    def __init__(self, name=None):
+        super().__init__(name)
+        self.store = {'Time': [], 'Total_active_tb': []}
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
@@ -130,7 +134,7 @@ class tb_baseline(Module):
                     (Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prob_latent_tb']
                 male_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
                 df.loc[male_latent_tb, 'has_tb'] = 'Latent'
-                df.loc[male_latent_tb, 'date_latent_tb'] = self.sim.date
+                df.loc[male_latent_tb, 'date_latent_tb'] = now
 
             idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
 
@@ -139,7 +143,7 @@ class tb_baseline(Module):
                     (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == i), 'incidence_per_capita']
                 male_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
                 df.loc[male_active_tb, 'has_tb'] = 'Active'
-                df.loc[male_active_tb, 'date_active_tb'] = self.sim.date
+                df.loc[male_active_tb, 'date_active_tb'] = now
 
             # female
             idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
@@ -150,7 +154,7 @@ class tb_baseline(Module):
                     (Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
                 df.loc[female_latent_tb, 'has_tb'] = 'Latent'
-                df.loc[female_latent_tb, 'date_latent_tb'] = self.sim.date
+                df.loc[female_latent_tb, 'date_latent_tb'] = now
 
             idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
 
@@ -159,19 +163,22 @@ class tb_baseline(Module):
                     (active_tb_prob_year.Sex == 'F') & (active_tb_prob_year.ages == i), 'incidence_per_capita']
                 female_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
                 df.loc[female_active_tb, 'has_tb'] = 'Active'
-                df.loc[female_active_tb, 'date_active_tb'] = self.sim.date
+                df.loc[female_active_tb, 'date_active_tb'] = now
 
-        print(df.head(20))
+        # print(df.head(20))
 
         # date of death of the infected individuals (in the future)
         infected_count = len(df[(df.has_tb == 'Active') & df.is_alive])  # get all the infected alive individuals
-        print('infected_count: ', infected_count)
+        # print('infected_count: ', infected_count)
 
         death_years_ahead = np.random.exponential(scale=5, size=infected_count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        death_td_ahead = pd.to_timedelta(death_years_ahead * 365.25, unit='d')
+        # death_td_ahead = pd.Series(death_td_ahead).dt.floor("S")  # remove microseconds
+        # print('death_td_ahead: ', death_td_ahead)
 
         # set the properties of infected individuals
-        df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = self.sim.date + death_td_ahead
+        df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = now + death_td_ahead
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -184,7 +191,7 @@ class tb_baseline(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(tb_logging_event(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
         # add the death event of infected individuals
         df = sim.population.props
@@ -201,14 +208,10 @@ class tb_baseline(Module):
         :param child: the new child
         """
 
-        # assign properties at birth linked with this module
-        # set-up baseline population
-        # df['has_tb'].values[:] = 'Uninfected'
-        # df['date_active_tb'] = pd.NaT
-        # df['date_latent_tb'] = pd.NaT
-        # df['date_tb_death'] = pd.NaT
-
-        raise NotImplementedError
+        child.has_tb.values[:] = 'Uninfected'
+        child.date_active_tb = pd.NaT
+        child.date_latent_tb = pd.NaT
+        child.date_tb_death = pd.NaT
 
 
 class tb_event(RegularEvent, PopulationScopeEventMixin):
@@ -248,21 +251,26 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         total_population = len(df[df.is_alive])
 
         force_of_infection = (params['transmission_rate'] * active_total * uninfected_total) / total_population
-        print('force_of_infection: ', force_of_infection)
+        # print('force_of_infection: ', force_of_infection)
 
         # this prob_tb_new = 584, therefore random draw will produce all TRUE values
         prob_tb_new = pd.Series(force_of_infection, index=df[(df.has_tb == 'Uninfected') & df.is_alive].index)
-        print('prob_tb_new: ', prob_tb_new)
+        # print('prob_tb_new: ', prob_tb_new)
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
         df.loc[new_case, 'has_tb'] = 'Latent'
         df.loc[new_case, 'date_latent_tb'] = now
 
-        # 14% of newly infected latent cases become active directly
-        fast_progression = df[(df.has_tb == 'Latent') & (df.date_latent_tb == now) & df.is_alive].sample(
-            frac=params['prop_fast_progressor']).index
-        df.loc[fast_progression, 'has_tb'] = 'Active'
-        df.loc[fast_progression, 'date_active_tb'] = now
+        # if any newly infected latent cases, 14% become active directly
+        new_latent = df[(df.has_tb == 'Latent') & (df.date_latent_tb == now) & df.is_alive].sum()
+        # print(new_latent)
+
+        if new_latent.any():
+            fast_progression = df[(df.has_tb == 'Latent') & (df.date_latent_tb == now) & df.is_alive].sample(
+                frac=params['prop_fast_progressor']).index
+            df.loc[fast_progression, 'has_tb'] = 'Active'
+            df.loc[fast_progression, 'date_active_tb'] = now
+
 
         # slow progressors with latent TB become active
         # needs to be a random sample with weights for RR of active disease
@@ -301,3 +309,24 @@ class tb_logging_event(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         pass
+
+
+class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """ produce some outputs to check
+        """
+        # run this event every 12 months (every year)
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        active_tb_total = len(df[df.has_tb == 'Active'])
+        print(active_tb_total)
+
+        self.module.store['Time'].append(self.sim.date)
+        self.module.store['Total_active_tb'].append(active_tb_total)
+
+        print('tb outputs: ', self.sim.date, active_tb_total)
