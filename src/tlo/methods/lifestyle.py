@@ -490,7 +490,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         men_over_15 = df.index[age.years >= 15 & (df.sex == 'M') & df.is_alive]
         women_over_15 = df.index[age.years >= 15 & (df.sex == 'F') & df.is_alive]
 
-        n_men_over_15 = len(men_over_15)
+        n_men_over_15 = len(men_over_15) 
         n_women_over_15 = len(women_over_15)
 
         self.module.store['alive'].append(alive)
