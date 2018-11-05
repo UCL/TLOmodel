@@ -3,19 +3,19 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
 
 from tlo import Simulation, Date
 from tlo.methods import demography
 
-import dill
 
 
 #%% Run the Simulation
-path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Old Versions/Demography_WorkingFile.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
+path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
-popsize = 100000
+end_date = Date(2020, 1, 1)
+popsize = 1000
 
 sim = Simulation(start_date=start_date)
 
@@ -24,7 +24,7 @@ sim.verboseoutput=False
 core_module = demography.Demography(workbook_path=path)
 sim.register(core_module)
 
-sim.seed_rngs(0)
+sim.seed_rngs(2)
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -34,14 +34,14 @@ sim.simulate(end_date=end_date)
 #%% Make a nice plot;
 
 figurepath='/Users/tbh03/PycharmProjects/TLOmodel/src/Analysis/Figures/'
-
+datestamp=datetime.date.today().strftime("__%Y_%m_%d")
 
 plt.plot(sim.modules['Demography'].store_PopulationStats['Time'], sim.modules['Demography'].store_PopulationStats['Population_Total'])
 plt.title("Population Size")
 plt.xlabel("Year")
 plt.ylabel("Populaton Size")
 
-plt.savefig(figurepath+'PopSize.png')
+plt.savefig(figurepath+'PopSize'+ datestamp +'.pdf')
 
 plt.show()
 
@@ -139,27 +139,15 @@ for ax in axes.flat:
 fig.tight_layout()
 fig.subplots_adjust(wspace=0.09)
 
-plt.savefig(figurepath+'PopulationPyramid2015.pdf')
+plt.savefig(figurepath+'PopPyramid2015'+ datestamp +'.pdf')
 plt.show()
 
 
-#%% This a second cell
-
-fig, ax = plt.subplots()
-ax.barh(y, y)
-plt.show()
-
-# Example data
-people = ('Tom', 'Dick', 'Harry', 'Slim', 'Jim')
-y_pos = np.arange(len(people))
-performance = 3 + 10 * np.random.rand(len(people))
-error = np.random.rand(len(people))
+#%% Plot deaths (by cause)
 
 
-ax.set_yticks(y_pos)
-ax.set_yticklabels(people)
-ax.invert_yaxis()  # labels read top-to-bottom
-ax.set_xlabel('Performance')
-ax.set_title('How fast do you want to go today?')
 
-plt.show()
+
+#%% Plot births occuring over time...
+
+

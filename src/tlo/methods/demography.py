@@ -163,6 +163,7 @@ class Demography(Module):
         df.date_of_last_pregnancy = pd.DateOffset(months=0)
 
         df.contraception.values[:] = 'not using' #this will be ascribed by the lifestype module
+        #TODO: Lifestyle module should look after contraception property
 
 
 
@@ -220,16 +221,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         female=pd.merge(female, population.age,left_index=True,right_index=True)  # merge in the ages
 
         fert_schedule=self.module.parameters['fertility_schedule']  # load the fertility schedule (imported datasheet from excel workbook)
-        # fert_schedule=fert_schedule.loc[fert_schedule.year==self.sim.date.year] # get the subset of fertility rates for this year.
 
-        # # --------
-        # # add age-groups to each dataframe (this to be done by the population object later)
-        # # (NB. Why does fert_schedule['agegrp']=0 create a warning when the same line on 'females' doesn't)
-        # # TODO: add age-group cateogory to population method so that this isn't done here
-        # female['agegrp']=0
-        # female['agegrp']=np.floor(female['years']/5)
-        # fert_schedule['agegrp']=0
-        # fert_schedule['agegrp']=np.floor(fert_schedule['age_from']/5)
         # --------
 
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
