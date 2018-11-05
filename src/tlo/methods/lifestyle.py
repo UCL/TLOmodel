@@ -61,7 +61,7 @@ class Lifestyle(Module):
     def __init__(self):
         super().__init__()
         self.store = {'alive': []}
-        self.store2 = {'proportion_m_overwt': []}
+        self.store2 = {'prop_m_urban_overwt': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -444,12 +444,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         urban_alive = (df.is_alive & df.li_urban).sum()
         alive = df.is_alive.sum()
 
-        men_over_15_overweight = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive]
-        men_over_15 = df.index[(age.years >= 15) & (df.sex == 'M') & df.is_alive]
-        women_over_15 = df.index[(age.years >= 15) & (df.sex == 'F') & df.is_alive]
+        m_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & df.li_urban]
+        m_urban_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_urban & df.is_alive]
 
-        n_men_over_15 = len(men_over_15)
-        n_women_over_15 = len(women_over_15)
+        n_m_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
 
         self.module.store['alive'].append(alive)
 
@@ -459,15 +457,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
-        proportion_m_overwt = len(men_over_15_overweight) / len(men_over_15)
+        prop_m_urban_overwt = len(m_urban_ge15_overwt) / len(m_urban_ge15)
 
-        self.module.store2['proportion_m_overwt'].append(proportion_m_overwt)
+        self.module.store2['prop_m_urban_overwt'].append(prop_m_urban_overwt)
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_men_over_15:%d , proportion_m_overwt:%f , newly urban: %d, '
+        print('%s lifestyle n_m_ge15:%d , prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_men_over_15,  proportion_m_overwt, newly_urban_in_last_3mths,
+              (self.sim.date, n_m_ge15,  prop_m_urban_overwt, newly_urban_in_last_3mths,
                list(wealth_count_alive)),
               flush=True)
 
