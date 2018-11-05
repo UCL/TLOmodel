@@ -330,7 +330,6 @@ class hiv(Module):
         df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
 
         # test2 = df.loc[hiv_inf]
-
         # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for infants
 
     def initial_pop_deaths_adults(self, population):
@@ -353,7 +352,6 @@ class hiv(Module):
 
         # print('length time_of_death:', len(time_of_death))
         # print('time_death: ', time_of_death)
-
 
         time_infected = now - df.loc[hiv_ad, 'date_hiv_infection']
         # print(time_infected)
@@ -383,7 +381,6 @@ class hiv(Module):
         df.loc[hiv_ad, 'date_aids_death'] = df.loc[hiv_ad, 'date_hiv_infection'] + time_of_death
 
         # test2 = df.loc[hiv_ad]
-
         # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for adults
 
 
@@ -408,7 +405,10 @@ class hiv(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        pass
+        child.has_hiv = False
+        child.date_hiv_infection = pd.NaT
+        child.date_aids_death = pd.NaT
+        child.sexual_risk_group = 1
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
@@ -465,10 +465,8 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # time of death
         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(new_cases)) * \
                         np.exp(self.module.log_scale(df_age.loc[new_cases, 'years']))
-        print('death dates years: ', death_date)
-
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
-        print('death dates as dates: ', death_date)
+        # print('death dates as dates: ', death_date)
 
         # death_date = pd.to_timedelta(death_date).values.astype('timedelta64[s]')
         # print('death dates remove ms: ', death_date)

@@ -66,10 +66,10 @@ class Mockitis(Module):
         :param population: the population of individuals
         """
 
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df = population.props  # a shortcut to the dataframe storing data for individuals
 
         df['mi_is_infected'] = False  # default: no individuals infected
-        df['mi_status'].values[:] = 'N'  # default: never infected, this is how you initialise a categorial
+        df['mi_status'].values[:] = 'N'  # default: never infected, this is how you initialise a categorical
         df['mi_date_infected'] = pd.NaT  # default: not a time
         df['mi_date_death'] = pd.NaT  # default: not a time
         df['mi_date_cure'] = pd.NaT  # default: not a time
