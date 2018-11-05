@@ -480,14 +480,18 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-    # TODO
-    # create an output of the proportion of people age over 15 who are overwt (for example) I'm struggling with
-    # the age
+        age = population.age
 
         urban_alive = (df.is_alive & df.li_urban).sum()
-        n_overwt_alive = (df.is_alive & df.li_overwt).sum()
      #  self.module.store['urban_total'].append(urban_alive)
         alive = df.is_alive.sum()
+
+        men_over_15_overweight = df.index[age.years >= 15 & (df.sex == 'M') & df.li_overwt & df.is_alive]
+        men_over_15 = df.index[age.years >= 15 & (df.sex == 'M') & df.is_alive]
+        women_over_15 = df.index[age.years >= 15 & (df.sex == 'F') & df.is_alive]
+
+        n_men_over_15 = len(men_over_15)
+        n_women_over_15 = len(women_over_15)
 
         self.module.store['alive'].append(alive)
 
@@ -497,10 +501,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
+        proportion_m_overwt = len(men_over_15_overweight) / len(men_over_15)
+
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle urban alive:%d , proportion_urban: %f , newly urban: %d, wealth: %s' %
-              (self.sim.date, urban_alive, proportion_urban, newly_urban_in_last_3mths, list(wealth_count_alive)),
+        print('%s lifestyle n_men_over_15:%d ,n_women_over_15:%e , proportion_m_overwt: %f , newly urban: %d, '
+              'wealth: %s' %
+              (self.sim.date, n_men_over_15, n_women_over_15, proportion_m_overwt, newly_urban_in_last_3mths,
+               list(wealth_count_alive)),
               flush=True)
 
 
