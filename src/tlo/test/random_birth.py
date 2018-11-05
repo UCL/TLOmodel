@@ -99,6 +99,7 @@ class RandomBirth(Module):
         child.is_pregnant = False
         child.children = []
         mother.children.append(child.index)
+        mother.is_pregnant = False
 
 
 class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
