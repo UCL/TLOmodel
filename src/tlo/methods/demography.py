@@ -407,6 +407,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
+        age_range=self.sim.population.age.age_range
+        age=self.sim.population.age.years
 
         Num_Women=((df['sex']=='F') & (df['is_alive']==True)).sum()
         Num_Men=((df['sex']=='M') & (df['is_alive']==True)).sum()
@@ -420,9 +422,47 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               (self.sim.date,Num_Women,Num_Men,Num_Total), flush=True)
 
 
-
         self.module.store['Time'].append(self.sim.date)
-        self.module.store['Population_Total'].append(Num_Total)
+        self.module.store['Population_Total'].append((df['is_alive']==True).sum())
+        self.module.store['Population_Men'].append(((df['sex']=='M') & (df['is_alive']==True)).sum())
+        self.module.store['Population_Men_0-4'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='0-4') ).sum())
+        self.module.store['Population_Men_5-9'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='5-9') ).sum())
+        self.module.store['Population_Men_10-14'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='10-14') ).sum())
+        self.module.store['Population_Men_15-19'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='15-19') ).sum())
+        self.module.store['Population_Men_20-24'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='20-24') ).sum())
+        self.module.store['Population_Men_25-29'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='25-29') ).sum())
+        self.module.store['Population_Men_30-34'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='30-34') ).sum())
+        self.module.store['Population_Men_35-39'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='35-39') ).sum())
+        self.module.store['Population_Men_40-44'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='40-44') ).sum())
+        self.module.store['Population_Men_45-49'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='45-49') ).sum())
+        self.module.store['Population_Men_50-54'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='50-54') ).sum())
+        self.module.store['Population_Men_55-59'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='55-59') ).sum())
+        self.module.store['Population_Men_60-64'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='60-64') ).sum())
+        self.module.store['Population_Men_65-69'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='65-69') ).sum())
+        self.module.store['Population_Men_70-74'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='70-74') ).sum())
+        self.module.store['Population_Men_75-79'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='75-79') ).sum())
+        self.module.store['Population_Men_80-84'].append(((df['sex']=='M') & (df['is_alive']==True) & (age_range=='80-84') ).sum())
+        self.module.store['Population_Men_85-'].append(((df['sex']=='M') & (df['is_alive']==True) & (age>=85) ).sum())
+        self.module.store['Population_Women'].append(((df['sex']=='F') & (df['is_alive']==True)).sum())
+        self.module.store['Population_Women_0-4'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='0-4') ).sum())
+        self.module.store['Population_Women_5-9'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='5-9') ).sum())
+        self.module.store['Population_Women_10-14'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='10-14') ).sum())
+        self.module.store['Population_Women_15-19'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='15-19') ).sum())
+        self.module.store['Population_Women_20-24'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='20-24') ).sum())
+        self.module.store['Population_Women_25-29'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='25-29') ).sum())
+        self.module.store['Population_Women_30-34'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='30-34') ).sum())
+        self.module.store['Population_Women_35-39'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='35-39') ).sum())
+        self.module.store['Population_Women_40-44'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='40-44') ).sum())
+        self.module.store['Population_Women_45-49'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='45-49') ).sum())
+        self.module.store['Population_Women_50-54'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='50-54') ).sum())
+        self.module.store['Population_Women_55-59'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='55-59') ).sum())
+        self.module.store['Population_Women_60-64'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='60-64') ).sum())
+        self.module.store['Population_Women_65-69'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='65-69') ).sum())
+        self.module.store['Population_Women_70-74'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='70-74') ).sum())
+        self.module.store['Population_Women_75-79'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='75-79') ).sum())
+        self.module.store['Population_Women_80-84'].append(((df['sex']=='F') & (df['is_alive']==True) & (age_range=='80-84') ).sum())
+        self.module.store['Population_Women_85-'].append(((df['sex']=='F') & (df['is_alive']==True) & (age>=85) ).sum())
+
 
 
 
