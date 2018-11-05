@@ -7,7 +7,7 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2060, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 1000
 
 
@@ -36,6 +36,7 @@ if __name__ == '__main__':
     # plot the urban total history
   #  stats = simulation.modules['Lifestyle'].store['urban_total']
     stats2 = simulation.modules['Lifestyle'].store['alive']
+    stats3 = simulation.modules['Lifestyle'].store2['proportion_m_overwt']
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -45,9 +46,9 @@ if __name__ == '__main__':
    # plt.plot(np.arange(0, len(stats2)), stats2)
 
     xvals = np.arange(0, len(stats2))
-    yvals = stats2
+    yvals = stats3
   #  plt.xlim(0, 200)
-    plt.ylim(0, 5000)
+    plt.ylim(0, 1)
     plt.plot(xvals, yvals)
 
     plt.show()

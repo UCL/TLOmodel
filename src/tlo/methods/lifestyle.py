@@ -42,27 +42,6 @@ class Lifestyle(Module):
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_p_overwt_f_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female rural agege15'),
-        'init_p_overwt_f_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if female urban agege15'),
-        'init_p_overwt_m_rural_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male rural agege15'),
-        'init_p_overwt_m_urban_agege15': Parameter(Types.REAL, 'proportion overwt at baseline if male urban agege15'),
-        'init_p_tob_m_wealth1_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 age1519'),
-        'init_p_tob_m_wealth1_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 age2039'),
-        'init_p_tob_m_wealth1_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth1 agege40'),
-        'init_p_tob_m_wealth2_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 age1519'),
-        'init_p_tob_m_wealth2_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 age2039'),
-        'init_p_tob_m_wealth2_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth2 agege40'),
-        'init_p_tob_m_wealth3_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 age1519'),
-        'init_p_tob_m_wealth3_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 age2039'),
-        'init_p_tob_m_wealth3_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth3 agege40'),
-        'init_p_tob_m_wealth4_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 age1519'),
-        'init_p_tob_m_wealth4_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 age2039'),
-        'init_p_tob_m_wealth4_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth4 agege40'),
-        'init_p_tob_m_wealth5_age1519': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age1519'),
-        'init_p_tob_m_wealth5_age2039': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 age2039'),
-        'init_p_tob_m_wealth5_agege40': Parameter(Types.REAL, 'proportion tob at baseline if male wealth5 agege40'),
-        'init_p_ex_alc_m': Parameter(Types.LIST, 'proportion ex alc at baseline in males'),
-        'init_p_ex_alc_f': Parameter(Types.LIST, 'proportion ex alc at baseline in femaies'),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
     }
 
@@ -82,6 +61,7 @@ class Lifestyle(Module):
     def __init__(self):
         super().__init__()
         self.store = {'alive': []}
+        self.store2 = {'proportion_m_overwt': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -91,8 +71,8 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.000
-        self.parameters['r_not_overwt'] = 0.000
+        self.parameters['r_overwt'] = 0.005
+        self.parameters['r_not_overwt'] = 0.001
         self.parameters['rr_overwt_f'] = 1
         self.parameters['r_low_ex'] = 0.00
         self.parameters['r_not_low_ex'] = 0.000
@@ -105,29 +85,6 @@ class Lifestyle(Module):
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
         self.parameters['init_p_overwt_agelt15'] = 0.0
-        self.parameters['init_p_overwt_f_rural_agege15'] = 0.17
-        self.parameters['init_p_overwt_f_urban_agege15'] = 0.32
-        self.parameters['init_p_overwt_m_rural_agege15'] = 0.27
-        self.parameters['init_p_overwt_m_urban_agege15'] = 0.46
-        self.parameters['init_p_low_ex_f_rural_agege15'] = 0.07
-        self.parameters['init_p_low_ex_f_urban_agege15'] = 0.18
-        self.parameters['init_p_low_ex_m_rural_agege15'] = 0.11
-        self.parameters['init_p_low_ex_m_urban_agege15'] = 0.32
-        self.parameters['init_p_tob_m_wealth1_age1519'] = 0.01
-        self.parameters['init_p_tob_m_wealth1_age2039'] = 0.04
-        self.parameters['init_p_tob_m_wealth1_agege40'] = 0.06
-        self.parameters['init_p_tob_m_wealth2_age1519'] = 0.02
-        self.parameters['init_p_tob_m_wealth2_age2039'] = 0.08
-        self.parameters['init_p_tob_m_wealth2_agege40'] = 0.12
-        self.parameters['init_p_tob_m_wealth3_age1519'] = 0.03
-        self.parameters['init_p_tob_m_wealth3_age2039'] = 0.12
-        self.parameters['init_p_tob_m_wealth3_agege40'] = 0.18
-        self.parameters['init_p_tob_m_wealth4_age1519'] = 0.04
-        self.parameters['init_p_tob_m_wealth4_age2039'] = 0.16
-        self.parameters['init_p_tob_m_wealth4_agege40'] = 0.24
-        self.parameters['init_p_tob_m_wealth5_age1519'] = 0.05
-        self.parameters['init_p_tob_m_wealth5_age2039'] = 0.2
-        self.parameters['init_p_tob_m_wealth5_agege40'] = 0.3
         self.parameters['init_p_ex_alc_m'] = 0.15
         self.parameters['init_p_ex_alc_f'] = 0.01
 
@@ -178,7 +135,7 @@ class Lifestyle(Module):
         overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
                                                ('M', False, 0.27),
                                                ('F', True, 0.32),
-                                               ('F', False, 0.17) ],
+                                               ('F', False, 0.17)],
                                          columns=['sex', 'is_urban', 'p_ow'])
 
         overweight_probs = df.loc[gte_15, ['sex', 'li_urban']].merge(overweight_lookup,
@@ -187,7 +144,7 @@ class Lifestyle(Module):
                                                                      how='left')['p_ow']
 
         random_draw = self.rng.random_sample(size=len(gte_15))
-        df.loc[gte_15, 'li_overwt'] = (overweight_probs.values < random_draw)
+        df.loc[gte_15, 'li_overwt'] = (random_draw < overweight_probs.values)
 
         # low_ex;
         low_ex_lookup = pd.DataFrame(data=[('M', True, 0.32),
@@ -249,9 +206,11 @@ class Lifestyle(Module):
         assert len(df_with_age) == len(gte_15)  # check we have the same number of individuals after the merge
 
         # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
-        tob_probs = df_with_age.merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'], how='left')
+        tob_probs = df_with_age.merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'],
+                                      how='left')
 
-        assert np.array_equal(tob_probs.years_exact, df_with_age.years_exact)  # check the order of individuals is the same by comparing exact ages
+        assert np.array_equal(tob_probs.years_exact, df_with_age.years_exact)
+        # check the order of individuals is the same by comparing exact ages
         assert tob_probs.p_tob.isna().sum() == 0  # ensure we found a p_tob for every individual
 
         # each individual has a baseline probability
@@ -264,7 +223,7 @@ class Lifestyle(Module):
 
         # decide on tobacco use based on the individual probability is greater than random draw
         # this is a list of True/False. assign to li_tob
-        df.loc[gte_15, 'li_tob'] = (tob_probs.values > random_draw)
+        df.loc[gte_15, 'li_tob'] = (random_draw < tob_probs.values)
 
         # ex alc;
         df.loc[agelt15_index, 'li_ex_alc'] = False
@@ -483,14 +442,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         age = population.age
 
         urban_alive = (df.is_alive & df.li_urban).sum()
-     #  self.module.store['urban_total'].append(urban_alive)
         alive = df.is_alive.sum()
 
-        men_over_15_overweight = df.index[age.years >= 15 & (df.sex == 'M') & df.li_overwt & df.is_alive]
-        men_over_15 = df.index[age.years >= 15 & (df.sex == 'M') & df.is_alive]
-        women_over_15 = df.index[age.years >= 15 & (df.sex == 'F') & df.is_alive]
+        men_over_15_overweight = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive]
+        men_over_15 = df.index[(age.years >= 15) & (df.sex == 'M') & df.is_alive]
+        women_over_15 = df.index[(age.years >= 15) & (df.sex == 'F') & df.is_alive]
 
-        n_men_over_15 = len(men_over_15) 
+        n_men_over_15 = len(men_over_15)
         n_women_over_15 = len(women_over_15)
 
         self.module.store['alive'].append(alive)
@@ -503,11 +461,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         proportion_m_overwt = len(men_over_15_overweight) / len(men_over_15)
 
+        self.module.store2['proportion_m_overwt'].append(proportion_m_overwt)
+
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_men_over_15:%d ,n_women_over_15:%e , proportion_m_overwt: %f , newly urban: %d, '
+        print('%s lifestyle n_men_over_15:%d , proportion_m_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_men_over_15, n_women_over_15, proportion_m_overwt, newly_urban_in_last_3mths,
+              (self.sim.date, n_men_over_15,  proportion_m_overwt, newly_urban_in_last_3mths,
                list(wealth_count_alive)),
               flush=True)
 
