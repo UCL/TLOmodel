@@ -18,7 +18,7 @@ sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
+sim.verboseoutput=True
 
 # Make a nice plot;
 

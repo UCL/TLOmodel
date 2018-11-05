@@ -21,7 +21,54 @@ class Demography(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
-        self.store={'Time':[], 'Population_Total':[], 'Population_Men':[], 'Population0-5':[],'Population5-10':[]}
+        self.store={'Time':[],
+                    'Population_Total':[],
+                    'Population_Men':[],
+                    'Population_Men_0-4':[],
+                    'Population_Men_5-9':[],
+                    'Population_Men_10-14': [],
+                    'Population_Men_15-19': [],
+                    'Population_Men_20-24': [],
+                    'Population_Men_25-29': [],
+                    'Population_Men_30-34': [],
+                    'Population_Men_35-39': [],
+                    'Population_Men_40-44': [],
+                    'Population_Men_45-49': [],
+                    'Population_Men_50-54': [],
+                    'Population_Men_55-59': [],
+                    'Population_Men_60-64': [],
+                    'Population_Men_65-69': [],
+                    'Population_Men_70-74': [],
+                    'Population_Men_75-79': [],
+                    'Population_Men_80-84': [],
+                    'Population_Men_85-': [],
+                    'Population_Women': [],
+                    'Population_Women_0-4': [],
+                    'Population_Women_5-9': [],
+                    'Population_Women_10-14': [],
+                    'Population_Women_15-19': [],
+                    'Population_Women_20-24': [],
+                    'Population_Women_25-29': [],
+                    'Population_Women_30-34': [],
+                    'Population_Women_35-39': [],
+                    'Population_Women_40-44': [],
+                    'Population_Women_45-49': [],
+                    'Population_Women_50-54': [],
+                    'Population_Women_55-59': [],
+                    'Population_Women_60-64': [],
+                    'Population_Women_65-69': [],
+                    'Population_Women_70-74': [],
+                    'Population_Women_75-79': [],
+                    'Population_Women_80-84': [],
+                    'Population_Women_85-': [],
+                    'DeathEvent_Time': [],
+                    'DeathEvent_Age': [],
+                    'DeathEvent_Cause': [],
+                    'BirthEvent_Time': [],
+                    'BirthEvent_AgeOfMother': [],
+                    'BirthEvent_Outcome': []}
+
+
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -147,7 +194,8 @@ class Demography(Module):
         child.mother_id = mother.index
         child.is_alive = True
 
-        print("A new child has been born:",child.index)
+        if self.sim.verboseoutput:
+            print("A new child has been born:",child.index)
 
 
 
@@ -161,7 +209,8 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        print('Checking to see if anyone should become pregnant....')
+        if self.sim.verboseoutput:
+            print('Checking to see if anyone should become pregnant....')
 
         df=population.props # get the population dataframe
 
@@ -200,8 +249,9 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         personnumbers_of_newlypregnant=female.index[newlypregnant]
         for personnumber in personnumbers_of_newlypregnant:
 
-            print('Woman number: ',population[personnumber])
-            print('Her age is:', female.loc[personnumber,'years'])
+            if self.sim.verboseoutput:
+                print('Woman number: ',population[personnumber])
+                print('Her age is:', female.loc[personnumber,'years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2+4*self.sim.rng.random_sample())
@@ -211,7 +261,9 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             # Schedule the Birth
             birth = DelayedBirthEvent(self.module, mother)  # prepare for that birth event
             self.sim.schedule_event(birth, birth_date_of_child)
-            print("The birth is now booked for: ", birth_date_of_child)
+
+            if self.sim.verboseoutput:
+                print("The birth is now booked for: ", birth_date_of_child)
 
             # Launch the Pregnancy_And_Newborn_Supervisor
             # p_and_n_supervisor=Pregnancy_And_Newborn_Supervisor_Event(self.module,mother)
@@ -240,12 +292,20 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         :param person: the person the event happens to, i.e. the mother giving birth
         """
 
-        print("@@@@ A Birth is now occuring, to mother", mother)
+        if self.sim.verboseoutput:
+            print("@@@@ A Birth is now occuring, to mother", mother)
+
         if mother.is_alive:
             self.sim.do_birth
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         mother.is_pregnant=False
+
+
+        # Log the birth:
+        self.module.store['BirthEvent_Time'].append(self.sim.date)
+        self.module.store['BirthEvent_AgeOfMother'].append(self.sim.population.age.years[mother.index])
+        self.module.store['BirthEvent_Outcome'].append(0)
 
 
 
@@ -261,7 +321,8 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        print("Checking to see if anyone should die....")
+        if self.sim.verboseoutput:
+            print("Checking to see if anyone should die....")
 
         #get the mortality schedule for now...
         mort_schedule=self.module.parameters['mortality_schedule']  # load the mortality schedule (imported datasheet from excel workbook)
@@ -317,14 +378,22 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         self.cause=cause
 
     def apply(self, individual):
-        print("@@@@ A Death is now occuring, to person", individual)
+
+        if self.sim.verboseoutput:
+            print("@@@@ A Death is now occuring, to person", individual)
+
         if individual.is_alive:
             # here comes the death..
             individual.is_alive = False
-
             # the person is now dead
+
+        if self.sim.verboseoutput:
             print("*******************************************The person", individual, "is now officially dead and has died of :", self.cause)
 
+        # Log the death
+        self.module.store['DeathEvent_Time'].append(self.sim.date)
+        self.module.store['DeathEvent_Age'].append(self.sim.population.age.years[individual.index])
+        self.module.store['DeathEvent_Cause'].append(self.cause)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -345,8 +414,12 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         counts = {'Num_Women': Num_Women, 'Num_Men': Num_Men, 'Num_Total': Num_Total}
 
-        print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
+
+        if self.sim.verboseoutput:
+            print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
               (self.sim.date,Num_Women,Num_Men,Num_Total), flush=True)
+
+
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Population_Total'].append(Num_Total)

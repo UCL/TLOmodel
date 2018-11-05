@@ -42,6 +42,8 @@ class Simulation:
         self.modules = {}
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
+        self.verboseoutput=False
+
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
