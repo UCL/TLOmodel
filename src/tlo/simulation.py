@@ -130,6 +130,7 @@ class Simulation:
             module.on_birth(mother, child)
         return child
 
+        print('A birth is being added')
 
 
 class EventQueue:

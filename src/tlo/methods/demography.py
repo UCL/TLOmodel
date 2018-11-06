@@ -193,7 +193,7 @@ class Demography(Module):
         :param child: the new child
         """
         child.date_of_birth = self.sim.date
-        child.sex = sim.rng.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
+        child.sex = self.sim.rng.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
         child.mother_id = mother.index
         child.is_alive = True
 
@@ -291,7 +291,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
             print("@@@@ A Birth is now occuring, to mother", mother)
 
         if mother.is_alive:
-            self.sim.do_birth
+            self.sim.do_birth(mother)
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         mother.is_pregnant=False
