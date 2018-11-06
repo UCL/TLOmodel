@@ -36,7 +36,11 @@ if __name__ == '__main__':
     # plot the urban total history
   #  stats = simulation.modules['Lifestyle'].store['urban_total']
     stats2 = simulation.modules['Lifestyle'].store['alive']
-    stats3 = simulation.modules['Lifestyle'].store2['prop_m_urban_overwt']
+    stats3 = simulation.modules['Lifestyle'].o_prop_m_urban_overwt['prop_m_urban_overwt']
+    stats4 = simulation.modules['Lifestyle'].o_prop_f_urban_overwt['prop_f_urban_overwt']
+    stats5 = simulation.modules['Lifestyle'].o_prop_m_rural_overwt['prop_m_rural_overwt']
+    stats6 = simulation.modules['Lifestyle'].o_prop_f_rural_overwt['prop_f_rural_overwt']
+    stats7 = simulation.modules['Lifestyle'].o_prop_urban['prop_urban']
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -46,10 +50,9 @@ if __name__ == '__main__':
    # plt.plot(np.arange(0, len(stats2)), stats2)
 
     xvals = np.arange(0, len(stats2))
-    yvals = stats3
-  #  plt.xlim(0, 200)
+
+    yvals = stats6
     plt.ylim(0, 1)
     plt.plot(xvals, yvals)
-
     plt.show()
 
