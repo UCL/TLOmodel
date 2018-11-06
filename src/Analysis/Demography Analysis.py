@@ -19,12 +19,12 @@ popsize = 1000
 
 sim = Simulation(start_date=start_date)
 
-sim.verboseoutput=False
+sim.verboseoutput=True
 
 core_module = demography.Demography(workbook_path=path)
 sim.register(core_module)
 
-sim.seed_rngs(2)
+sim.seed_rngs(1)
 
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -59,8 +59,6 @@ X=df.loc[m2015] # subset to the year of interest
 
 ModelOutput_Women=np.array([ X['Population_Women_0-4'].values,
                       X['Population_Women_5-9'].values,
-                      X['Population_Women_0-4'].values,
-                      X['Population_Women_5-9'].values,
                       X['Population_Women_10-14'].values,
                       X['Population_Women_15-19'].values,
                       X['Population_Women_20-24'].values,
@@ -80,8 +78,6 @@ ModelOutput_Women=np.array([ X['Population_Women_0-4'].values,
                       ])
 
 ModelOutput_Men=np.array([ X['Population_Men_0-4'].values,
-                      X['Population_Men_5-9'].values,
-                      X['Population_Men_0-4'].values,
                       X['Population_Men_5-9'].values,
                       X['Population_Men_10-14'].values,
                       X['Population_Men_15-19'].values,
@@ -151,3 +147,25 @@ plt.show()
 #%% Plot births occuring over time...
 
 
+
+#%% Plots births ....
+
+df=pd.DataFrame([sim.modules['Demography'].store_EventsLog['BirthEvent_Time'],
+             sim.modules['Demography'].store_EventsLog['BirthEvent_AgeOfMother'],
+             sim.modules['Demography'].store_EventsLog['BirthEvent_Outcome']]).transpose()
+df.columns=['BirthEvent_Time','BirthEvent_AgeOfMother','BirthEvent_Outcome']
+
+
+plt.plot_date(df['BirthEvent_Time'],df['BirthEvent_AgeOfMother'])
+plt.show()
+
+
+#%%
+df=pd.DataFrame([sim.modules['Demography'].store_EventsLog['DeathEvent_Time'],
+             sim.modules['Demography'].store_EventsLog['DeathEvent_Age'],
+             sim.modules['Demography'].store_EventsLog['DeathEvent_Cause']]).transpose()
+
+df.columns=['DeathEvent_Time','DeathEvent_Age','DeathEvent_Cause']
+
+plt.plot_date(df['DeathEvent_Time'],df['DeathEvent_Age'])
+plt.show()

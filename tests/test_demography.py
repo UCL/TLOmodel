@@ -8,7 +8,7 @@ popsize = 50
 
 sim = Simulation(start_date=start_date)
 
-sim.verboseoutput=True
+sim.verboseoutput=False
 
 core_module = demography.Demography(workbook_path=path)
 sim.register(core_module)
