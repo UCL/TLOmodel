@@ -61,7 +61,11 @@ class Lifestyle(Module):
     def __init__(self):
         super().__init__()
         self.store = {'alive': []}
-        self.store2 = {'prop_m_urban_overwt': []}
+        self.o_prop_urban = {'prop_urban': []}
+        self.o_prop_m_urban_overwt = {'prop_m_urban_overwt': []}
+        self.o_prop_f_urban_overwt = {'prop_f_urban_overwt': []}
+        self.o_prop_m_rural_overwt = {'prop_m_rural_overwt': []}
+        self.o_prop_f_rural_overwt = {'prop_f_rural_overwt': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -71,9 +75,10 @@ class Lifestyle(Module):
         """
         self.parameters['r_urban'] = 0.000625
         self.parameters['r_rural'] = 0.00001
-        self.parameters['r_overwt'] = 0.005
+        self.parameters['r_overwt'] = 0.0025
         self.parameters['r_not_overwt'] = 0.001
-        self.parameters['rr_overwt_f'] = 1
+        self.parameters['rr_overwt_f'] = 1.0
+        self.parameters['rr_overwt_urban'] = 1.5
         self.parameters['r_low_ex'] = 0.00
         self.parameters['r_not_low_ex'] = 0.000
         self.parameters['r_tob'] = 0.000
@@ -288,6 +293,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_overwt = module.parameters['r_overwt']
         self.r_not_overwt = module.parameters['r_not_overwt']
         self.rr_overwt_f = module.parameters['rr_overwt_f']
+        self.rr_overwt_urban = module.parameters['rr_overwt_urban']
         self.r_low_ex = module.parameters['r_low_ex']
         self.r_not_low_ex = module.parameters['r_not_low_ex']
         self.r_tob = module.parameters['r_tob']
@@ -332,29 +338,50 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # as above - transition between overwt and not overwt
         # transition to ovrwt depends on sex
 
-        currently_not_overwt_f = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F')]
-        currently_not_overwt_m = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M')]
+        currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban]
+        currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban]
+        currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban]
+        currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban]
         currently_overwt = df.index[df.li_overwt & df.is_alive]
 
-        ri_overwt_f = self.r_overwt*self.rr_overwt_f
-        ri_overwt_m = self.r_overwt
+        ri_overwt_f_urban = self.r_overwt * self.rr_overwt_f * self.rr_overwt_urban
+        ri_overwt_f_rural = self.r_overwt * self.rr_overwt_f
+        ri_overwt_m_urban = self.r_overwt * self.rr_overwt_urban
+        ri_overwt_m_rural = self.r_overwt
 
-        now_overwt_f = np.random.choice([True, False],
-                                        size=len(currently_not_overwt_f),
-                                        p=[ri_overwt_f, 1 - ri_overwt_f])
-        if now_overwt_f.sum():
-            overwt_f_idx = currently_not_overwt_f[now_overwt_f]
-            df.loc[overwt_f_idx, 'li_overwt'] = True
+        now_overwt_f_urban = np.random.choice([True, False],
+                                              size=len(currently_not_overwt_f_urban),
+                                              p=[ri_overwt_f_urban, 1 - ri_overwt_f_urban])
 
-        now_overwt_m = np.random.choice([True, False],
-                                        size=len(currently_not_overwt_m),
-                                        p=[ri_overwt_m, 1 - ri_overwt_m])
-        if now_overwt_m.sum():
-            overwt_m_idx = currently_not_overwt_m[now_overwt_m]
-            df.loc[overwt_m_idx, 'li_overwt'] = True
+        if now_overwt_f_urban.sum():
+            overwt_f_urban_idx = currently_not_overwt_f_urban[now_overwt_f_urban]
+            df.loc[overwt_f_urban_idx, 'li_overwt'] = True
+
+        now_overwt_m_urban = np.random.choice([True, False],
+                                              size=len(currently_not_overwt_m_urban),
+                                              p=[ri_overwt_m_urban, 1 - ri_overwt_m_urban])
+
+        if now_overwt_m_urban.sum():
+            overwt_m_urban_idx = currently_not_overwt_m_urban[now_overwt_m_urban]
+            df.loc[overwt_m_urban_idx, 'li_overwt'] = True
 
         now_not_overwt = np.random.choice([True, False], size=len(currently_overwt),
                                           p=[self.r_not_overwt, 1 - self.r_not_overwt])
+
+        now_overwt_f_rural = np.random.choice([True, False],
+                                              size=len(currently_not_overwt_f_rural),
+                                              p=[ri_overwt_f_rural, 1 - ri_overwt_f_rural])
+        if now_overwt_f_rural.sum():
+            overwt_f_rural_idx = currently_not_overwt_f_rural[now_overwt_f_rural]
+            df.loc[overwt_f_rural_idx, 'li_overwt'] = True
+
+        now_overwt_m_rural = np.random.choice([True, False],
+                                              size=len(currently_not_overwt_m_rural),
+                                              p=[ri_overwt_m_rural, 1 - ri_overwt_m_rural])
+        if now_overwt_m_rural.sum():
+            overwt_m_rural_idx = currently_not_overwt_m_rural[now_overwt_m_rural]
+            df.loc[overwt_m_rural_idx, 'li_overwt'] = True
+
         if now_not_overwt.sum():
             not_overwt_idx = currently_overwt[now_not_overwt]
             df.loc[not_overwt_idx, 'li_overwt'] = False
@@ -444,8 +471,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         urban_alive = (df.is_alive & df.li_urban).sum()
         alive = df.is_alive.sum()
 
+        prop_urban = urban_alive / alive
         m_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & df.li_urban]
+        f_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & df.li_urban]
+        m_rural_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & ~df.li_urban]
+        f_rural_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & ~df.li_urban]
         m_urban_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_urban & df.is_alive]
+        f_urban_ge15 = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_urban & df.is_alive]
+        m_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & ~df.li_urban & df.is_alive]
+        f_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'F') & ~df.li_urban & df.is_alive]
 
         n_m_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
 
@@ -458,14 +492,21 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         newly_urban_in_last_3mths = mask.sum()
 
         prop_m_urban_overwt = len(m_urban_ge15_overwt) / len(m_urban_ge15)
+        prop_f_urban_overwt = len(f_urban_ge15_overwt) / len(f_urban_ge15)
+        prop_m_rural_overwt = len(m_rural_ge15_overwt) / len(m_rural_ge15)
+        prop_f_rural_overwt = len(f_rural_ge15_overwt) / len(f_rural_ge15)
 
-        self.module.store2['prop_m_urban_overwt'].append(prop_m_urban_overwt)
+        self.module.o_prop_m_urban_overwt['prop_m_urban_overwt'].append(prop_m_urban_overwt)
+        self.module.o_prop_f_urban_overwt['prop_f_urban_overwt'].append(prop_f_urban_overwt)
+        self.module.o_prop_m_rural_overwt['prop_m_rural_overwt'].append(prop_m_rural_overwt)
+        self.module.o_prop_f_rural_overwt['prop_f_rural_overwt'].append(prop_f_rural_overwt)
+        self.module.o_prop_urban['prop_urban'].append(prop_urban)
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , prop_m_urban_overwt:%f , newly urban: %d, '
+        print('%s lifestyle n_m_ge15:%d , prop_urban: %f , prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_m_ge15,  prop_m_urban_overwt, newly_urban_in_last_3mths,
+              (self.sim.date, n_m_ge15,  prop_urban, prop_m_urban_overwt, newly_urban_in_last_3mths,
                list(wealth_count_alive)),
               flush=True)
 
