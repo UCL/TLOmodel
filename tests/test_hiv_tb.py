@@ -40,17 +40,20 @@ if __name__ == '__main__':
     test_hiv_tb_simulation(simulation)
 
 
+# add plots for infections on birth and deaths when done
 
 # Make a nice plot
 hiv_output = simulation.modules['hiv'].store['Total_HIV']
 time = simulation.modules['hiv'].store['Time']
 
-tb_output = simulation.modules['tb_baseline'].store['Total_active_tb']
+active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
+coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
 time2 = simulation.modules['tb_baseline'].store['Time']
 
 plt.plot(time, hiv_output)
-plt.plot(time2, tb_output)
-plt.legend(['HIV', 'TB'], loc='upper left')
+plt.plot(time2, active_tb)
+plt.plot(time2, coinfected)
+plt.legend(['HIV', 'TB', 'HIV + TB'], loc='upper left')
 plt.xticks(rotation=45)
 plt.ylabel('Number of cases')
 
