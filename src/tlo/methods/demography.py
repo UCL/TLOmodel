@@ -9,8 +9,7 @@ import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-# from tlo.methods.pregnancy_and_newborn_supervisor import Pregnancy_And_Newborn_Supervisor_Event
-
+from tlo import Simulation, Date
 
 class Demography(Module):
     """
@@ -153,7 +152,7 @@ class Demography(Module):
         df.is_alive = True
 
         # assign that half the adult population is married (will be done in lifestyle module)
-        df.is_married=False
+        df.is_married=False #TODO: Lifestyle module should look after married property
 
         adults=(population.age.years>=18)
         df.loc[adults,'is_married']=self.sim.rng.choice([True,False],size=adults.sum(),p=[0.5,0.5])
@@ -196,9 +195,14 @@ class Demography(Module):
         child.sex = self.sim.rng.choice(['M', 'F'],p=[self.parameters['fraction_of_births_male'],(1-self.parameters['fraction_of_births_male'])])
         child.mother_id = mother.index
         child.is_alive = True
+        child.is_pregnant = False
+        child.is_married=False
+        child.date_of_last_pregnancy = pd.DateOffset(months=0)
+        child.contraception = 'not using'    #TODO: contraception should be governed by lifestyle module
 
         if self.sim.verboseoutput:
             print("A new child has been born:",child.index)
+
 
 
 
@@ -215,9 +219,13 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
         if self.sim.verboseoutput:
             print('Checking to see if anyone should become pregnant....')
 
+        if self.sim.date>Date(2035,1,1):
+            print('Now after 2035')
+
+
         df=population.props # get the population dataframe
 
-        female=df.loc[df.sex=='F',['contraception','is_married','is_pregnant']]  # get the subset of women from the population dataframe and relevant characteristics
+        female=df.loc[(df.sex=='F') & (df.is_alive==True),['contraception','is_married','is_pregnant']]  # get the subset of women from the population dataframe and relevant characteristics
         female=pd.merge(female, population.age,left_index=True,right_index=True)  # merge in the ages
 
         fert_schedule=self.module.parameters['fertility_schedule']  # load the fertility schedule (imported datasheet from excel workbook)
@@ -260,9 +268,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             if self.sim.verboseoutput:
                 print("The birth is now booked for: ", birth_date_of_child)
 
-            # Launch the Pregnancy_And_Newborn_Supervisor
-            # p_and_n_supervisor=Pregnancy_And_Newborn_Supervisor_Event(self.module,mother)
-            # self.sim.schedule_event(p_and_n_supervisor, DateOffset(weeks=1))
+
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
