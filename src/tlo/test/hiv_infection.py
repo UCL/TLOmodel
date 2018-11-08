@@ -9,6 +9,8 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 # read in data files #
+from tlo.methods import demography
+
 file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
 # file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
 
@@ -27,7 +29,7 @@ class hiv(Module):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.store = {'Time': [], 'Total_HIV': []}
+        self.store = {'Time': [], 'Total_HIV': [], 'HIV_deaths': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -397,8 +399,7 @@ class hiv(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        event = hiv_event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=12))
+        sim.schedule_event(hiv_event(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=12))
@@ -483,6 +484,17 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_cases, 'date_hiv_infection'] = now
         df.loc[new_cases, 'date_aids_death'] = now + death_date
 
+        death_dates = df.date_aids_death[new_cases]
+
+        # schedule the death event
+        for i in new_cases:
+            person = population[i]
+            death = demography.InstantaneousDeath(self.module, person, cause='hiv')  # make that death event
+            time_death = death_dates[i]
+            # print('time_death: ', time_death)
+            # print('now: ', now)
+            self.sim.schedule_event(death, time_death)  # schedule the death
+
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -495,10 +507,20 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
+        now = self.sim.date
 
         infected_total = df.has_hiv.sum()
 
+        date_aids_death = df.loc[df.has_hiv & df.is_alive, 'date_aids_death']
+        # print('date_aids_death: ', date_aids_death)
+        year_aids_death = date_aids_death.dt.year
+        # print('year_aids_death: ', year_aids_death)
+
+        die = sum(1 for x in year_aids_death if int(x) == now.year)
+        # print('die: ', die)
+
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
+        self.module.store['HIV_deaths'].append(die)
 
-        print('hiv outputs: ', self.sim.date, infected_total)
+        # print('hiv outputs: ', self.sim.date, infected_total)

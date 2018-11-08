@@ -1,6 +1,7 @@
 
 import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
+import numpy as np
 
 from tlo import Date, DateOffset, Person, Simulation, Types
 from tlo.test import hiv_infection, tb
@@ -45,17 +46,35 @@ if __name__ == '__main__':
 # Make a nice plot
 hiv_output = simulation.modules['hiv'].store['Total_HIV']
 time = simulation.modules['hiv'].store['Time']
+hiv_deaths = simulation.modules['hiv'].store['HIV_deaths']
 
 active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
 coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
+tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
+time_tb_death = simulation.modules['tb_baseline'].store['Time_death_TB']
 time2 = simulation.modules['tb_baseline'].store['Time']
 
+
+t1 = np.arange(0.0, 5.0, 0.1)
+t2 = np.arange(0.0, 5.0, 0.02)
+
+plt.figure(1)
+plt.subplot(211)
 plt.plot(time, hiv_output)
 plt.plot(time2, active_tb)
 plt.plot(time2, coinfected)
-plt.legend(['HIV', 'TB', 'HIV + TB'], loc='upper left')
-plt.xticks(rotation=45)
-plt.ylabel('Number of cases')
+
+plt.subplot(212)
+plt.plot(time_tb_death, tb_deaths)
+plt.show()
+#
+# fig, axs = plt.subplots(1, 2)
+# plt.plot(time, hiv_output)
+# axs[0, 0].plot(time2, active_tb)
+# axs[0, 0].plot(time2, coinfected)
+# plt.legend(['HIV', 'TB', 'HIV + TB'], loc='upper left')
+# plt.xticks(rotation=45)
+# plt.ylabel('Number of cases')
 
 plt.show()
 
