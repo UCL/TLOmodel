@@ -9,6 +9,8 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 # file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'  # laptop
+from tlo.methods import demography
+
 file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
 
 tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
@@ -21,7 +23,7 @@ class tb_baseline(Module):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.store = {'Time': [], 'Total_active_tb': []}
+        self.store = {'Time': [], 'Total_active_tb': [], 'Total_co-infected': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -58,9 +60,9 @@ class tb_baseline(Module):
         'tb_mortality_rate': Parameter(
             Types.REAL,
             'mortality rate with active tb'),
-        'rr_tb_mortality_hiv': Parameter(
+        'tb_mortality_HIV': Parameter(
             Types.REAL,
-            'relative risk of mortality from tb in hiv+ compared with hiv-'),
+            'mortality from tb with concurrent HIV'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -95,8 +97,8 @@ class tb_baseline(Module):
         params['rel_infectiousness_hiv'] = 0.68  # Juan
         params['prob_self_cure'] = 0.15
         params['self_cure'] = 0.33  # tiemersma plos one 2011, self-cure/death in 3 yrs
-        params['tb_mortality_rate'] = 0.15
-        params['rr_tb_mortality_HIV'] = 17.1
+        params['tb_mortality_rate'] = 0.15  # Juan
+        params['tb_mortality_HIV'] = 0.84  # Juan
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -186,19 +188,22 @@ class tb_baseline(Module):
         It is a good place to add initial events to the event queue.
         """
         # add the basic event (we will implement below)
-        event = tb_event(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=12))
+        sim.schedule_event(tb_event(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
         # add the death event of infected individuals
-        df = sim.population.props
-        infected_individuals = df[(df.has_tb == 'Active') & df.is_alive].index
-        for index in infected_individuals:
-            individual = self.sim.population[index]
-            death_event = tb_death_event(self, individual)
-            self.sim.schedule_event(death_event, individual.date_tb_death)
+        # df = sim.population.props
+        # infected_individuals = df[(df.has_tb == 'Active') & df.is_alive].index
+        # for index in infected_individuals:
+        #     individual = self.sim.population[index]
+        #     death_event = tbDeathEvent(self, individual)
+        #     self.sim.schedule_event(death_event, individual.date_tb_death)
+
+        sim.schedule_event(tbDeathEvent(self), sim.date + DateOffset(
+            months=12))
+
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -323,13 +328,55 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure_tb, 'has_tb'] = 'Latent'
 
 
-# need to pass the individual to this class not just the population dataframe
-class tb_death_event(Event, IndividualScopeEventMixin):
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
+class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that actually kills people.
 
-    def apply(self, individual):
-        pass
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """Create a new random death event.
+
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        :param death_probability: the per-person probability of death each month
+        """
+        super().__init__(module, frequency=DateOffset(months=12))
+
+    def apply(self, population):
+        """Apply this event to the population.
+
+        For efficiency, we use pandas operations to scan the entire population
+        and kill individuals at random.
+
+        :param population: the current population
+        """
+        params = self.module.parameters
+        df = population.props
+        now = self.sim.date
+        rng = self.module.rng
+
+        # Generate a series of random numbers, one per individual
+        mortality_rate = pd.Series(0, index=df.index)
+        mortality_rate.loc[(df.has_tb == 'Active') & ~df.has_hiv] = params['tb_mortality_rate']
+        mortality_rate.loc[(df.has_tb == 'Active') & df.has_hiv] = params['tb_mortality_HIV']
+        # print('mort_rate: ', mortality_rate)
+
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < mortality_rate)
+        # print('deaths: ', deaths)
+        will_die = (df[deaths]).index
+        # print('will_die: ', will_die)
+
+        for i in will_die:
+            person = population[i]
+            death = demography.InstantaneousDeath(self.module, person, cause='tb')  # make that death event
+            self.sim.schedule_event(death, now)  # schedule the death for "now"
 
 
 class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -345,9 +392,10 @@ class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         active_tb_total = len(df[df.has_tb == 'Active'])
-        print(active_tb_total)
+        coinfected_total = len(df[(df.has_tb == 'Active') & df.has_hiv])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_active_tb'].append(active_tb_total)
+        self.module.store['Total_co-infected'].append(coinfected_total)
 
-        print('tb outputs: ', self.sim.date, active_tb_total)
+        print('tb outputs: ', self.sim.date, active_tb_total, coinfected_total)
