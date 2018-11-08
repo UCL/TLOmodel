@@ -271,33 +271,37 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[fast_progression, 'date_active_tb'] = now
 
         # slow progressors with latent TB become active
-        # needs to be a random sample with weights for RR of active disease
-        eff_prob_active_tb = pd.Series(params['progression_to_active_rate'], index=df[df.has_tb == 'Latent'].index)
-        print('eff_prob_active_tb: ', eff_prob_active_tb)
+        # random sample with weights for RR of active disease
+        eff_prob_active_tb = pd.Series(0, index=df.index)
+        # print('eff_prob_active_tb - all zeros: ', eff_prob_active_tb)
 
-        hiv_stage1 = df.index[df.has_hiv &
+        eff_prob_active_tb.loc[df.has_tb == 'Latent'] = params['progression_to_active_rate']
+        # print('eff_prob_active_tb: ', eff_prob_active_tb)
+
+        hiv_stage1 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
                               (((now - df.date_hiv_infection).dt.days / 365.25) < 3.33)]
-        print('hiv_stage1', hiv_stage1)
+        # print('hiv_stage1', hiv_stage1)
 
-        hiv_stage2 = df.index[df.has_hiv &
+        hiv_stage2 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
                               (((now - df.date_hiv_infection).dt.days / 365.25) >= 3.33) &
                               (((now - df.date_hiv_infection).dt.days / 365.25) < 6.67)]
-        print('hiv_stage2', hiv_stage2)
+        # print('hiv_stage2', hiv_stage2)
 
-        hiv_stage3 = df.index[df.has_hiv &
+        hiv_stage3 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
                               (((now - df.date_hiv_infection).dt.days / 365.25) >= 6.67) &
                               (((now - df.date_hiv_infection).dt.days / 365.25) < 10)]
-        print('hiv_stage3', hiv_stage3)
+        # print('hiv_stage3', hiv_stage3)
 
-        hiv_stage4 = df.index[df.has_hiv &
+        hiv_stage4 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
                               (((now - df.date_hiv_infection).dt.days / 365.25) >= 10)]
-        print('hiv_stage4', hiv_stage4)
+        # print('hiv_stage4', hiv_stage4)
 
         eff_prob_active_tb.loc[hiv_stage1] *= params['rr_tb_with_hiv_stages'][0]
         eff_prob_active_tb.loc[hiv_stage2] *= params['rr_tb_with_hiv_stages'][1]
         eff_prob_active_tb.loc[hiv_stage3] *= params['rr_tb_with_hiv_stages'][2]
         eff_prob_active_tb.loc[hiv_stage4] *= params['rr_tb_with_hiv_stages'][3]
-        print('eff_prob_active_tb: ', eff_prob_active_tb)
+        # print('eff_prob_active_tb with hiv stages: ', eff_prob_active_tb)
+        # eff_prob_active_tb.to_csv('Q:/Thanzi la Onse/TB/eff_prob.csv', sep=',')
 
         # eff_prob_active_tb.loc[df.on_art] *= params['rr_tb_art']
         # eff_prob_active_tb.loc[df.is_malnourished] *= params['rr_tb_malnourished']
@@ -307,7 +311,9 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         # eff_prob_active_tb.loc[df.high_pollution] *= params['rr_tb_pollution']
 
         prog_to_active = eff_prob_active_tb > rng.rand(len(eff_prob_active_tb))
+        # print('prog_to_active: ', prog_to_active )
         new_active_case = prog_to_active[prog_to_active].index
+        # print('new_active_case: ', new_active_case)
         df.loc[new_active_case, 'has_tb'] = 'Active'
         df.loc[new_active_case, 'date_active_tb'] = now
 
@@ -323,14 +329,6 @@ class tb_death_event(Event, IndividualScopeEventMixin):
         super().__init__(module, person=individual)
 
     def apply(self, individual):
-        pass
-
-
-class tb_logging_event(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-
-    def apply(self, population):
         pass
 
 

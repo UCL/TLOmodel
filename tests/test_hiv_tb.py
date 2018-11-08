@@ -13,7 +13,7 @@ path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Ol
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 
@@ -41,15 +41,12 @@ if __name__ == '__main__':
 
 
 
-# Make a nice plot;
+# Make a nice plot
 hiv_output = simulation.modules['hiv'].store['Total_HIV']
 time = simulation.modules['hiv'].store['Time']
 
 tb_output = simulation.modules['tb_baseline'].store['Total_active_tb']
 time2 = simulation.modules['tb_baseline'].store['Time']
-
-
-# plt.plot(np.arange(0, len(stats)), stats)
 
 plt.plot(time, hiv_output)
 plt.plot(time2, tb_output)
