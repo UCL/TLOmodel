@@ -23,7 +23,8 @@ class tb_baseline(Module):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.store = {'Time': [], 'Total_active_tb': [], 'Total_co-infected': []}
+        self.store = {'Time': [], 'Total_active_tb': [], 'Total_co-infected': [], 'TB_deaths': [],
+                      'Time_death_TB': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -378,6 +379,12 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             death = demography.InstantaneousDeath(self.module, person, cause='tb')  # make that death event
             self.sim.schedule_event(death, now)  # schedule the death for "now"
 
+        total_deaths = len(will_die)
+        self.module.store['TB_deaths'].append(total_deaths)
+        self.module.store['Time_death_TB'].append(self.sim.date)
+
+
+
 
 class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -398,4 +405,4 @@ class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Total_active_tb'].append(active_tb_total)
         self.module.store['Total_co-infected'].append(coinfected_total)
 
-        print('tb outputs: ', self.sim.date, active_tb_total, coinfected_total)
+        # print('tb outputs: ', self.sim.date, active_tb_total, coinfected_total)
