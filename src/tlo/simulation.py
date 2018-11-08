@@ -124,13 +124,14 @@ class Simulation:
         :return: the new child
         """
 
-        print("We are now in simulation.do_birth()")
+        if self.verboseoutput:
+            print("We are now in simulation.do_birth()")
+
         child = self.population.do_birth
         for module in self.modules.values():
             module.on_birth(mother, child)
         return child
 
-        print('A birth is being added')
 
 
 class EventQueue:
