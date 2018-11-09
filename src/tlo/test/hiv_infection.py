@@ -94,7 +94,7 @@ class hiv(Module):
         params['proportion_high_sexual_risk_female'] = 0.0095
         params['rr_HIV_high_sexual_risk'] = 2
         params['proportion_on_ART_infectious'] = 0.2
-        params['beta'] = 0.01  # dummy value
+        params['beta'] = 0.3  # dummy value
         params['irr_hiv_f'] = 1.35
 
     def initialise_population(self, population):
@@ -155,7 +155,6 @@ class hiv(Module):
 
         now = self.sim.date
         df = population.props
-        age = population.age
 
         prevalence = hiv_prev.loc[hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
 
@@ -447,17 +446,18 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # calculate force of infection, modify for treated when available
-        infected = len(df_age[(df_age.has_hiv == 1) & (df_age.years >= 15)])  # number infected untreated
+        infected = len(df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & df_age.is_alive])  # number infected untreated
         # infected_treated = params['proportion_on_ART_infectious'] * len(
         #     df_age[(df_age.has_HIV == 1) & (df_age.on_ART == 1) & (
         #         df_age.age.years >= 15)])  # number infected & treated
 
         total_pop = len(df_age[(df_age.years >= 15)])
         foi = params['beta'] * infected / total_pop
+        print('foi:', foi)
 
         # calculate expected number of new infections and allocate
-        new_infections = int(round(foi * len(df.index[~df.has_hiv])))  # foi * number susceptible
-        # print('number new infections: ', new_infections)
+        new_infections = int(round(foi * len(df.index[~df.has_hiv & df.is_alive])))  # foi * number susceptible
+        print('number new hiv infections: ', new_infections)
 
         # allocate expected number of new infections using weights from irr_age and sexual risk group
         df_with_irr = df_age.merge(irr_age, left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
@@ -509,7 +509,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        infected_total = df.has_hiv.sum()
+        infected_total = len(df[df.has_hiv & df.is_alive])
 
         date_aids_death = df.loc[df.has_hiv & df.is_alive, 'date_aids_death']
         # print('date_aids_death: ', date_aids_death)
@@ -517,7 +517,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # print('year_aids_death: ', year_aids_death)
 
         die = sum(1 for x in year_aids_death if int(x) == now.year)
-        # print('die: ', die)
+        print('die: ', die)
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)

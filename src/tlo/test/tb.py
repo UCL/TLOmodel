@@ -84,7 +84,7 @@ class tb_baseline(Module):
         """
         params = self.parameters
         params['prop_fast_progressor'] = 0.14
-        params['transmission_rate'] = 0.00001  # 4.9 (Juan) but no treatment yet so too high for test runs
+        params['transmission_rate'] = 0.0001  # 4.9 (Juan)
         params['progression_to_active_rate'] = 0.5
 
         params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]
@@ -398,8 +398,8 @@ class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        active_tb_total = len(df[df.has_tb == 'Active'])
-        coinfected_total = len(df[(df.has_tb == 'Active') & df.has_hiv])
+        active_tb_total = len(df[(df.has_tb == 'Active') & df.is_alive])
+        coinfected_total = len(df[(df.has_tb == 'Active') & df.has_hiv & df.is_alive])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_active_tb'].append(active_tb_total)
