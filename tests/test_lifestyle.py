@@ -34,13 +34,50 @@ if __name__ == '__main__':
     test_lifestyle_simulation(simulation)
 
     # plot the urban total history
-  #  stats = simulation.modules['Lifestyle'].store['urban_total']
-    stats2 = simulation.modules['Lifestyle'].store['alive']
-    stats3 = simulation.modules['Lifestyle'].o_prop_m_urban_overwt['prop_m_urban_overwt']
-    stats4 = simulation.modules['Lifestyle'].o_prop_f_urban_overwt['prop_f_urban_overwt']
-    stats5 = simulation.modules['Lifestyle'].o_prop_m_rural_overwt['prop_m_rural_overwt']
-    stats6 = simulation.modules['Lifestyle'].o_prop_f_rural_overwt['prop_f_rural_overwt']
-    stats7 = simulation.modules['Lifestyle'].o_prop_urban['prop_urban']
+  # stats = simulation.modules['Lifestyle'].store['urban_total']
+  # stats = simulation.modules['Lifestyle'].store['alive']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_urban_overwt['prop_m_urban_overwt']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_urban_overwt['prop_f_urban_overwt']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_rural_overwt['prop_m_rural_overwt']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_rural_overwt['prop_f_rural_overwt']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_urban_low_ex['prop_m_urban_low_ex']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_urban_low_ex['prop_f_urban_low_ex']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_rural_low_ex['prop_m_rural_low_ex']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_rural_low_ex['prop_f_rural_low_ex']
+  # stats = simulation.modules['Lifestyle'].o_prop_urban['prop_urban']
+  # stats = simulation.modules['Lifestyle'].o_prop_wealth1['prop_wealth1']
+  # stats = simulation.modules['Lifestyle'].o_prop_tob['prop_tob']
+    stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w1_tob['prop_m_age1519_w1_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w1_tob['prop_m_age2039_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w1_tob['prop_m_agege40_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w1_tob['prop_f_age1519_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w1_tob['prop_f_age2039_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w1_tob['prop_f_agege40_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w2_tob['prop_m_age1519_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w2_tob['prop_m_age2039_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w2_tob['prop_m_agege40_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w2_tob['prop_f_age1519_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w2_tob['prop_f_age2039_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w2_tob['prop_f_agege40_w2_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w3_tob['prop_m_age1519_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w3_tob['prop_m_age2039_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w3_tob['prop_m_agege40_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w3_tob['prop_f_age1519_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w3_tob['prop_f_age2039_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w3_tob['prop_f_agege40_w3_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w4_tob['prop_m_age1519_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w4_tob['prop_m_age2039_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w4_tob['prop_m_agege40_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w4_tob['prop_f_age1519_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w4_tob['prop_f_age2039_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w4_tob['prop_f_agege40_w4_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w5_tob['prop_m_age1519_w5_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w5_tob['prop_m_age2039_w5_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w5_tob['prop_m_agege40_w5_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w5_tob['prop_f_age1519_w5_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w5_tob['prop_f_age2039_w5_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w5_tob['prop_f_agege40_w5_tob']
+
 
     import matplotlib.pyplot as plt
     import numpy as np
@@ -49,10 +86,10 @@ if __name__ == '__main__':
 
    # plt.plot(np.arange(0, len(stats2)), stats2)
 
-    xvals = np.arange(0, len(stats2))
+    xvals = np.arange(0, len(stats))
 
-    yvals = stats6
-    plt.ylim(0, 1)
+    yvals = stats
+    plt.ylim(0, 0.2)
     plt.plot(xvals, yvals)
     plt.show()
 
