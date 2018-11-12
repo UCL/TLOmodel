@@ -44,8 +44,8 @@ class Lifestyle(Module):
         'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tob if age ge 40 compared with 15-19'),
         'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tob if female'),
         'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tob per 1 higher wealth level (higher wealth level = lower wealth)'),
-        'r_excess_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
-        'r_not_excess_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
+        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
+        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -77,6 +77,8 @@ class Lifestyle(Module):
         self.o_prop_f_urban_low_ex = {'prop_f_urban_low_ex': []}
         self.o_prop_m_rural_low_ex = {'prop_m_rural_low_ex': []}
         self.o_prop_f_rural_low_ex = {'prop_f_rural_low_ex': []}
+        self.o_prop_m_ex_alc = {'prop_m_ex_alc': []}
+        self.o_prop_f_ex_alc = {'prop_f_ex_alc': []}
         self.o_prop_wealth1 = {'prop_wealth1': []}
         self.o_prop_tob = {'prop_tob': []}
         self.o_prop_m_age1519_w1_tob = {'prop_m_age1519_w1_tob': []}
@@ -126,7 +128,7 @@ class Lifestyle(Module):
         self.parameters['r_not_low_ex'] = 0.0001
         self.parameters['rr_low_ex_f'] = 0.6
         self.parameters['rr_low_ex_urban'] = 2.0
-        self.parameters['r_tob'] = 0.005
+        self.parameters['r_tob'] = 0.0004
         self.parameters['r_not_tob'] = 0.000
         self.parameters['rr_tob_f'] = 0.1
         self.parameters['rr_tob_age2039'] = 1.2
@@ -395,10 +397,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # as above - transition between overwt and not overwt
         # transition to ovrwt depends on sex
 
-        currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban]
-        currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban]
-        currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban]
-        currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban]
+        currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban
+                                                & (age.years >= 15)]
         currently_overwt = df.index[df.li_overwt & df.is_alive]
 
         ri_overwt_f_urban = self.r_overwt * self.rr_overwt_f * self.rr_overwt_urban
@@ -444,10 +450,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[not_overwt_idx, 'li_overwt'] = False
 
         # transition between low ex and not low ex
-        currently_not_low_ex_f_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & df.li_urban]
-        currently_not_low_ex_m_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & df.li_urban]
-        currently_not_low_ex_f_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & ~df.li_urban]
-        currently_not_low_ex_m_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & ~df.li_urban]
+        currently_not_low_ex_f_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_low_ex_m_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_low_ex_f_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & ~df.li_urban
+                                                & (age.years >= 15)]
+        currently_not_low_ex_m_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & ~df.li_urban
+                                                & (age.years >= 15)]
         currently_low_ex = df.index[df.li_low_ex & df.is_alive]
 
         ri_low_ex_f_urban = self.r_low_ex * self.rr_low_ex_f * self.rr_low_ex_urban
@@ -840,8 +850,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
     # transition to ex alc depends on sex
 
-        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F')]
-        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M')]
+        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (age.years >= 15)]
+        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (age.years >= 15)]
         currently_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
         ri_ex_alc_f = self.r_ex_alc*self.rr_ex_alc_f
@@ -885,6 +895,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         urban_alive = (df.is_alive & df.li_urban).sum()
         alive = df.is_alive.sum()
 
+        ex_alc = (df.is_alive & (age.years >= 15) & df.li_ex_alc).sum()
+
         prop_urban = urban_alive / alive
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
@@ -904,7 +916,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         m_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & ~df.li_urban & df.is_alive]
         f_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'F') & ~df.li_urban & df.is_alive]
 
-        tob = df.index[df.li_tob & df.is_alive]
+        tob = df.index[df.li_tob & df.is_alive & (age.years >= 15)]
+
         m_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 1)]
         m_age2039_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
@@ -1006,7 +1019,12 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                                 & (df.li_wealth == 5)]
         f_agege40_w5 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 5)]
 
+        f_ex_alc = (df.is_alive & (age.years >= 15) & (df.sex == 'F') & df.li_ex_alc).sum()
+        m_ex_alc = (df.is_alive & (age.years >= 15) & (df.sex == 'M') & df.li_ex_alc).sum()
+
         n_m_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
+        n_f_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'F')).sum()
+        n_ge15 = (df.is_alive & (age.years >= 15)).sum()
 
         self.module.store['alive'].append(alive)
 
@@ -1027,9 +1045,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_f_rural_low_ex = len(f_rural_ge15_low_ex) / len(f_rural_ge15)
 
         prop_wealth1 = len(wealth1) / alive
-        prop_tob = len(tob) / alive
+        prop_tob = len(tob) / n_ge15
 
-        test = len(m_age1519_w1)
+        prop_f_ex_alc = f_ex_alc / n_f_ge15
+        prop_m_ex_alc = m_ex_alc / n_m_ge15
 
         prop_m_age1519_w1_tob = len(m_age1519_w1_tob) / len(m_age1519_w1)
         prop_f_age1519_w1_tob = len(f_age1519_w1_tob) / len(f_age1519_w1)
@@ -1075,6 +1094,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.o_prop_urban['prop_urban'].append(prop_urban)
         self.module.o_prop_wealth1['prop_wealth1'].append(prop_wealth1)
         self.module.o_prop_tob['prop_tob'].append(prop_tob)
+        self.module.o_prop_m_ex_alc['prop_m_ex_alc'].append(prop_m_ex_alc)
+        self.module.o_prop_f_ex_alc['prop_f_ex_alc'].append(prop_f_ex_alc)
 
         self.module.o_prop_m_age1519_w1_tob['prop_m_age1519_w1_tob'].append(prop_m_age1519_w1_tob)
         self.module.o_prop_m_age2039_w1_tob['prop_m_age2039_w1_tob'].append(prop_m_age2039_w1_tob)
@@ -1109,10 +1130,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , test: %d,  alive:%d, prop_wealth1 %f,  '
+        print('%s lifestyle n_m_ge15:%d , prop_f_ex_alc %f, alive:%d, prop_wealth1 %f,  '
               'prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_m_ge15, test, alive,  prop_wealth1, prop_m_urban_overwt,
+              (self.sim.date, n_m_ge15, prop_f_ex_alc, alive,  prop_wealth1, prop_m_urban_overwt,
                newly_urban_in_last_3mths,
                list(wealth_count_alive)),
               flush=True)
