@@ -134,9 +134,9 @@ class Lifestyle(Module):
         self.parameters['rr_tob_age2039'] = 1.2
         self.parameters['rr_tob_agege40'] = 1.5
         self.parameters['rr_tob_wealth'] = 1.3
-        self.parameters['r_ex_alc'] = 0.000
+        self.parameters['r_ex_alc'] = 0.003
         self.parameters['r_not_ex_alc'] = 0.000
-        self.parameters['rr_ex_alc_f'] = 1
+        self.parameters['rr_ex_alc_f'] = 0.07
         self.parameters['init_p_urban'] = 0.17
         self.parameters['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
         self.parameters['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
