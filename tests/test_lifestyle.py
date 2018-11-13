@@ -77,8 +77,8 @@ if __name__ == '__main__':
   # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w5_tob['prop_f_age1519_w5_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w5_tob['prop_f_age2039_w5_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w5_tob['prop_f_agege40_w5_tob']
-  # stats = simulation.modules['Lifestyle'].o_prop_m_ex_alc['prop_m_ex_alc']
-    stats = simulation.modules['Lifestyle'].o_prop_f_ex_alc['prop_f_ex_alc']
+    stats = simulation.modules['Lifestyle'].o_prop_m_ex_alc['prop_m_ex_alc']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_ex_alc['prop_f_ex_alc']
 
     import matplotlib.pyplot as plt
     import numpy as np
