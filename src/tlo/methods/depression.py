@@ -2,10 +2,10 @@
 First draft of depression module based on Andrew's document.
 """
 
-import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+import numpy as np
+import pandas as pd
 
 
 class Depression(Module):
@@ -20,9 +20,9 @@ class Depression(Module):
         'base_3m_prob_depression': Parameter(
             Types.REAL,
             'Base incidence of depression over a 3 month period'),
-        'rr_depression_low_ses': Parameter(
+        'rr_depression_wealth45': Parameter(
             Types.REAL,
-            'Relative rate of depression when low socio-economic status'),
+            'Relative rate of depression when in wealth level 4 or 5'),
         'rr_depression_chron_cond': Parameter(
             Types.REAL,
             'Relative rate of depression associated with chronic disease'),
@@ -32,9 +32,12 @@ class Depression(Module):
         'rr_depression_female': Parameter(
             Types.REAL,
             'Relative rate of depression for females'),
-        'rr_depression_prev_episode': Parameter(
+        'rr_depression_prev_epis': Parameter(
             Types.REAL,
             'Relative rate of depression associated with previous depression'),
+        'rr_depression_prev_epis_on_antidepr': Parameter(
+            Types.REAL,
+            'Relative rate of depression associated with previous depression if on antidepressants'),
         'rr_depression_age_15_20': Parameter(
             Types.REAL,
             'Relative rate of depression associated with 15-20 year olds'),
@@ -49,20 +52,43 @@ class Depression(Module):
         'rr_resol_depress_chron_cond': Parameter(
             Types.REAL,
             'Relative rate of resolving depression associated with chronic disease symptoms'),
+        'rr_resol_depress_on_antidepr': Parameter(
+            Types.REAL,
+            'Relative rate of resolving depression if on antidepressants'),
+        'rate_stop_antidepr': Parameter(
+            Types.REAL,
+            'rate of stopping antidepressants when not currently depressed'),
+        'rate_default_antidepr': Parameter(
+            Types.REAL,
+            'rate of stopping antidepressants when still depressed'),
+        'rate_init_antidepr': Parameter(
+            Types.REAL,
+            'rate of initiation of antidepressants'),
+        'prob_3m_suicide_depression_m': Parameter(
+            Types.REAL,
+            'rate of suicide in (currently depressed) men'),
+        'prob_3m_suicide_depression_f': Parameter(
+            Types.REAL,
+            'rate of suicide in (currently depressed) women'),
+        'prob_3m_selfharm_depression': Parameter(
+            Types.REAL,
+            'rate of non-fatal self harm in (currently depressed)'),
     }
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'is_depressed': Property(Types.BOOL, 'Whether this individual is currently depressed'),
-        'date_init_depression': Property(
-            Types.DATE, 'When this individual became depressed (or null)'),
-        'date_depression_resolved': Property(
-            Types.DATE, 'When the last bout of depression was resolved (or NULL)'),
-        'ever_depressed': Property(
+        'de_depressed': Property(Types.BOOL, 'currently depressed'),
+        'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
+        'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
+        'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
+        'de_date_init_last_depression': Property(
+            Types.DATE, 'When this individual last initiated a depression episode'),
+        'de_date_depression_resolved': Property(
+            Types.DATE, 'When the last episode of depression was resolved'),
+        'de_ever_depressed': Property(
             Types.BOOL, 'Whether this person has ever experienced depression'),
-        'prob_3m_resol_depression': Property(
-            Types.REAL,
-            'Base probability for recovering from this bout of depression (if relevant)'),
+        'de_prob_3m_resol_depression': Property(
+            Types.REAL, 'Base probability for recovering from this bout of depression (if relevant)'),
     }
 
     def read_parameters(self, data_folder):
@@ -74,16 +100,24 @@ class Depression(Module):
           Typically modules would read a particular file within here.
         """
         params = self.parameters  # To save typing!
-        params['base_3m_prob_depression'] = 0.001
-        params['rr_depression_low_ses'] = 3
+        params['base_3m_prob_depression'] = 0.0007
+        params['rr_depression_wealth45'] = 3
         params['rr_depression_chron_cond'] = 1.25
         params['rr_depression_pregnancy'] = 3
         params['rr_depression_female'] = 1.5
-        params['rr_depression_prev_episode'] = 50
+        params['rr_depression_prev_epis'] = 50
+        params['rr_depression_prev_epis_on_antidepr'] = 30
         params['rr_depression_age_15_20'] = 1
         params['rr_depression_age_60plus'] = 3
         params['depression_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
-        params['rr_resol_depress_chron_cond'] = 0.75
+        params['rr_resol_depress_chron_cond'] = 0.5
+        params['rr_resol_depress_on_antidepr'] = 1.5
+        params['rate_init_antidep'] = 0.03
+        params['rate_stop_antidepr'] = 0.70
+        params['rate_default_antidepr'] = 0.20
+        params['prob_3m_suicide_depression_m'] = 0.001
+        params['prob_3m_suicide_depression_f'] = 0.0005
+        params['prob_3m_selfharm_depression'] = 0.002
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
