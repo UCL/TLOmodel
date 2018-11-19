@@ -17,78 +17,78 @@ class Depression(Module):
 
     # Module parameters
     PARAMETERS = {
-        'init_pr_depressed_m_age1519_no_chron_cond_wealth123': Parameter(
+        'init_pr_depr_m_age1519_no_cc_wealth123': Parameter(
             Types.REAL,
             'initial probability of being depressed in male age1519 with no chronic condition with wealth level 123'),
-        'init_rp_depressed_f_not_rec_preg': Parameter(
+        'init_rp_depr_f_not_rec_preg': Parameter(
             Types.REAL,
             'initial relative prevalence of being depressed in females not recently pregnant'),
-        'init_rp_depressed_f_rec_preg': Parameter(
+        'init_rp_depr_f_rec_preg': Parameter(
             Types.REAL,
             'initial relative prevalence of being depressed in females recently pregnant'),
-        'init_rp_depressed_age2059': Parameter(
+        'init_rp_depr_age2059': Parameter(
             Types.REAL,
             'initial relative prevalence of being depressed in 20-59 year olds'),
-        'init_rp_depressed_agege60': Parameter(
+        'init_rp_depr_agege60': Parameter(
             Types.REAL,
             'initial relative prevalence of being depressed in 60 + year olds'),
-        'init_rp_depressed_chron_cond': Parameter(
+        'init_rp_depr_cc': Parameter(
             Types.REAL,
-            'initial relative prevalence of being depressed in people with chroonic condition'),
-        'init_rp_depressed_wealth45': Parameter(
+            'initial relative prevalence of being depressed in people with chronic condition'),
+        'init_rp_depr_wealth45': Parameter(
             Types.REAL,
             'initial relative prevalence of being depressed in people with wealth level 4 or 5'),
-        'init_rp_ever_depressed_per_year_older_m': Parameter(
+        'init_rp_ever_depr_per_year_older_m': Parameter(
             Types.REAL,
-            'init_rp_ever_depressed_per_year_older_m if not currently depressed'),
-        'init_rp_ever_depressed_per_year_older_f': Parameter(
+            'initial relative prevalence ever depression per year older in men if not currently depressed'),
+        'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL,
-            'init_rp_ever_depressed_per_year_older_f if nor currently depressed'),
+            'initial relative prevalence ever depression per year older in women if not currently depressed'),
         'init_pr_on_antidepr_curr_depressed': Parameter(
             Types.REAL,
-            'init_pr_on_antidepr_curr_depressed'),
-        'init_rp_never_depressed': Parameter(
+            'initial prob of being on antidepressants if currently depressed'),
+        'init_rp_never_depr': Parameter(
             Types.REAL,
-            'init_rp_never_depressed'),
-        'init_rp_ever_depressed_not_current': Parameter(
+            'initial relative prevalence of having never been depressed'),
+        'init_rp_ever_depr_not_current': Parameter(
             Types.REAL,
-            'init_rp_ever_depressed_not_current'),
-        'base_3m_prob_depression': Parameter(
+            'initial relative prevalence of being ever depressed but not currently depressed'),
+        'base_3m_prob_depr': Parameter(
             Types.REAL,
-            'Base incidence of depression over a 3 month period'),
-        'rr_depression_wealth45': Parameter(
+            'base probability of depression over a 3 month period if male, wealth123, no chronic condition '),
+        'rr_depr_wealth45': Parameter(
             Types.REAL,
             'Relative rate of depression when in wealth level 4 or 5'),
-        'rr_depression_chron_cond': Parameter(
+        'rr_depr_cc': Parameter(
             Types.REAL,
             'Relative rate of depression associated with chronic disease'),
-        'rr_depression_pregnancy': Parameter(
+        'rr_depr_pregnancy': Parameter(
             Types.REAL,
             'Relative rate of depression when pregnant or recently pregnant'),
-        'rr_depression_female': Parameter(
+        'rr_depr_female': Parameter(
             Types.REAL,
             'Relative rate of depression for females'),
-        'rr_depression_prev_epis': Parameter(
+        'rr_depr_prev_epis': Parameter(
             Types.REAL,
             'Relative rate of depression associated with previous depression'),
-        'rr_depression_prev_epis_on_antidepr': Parameter(
+        'rr_depr_prev_epis_on_antidepr': Parameter(
             Types.REAL,
             'Relative rate of depression associated with previous depression if on antidepressants'),
-        'rr_depression_age_15_20': Parameter(
+        'rr_depr_age_15_20': Parameter(
             Types.REAL,
             'Relative rate of depression associated with 15-20 year olds'),
-        'rr_depression_age_60plus': Parameter(
+        'rr_depr_age_60plus': Parameter(
             Types.REAL,
             'Relative rate of depression associated with age > 60'),
-        'depression_resolution_rates': Parameter(
+        'depr_resolution_rates': Parameter(
             Types.LIST,
             'Probabilities that depression will resolve in a 3 month window. '
             'Each individual is equally likely to fall into one of the listed'
             ' categories.'),
-        'rr_resol_depress_chron_cond': Parameter(
+        'rr_resol_depr_cc': Parameter(
             Types.REAL,
             'Relative rate of resolving depression associated with chronic disease symptoms'),
-        'rr_resol_depress_on_antidepr': Parameter(
+        'rr_resol_depr_on_antidepr': Parameter(
             Types.REAL,
             'Relative rate of resolving depression if on antidepressants'),
         'rate_stop_antidepr': Parameter(
@@ -100,31 +100,31 @@ class Depression(Module):
         'rate_init_antidepr': Parameter(
             Types.REAL,
             'rate of initiation of antidepressants'),
-        'prob_3m_suicide_depression_m': Parameter(
+        'prob_3m_suicide_depr_m': Parameter(
             Types.REAL,
             'rate of suicide in (currently depressed) men'),
-        'prob_3m_suicide_depression_f': Parameter(
+        'prob_3m_suicide_depr_f': Parameter(
             Types.REAL,
             'rate of suicide in (currently depressed) women'),
-        'prob_3m_selfharm_depression': Parameter(
+        'prob_3m_selfharm_depr': Parameter(
             Types.REAL,
             'rate of non-fatal self harm in (currently depressed)'),
     }
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'de_depressed': Property(Types.BOOL, 'currently depressed'),
+        'de_depr': Property(Types.BOOL, 'currently depr'),
         'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
         'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
-        'de_date_init_last_depression': Property(
-            Types.DATE, 'When this individual last initiated a depression episode'),
-        'de_date_depression_resolved': Property(
-            Types.DATE, 'When the last episode of depression was resolved'),
-        'de_ever_depressed': Property(
-            Types.BOOL, 'Whether this person has ever experienced depression'),
-        'de_prob_3m_resol_depression': Property(
-            Types.REAL, 'Base probability for recovering from this bout of depression (if relevant)'),
+        'de_date_init_last_depr': Property(
+            Types.DATE, 'When this individual last initiated a depr episode'),
+        'de_date_depr_resolved': Property(
+            Types.DATE, 'When the last episode of depr was resolved'),
+        'de_ever_depr': Property(
+            Types.BOOL, 'Whether this person has ever experienced depr'),
+        'de_prob_3m_resol_depr': Property(
+            Types.REAL, 'Base probability for recovering from this bout of depr (if relevant)'),
     }
 
     def __init__(self):
@@ -142,37 +142,36 @@ class Depression(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
-        self.parameters['init_pr_depressed_m_age1519_no_chron_cond_wealth123'] = 0.1
-        self.parameters['init_rp_depressed_f_not_rec_preg'] = 1
-        self.parameters['init_rp_depressed_f_rec_preg'] = 1
-        self.parameters['init_rp_depressed_age2059'] = 1
-        self.parameters['init_rp_depressed_agege60'] = 1
-        self.parameters['init_rp_depressed_chron_cond'] = 1
-        self.parameters['init_rp_depressed_wealth45'] = 1
-        self.parameters['init_rp_ever_depressed_per_year_older_m'] = 0.007
-        self.parameters['init_rp_ever_depressed_per_year_older_f'] = 0.009
-        self.parameters['init_pr_on_antidepr_curr_depressed'] = 0.15
-        self.parameters['init_rp_never_depressed'] = 0
-        self.parameters['init_rp_ever_depressed_not_current'] = 1.5
-        self.parameters['base_3m_prob_depression'] = 0.0007
-        self.parameters['rr_depression_wealth45'] = 3
-        self.parameters['rr_depression_chron_cond'] = 1.25
-        self.parameters['rr_depression_pregnancy'] = 3
-        self.parameters['rr_depression_female'] = 1.5
-        self.parameters['rr_depression_prev_epis'] = 50
-        self.parameters['rr_depression_prev_epis_on_antidepr'] = 30
-        self.parameters['rr_depression_age_15_20'] = 1
-        self.parameters['rr_depression_age_60plus'] = 3
-        self.parameters['depression_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
-        self.parameters['rr_resol_depress_chron_cond'] = 0.5
+        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.1
+        self.parameters['init_rp_depr_f_not_rec_preg'] = 1
+        self.parameters['init_rp_depr_f_rec_preg'] = 1
+        self.parameters['init_rp_depr_age2059'] = 1
+        self.parameters['init_rp_depr_agege60'] = 1
+        self.parameters['init_rp_depr_cc'] = 1
+        self.parameters['init_rp_depr_wealth45'] = 1
+        self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.007
+        self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.009
+        self.parameters['init_pr_antidepr_curr_depr'] = 0.15
+        self.parameters['init_rp_never_depr'] = 0
+        self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
+        self.parameters['base_3m_prob_depr'] = 0.0007
+        self.parameters['rr_depr_wealth45'] = 3
+        self.parameters['rr_depr_cc'] = 1.25
+        self.parameters['rr_depr_pregnancy'] = 3
+        self.parameters['rr_depr_female'] = 1.5
+        self.parameters['rr_depr_prev_epis'] = 50
+        self.parameters['rr_depr_prev_epis_on_antidepr'] = 30
+        self.parameters['rr_depr_age_15_20'] = 1
+        self.parameters['rr_depr_age_60plus'] = 3
+        self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
+        self.parameters['rr_resol_depress_cc'] = 0.5
         self.parameters['rr_resol_depress_on_antidepr'] = 1.5
         self.parameters['rate_init_antidep'] = 0.03
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
-        self.parameters['prob_3m_suicide_depression_m'] = 0.001
-        self.parameters['prob_3m_suicide_depression_f'] = 0.0005
-        self.parameters['prob_3m_selfharm_depression'] = 0.002
+        self.parameters['prob_3m_suicide_depr_m'] = 0.001
+        self.parameters['prob_3m_suicide_depr_f'] = 0.0005
+        self.parameters['prob_3m_selfharm_depr'] = 0.002
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -185,21 +184,83 @@ class Depression(Module):
         """
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        df['de_depressed'] = False
-        df['de_date_init_last_depression'] = pd.NaT
-        df['de_date_depression_resolved'] = pd.NaT
+        df['de_depr'] = False
+        df['de_date_init_last_depr'] = pd.NaT
+        df['de_date_depr_resolved'] = pd.NaT
         df['de_non_fatal_self_harm_event'] = False
         df['de_suicide'] = False
         df['de_on_antidepr'] = False
-        df['de_ever_depressed'] = False
-        df['de_prob_3m_resol_depression'] = False
+        df['de_ever_depr'] = False
+        df['de_prob_3m_resol_depr'] = False
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
 
-    # current depression ;
-    # dataframe sex  age group  de_chron_cond  recent_preg  wealth   pr_depressed
-    depressed_lookup = pd.DataFrame([('M', '15-19', 0.01),
+        p_depr_m_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123
+        p_depr_f_not_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg
+        p_depr_f_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_rec_preg
+        p_depr_m_age2059_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_age2059
+        p_depr_f_not_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059
+        p_depr_f_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059
+        p_depr_m_agege60_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_agege60
+        p_depr_f_not_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60
+        p_depr_f_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60
+        p_depr_m_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_cc
+        p_depr_f_not_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc
+        p_depr_f_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc
+        p_depr_m_age2059_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+        p_depr_f_not_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+        p_depr_f_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+        p_depr_m_agege60_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+        p_depr_f_not_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+        p_depr_f_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+        p_depr_m_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_wealth45
+        p_depr_m_age2059_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+        p_depr_m_agege60_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+        p_depr_m_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_m_age2059_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_m_agege60_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_not_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_depr_f_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+        p_ever_depr_not_curr_m = age.years * self.init_rp_ever_depr_per_year_older_m
+        p_ever_depr_not_curr_f = age.years * self.init_rp_ever_depr_per_year_older_f
+        p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
+        p_antidepr_ever_depr_not_curr = self.init_rp_antidepr_ever_depr_not_curr
+
+        depr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.xx_cc & (df.li_wealth == 1 or df.li_wealth == 2
+                                                                                                            or df.li_wealth == 3) & df.sex == 'M']
+
+        depr_m_age1519_no_cc_wealth123 = np.random.choice([True, False], size=len(depr_m_age1519_no_cc_wealth123_index),
+                                                          p=[p_depr_m_age1519_no_cc_wealth123, 1 - p_depr_m_age1519_no_cc_wealth123])
+
+        if depr_m_age1519_no_cc_wealth123.sum():
+            df.loc[depr_m_age1519_no_cc_wealth123, 'de_depr'] = True
+
+
+
+
+
+
+
+
+
+"""
+
+code that may be referred to:
+
+    # current depr ;
+    # dataframe sex  age group  de_cc  recent_preg  wealth   pr_depr
+    depr_lookup = pd.DataFrame([('M', '15-19', 0.01),
                                ('M', '20-24', 0.04),
                                ('M', '25-29', 0.04),
                                ('M', '30-34', 0.04),
@@ -262,6 +323,9 @@ class Depression(Module):
     # this is a list of True/False. assign to li_tob
     df.loc[gte_15, 'li_tob'] = (random_draw < tob_probs.values)
 
+"""
+
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -269,11 +333,11 @@ class Depression(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
 
-        Here we add our three-monthly event to poll the population for depression starting
+        Here we add our three-monthly event to poll the population for depr starting
         or stopping.
         """
-        depression_poll = DepressionEvent(self)
-        sim.schedule_event(depression_poll, sim.date + DateOffset(months=3))
+        depr_poll = deprEvent(self)
+        sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -283,12 +347,12 @@ class Depression(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        child.is_depressed = False
-        child.ever_depressed = False
+        child.de_depr = False
+        child.de_ever_depr = False
 
 
-class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that actually changes individuals' depressed status.
+class DeprEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that actually changes individuals' depr status.
 
     Regular events automatically reschedule themselves at a fixed frequency,
     and thus implement discrete timestep type behaviour. The frequency is
@@ -296,7 +360,7 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        """Create a new depression event.
+        """Create a new depr event.
 
         We need to pass the frequency at which we want to occur to the base class
         constructor using super(). We also pass the module that created this event,
@@ -306,6 +370,28 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=3))
 
+        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
+        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
+        self.rr_depr_wealth45 = module.parameters['rr_depr_wealth45']
+        self.rr_depr_cc = module.parameters['rr_depr_cc']
+        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
+        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
+        self.rr_depr_female = module.parameters['rr_depr_female']
+        self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
+        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
+        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
+        self.rr_depr_age_15_20 = module.parameters['rr_depr_age_15_20']
+        self.rr_depr_age_60plus = module.parameters['rr_depr_age_60plus']
+        self.depr_resolution_rates = module.parameters['depr_resolution_rates']
+        self.rr_resol_depress_cc = module.parameters['rr_resol_depress_cc']
+        self.rr_resol_depress_on_antidepr = module.parameters['rr_resol_depress_on_antidepr']
+        self.rate_init_antidep = module.parameters['rate_init_antidep']
+        self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
+        self.rate_default_antidepr = module.parameters['rate_default_antidepr']
+        self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
+        self.prob_3m_suicide_depr_f = module.parameters['prob_3m_suicide_depr_f']
+        self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
+
     def apply(self, population):
         """Apply this event to the population.
 
@@ -313,40 +399,133 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
-        params = self.module.parameters
-        now = self.sim.date
-        rng = self.module.rng
+#       params = self.module.parameters
+
+        df = population.props
+        age = population.age
+
+#       now = self.sim.date
+#       rng = self.module.rng
+
+
+
+
+
+
+
+
+"""
+
+possibly useful code
+
+	        # as above - transition between overwt and not overwt
+	        # transition to ovrwt depends on sex
+
+
+	        currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban
+	                                                & (age.years >= 15)]
+	        currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban
+	                                                & (age.years >= 15)]
+	        currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban
+	                                                & (age.years >= 15)]
+	        currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban
+	                                                & (age.years >= 15)]
+	        currently_overwt = df.index[df.li_overwt & df.is_alive]
+
+
+	        ri_overwt_f_urban = self.r_overwt * self.rr_overwt_f * self.rr_overwt_urban
+	        ri_overwt_f_rural = self.r_overwt * self.rr_overwt_f
+	        ri_overwt_m_urban = self.r_overwt * self.rr_overwt_urban
+	        ri_overwt_m_rural = self.r_overwt
+
+
+	        now_overwt_f_urban = np.random.choice([True, False],
+	                                              size=len(currently_not_overwt_f_urban),
+	                                              p=[ri_overwt_f_urban, 1 - ri_overwt_f_urban])
+
+
+	        if now_overwt_f_urban.sum():
+	            overwt_f_urban_idx = currently_not_overwt_f_urban[now_overwt_f_urban]
+	            df.loc[overwt_f_urban_idx, 'li_overwt'] = True
+
+
+	        now_overwt_m_urban = np.random.choice([True, False],
+	                                              size=len(currently_not_overwt_m_urban),
+	                                              p=[ri_overwt_m_urban, 1 - ri_overwt_m_urban])
+
+
+	        if now_overwt_m_urban.sum():
+	            overwt_m_urban_idx = currently_not_overwt_m_urban[now_overwt_m_urban]
+	            df.loc[overwt_m_urban_idx, 'li_overwt'] = True
+
+
+	        now_not_overwt = np.random.choice([True, False], size=len(currently_overwt),
+	                                          p=[self.r_not_overwt, 1 - self.r_not_overwt])
+
+
+	        now_overwt_f_rural = np.random.choice([True, False],
+	                                              size=len(currently_not_overwt_f_rural),
+	                                              p=[ri_overwt_f_rural, 1 - ri_overwt_f_rural])
+	        if now_overwt_f_rural.sum():
+	            overwt_f_rural_idx = currently_not_overwt_f_rural[now_overwt_f_rural]
+	            df.loc[overwt_f_rural_idx, 'li_overwt'] = True
+
+
+	        now_overwt_m_rural = np.random.choice([True, False],
+	                                              size=len(currently_not_overwt_m_rural),
+	                                              p=[ri_overwt_m_rural, 1 - ri_overwt_m_rural])
+	        if now_overwt_m_rural.sum():
+	            overwt_m_rural_idx = currently_not_overwt_m_rural[now_overwt_m_rural]
+	            df.loc[overwt_m_rural_idx, 'li_overwt'] = True
+
+
+	        if now_not_overwt.sum():
+	            not_overwt_idx = currently_overwt[now_not_overwt]
+	            df.loc[not_overwt_idx, 'li_overwt'] = False
+
+"""
+
+
+
+
+
+
+"""
+
+possibly useful code
 
         ago_15yr = now - DateOffset(years=15)
         ago_20yr = now - DateOffset(years=20)
         ago_60yr = now - DateOffset(years=60)
         p = population
 
-        depressed = p.is_depressed.copy()
+        depr = p.is_depr.copy()
 
-        # calculate the effective probability of depression for not-depressed persons
-        eff_prob_depression = pd.Series(params['base_3m_prob_depression'], index=p[~p.is_depressed].index)
-        eff_prob_depression.loc[p.is_pregnant] *= params['rr_depression_pregnancy']
-        eff_prob_depression.loc[~p.ever_depressed] *= params['rr_depression_prev_episode']
-        eff_prob_depression.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depression_age_15_20']
-        eff_prob_depression.loc[p.date_of_birth > ago_60yr] *= params['rr_depression_age_60plus']
-        eff_prob_depression.loc[p.female] *= params['rr_depression_female']
-        eff_prob_depression.loc[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_depression_chron_cond']
+        # calculate the effective probability of depr for not-depr persons
+        eff_prob_depr = pd.Series(params['base_3m_prob_depr'], index=p[~p.is_depr].index)
+        eff_prob_depr.loc[p.is_pregnant] *= params['rr_depr_pregnancy']
+        eff_prob_depr.loc[~p.ever_depr] *= params['rr_depr_prev_episode']
+        eff_prob_depr.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depr_age_15_20']
+        eff_prob_depr.loc[p.date_of_birth > ago_60yr] *= params['rr_depr_age_60plus']
+        eff_prob_depr.loc[p.female] *= params['rr_depr_female']
+        eff_prob_depr.loc[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_depr_cc']
 
-        is_newly_depressed = eff_prob_depression > rng.rand(len(eff_prob_depression))
-        newly_depressed = is_newly_depressed[is_newly_depressed].index
-        p[newly_depressed, 'is_depressed'] = True
-        p[newly_depressed, 'ever_depressed'] = True
-        p[newly_depressed, 'date_init_depression'] = now
-        p[newly_depressed, 'date_depression_resolved'] = None
-        p[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(
-            params['depression_resolution_rates'], size=len(newly_depressed))
+        is_newly_depr = eff_prob_depr > rng.rand(len(eff_prob_depr))
+        newly_depr = is_newly_depr[is_newly_depr].index
+        p[newly_depr, 'is_depr'] = True
+        p[newly_depr, 'ever_depr'] = True
+        p[newly_depr, 'date_init_depr'] = now
+        p[newly_depr, 'date_depr_resolved'] = None
+        p[newly_depr, 'prob_3m_resol_depr'] = rng.choice(
+            params['depr_resolution_rates'], size=len(newly_depr))
 
-        # continuation or resolution of depression
-        eff_prob_recover = pd.Series(p.prob_3m_resol_depression, index=p[depressed].index)
-        eff_prob_recover[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_resol_depress_chron_cond']
-        is_resol_depression = eff_prob_recover > rng.rand(len(eff_prob_recover))
-        resolved_depress = is_resol_depression[is_resol_depression].index
-        p[resolved_depress, 'is_depressed'] = False
-        p[resolved_depress, 'date_depression_resolved'] = now
-        p[resolved_depress, 'date_init_depression'] = None
+        # continuation or resolution of depr
+        eff_prob_recover = pd.Series(p.prob_3m_resol_depr, index=p[depr].index)
+        eff_prob_recover[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_resol_depress_cc']
+        is_resol_depr = eff_prob_recover > rng.rand(len(eff_prob_recover))
+        resolved_depress = is_resol_depr[is_resol_depr].index
+        p[resolved_depress, 'is_depr'] = False
+        p[resolved_depress, 'date_depr_resolved'] = now
+        p[resolved_depress, 'date_init_depr'] = None
+
+"""
