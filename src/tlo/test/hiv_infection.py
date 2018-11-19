@@ -50,8 +50,12 @@ class hiv(Module):
             Parameter(Types.REAL, 'proportion of men who have high sexual risk behaviour'),
         'proportion_high_sexual_risk_female':
             Parameter(Types.REAL, 'proportion of women who have high sexual risk behaviour'),
+        'proportion_female_sex_workers':
+            Parameter(Types.REAL, 'proportion of women who engage in transactional sex'),
         'rr_HIV_high_sexual_risk':
             Parameter(Types.REAL, 'relative risk of acquiring HIV with high risk sexual behaviour'),
+        'rr_HIV_high_sexual_risk_fsw':
+            Parameter(Types.REAL, 'relative risk of acquiring HIV with female sex work'),
         'proportion_on_ART_infectious':
             Parameter(Types.REAL, 'proportion of people on ART contributing to transmission as not virally suppressed'),
         'beta':
@@ -92,7 +96,9 @@ class hiv(Module):
         params['weibull_shape_mort_adult'] = 2
         params['proportion_high_sexual_risk_male'] = 0.0913
         params['proportion_high_sexual_risk_female'] = 0.0095
+        params['proportion_female_sex_workers'] = 0.01
         params['rr_HIV_high_sexual_risk'] = 2
+        params['rr_HIV_high_sexual_risk_fsw'] = 20
         params['proportion_on_ART_infectious'] = 0.2
         params['beta'] = 0.3  # dummy value
         params['irr_hiv_f'] = 1.35
@@ -110,6 +116,7 @@ class hiv(Module):
 
         # print('hello')
         self.high_risk(population)  # assign high sexual risk
+        self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
         self.time_since_infection(population)  # find time since infection using CD4 distribution
         self.initial_pop_deaths_children(population)  # add death dates for children
@@ -135,6 +142,20 @@ class hiv(Module):
         df.loc[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
 
         # print('hurray it works')
+
+    def fsw(self, population):
+        """ Assign female sex work to sample of women and change sexual risk to high value
+        """
+
+        df = population.props
+        age = population.age
+
+        fsw = df[(df.sex == 'F') & (age.years >= 15)].sample(
+            frac=self.parameters['proportion_female_sex_workers']).index
+
+        # these individuals have higher risk of hiv
+        df.loc[fsw, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk_fsw']
+
 
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
         df = population.props
