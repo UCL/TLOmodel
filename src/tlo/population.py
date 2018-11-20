@@ -1,4 +1,5 @@
 """The Person and Population classes."""
+from collections import defaultdict
 from functools import lru_cache
 
 import numpy as np
@@ -93,7 +94,11 @@ class Population:
         A list of Person objects representing the individuals in the population.
     """
 
-    __slots__ = ('people', 'props', 'sim')
+    __slots__ = ('people', 'props', 'sim', 'age_ranges')
+
+    MIN_AGE_FOR_RANGE = 0
+    MAX_AGE_FOR_RANGE = 100
+    AGE_RANGE_SIZE = 5
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -113,6 +118,35 @@ class Population:
         self.people = []
         for i in range(initial_size):
             self.people.append(Person(self, i))
+
+        self.age_ranges = Population.make_age_range_lookup()
+
+    @staticmethod
+    def make_age_range_lookup():
+        """Returns a dictionary mapping age (in years) to age range
+        i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+        """
+        def chunks(items, n):
+            """Takes a list and divides it into parts of size n"""
+            for index in range(0, len(items), n):
+                yield items[index:index + n]
+
+        # split all the ages from min to limit (100 years) into 5 year ranges
+        parts = chunks(range(Population.MIN_AGE_FOR_RANGE, Population.MAX_AGE_FOR_RANGE),
+                       Population.AGE_RANGE_SIZE)
+
+        # any ages >= 100 are in the '100+' category
+        age_ranges = defaultdict(lambda: '100+')
+
+        # loop over each range and map all ages falling within the range to the range
+        for part in parts:
+            start = part.start
+            end = part.stop - 1
+            value = '%s-%s' % (start, end)
+            for i in range(start, part.stop):
+                age_ranges[i] = value
+
+        return age_ranges
 
     def __len__(self):
         """:return: the size of the population."""
@@ -170,7 +204,10 @@ class Population:
         :param name: the name of the property to access
         """
         # TODO: If over-allocating make sure to change the end index here and in __setattr__!
-        return self.props.loc[:, name]
+        if name in self.props.columns:
+            return self.props.loc[:, name]
+        else:
+            return getattr(self.props, name)
 
     def __setattr__(self, name, value):
         """Set the values of a property over the population.
@@ -214,7 +251,8 @@ class Population:
         age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
         age.index.name = 'person'
         age['years_exact'] = age.days / np.timedelta64(1, 'Y')
-        age['years'] = np.floor(age.years_exact)
+        age['years'] = age.years_exact.astype(int)
+        age['age_range'] = age.years.map(self.age_ranges).astype('category')
         return age
 
     @property
