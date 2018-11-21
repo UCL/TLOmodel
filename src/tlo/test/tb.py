@@ -8,10 +8,11 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
-# file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'  # laptop
 from tlo.methods import demography
 
-file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
+# file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'  # laptop
+# file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
+file_path = 'P:/Documents/TLO/Method_TB.xlsx'  # York
 
 tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
 Active_tb_prob, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_prob']
@@ -170,17 +171,6 @@ class tb_baseline(Module):
 
         # print(df.head(20))
 
-        # date of death of the infected individuals (in the future)
-        infected_count = len(df[(df.has_tb == 'Active') & df.is_alive])  # get all the infected alive individuals
-        # print('infected_count: ', infected_count)
-
-        death_years_ahead = np.random.exponential(scale=5, size=infected_count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead * 365.25, unit='d')
-        # death_td_ahead = pd.Series(death_td_ahead).dt.floor("S")  # remove microseconds
-        # print('death_td_ahead: ', death_td_ahead)
-
-        # set the properties of infected individuals
-        df.loc[(df.has_tb == 'Active') & df.is_alive, 'date_tb_death'] = now + death_td_ahead
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -191,20 +181,11 @@ class tb_baseline(Module):
         # add the basic event (we will implement below)
         sim.schedule_event(tb_event(self), sim.date + DateOffset(months=12))
 
-        # add an event to log to screen
-        sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
-
-        # add the death event of infected individuals
-        # df = sim.population.props
-        # infected_individuals = df[(df.has_tb == 'Active') & df.is_alive].index
-        # for index in infected_individuals:
-        #     individual = self.sim.population[index]
-        #     death_event = tbDeathEvent(self, individual)
-        #     self.sim.schedule_event(death_event, individual.date_tb_death)
-
         sim.schedule_event(tbDeathEvent(self), sim.date + DateOffset(
             months=12))
 
+        # add an event to log to screen
+        sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -362,17 +343,19 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         rng = self.module.rng
 
-        # Generate a series of random numbers, one per individual
         mortality_rate = pd.Series(0, index=df.index)
         mortality_rate.loc[(df.has_tb == 'Active') & ~df.has_hiv] = params['tb_mortality_rate']
         mortality_rate.loc[(df.has_tb == 'Active') & df.has_hiv] = params['tb_mortality_HIV']
         # print('mort_rate: ', mortality_rate)
 
+        # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
         deaths = df.is_alive & (probs < mortality_rate)
         # print('deaths: ', deaths)
         will_die = (df[deaths]).index
         # print('will_die: ', will_die)
+
+        # TODO: add in date_tb_death as self.sim.date
 
         for i in will_die:
             person = population[i]
