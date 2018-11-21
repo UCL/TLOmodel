@@ -43,5 +43,15 @@ class health_system(Module):
     def on_birth(self, mother, child):
         pass
 
-    def treatment_available(self, person, art):
+    def treatment_available(self, population):
+
+        now = self.sim.date
+        df = population.props
+
+        # select all HIV+
+
+        # extract probability of art by age, sex, year
+
+        # if just using probability then how to assign by longest time infected?
+
         pass
