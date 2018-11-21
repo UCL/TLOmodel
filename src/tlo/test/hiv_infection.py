@@ -6,13 +6,14 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
-
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 # read in data files #
 from tlo.methods import demography
 
-file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
+# file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
 # file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
+file_path = 'P:/Documents/TLO/Method_HIV.xlsx'  # York
+
 
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
 hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs,\
@@ -521,7 +522,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
         """
-        # run this event every 12 months (every year)
+        # run this event every 12 months
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 

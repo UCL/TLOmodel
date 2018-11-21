@@ -8,8 +8,11 @@ from tlo.test import hiv_infection, tb
 from tlo.methods import demography
 
 # for desktop
-path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
+# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
 # path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to Demography.xlsx file
+path = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
+
+art_path = 'P:/Documents/TLO/Method_ART.xlsx'  # York
 
 # for laptop
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
