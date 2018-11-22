@@ -125,13 +125,17 @@ class Depression(Module):
             Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depr': Property(
             Types.REAL, 'Base probability for recovering from this bout of depr (if relevant)'),
+        'li_wealth': Property(
+            Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
+        'de_cc': Property(
+            Types.BOOL, 'whether has chronic condition')
     }
 
     def __init__(self):
         super().__init__()
 # todo update this below
         self.store = {'alive': []}
-        self.o_prop_urban = {'prop_urban': []}
+        self.o_prop_depr = {'prop_depr': []}
 
 
     def read_parameters(self, data_folder):
@@ -193,65 +197,208 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depr'] = False
 
+        # todo - this to be removed when defined in other modules
+        df['de_cc'] = False
+        df['li_wealth'] = 3
+
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
 
-        p_depr_m_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123
-        p_depr_f_not_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg
-        p_depr_f_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_rec_preg
-        p_depr_m_age2059_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_age2059
-        p_depr_f_not_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059
-        p_depr_f_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059
-        p_depr_m_agege60_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_agege60
-        p_depr_f_not_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60
-        p_depr_f_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60
-        p_depr_m_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_cc
-        p_depr_f_not_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc
-        p_depr_f_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc
-        p_depr_m_age2059_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_age2059 * self.init_rp_depr_cc
-        p_depr_f_not_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
-        p_depr_f_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
-        p_depr_m_agege60_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_agege60 * self.init_rp_depr_cc
-        p_depr_f_not_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
-        p_depr_f_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
-        p_depr_m_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_wealth45
-        p_depr_m_age2059_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
-        p_depr_m_agege60_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
-        p_depr_m_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_m_age2059_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_m_agege60_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_not_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_depr_f_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-        p_ever_depr_not_curr_m = age.years * self.init_rp_ever_depr_per_year_older_m
-        p_ever_depr_not_curr_f = age.years * self.init_rp_ever_depr_per_year_older_f
-        p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
-        p_antidepr_ever_depr_not_curr = self.init_rp_antidepr_ever_depr_not_curr
+        p_depr_m_age1519_no_cc_wealth123 = self.init_pr_depr_m_age1519_no_cc_wealth123
+#       p_depr_f_not_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg
+#       p_depr_f_rec_preg_age1519_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_rec_preg
+#       p_depr_m_age2059_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_age2059
+#       p_depr_f_not_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059
+#       p_depr_f_rec_preg_age2059_no_cc_wealth123 = self.prob_depr_m_age2059_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059
+#       p_depr_m_agege60_no_cc_wealth123 = self.prob_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_agege60
+#       p_depr_f_not_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60
+#       p_depr_f_rec_preg_agege60_no_cc_wealth123 = self.prob_depr_m_agege60_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60
+#       p_depr_m_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_cc
+#       p_depr_f_not_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc
+#       p_depr_f_rec_preg_age1519_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc
+#       p_depr_m_age2059_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+#       p_depr_f_not_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+#       p_depr_f_rec_preg_age2059_cc_wealth123 = self.prob_depr_m_age2059_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc
+#       p_depr_m_agege60_cc_wealth123 = self.prob_depr_m_age1519_cc_wealth123 * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+#       p_depr_f_not_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+#       p_depr_f_rec_preg_agege60_cc_wealth123 = self.prob_depr_m_agege60_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc
+#       p_depr_m_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_age1519_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_wealth45
+#       p_depr_m_age2059_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_age2059_no_cc_wealth45 = self.prob_depr_m_age2059_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_wealth45
+#       p_depr_m_agege60_no_cc_wealth45 = self.prob_depr_m_age1519_no_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_agege60_no_cc_wealth45 = self.prob_depr_m_agege60_no_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_wealth45
+#       p_depr_m_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_age1519_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_m_age2059_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_age2059_cc_wealth45 = self.prob_depr_m_age2059_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_age2059 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_m_agege60_cc_wealth45 = self.prob_depr_m_age1519_cc_wealth45 * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_not_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_depr_f_rec_preg_agege60_cc_wealth45 = self.prob_depr_m_agege60_cc_wealth45 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
+#       p_ever_depr_not_curr_m = age.years * self.init_rp_ever_depr_per_year_older_m
+#       p_ever_depr_not_curr_f = age.years * self.init_rp_ever_depr_per_year_older_f
+#       p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
+#       p_antidepr_ever_depr_not_curr = self.init_rp_antidepr_ever_depr_not_curr
 
-        depr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.xx_cc & (df.li_wealth == 1 or df.li_wealth == 2
-                                                                                                            or df.li_wealth == 3) & df.sex == 'M']
+        depr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.values[:] == [1, 2, 3])
+                                                        & (df.sex == 'M') & df.is_alive]
 
         depr_m_age1519_no_cc_wealth123 = np.random.choice([True, False], size=len(depr_m_age1519_no_cc_wealth123_index),
-                                                          p=[p_depr_m_age1519_no_cc_wealth123, 1 - p_depr_m_age1519_no_cc_wealth123])
+                                                          p=[p_depr_m_age1519_no_cc_wealth123,
+                                                             1 - p_depr_m_age1519_no_cc_wealth123])
 
         if depr_m_age1519_no_cc_wealth123.sum():
-            df.loc[depr_m_age1519_no_cc_wealth123, 'de_depr'] = True
+            df.loc[depr_m_age1519_no_cc_wealth123_index, 'de_depr'] = depr_m_age1519_no_cc_wealth123
+
+    def initialise_simulation(self, sim):
+        """Get ready for simulation start.
+
+        This method is called just before the main simulation loop begins, and after all
+        modules have read their parameters and the initial population has been created.
+        It is a good place to add initial events to the event queue.
+
+        Here we add our three-monthly event to poll the population for depr starting
+        or stopping.
+        """
+        depr_poll = DeprEvent(self)
+        sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
+
+        event = DepressionLoggingEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=3))
+
+    def on_birth(self, mother, child):
+        """Initialise our properties for a newborn individual.
+
+        This is called by the simulation whenever a new person is born.
+
+        :param mother: the mother for this child
+        :param child: the new child
+        """
+        child.de_depr = False
+        child.de_ever_depr = False
 
 
+class DeprEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that actually changes individuals' depr status.
+
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """Create a new depr event.
+
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=3))
+
+        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
+        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
+        self.rr_depr_wealth45 = module.parameters['rr_depr_wealth45']
+        self.rr_depr_cc = module.parameters['rr_depr_cc']
+        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
+        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
+        self.rr_depr_female = module.parameters['rr_depr_female']
+        self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
+        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
+        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
+        self.rr_depr_age_15_20 = module.parameters['rr_depr_age_15_20']
+        self.rr_depr_age_60plus = module.parameters['rr_depr_age_60plus']
+        self.depr_resolution_rates = module.parameters['depr_resolution_rates']
+        self.rr_resol_depress_cc = module.parameters['rr_resol_depress_cc']
+        self.rr_resol_depress_on_antidepr = module.parameters['rr_resol_depress_on_antidepr']
+        self.rate_init_antidep = module.parameters['rate_init_antidep']
+        self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
+        self.rate_default_antidepr = module.parameters['rate_default_antidepr']
+        self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
+        self.prob_3m_suicide_depr_f = module.parameters['prob_3m_suicide_depr_f']
+        self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
+
+    def apply(self, population):
+        """Apply this event to the population.
+
+        For efficiency, we use pandas operations to scan the entire population in bulk.
+
+        :param population: the current population
+        """
+#       params = self.module.parameters
+
+        df = population.props
+        age = population.age
+
+#       now = self.sim.date
+#       rng = self.module.rng
 
 
+class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """comments...
+        """
+        # run this event every 3 month
+        self.repeat = 3
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
 
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+        alive = df.is_alive.sum()
+        age = population.age
 
+#       urban_alive = (df.is_alive & df.li_urban).sum()
+#       ex_alc = (df.is_alive & (age.years >= 15) & df.li_ex_alc).sum()
+#       prop_urban = urban_alive / alive
+#       tob = df.index[df.li_tob & df.is_alive & (age.years >= 15)]
+#       m_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+#                                   & (df.li_wealth == 1)]
+#
+#       m_age1519_w1 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+#                               & (df.li_wealth == 1)]
+#
+#
+#       f_ex_alc = (df.is_alive & (age.years >= 15) & (df.sex == 'F') & df.li_ex_alc).sum()
+#
+#       n_m_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
+#       n_f_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'F')).sum()
 
+#       n_depr = (df.de_depr & df.is_alive & age.year >= 15).sum()
+
+        n_depr = df.de_depr.sum()
+
+        self.module.store['alive'].append(alive)
+
+#       proportion_urban = urban_alive / (df.is_alive.sum())
+#       rural_alive = (df.is_alive & (~df.li_urban)).sum()
+
+#       mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
+#       newly_urban_in_last_3mths = mask.sum()
+
+#       prop_m_urban_overwt = len(m_urban_ge15_overwt) / len(m_urban_ge15)
+#       prop_f_rural_low_ex = len(f_rural_ge15_low_ex) / len(f_rural_ge15)
+
+#       prop_wealth1 = len(wealth1) / alive
+#       prop_f_ex_alc = f_ex_alc / n_f_ge15
+
+#       prop_m_age1519_w1_tob = len(m_age1519_w1_tob) / len(m_age1519_w1)
+
+#       self.module.o_prop_f_rural_low_ex['prop_f_rural_low_ex'].append(prop_f_rural_low_ex)
+#       self.module.o_prop_m_age1519_w1_tob['prop_m_age1519_w1_tob'].append(prop_m_age1519_w1_tob)
+
+#       wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
+
+        print('%s ,  n_depr:%d , alive: %d' %
+              (self.sim.date, n_depr, alive),
+              flush=True)
 
 
 """
@@ -324,90 +471,6 @@ code that may be referred to:
     df.loc[gte_15, 'li_tob'] = (random_draw < tob_probs.values)
 
 """
-
-
-    def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-
-        Here we add our three-monthly event to poll the population for depr starting
-        or stopping.
-        """
-        depr_poll = deprEvent(self)
-        sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
-
-    def on_birth(self, mother, child):
-        """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
-        """
-        child.de_depr = False
-        child.de_ever_depr = False
-
-
-class DeprEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that actually changes individuals' depr status.
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
-    """
-
-    def __init__(self, module):
-        """Create a new depr event.
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        """
-        super().__init__(module, frequency=DateOffset(months=3))
-
-        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
-        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
-        self.rr_depr_wealth45 = module.parameters['rr_depr_wealth45']
-        self.rr_depr_cc = module.parameters['rr_depr_cc']
-        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
-        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
-        self.rr_depr_female = module.parameters['rr_depr_female']
-        self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
-        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
-        self.rr_depr_prev_epis_on_antidepr = module.parameters['rr_depr_prev_epis_on_antidepr']
-        self.rr_depr_age_15_20 = module.parameters['rr_depr_age_15_20']
-        self.rr_depr_age_60plus = module.parameters['rr_depr_age_60plus']
-        self.depr_resolution_rates = module.parameters['depr_resolution_rates']
-        self.rr_resol_depress_cc = module.parameters['rr_resol_depress_cc']
-        self.rr_resol_depress_on_antidepr = module.parameters['rr_resol_depress_on_antidepr']
-        self.rate_init_antidep = module.parameters['rate_init_antidep']
-        self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
-        self.rate_default_antidepr = module.parameters['rate_default_antidepr']
-        self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
-        self.prob_3m_suicide_depr_f = module.parameters['prob_3m_suicide_depr_f']
-        self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
-
-    def apply(self, population):
-        """Apply this event to the population.
-
-        For efficiency, we use pandas operations to scan the entire population in bulk.
-
-        :param population: the current population
-        """
-#       params = self.module.parameters
-
-        df = population.props
-        age = population.age
-
-#       now = self.sim.date
-#       rng = self.module.rng
-
-
 
 
 
