@@ -15,7 +15,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 # Read in data
-file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
+file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Model/Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HT_prevalence, HT_incidence, HT_treatment = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
                                             method_ht_data['treatment_parameters']

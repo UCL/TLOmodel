@@ -3,7 +3,7 @@ import pytest
 from tlo import Simulation, Date
 from tlo.methods import demography, hypertension
 
-path = '/Users/mc1405/Desktop/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
+path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Model/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
 end_date = Date(2060, 1, 1)
 popsize = 1000
