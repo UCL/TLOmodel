@@ -36,7 +36,6 @@ class HT(Module):
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
-
     PARAMETERS = {
         # Insert if relevant
     }
@@ -54,7 +53,6 @@ class HT(Module):
                                         'Historical status: N=never; C=Current, P=Previous',
                                         categories=['N', 'C', 'P']),
         'ht_date_treatment': Property(Types.DATE, 'Date of latest hypertension treatment'),
-        # 'date_death': Property(Types.DATE, 'Date of hypertension death'),
     }
 
     def read_parameters(self, data_folder):
@@ -63,7 +61,6 @@ class HT(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -84,9 +81,7 @@ class HT(Module):
         df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
         df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
         df['ht_treatment_status'] = 'N'  # Default setting: no one is treated
-        df['ht_date_treatment'] = pd.NaT  # Defailt setting: no one has a date of treatment
-        # df['date_death'] = pd.NaT  # Default setting: no one dies from hypertension
-
+        df['ht_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
 
         # 3. Assign prevalence as per data, by using probability by age
         joined = pd.merge(population.age, HT_prevalence, left_on=['years'], right_on=['age'], how='left')
@@ -105,14 +100,9 @@ class HT(Module):
         ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
         infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
 
-        # 5.1 Set date of background death amongst those with prevalent cases
-        # death_years_ahead = np.random.exponential(scale=2, size=pop_count)
-        # death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-
-        # 5.2 Set the properties of those with prevalent hypertension
+        # 5.1 Set the properties of those with prevalent hypertension
         df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
         df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
-        # df['date_death'] = self.sim.date + death_td_ahead
 
         print("\n", "Population has been initialised, prevalent cases have been assigned.  ")
 
@@ -129,14 +119,6 @@ class HT(Module):
 
         # Add an event to log to screen
         sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(months=6))
-
-        # Add death event
-        # df = sim.population.props
-        # hypertension_individuals = df[df.ht_current_status].index
-        # for index in hypertension_individuals:
-        #    individual = self.sim.population[index]
-        #    death_event = HTDeathEvent(self, individual)
-        #    self.sim.schedule_event(death_event, individual.date_death)
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -204,7 +186,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[ht_idx, 'ht_current_status'] = True
             df.loc[ht_idx, 'ht_historic_status'] = 'C'
             df.loc[ht_idx, 'ht_date_case'] = self.sim.date
-            # df.loc[ht_idx, 'date_death'] = self.sim.date + pd.Timedelta(25, unit='Y')
 
         print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  ")
 
@@ -224,14 +205,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[ht_idx, 'ht_date_treatment'] = self.sim.date
 
         print("\n", "Treatment has been assigned.  ")
-
-
-# class HTDeathEvent(Event, IndividualScopeEventMixin):
-#    def __init__(self, module, individual):
-#        super().__init__(module, person=individual)
-#
-#    def apply(self, individual):
-#        pass
 
 
 class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
