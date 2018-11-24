@@ -69,7 +69,7 @@ class RandomBirth(Module):
         # We randomly sample birth dates for the initial population during the preceding decade
         start_date = population.sim.date
         dates = pd.date_range(start_date - DateOffset(years=10), start_date, freq='M')
-        population.date_of_birth = self.rng.choice(dates, size=len(population))
+ #      population.date_of_birth = self.rng.choice(dates, size=len(population))
         # No children have yet been born. We iterate over the population to ensure each
         # person gets a distinct list.
         for person in population:
