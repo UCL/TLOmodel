@@ -33,16 +33,12 @@ if __name__ == '__main__':
     simulation = simulation()
     test_depression_simulation(simulation)
 
-    # plot the urban total history
+    # plot the total history
 
-    stats = simulation.modules['prop_depr'].o_prop_depr['prop_depr']
+    stats = simulation.modules['Depression'].o_prop_depr['prop_depr']
 
     import matplotlib.pyplot as plt
     import numpy as np
-   # plt.plot(np.arange(0, len(stats)), stats)
-   # plt.show()
-
-   # plt.plot(np.arange(0, len(stats2)), stats2)
 
     xvals = np.arange(0, len(stats))
 
