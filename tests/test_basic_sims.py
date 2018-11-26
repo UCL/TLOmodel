@@ -1,7 +1,8 @@
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Person, Simulation, Types
+from tlo import Date, DateOffset, Module, Person, Property, Simulation, Types
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
 
 
@@ -143,16 +144,16 @@ def test_birth_and_death():
         sim.population[4:5, 'is_alive'],
         check_names=False)
     pd.testing.assert_frame_equal(
-        pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [True, False]}, index=[8, 9]),
+        pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [False, True]}, index=[8, 9]),
         sim.population[8:9, ('is_alive', 'is_pregnant')],
         check_names=False)
     pd.testing.assert_frame_equal(
-        pd.DataFrame({'is_alive': [False], 'is_pregnant': [True]}, index=[6]),
+        pd.DataFrame({'is_alive': [False], 'is_pregnant': [False]}, index=[6]),
         sim.population[[6], ('is_alive', 'is_pregnant')],
         check_names=False)
 
     # Check birth stats match reference data
-    assert len(sim.population) == 19
+    assert len(sim.population) == 20
 
     # Check no-one gave birth after dying
     for person in sim.population:
@@ -170,3 +171,51 @@ def test_birth_and_death():
             assert child1.date_of_birth < child2.date_of_birth
             # Birth dates need to be at least 9 months apart
             assert child1.date_of_birth + DateOffset(months=9) <= child2.date_of_birth
+
+
+def test_regular_event_with_end():
+    # A small module (that does nothing) and event with end date
+    class MyModule(Module):
+        PROPERTIES = {'last_run': Property(Types.DATE, '')}
+
+        def read_parameters(self, data_folder): pass
+
+        def initialise_population(self, population): pass
+
+        def initialise_simulation(self, sim): pass
+
+        def on_birth(self, mother, child): pass
+
+    class MyEvent(PopulationScopeEventMixin, RegularEvent):
+        def __init__(self, module, end_date):
+            # This regular event runs every day but ends as specified
+            super().__init__(module=module, frequency=DateOffset(days=1), end_date=end_date)
+
+        def apply(self, population):
+            population.loc[0, 'last_run'] = population.sim.date
+
+    class MyOtherEvent(PopulationScopeEventMixin, RegularEvent):
+        def __init__(self, module):
+            # This regular event runs every day and does not end
+            super().__init__(module=module, frequency=DateOffset(days=1))
+
+        def apply(self, population):
+            pass
+
+    sim = Simulation(start_date=Date(2010, 1, 1))
+
+    my_module = MyModule()
+    sim.register(my_module)
+    sim.make_initial_population(n=1)
+
+    my_event = MyEvent(my_module, end_date=Date(2010, 3, 1))
+    my_other_event = MyOtherEvent(my_module)
+
+    sim.schedule_event(my_event, sim.date + DateOffset(days=1))
+    sim.schedule_event(my_other_event, sim.date + DateOffset(days=1))
+    sim.simulate(end_date=Date(2011, 1, 1))
+
+    # The last update to the data frame is the last event run (not the end of the simulation)
+    assert sim.population.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
+    # The last event the simulation ran was my_other_event that doesn't have end date
+    assert sim.date == pd.Timestamp(Date(2011, 1, 1))
