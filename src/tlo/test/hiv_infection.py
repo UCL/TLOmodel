@@ -124,7 +124,7 @@ class hiv(Module):
         self.initial_pop_deaths_adults(population)  # add death dates for adults
 
     def log_scale(self, a0):
-        """helper function for adult mortality rates"""
+        """ helper function for adult mortality rates"""
         age_scale = 2.55 - 0.025 * (a0 - 30)
         return age_scale
 
@@ -475,11 +475,11 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         total_pop = len(df_age[(df_age.years >= 15)])
         foi = params['beta'] * infected / total_pop
-        print('foi:', foi)
+        # print('foi:', foi)
 
         # calculate expected number of new infections and allocate
         new_infections = int(round(foi * len(df.index[~df.has_hiv & df.is_alive])))  # foi * number susceptible
-        print('number new hiv infections: ', new_infections)
+        # print('number new hiv infections: ', new_infections)
 
         # allocate expected number of new infections using weights from irr_age and sexual risk group
         df_with_irr = df_age.merge(irr_age, left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
@@ -539,7 +539,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # print('year_aids_death: ', year_aids_death)
 
         die = sum(1 for x in year_aids_death if int(x) == now.year)
-        print('die: ', die)
+        # print('die: ', die)
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
