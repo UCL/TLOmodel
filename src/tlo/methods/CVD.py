@@ -33,13 +33,23 @@ class CVD(Module):
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     PARAMETERS = {
-        # Insert if relevant
+        'prob_CVD_basic': Parameter(Types.REAL,
+                                   'Probability of getting hypertension given no pre-existing condition'),
+        'prob_CVDgivenDiab': Parameter(Types.REAL,
+                                    'Probability of getting hypertension given pre-existing diabetes'),
+        # 'prob_CVDgivenHT': Parameter(Types.REAL,
+        #                            'Probability of getting hypertension given pre-existing hypertension'),
+        # 'prob_CVDgivenHC': Parameter(Types.REAL,
+        #                            'Probability of getting hypertension given pre-existing high cholesterol'),
+        # 'prob_CVDgivenHIV': Parameter(Types.REAL,
+        #                            'Probability of getting hypertension given pre-existing HIV'),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
+        'cvd_risk': Property(Types.REAL, 'Risk of CVD given pre-existing condition'),
         'cvd_current_status': Property(Types.BOOL, 'Current CVD status'),
         'cvd_historic_status': Property(Types.CATEGORICAL,
                                        'Historical status: N=never; C=Current, P=Previous',
@@ -60,6 +70,13 @@ class CVD(Module):
           Typically modules would read a particular file within here.
         """
 
+        params = self.parameters
+        params['prob_CVD_basic'] = 1
+        params['prob_CVDgivenDiab'] = 2 # 2.31
+        # params['prob_CVDgivenHT'] = 1.26
+        # params['prob_CVDgivenHC'] = 1.41
+        # params['prob_HTgivenHIV'] = 2.6
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -75,6 +92,7 @@ class CVD(Module):
         now = self.sim.date
 
         # 2. Set default values for all variables to be initialised
+        df['ht_risk'] = 'N'  # Default setting: no risk given pre-existing conditions
         df['cvd_current_status'] = False  # Default setting: no one has CVD
         df['cvd_historic_status'] = 'N'  # Default setting: no one has CVD
         df['cvd_date_case'] = pd.NaT  # Default setting: no one has a date for CVD
@@ -84,7 +102,12 @@ class CVD(Module):
         # 3. Assign prevalence as per data, by using probability by age
         joined = pd.merge(population.age, CVD_prevalence, left_on=['years'], right_on=['age'], how='left')
         random_numbers = np.random.rand(len(df))
-        df['cvd_current_status'] = (joined.probability > random_numbers)
+
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign CVD
+        df.loc[~df.diab_current_status, 'cvd_risk'] = self.prob_CVD_basic  # Basic risk, no pre-existing conditions
+        df.loc[df.diab_current_status, 'cvd_risk'] = self.prob_CVDgivenDiab  # Risk if pre-existing diabetes
+        joined.probability_updated = joined.probability * df.CVD_risk  # Update 'real' prevalence
+        df['cvd_current_status'] = (joined.probability_updated > random_numbers)  # Assign prevalence at t0
 
         # 3.1 Ways to check what's happening
         # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
@@ -147,8 +170,11 @@ class CVDEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
-        # Insert if neccessary
-
+        self.prob_CVD_basic = module.parameters['prob_CVD_basic']
+        self.prob_CVDgivenDiab = module.parameters['prob_CVDgivenDiab']
+        # self.prob_CVDgivenHT = module.parameters['prob_CVDgivenHT']
+        # self.prob_CVDgivenHC = module.parameters['prob_CVDgivenHC']
+        # self.prob_CVDgivenHIV = module.parameters['prob_CVDgivenHIV']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -170,7 +196,12 @@ class CVDEvent(RegularEvent, PopulationScopeEventMixin):
 
         joined = pd.merge(ages_of_no_cvd.reset_index(), CVD_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
         random_numbers = np.random.rand(len(joined))
-        now_cvd = (joined.probability > random_numbers)
+
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign CVD
+        df.loc[~df.diab_current_status, 'cvd_risk'] = self.prob_CVD_basic_basic     # Basic risk, no pre-existing conditions
+        df.loc[df.diab_current_status, 'cvd_risk'] = self.prob_CVDgivenDiab         # Risk if pre-existing high cholesterol
+        joined.probability_updated = joined.probability * df.ht_risk                # Update 'real' incidence
+        now_cvd = (joined.probability_updated > random_numbers)                     # Assign incidence
 
         # 3.1 Ways to check what's happening
         temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')

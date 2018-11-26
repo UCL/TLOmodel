@@ -1,7 +1,7 @@
 import pytest
 
 from tlo import Simulation, Date
-from tlo.methods import demography, hypertension, highcholesterol#, diabetes, CVD
+from tlo.methods import demography, hypertension, highcholesterol, diabetes#, CVD
 
 path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Model/Demography.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
@@ -13,9 +13,11 @@ popsize = 1000
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
+    diabetes_module = diabetes.Diabetes()  # This will load method for diabetes
     highcholesterol_module = highcholesterol.HC()         # This will load method for high cholesterol
     hypertension_module = hypertension.HT()               # This will load method for hypertension
     sim.register(core_module)
+    sim.register(diabetes_module)  # This will register method for diabetes
     sim.register(highcholesterol_module)                  # This will register method for high cholesterol
     sim.register(hypertension_module)                     # This will register method for hypertension
     return sim
