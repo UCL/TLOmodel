@@ -15,10 +15,12 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 # Read in data
-file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Model/Method_HT.xlsx'
+file_path = '/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prevalence, HT_incidence, HT_treatment = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                                            method_ht_data['treatment_parameters']
+HT_prevalence, HT_incidence, HT_treatment, HT_risk = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+                                            method_ht_data['treatment_parameters'], method_ht_data['parameters']
+
+
 
 
 class HT(Module):
@@ -37,6 +39,15 @@ class HT(Module):
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     PARAMETERS = {
+        'prob_HTgivenHC': Parameter(Types.REAL, 'Probability of getting hypertension given pre-existing high cholesterol'),
+        'prob_HT_basic': Parameter(Types.REAL,
+                                    'Probability of getting hypertension given no pre-existing condition'),
+
+        #'prob_HTgivenDiab': Parameter(Types.REAL,
+        #                            'Probability of getting hypertension given pre-existing diabetes'),
+        'prob_success_treat': Parameter(Types.REAL,
+                                    'Probability of intervention for hypertension reduced blood pressure to normal levels'),
+
         # Insert if relevant
     }
 
@@ -44,6 +55,7 @@ class HT(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
+        'ht_risk': Property(Types.REAL, 'Risk of hypertension given pre-existing condition'),
         'ht_current_status': Property(Types.BOOL, 'Current hypertension status'),
         'ht_historic_status': Property(Types.CATEGORICAL,
                                        'Historical status: N=never; C=Current, P=Previous',
@@ -62,6 +74,12 @@ class HT(Module):
           Typically modules would read a particular file within here.
         """
 
+        params = self.parameters
+        params['prob_HTgivenHC'] = 2 #1.28
+        params['prob_HT_basic']= 1
+        #params['prob_HTgivenDiab'] = 1.4
+        params['prob_success_treat'] = 0.5
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -77,18 +95,25 @@ class HT(Module):
         now = self.sim.date
 
         # 2. Set default values for all variables to be initialised
+        df['ht_risk'] = 'N'  # Default setting: no one is treated
         df['ht_current_status'] = False  # Default setting: no one has hypertension
         df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
         df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
         df['ht_treatment_status'] = 'N'  # Default setting: no one is treated
         df['ht_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
 
+
         # 3. Assign prevalence as per data, by using probability by age
         joined = pd.merge(population.age, HT_prevalence, left_on=['years'], right_on=['age'], how='left')
         random_numbers = np.random.rand(len(df))
-        df['ht_current_status'] = (joined.probability > random_numbers)
 
-        # 3.1 Ways to check what's happening
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
+        df.loc[~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic           # Basic risk, no pre-existing conditions
+        df.loc[df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC           # Risk if pre-existing high cholesterol
+        joined.probability_updated = joined.probability * df.ht_risk            # Update 'real' prevalence
+        df['ht_current_status'] = (joined.probability_updated > random_numbers) # Assign prevalence at t0
+
+        # 3.2 Ways to check what's happening
         # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
         # temp = pd.DataFrame([population.age.years, joined.Proportion, random_numbers, df['ht_current_status']])
 
@@ -169,7 +194,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 3. Handle new cases of hypertension
         ages_of_no_ht = population.age.loc[currently_ht_no]
-
         joined = pd.merge(ages_of_no_ht.reset_index(), HT_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
         random_numbers = np.random.rand(len(joined))
         now_hypertensive = (joined.probability > random_numbers)
