@@ -241,6 +241,9 @@ class hiv(Module):
                                                             replace=True,
                                                             p=cd4_probs.values)
 
+        df.cd4_state = df_age.cd4_state  # output this as needed for baseline art mortality rates
+        # print(df.cd4_state.head(40))
+
         # print(cd4_probs)
 
         # print(df.head(20))
@@ -286,7 +289,7 @@ class hiv(Module):
         # NOTE: we use the '.values' to assign back, ignoring the index of the 'date_infected' series
         df.loc[infected, 'date_hiv_infection'] = date_infected.values
 
-        del df['cd4_state']  # this doesn't delete the column, just the values in it
+        # del df['cd4_state']  # this doesn't delete the column, just the values in it
 
         # assign time of infection for children <15 years
         inf_child = df_age.index[df_age.has_hiv & (df_age.years < 15)]
