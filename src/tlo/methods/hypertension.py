@@ -36,17 +36,15 @@ class HT(Module):
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     PARAMETERS = {
-        'prob_HTgivenHC': Parameter(Types.REAL, 'Probability of getting hypertension given pre-existing high cholesterol'),
         'prob_HT_basic': Parameter(Types.REAL,
                                     'Probability of getting hypertension given no pre-existing condition'),
+        'prob_HTgivenHC': Parameter(Types.REAL, 'Probability of getting hypertension given pre-existing high cholesterol'),
         #'prob_HTgivenDiab': Parameter(Types.REAL,
         #                            'Probability of getting hypertension given pre-existing diabetes'),
         #'prob_HTgivenHIV': Parameter(Types.REAL,
         #                            'Probability of getting hypertension given pre-existing HIV'),
         'prob_success_treat': Parameter(Types.REAL,
                                     'Probability of intervention for hypertension reduced blood pressure to normal levels'),
-
-        # Insert if relevant
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -75,7 +73,7 @@ class HT(Module):
         params = self.parameters
         params['prob_HT_basic'] = 1
         params['prob_HTgivenHC'] = 2 # 1.28
-                # params['prob_HTgivenDiab'] = 1.4
+        # params['prob_HTgivenDiab'] = 1.4
         # params['prob_HTgivenHIV'] = 1.49
         params['prob_success_treat'] = 0.5
 
@@ -94,11 +92,11 @@ class HT(Module):
         now = self.sim.date
 
         # 2. Set default values for all variables to be initialised
-        df['ht_risk'] = 'N'  # Default setting: no one is treated
-        df['ht_current_status'] = False  # Default setting: no one has hypertension
-        df['ht_historic_status'] = 'N'  # Default setting: no one has hypertension
-        df['ht_date_case'] = pd.NaT  # Default setting: no one has a date for hypertension
-        df['ht_treatment_status'] = 'N'  # Default setting: no one is treated
+        df['ht_risk'] = 'N'  # Default setting: no risk given pre-existing conditions
+        df['ht_current_status'] = False   # Default setting: no one has hypertension
+        df['ht_historic_status'] = 'N'    # Default setting: no one has hypertension
+        df['ht_date_case'] = pd.NaT       # Default setting: no one has a date for hypertension
+        df['ht_treatment_status'] = 'N'   # Default setting: no one is treated
         df['ht_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
 
 
@@ -204,7 +202,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
         joined.probability_updated = joined.probability * df.ht_risk  # Update 'real' incidence
         now_hypertensive = (joined.probability_updated > random_numbers)  # Assign incidence
-        
+
         # 3.2 Ways to check what's happening
         temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
         temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])

@@ -33,13 +33,18 @@ class HC(Module):
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     PARAMETERS = {
-        # Insert if relevant
+        'prob_HC_basic': Parameter(Types.REAL,
+                                   'Probability of getting high cholesterol given no pre-existing condition'),
+        'prob_HCgivenDiab': Parameter(Types.REAL,
+                                    'Probability of getting high cholesterol given pre-existing diiabetes'),
+
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
+        'hc_risk': Property(Types.REAL, 'Risk of high cholesterol given pre-existing condition'),
         'hc_current_status': Property(Types.BOOL, 'Current high cholesterol status'),
         'hc_historic_status': Property(Types.CATEGORICAL,
                                        'Historical status: N=never; C=Current, P=Previous',
@@ -58,6 +63,11 @@ class HC(Module):
           Typically modules would read a particular file within here.
         """
 
+        params = self.parameters
+        params['prob_HC_basic'] = 1
+        params['prob_HCgivenDiab'] = 2  # 1.12
+        params['prob_success_treat'] = 0.5
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -73,16 +83,22 @@ class HC(Module):
         now = self.sim.date
 
         # 2. Set default values for all variables to be initialised
+        df['hc_risk'] = 'N'              # Default setting: no risk given pre-existing conditions
         df['hc_current_status'] = False  # Default setting: no one has high cholesterol
-        df['hc_historic_status'] = 'N'  # Default setting: no one has high cholesterol
-        df['hc_date_case'] = pd.NaT  # Default setting: no one has a date for high cholesterol
+        df['hc_historic_status'] = 'N'   # Default setting: no one has high cholesterol
+        df['hc_date_case'] = pd.NaT      # Default setting: no one has a date for high cholesterol
         df['hc_treatment_status'] = 'N'  # Default setting: no one is treated
-        df['hc_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
+        df['hc_date_treatment'] = pd.NaT # Details setting: no one has a date of treatment
 
         # 3. Assign prevalence as per data, by using probability by age
         joined = pd.merge(population.age, HC_prevalence, left_on=['years'], right_on=['age'], how='left')
         random_numbers = np.random.rand(len(df))
-        df['hc_current_status'] = (joined.probability > random_numbers)
+
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign high cholesterol
+        df.loc[~df.diab_current_status, 'hc_risk'] = self.prob_HC_basic         # Basic risk, no pre-existing conditions
+        df.loc[df.diab_current_status, 'hc_risk'] = self.prob_HCgivenDiab       # Risk if pre-existing diabetes
+        joined.probability_updated = joined.probability * df.hc_risk            # Update 'real' prevalence
+        df['hC_current_status'] = (joined.probability_updated > random_numbers) # Assign prevalence at t0
 
         # 3.1 Ways to check what's happening
         # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
@@ -145,7 +161,9 @@ class HCEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
-        # Insert if neccessary
+        self.prob_HC_basic = module.parameters['prob_HC_basic']
+        self.prob_HCgivenDiab = module.parameters['prob_HCgivenDiab']
+        self.prob_success_treat = module.parameters['prob_success_treat']
 
 
     def apply(self, population):
@@ -165,10 +183,15 @@ class HCEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 3. Handle new cases of high cholesterol
         ages_of_no_hc = population.age.loc[currently_hc_no]
-
         joined = pd.merge(ages_of_no_hc.reset_index(), HC_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
         random_numbers = np.random.rand(len(joined))
-        now_highcholesterol = (joined.probability > random_numbers)
+
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign high cholesterol
+        df.loc[~df.diab_current_status, 'hc_risk'] = self.prob_HC_basic  # Basic risk, no pre-existing conditions
+        df.loc[df.diab_current_status, 'hc_risk'] = self.prob_HCgivenDiab  # Risk if pre-existing diabetes
+        joined.probability_updated = joined.probability * df.hc_risk  # Update 'real' incidence
+        now_highcholesterol = (joined.probability_updated > random_numbers)  # Assign incidence
+
 
         # 3.1 Ways to check what's happening
         temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
