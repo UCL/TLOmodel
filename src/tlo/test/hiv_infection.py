@@ -101,7 +101,7 @@ class hiv(Module):
         params['rr_HIV_high_sexual_risk'] = 2
         params['rr_HIV_high_sexual_risk_fsw'] = 20
         params['proportion_on_ART_infectious'] = 0.2
-        params['beta'] = 0.3  # dummy value
+        params['beta'] = 0.9  # dummy value
         params['irr_hiv_f'] = 1.35
 
     def initialise_population(self, population):

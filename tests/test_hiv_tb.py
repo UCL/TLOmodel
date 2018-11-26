@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tlo import Date, DateOffset, Person, Simulation, Types
-from tlo.test import hiv_infection, tb
+from tlo.test import hiv_infection, tb, health_system
 from tlo.methods import demography
 
 # for desktop
@@ -28,10 +28,13 @@ def simulation():
     core_module = demography.Demography(workbook_path=path)
     hiv_module = hiv_infection.hiv()
     tb_module = tb.tb_baseline()
+    hs_module = health_system.health_system()
 
     sim.register(core_module)
     sim.register(hiv_module)
     sim.register(tb_module)
+    sim.register(hs_module)
+
     return sim
 
 
@@ -52,6 +55,9 @@ hiv_output = simulation.modules['hiv'].store['Total_HIV']
 time = simulation.modules['hiv'].store['Time']
 hiv_deaths = simulation.modules['hiv'].store['HIV_deaths']
 
+number_tested = simulation.modules['health_system'].store['Number_tested']
+testing_dates = simulation.modules['health_system'].store['Time']
+
 active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
 coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
 tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
@@ -60,21 +66,27 @@ time2 = simulation.modules['tb_baseline'].store['Time']
 
 
 plt.figure(1)
-plt.subplot(211)  # numrows, numcols, fignum
+ax = plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(time, hiv_output)
-plt.plot(time2, active_tb)
-plt.plot(time2, coinfected)
-plt.legend(['HIV', 'TB', 'HIV + TB'], loc='upper left')
-plt.xticks(rotation=45)
+plt.plot(time, hiv_deaths)
+plt.legend(['HIV', 'HIV deaths'], loc='upper right')
+# ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
-plt.subplot(212)
-plt.plot(time, hiv_deaths)
+ax = plt.subplot(222)
+plt.plot(time2, active_tb)
 plt.plot(time_tb_death, tb_deaths)
 plt.ylim(bottom=0)
-plt.legend(['HIV deaths', 'TB deaths'], loc='upper left')
+plt.legend(['TB', 'TB deaths'], loc='upper right')
+# ax.set_xticklabels([])
+plt.ylabel('Number of cases')
+
+plt.subplot(223)
+plt.plot(testing_dates, number_tested)
+plt.ylim(bottom=0)
+plt.legend(['HIV testing'], loc='upper right')
 plt.xticks(rotation=45)
-plt.ylabel('Number of deaths')
+plt.ylabel('Number of tests')
 
 plt.show()
 
