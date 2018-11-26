@@ -56,6 +56,7 @@ time = simulation.modules['hiv'].store['Time']
 hiv_deaths = simulation.modules['hiv'].store['HIV_deaths']
 
 number_tested = simulation.modules['health_system'].store['Number_tested']
+number_treated = simulation.modules['health_system'].store['Number_treated']
 testing_dates = simulation.modules['health_system'].store['Time']
 
 active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
@@ -70,7 +71,7 @@ ax = plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(time, hiv_output)
 plt.plot(time, hiv_deaths)
 plt.legend(['HIV', 'HIV deaths'], loc='upper right')
-# ax.set_xticklabels([])
+ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
 ax = plt.subplot(222)
@@ -78,7 +79,7 @@ plt.plot(time2, active_tb)
 plt.plot(time_tb_death, tb_deaths)
 plt.ylim(bottom=0)
 plt.legend(['TB', 'TB deaths'], loc='upper right')
-# ax.set_xticklabels([])
+ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
 plt.subplot(223)
@@ -87,6 +88,13 @@ plt.ylim(bottom=0)
 plt.legend(['HIV testing'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Number of tests')
+
+plt.subplot(224)
+plt.plot(testing_dates, number_treated)
+plt.ylim(bottom=0)
+plt.legend(['on ART'], loc='upper right')
+plt.xticks(rotation=45)
+plt.ylabel('Number treated')
 
 plt.show()
 
