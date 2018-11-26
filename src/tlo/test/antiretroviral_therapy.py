@@ -8,9 +8,13 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
 # this class contains all the methods required to set up the baseline population
-class ART(Module):
+class art(Module):
     """Models ART initiation.
     """
+
+    def __init__(self, name=None, workbook_path=None):
+        super().__init__(name)
+        self.workbook_path = workbook_path
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -23,7 +27,56 @@ class ART(Module):
         'ART_mortality_rate': Property(Types.REAL, 'Mortality rates whilst on ART'),
     }
 
-    # HELPER FUNCTION
+
+    def read_parameters(self, data_folder):
+        """ Read parameter values from file
+        """
+        # values early / late starters
+        self.parameters['art_mortality_rates'] = pd.read_excel(self.workbook_path,
+                                                               sheet_name='mortality_on_art')
+
+        # values by CD4 state
+        self.parameters['initial_art_mortality'] = pd.read_excel(self.workbook_path,
+                                                                 sheet_name='mortality_CD4')
+
+
+    def initialise_population(self, population):
+        """ assign mortality rates on ART for baseline population
+        """
+
+        df = population.props
+        now = self.sim.date
+
+        worksheet = self.parameters['initial_art_mortality']
+
+        # add age to population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
+        # for those aged >=5 years
+        # hold the index of all individuals on art at baseline
+        treated = df_age.index[df_age.on_art & (df_age.years >= 5)]
+
+        # select all individuals on art and over 5 years of age
+        treated_age = df_age.loc[treated, ['cd4_state', 'sex', 'years']]
+
+        print(treated_age.head(10))
+
+        # merge all infected individuals with their mortality rates by cd4, sex and age
+        treated_age_cd4 = treated_age.merge(worksheet,
+                                              left_on=['cd4_state', 'sex', 'years'],
+                                              right_on=['state', 'sex', 'age'],
+                                              how='left')
+
+        assert len(treated_age_cd4) == len(treated)  # check merged row count
+        print(treated_age_cd4.head(30))
+
+
+        # for infants
+
+
+
+
+    # helper function
     def get_index(df, age_low, age_high, has_hiv, on_ART, current_time,
                   length_treatment_low, length_treatment_high,
                   optarg1=None, optarg2=None, optarg3=None):
@@ -49,59 +102,6 @@ class ART(Module):
 
         return index
 
-    def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-
-        Here we do nothing.
-
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
-        """
-        params = self.parameters
-        params['p_infection'] = 0.01
-        params['p_cure'] = 0.01
-        params['initial_prevalence'] = 0.05
-        self.parameters['interpolated_pop'] = pd.read_excel(self.workbook_path,
-                                                            sheet_name='Interpolated Pop Structure')
-
-
-
-    # initial number on ART ordered by longest duration of infection
-    # ART numbers are divided by sim_size
-    def initial_ART_allocation(self, df, current_time):
-
-        self.current_time = current_time
-
-        # select data for baseline year 2018 - or replace with self.current_time
-        self.hiv_art_f = HIV_ART['ART'][
-            (HIV_ART.Year == self.current_time) & (HIV_ART.Sex == 'F')]  # returns vector ordered by age
-        self.hiv_art_m = HIV_ART['ART'][(HIV_ART.Year == self.current_time) & (HIV_ART.Sex == 'M')]
-
-        for i in range(0, 81):
-            # male
-            # select each age-group
-            subgroup = df[(df.age == i) & (df.has_HIV == 1) & (df.sex == 'M')]
-            # order by longest time infected
-            subgroup.sort_values(by='date_HIV_infection', ascending=False, na_position='last')
-            art_slots = int(self.hiv_art_m.iloc[i])
-            tmp = subgroup.id[0:art_slots]
-            df.loc[tmp, 'on_ART'] = 1
-            df.loc[tmp, 'date_ART_start'] = self.current_time
-
-            # female
-            # select each age-group
-            subgroup2 = df[(df.age == i) & (df.has_HIV == 1) & (df.sex == 'F')]
-            # order by longest time infected
-            subgroup2.sort_values(by='date_HIV_infection', ascending=False, na_position='last')
-            art_slots2 = int(self.hiv_art_f.iloc[i])
-            tmp2 = subgroup2.id[0:art_slots2]
-            df.loc[tmp2, 'on_ART'] = 1
-            df.loc[tmp2, 'date_ART_start'] = self.current_time
-
-        return df
-
-
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -121,5 +121,3 @@ class ART(Module):
         :param child: the new child
         """
         raise NotImplementedError
-
-

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tlo import Date, DateOffset, Person, Simulation, Types
-from tlo.test import hiv_infection, tb, health_system
+from tlo.test import hiv_infection, tb, health_system, antiretroviral_therapy
 from tlo.methods import demography
 
 # for desktop
@@ -29,11 +29,13 @@ def simulation():
     hiv_module = hiv_infection.hiv()
     tb_module = tb.tb_baseline()
     hs_module = health_system.health_system(workbook_path=path_hs)
+    art_module = antiretroviral_therapy.art(workbook_path=path_hs)
 
     sim.register(core_module)
     sim.register(hiv_module)
     sim.register(tb_module)
     sim.register(hs_module)
+    sim.register(art_module)
 
     return sim
 

@@ -36,8 +36,10 @@ class health_system(Module):
         params['testing_coverage'] = 0.2  # dummy value
         params['art_coverage'] = 0.5  # dummy value
 
-        self.parameters['initial_art'] = pd.read_excel(self.workbook_path,
+        self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                        sheet_name='coverage')
+
+
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -58,7 +60,7 @@ class health_system(Module):
         now = self.sim.date
         df = population.props
 
-        worksheet = self.parameters['initial_art']
+        worksheet = self.parameters['initial_art_coverage']
 
         coverage = worksheet.loc[worksheet.year == now.year, ['year', 'single_age', 'sex', 'prop_coverage']]
         # print('coverage: ', coverage.head(20))
@@ -70,11 +72,11 @@ class health_system(Module):
         # merge all susceptible individuals with their hiv probability based on sex and age
         df_with_age = df_with_age.merge(coverage,
 
-                                                 left_on=['years', 'sex'],
+                                        left_on=['years', 'sex'],
 
-                                                 right_on=['single_age', 'sex'],
+                                        right_on=['single_age', 'sex'],
 
-                                                 how='left')
+                                        how='left')
 
         # no data for ages 100+ so fill missing values with 0
         df_with_age['prop_coverage'] = df_with_age['prop_coverage'].fillna(0)
@@ -88,7 +90,7 @@ class health_system(Module):
         # probability of baseline population receiving art
         art_index = df_with_age.index[
             (random_draw < df_with_age.prop_coverage) & ~df_with_age.has_hiv & df.is_alive]
-        print('art_index: ', art_index)
+        # print('art_index: ', art_index)
 
         # we don't know proportion tested but not treated at baseline, assume same proportion
         df.loc[art_index, 'ever_tested'] = True
@@ -96,7 +98,6 @@ class health_system(Module):
         df.loc[art_index, 'hiv_diagnosed'] = True
         df.loc[art_index, 'on_art'] = True
         df.loc[art_index, 'date_art_start'] = now
-
 
     def initialise_simulation(self, sim):
         sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
