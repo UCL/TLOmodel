@@ -20,9 +20,6 @@ method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HT_prevalence, HT_incidence, HT_treatment, HT_risk = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
                                             method_ht_data['treatment_parameters'], method_ht_data['parameters']
 
-
-
-
 class HT(Module):
     """
     This is the hypertension module
@@ -42,9 +39,10 @@ class HT(Module):
         'prob_HTgivenHC': Parameter(Types.REAL, 'Probability of getting hypertension given pre-existing high cholesterol'),
         'prob_HT_basic': Parameter(Types.REAL,
                                     'Probability of getting hypertension given no pre-existing condition'),
-
         #'prob_HTgivenDiab': Parameter(Types.REAL,
         #                            'Probability of getting hypertension given pre-existing diabetes'),
+        #'prob_HTgivenHIV': Parameter(Types.REAL,
+        #                            'Probability of getting hypertension given pre-existing HIV'),
         'prob_success_treat': Parameter(Types.REAL,
                                     'Probability of intervention for hypertension reduced blood pressure to normal levels'),
 
@@ -75,9 +73,10 @@ class HT(Module):
         """
 
         params = self.parameters
-        params['prob_HTgivenHC'] = 2 #1.28
-        params['prob_HT_basic']= 1
-        #params['prob_HTgivenDiab'] = 1.4
+        params['prob_HT_basic'] = 1
+        params['prob_HTgivenHC'] = 2 # 1.28
+                # params['prob_HTgivenDiab'] = 1.4
+        # params['prob_HTgivenHIV'] = 1.49
         params['prob_success_treat'] = 0.5
 
     def initialise_population(self, population):
@@ -174,8 +173,11 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
-        # Insert if neccessary
-
+        self.prob_HT_basic = module.parameters['prob_HT_basic']
+        self.prob_HTgivenHC = module.parameters['prob_HTgivenHC']
+        # self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
+        # self.prob_HTgivenHIV = module.parameters['prob_HTgivenHIV']
+        self.prob_success_treat = module.parameters['prob_success_treat']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -196,13 +198,18 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         ages_of_no_ht = population.age.loc[currently_ht_no]
         joined = pd.merge(ages_of_no_ht.reset_index(), HT_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
         random_numbers = np.random.rand(len(joined))
-        now_hypertensive = (joined.probability > random_numbers)
 
-        # 3.1 Ways to check what's happening
+        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
+        df.loc[~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        df.loc[df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
+        joined.probability_updated = joined.probability * df.ht_risk  # Update 'real' incidence
+        now_hypertensive = (joined.probability_updated > random_numbers)  # Assign incidence
+        
+        # 3.2 Ways to check what's happening
         temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
         temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])
 
-        # 3.2 If newly hypertensive
+        # 3.3 If newly hypertensive
         if now_hypertensive.sum():
 
             ht_idx = currently_ht_no[now_hypertensive]
