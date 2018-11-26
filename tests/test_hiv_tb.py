@@ -12,7 +12,7 @@ from tlo.methods import demography
 # path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to Demography.xlsx file
 path = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
 
-art_path = 'P:/Documents/TLO/Method_ART.xlsx'  # York
+path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
 
 # for laptop
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
@@ -28,7 +28,7 @@ def simulation():
     core_module = demography.Demography(workbook_path=path)
     hiv_module = hiv_infection.hiv()
     tb_module = tb.tb_baseline()
-    hs_module = health_system.health_system()
+    hs_module = health_system.health_system(workbook_path=path_hs)
 
     sim.register(core_module)
     sim.register(hiv_module)
