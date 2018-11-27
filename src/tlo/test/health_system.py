@@ -69,7 +69,7 @@ class health_system(Module):
         df_with_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
         # print('df_with_age: ', df_with_age.head(10))
 
-        # merge all susceptible individuals with their hiv probability based on sex and age
+        # merge all susceptible individuals with their coverage probability based on sex and age
         df_with_age = df_with_age.merge(coverage,
 
                                         left_on=['years', 'sex'],
@@ -148,6 +148,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diagnosed_index, 'hiv_diagnosed'] = True
 
 
+# TODO: decide how to define probability of treatment / rates of ART initiation
 class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
     """ assigning ART to diagnosed HIV+ people
     """

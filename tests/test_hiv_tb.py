@@ -18,7 +18,7 @@ path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
 # path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
+end_date = Date(2025, 1, 1)
 popsize = 50000
 
 
@@ -61,6 +61,9 @@ number_tested = simulation.modules['health_system'].store['Number_tested']
 number_treated = simulation.modules['health_system'].store['Number_treated']
 testing_dates = simulation.modules['health_system'].store['Time']
 
+deaths_art = simulation.modules['art'].store['Number_dead_art']
+time_deaths_art = simulation.modules['art'].store['Time']
+
 active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
 coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
 tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
@@ -72,7 +75,8 @@ plt.figure(1)
 ax = plt.subplot(221)  # numrows, numcols, fignum
 plt.plot(time, hiv_output)
 plt.plot(time, hiv_deaths)
-plt.legend(['HIV', 'HIV deaths'], loc='upper right')
+plt.plot(time_deaths_art, deaths_art)
+plt.legend(['HIV', 'AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
 ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 

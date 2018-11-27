@@ -73,7 +73,6 @@ class hiv(Module):
         'date_hiv_infection': Property(Types.DATE, 'Date acquired HIV infection'),
         'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
-        'date_death': Property(Types.DATE, 'Date of death'),
         'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
                               categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
                                           'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
