@@ -5,16 +5,19 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods import demography
 
 
 # this class contains all the methods required to set up the baseline population
 class art(Module):
-    """Models ART initiation.
+    """ Models ART initiation.
     """
 
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+        self.store = {'Time': [], 'Number_dead_art': []}
+
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -25,8 +28,9 @@ class art(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'art_mortality_rate': Property(Types.REAL, 'Mortality rates whilst on art'),
-        'art_early': Property(Types.BOOL, 'If art was started >2 years from scheduled death'),
-        'time_on_art': Property(Types.CATEGORICAL, 'length of time on art', categories=['0_6', '7_12', '12']),
+        'early_art': Property(Types.BOOL, 'If art was started >2 years from scheduled death'),
+        'time_on_art': Property(Types.CATEGORICAL, 'length of time on art',
+                                categories=['0_6months', '7_12months', '12months']),
     }
 
     def read_parameters(self, data_folder):
@@ -47,6 +51,8 @@ class art(Module):
         df = population.props
 
         df.art_mortality_rate = None  # default no values
+        df.art_early = None
+        df.time_on_art = None
 
         worksheet = self.parameters['initial_art_mortality']
 
@@ -66,16 +72,16 @@ class art(Module):
         # retrieve index to assign mortality rates
         idx = df_age.index[df_age.on_art]
         df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'mortality']
-        print(idx)
+        # print(idx)
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
+        """ Get ready for simulation start.
         """
-        pass
+        event = ArtMortalityEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=1))
+
+        sim.schedule_event(HivArtDeathEvent(self), sim.date + DateOffset(
+            months=12))
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -93,30 +99,10 @@ class ArtMortalityEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+        super().__init__(module, frequency=DateOffset(months=2))  # every 12 months
         # make sure any rates are annual if frequency of event is annual
 
-    # HELPER FUNCTION
-    def get_index(population, age, has_hiv, on_art, current_time,
-                  length_treatment_low, length_treatment_high,
-                  optarg1=None, optarg2=None, optarg3=None):
-        # optargs not needed for infant mortality rates (yet)
-        # optarg1 = time from treatment start to death lower bound
-        # optarg2 = time from treatment start to death upper bound
-        # optarg3 = sex
-
-        df = population.props
-
-        index = df.index[
-            (df.age == age) & (df.sex == optarg3) &
-            df.has_hiv & df.on_art &
-            ((current_time - df.date_art_start) > length_treatment_low) &
-            ((current_time - df.date_art_start) <= length_treatment_high) &
-            (df.date_aids_death - df.date_art_start >= optarg1) &
-            (df.date_aids_death - df.date_art_start < optarg2)]
-
-        return index
-
+    # TODO: include early and late values of mortality on art for infants
     def apply(self, population):
         params = self.module.parameters
         now = self.sim.date
@@ -124,22 +110,79 @@ class ArtMortalityEvent(RegularEvent, PopulationScopeEventMixin):
 
         worksheet = self.module.parameters['art_mortality_data']
 
+        # find index of all 0-6 months on treatment
+        idx = df.index[df.on_art & ((now - df.date_art_start).dt.days < 182.6)]
+        df.loc[idx, 'time_on_art'] = '0_6months'
+
+        # find index of all 7-12 months on treatment
+        idx = df.index[df.on_art & ((now - df.date_art_start).dt.days >= 182.6)
+                       & ((now - df.date_art_start).dt.days < 365.25)]
+        df.loc[idx, 'time_on_art'] = '7_12months'
+
+        # find index of all >12 months on treatment
+        idx = df.index[df.on_art & ((now - df.date_art_start).dt.days >= 365.25)]
+        df.loc[idx, 'time_on_art'] = '12months'
+
+        # find index of all early starters
+        idx = df.index[df.on_art & ((df.date_aids_death - df.date_art_start).dt.days >= 730.5)]
+        df.loc[idx, 'early_art'] = True
+
+        # find index of all late starters
+        idx = df.index[df.on_art & ((df.date_aids_death - df.date_art_start).dt.days < 730.5)]
+        df.loc[idx, 'early_art'] = False
+
         # add age to population.props
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        # find index of all 0-6 months on treatment
-        idx = df.index[df.on_art & ((now - df_age.date_art_start).dt.days < 182.6)]
-        df.loc[idx, 'time_on_art'] = '0_6'
+        # add updated mortality rates
+        df_age = pd.merge(df_age, worksheet, left_on=['years', 'sex', 'time_on_art', 'early_art'],
+                          right_on=['age', 'sex', 'time_on_art', 'early'], how='left')
+        # df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
+        # print('df_age with art mortality: ', df_age.head(30))
 
-        # find index of all 7-12 months on treatment
-        idx = df.index[df.on_art & ((now - df_age.date_art_start).dt.days >= 182.6)
-                       & ((now - df_age.date_art_start).dt.days < 365.25)]
-        df.loc[idx, 'time_on_art'] = '7_12'
-
-        # find index of all >12 months on treatment
-        idx = df.index[df.on_art & ((now - df_age.date_art_start).dt.days >= 365.25)]
-        df.loc[idx, 'time_on_art'] = '12'
+        idx = df.index[df.on_art]
+        # print(idx)
+        df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'rate']
+        # df.to_csv('P:/Documents/TLO/test2.csv', sep=',')
 
 
+class HivArtDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """ The regular event that actually kills people.
+    """
 
+    def __init__(self, module):
+        """ Create a new random death event.
+        """
+        super().__init__(module, frequency=DateOffset(months=12))
 
+    def apply(self, population):
+        """Apply this event to the population.
+
+        For efficiency, we use pandas operations to scan the entire population
+        and kill individuals at random.
+
+        :param population: the current population
+        """
+        params = self.module.parameters
+        df = population.props
+        now = self.sim.date
+        rng = self.module.rng
+
+        # fill missing values with 0
+        df['art_mortality_rate'] = df['art_mortality_rate'].fillna(0)
+
+        # Generate a series of random numbers, one per individual
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < df.art_mortality_rate)
+        will_die = (df[deaths]).index
+
+        for i in will_die:
+            person = population[i]
+            death = demography.InstantaneousDeath(self.module, person, cause='aids')  # make that death event
+            self.sim.schedule_event(death, now)  # schedule the death for "now"
+
+        total_deaths = len(will_die)
+        self.module.store['Number_dead_art'].append(total_deaths)
+        self.module.store['Time'].append(self.sim.date)
+
+# TODO: cancel the scheduled hiv death if now on art
