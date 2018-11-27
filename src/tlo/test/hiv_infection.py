@@ -14,13 +14,12 @@ from tlo.methods import demography
 # file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
 file_path = 'P:/Documents/TLO/Method_HIV.xlsx'  # York
 
-
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
-hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs,\
-      irr_age = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
-      method_hiv_data['incidence'], \
-      method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
-      method_hiv_data['Initial_state_probs'], method_hiv_data['IRR']
+hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
+irr_age = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
+          method_hiv_data['incidence'], \
+          method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
+          method_hiv_data['Initial_state_probs'], method_hiv_data['IRR']
 
 
 class hiv(Module):
@@ -76,7 +75,8 @@ class hiv(Module):
         'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
         'date_death': Property(Types.DATE, 'Date of death'),
         'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
-                              categories=['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']),
+                              categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
+                                          'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
     }
 
     def read_parameters(self, data_folder):
@@ -157,7 +157,6 @@ class hiv(Module):
         # these individuals have higher risk of hiv
         df.loc[fsw, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk_fsw']
 
-
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
         df = population.props
         age = population.age
@@ -225,26 +224,49 @@ class hiv(Module):
         df = population.props
         now = self.sim.date
 
-        # for those aged >= 15 years
         # add age to population.props
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # print(df_age.head(20))
 
-        cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
+        # for those aged 0-4 years
+        cd4_states = ['CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5', 'CD0']
+        for sex in ['M', 'F']:
+            idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years < 5)]
+            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == '0_4'),
+                                     'probability']
+            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
+                                                            size=len(idx),
+                                                            replace=True,
+                                                            p=cd4_probs.values)
+
+
+        # for those aged 5-14 years
+        cd4_states = ['CD1000', 'CD750', 'CD500', 'CD350', 'CD200', 'CD0']
+
+        for sex in ['M', 'F']:
+            idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 5) & (df_age.years <= 14)]
+            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == '5_14'),
+                                     'probability']
+            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
+                                                            size=len(idx),
+                                                            replace=True,
+                                                            p=cd4_probs.values)
+
+        # for those aged >= 15 years
+        cd4_states2 = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
 
         for sex in ['M', 'F']:
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
-            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year), 'probability']
-            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
+            cd4_probs = cd4_base.loc[
+                (cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == "15_80"), 'probability']
+            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states2,
                                                             size=len(idx),
                                                             replace=True,
                                                             p=cd4_probs.values)
 
         df.cd4_state = df_age.cd4_state  # output this as needed for baseline art mortality rates
         # print(df.cd4_state.head(40))
-
-        # print(cd4_probs)
 
         # print(df.head(20))
 
@@ -334,9 +356,8 @@ class hiv(Module):
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
                      (pd.to_timedelta(time_death_slow * 365.25, unit='d'))):
-
             redraw = time_infected.index[time_infected >
-                                 (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
+                                         (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
             # print('redraw: ', redraw)
 
             new_time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
@@ -388,14 +409,13 @@ class hiv(Module):
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
                      (pd.to_timedelta(time_of_death * 365.25, unit='d'))):
-
             redraw = time_infected.index[time_infected >
-                                 (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
+                                         (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
 
             # print("redraw: ", redraw)
 
             new_time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw)) * \
-                        np.exp(self.log_scale(df_age.loc[redraw, 'years']))
+                                np.exp(self.log_scale(df_age.loc[redraw, 'years']))
             # print('new_time_of_death:', new_time_of_death)
 
             time_of_death[redraw] = new_time_of_death
@@ -414,7 +434,6 @@ class hiv(Module):
 
         # test2 = df.loc[hiv_ad]
         # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for adults
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -458,7 +477,6 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
 
-
     def apply(self, population):
         """Apply this event to the population.
         :param population: the current population
@@ -471,7 +489,8 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # calculate force of infection, modify for treated when available
-        infected = len(df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & df_age.is_alive])  # number infected untreated
+        infected = len(
+            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & df_age.is_alive])  # number infected untreated
         # infected_treated = params['proportion_on_ART_infectious'] * len(
         #     df_age[(df_age.has_HIV == 1) & (df_age.on_ART == 1) & (
         #         df_age.age.years >= 15)])  # number infected & treated
@@ -496,7 +515,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         # time of death
         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(new_cases)) * \
-                        np.exp(self.module.log_scale(df_age.loc[new_cases, 'years']))
+                     np.exp(self.module.log_scale(df_age.loc[new_cases, 'years']))
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
         # print('death dates as dates: ', death_date)
 

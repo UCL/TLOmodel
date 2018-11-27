@@ -23,14 +23,14 @@ class art(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'ART_mortality_rate': Property(Types.REAL, 'Mortality rates whilst on ART'),
+        'art_mortality_rate': Property(Types.REAL, 'Mortality rates whilst on ART'),
     }
 
     def read_parameters(self, data_folder):
         """ Read parameter values from file
         """
         # values early / late starters
-        self.parameters['art_mortality_rates'] = pd.read_excel(self.workbook_path,
+        self.parameters['art_mortality_data'] = pd.read_excel(self.workbook_path,
                                                                sheet_name='mortality_rates_long')
 
         # values by CD4 state
@@ -45,7 +45,7 @@ class art(Module):
 
         df = population.props
 
-        df.ART_mortality_rate = None  # default no values
+        df.art_mortality_rate = None  # default no values
 
         worksheet = self.parameters['initial_art_mortality']
         worksheet2 = self.parameters['initial_art_mortality_inf']
@@ -61,13 +61,24 @@ class art(Module):
         df_age = pd.merge(df_age, mort_rates, left_on=['years', 'sex', 'cd4_state'],
                           right_on=['age', 'sex', 'state'], how='left')
         # print('df_age: ', df_age.head(20))
-        # df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
+        df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
 
         # for infants
         mort_rates_inf = worksheet2.loc[worksheet2.time_on_ART == "12"]
         df_age = pd.merge(df_age, mort_rates_inf, left_on=['years'],
                           right_on=['age'], how='left')
-        # df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
+        # print('df_age: ', df_age.head(20))
+        df_age.to_csv('P:/Documents/TLO/test2.csv', sep=',')
+
+        # retrieve index to assign mortality rates
+        idx = df_age.index[df_age.on_art & (df_age.years >= 5)]
+        df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'mortality']
+        print(idx)
+
+        idx = df_age.index[df_age.on_art & (df_age.years < 5)]
+        df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'paed_mort']
+        # print('df: ', df.head(20))
+
 
 
 
