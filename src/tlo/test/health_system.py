@@ -89,7 +89,7 @@ class health_system(Module):
 
         # probability of baseline population receiving art
         art_index = df_with_age.index[
-            (random_draw < df_with_age.prop_coverage) & ~df_with_age.has_hiv & df.is_alive]
+            (random_draw < df_with_age.prop_coverage) & df_with_age.has_hiv & df.is_alive]
         # print('art_index: ', art_index)
 
         # we don't know proportion tested but not treated at baseline, assume same proportion
@@ -138,14 +138,14 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of HIV testing
         testing_index = df.index[(random_draw < params['testing_coverage']) & ~df.ever_tested & df.is_alive]
-        testing_diagnosed_index = df.index[
-            (random_draw < params['testing_coverage']) & ~df.ever_tested & df.is_alive & df.has_hiv]
+        df.loc[testing_index, 'ever_tested'] = True
+        df.loc[testing_index, 'date_tested'] = now
+
+        diagnosed_index = df.index[df.ever_tested & df.is_alive & df.has_hiv]
         # print('testing_index: ', testing_index)
         # print('diagnosed_index: ', testing_diagnosed_index)
 
-        df.loc[testing_index, 'ever_tested'] = True
-        df.loc[testing_index, 'date_tested'] = now
-        df.loc[testing_diagnosed_index, 'hiv_diagnosed'] = True
+        df.loc[diagnosed_index, 'hiv_diagnosed'] = True
 
 
 class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
