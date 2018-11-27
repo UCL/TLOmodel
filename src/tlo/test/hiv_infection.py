@@ -254,13 +254,13 @@ class hiv(Module):
                                                             p=cd4_probs.values)
 
         # for those aged >= 15 years
-        cd4_states2 = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
+        cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
 
         for sex in ['M', 'F']:
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
             cd4_probs = cd4_base.loc[
                 (cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == "15_80"), 'probability']
-            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states2,
+            df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
                                                             size=len(idx),
                                                             replace=True,
                                                             p=cd4_probs.values)
