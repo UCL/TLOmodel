@@ -10,9 +10,9 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 
 from tlo.methods import demography
 
-# file_path = '/Users/Tara/Desktop/TLO/TB/Method_TB.xlsx'  # laptop
+file_path = '/Users/Tara/Documents/TLO/Method_TB.xlsx'  # laptop
 # file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
-file_path = 'P:/Documents/TLO/Method_TB.xlsx'  # York
+# file_path = 'P:/Documents/TLO/Method_TB.xlsx'  # York
 
 tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
 Active_tb_prob, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_prob']

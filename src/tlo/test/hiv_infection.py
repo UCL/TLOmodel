@@ -11,8 +11,8 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 
 # file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
-# file_path = '/Users/Tara/Documents/Method_HIV.xlsx'  # for laptop
-file_path = 'P:/Documents/TLO/Method_HIV.xlsx'  # York
+file_path = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'  # for laptop
+# file_path = 'P:/Documents/TLO/Method_HIV.xlsx'  # York
 
 method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
 hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
@@ -91,14 +91,13 @@ class hiv(Module):
         params['infant_progression_category'] = ['FAST', 'SLOW']
         params['exp_rate_mort_infant_fast_progressor'] = 1.08
         params['weibull_scale_mort_infant_slow_progressor'] = 16
-        params['weibull_size_mort_infant_slow_progressor'] = 1
         params['weibull_shape_mort_infant_slow_progressor'] = 2.7
         params['weibull_shape_mort_adult'] = 2
         params['proportion_high_sexual_risk_male'] = 0.0913
         params['proportion_high_sexual_risk_female'] = 0.0095
-        params['proportion_female_sex_workers'] = 0.01
+        params['proportion_female_sex_workers'] = 0.0069
         params['rr_HIV_high_sexual_risk'] = 2
-        params['rr_HIV_high_sexual_risk_fsw'] = 20
+        params['rr_HIV_high_sexual_risk_fsw'] = 5
         params['proportion_on_ART_infectious'] = 0.2
         params['beta'] = 0.9  # dummy value
         params['irr_hiv_f'] = 1.35
@@ -341,7 +340,7 @@ class hiv(Module):
         # print('hiv_inf: ', hiv_inf)
 
         # need a two parameter Weibull with size parameter, multiply by scale instead
-        time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
+        time_death_slow = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                            size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
         # print('time_death_slow: ', time_death_slow)
 
@@ -359,7 +358,7 @@ class hiv(Module):
                                          (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
             # print('redraw: ', redraw)
 
-            new_time_death_slow = self.rng.weibull(a=params['weibull_size_mort_infant_slow_progressor'],
+            new_time_death_slow = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                    size=len(redraw)) * params[
                                       'weibull_scale_mort_infant_slow_progressor']
             # print('new_time_death: ', new_time_death_slow)

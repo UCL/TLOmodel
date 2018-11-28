@@ -4,21 +4,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from tlo import Date, DateOffset, Person, Simulation, Types
-from tlo.test import hiv_infection, tb, health_system, antiretroviral_therapy
+from tlo.test import hiv_infection, tb, health_system, antiretroviral_therapy, health_system_tb
 from tlo.methods import demography
 
 # for desktop
-# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
-# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to Demography.xlsx file
-path = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
+# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
+# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+# path = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
 
-path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
+# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
 
 # for laptop
-# path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
+path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
+path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'  # York
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 50000
 
 
@@ -30,12 +31,14 @@ def simulation():
     tb_module = tb.tb_baseline()
     hs_module = health_system.health_system(workbook_path=path_hs)
     art_module = antiretroviral_therapy.art(workbook_path=path_hs)
+    hs_tb_module = health_system_tb.health_system_tb()
 
     sim.register(core_module)
     sim.register(hiv_module)
     sim.register(tb_module)
     sim.register(hs_module)
     sim.register(art_module)
+    sim.register(hs_tb_module)
 
     return sim
 
@@ -70,6 +73,9 @@ tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
 time_tb_death = simulation.modules['tb_baseline'].store['Time_death_TB']
 time2 = simulation.modules['tb_baseline'].store['Time']
 
+time_test_tb = simulation.modules['health_system_tb'].store['Time']
+tb_tests = simulation.modules['health_system_tb'].store['Number_tested_tb']
+
 
 plt.figure(1)
 ax = plt.subplot(221)  # numrows, numcols, fignum
@@ -90,8 +96,9 @@ plt.ylabel('Number of cases')
 
 plt.subplot(223)
 plt.plot(testing_dates, number_tested)
+plt.plot(time_test_tb, tb_tests)
 plt.ylim(bottom=0)
-plt.legend(['HIV testing'], loc='upper right')
+plt.legend(['HIV testing', 'TB testing'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Number of tests')
 
