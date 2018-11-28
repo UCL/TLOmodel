@@ -74,10 +74,10 @@ class Depression(Module):
         'rr_depr_on_antidepr': Parameter(
             Types.REAL,
             'Relative rate of depression associated with previous depression if on antidepressants'),
-        'rr_depr_age_15_20': Parameter(
+        'rr_depr_age1519': Parameter(
             Types.REAL,
             'Relative rate of depression associated with 15-20 year olds'),
-        'rr_depr_age_60plus': Parameter(
+        'rr_depr_agege60': Parameter(
             Types.REAL,
             'Relative rate of depression associated with age > 60'),
         'depr_resolution_rates': Parameter(
@@ -160,14 +160,15 @@ class Depression(Module):
         self.parameters['init_rp_never_depr'] = 0
         self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
         self.parameters['base_3m_prob_depr'] = 0.0007
+        self.parameters['base_3m_prob_depr'] = 0
         self.parameters['rr_depr_wealth45'] = 3
         self.parameters['rr_depr_cc'] = 1.25
         self.parameters['rr_depr_pregnancy'] = 3
         self.parameters['rr_depr_female'] = 1.5
         self.parameters['rr_depr_prev_epis'] = 50
         self.parameters['rr_depr_on_antidepr'] = 30
-        self.parameters['rr_depr_age_15_20'] = 1
-        self.parameters['rr_depr_age_60plus'] = 3
+        self.parameters['rr_depr_age1519'] = 1
+        self.parameters['rr_depr_agege60'] = 3
         self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
         self.parameters['rr_resol_depress_cc'] = 0.5
         self.parameters['rr_resol_depress_on_antidepr'] = 1.5
@@ -250,6 +251,7 @@ class Depression(Module):
    #    todo - needs changing so prob is dependent on age (not all age 30)
         p_ever_depr_not_curr_m = 30 * self.init_rp_ever_depr_per_year_older_m
         p_ever_depr_not_curr_f = 30 * self.init_rp_ever_depr_per_year_older_f
+
         p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
         p_antidepr_ever_depr_not_curr = self.init_pr_antidepr_curr_depr * self.init_rp_antidepr_ever_depr_not_curr
 
@@ -399,8 +401,8 @@ class Depression(Module):
                                                               (df.li_wealth.isin([4, 5]))
                                                               & (df.sex == 'F') & df.is_alive & df.is_pregnant]
 
-        m_index = df.index[(df.sex == 'M') & df.is_alive]
-        f_index = df.index[(df.sex == 'F') & df.is_alive]
+        m_index = df[(df.sex == 'M') & df.is_alive & (age.years >= 15)].index
+        f_index = df[(df.sex == 'F') & df.is_alive & (age.years >= 15)].index
 
         depr_m_age1519_no_cc_wealth123 = np.random.choice([True, False],
                                 size=len(m_age1519_no_cc_wealth123_index),
@@ -716,19 +718,12 @@ class Depression(Module):
             df.loc[f_rec_preg_agege60_cc_wealth45_index, 'de_depr'] = \
                 depr_f_rec_preg_agege60_cc_wealth45
 
-        ever_depr_m = np.random.choice([True, False], size=len(m_index),
-                                       p=[p_ever_depr_not_curr_m,
-                                          1 - p_ever_depr_not_curr_m])
+        df['de_ever_depr'] = df['de_depr']
 
-        if ever_depr_m.sum():
-            df.loc[m_index, 'de_ever_depr'] = ever_depr_m
-
-        ever_depr_f = np.random.choice([True, False], size=len(m_index),
-                                   p=[p_ever_depr_not_curr_f,
-                                      1 - p_ever_depr_not_curr_f])
-
-        if ever_depr_f.sum():
-            df.loc[m_index, 'de_ever_depr'] = ever_depr_f
+        df.loc[f_index, 'p_xxx'] = age.loc[f_index, 'years'] * self.init_rp_ever_depr_per_year_older_f
+        df.loc[m_index, 'p_xxx'] = age.loc[m_index, 'years'] * self.init_rp_ever_depr_per_year_older_m
+        random_draw = self.rng.random_sample(size=len(df))
+        df['de_ever_depr'] = (df['p_xxx'] > random_draw)
 
         curr_depr_index = df.index[df.de_depr & df.is_alive]
 
@@ -804,8 +799,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
         self.rr_depr_on_antidepr = module.parameters['rr_depr_on_antidepr']
         self.rr_depr_on_antidepr = module.parameters['rr_depr_on_antidepr']
-        self.rr_depr_age_15_20 = module.parameters['rr_depr_age_15_20']
-        self.rr_depr_age_60plus = module.parameters['rr_depr_age_60plus']
+        self.rr_depr_age1519 = module.parameters['rr_depr_age1519']
+        self.rr_depr_agege60 = module.parameters['rr_depr_agege60']
         self.depr_resolution_rates = module.parameters['depr_resolution_rates']
         self.rr_resol_depress_cc = module.parameters['rr_resol_depress_cc']
         self.rr_resol_depress_on_antidepr = module.parameters['rr_resol_depress_on_antidepr']
@@ -831,113 +826,113 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         prob3m_depr_never_depr_m_age2059_no_cc_wealth123 = self.base_3m_prob_depr
         prob3m_depr_never_depr_f_not_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female
         prob3m_depr_never_depr_f_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy
-        prob3m_depr_never_depr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20
-        prob3m_depr_never_depr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20
-        prob3m_depr_never_depr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20
-        prob3m_depr_never_depr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20
-        prob3m_depr_never_depr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20
-        prob3m_depr_never_depr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20
+        prob3m_depr_never_depr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519
+        prob3m_depr_never_depr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519
+        prob3m_depr_never_depr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519
+        prob3m_depr_never_depr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519
+        prob3m_depr_never_depr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60
+        prob3m_depr_never_depr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60
         prob3m_depr_never_depr_m_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_cc
         prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc
         prob3m_depr_never_depr_f_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc
-        prob3m_depr_never_depr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc
-        prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc
-        prob3m_depr_never_depr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc
-        prob3m_depr_never_depr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc
-        prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc
-        prob3m_depr_never_depr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc
+        prob3m_depr_never_depr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519  * self.rr_depr_cc
+        prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc
+        prob3m_depr_never_depr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc
+        prob3m_depr_never_depr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_cc
+        prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc
+        prob3m_depr_never_depr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc
         prob3m_depr_never_depr_m_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_wealth45
         prob3m_depr_never_depr_f_not_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_wealth45
         prob3m_depr_never_depr_f_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_wealth45
-        prob3m_depr_never_depr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45
-        prob3m_depr_never_depr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_wealth45
         prob3m_depr_never_depr_m_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_cc * self.rr_depr_wealth45
         prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc * self.rr_depr_wealth45
         prob3m_depr_never_depr_f_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45
-        prob3m_depr_never_depr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519  * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45
+        prob3m_depr_never_depr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45
 
         prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth123 = self.base_3m_prob_depr  * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_cc * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519  * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_wealth45 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_wealth45 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
         prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
-        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519  * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
+        prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_prev_epis
 
         prob3m_depr_on_antidepr_m_age2059_no_cc_wealth123 = self.base_3m_prob_depr  * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_m_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_cc * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_age1519  * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_m_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_m_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy  * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20  * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
-        prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age_15_20 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_age1519 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_m_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
+        prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
 
         # todo need to ensure these probabilities capped at 1
 
@@ -962,6 +957,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age2059_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
@@ -975,6 +971,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age2059_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
@@ -988,6 +985,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age2059_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1001,6 +999,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age1519_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1014,6 +1013,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age1519_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1027,6 +1027,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age1519_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_agege60_no_cc_wealth123_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1040,6 +1041,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_agege60_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1053,6 +1055,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_agege60_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1066,6 +1069,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_agege60_no_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1079,6 +1083,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age2059_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1092,6 +1097,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age2059_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1105,6 +1111,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age2059_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1118,6 +1125,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age1519_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1131,6 +1139,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age1519_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1144,6 +1153,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age1519_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1157,6 +1167,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_agege60_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1170,6 +1181,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_agege60_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1183,6 +1195,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_agege60_cc_wealth123_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
@@ -1196,6 +1209,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age2059_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
@@ -1209,6 +1223,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age2059_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
@@ -1222,6 +1237,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age2059_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1235,6 +1251,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age1519_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1248,6 +1265,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age1519_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
@@ -1261,6 +1279,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age1519_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_agege60_no_cc_wealth45_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1274,6 +1293,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_agege60_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1287,6 +1307,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_agege60_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60)  & ~df.de_cc &
@@ -1300,6 +1321,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_agege60_no_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1313,6 +1335,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age2059_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1326,6 +1349,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age2059_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
@@ -1339,6 +1363,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age2059_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1352,6 +1377,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_age1519_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1365,6 +1391,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_age1519_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
@@ -1378,6 +1405,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_age1519_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1391,6 +1419,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_m_agege60_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1404,6 +1433,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_not_preg_agege60_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
         never_depr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
@@ -1417,7 +1447,2111 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         if now_depr.sum():
             x_idx = never_depr_f_preg_agege60_cc_wealth45_index[now_depr]
             df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & ~df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_not_on_antidepr_ever_depr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_not_on_antidepr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_age2059_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_age1519_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_agege60_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth123_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_m_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        never_depr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60)  & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & ~df.de_ever_depr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(never_depr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_never_depr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_never_depr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = never_depr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_age2059_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_age1519_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_m_agege60_cc_wealth123, 1 - prob3m_depr_on_antidepr_m_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age2059_cc_wealth123_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age2059_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age2059_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age1519_cc_wealth123_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age1519_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age1519_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_agege60_cc_wealth123_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([1, 2, 3]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_agege60_cc_wealth123_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth123, 1 - prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth123])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_agege60_cc_wealth123_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_age2059_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_age1519_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_agege60_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_age2059_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age2059_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_age1519_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age1519_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth45_index = df.index[(age.years >= 60) & ~df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_agege60_no_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_agege60_no_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_age2059_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_age1519_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_m_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_m_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_m_agege60_cc_wealth45, 1 - prob3m_depr_on_antidepr_m_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_m_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_not_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age2059_cc_wealth45_index = df.index[(age.years >= 20) & (age.years < 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age2059_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_age2059_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age2059_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_age1519_cc_wealth45_index = df.index[(age.years >= 15) & (age.years < 20) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_age1519_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_age1519_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_age1519_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+        ever_depr_on_antidepr_f_preg_agege60_cc_wealth45_index = df.index[(age.years >= 60) & df.de_cc &
+                                                        (df.li_wealth.isin([4, 5]))
+                                                        & (df.sex == 'M') & df.is_alive & ~df.de_depr & df.de_ever_depr
+                                                        & df.de_on_antidepr]
+
+        now_depr = np.random.choice([True, False],
+                             size=len(ever_depr_on_antidepr_f_preg_agege60_cc_wealth45_index),
+                             p=[prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth45, 1 - prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth45])
+
+        if now_depr.sum():
+            x_idx = ever_depr_on_antidepr_f_preg_agege60_cc_wealth45_index[now_depr]
+            df.loc[x_idx, 'de_depr'] = True
+            df.loc[x_idx, 'de_ever_depr'] = True
+            df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1687,8 +3821,8 @@ possibly useful code
         eff_prob_depr = pd.Series(params['base_3m_prob_depr'], index=p[~p.is_depr].index)
         eff_prob_depr.loc[p.is_pregnant] *= params['rr_depr_pregnancy']
         eff_prob_depr.loc[~p.ever_depr] *= params['rr_depr_prev_episode']
-        eff_prob_depr.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depr_age_15_20']
-        eff_prob_depr.loc[p.date_of_birth > ago_60yr] *= params['rr_depr_age_60plus']
+        eff_prob_depr.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depr_age_1519']
+        eff_prob_depr.loc[p.date_of_birth > ago_60yr] *= params['rr_depr_age_ge60']
         eff_prob_depr.loc[p.female] *= params['rr_depr_female']
         eff_prob_depr.loc[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_depr_cc']
 
