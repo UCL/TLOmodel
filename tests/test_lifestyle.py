@@ -7,7 +7,7 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2011, 1, 1)
 popsize = 10000
 
 
