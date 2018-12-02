@@ -40,10 +40,18 @@ class Lifestyle(Module):
         'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tob per 1 higher wealth level (higher wealth level = lower wealth)'),
         'r_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
         'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
+        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
+        'init_dist_mar_stat_age1520': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
+        'init_dist_mar_stat_age2023': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
+        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
+        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
+        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
+        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
+        'r_mar': Parameter(Types.REAL, 'prob per 3 months of marriage when age 15-30'),
+        'r_div_wid': Parameter(Types.REAL, 'prob per 3 months of becoming divorced or widowed, amongst those married'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -56,7 +64,8 @@ class Lifestyle(Module):
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
         'li_low_ex': Property(Types.BOOL, 'currently low ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
-        'li_ex_alc': Property(Types.BOOL, 'current excess alcohol')
+        'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
+        'li_mar_stat': Property(Types.CATEGORICAL, 'marital status', categories=[1, 2, 3])
     }
 
     def __init__(self):
@@ -137,6 +146,14 @@ class Lifestyle(Module):
         self.parameters['init_p_overwt_agelt15'] = 0.0
         self.parameters['init_p_ex_alc_m'] = 0.15
         self.parameters['init_p_ex_alc_f'] = 0.01
+        self.parameters['init_dist_mar_stat_age1520'] = [0.70, 0.30, 0.00]
+        self.parameters['init_dist_mar_stat_age2030'] = [0.15, 0.80, 0.05]
+        self.parameters['init_dist_mar_stat_age3040'] = [0.05, 0.70, 0.25]
+        self.parameters['init_dist_mar_stat_age4050'] = [0.03, 0.50, 0.47]
+        self.parameters['init_dist_mar_stat_age5060'] = [0.03, 0.30, 0.67]
+        self.parameters['init_dist_mar_stat_agege60'] = [0.03, 0.20, 0.77]
+        self.parameters['r_mar'] = 0.03
+        self.parameters['r_div_wid'] = 0.01
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -153,11 +170,14 @@ class Lifestyle(Module):
         df['li_low_ex'] = False  # default all not low ex
         df['li_tob'] = False  # default all not tob
         df['li_ex_alc'] = False  # default all not ex alc
+        df['li_mar_stat'] = 1  # default: all individuals never married
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
 
         agelt15_index = df.index[age.years < 15]
+
+        # todo: allocate wealth level at baseline
 
         # urban
         # randomly selected some individuals as urban
