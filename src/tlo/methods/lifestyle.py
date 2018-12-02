@@ -114,6 +114,12 @@ class Lifestyle(Module):
         self.o_prop_f_age1519_w5_tob = {'prop_f_age1519_w5_tob': []}
         self.o_prop_f_age2039_w5_tob = {'prop_f_age2039_w5_tob': []}
         self.o_prop_f_agege40_w5_tob = {'prop_f_agege40_w5_tob': []}
+        self.o_prop_mar_stat_1 = {'prop_mar_stat_1': []}
+        self.o_prop_mar_stat_2 = {'prop_mar_stat_2': []}
+        self.o_prop_mar_stat_3 = {'prop_mar_stat_3': []}
+        self.o_prop_mar_stat_1_agege60 = {'prop_mar_stat_1_agege60': []}
+        self.o_prop_mar_stat_2_agege60 = {'prop_mar_stat_2_agege60': []}
+        self.o_prop_mar_stat_3_agege60 = {'prop_mar_stat_3_agege60': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -311,6 +317,22 @@ class Lifestyle(Module):
         df.loc[f_agege15_index, 'li_ex_alc'] = np.random.choice([True, False], size=len(f_agege15_index),
                                                                 p=[i_p_ex_alc_f, i_p_not_ex_alc_f])
 
+        # mar stat
+
+        age1520_index = df.index[(age.years >= 15) & (age.years < 20) & df.is_alive]
+        age2030_index = df.index[(age.years >= 20) & (age.years < 30) & df.is_alive]
+        age3040_index = df.index[(age.years >= 30) & (age.years < 40) & df.is_alive]
+        age4050_index = df.index[(age.years >= 40) & (age.years < 50) & df.is_alive]
+        age5060_index = df.index[(age.years >= 50) & (age.years < 60) & df.is_alive]
+        agege60_index = df.index[(age.years >= 60) & df.is_alive]
+
+        df.loc[age1520_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age1520_index), p=self.init_dist_mar_stat_age1520)
+        df.loc[age2030_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age2030_index), p=self.init_dist_mar_stat_age2030)
+        df.loc[age3040_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age3040_index), p=self.init_dist_mar_stat_age3040)
+        df.loc[age4050_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age4050_index), p=self.init_dist_mar_stat_age4050)
+        df.loc[age5060_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age5060_index), p=self.init_dist_mar_stat_age5060)
+        df.loc[agege60_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(agege60_index), p=self.init_dist_mar_stat_agege60)
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         This method is called just before the main simulation loop begins, and after all
@@ -372,6 +394,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_ex_alc = module.parameters['r_ex_alc']
         self.r_not_ex_alc = module.parameters['r_not_ex_alc']
         self.rr_ex_alc_f = module.parameters['rr_ex_alc_f']
+        self.r_mar = module.parameters['r_mar']
+        self.r_div_wid = module.parameters['r_div_wid']
+
 
     def apply(self, population):
         """Apply this event to the population.
@@ -891,6 +916,19 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
             df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
 
+    # transitions in mar stat
+
+        curr_never_mar_index = df.index[df.is_alive & (age.years >= 15) & (age.years < 30) & (df.li_mar_stat == 1)]
+        now_mar = np.random.choice([True, False], size=len(curr_never_mar_index), p=[self.r_mar, 1 - self.r_mar])
+        if now_mar.sum():
+            now_mar_index = curr_never_mar_index[now_mar]
+            df.loc[now_mar_index, 'li_mar_stat'] = 2
+
+        curr_mar_index = df.index[df.is_alive & (df.li_mar_stat == 2)]
+        now_div_wid = np.random.choice([True, False], size=len(curr_mar_index), p=[self.r_div_wid, 1 - self.r_div_wid])
+        if now_div_wid.sum():
+            now_div_wid_index = curr_mar_index[now_div_wid]
+            df.loc[now_div_wid_index, 'li_mar_stat'] = 3
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -914,6 +952,19 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_urban = urban_alive / alive
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
+
+        mar_stat_1_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (age.years >= 15)]
+        mar_stat_2_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (age.years >= 15)]
+        mar_stat_3_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (age.years >= 15)]
+
+        m_idx = df.index[df.is_alive & (df.sex == 'M') & (age.years >= 15)]
+        f_idx = df.index[df.is_alive & (df.sex == 'F') & (age.years >= 15)]
+        ge15_idx = df.index[df.is_alive & (age.years >= 15)]
+
+        mar_stat_1_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (age.years >= 60)]
+        mar_stat_2_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (age.years >= 60)]
+        mar_stat_3_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (age.years >= 60)]
+        ge60_idx = df.index[df.is_alive & (age.years >= 60)]
 
         m_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & df.li_urban]
         f_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & df.li_urban]
@@ -1064,6 +1115,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_f_ex_alc = f_ex_alc / n_f_ge15
         prop_m_ex_alc = m_ex_alc / n_m_ge15
 
+        prop_mar_stat_1 = len(mar_stat_1_idx) / len(ge15_idx)
+        prop_mar_stat_2 = len(mar_stat_2_idx) / len(ge15_idx)
+        prop_mar_stat_3 = len(mar_stat_3_idx) / len(ge15_idx)
+
+        prop_mar_stat_1_agege60 = len(mar_stat_1_agege60_idx) / len(ge60_idx)
+        prop_mar_stat_2_agege60 = len(mar_stat_2_agege60_idx) / len(ge60_idx)
+        prop_mar_stat_3_agege60 = len(mar_stat_3_agege60_idx) / len(ge60_idx)
+
         prop_m_age1519_w1_tob = len(m_age1519_w1_tob) / len(m_age1519_w1)
         prop_f_age1519_w1_tob = len(f_age1519_w1_tob) / len(f_age1519_w1)
         prop_m_age2039_w1_tob = len(m_age2039_w1_tob) / len(m_age2039_w1)
@@ -1094,7 +1153,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_f_age2039_w5_tob = len(f_age2039_w5_tob) / len(f_age2039_w5)
         prop_m_agege40_w5_tob = len(m_agege40_w5_tob) / len(m_agege40_w5)
         prop_f_agege40_w5_tob = len(f_agege40_w5_tob) / len(f_agege40_w5)
-        
+
+        self.module.o_prop_mar_stat_1['prop_mar_stat_1'].append(prop_mar_stat_1)
+        self.module.o_prop_mar_stat_2['prop_mar_stat_2'].append(prop_mar_stat_2)
+        self.module.o_prop_mar_stat_3['prop_mar_stat_3'].append(prop_mar_stat_3)
+        self.module.o_prop_mar_stat_1_agege60['prop_mar_stat_1_agege60'].append(prop_mar_stat_1_agege60)
+        self.module.o_prop_mar_stat_2_agege60['prop_mar_stat_2_agege60'].append(prop_mar_stat_2_agege60)
+        self.module.o_prop_mar_stat_3_agege60['prop_mar_stat_3_agege60'].append(prop_mar_stat_3_agege60)
+
         self.module.o_prop_m_urban_overwt['prop_m_urban_overwt'].append(prop_m_urban_overwt)
         self.module.o_prop_f_urban_overwt['prop_f_urban_overwt'].append(prop_f_urban_overwt)
         self.module.o_prop_m_rural_overwt['prop_m_rural_overwt'].append(prop_m_rural_overwt)
@@ -1144,10 +1210,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , prop_f_ex_alc %f, alive:%d, prop_wealth1 %f,  '
-              'prop_m_urban_overwt:%f , newly urban: %d, '
+        print('%s lifestyle n_m_ge15:%d , prop_wealth1 %f, prop_mar_stat_1 %f,'
+              'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_m_ge15, prop_f_ex_alc, alive,  prop_wealth1, prop_m_urban_overwt,
+              (self.sim.date, n_m_ge15, prop_wealth1, prop_mar_stat_1,  prop_mar_stat_2,
+               prop_mar_stat_3, prop_m_urban_overwt,
                newly_urban_in_last_3mths,
                list(wealth_count_alive)),
               flush=True)
