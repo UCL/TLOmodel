@@ -156,6 +156,7 @@ class Lifestyle(Module):
         self.o_prop_mar_stat_1_agege60 = {'prop_mar_stat_1_agege60': []}
         self.o_prop_mar_stat_2_agege60 = {'prop_mar_stat_2_agege60': []}
         self.o_prop_mar_stat_3_agege60 = {'prop_mar_stat_3_agege60': []}
+        self.o_prop_f_1550_on_con = {'prop_f_1550_on_con': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -198,7 +199,7 @@ class Lifestyle(Module):
         self.parameters['r_div_wid'] = 0.01
         self.parameters['init_p_on_contrac'] = 0.30
         self.parameters['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
-        self.parameters['r_contrac'] = 0.03
+        self.parameters['r_contrac'] = 0.05
         self.parameters['r_contrac_int'] = 0.1
         self.parameters['r_con_1_2'] = 0.0
         self.parameters['r_con_1_3'] = 0.0
@@ -476,7 +477,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_ex_alc_f = module.parameters['rr_ex_alc_f']
         self.r_mar = module.parameters['r_mar']
         self.r_div_wid = module.parameters['r_div_wid']
-
+        self.r_contrac = module.parameters['r_contrac']
+        self.r_contrac_int = module.parameters['r_contrac_int']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1010,6 +1012,26 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             now_div_wid_index = curr_mar_index[now_div_wid]
             df.loc[now_div_wid_index, 'li_mar_stat'] = 3
 
+        # updating of contraceptive status
+
+        curr_not_on_con_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & ~df.li_on_con]
+        now_on_con = np.random.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
+        if now_on_con.sum():
+            now_on_con_index = curr_not_on_con_idx[now_on_con]
+            df.loc[now_on_con_index, 'li_on_con'] = True
+
+        curr_on_con_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con]
+        now_not_on_con = np.random.choice([True, False], size=len(curr_on_con_idx), p=[self.r_contrac_int, 1 - self.r_contrac_int])
+        if now_not_on_con.sum():
+            now_not_on_con_index = curr_on_con_idx[now_not_on_con]
+            df.loc[now_not_on_con_index, 'li_on_con'] = False
+
+        f_age50_idx = df.index[df.is_alive & (age.years == 50) & (df.sex == 'F') & df.li_on_con]
+        df.loc[f_age50_idx, 'li_on_con'] = False
+
+        # todo
+        # coding of switching between contraceptive methods
+
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -1171,6 +1193,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_f_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'F')).sum()
         n_ge15 = (df.is_alive & (age.years >= 15)).sum()
 
+        n_f_age1550 = (df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F')).sum()
+        n_f_age1550_on_con = (df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con).sum()
+
+        prop_f_1550_on_con = n_f_age1550_on_con / n_f_age1550
+
         self.module.store['alive'].append(alive)
 
         proportion_urban = urban_alive / (df.is_alive.sum())
@@ -1288,12 +1315,14 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.o_prop_f_age2039_w5_tob['prop_f_age2039_w5_tob'].append(prop_f_age2039_w5_tob)
         self.module.o_prop_f_agege40_w5_tob['prop_f_agege40_w5_tob'].append(prop_f_agege40_w5_tob)
 
+        self.module.o_prop_f_1550_on_con['prop_f_1550_on_con'].append(prop_f_1550_on_con)
+
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , prop_wealth1 %f, prop_mar_stat_1 %f,'
+        print('%s lifestyle n_m_ge15:%d , prop_wealth1 %f, prop_f_1550_on_con  %f, prop_mar_stat_1 %f,'
               'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_m_ge15, prop_wealth1, prop_mar_stat_1,  prop_mar_stat_2,
+              (self.sim.date, n_m_ge15, prop_wealth1, prop_f_1550_on_con, prop_mar_stat_1,  prop_mar_stat_2,
                prop_mar_stat_3, prop_m_urban_overwt,
                newly_urban_in_last_3mths,
                list(wealth_count_alive)),
