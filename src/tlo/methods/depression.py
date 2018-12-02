@@ -111,6 +111,8 @@ class Depression(Module):
             'rate of non-fatal self harm in (currently depressed)'),
     }
 
+
+
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
         'de_depr': Property(Types.BOOL, 'currently depr'),
@@ -124,7 +126,8 @@ class Depression(Module):
         'de_ever_depr': Property(
             Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depr': Property(
-            Types.REAL, 'Base probability for recovering from this bout of depr (if relevant)'),
+            Types.CATEGORICAL, 'Base probability for recovering from this bout of depr (if relevant)', categories=[1, 2, 3, 4, 5]),
+        # probabilities are 0.2, 0.3, 0.5, 0.7, 0.95
         'li_wealth': Property(
             Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'de_cc': Property(
@@ -247,10 +250,6 @@ class Depression(Module):
         p_depr_m_agege60_cc_wealth45 = self.init_pr_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
         p_depr_f_not_rec_preg_agege60_cc_wealth45 = self.init_pr_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_not_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
         p_depr_f_rec_preg_agege60_cc_wealth45 = self.init_pr_depr_m_age1519_no_cc_wealth123 * self.init_rp_depr_f_rec_preg * self.init_rp_depr_agege60 * self.init_rp_depr_cc * self.init_rp_depr_wealth45
-
-   #    todo - needs changing so prob is dependent on age (not all age 30)
-        p_ever_depr_not_curr_m = 30 * self.init_rp_ever_depr_per_year_older_m
-        p_ever_depr_not_curr_f = 30 * self.init_rp_ever_depr_per_year_older_f
 
         p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
         p_antidepr_ever_depr_not_curr = self.init_pr_antidepr_curr_depr * self.init_rp_antidepr_ever_depr_not_curr
@@ -742,6 +741,19 @@ class Depression(Module):
 
         if antidepr_ev_de.sum():
             df.loc[ever_depr_index, 'de_on_antidepr'] = antidepr_ev_de
+
+        curr_depr_index = df.index[df.de_depr & df.is_alive]
+
+       # todo - this below, not running yet
+#       random choice of a value for de_prob_3m_resol_depr at the point of becoming depressed (or at baseline for those depressed)
+#       probabilities = [0.2, 0.2, 0.2, 0.2, 0.2]
+#       categories = self.depr_resolution_rates
+#       df['de_prob_3m_resol_depr'] = self.rng.choice(categories, size=len(curr_depr_index), p=probabilities)
+
+
+
+
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
