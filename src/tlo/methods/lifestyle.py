@@ -19,12 +19,6 @@ class Lifestyle(Module):
     * `on_birth(mother, child)`
     """
 
-    # TODO add rr_urban_f   r_incr_wealth   r_decr_wealth   rr_incr_wealth_urban
-    # TODO rr_tob according to age group female wealth
-    # TODO rr_overwt  age group  urban  female
-    # TODO rr_low_ex  age group  urban female
-    # TODO rr_ex_alc  age group female
-
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
