@@ -7,7 +7,7 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 
@@ -83,8 +83,9 @@ if __name__ == '__main__':
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_2['prop_mar_stat_2']
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_3['prop_mar_stat_3']
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_1_agege60['prop_mar_stat_1_agege60']
-    stats = simulation.modules['Lifestyle'].o_prop_mar_stat_2_agege60['prop_mar_stat_2_agege60']
+  # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_2_agege60['prop_mar_stat_2_agege60']
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_3_agege60['prop_mar_stat_3_agege60']
+    stats = simulation.modules['Lifestyle'].o_prop_f_1550_on_con['prop_f_1550_on_con']
 
     import matplotlib.pyplot as plt
     import numpy as np
