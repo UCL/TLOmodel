@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
 class male_circumcision(Module):
@@ -15,7 +15,7 @@ class male_circumcision(Module):
 
     def __init__(self, name=None):
         super().__init__(name)
-        self.store = {'Time': [], 'proportion_circumcised': [], 'circumcised_in_last_timestep': []}
+        self.store = {'Time': [], 'proportion_circumcised': [], 'recently_circumcised': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -44,31 +44,19 @@ class male_circumcision(Module):
         params['p_circumcision'] = 0.05
         params['initial_circumcision'] = 0.1
 
-
     def initialise_population(self, population):
-        """Set our property values for the initial population.
-
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        :param population: the population of individuals
-        """
-
         df = population.props  # a shortcut to the dataframe storing data for individuals
 
         df['is_circumcised'] = False  # default: no individuals circumcised
         df['date_circumcised'] = pd.NaT  # default: not a time
 
+        # randomly selected some individuals as circumcised
+        initial_circumcised = self.parameters['initial_circumcision']
+        df.loc[df.is_alive, 'is_circumcised'] = np.random.choice([True, False], size=len(df[df.is_alive]),
+                                                                 p=[initial_circumcised, 1 - initial_circumcised])
 
-        # randomly selected some individuals as infected
-        initial_infected = self.parameters['initial_circumcision']
-        initial_uninfected = 1 - initial_infected
-        df['is_circumcised'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
-
-        # set the properties of infected individuals
-        df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date   # TODO: perhaps change to DOB
-
+        # set the properties of circumcised individuals
+        df.loc[df.is_circumcised, 'date_infected'] = self.sim.date  # TODO: perhaps change to DOB
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -83,7 +71,6 @@ class male_circumcision(Module):
 
         # add an event to log to screen
         sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=6))
-
 
     def on_birth(self, mother, child):
         """Initialise our properties for a newborn individual.
@@ -128,13 +115,12 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        circumcised_total = df.mi_is_circumcised.sum()
-        proportion_circumcised = circumcised_total / len(df)
+        circumcised_total = len(df[df.is_alive & df.is_circumcised])
+        proportion_circumcised = circumcised_total / len(df[df.is_alive])
 
         mask = (df['date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
         circumcised_in_last_timestep = mask.sum()
 
-        self.module.store.append(proportion_circumcised, circumcised_in_last_timestep)
-
-
-
+        self.module.store['Time'].append(self.sim.date)
+        self.module.store['proportion_circumcised'].append(proportion_circumcised)
+        self.module.store['recently_circumcised'].append(circumcised_in_last_timestep)

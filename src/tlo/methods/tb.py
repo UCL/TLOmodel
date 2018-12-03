@@ -134,7 +134,7 @@ class tb_baseline(Module):
 
         for i in range(0, 81):
             # male
-            idx = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
+            idx = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -144,7 +144,7 @@ class tb_baseline(Module):
                 df.loc[male_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[male_latent_tb, 'date_latent_tb'] = now
 
-            idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected')
+            idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx_uninfected.any():
                 fraction_active_tb = active_tb_prob_year.loc[
@@ -154,7 +154,7 @@ class tb_baseline(Module):
                 df.loc[male_active_tb, 'date_active_tb'] = now
 
             # female
-            idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
+            idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -164,7 +164,7 @@ class tb_baseline(Module):
                 df.loc[female_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[female_latent_tb, 'date_latent_tb'] = now
 
-            idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected')
+            idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 fraction_active_tb = active_tb_prob_year.loc[
@@ -308,7 +308,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_active_case, 'date_active_tb'] = now
 
         # self-cure - move back from active to latent, make sure it's not the ones that just became active
-        self_cure_tb = df[(df.has_tb == 'Active') & (df.date_active_tb < now)].sample(
+        self_cure_tb = df[(df.has_tb == 'Active') & df.is_alive & (df.date_active_tb < now)].sample(
             frac=(params['prob_self_cure'] * params['self_cure'])).index
         df.loc[self_cure_tb, 'has_tb'] = 'Latent'
 
