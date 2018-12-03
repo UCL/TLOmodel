@@ -1,34 +1,38 @@
 
 import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
-import numpy as np
 
-from tlo import Date, DateOffset, Person, Simulation, Types
-from tlo.test import hiv_infection, tb, health_system, antiretroviral_therapy, health_system_tb
-from tlo.methods import demography
+from tlo import Date, Simulation
+from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system, health_system_tb, tb
 
 # for desktop
-# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
-# path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-# path = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
+# path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
+# path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+# path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
-# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
+# York
+path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
+path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
+path_tb = 'P:/Documents/TLO/Method_TB.xlsx'  # York
 
 # for laptop
-path = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
-path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'  # York
+# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
+# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 50000
 
 
 @pytest.fixture
 def simulation():
     sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(workbook_path=path)
-    hiv_module = hiv_infection.hiv()
-    tb_module = tb.tb_baseline()
+    core_module = demography.Demography(workbook_path=path_dem)
+    hiv_module = hiv_infection.hiv(workbook_path=path_hiv)
+    tb_module = tb.tb_baseline(workbook_path=path_tb)
     hs_module = health_system.health_system(workbook_path=path_hs)
     art_module = antiretroviral_therapy.art(workbook_path=path_hs)
     hs_tb_module = health_system_tb.health_system_tb()

@@ -10,25 +10,15 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 # read in data files #
 from tlo.methods import demography
 
-# file_path = 'Q:/Thanzi la Onse/HIV/Method_HIV.xlsx'  # for desktop
-file_path = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'  # for laptop
-# file_path = 'P:/Documents/TLO/Method_HIV.xlsx'  # York
-
-method_hiv_data = pd.read_excel(file_path, sheet_name=None, header=0)
-hiv_prev, hiv_death, hiv_inc, cd4_base, time_cd4, initial_state_probs, \
-irr_age = method_hiv_data['prevalence'], method_hiv_data['deaths'], \
-          method_hiv_data['incidence'], \
-          method_hiv_data['CD4_distribution'], method_hiv_data['cd4_unrolled'], \
-          method_hiv_data['Initial_state_probs'], method_hiv_data['IRR']
-
 
 class hiv(Module):
     """
     baseline hiv infection
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
+        self.workbook_path = workbook_path
         self.store = {'Time': [], 'Total_HIV': [], 'HIV_deaths': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -102,6 +92,18 @@ class hiv(Module):
         params['beta'] = 0.9  # dummy value
         params['irr_hiv_f'] = 1.35
 
+        self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
+                                                           sheet_name=None)
+
+        params['hiv_prev'], params['hiv_death'], params['hiv_inc'], params['cd4_base'], params['time_cd4'], \
+        params['initial_state_probs'], params['irr_age'] = self.method_hiv_data['prevalence'], \
+                                                           self.method_hiv_data['deaths'], \
+                                                           self.method_hiv_data['incidence'], \
+                                                           self.method_hiv_data['CD4_distribution'], \
+                                                           self.method_hiv_data['cd4_unrolled'], \
+                                                           self.method_hiv_data['Initial_state_probs'], \
+                                                           self.method_hiv_data['IRR']
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -113,7 +115,6 @@ class hiv(Module):
         df['date_aids_death'] = pd.NaT
         df['sexual_risk_group'] = 1
 
-        # print('hello')
         self.high_risk(population)  # assign high sexual risk
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -175,7 +176,7 @@ class hiv(Module):
         now = self.sim.date
         df = population.props
 
-        prevalence = hiv_prev.loc[hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
+        prevalence = self.hiv_prev.loc[self.hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
 
         # add age to population.props
         df_with_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
@@ -231,21 +232,22 @@ class hiv(Module):
         cd4_states = ['CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5', 'CD0']
         for sex in ['M', 'F']:
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years < 5)]
-            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == '0_4'),
-                                     'probability']
+            cd4_probs = self.cd4_base.loc[
+                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '0_4'),
+                'probability']
             df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
                                                             size=len(idx),
                                                             replace=True,
                                                             p=cd4_probs.values)
-
 
         # for those aged 5-14 years
         cd4_states = ['CD1000', 'CD750', 'CD500', 'CD350', 'CD200', 'CD0']
 
         for sex in ['M', 'F']:
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 5) & (df_age.years <= 14)]
-            cd4_probs = cd4_base.loc[(cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == '5_14'),
-                                     'probability']
+            cd4_probs = self.cd4_base.loc[
+                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '5_14'),
+                'probability']
             df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
                                                             size=len(idx),
                                                             replace=True,
@@ -256,8 +258,9 @@ class hiv(Module):
 
         for sex in ['M', 'F']:
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
-            cd4_probs = cd4_base.loc[
-                (cd4_base.sex == sex) & (cd4_base.year == now.year) & (cd4_base.age == "15_80"), 'probability']
+            cd4_probs = self.cd4_base.loc[
+                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (
+                        self.cd4_base.age == "15_80"), 'probability']
             df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
                                                             size=len(idx),
                                                             replace=True,
@@ -277,7 +280,7 @@ class hiv(Module):
         # print(infected_age.head(10))
 
         # merge all infected individuals with their cd4 infected row based on CD4 state, sex and age
-        infected_age_cd4 = infected_age.merge(time_cd4,
+        infected_age_cd4 = infected_age.merge(self.time_cd4,
                                               left_on=['cd4_state', 'sex', 'years'],
                                               right_on=['cd4_state', 'sex', 'age'],
                                               how='left')
@@ -502,7 +505,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # print('number new hiv infections: ', new_infections)
 
         # allocate expected number of new infections using weights from irr_age and sexual risk group
-        df_with_irr = df_age.merge(irr_age, left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
+        df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
         # print('df: ', df_with_irr.head(30))
         combined_irr = df_with_irr.loc[~df_with_irr.has_hiv, 'comb_irr'] * df_with_irr.loc[
             ~df_with_irr.has_hiv, 'sexual_risk_group']

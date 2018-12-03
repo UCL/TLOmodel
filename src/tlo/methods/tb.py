@@ -10,20 +10,14 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, Individua
 
 from tlo.methods import demography
 
-file_path = '/Users/Tara/Documents/TLO/Method_TB.xlsx'  # laptop
-# file_path = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'  # desktop
-# file_path = 'P:/Documents/TLO/Method_TB.xlsx'  # York
-
-tb_data = pd.read_excel(file_path, sheet_name=None, header=0)
-Active_tb_prob, Latent_tb_prop = tb_data['Active_TB_prob'], tb_data['Latent_TB_prob']
-
 
 class tb_baseline(Module):
     """ Set up the baseline population with TB prevalence
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
+        self.workbook_path = workbook_path
         self.store = {'Time': [], 'Total_active_tb': [], 'Total_co-infected': [], 'TB_deaths': [],
                       'Time_death_TB': []}
 
@@ -102,6 +96,13 @@ class tb_baseline(Module):
         params['tb_mortality_rate'] = 0.15  # Juan
         params['tb_mortality_HIV'] = 0.84  # Juan
 
+        self.parameters['tb_data'] = pd.read_excel(self.workbook_path,
+                                                           sheet_name=None)
+
+        params['Active_tb_prob'], params['Latent_tb_prob'] = self.tb_data['Active_TB_prob'], \
+                                                           self.tb_data['Latent_TB_prob']
+
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -125,8 +126,11 @@ class tb_baseline(Module):
         # baseline infections not weighted by RR, randomly assigned
         # can include RR values in the sample command (weights)
 
-        active_tb_prob_year = Active_tb_prob.loc[
-            Active_tb_prob.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
+        active_tb_data = self.parameters['Active_tb_prob']
+        latent_tb_data = self.parameters['Latent_tb_prob']
+
+        active_tb_prob_year = active_tb_data.loc[
+            active_tb_data.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
 
         for i in range(0, 81):
             # male
@@ -134,8 +138,8 @@ class tb_baseline(Module):
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
-                fraction_latent_tb = Latent_tb_prop.loc[
-                    (Latent_tb_prop.sex == 'M') & (Latent_tb_prop.age == i), 'prob_latent_tb']
+                fraction_latent_tb = latent_tb_data.loc[
+                    (latent_tb_data.sex == 'M') & (latent_tb_data.age == i), 'prob_latent_tb']
                 male_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
                 df.loc[male_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[male_latent_tb, 'date_latent_tb'] = now
@@ -154,8 +158,8 @@ class tb_baseline(Module):
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
-                fraction_latent_tb = Latent_tb_prop.loc[
-                    (Latent_tb_prop.sex == 'F') & (Latent_tb_prop.age == i), 'prob_latent_tb']
+                fraction_latent_tb = latent_tb_data.loc[
+                    (latent_tb_data.sex == 'F') & (latent_tb_data.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
                 df.loc[female_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[female_latent_tb, 'date_latent_tb'] = now
@@ -183,7 +187,6 @@ class tb_baseline(Module):
 
         sim.schedule_event(tbDeathEvent(self), sim.date + DateOffset(
             months=12))
-
         # add an event to log to screen
         sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
