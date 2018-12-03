@@ -56,36 +56,12 @@ class Lifestyle(Module):
         'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
         'r_contrac': Parameter(Types.REAL, 'prob per 3 months of starting contraceptive if age 15-50'),
         'r_contrac_int': Parameter(Types.REAL, 'prob per 3 months of interrupting or stopping contraception (note current method of contrac is a different propeerty'),
-        'r_con_1_2': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 1 to contraception method 2'),
-        'r_con_1_3': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 1 to contraception method 3'),
-        'r_con_1_4': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 1 to contraception method 4'),
-        'r_con_1_5': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 1 to contraception method 5'),
-        'r_con_1_6': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 1 to contraception method 6'),
-        'r_con_2_3': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 3'),
-        'r_con_2_4': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 4'),
-        'r_con_2_5': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 5'),
-        'r_con_2_6': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 6'),
-        'r_con_3_4': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 3 to contraception method 4'),
-        'r_con_3_5': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 3 to contraception method 5'),
-        'r_con_3_6': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 3 to contraception method 6'),
-        'r_con_4_5': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 4 to contraception method 5'),
-        'r_con_4_6': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 4 to contraception method 6'),
-        'r_con_5_6': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 5 to contraception method 6'),
-        'r_con_2_1': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 1'),
-        'r_con_3_1': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 2 to contraception method 1'),
-        'r_con_4_1': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 4 to contraception method 1'),
-        'r_con_5_1': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 5 to contraception method 1'),
-        'r_con_6_1': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 6 to contraception method 1'),
-        'r_con_3_2': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 3 to contraception method 2'),
-        'r_con_4_2': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 4 to contraception method 2'),
-        'r_con_5_2': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 5 to contraception method 2'),
-        'r_con_6_2': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 6 to contraception method 2'),
-        'r_con_4_3': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 4 to contraception method 3'),
-        'r_con_5_3': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 5 to contraception method 3'),
-        'r_con_6_3': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 6 to contraception method 3'),
-        'r_con_5_4': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 5 to contraception method 4'),
-        'r_con_6_4': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 6 to contraception method 4'),
-        'r_con_6_5': Parameter(Types.REAL, 'prob per 3 months of moving from contraception method 6 to contraception method 5'),
+        'r_con_from_1': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 1'),
+        'r_con_from_2': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 2'),
+        'r_con_from_3': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 3'),
+        'r_con_from_4': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 4'),
+        'r_con_from_5': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 5'),
+        'r_con_from_6': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 6'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -201,36 +177,12 @@ class Lifestyle(Module):
         self.parameters['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
         self.parameters['r_contrac'] = 0.05
         self.parameters['r_contrac_int'] = 0.1
-        self.parameters['r_con_1_2'] = 0.0
-        self.parameters['r_con_1_3'] = 0.0
-        self.parameters['r_con_1_4'] = 0.0
-        self.parameters['r_con_1_5'] = 0.0
-        self.parameters['r_con_1_6'] = 0.0
-        self.parameters['r_con_2_1'] = 0.0
-        self.parameters['r_con_2_3'] = 0.0
-        self.parameters['r_con_2_4'] = 0.0
-        self.parameters['r_con_2_5'] = 0.0
-        self.parameters['r_con_2_6'] = 0.0
-        self.parameters['r_con_3_1'] = 0.0
-        self.parameters['r_con_3_2'] = 0.0
-        self.parameters['r_con_3_4'] = 0.0
-        self.parameters['r_con_3_5'] = 0.0
-        self.parameters['r_con_3_6'] = 0.0
-        self.parameters['r_con_4_1'] = 0.0
-        self.parameters['r_con_4_2'] = 0.0
-        self.parameters['r_con_4_3'] = 0.0
-        self.parameters['r_con_4_5'] = 0.0
-        self.parameters['r_con_4_6'] = 0.0
-        self.parameters['r_con_5_1'] = 0.0
-        self.parameters['r_con_5_2'] = 0.0
-        self.parameters['r_con_5_3'] = 0.0
-        self.parameters['r_con_5_4'] = 0.0
-        self.parameters['r_con_5_6'] = 0.0
-        self.parameters['r_con_6_1'] = 0.0
-        self.parameters['r_con_6_2'] = 0.0
-        self.parameters['r_con_6_3'] = 0.0
-        self.parameters['r_con_6_4'] = 0.0
-        self.parameters['r_con_6_5'] = 0.0
+        self.parameters['r_con_from_1'] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.parameters['r_con_from_2'] = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
+        self.parameters['r_con_from_3'] = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+        self.parameters['r_con_from_4'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+        self.parameters['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+        self.parameters['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -390,7 +342,7 @@ class Lifestyle(Module):
         df.loc[f_agege15_index, 'li_ex_alc'] = np.random.choice([True, False], size=len(f_agege15_index),
                                                                 p=[i_p_ex_alc_f, i_p_not_ex_alc_f])
 
-        # mar stat
+        # mar stat (marital status)
 
         age1520_index = df.index[(age.years >= 15) & (age.years < 20) & df.is_alive]
         age2030_index = df.index[(age.years >= 20) & (age.years < 30) & df.is_alive]
@@ -479,6 +431,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_div_wid = module.parameters['r_div_wid']
         self.r_contrac = module.parameters['r_contrac']
         self.r_contrac_int = module.parameters['r_contrac_int']
+        self.r_con_from_1 = module.parameters['r_con_from_1']
+        self.r_con_from_2 = module.parameters['r_con_from_2']
+        self.r_con_from_3 = module.parameters['r_con_from_3']
+        self.r_con_from_4 = module.parameters['r_con_from_4']
+        self.r_con_from_5 = module.parameters['r_con_from_5']
+        self.r_con_from_6 = module.parameters['r_con_from_6']
+
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1029,8 +988,21 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         f_age50_idx = df.index[df.is_alive & (age.years == 50) & (df.sex == 'F') & df.li_on_con]
         df.loc[f_age50_idx, 'li_on_con'] = False
 
+        curr_on_con_t_1_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
+        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_1_idx), p=self.r_con_from_1)
+        curr_on_con_t_2_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
+        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_2_idx), p=self.r_con_from_2)
+        curr_on_con_t_3_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
+        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_3_idx), p=self.r_con_from_3)
+        curr_on_con_t_4_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
+        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_4_idx), p=self.r_con_from_4)
+        curr_on_con_t_5_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
+        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_5_idx), p=self.r_con_from_5)
+        curr_on_con_t_6_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
+        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
+
         # todo
-        # coding of switching between contraceptive methods
+        # why not all on con type 1 or 6 ?
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
