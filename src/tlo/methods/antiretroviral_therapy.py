@@ -18,14 +18,8 @@ class art(Module):
         self.workbook_path = workbook_path
         self.store = {'Time': [], 'Number_dead_art': []}
 
-
-    # Here we declare parameters for this module. Each parameter has a name, data type,
-    # and longer description.
     # PARAMETERS = {}
 
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'art_mortality_rate': Property(Types.REAL, 'Mortality rates whilst on art'),
         'early_art': Property(Types.BOOL, 'If art was started >2 years from scheduled death'),

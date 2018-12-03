@@ -52,6 +52,8 @@ class hiv(Module):
             Parameter(Types.REAL, 'transmission rate'),
         'irr_hiv_f':
             Parameter(Types.REAL, 'incidence rate ratio for females vs males'),
+        'prob_mtct':
+            Parameter(Types.REAL, 'probability of mother to child transmission'),
 
     }
 
@@ -91,6 +93,7 @@ class hiv(Module):
         params['proportion_on_ART_infectious'] = 0.2
         params['beta'] = 0.9  # dummy value
         params['irr_hiv_f'] = 1.35
+        params['prob_mtct'] = 0.2
 
         self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
                                                            sheet_name=None)
@@ -456,10 +459,18 @@ class hiv(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
+        params = self.parameters
+
         child.has_hiv = False
         child.date_hiv_infection = pd.NaT
         child.date_aids_death = pd.NaT
         child.sexual_risk_group = 1
+
+        random_draw = self.sim.rng.random_sample(size=1)
+
+        if (random_draw < params['prob_mtct']) & mother.has_hiv:
+            child.has_hiv = True
+            child.date_hiv_infection = self.sim.date
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
