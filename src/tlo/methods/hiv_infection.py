@@ -54,6 +54,10 @@ class hiv(Module):
             Parameter(Types.REAL, 'incidence rate ratio for females vs males'),
         'prob_mtct':
             Parameter(Types.REAL, 'probability of mother to child transmission'),
+        'rr_circumcision':
+            Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
+        'rr_behaviour_change':
+            Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
 
     }
 
@@ -64,7 +68,7 @@ class hiv(Module):
         'has_hiv': Property(Types.BOOL, 'HIV status'),
         'date_hiv_infection': Property(Types.DATE, 'Date acquired HIV infection'),
         'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
-        'sexual_risk_group': Property(Types.REAL, 'Relative risk of HIV based on sexual risk high/low'),
+        'sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk groups', categories=['low', 'high', 'sex_work']),
         'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
                               categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
                                           'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
@@ -94,6 +98,8 @@ class hiv(Module):
         params['beta'] = 0.9  # dummy value
         params['irr_hiv_f'] = 1.35
         params['prob_mtct'] = 0.2
+        params['rr_circumcision'] = 0.6
+        params['rr_behaviour_change'] = 0.5
 
         self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
                                                            sheet_name=None)
@@ -116,7 +122,7 @@ class hiv(Module):
         df['has_hiv'] = False
         df['date_hiv_infection'] = pd.NaT
         df['date_aids_death'] = pd.NaT
-        df['sexual_risk_group'] = 1
+        df['sexual_risk_group'].values[:] = 'low'
 
         self.high_risk(population)  # assign high sexual risk
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
@@ -142,9 +148,7 @@ class hiv(Module):
             frac=self.parameters['proportion_high_sexual_risk_female']).index
 
         # these individuals have higher risk of hiv
-        df.loc[male_sample | female_sample, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk']
-
-        # print('hurray it works')
+        df.loc[male_sample | female_sample, 'sexual_risk_group'] = 'high'
 
     def fsw(self, population):
         """ Assign female sex work to sample of women and change sexual risk to high value
@@ -157,7 +161,7 @@ class hiv(Module):
             frac=self.parameters['proportion_female_sex_workers']).index
 
         # these individuals have higher risk of hiv
-        df.loc[fsw, 'sexual_risk_group'] = self.parameters['rr_HIV_high_sexual_risk_fsw']
+        df.loc[fsw, 'sexual_risk_group'] = 'sex_work'
 
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
         df = population.props
@@ -263,7 +267,7 @@ class hiv(Module):
             idx = df_age.index[df_age.has_hiv & (df_age.sex == sex) & (df_age.years >= 15)]
             cd4_probs = self.cd4_base.loc[
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (
-                        self.cd4_base.age == "15_80"), 'probability']
+                    self.cd4_base.age == "15_80"), 'probability']
             df_age.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
                                                             size=len(idx),
                                                             replace=True,
@@ -464,7 +468,7 @@ class hiv(Module):
         child.has_hiv = False
         child.date_hiv_infection = pd.NaT
         child.date_aids_death = pd.NaT
-        child.sexual_risk_group = 1
+        child.sexual_risk_group.values[:] = 'low'
 
         random_draw = self.sim.rng.random_sample(size=1)
 
@@ -501,33 +505,54 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # calculate force of infection, modify for treated when available
-        infected = len(
-            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & df_age.is_alive])  # number infected untreated
-        # infected_treated = params['proportion_on_ART_infectious'] * len(
-        #     df_age[(df_age.has_HIV == 1) & (df_age.on_ART == 1) & (
-        #         df_age.age.years >= 15)])  # number infected & treated
+        infected_untreated = len(
+            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & ~df_age.on_art & df_age.is_alive])
 
-        total_pop = len(df_age[(df_age.years >= 15)])
-        foi = params['beta'] * infected / total_pop
+        # relates to proportion non-adherent to art and still infectious
+        infected_treated = params['proportion_on_ART_infectious'] * len(
+            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & (df_age.on_art == 1) & df_age.is_alive])
+
+        total_pop = len(df_age[(df_age.years >= 15) & df_age.is_alive])
+        foi = params['beta'] * (infected_untreated + infected_treated) / total_pop
         # print('foi:', foi)
 
-        # calculate expected number of new infections and allocate
-        new_infections = int(round(foi * len(df.index[~df.has_hiv & df.is_alive])))  # foi * number susceptible
-        # print('number new hiv infections: ', new_infections)
+        # TODO: reduce force of infection if behaviour change available
+        # TODO: reduce FOI due to condom use / male circumcision
+        # calculate expected number of new infections in >=15 years only
+        # new_infections = int(round(foi * len(df.index[~df.has_hiv & (df.age.years >= 15) & df.is_alive])))
+        # # print('number new hiv infections: ', new_infections)
+        #
+        # # allocate expected number of new infections using weights from irr_age and sexual risk group
+        # df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
+        # # print('df: ', df_with_irr.head(30))
+        # combined_irr = df_with_irr.loc[~df_with_irr.has_hiv, 'comb_irr'] * df_with_irr.loc[
+        #     ~df_with_irr.has_hiv, 'sexual_risk_group']
+        # # print(combined_irr)
+        # # weights are automatically scaled so no need to normalise
+        # new_cases = df_with_irr.loc[~df_with_irr.has_hiv].sample(n=new_infections, replace=False,
+        #                                                          weights=combined_irr).index
 
-        # allocate expected number of new infections using weights from irr_age and sexual risk group
         df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
         # print('df: ', df_with_irr.head(30))
-        combined_irr = df_with_irr.loc[~df_with_irr.has_hiv, 'comb_irr'] * df_with_irr.loc[
-            ~df_with_irr.has_hiv, 'sexual_risk_group']
-        # print(combined_irr)
-        # weights are automatically scaled so no need to normalise
-        new_cases = df_with_irr.loc[~df_with_irr.has_hiv].sample(n=new_infections, replace=False,
-                                                                 weights=combined_irr).index
+
+        #  incidence rate ratios and relative susceptibility
+        eff_susc = pd.Series(0, index=df_with_irr.index)
+        eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive] = foi  # foi applied to all HIV- adults
+        eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive] *= df_with_irr.loc[
+            ~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR
+        eff_susc.loc[df_with_irr.sexual_risk_group == 'high'] *= params['rr_HIV_high_sexual_risk']  # scaled by sexual risk group
+        eff_susc.loc[df_with_irr.sexual_risk_group == 'sex_work'] *= params['rr_HIV_high_sexual_risk_fsw']  # scaled for fsw
+        eff_susc.loc[df_with_irr.is_circumcised] *= params['rr_circumcision']  # scaled for circumcision
+        eff_susc.loc[df_with_irr.behaviour_change] *= params['rr_behaviour_change']  # scaled for behaviour counselling
+
+        #  sample using the FOI scaled by relative susceptibility
+        newly_infected_index = df_with_irr.index[
+            (self.sim.rng.random_sample(size=len(df_with_irr)) < eff_susc) & ~df_with_irr.has_hiv & (
+                df_with_irr.years >= 15) & df_with_irr.is_alive]
 
         # time of death
-        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(new_cases)) * \
-                     np.exp(self.module.log_scale(df_age.loc[new_cases, 'years']))
+        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
+                     np.exp(self.module.log_scale(df_age.loc[newly_infected_index, 'years']))
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
         # print('death dates as dates: ', death_date)
 
@@ -536,14 +561,14 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         death_date = pd.Series(death_date).dt.floor("S")
         # print('death dates without ns: ', death_date)
 
-        df.loc[new_cases, 'has_hiv'] = True
-        df.loc[new_cases, 'date_hiv_infection'] = now
-        df.loc[new_cases, 'date_aids_death'] = now + death_date
+        df.loc[newly_infected_index, 'has_hiv'] = True
+        df.loc[newly_infected_index, 'date_hiv_infection'] = now
+        df.loc[newly_infected_index, 'date_aids_death'] = now + death_date
 
-        death_dates = df.date_aids_death[new_cases]
+        death_dates = df.date_aids_death[newly_infected_index]
 
         # schedule the death event
-        for i in new_cases:
+        for i in newly_infected_index:
             person = population[i]
             death = demography.InstantaneousDeath(self.module, person, cause='hiv')  # make that death event
             time_death = death_dates[i]
