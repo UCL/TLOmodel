@@ -3,7 +3,9 @@ import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system, health_system_tb, tb
+from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system, health_system_tb, tb, male_circumcision
+
+
 
 # for desktop
 # path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
@@ -36,6 +38,7 @@ def simulation():
     hs_module = health_system.health_system(workbook_path=path_hs)
     art_module = antiretroviral_therapy.art(workbook_path=path_hs)
     hs_tb_module = health_system_tb.health_system_tb()
+    circumcision_module = male_circumcision.male_circumcision()
 
     sim.register(core_module)
     sim.register(hiv_module)
@@ -43,18 +46,19 @@ def simulation():
     sim.register(hs_module)
     sim.register(art_module)
     sim.register(hs_tb_module)
+    sim.register(circumcision_module)
 
     return sim
 
 
-def test_hiv_tb_simulation(simulation):
+def test_simulation(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
 
 if __name__ == '__main__':
     simulation = simulation()
-    test_hiv_tb_simulation(simulation)
+    test_simulation(simulation)
 
 
 # add plots for infections on birth and deaths when done
@@ -80,6 +84,9 @@ time2 = simulation.modules['tb_baseline'].store['Time']
 time_test_tb = simulation.modules['health_system_tb'].store['Time']
 tb_tests = simulation.modules['health_system_tb'].store['Number_tested_tb']
 
+time_circum = simulation.modules['male_circumcision'].store['Time']
+prop_circum = simulation.modules['male_circumcision'].store['proportion_circumcised']
+
 
 plt.figure(1)
 ax = plt.subplot(221)  # numrows, numcols, fignum
@@ -101,17 +108,18 @@ plt.ylabel('Number of cases')
 plt.subplot(223)
 plt.plot(testing_dates, number_tested)
 plt.plot(time_test_tb, tb_tests)
+plt.plot(testing_dates, number_treated)
 plt.ylim(bottom=0)
-plt.legend(['HIV testing', 'TB testing'], loc='upper right')
+plt.legend(['HIV testing', 'TB testing', 'on ART'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Number of tests')
 
 plt.subplot(224)
-plt.plot(testing_dates, number_treated)
+plt.plot(time_circum, prop_circum)
 plt.ylim(bottom=0)
-plt.legend(['on ART'], loc='upper right')
+plt.legend(['circumcised'], loc='upper right')
 plt.xticks(rotation=45)
-plt.ylabel('Number treated')
+plt.ylabel('Proportion circumcised')
 
 plt.show()
 
