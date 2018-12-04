@@ -7,6 +7,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 import numpy as np
 import pandas as pd
 
+
 class Lifestyle(Module):
     """
     One line summary goes here...
@@ -45,7 +46,7 @@ class Lifestyle(Module):
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
         'init_dist_mar_stat_age1520': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
-        'init_dist_mar_stat_age2023': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
+        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
         'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
         'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
         'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
@@ -62,6 +63,26 @@ class Lifestyle(Module):
         'r_con_from_4': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 4'),
         'r_con_from_5': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 5'),
         'r_con_from_6': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 6'),
+        'r_stop_ed': Parameter(Types.REAL, 'prob per 3 months of stopping education if male'),
+        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'),
+        'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if male'),
+        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 higher wealth level' ),
+        'p_ed_secondar': Parameter(Types.REAL, 'probability at age 11 that start secondary education at 11 if male and in primary education'),
+        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'),
+        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'),
+        'init_rp_some_ed_age1520': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 1520'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 2030'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 3040'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 4050'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 5060'),
+        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline per higher wealth level'),
+        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL, 'proportion of low wealth aged 20-30 with some education who have secondary education at baseline'),
+        'init_rp_some_ed_sec_age1520': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 15-20'),
+        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 30-40'),
+        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 40-50'),
+        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 50-60'),
+        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 60+'),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of sec_ed per higher wealth level'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -78,6 +99,8 @@ class Lifestyle(Module):
         'li_mar_stat': Property(Types.CATEGORICAL, 'marital status', categories=[1, 2, 3]),
         'li_on_con': Property(Types.BOOL, 'on contraceptive'),
         'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
+        'li_in_ed': Property(Types.BOOL, 'currently in education'),
+        'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
     }
 
     def __init__(self):
@@ -177,12 +200,31 @@ class Lifestyle(Module):
         self.parameters['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
         self.parameters['r_contrac'] = 0.05
         self.parameters['r_contrac_int'] = 0.1
-        self.parameters['r_con_from_1'] = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        self.parameters['r_con_from_1'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.parameters['r_con_from_2'] = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
         self.parameters['r_con_from_3'] = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
         self.parameters['r_con_from_4'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
         self.parameters['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         self.parameters['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+        self.parameters['r_stop_ed'] = 0.01
+        self.parameters['p_ed_primary'] = 0.75
+        self.parameters['rp_ed_primary_higher_wealth'] = 1.05
+        self.parameters['p_ed_secondary'] = 0.5
+        self.parameters['rp_ed_secondary_higher_wealth'] = 1.15
+        self.parameters['init_age2030_w5_some_ed'] = 0.3
+        self.parameters['init_rp_some_ed_age1520'] = 0.35
+        self.parameters['init_rp_some_ed_age3040'] = 0.25
+        self.parameters['init_rp_some_ed_age4050'] = 0.2
+        self.parameters['init_rp_some_ed_age5060'] = 0.15
+        self.parameters['init_rp_some_ed_agege60'] = 0.1
+        self.parameters['init_rp_some_ed_per_higher_wealth'] = 1.3
+        self.parameters['init_prop_age2030_w5_some_ed_sec'] = 0.3
+        self.parameters['init_rp_some_ed_sec_age1520'] = 0.35
+        self.parameters['init_rp_some_ed_sec_age3040'] = 0.25
+        self.parameters['init_rp_some_ed_sec_age4050'] = 0.2
+        self.parameters['init_rp_some_ed_sec_age5060'] = 0.15
+        self.parameters['init_rp_some_ed_sec_agege60'] = 0.1
+        self.parameters['init_rp_some_ed_sec_per_higher_wealth'] = 1.3
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -202,6 +244,8 @@ class Lifestyle(Module):
         df['li_mar_stat'] = 1  # default: all individuals never married
         df['li_on_con'] = False # default: all not on contraceptives
         df['li_con_t'] = 1  # default: call contraceptive type 1, but when li_on_con = False this property becomes most recent contraceptive used
+        df['li_in_ed'] = False   # default: not in education
+        df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
@@ -366,6 +410,38 @@ class Lifestyle(Module):
         f_age1550_on_con_idx = df.index[(age.years >= 15) & (age.years < 50) & df.is_alive & (df.sex == 'F') & (df.li_on_con == True)]
         df.loc[f_age1550_on_con_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(f_age1550_on_con_idx), p=self.parameters['init_dist_con_t'])
 
+        # education (li_in_ed and li_ed_lev)
+
+        ed_lev_1_ = 1 - self.parameters['init_age2030_w5_some_ed']
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_prop_age2030_w5_some_ed_sec']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age2030_w5_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[age2030_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] * self.parameters['init_rp_some_ed_sec_age1520']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age1520_w5_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[age1520_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+
+#       self.parameters['init_rp_some_ed_age1520'] = 0.35
+#       self.parameters['init_rp_some_ed_age3040'] = 0.25
+#       self.parameters['init_rp_some_ed_age4050'] = 0.2
+#       self.parameters['init_rp_some_ed_age5060'] = 0.15
+#       self.parameters['init_rp_some_ed_agege60'] = 0.1
+#       self.parameters['init_rp_some_ed_per_higher_wealth'] = 1.3
+#
+#       self.parameters['init_rp_some_ed_sec_age1520'] = 0.35
+#       self.parameters['init_rp_some_ed_sec_age3040'] = 0.25
+#       self.parameters['init_rp_some_ed_sec_age4050'] = 0.2
+#       self.parameters['init_rp_some_ed_sec_age5060'] = 0.15
+#       self.parameters['init_rp_some_ed_sec_agege60'] = 0.1
+#       self.parameters['init_rp_some_ed_sec_per_higher_wealth'] = 1.3
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         This method is called just before the main simulation loop begins, and after all
@@ -437,7 +513,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         self.r_con_from_4 = module.parameters['r_con_from_4']
         self.r_con_from_5 = module.parameters['r_con_from_5']
         self.r_con_from_6 = module.parameters['r_con_from_6']
-
+        self.p_ed_primary = module.parameters['p_ed_primary']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1001,8 +1077,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         curr_on_con_t_6_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
         df.loc[curr_on_con_t_6_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
 
-        # todo
-        # why not all on con type 1 or 6 ?
+        # update education
+
+#       m_age5_idx = df.index[(age.years == 5) & df.is_alive]
+#       df.loc[m_age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(m_age5_idx), p=[1 - self.p_ed_primary, self.p_ed_primary, 0])
+#       m_age5_in_ed_idx = df.index[(age.years == 5) & df.is_alive & (df.li_ed_lev == 2)]
+#       df.loc[m_age5_in_ed_idx, 'li_in_ed'] = True
+
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
