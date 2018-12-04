@@ -428,6 +428,13 @@ class Lifestyle(Module):
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
 
+
+#       df.loc[f_index, 'p_xxx'] = age.loc[f_index, 'years'] * self.init_rp_ever_depr_per_year_older_f
+#       df.loc[m_index, 'p_xxx'] = age.loc[m_index, 'years'] * self.init_rp_ever_depr_per_year_older_m
+#       random_draw = self.rng.random_sample(size=len(df))
+#       df['de_ever_depr'] = (df['p_xxx'] > random_draw)
+
+
 #       self.parameters['init_rp_some_ed_age1520'] = 0.35
 #       self.parameters['init_rp_some_ed_age3040'] = 0.25
 #       self.parameters['init_rp_some_ed_age4050'] = 0.2
