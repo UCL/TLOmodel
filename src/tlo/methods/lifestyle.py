@@ -213,6 +213,7 @@ class Lifestyle(Module):
         self.parameters['rp_ed_secondary_higher_wealth'] = 1.15
         self.parameters['init_age2030_w5_some_ed'] = 0.3
         self.parameters['init_rp_some_ed_age1520'] = 0.35
+        self.parameters['init_rp_some_ed_age0515'] = 0.35
         self.parameters['init_rp_some_ed_age3040'] = 0.25
         self.parameters['init_rp_some_ed_age4050'] = 0.2
         self.parameters['init_rp_some_ed_age5060'] = 0.15
@@ -246,9 +247,11 @@ class Lifestyle(Module):
         df['li_con_t'] = 1  # default: call contraceptive type 1, but when li_on_con = False this property becomes most recent contraceptive used
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
+        df['andrew_age'] = 30
 
         #  this below calls the age dataframe / call age.years to get age in years
         age = population.age
+        df['andrew_age'] = age.years
 
         agelt15_index = df.index[age.years < 15]
 
@@ -419,35 +422,421 @@ class Lifestyle(Module):
         df.loc[age2030_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0515'])
+        ed_lev_3_ = 0
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age0515_w5_idx = df.index[(age.years >= 5) & (age.years < 15) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[age0515_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0515_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
         ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'])
         ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
-                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] * self.parameters['init_rp_some_ed_sec_age1520']
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age1520']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
         age1520_w5_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age1520_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age4050']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age4050_w5_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[age4050_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age5060']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age5060_w5_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[age5060_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_agege60']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        agege60_w5_idx = df.index[(age.years >= 60) & (df.li_wealth == 5) & df.is_alive]
+        df.loc[agege60_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w5_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age2030_w4_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[age2030_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0515']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = 0
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age0515_w4_idx = df.index[(age.years >= 5) & (age.years < 15) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[age0515_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0515_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age1520'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age1520_w4_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[age1520_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age4050'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age4050_w4_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[age4050_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age5060'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age5060_w4_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[age5060_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_agege60'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        agege60_w4_idx = df.index[(age.years >= 60) & (df.li_wealth == 4) & df.is_alive]
+        df.loc[agege60_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w4_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] \
+                        * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                        * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] \
+                        * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                        * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                        * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                        * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                        * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age2030_w3_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[age2030_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0515']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = 0
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age0515_w3_idx = df.index[(age.years >= 5) & (age.years < 15) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[age0515_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0515_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age1520'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age1520_w3_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[age1520_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age4050'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age4050_w3_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[age4050_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_age5060'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age5060_w3_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[age5060_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_agege60'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        agege60_w3_idx = df.index[(age.years >= 60) & (df.li_wealth == 3) & df.is_alive]
+        df.loc[agege60_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w3_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'] 
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age2030_w2_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[age2030_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0515']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = 0
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age0515_w2_idx = df.index[(age.years >= 5) & (age.years < 15) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[age0515_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0515_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age1520'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age1520_w2_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[age1520_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age4050'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age4050_w2_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[age4050_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_age5060'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age5060_w2_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[age5060_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_agege60'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        agege60_w2_idx = df.index[(age.years >= 60) & (df.li_wealth == 2) & df.is_alive]
+        df.loc[agege60_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w2_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age2030_w1_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[age2030_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age1520'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age1520'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0515']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth']
+                            * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = 0
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age0515_w1_idx = df.index[(age.years >= 5) & (age.years < 15) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[age0515_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0515_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age1520_w1_idx = df.index[(age.years >= 15) & (age.years < 20) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[age1520_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1520_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_age4050'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age4050_w1_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[age4050_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_age5060'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        age5060_w1_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[age5060_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
+                         * self.parameters['init_rp_some_ed_per_higher_wealth'])
+        ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_agege60'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
+                    * self.parameters['init_rp_some_ed_sec_agege60'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
+        ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
+        agege60_w1_idx = df.index[(age.years >= 60) & (df.li_wealth == 1) & df.is_alive]
+        df.loc[agege60_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w1_idx),
+                                                               p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
+
+        age_5_15_ed_lev_1_index = df.index[(age.years >= 5) & (age.years < 15) & (df['li_ed_lev'] == 1) & df.is_alive]
+        df.loc[age_5_15_ed_lev_1_index, 'li_in_ed'] = False
+        age_5_15_ed_lev_2_index = df.index[(age.years >= 5) & (age.years < 15) & df.is_alive & (df['li_ed_lev'] == 2)]
+        df.loc[age_5_15_ed_lev_2_index, 'li_in_ed'] = True
+        age_5_15_ed_lev_3_index = df.index[(age.years >= 5) & (age.years < 15) & df.is_alive & (df['li_ed_lev'] == 3)]
+        df.loc[age_5_15_ed_lev_3_index, 'li_in_ed'] = True
+        age_15_20_ed_lev_3_index = df.index[(age.years >= 15) & (age.years < 20) & (df['li_ed_lev'] == 3) & df.is_alive]
+        df.loc[age_15_20_ed_lev_3_index, 'li_in_ed'] = True
 
 
-#       df.loc[f_index, 'p_xxx'] = age.loc[f_index, 'years'] * self.init_rp_ever_depr_per_year_older_f
-#       df.loc[m_index, 'p_xxx'] = age.loc[m_index, 'years'] * self.init_rp_ever_depr_per_year_older_m
-#       random_draw = self.rng.random_sample(size=len(df))
-#       df['de_ever_depr'] = (df['p_xxx'] > random_draw)
-
-
-#       self.parameters['init_rp_some_ed_age1520'] = 0.35
-#       self.parameters['init_rp_some_ed_age3040'] = 0.25
-#       self.parameters['init_rp_some_ed_age4050'] = 0.2
-#       self.parameters['init_rp_some_ed_age5060'] = 0.15
-#       self.parameters['init_rp_some_ed_agege60'] = 0.1
-#       self.parameters['init_rp_some_ed_per_higher_wealth'] = 1.3
-#
-#       self.parameters['init_rp_some_ed_sec_age1520'] = 0.35
-#       self.parameters['init_rp_some_ed_sec_age3040'] = 0.25
-#       self.parameters['init_rp_some_ed_sec_age4050'] = 0.2
-#       self.parameters['init_rp_some_ed_sec_age5060'] = 0.15
-#       self.parameters['init_rp_some_ed_sec_agege60'] = 0.1
-#       self.parameters['init_rp_some_ed_sec_per_higher_wealth'] = 1.3
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
