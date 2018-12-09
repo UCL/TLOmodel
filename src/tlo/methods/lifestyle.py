@@ -1539,11 +1539,42 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         age13_idx = df.index[(age.years == 13) & df.is_alive & (df.li_wealth == 1) & df.li_in_ed]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[1 - p_s_ed, p_s_ed, 0])
 
+        p_stop_ed_w1 = self.r_stop_ed
+        curr_in_ed_w1_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 1)]
+        now_not_in_ed_w1 = np.random.choice([True, False], size=len(curr_in_ed_w1_idx),
+                                            p=[p_stop_ed_w1, 1 - p_stop_ed_w1])
+        if now_not_in_ed_w1.sum():
+            now_not_in_ed_w1_idx = curr_in_ed_w1_idx[now_not_in_ed_w1]
+            df.loc[now_not_in_ed_w1_idx, 'li_in_ed'] = False
 
-#       'r_stop_ed': Parameter(Types.REAL, 'prob per 3 months of stopping education if male'),
-#       'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'),
-#       'p_ed_secondary': Parameter(Types.REAL, 'probability at age 11 that start secondary education at 11 if male and in primary education and wealth level 5'),
-#       'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'),
+        p_stop_ed_w2 = self.r_stop_ed * self.rr_stop_ed_lower_wealth
+        curr_in_ed_w2_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 2)]
+        now_not_in_ed_w2 = np.random.choice([True, False], size=len(curr_in_ed_w2_idx), p=[p_stop_ed_w2, 1 - p_stop_ed_w2])
+        if now_not_in_ed_w2.sum():
+            now_not_in_ed_w2_idx = curr_in_ed_w2_idx[now_not_in_ed_w2]
+            df.loc[now_not_in_ed_w2_idx, 'li_in_ed'] = False
+
+        p_stop_ed_w3 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
+        curr_in_ed_w3_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 3)]
+        now_not_in_ed_w3 = np.random.choice([True, False], size=len(curr_in_ed_w3_idx), p=[p_stop_ed_w3, 1 - p_stop_ed_w3])
+        if now_not_in_ed_w3.sum():
+            now_not_in_ed_w3_idx = curr_in_ed_w3_idx[now_not_in_ed_w3]
+            df.loc[now_not_in_ed_w3_idx, 'li_in_ed'] = False
+
+        p_stop_ed_w4 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
+        curr_in_ed_w4_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 4)]
+        now_not_in_ed_w4 = np.random.choice([True, False], size=len(curr_in_ed_w4_idx), p=[p_stop_ed_w4, 1 - p_stop_ed_w4])
+        if now_not_in_ed_w4.sum():
+            now_not_in_ed_w4_idx = curr_in_ed_w4_idx[now_not_in_ed_w4]
+            df.loc[now_not_in_ed_w4_idx, 'li_in_ed'] = False
+
+        p_stop_ed_w5 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth * \
+            self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
+        curr_in_ed_w5_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 5)]
+        now_not_in_ed_w5 = np.random.choice([True, False], size=len(curr_in_ed_w5_idx), p=[p_stop_ed_w5, 1 - p_stop_ed_w5])
+        if now_not_in_ed_w5.sum():
+            now_not_in_ed_w5_idx = curr_in_ed_w5_idx[now_not_in_ed_w5]
+            df.loc[now_not_in_ed_w5_idx, 'li_in_ed'] = False
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1567,6 +1598,18 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_urban = urban_alive / alive
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
+
+        wealth1_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (age.years >= 5)]
+        wealth1_ed_lev_3_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
+        wealth5_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (age.years >= 5)]
+        wealth5_ed_lev_3_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
+        wealth1_ed_lev_2_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 2) & (age.years >= 5)]
+        wealth5_ed_lev_2_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 2) & (age.years >= 5)]
+
+        prop_wealth1_ed_lev_3_agege5 = len(wealth1_ed_lev_3_agege5) / len(wealth1_agege5)
+        prop_wealth5_ed_lev_3_agege5 = len(wealth5_ed_lev_3_agege5) / len(wealth5_agege5)
+        prop_wealth1_some_ed_agege5 = (len(wealth1_ed_lev_2_agege5) + len(wealth1_ed_lev_3_agege5)) / len(wealth1_agege5)
+        prop_wealth5_some_ed_agege5 = (len(wealth5_ed_lev_2_agege5) + len(wealth5_ed_lev_3_agege5)) / len(wealth5_agege5)
 
         mar_stat_1_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (age.years >= 15)]
         mar_stat_2_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (age.years >= 15)]
@@ -1832,10 +1875,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , prop_wealth1 %f, prop_f_1550_on_con  %f, prop_mar_stat_1 %f,'
+        print('%s lifestyle n_m_ge15:%d , prop_wealth1_ed_lev_3: %f,prop_wealth5_ed_lev_3: %f, '
+              'prop_wealth1_some_ed: %f, prop_wealth5_some_ed: %f, prop_wealth1 %f, prop_f_1550_on_con  '
+              '%f, prop_mar_stat_1 %f,'
               'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
-              (self.sim.date, n_m_ge15, prop_wealth1, prop_f_1550_on_con, prop_mar_stat_1,  prop_mar_stat_2,
+              (self.sim.date, n_m_ge15, prop_wealth1_ed_lev_3_agege5, prop_wealth5_ed_lev_3_agege5,
+               prop_wealth1_some_ed_agege5,
+               prop_wealth5_some_ed_agege5, prop_wealth1, prop_f_1550_on_con, prop_mar_stat_1,
+               prop_mar_stat_2,
                prop_mar_stat_3, prop_m_urban_overwt,
                newly_urban_in_last_3mths,
                list(wealth_count_alive)),
