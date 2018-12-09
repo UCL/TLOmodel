@@ -207,28 +207,27 @@ class Lifestyle(Module):
         self.parameters['r_con_from_4'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
         self.parameters['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         self.parameters['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        self.parameters['r_stop_ed'] = 0.01
+        self.parameters['r_stop_ed'] = 0.005
         self.parameters['rr_stop_ed_lower_wealth'] = 1.10
-        self.parameters['p_ed_primary'] = 0.75
-        self.parameters['rp_ed_primary_higher_wealth'] = 1.05
+        self.parameters['p_ed_primary'] = 0.94
+        self.parameters['rp_ed_primary_higher_wealth'] = 1.01
         self.parameters['p_ed_secondary'] = 0.5
         self.parameters['rp_ed_secondary_higher_wealth'] = 1.15
-        self.parameters['init_age2030_w5_some_ed'] = 0.3
-        self.parameters['init_rp_some_ed_age0513'] = 0.35
-        self.parameters['init_rp_some_ed_age1320'] = 0.35
-        self.parameters['init_rp_some_ed_age0515'] = 0.35
-        self.parameters['init_rp_some_ed_age3040'] = 0.25
-        self.parameters['init_rp_some_ed_age4050'] = 0.2
-        self.parameters['init_rp_some_ed_age5060'] = 0.15
-        self.parameters['init_rp_some_ed_agege60'] = 0.1
-        self.parameters['init_rp_some_ed_per_higher_wealth'] = 1.3
-        self.parameters['init_prop_age2030_w5_some_ed_sec'] = 0.3
-        self.parameters['init_rp_some_ed_sec_age1320'] = 0.35
-        self.parameters['init_rp_some_ed_sec_age3040'] = 0.25
-        self.parameters['init_rp_some_ed_sec_age4050'] = 0.2
-        self.parameters['init_rp_some_ed_sec_age5060'] = 0.15
-        self.parameters['init_rp_some_ed_sec_agege60'] = 0.1
-        self.parameters['init_rp_some_ed_sec_per_higher_wealth'] = 1.3
+        self.parameters['init_age2030_w5_some_ed'] = 0.97
+        self.parameters['init_rp_some_ed_age0513'] = 1.01
+        self.parameters['init_rp_some_ed_age1320'] = 1.00
+        self.parameters['init_rp_some_ed_age3040'] = 1.00
+        self.parameters['init_rp_some_ed_age4050'] = 0.99
+        self.parameters['init_rp_some_ed_age5060'] = 0.99
+        self.parameters['init_rp_some_ed_agege60'] = 0.98
+        self.parameters['init_rp_some_ed_per_higher_wealth'] = 1.005
+        self.parameters['init_prop_age2030_w5_some_ed_sec'] = 0.02
+        self.parameters['init_rp_some_ed_sec_age1320'] = 1.00
+        self.parameters['init_rp_some_ed_sec_age3040'] = 0.90
+        self.parameters['init_rp_some_ed_sec_age4050'] = 0.85
+        self.parameters['init_rp_some_ed_sec_age5060'] = 0.80
+        self.parameters['init_rp_some_ed_sec_agege60'] = 0.75
+        self.parameters['init_rp_some_ed_sec_per_higher_wealth'] = 2.50
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -596,6 +595,7 @@ class Lifestyle(Module):
         ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age5060'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age5060'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
@@ -672,6 +672,7 @@ class Lifestyle(Module):
         ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age4050'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age4050'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
@@ -690,6 +691,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age5060'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
@@ -778,6 +780,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age4050'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
@@ -799,6 +802,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
+                    * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age5060'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
@@ -1599,7 +1603,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
 
-        wealth1_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (age.years >= 5)]
+        wealth1_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (age.years >= 6)]
         wealth1_ed_lev_3_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
         wealth5_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (age.years >= 5)]
         wealth5_ed_lev_3_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
@@ -1876,7 +1880,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
         print('%s lifestyle n_m_ge15:%d , prop_wealth1_ed_lev_3: %f,prop_wealth5_ed_lev_3: %f, '
-              'prop_wealth1_some_ed: %f, prop_wealth5_some_ed: %f, prop_wealth1 %f, prop_f_1550_on_con  '
+              'prop_wealth1_some_ed_agege5: %f, prop_wealth5_some_ed_agege5: %f, prop_wealth1 %f, prop_f_1550_on_con  '
               '%f, prop_mar_stat_1 %f,'
               'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
               'wealth: %s' %
