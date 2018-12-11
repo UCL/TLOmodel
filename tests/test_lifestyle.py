@@ -7,8 +7,8 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 8, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 
 @pytest.fixture
@@ -85,7 +85,15 @@ if __name__ == '__main__':
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_1_agege60['prop_mar_stat_1_agege60']
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_2_agege60['prop_mar_stat_2_agege60']
   # stats = simulation.modules['Lifestyle'].o_prop_mar_stat_3_agege60['prop_mar_stat_3_agege60']
-    stats = simulation.modules['Lifestyle'].o_prop_f_1550_on_con['prop_f_1550_on_con']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_1550_on_con['prop_f_1550_on_con']
+
+    stats = simulation.modules['Lifestyle'].o_prop_age6_in_ed_w1['prop_age6_in_ed_w1']
+#   stats = simulation.modules['Lifestyle'].o_prop_age6_in_ed_w5['prop_age6_in_ed_w5']
+#   stats = simulation.modules['Lifestyle'].o_prop_age14_in_ed_w1['prop_age14_in_ed_w1']
+#   stats = simulation.modules['Lifestyle'].o_prop_age14_in_ed_w5['prop_age14_in_ed_w5']
+#   stats = simulation.modules['Lifestyle'].o_prop_age19_in_ed_w1['prop_age19_in_ed_w1']
+#   stats = simulation.modules['Lifestyle'].o_prop_age19_in_ed_w5['prop_age19_in_ed_w5']
+
 
     import matplotlib.pyplot as plt
     import numpy as np
