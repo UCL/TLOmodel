@@ -67,7 +67,7 @@ class Lifestyle(Module):
         'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if male wealth level 5'),
         'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 higher wealth level' ),
-        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 11 that start secondary education at 11 if male and in primary education and wealth level 5'),
+        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 if male and in primary education and wealth level 5'),
         'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'),
         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'),
         'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 1520'),
@@ -157,6 +157,12 @@ class Lifestyle(Module):
         self.o_prop_mar_stat_2_agege60 = {'prop_mar_stat_2_agege60': []}
         self.o_prop_mar_stat_3_agege60 = {'prop_mar_stat_3_agege60': []}
         self.o_prop_f_1550_on_con = {'prop_f_1550_on_con': []}
+        self.o_prop_age6_in_ed_w1 = {'prop_age6_in_ed_w1': []}
+        self.o_prop_age6_in_ed_w5 = {'prop_age6_in_ed_w5': []}
+        self.o_prop_age14_in_ed_w1 = {'prop_age14_in_ed_w1': []}
+        self.o_prop_age14_in_ed_w5 = {'prop_age14_in_ed_w5': []}
+        self.o_prop_age19_in_ed_w1 = {'prop_age19_in_ed_w1': []}
+        self.o_prop_age19_in_ed_w5 = {'prop_age19_in_ed_w5': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -208,11 +214,11 @@ class Lifestyle(Module):
         self.parameters['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
         self.parameters['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
         self.parameters['r_stop_ed'] = 0.005
-        self.parameters['rr_stop_ed_lower_wealth'] = 1.10
+        self.parameters['rr_stop_ed_lower_wealth'] = 2.7
         self.parameters['p_ed_primary'] = 0.94
         self.parameters['rp_ed_primary_higher_wealth'] = 1.01
-        self.parameters['p_ed_secondary'] = 0.5
-        self.parameters['rp_ed_secondary_higher_wealth'] = 1.15
+        self.parameters['p_ed_secondary'] = 0.3
+        self.parameters['rp_ed_secondary_higher_wealth'] = 1.20
         self.parameters['init_age2030_w5_some_ed'] = 0.97
         self.parameters['init_rp_some_ed_age0513'] = 1.01
         self.parameters['init_rp_some_ed_age1320'] = 1.00
@@ -621,7 +627,7 @@ class Lifestyle(Module):
 
         ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed']
                          * self.parameters['init_rp_some_ed_per_higher_wealth']
-                         * self.parameters['init_rp_some_ed_per_higher_wealth'] 
+                         * self.parameters['init_rp_some_ed_per_higher_wealth']
                          * self.parameters['init_rp_some_ed_per_higher_wealth'])
         ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] \
                     * self.parameters['init_rp_some_ed_per_higher_wealth'] \
@@ -1139,9 +1145,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         ri_tob_m_age2039_w1 = self.r_tob * self.rr_tob_age2039
         ri_tob_m_agege40_w1 = self.r_tob * self.rr_tob_agege40
 
-        ri_tob_f_age1519_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth  
-        ri_tob_f_age2039_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth 
-        ri_tob_f_agege40_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth 
+        ri_tob_f_age1519_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth
+        ri_tob_f_age2039_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth
+        ri_tob_f_agege40_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth
         ri_tob_m_age1519_w2 = self.r_tob * self.rr_tob_wealth
         ri_tob_m_age2039_w2 = self.r_tob * self.rr_tob_age2039 * self.rr_tob_wealth
         ri_tob_m_agege40_w2 = self.r_tob * self.rr_tob_agege40 * self.rr_tob_wealth
@@ -1766,6 +1772,27 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
+        age6_w1_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 1)]
+        age6_w1_in_ed_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 1) & df.li_in_ed]
+        prop_age6_in_ed_w1 = len(age6_w1_in_ed_idx) / len(age6_w1_idx)
+        age6_w5_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 5)]
+        age6_w5_in_ed_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 5) & df.li_in_ed]
+        prop_age6_in_ed_w5 = len(age6_w5_in_ed_idx) / len(age6_w5_idx)
+
+        age14_w1_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 1)]
+        age14_w1_in_ed_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 1) & df.li_in_ed]
+        prop_age14_in_ed_w1 = len(age14_w1_in_ed_idx) / len(age14_w1_idx)
+        age14_w5_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 5)]
+        age14_w5_in_ed_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 5) & df.li_in_ed]
+        prop_age14_in_ed_w5 = len(age14_w5_in_ed_idx) / len(age14_w5_idx)
+
+        age19_w1_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 1)]
+        age19_w1_in_ed_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 1) & df.li_in_ed]
+        prop_age19_in_ed_w1 = len(age19_w1_in_ed_idx) / len(age19_w1_idx)
+        age19_w5_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 5)]
+        age19_w5_in_ed_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 5) & df.li_in_ed]
+        prop_age19_in_ed_w5 = len(age19_w5_in_ed_idx) / len(age19_w5_idx)
+
         prop_m_urban_overwt = len(m_urban_ge15_overwt) / len(m_urban_ge15)
         prop_f_urban_overwt = len(f_urban_ge15_overwt) / len(f_urban_ge15)
         prop_m_rural_overwt = len(m_rural_ge15_overwt) / len(m_rural_ge15)
@@ -1877,22 +1904,31 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         self.module.o_prop_f_1550_on_con['prop_f_1550_on_con'].append(prop_f_1550_on_con)
 
+        self.module.o_prop_age6_in_ed_w1['prop_age6_in_ed_w1'].append(prop_age6_in_ed_w1)
+        self.module.o_prop_age6_in_ed_w5['prop_age6_in_ed_w5'].append(prop_age6_in_ed_w5)
+        self.module.o_prop_age14_in_ed_w1['prop_age14_in_ed_w1'].append(prop_age14_in_ed_w1)
+        self.module.o_prop_age14_in_ed_w5['prop_age14_in_ed_w5'].append(prop_age14_in_ed_w5)
+        self.module.o_prop_age19_in_ed_w1['prop_age19_in_ed_w1'].append(prop_age19_in_ed_w1)
+        self.module.o_prop_age19_in_ed_w5['prop_age19_in_ed_w5'].append(prop_age19_in_ed_w5)
+
         wealth_count_alive = df.loc[df.is_alive, 'li_wealth'].value_counts()
 
-        print('%s lifestyle n_m_ge15:%d , prop_wealth1_ed_lev_3: %f,prop_wealth5_ed_lev_3: %f, '
-              'prop_wealth1_some_ed_agege5: %f, prop_wealth5_some_ed_agege5: %f, prop_wealth1 %f, prop_f_1550_on_con  '
-              '%f, prop_mar_stat_1 %f,'
-              'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
-              'wealth: %s' %
-              (self.sim.date, n_m_ge15, prop_wealth1_ed_lev_3_agege5, prop_wealth5_ed_lev_3_agege5,
-               prop_wealth1_some_ed_agege5,
-               prop_wealth5_some_ed_agege5, prop_wealth1, prop_f_1550_on_con, prop_mar_stat_1,
-               prop_mar_stat_2,
-               prop_mar_stat_3, prop_m_urban_overwt,
-               newly_urban_in_last_3mths,
-               list(wealth_count_alive)),
-              flush=True)
+        print('%s , prop_age6_in_ed_w5: %f' %
+              (self.sim.date,  prop_age6_in_ed_w5), flush=True)
 
+#       print('%s lifestyle n_m_ge15:%d , prop_age6_in_ed_w5: %f,  prop_wealth1_ed_lev_3: %f,prop_wealth5_ed_lev_3: %f, '
+#             'prop_wealth1_some_ed_agege5: %f, prop_wealth5_some_ed_agege5: %f, prop_wealth1 %f, prop_f_1550_on_con  '
+#             '%f, prop_mar_stat_1 %f,'
+#             'prop_mar_stat_2 %f, prop_mar_stat_3 %f, prop_m_urban_overwt:%f , newly urban: %d, '
+#             'wealth: %s' %
+#             (self.sim.date, n_m_ge15, prop_age6_in_ed_w5, prop_wealth1_ed_lev_3_agege5, prop_wealth5_ed_lev_3_agege5,
+#              prop_wealth1_some_ed_agege5,
+#              prop_wealth5_some_ed_agege5, prop_wealth1, prop_f_1550_on_con, prop_mar_stat_1,
+#              prop_mar_stat_2,
+#              prop_mar_stat_3, prop_m_urban_overwt,
+#              newly_urban_in_last_3mths,
+#              list(wealth_count_alive)),
+#             flush=True)
 
 
 
