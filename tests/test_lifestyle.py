@@ -7,8 +7,8 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 30000
+end_date = Date(2032, 1, 1)
+popsize = 3000
 
 
 @pytest.fixture
