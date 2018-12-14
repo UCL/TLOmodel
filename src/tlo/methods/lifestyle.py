@@ -872,8 +872,11 @@ class Lifestyle(Module):
         child.li_wealth = mother.li_wealth
         child.li_in_ed = False
         child.li_ed_lev = 1
+        child.li_mar_stat = 1
+        child.li_on_con = False
+        child.li_con_t = 1
 
- #      child.date_of_birth
+#      child.date_of_birth
  #      child.sex
  #      child.mother_id
  #      child.is_alive
@@ -1592,6 +1595,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_in_ed_w5.sum():
             now_not_in_ed_w5_idx = curr_in_ed_w5_idx[now_not_in_ed_w5]
             df.loc[now_not_in_ed_w5_idx, 'li_in_ed'] = False
+
+        curr_in_ed_age20_idx = df.index[df.is_alive & df.li_in_ed & (age.years == 20)]
+        df.loc[curr_in_ed_age20_idx, 'li_in_ed'] = False
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
