@@ -200,7 +200,7 @@ class Depression(Module):
         df['de_suicide'] = False
         df['de_on_antidepr'] = False
         df['de_ever_depr'] = False
-        df['de_prob_3m_resol_depr'] = False
+        df['de_prob_3m_resol_depr'] = 3
 
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
@@ -750,11 +750,6 @@ class Depression(Module):
 #       categories = self.depr_resolution_rates
 #       df['de_prob_3m_resol_depr'] = self.rng.choice(categories, size=len(curr_depr_index), p=probabilities)
 
-
-
-
-
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -828,11 +823,93 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
-#       params = self.module.parameters
 
         df = population.props
         age = population.age
 
+        params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
+
+        ago_15yr = now - DateOffset(years=15)
+        ago_20yr = now - DateOffset(years=20)
+        ago_60yr = now - DateOffset(years=60)
+
+        idx = df.index[df.is_alive & ~df.de_depr]
+
+        eff_prob_depression = pd.Series(params['base_3m_prob_depr'], index=df.index[df.is_alive & ~df.de_depr])
+        eff_prob_depression.loc[df.is_pregnant] *= params['rr_depr_pregnancy']
+        eff_prob_depression.loc[~df.de_ever_depr] *= params['rr_depr_prev_epis']
+        eff_prob_depression.loc[df.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depr_age1519']
+        eff_prob_depression.loc[df.date_of_birth > ago_60yr] *= params['rr_depr_agege60']
+        eff_prob_depression.loc[(df.sex == 'F')] *= params['rr_depr_female']
+        eff_prob_depression.loc[df.de_cc] *= params['rr_depr_cc']
+        eff_prob_depression.loc[df.li_wealth.between(4, 5)] *= params['rr_depr_wealth45']
+        # if already depressed don't want to regster as newly depressed
+#       eff_prob_depression.loc[df.de_depr] *= 0
+        # if not alive don't want to regster as newly depressed
+#       eff_prob_depression.loc[~df.is_alive] *= 0
+
+        newly_depressed = np.random.choice([True, False], size=len(idx), p=[eff_prob_depression, 1-eff_prob_depression])
+
+        df[newly_depressed, 'de_depr'] = True
+        df[newly_depressed, 'de_ever_depr'] = True
+        df[newly_depressed, 'de_date_init_most_rec_depr'] = now
+        df[newly_depressed, 'de_date_depr_resolved'] = None
+        df[newly_depressed, 'de_prob_3m_resol_depr'] = rng.choice(
+            params['depr_resolution_rates'], size=len(newly_depressed))
+
+        # continuation or resolution of depression
+#       eff_prob_recover = pd.Series(p.prob_3m_resol_depression, index=p[depressed].index)
+#       eff_prob_recover[p.has_hyptension & p.has_chronic_back_pain] *= params['rr_resol_depress_chron_cond']
+#       is_resol_depression = eff_prob_recover > rng.rand(len(eff_prob_recover))
+#       resolved_depress = is_resol_depression[is_resol_depression].index
+#       p[resolved_depress, 'is_depressed'] = False
+#       p[resolved_depress, 'date_depression_resolved'] = now
+#       p[resolved_depress, 'date_init_depression'] = None
+
+
+#       'de_depr': Property(Types.BOOL, 'currently depr'),
+#       'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
+#       'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
+#       'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
+#       'de_date_init_most_rec_depr': Property(
+#           Types.DATE, 'When this individual last initiated a depr episode'),
+#       'de_date_depr_resolved': Property(
+#           Types.DATE, 'When the last episode of depr was resolved'),
+#       'de_ever_depr': Property(
+#           Types.BOOL, 'Whether this person has ever experienced depr'),
+#       'de_prob_3m_resol_depr': Property(
+#           Types.CATEGORICAL, 'Base probability for recovering from this bout of depr (if relevant)', categories=[1, 2, 3, 4, 5]),
+#       # probabilities are 0.2, 0.3, 0.5, 0.7, 0.95
+#       'li_wealth': Property(
+#           Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
+#       'de_cc': Property(
+#           Types.BOOL, 'whether has chronic condition'),
+#       'a_age': Property(
+#           Types.REAL, 'current age')
+
+
+#       self.parameters['base_3m_prob_depr'] = 0.0007
+#       self.parameters['rr_depr_wealth45'] = 3
+#       self.parameters['rr_depr_cc'] = 1.25
+#       self.parameters['rr_depr_pregnancy'] = 3
+#       self.parameters['rr_depr_female'] = 1.5
+#       self.parameters['rr_depr_prev_epis'] = 50
+#       self.parameters['rr_depr_on_antidepr'] = 30
+#       self.parameters['rr_depr_age1519'] = 1
+#       self.parameters['rr_depr_agege60'] = 3
+#       self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
+#       self.parameters['rr_resol_depress_cc'] = 0.5
+#       self.parameters['rr_resol_depress_on_antidepr'] = 1.5
+#       self.parameters['rate_init_antidep'] = 0.03
+#       self.parameters['rate_stop_antidepr'] = 0.70
+#       self.parameters['rate_default_antidepr'] = 0.20
+#       self.parameters['prob_3m_suicide_depr_m'] = 0.001
+#       self.parameters['prob_3m_suicide_depr_f'] = 0.0005
+#       self.parameters['prob_3m_selfharm_depr'] = 0.002
+
+        """
         prob3m_depr_never_depr_m_age2059_no_cc_wealth123 = self.base_3m_prob_depr
         prob3m_depr_never_depr_f_not_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_female
         prob3m_depr_never_depr_f_preg_age2059_no_cc_wealth123 = self.base_3m_prob_depr * self.rr_depr_pregnancy
@@ -944,6 +1021,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         prob3m_depr_on_antidepr_f_not_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_female * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
         prob3m_depr_on_antidepr_f_preg_agege60_cc_wealth45 = self.base_3m_prob_depr * self.rr_depr_pregnancy * self.rr_depr_agege60 * self.rr_depr_cc * self.rr_depr_wealth45 * self.rr_depr_on_antidepr
 
+    
         # todo need to ensure these probabilities capped at 1
 
 #       self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
@@ -3548,56 +3626,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[x_idx, 'de_ever_depr'] = True
             df.loc[x_idx, 'de_date_init_most_rec_depr'] = self.sim.date
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        """
 
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -3632,7 +3661,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #       n_ge15 = (df.is_alive & (age.years >= 15)).sum()
         n_ge15 = df.is_alive.sum()
 
-        #       n_depr = (df.de_depr & df.is_alive & (age.years >= 15)).sum()
+#       n_depr = (df.de_depr & df.is_alive & (age.years >= 15)).sum()
         n_depr = (df['de_depr'] & df.is_alive).sum()
 
         prop_depr = n_depr / alive
