@@ -7,8 +7,9 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+
+
 # read in data files #
-from tlo.methods import demography
 
 
 class hiv(Module):
@@ -19,7 +20,8 @@ class hiv(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
-        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_actual_deaths': []}
+        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': []}
+        self.store_DeathsLog = {'DeathEvent_Time': [], 'DeathEvent_Age': [], 'DeathEvent_Cause': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -58,7 +60,10 @@ class hiv(Module):
             Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
         'rr_behaviour_change':
             Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
-
+        'rel_infectiousness_acute':
+            Parameter(Types.REAL, 'relative infectiousness during acute stage'),
+        'rel_infectiousness_late':
+            Parameter(Types.REAL, 'relative infectiousness during late stage')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -100,6 +105,9 @@ class hiv(Module):
         params['prob_mtct'] = 0.2
         params['rr_circumcision'] = 0.6
         params['rr_behaviour_change'] = 0.5
+        params['rel_infectiousness_acute'] = 26
+        params['rel_infectiousness_late'] = 7
+
 
         self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
                                                            sheet_name=None)
@@ -504,20 +512,82 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # add age to population.props
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        # calculate force of infection, modify for treated when available
-        infected_untreated = len(
-            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & ~df_age.on_art & df_age.is_alive])
+        #  calculate relative infectivity for everyone hiv+
+        # stage of infection
 
-        # relates to proportion non-adherent to art and still infectious
-        infected_treated = params['proportion_on_ART_infectious'] * len(
-            df_age[(df_age.has_hiv == 1) & (df_age.years >= 15) & (df_age.on_art == 1) & df_age.is_alive])
+        # select all hiv+ and alive
+        time_on_treatment = (now - df_age.date_art_start).dt.days / 30.44  # in months
+        # print('time_on_treatment:', time_on_treatment)
+
+        time_before_death = (df_age.date_aids_death - now).dt.days / 30.44
+        # print('time_before_death:', time_before_death)
+
+        # time since infection
+        time_inf = (now - df_age.date_hiv_infection).dt.days / 30.44
+
+        # sum how many untreated in each stage of infection
+        acute = len(
+            df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (time_inf < 3)])
+        print('acute:', acute)
+
+        chronic = len(
+            df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (time_inf >= 3)
+                         & (time_before_death >= 19)])
+        print('chronic:', chronic)
+
+        late = len(df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (
+                time_before_death >= 10)
+                                & (time_before_death < 19)])
+        print('late:', late)
+
+        end = len(df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (
+                time_before_death < 10)])
+        print('end:', end)  # no transmission during end stage
+
+        # if early treated, use same relative infectivity as untreated
+        acute_early_treated = len(
+            df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & time_inf < 3 & (
+                    time_on_treatment < 3)])
+        print('acute_early_treated:', acute_early_treated)
+
+        chronic_early_treated = len(
+            df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_inf >= 3)
+                         & (time_before_death >= 19) & (time_on_treatment < 3)])
+        print('chronic_early_treated:', chronic_early_treated)
+
+        late_early_treated = len(
+            df_age.index[
+                df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_before_death >= 10)
+                & (time_before_death < 19) & (time_on_treatment < 3)])
+        print('late_early_treated:', late_early_treated)
+
+        end_early_treated = len(df_age.index[
+                                    df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (
+                                            time_before_death < 10) &
+                                    (time_on_treatment < 3)])
+        print('end_early_treated:', end_early_treated)  # no transmission during end stage
+
+        # after 3 months of treatment
+        treated = len(
+            df_age.index[
+                df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_on_treatment >= 3)])
+        print('treated:', treated)
+
+
+        # calculate force of infection, modify for treated when available
+        infectious_term = ((acute + acute_early_treated) * params['rel_infectiousness_acute']) + \
+                          chronic + chronic_early_treated +\
+                          ((late + late_early_treated) * params['rel_infectiousness_late']) + \
+                          (treated * params['proportion_on_ART_infectious'])
 
         total_pop = len(df_age[(df_age.years >= 15) & df_age.is_alive])
-        foi = params['beta'] * (infected_untreated + infected_treated) / total_pop
-        # print('foi:', foi)
+        foi = params['beta'] * infectious_term / total_pop
+        print('foi:', foi)
 
         # TODO: reduce force of infection if behaviour change available
         # TODO: reduce FOI due to condom use / male circumcision
+        # TODO: output FOI to parse to infection_event
+
         # calculate expected number of new infections in >=15 years only
         # new_infections = int(round(foi * len(df.index[~df.has_hiv & (df.age.years >= 15) & df.is_alive])))
         # # print('number new hiv infections: ', new_infections)
@@ -537,11 +607,15 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         #  incidence rate ratios and relative susceptibility
         eff_susc = pd.Series(0, index=df_with_irr.index)
-        eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive] = foi  # foi applied to all HIV- adults
+        eff_susc.loc[
+            ~df_with_irr.has_hiv & (
+                df_with_irr.years >= 15) & df_with_irr.is_alive] = foi  # foi applied to all HIV- adults
         eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive] *= df_with_irr.loc[
             ~df_with_irr.has_hiv & (df_with_irr.years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR
-        eff_susc.loc[df_with_irr.sexual_risk_group == 'high'] *= params['rr_HIV_high_sexual_risk']  # scaled by sexual risk group
-        eff_susc.loc[df_with_irr.sexual_risk_group == 'sex_work'] *= params['rr_HIV_high_sexual_risk_fsw']  # scaled for fsw
+        eff_susc.loc[df_with_irr.sexual_risk_group == 'high'] *= params[
+            'rr_HIV_high_sexual_risk']  # scaled by sexual risk group
+        eff_susc.loc[df_with_irr.sexual_risk_group == 'sex_work'] *= params[
+            'rr_HIV_high_sexual_risk_fsw']  # scaled for fsw
         eff_susc.loc[df_with_irr.is_circumcised] *= params['rr_circumcision']  # scaled for circumcision
         eff_susc.loc[df_with_irr.behaviour_change] *= params['rr_behaviour_change']  # scaled for behaviour counselling
 
@@ -590,6 +664,11 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
         if individual.is_alive & ~individual.on_art:
             individual.is_alive = False
 
+        # Log the death
+        self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
+        self.module.store_DeathsLog['DeathEvent_Age'].append(self.sim.population.age.years[individual.index])
+        self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
+
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -618,6 +697,5 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
         self.module.store['HIV_scheduled_deaths'].append(die)
-        self.module.store['HIV_actual_deaths'].append(die)
 
         # print('hiv outputs: ', self.sim.date, infected_total)
