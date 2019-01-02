@@ -94,11 +94,7 @@ class Population:
         A list of Person objects representing the individuals in the population.
     """
 
-    __slots__ = ('people', 'props', 'sim', 'age_ranges')
-
-    MIN_AGE_FOR_RANGE = 0
-    MAX_AGE_FOR_RANGE = 100
-    AGE_RANGE_SIZE = 5
+    __slots__ = ('people', 'props', 'sim')
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -118,35 +114,6 @@ class Population:
         self.people = []
         for i in range(initial_size):
             self.people.append(Person(self, i))
-
-        self.age_ranges = Population.make_age_range_lookup()
-
-    @staticmethod
-    def make_age_range_lookup():
-        """Returns a dictionary mapping age (in years) to age range
-        i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
-        """
-        def chunks(items, n):
-            """Takes a list and divides it into parts of size n"""
-            for index in range(0, len(items), n):
-                yield items[index:index + n]
-
-        # split all the ages from min to limit (100 years) into 5 year ranges
-        parts = chunks(range(Population.MIN_AGE_FOR_RANGE, Population.MAX_AGE_FOR_RANGE),
-                       Population.AGE_RANGE_SIZE)
-
-        # any ages >= 100 are in the '100+' category
-        age_ranges = defaultdict(lambda: '100+')
-
-        # loop over each range and map all ages falling within the range to the range
-        for part in parts:
-            start = part.start
-            end = part.stop - 1
-            value = '%s-%s' % (start, end)
-            for i in range(start, part.stop):
-                age_ranges[i] = value
-
-        return age_ranges
 
     def __len__(self):
         """:return: the size of the population."""
@@ -234,39 +201,6 @@ class Population:
                 props[prop_name] = prop.create_series(prop_name, size)
         return props
 
-    @lru_cache(maxsize=1)
-    def __get_age(self, timestamp):
-        """
-        Creates a dataframe holding age information. This private method is decorated with an LRU
-        cache of size 1. This means the age dataframe for the most recent timestamp is cached.
-
-        Module/events can repeatedly access the population.age property as the simulation runs
-        forward in time, the age for the current timestemp will only be calculated once.
-
-        See the 'age()' method.
-
-        :param timestamp: a numpy datetime
-        :return: Pandas dataframe with age of individuals in population
-        """
-        age = pd.DataFrame({'days': timestamp - self.sim.population.props.date_of_birth})
-        age.index.name = 'person'
-        age['years_exact'] = age.days / np.timedelta64(1, 'Y')
-        age['years'] = age.years_exact.astype(int)
-        age['age_range'] = age.years.map(self.age_ranges).astype('category')
-        return age
-
-    @property
-    def age(self):
-        """
-        Returns age of individuals based on the current simulation date. The dataframe returned
-        has columns 'days', 'years_exact' and 'years' (whole years).
-
-        The index of the age dataframe is the same as the population dataframe.
-
-        :return: A Pandas dataframe of age information of the population
-        """
-        return self.__get_age(self.sim.date)
-
     @property
     def do_birth(self):
         """Create a new person within the population.
@@ -280,11 +214,8 @@ class Population:
         self.props = self.props.append(extra_props, ignore_index=True, sort=False)
         new_person = Person(self, new_index)
         self.people.append(new_person)
-     # self.props.index.name =person
+        self.props.index.name = 'person'
         return new_person
-
-
-
 
     def make_test_property(self, name, type_):
         """Create a new property for test purposes.
