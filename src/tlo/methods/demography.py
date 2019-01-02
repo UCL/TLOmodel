@@ -206,7 +206,7 @@ class Demography(Module):
 
         # assign that none of the adult (woman) population is pregnant
         df.is_pregnant = False
-        df.date_of_last_pregnancy = pd.DateOffset(months=0)
+        df.date_of_last_pregnancy = pd.NaT
 
         df.contraception.values[:] = 'not using'  # this will be ascribed by the lifestype module
         # TODO: Lifestyle module should look after contraception property
@@ -252,7 +252,7 @@ class Demography(Module):
         child.is_alive = True
         child.is_pregnant = False
         child.is_married = False
-        child.date_of_last_pregnancy = pd.DateOffset(months=0)
+        child.date_of_last_pregnancy = pd.NaT
         child.contraception = 'not using'  # TODO: contraception should be governed by lifestyle module
 
         if self.sim.verboseoutput:
@@ -277,7 +277,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.age_range = df.age_years.map(self.age_range_lookup).astype('category')
 
 
-class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
+class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
     """
     This event looks across each woman in the population to determine who will become pregnant
     """
@@ -294,7 +294,6 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
             print('Now after 2035')
 
         df = population.props  # get the population dataframe
-        print(len(df), df.dtypes)
 
         female = df.loc[
             (df.sex == 'F') & (df.is_alive == True), ['contraception', 'is_married', 'is_pregnant',
@@ -332,7 +331,7 @@ class PregnancyPoll(RegularEvent,PopulationScopeEventMixin):
 
             if self.sim.verboseoutput:
                 print('Woman number: ', population[personnumber])
-                print('Her age is:', female.loc[personnumber, 'years'])
+                print('Her age is:', female.loc[personnumber, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(
