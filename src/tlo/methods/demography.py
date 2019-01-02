@@ -184,8 +184,7 @@ class Demography(Module):
                                            box=False))
 
         df = population.props
-        df.date_of_birth = self.sim.date - (
-                pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
+        df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
         df.sex = pd.Categorical(pop_sample['gender'].map({'female': 'F', 'male': 'M'}))
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
@@ -194,7 +193,8 @@ class Demography(Module):
         df.is_married = False  # TODO: Lifestyle module should look after married property
 
         adults = (df.age_years >= 18)
-        df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False], size=adults.sum(),
+        df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False],
+                                                           size=adults.sum(),
                                                            p=[0.5, 0.5])
 
         # assign that none of the adult (woman) population is pregnant
@@ -220,11 +220,12 @@ class Demography(Module):
         sim.schedule_event(AgeUpdateEvent(self, self.AGE_RANGE_LOOKUP),
                            sim.date + DateOffset(days=1))
 
-        # Launch the repeating events for demoraphy...
-        sim.schedule_event(PregnancyPoll(self),
-                           sim.date+DateOffset(months=1))       # check all population to determine if pregnancy should be triggered (repeats every month)
-        sim.schedule_event(OtherDeathPoll(self),
-                           sim.date+DateOffset(months=1))      # check all population to determine if person should die (from causes other than those explicitly modelled) (repeats every month)
+        # check all population to determine if pregnancy should be triggered (repeats every month)
+        sim.schedule_event(PregnancyPoll(self), sim.date+DateOffset(months=1))
+
+        # check all population to determine if person should die (from causes other than those
+        # explicitly modelled) (repeats every month)
+        sim.schedule_event(OtherDeathPoll(self), sim.date+DateOffset(months=1))
 
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(months=12))
@@ -237,10 +238,10 @@ class Demography(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
+        f_male = self.parameters['fraction_of_births_male']
+
         child.date_of_birth = self.sim.date
-        child.sex = self.sim.rng.choice(['M', 'F'],
-                                        p=[self.parameters['fraction_of_births_male'],
-                                           (1 - self.parameters['fraction_of_births_male'])])
+        child.sex = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
         child.mother_id = mother.index
         child.is_alive = True
         child.is_pregnant = False
@@ -288,34 +289,34 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props  # get the population dataframe
 
-        female = df.loc[
-            (df.sex == 'F') & (df.is_alive == True), ['contraception', 'is_married', 'is_pregnant',
-                                                      'age_years']]  # get the subset of women from the population dataframe and relevant characteristics
+        # get the subset of women from the population dataframe and relevant characteristics
+        female = df.loc[(df.sex == 'F') & df.is_alive, ['contraception', 'is_married', 'is_pregnant', 'age_years']]
 
-        fert_schedule = self.module.parameters[
-            'fertility_schedule']  # load the fertility schedule (imported datasheet from excel workbook)
+        # load the fertility schedule (imported datasheet from excel workbook)
+        fert_schedule = self.module.parameters['fertility_schedule']
 
         # --------
 
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
-        female = female.reset_index().merge(fert_schedule, left_on=['age_years', 'contraception'],
-                                            right_on=['age', 'cmeth'], how='left').set_index(
-            'person')
+        female = female.reset_index().merge(fert_schedule,
+                                            left_on=['age_years', 'contraception'],
+                                            right_on=['age', 'cmeth'], how='left').set_index('person')
 
-        female = female[
-            female.basefert_dhs.notna()]  # clean up items that didn't merge (those with ages not referenced in the fert_schedule sheet)
+        # clean up items that didn't merge (those with ages not referenced in the fert_schedule sheet)
+        female = female[female.basefert_dhs.notna()]
 
-        female.loc[female[
-                       'is_pregnant'] == True, 'basefert_dhs'] = 0  # zero-out risk of pregnancy if already pregnant
+        # zero-out risk of pregnancy if already pregnant
+        female.loc[female.is_pregnant==True, 'basefert_dhs'] = 0
 
-        newlypregnant = (self.sim.rng.random_sample(size=len(
-            female)) < female.basefert_dhs / 12)  # flipping the coin to determine if this woman will become pregnant
+        # flipping the coin to determine if this woman will become pregnant
+        newlypregnant = (self.sim.rng.random_sample(size=len(female)) < female.basefert_dhs / 12)
+
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
         # TODO: this should be linked to the self.frequency value
 
-        df.loc[female.index[
-                   newlypregnant], 'is_pregnant'] = True  # updating the pregancy status for that women
+        # updating the pregancy status for that women
+        df.loc[female.index[newlypregnant], 'is_pregnant'] = True
         df.loc[female.index[newlypregnant], 'date_of_last_pregnancy'] = self.sim.date
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
@@ -327,14 +328,13 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                 print('Her age is:', female.loc[personnumber, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(
-                weeks=-2 + 4 * self.sim.rng.random_sample())
+            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
 
-            mother = population[
-                personnumber]  # get the index of the mother (**Q: what data type is this....)
+            # get the index of the mother (**Q: what data type is this....)
+            mother = population[personnumber]
 
             # Schedule the Birth
-            birth = DelayedBirthEvent(self.module, mother)  # prepare for that birth event
+            birth = DelayedBirthEvent(self.module, mother)
             self.sim.schedule_event(birth, birth_date_of_child)
 
             if self.sim.verboseoutput:
@@ -360,7 +360,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     def apply(self, mother):
         """Apply this event to the given person.
         Assuming the person is still alive, we ask the simulation to create a new offspring.
-        :param person: the person the event happens to, i.e. the mother giving birth
+        :param mother: the person the event happens to, i.e. the mother giving birth
         """
 
         if self.sim.verboseoutput:
@@ -370,7 +370,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(mother)
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
-        mother.is_pregnant=False
+        mother.is_pregnant = False
 
         # Log the birth:
         self.module.store_EventsLog['BirthEvent_Time'].append(self.sim.date)
@@ -394,10 +394,13 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
             print("Checking to see if anyone should die....")
 
         # get the mortality schedule for now...
-        mort_schedule = self.module.parameters[
-            'mortality_schedule']  # load the mortality schedule (imported datasheet from excel workbook)
-        mort_schedule = mort_schedule.loc[
-            mort_schedule.year == self.sim.date.year]  # get the subset of mortality rates for this year.
+
+        # load the mortality schedule (imported datasheet from excel workbook)
+        mort_schedule = self.module.parameters['mortality_schedule']
+
+        # get the subset of mortality rates for this year.
+        mort_schedule = mort_schedule.loc[mort_schedule.year == self.sim.date.year]
+
         # create new variable that will align with population.sex
         mort_schedule['sex'] = np.where(mort_schedule['gender'] == 'male', 'M', 'F')
 
@@ -416,12 +419,16 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         mort_schedule.loc[mort_schedule.age_from == 0, 'agegrp'] = -1
         # -------
 
-        # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of mortality for each person in the model
-        df = df.reset_index().merge(mort_schedule, left_on=['agegrp', 'sex'],
-                                    right_on=['agegrp', 'sex'], how='left').set_index('person')
+        # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
+        # mortality for each person in the model
+        df = df.reset_index().merge(mort_schedule,
+                                    left_on=['agegrp', 'sex'],
+                                    right_on=['agegrp', 'sex'],
+                                    how='left').set_index('person')
 
-        outcome = (self.sim.rng.random_sample(
-            size=len(df)) < df.value / 12)  # flipping the coin to determine if this woman will die
+        # flipping the coin to determine if this woman will die
+        outcome = (self.sim.rng.random_sample(size=len(df)) < df.value / 12)
+
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
         # TODO: this should be linked to the self.frequency value
@@ -430,8 +437,9 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         willdie = (df[outcome == True]).index
         for i in willdie:
             person = population[i]
-            death = InstantaneousDeath(self.module, person, cause='Other')  # make that death event
-            self.sim.schedule_event(death, self.sim.date)  # schedule the death for "now"
+            death = InstantaneousDeath(self.module, person, cause='Other')
+            # schedule the death for "now"
+            self.sim.schedule_event(death, self.sim.date)
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
