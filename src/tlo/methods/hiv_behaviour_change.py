@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
+#  TODO: proportion counselled is greater than 1 by 2012
 
 class BehaviourChange(Module):
     """
