@@ -306,7 +306,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         female = female[female.basefert_dhs.notna()]
 
         # zero-out risk of pregnancy if already pregnant
-        female.loc[female.is_pregnant==True, 'basefert_dhs'] = 0
+        female.loc[female.is_pregnant, 'basefert_dhs'] = 0
 
         # flipping the coin to determine if this woman will become pregnant
         newlypregnant = (self.sim.rng.random_sample(size=len(female)) < female.basefert_dhs / 12)
@@ -378,7 +378,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         self.module.store_EventsLog['BirthEvent_Outcome'].append(0)
 
 
-class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
+class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     """
     This event looks across each person in the population to see if they should die.
     During development this will be applying WPP all-cause death rates...
@@ -434,7 +434,7 @@ class OtherDeathPoll(RegularEvent,PopulationScopeEventMixin):
         # TODO: this should be linked to the self.frequency value
 
         # loop through to see who is going to die:
-        willdie = (df[outcome == True]).index
+        willdie = (df[outcome]).index
         for i in willdie:
             person = population[i]
             death = InstantaneousDeath(self.module, person, cause='Other')
