@@ -33,6 +33,7 @@ def test_demography(simulation):
     assert df.is_alive.dtype == 'bool'
     assert df.date_of_last_pregnancy.dtype == 'datetime64[ns]'
     assert df.age_range.dtype == 'category'
+    assert df.contraception == 'category'
 
 
 if __name__ == '__main__':

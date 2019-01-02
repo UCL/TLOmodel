@@ -148,17 +148,10 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
-        # TODO: Read in excel file only once
-        self.parameters['interpolated_pop'] = pd.read_excel(self.workbook_path,
-                                                            sheet_name='Interpolated Pop Structure')
-
-        self.parameters['fertility_schedule'] = pd.read_excel(self.workbook_path,
-                                                              sheet_name='Age_spec fertility')
-
-        self.parameters['mortality_schedule'] = pd.read_excel(self.workbook_path,
-                                                              sheet_name='Mortality Rate')
-
+        workbook = pd.read_excel(self.workbook_path, sheet_name=None)
+        self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
+        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
+        self.parameters['mortality_schedule'] = workbook['Mortality Rate']
         self.parameters['fraction_of_births_male'] = 0.5
 
     def initialise_population(self, population):
