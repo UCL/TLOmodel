@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 # read in data files #
 from tlo.methods import demography
 
@@ -19,7 +19,7 @@ class hiv(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
-        self.store = {'Time': [], 'Total_HIV': [], 'HIV_deaths': []}
+        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_actual_deaths': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -315,7 +315,7 @@ class hiv(Module):
         time_infected = pd.to_timedelta(time_infected, unit='Y')
         date_infected = now - time_infected
 
-        # assign the calculated dates back to the original population dataframe        #
+        # assign the calculated dates back to the original population dataframe
         # NOTE: we use the '.values' to assign back, ignoring the index of the 'date_infected' series
         df.loc[infected, 'date_hiv_infection'] = date_infected.values
 
@@ -570,11 +570,25 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # schedule the death event
         for i in newly_infected_index:
             person = population[i]
-            death = demography.InstantaneousDeath(self.module, person, cause='hiv')  # make that death event
+            death = DeathEventHIV(self.module, person, cause='hiv')  # make that death event
             time_death = death_dates[i]
             # print('time_death: ', time_death)
             # print('now: ', now)
             self.sim.schedule_event(death, time_death)  # schedule the death
+
+
+class DeathEventHIV(Event, IndividualScopeEventMixin):
+    """
+    Performs the Death operation on an individual and logs it.
+    """
+
+    def __init__(self, module, individual, cause):
+        super().__init__(module, person=individual)
+        self.cause = cause
+
+    def apply(self, individual):
+        if individual.is_alive & ~individual.on_art:
+            individual.is_alive = False
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -597,11 +611,13 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         year_aids_death = date_aids_death.dt.year
         # print('year_aids_death: ', year_aids_death)
 
+        #  this shows the deaths scheduled for this year, including those postponed due to ART
         die = sum(1 for x in year_aids_death if int(x) == now.year)
         # print('die: ', die)
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
-        self.module.store['HIV_deaths'].append(die)
+        self.module.store['HIV_scheduled_deaths'].append(die)
+        self.module.store['HIV_actual_deaths'].append(die)
 
         # print('hiv outputs: ', self.sim.date, infected_total)

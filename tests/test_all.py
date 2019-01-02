@@ -14,9 +14,9 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, healt
 
 # York
 path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'  # York
-path_hs = 'P:/Documents/TLO/Method_ART.xlsx'  # York
-path_tb = 'P:/Documents/TLO/Method_TB.xlsx'  # York
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'
+path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
+path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # for laptop
 # path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'

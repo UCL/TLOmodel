@@ -137,6 +137,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of HIV testing
+        #  TODO: allow HIV- to be repeat tested
         testing_index = df.index[(random_draw < params['testing_coverage']) & ~df.ever_tested & df.is_alive]
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
