@@ -148,7 +148,7 @@ class Demography(Module):
 
         df = population.props
         df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
-        df.sex = pd.Categorical(pop_sample['gender'].map({'female': 'F', 'male': 'M'}))
+        df.sex.values[:] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
         df.is_alive = True
 
