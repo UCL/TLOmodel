@@ -1,10 +1,10 @@
 """The Person and Population classes."""
-from collections import defaultdict
-from functools import lru_cache
+import logging
 
-import numpy as np
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Person:
     """An individual within the population.
@@ -215,6 +215,9 @@ class Population:
         new_person = Person(self, new_index)
         self.people.append(new_person)
         self.props.index.name = 'person'
+
+        logger.debug('do_birth:%s', new_index)
+
         return new_person
 
     def make_test_property(self, name, type_):
