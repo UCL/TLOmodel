@@ -79,7 +79,7 @@ class RandomDeath(Module):
         """
         # Everyone starts off alive
         # We use 'broadcasting' to set the same value for every individual
-        population.is_alive = True
+        population.props.is_alive = True
         # No-one has a death date yet, so we can leave that uninitialised
         # (which means it will be full of 'not a time' values)
 
@@ -95,7 +95,7 @@ class RandomDeath(Module):
         death_poll = RandomDeathEvent(self, self.death_probability)
         sim.schedule_event(death_poll, sim.date + DateOffset(months=1))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
         This is called by the simulation whenever a new person is born.
@@ -103,7 +103,8 @@ class RandomDeath(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        child.is_alive = True
+        df = self.sim.population.props
+        df.at[child_id, 'is_alive'] = True
 
 
 class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
@@ -135,14 +136,15 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
+        df = population.props
         # Generate a series of random numbers, one per individual
-        probs = self.module.rng.rand(len(population))
+        probs = self.module.rng.rand(len(df))
         # Figure out which individuals are newly dead
         # ('deaths' here is a pandas.Series of True/False values)
-        deaths = population.is_alive & (probs < self.death_probability)
+        deaths = df.is_alive & (probs < self.death_probability)
         # Record their date of death
-        population[deaths, 'date_of_death'] = self.sim.date
+        df.loc[deaths, 'date_of_death'] = self.sim.date
         # Kill them
-        population[deaths, 'is_alive'] = False
+        df.loc[deaths, 'is_alive'] = False
         # We could do this more verbosely:
         # population.is_alive = population.is_alive & (probs >= self.death_probability)

@@ -126,6 +126,7 @@ class Demography(Module):
 
         :param population: the population of individuals
         """
+        df = population.props
 
         worksheet = self.parameters['interpolated_pop']
 
@@ -137,16 +138,15 @@ class Demography(Module):
         intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
 
         pop_sample = intpop.iloc[self.sim.rng.choice(intpop.index.values,
-                                                     size=len(population),
+                                                     size=len(df),
                                                      p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
         months = pd.Series(pd.to_timedelta(self.sim.rng.randint(low=0,
                                                                 high=12,
-                                                                size=len(population)),
+                                                                size=len(df)),
                                            unit='M',
                                            box=False))
 
-        df = population.props
         df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
         df.sex.values[:] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.mother_id = -1  # we can't use np.nan because that casts the series into a float
@@ -193,26 +193,28 @@ class Demography(Module):
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(months=12))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
+        df = self.sim.population.props
+
         f_male = self.parameters['fraction_of_births_male']
-        child.sex = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
+        df.at[child_id, 'sex'] = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
-        child.date_of_birth = self.sim.date
-        child.mother_id = mother.index
-        child.is_alive = True
-        child.is_pregnant = False
-        child.is_married = False
-        child.date_of_last_pregnancy = pd.NaT
-        child.contraception = 'not using'  # TODO: contraception should be governed by lifestyle module
+        df.at[child_id, 'date_of_birth'] = self.sim.date
+        df.at[child_id, 'mother_id'] = mother_id
+        df.at[child_id, 'is_alive'] = True
+        df.at[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'is_married'] = False
+        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
+        df.at[child_id, 'contraception'] = 'not using'  # TODO: contraception should be governed by lifestyle module
 
-        logger.debug('A new child has been born: %s', child.index)
+        logger.debug('A new child has been born: %s', child_id)
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -284,17 +286,14 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         personnumbers_of_newlypregnant = female.index[newlypregnant]
         for personnumber in personnumbers_of_newlypregnant:
 
-            logger.debug('Woman number: %s', population[personnumber])
+            logger.debug('Woman number: %s', personnumber)
             logger.debug('Her age is: %s', female.loc[personnumber, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
 
-            # get the index of the mother (**Q: what data type is this....)
-            mother = population[personnumber]
-
             # Schedule the Birth
-            birth = DelayedBirthEvent(self.module, mother)
+            birth = DelayedBirthEvent(self.module, personnumber)
             self.sim.schedule_event(birth, birth_date_of_child)
 
             logger.debug('The birth is now booked for: %s', birth_date_of_child)
@@ -304,7 +303,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     """A one-off event in which a pregnant mother gives birth.
     """
 
-    def __init__(self, module, mother):
+    def __init__(self, module, mother_id):
         """Create a new birth event.
 
         We need to pass the person this event happens to to the base class constructor
@@ -312,27 +311,29 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         number generators can be scoped per-module.
 
         :param module: the module that created this event
-        :param mother: the person giving birth
+        :param mother_id: the person giving birth
         """
-        super().__init__(module, person=mother)
+        super().__init__(module, person=mother_id)
 
-    def apply(self, mother):
+    def apply(self, mother_id):
         """Apply this event to the given person.
         Assuming the person is still alive, we ask the simulation to create a new offspring.
-        :param mother: the person the event happens to, i.e. the mother giving birth
+        :param mother_id: the person the event happens to, i.e. the mother giving birth
         """
 
-        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother)
+        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
 
-        if mother.is_alive:
-            self.sim.do_birth(mother)
+        df = self.sim.population.props
+
+        if df.at[mother_id, 'is_alive']:
+            self.sim.do_birth(mother_id)
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
-        mother.is_pregnant = False
+        df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
         logger.info('%s:%s:%s %s', self.sim.strdate, self.__class__.__name__,
-                    mother.age_years, 0)
+                    df.at[mother_id, 'age_years'], 0)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
@@ -391,8 +392,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # loop through to see who is going to die:
         willdie = (df[outcome]).index
-        for i in willdie:
-            person = population[i]
+        for person in willdie:
             death = InstantaneousDeath(self.module, person, cause='Other')
             # schedule the death for "now"
             self.sim.schedule_event(death, self.sim.date)
@@ -402,25 +402,26 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
     """
-    def __init__(self, module, individual, cause):
-        super().__init__(module, person=individual)
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person=individual_id)
         self.cause = cause
 
-    def apply(self, individual):
+    def apply(self, individual_id):
+        df = self.sim.population.props
 
-        logger.debug("@@@@ A Death is now occuring, to person %s", individual)
+        logger.debug("@@@@ A Death is now occuring, to person %s", individual_id)
 
-        if individual.is_alive:
+        if df.at[individual_id, 'is_alive']:
             # here comes the death..
-            individual.is_alive = False
+            df.at[individual_id, 'is_alive'] = False
             # the person is now dead
 
         logger.debug("*******************************************The person %s "
-                     "is now officially dead and has died of %s", individual, self.cause)
+                     "is now officially dead and has died of %s", individual_id, self.cause)
 
         # Log the death
         logger.info('%s:%s:%s %s', self.sim.strdate, self.__class__.__name__,
-                    individual.age_years, self.cause)
+                    df.at[individual_id, 'age_years'], self.cause)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
