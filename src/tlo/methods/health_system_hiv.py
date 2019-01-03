@@ -188,11 +188,6 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
             individual.loc[individual.ever_tested & individual.is_alive & individual.has_hiv, 'hiv_diagnosed'] = True
 
 
-
-
-
-
-
 # TODO: decide how to define probability of treatment / rates of ART initiation
 class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
     """ assigning ART to diagnosed HIV+ people
