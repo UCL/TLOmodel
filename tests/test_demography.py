@@ -21,7 +21,6 @@ def simulation():
 
 
 def test_demography(simulation):
-    simulation.verboseoutput = True
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 

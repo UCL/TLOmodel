@@ -5,6 +5,7 @@ Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the '
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
 from collections import defaultdict
+import logging
 
 import numpy as np
 import pandas as pd
@@ -12,6 +13,9 @@ import pandas as pd
 from tlo import Date
 from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -32,7 +36,7 @@ def make_age_range_lookup():
     parts = chunks(range(MIN_AGE_FOR_RANGE, MAX_AGE_FOR_RANGE), AGE_RANGE_SIZE)
 
     # any ages >= 100 are in the '100+' category
-    age_ranges = defaultdict(lambda: '100+')
+    age_ranges = defaultdict(lambda: '%d+' % MAX_AGE_FOR_RANGE)
 
     # loop over each range and map all ages falling within the range to the range
     for part in parts:
@@ -105,6 +109,11 @@ class Demography(Module):
             'BirthEvent_Outcome': []}
 
     AGE_RANGE_LOOKUP = make_age_range_lookup()
+    AGE_RANGE_CATEGORIES = set(AGE_RANGE_LOOKUP.values())
+    AGE_RANGE_CATEGORIES.add(AGE_RANGE_LOOKUP['DEFAULT'])
+
+    # We should have 21 age range categories
+    assert len(AGE_RANGE_CATEGORIES) == 21
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -137,7 +146,7 @@ class Demography(Module):
         'age_years': Property(Types.INT, 'The age of the individual in years'),
         'age_range': Property(Types.CATEGORICAL,
                               'The age range category of the individual',
-                              categories=set(AGE_RANGE_LOOKUP.values())),
+                              categories=AGE_RANGE_CATEGORIES),
     }
 
     def read_parameters(self, data_folder):
@@ -207,7 +216,7 @@ class Demography(Module):
         age_in_days = self.sim.date - df.date_of_birth
         df.age_exact_years = age_in_days / np.timedelta64(1, 'Y')
         df.age_years = df.age_exact_years.astype(int)
-        df.age_range = df.age_years.map(self.AGE_RANGE_LOOKUP).astype('category')
+        df.age_range.values[:] = df.age_years.map(self.AGE_RANGE_LOOKUP).astype('category')
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -239,9 +248,9 @@ class Demography(Module):
         :param child: the new child
         """
         f_male = self.parameters['fraction_of_births_male']
+        child.sex = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         child.date_of_birth = self.sim.date
-        child.sex = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
         child.mother_id = mother.index
         child.is_alive = True
         child.is_pregnant = False
@@ -249,14 +258,13 @@ class Demography(Module):
         child.date_of_last_pregnancy = pd.NaT
         child.contraception = 'not using'  # TODO: contraception should be governed by lifestyle module
 
-        if self.sim.verboseoutput:
-            print("A new child has been born:", child.index)
+        logger.debug('A new child has been born: %s', child.index)
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This event update updates the age_exact_years, age_years and age_range columns for the
-    population based on the current simulation date
+    This event updates the age_exact_years, age_years and age_range columns for the population based
+    on the current simulation date
     """
     def __init__(self, module, age_range_lookup):
         super().__init__(module, frequency=DateOffset(days=1))
@@ -268,7 +276,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.age_exact_years = age_in_days / np.timedelta64(1, 'Y')
         df.age_years = df.age_exact_years.astype(int)
-        df.age_range = df.age_years.map(self.age_range_lookup).astype('category')
+        df.age_range.values[:] = df.age_years.map(self.age_range_lookup).astype('category')
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
@@ -281,11 +289,10 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        if self.sim.verboseoutput:
-            print('Checking to see if anyone should become pregnant....')
+        logger.debug('Checking to see if anyone should become pregnant....')
 
         if self.sim.date > Date(2035, 1, 1):
-            print('Now after 2035')
+            logger.info('Now after 2035')
 
         df = population.props  # get the population dataframe
 
@@ -323,9 +330,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         personnumbers_of_newlypregnant = female.index[newlypregnant]
         for personnumber in personnumbers_of_newlypregnant:
 
-            if self.sim.verboseoutput:
-                print('Woman number: ', population[personnumber])
-                print('Her age is:', female.loc[personnumber, 'age_years'])
+            logger.debug('Woman number: %s', population[personnumber])
+            logger.debug('Her age is: %s', female.loc[personnumber, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
@@ -337,8 +343,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             birth = DelayedBirthEvent(self.module, mother)
             self.sim.schedule_event(birth, birth_date_of_child)
 
-            if self.sim.verboseoutput:
-                print("The birth is now booked for: ", birth_date_of_child)
+            logger.debug('The birth is now booked for: %s', birth_date_of_child)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -363,8 +368,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         :param mother: the person the event happens to, i.e. the mother giving birth
         """
 
-        if self.sim.verboseoutput:
-            print("@@@@ A Birth is now occuring, to mother", mother)
+        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother)
 
         if mother.is_alive:
             self.sim.do_birth(mother)
@@ -390,8 +394,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        if self.sim.verboseoutput:
-            print("Checking to see if anyone should die....")
+        logger.debug('Checking to see if anyone should die...')
 
         # get the mortality schedule for now...
 
@@ -452,17 +455,15 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, individual):
 
-        if self.sim.verboseoutput:
-            print("@@@@ A Death is now occuring, to person", individual)
+        logger.debug("@@@@ A Death is now occuring, to person %s", individual)
 
         if individual.is_alive:
             # here comes the death..
             individual.is_alive = False
             # the person is now dead
 
-        if self.sim.verboseoutput:
-            print("*******************************************The person", individual,
-                  "is now officially dead and has died of :", self.cause)
+        logger.debug("*******************************************The person %s "
+                     "is now officially dead and has died of %s", individual, self.cause)
 
         # Log the death
         self.module.store_EventsLog['DeathEvent_Time'].append(self.sim.date)
@@ -506,14 +507,16 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # 95-99
         # 100+
 
+        # TODO: to count use: df.age_range.value_counts()
+
         num_women = ((df.sex == 'F') & df.is_alive).sum()
         num_men = ((df.sex == 'M') & df.is_alive).sum()
         num_total = df.is_alive.sum()
 
-        if self.sim.verboseoutput:
-            print('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}' %
-                  (self.sim.date, num_women, num_men, num_total), flush=True)
-            
+        logger.debug('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}',
+                     self.sim.date,
+                     num_women, num_men, num_total)
+
         ps = self.module.store_PopulationStats
 
         ps['Time'].append(self.sim.date)
