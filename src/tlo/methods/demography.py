@@ -36,17 +36,23 @@ def make_age_range_lookup():
     parts = chunks(range(MIN_AGE_FOR_RANGE, MAX_AGE_FOR_RANGE), AGE_RANGE_SIZE)
 
     # any ages >= 100 are in the '100+' category
-    age_ranges = defaultdict(lambda: '%d+' % MAX_AGE_FOR_RANGE)
+    default_category = '%d+' % MAX_AGE_FOR_RANGE
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
 
     # loop over each range and map all ages falling within the range to the range
     for part in parts:
         start = part.start
         end = part.stop - 1
         value = '%s-%s' % (start, end)
+        ranges.append(value)
         for i in range(start, part.stop):
-            age_ranges[i] = value
+            lookup[i] = value
 
-    return age_ranges
+    ranges.append(default_category)
+    return ranges, lookup
 
 
 class Demography(Module):
@@ -108,9 +114,7 @@ class Demography(Module):
             'BirthEvent_AgeOfMother': [],
             'BirthEvent_Outcome': []}
 
-    AGE_RANGE_LOOKUP = make_age_range_lookup()
-    AGE_RANGE_CATEGORIES = set(AGE_RANGE_LOOKUP.values())
-    AGE_RANGE_CATEGORIES.add(AGE_RANGE_LOOKUP['DEFAULT'])
+    AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
