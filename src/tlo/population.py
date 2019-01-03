@@ -53,7 +53,7 @@ class Population:
 
         TODO: This will over-allocate capacity in the population dataframe for efficiency.
 
-        :return: the new person
+        :return: id of the new person
         """
         new_index = len(self.props)
         extra_props = self._create_props(1)

@@ -116,19 +116,19 @@ class Simulation:
         self.date = date
         event.run()
 
-    def do_birth(self, mother):
+    def do_birth(self, mother_id):
         """Create a new child person.
 
         We create a new person in the population and then call the `on_birth` method in
         all modules to initialise the child's properties.
 
-        :param mother: the maternal parent
+        :param mother_id: the maternal parent
         :return: the new child
         """
-        child = self.population.do_birth()
+        child_id = self.population.do_birth()
         for module in self.modules.values():
-            module.on_birth(mother, child)
-        return child
+            module.on_birth(mother_id, child_id)
+        return child_id
 
 
 class EventQueue:

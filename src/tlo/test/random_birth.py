@@ -156,7 +156,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     the constructor.
     """
 
-    def __init__(self, module, mother):
+    def __init__(self, module, mother_id):
         """Create a new birth event.
 
         We need to pass the person this event happens to to the base class constructor
@@ -164,9 +164,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         number generators can be scoped per-module.
 
         :param module: the module that created this event
-        :param mother: the person giving birth
+        :param mother_id: the person giving birth
         """
-        super().__init__(module, person=mother)
+        super().__init__(module, person_id=mother_id)
 
     def apply(self, mother_id):
         """Apply this event to the given person.

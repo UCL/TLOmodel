@@ -100,8 +100,8 @@ class RandomDeath(Module):
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
         df = self.sim.population.props
         df.at[child_id, 'is_alive'] = True

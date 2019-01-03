@@ -313,7 +313,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         :param module: the module that created this event
         :param mother_id: the person giving birth
         """
-        super().__init__(module, person=mother_id)
+        super().__init__(module, person_id=mother_id)
 
     def apply(self, mother_id):
         """Apply this event to the given person.
@@ -403,7 +403,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     Performs the Death operation on an individual and logs it.
     """
     def __init__(self, module, individual_id, cause):
-        super().__init__(module, person=individual_id)
+        super().__init__(module, person_id=individual_id)
         self.cause = cause
 
     def apply(self, individual_id):
