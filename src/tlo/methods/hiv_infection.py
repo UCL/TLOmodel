@@ -9,9 +9,6 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 
-# read in data files #
-
-
 class hiv(Module):
     """
     baseline hiv infection
@@ -88,26 +85,51 @@ class hiv(Module):
           Typically modules would read a particular file within here.
         """
         params = self.parameters
-        params['prob_infant_fast_progressor'] = [0.36, 1 - 0.36]
-        params['infant_progression_category'] = ['FAST', 'SLOW']
-        params['exp_rate_mort_infant_fast_progressor'] = 1.08
-        params['weibull_scale_mort_infant_slow_progressor'] = 16
-        params['weibull_shape_mort_infant_slow_progressor'] = 2.7
-        params['weibull_shape_mort_adult'] = 2
-        params['proportion_high_sexual_risk_male'] = 0.0913
-        params['proportion_high_sexual_risk_female'] = 0.0095
-        params['proportion_female_sex_workers'] = 0.0069
-        params['rr_HIV_high_sexual_risk'] = 2
-        params['rr_HIV_high_sexual_risk_fsw'] = 5
-        params['proportion_on_ART_infectious'] = 0.2
-        params['beta'] = 3.5  # dummy value
-        params['irr_hiv_f'] = 1.35
-        params['prob_mtct'] = 0.2
-        params['rr_circumcision'] = 0.6
-        params['rr_behaviour_change'] = 0.5
-        params['rel_infectiousness_acute'] = 26
-        params['rel_infectiousness_late'] = 7
+        params['param_list'] = pd.read_excel(self.workbook_path,
+                                                           sheet_name='parameters')
+        self.param_list.set_index("Parameter", inplace=True)
 
+        params['prob_infant_fast_progressor'] = self.param_list.loc['prob_infant_fast_progressor'].values
+        params['infant_progression_category'] = self.param_list.loc['infant_progression_category'].values
+        params['exp_rate_mort_infant_fast_progressor'] = \
+            self.param_list.loc['exp_rate_mort_infant_fast_progressor', 'Value1']
+        params['weibull_scale_mort_infant_slow_progressor'] = \
+            self.param_list.loc['weibull_scale_mort_infant_slow_progressor', 'Value1']
+        params['weibull_shape_mort_infant_slow_progressor'] = \
+            self.param_list.loc['weibull_shape_mort_infant_slow_progressor', 'Value1']
+        params['weibull_shape_mort_adult'] = \
+            self.param_list.loc['weibull_shape_mort_adult', 'Value1']
+        params['proportion_high_sexual_risk_male'] = \
+            self.param_list.loc['proportion_high_sexual_risk_male', 'Value1']
+        params['proportion_high_sexual_risk_female'] = \
+            self.param_list.loc['proportion_high_sexual_risk_female', 'Value1']
+        params['proportion_female_sex_workers'] = \
+            self.param_list.loc['proportion_female_sex_workers', 'Value1']
+        params['rr_HIV_high_sexual_risk'] = \
+            self.param_list.loc['rr_HIV_high_sexual_risk', 'Value1']
+        params['rr_HIV_high_sexual_risk_fsw'] = \
+            self.param_list.loc['rr_HIV_high_sexual_risk_fsw', 'Value1']
+        params['proportion_on_ART_infectious'] = \
+            self.param_list.loc['proportion_on_ART_infectious', 'Value1']
+        params['beta'] = \
+            self.param_list.loc['beta', 'Value1']
+        params['irr_hiv_f'] = \
+            self.param_list.loc['irr_hiv_f', 'Value1']
+        params['prob_mtct'] = \
+            self.param_list.loc['prob_mtct', 'Value1']
+        params['rr_circumcision'] = \
+            self.param_list.loc['rr_circumcision', 'Value1']
+        params['rr_behaviour_change'] = \
+            self.param_list.loc['rr_behaviour_change', 'Value1']
+        params['rel_infectiousness_acute'] = \
+            self.param_list.loc['rel_infectiousness_acute', 'Value1']
+        params['rel_infectiousness_late'] = \
+            self.param_list.loc['rel_infectiousness_late', 'Value1']
+
+        # print(self.param_list.head())
+        # print(params['infant_progression_category'])
+        # print(params['prob_infant_fast_progressor'])
+        # print(params['exp_rate_mort_infant_fast_progressor'])
 
         self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
                                                            sheet_name=None)
@@ -124,7 +146,6 @@ class hiv(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-
         df = population.props
 
         df['has_hiv'] = False
@@ -528,50 +549,50 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # sum how many untreated in each stage of infection
         acute = len(
             df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (time_inf < 3)])
-        print('acute:', acute)
+        # print('acute:', acute)
 
         chronic = len(
             df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (time_inf >= 3)
                          & (time_before_death >= 19)])
-        print('chronic:', chronic)
+        # print('chronic:', chronic)
 
         late = len(df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (
                 time_before_death >= 10)
                                 & (time_before_death < 19)])
-        print('late:', late)
+        # print('late:', late)
 
         end = len(df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & ~df_age.on_art & (
                 time_before_death < 10)])
-        print('end:', end)  # no transmission during end stage
+        # print('end:', end)  # no transmission during end stage
 
         # if early treated, use same relative infectivity as untreated
         acute_early_treated = len(
             df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & time_inf < 3 & (
                     time_on_treatment < 3)])
-        print('acute_early_treated:', acute_early_treated)
+        # print('acute_early_treated:', acute_early_treated)
 
         chronic_early_treated = len(
             df_age.index[df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_inf >= 3)
                          & (time_before_death >= 19) & (time_on_treatment < 3)])
-        print('chronic_early_treated:', chronic_early_treated)
+        # print('chronic_early_treated:', chronic_early_treated)
 
         late_early_treated = len(
             df_age.index[
                 df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_before_death >= 10)
                 & (time_before_death < 19) & (time_on_treatment < 3)])
-        print('late_early_treated:', late_early_treated)
+        # print('late_early_treated:', late_early_treated)
 
         end_early_treated = len(df_age.index[
                                     df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (
                                             time_before_death < 10) &
                                     (time_on_treatment < 3)])
-        print('end_early_treated:', end_early_treated)  # no transmission during end stage
+        # print('end_early_treated:', end_early_treated)  # no transmission during end stage
 
         # after 3 months of treatment
         treated = len(
             df_age.index[
                 df_age.has_hiv & (df_age.years >= 15) & df_age.is_alive & df_age.on_art & (time_on_treatment >= 3)])
-        print('treated:', treated)
+        # print('treated:', treated)
 
 
         # calculate force of infection
@@ -582,7 +603,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         total_pop = len(df_age[(df_age.years >= 15) & df_age.is_alive])
         foi = params['beta'] * infectious_term / total_pop
-        print('foi:', foi)
+        # print('foi:', foi)
 
         # TODO: reduce force of infection if behaviour change available
         # TODO: reduce FOI due to condom use / male circumcision
