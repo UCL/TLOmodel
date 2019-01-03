@@ -331,7 +331,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         mother.is_pregnant = False
 
         # Log the birth:
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s:%s %s', self.sim.strdate, self.__class__.__name__,
                     mother.age_years, 0)
 
 
@@ -355,7 +355,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         mort_schedule = self.module.parameters['mortality_schedule']
 
         # get the subset of mortality rates for this year.
-        mort_schedule = mort_schedule.loc[mort_schedule.year == self.sim.date.year]
+        mort_schedule = mort_schedule.loc[mort_schedule.year == self.sim.date.year].copy()
 
         # create new variable that will align with population.sex
         mort_schedule['sex'] = np.where(mort_schedule['gender'] == 'male', 'M', 'F')
@@ -419,7 +419,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                      "is now officially dead and has died of %s", individual, self.cause)
 
         # Log the death
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s:%s %s', self.sim.strdate, self.__class__.__name__,
                     individual.age_years, self.cause)
 
 
@@ -436,21 +436,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
                     'Total', sum(sex_count))
 
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
                     'SexM', sex_count['M'])
 
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
                     'SexF', sex_count['F'])
 
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
                     'AgesM', ','.join(map(str, m_age_counts)))
 
-        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
                     'AgesF', ','.join(map(str, f_age_counts)))
 
