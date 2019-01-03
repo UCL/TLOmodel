@@ -43,6 +43,10 @@ class Simulation:
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
 
+    @property
+    def strdate(self):
+        return self.date.date()
+
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
 
