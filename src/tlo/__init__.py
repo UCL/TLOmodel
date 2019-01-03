@@ -13,7 +13,7 @@ from pandas import Timestamp as Date  # noqa
 from pandas.tseries.offsets import DateOffset  # noqa
 
 from .core import Module, Parameter, Property, Types  # noqa
-from .population import Person, Population  # noqa
+from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
 logging.basicConfig(level=logging.DEBUG)
