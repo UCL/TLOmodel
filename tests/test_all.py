@@ -3,7 +3,8 @@ import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system, health_system_tb, tb, male_circumcision, hiv_behaviour_change
+from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system_hiv, health_system_tb, tb, \
+    male_circumcision, hiv_behaviour_change
 
 
 
@@ -37,7 +38,7 @@ def simulation():
     core_module = demography.Demography(workbook_path=path_dem)
     hiv_module = hiv_infection.hiv(workbook_path=path_hiv)
     art_module = antiretroviral_therapy.art(workbook_path=path_hs)
-    hs_module = health_system.health_system(workbook_path=path_hs)
+    hs_module = health_system_hiv.health_system(workbook_path=path_hs)
     circumcision_module = male_circumcision.male_circumcision()
     behavioural_module = hiv_behaviour_change.BehaviourChange()
     tb_module = tb.tb_baseline(workbook_path=path_tb)
