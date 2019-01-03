@@ -70,43 +70,52 @@ if __name__ == '__main__':
 #  TODO: use the store to calculate scheduled hiv deaths and deaths actually occurring
 #  gap will be deaths averted due to ART
 
-# # Make a nice plot
-# hiv_output = simulation.modules['hiv'].store['Total_HIV']
-# time = simulation.modules['hiv'].store['Time']
-# hiv_deaths = simulation.modules['hiv'].store['HIV_scheduled_deaths']
-#
-# number_tested = simulation.modules['health_system'].store['Number_tested']
-# number_treated = simulation.modules['health_system'].store['Number_treated']
-# testing_dates = simulation.modules['health_system'].store['Time']
-#
-# deaths_art = simulation.modules['art'].store['Number_dead_art']
-# time_deaths_art = simulation.modules['art'].store['Time']
-#
-# time_circum = simulation.modules['male_circumcision'].store['Time']
-# prop_circum = simulation.modules['male_circumcision'].store['proportion_circumcised']
-#
-# time_behav = simulation.modules['BehaviourChange'].store['Time']
-# prop_counselled = simulation.modules['BehaviourChange'].store['Proportion_hiv_counselled']
-#
-# active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
-# coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
-# tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
-# time_tb_death = simulation.modules['tb_baseline'].store['Time_death_TB']
-# time2 = simulation.modules['tb_baseline'].store['Time']
-#
-# time_test_tb = simulation.modules['health_system_tb'].store['Time']
-# tb_tests = simulation.modules['health_system_tb'].store['Number_tested_tb']
-#
-#
-# plt.figure(1)
-# ax = plt.subplot(221)  # numrows, numcols, fignum
-# plt.plot(time, hiv_output)
-# plt.plot(time, hiv_deaths)
-# plt.plot(time_deaths_art, deaths_art)
-# plt.legend(['HIV', 'AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
-# ax.set_xticklabels([])
-# plt.ylabel('Number of cases')
-#
+# Make a nice plot
+hiv_output = simulation.modules['hiv'].store['Total_HIV']
+time = simulation.modules['hiv'].store['Time']
+hiv_deaths = simulation.modules['hiv'].store['HIV_scheduled_deaths']
+
+number_tested = simulation.modules['health_system'].store['Number_tested']
+number_treated = simulation.modules['health_system'].store['Number_treated']
+testing_dates = simulation.modules['health_system'].store['Time']
+
+deaths_art = simulation.modules['art'].store['Number_dead_art']
+time_deaths_art = simulation.modules['art'].store['Time']
+
+time_circum = simulation.modules['male_circumcision'].store['Time']
+prop_circum = simulation.modules['male_circumcision'].store['proportion_circumcised']
+
+time_behav = simulation.modules['BehaviourChange'].store['Time']
+prop_counselled = simulation.modules['BehaviourChange'].store['Proportion_hiv_counselled']
+
+active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
+coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
+tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
+time_tb_death = simulation.modules['tb_baseline'].store['Time_death_TB']
+time2 = simulation.modules['tb_baseline'].store['Time']
+
+time_test_tb = simulation.modules['health_system_tb'].store['Time']
+tb_tests = simulation.modules['health_system_tb'].store['Number_tested_tb']
+
+
+plt.figure(1)
+
+# hiv cases
+ax = plt.subplot(221)  # numrows, numcols, fignum
+plt.plot(time, hiv_output)
+plt.legend(['HIV'], loc='upper right')
+ax.set_xticklabels([])
+plt.ylabel('Number of cases')
+
+# hiv deaths
+ax = plt.subplot(222)  # numrows, numcols, fignum
+plt.plot(time, hiv_deaths)
+plt.plot(time_deaths_art, deaths_art)
+plt.legend(['AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
+ax.set_xticklabels([])
+plt.ylabel('Number of death')
+
+# tb cases
 # ax = plt.subplot(222)
 # plt.plot(time2, active_tb)
 # plt.plot(time_tb_death, tb_deaths)
@@ -114,24 +123,26 @@ if __name__ == '__main__':
 # plt.legend(['TB', 'TB deaths'], loc='upper right')
 # ax.set_xticklabels([])
 # plt.ylabel('Number of cases')
-#
-# plt.subplot(223)
-# plt.plot(testing_dates, number_tested)
-# plt.plot(time_test_tb, tb_tests)
-# plt.plot(testing_dates, number_treated)
-# plt.ylim(bottom=0)
-# plt.legend(['HIV testing', 'TB testing', 'on ART'], loc='upper right')
-# plt.xticks(rotation=45)
-# plt.ylabel('Number of tests')
-#
-# plt.subplot(224)
-# plt.plot(time_circum, prop_circum)
-# plt.plot(time_behav, prop_counselled)
-# plt.ylim(bottom=0)
-# plt.legend(['circumcised', 'counselled'], loc='upper right')
-# plt.xticks(rotation=45)
-# plt.ylabel('Proportion')
-#
-# plt.show()
-#
+
+# testing hiv/tb
+plt.subplot(223)
+plt.plot(testing_dates, number_tested)
+plt.plot(time_test_tb, tb_tests)
+plt.plot(testing_dates, number_treated)
+plt.ylim(bottom=0)
+plt.legend(['HIV testing', 'TB testing', 'on ART'], loc='upper right')
+plt.xticks(rotation=45)
+plt.ylabel('Number of tests')
+
+# counselling / circumcised
+plt.subplot(224)
+plt.plot(time_circum, prop_circum)
+plt.plot(time_behav, prop_counselled)
+plt.ylim(bottom=0)
+plt.legend(['circumcised', 'counselled'], loc='upper right')
+plt.xticks(rotation=45)
+plt.ylabel('Proportion')
+
+plt.show()
+
 # print(simulation.modules['hiv'].store_DeathsLog['DeathEvent_Time'])
