@@ -170,7 +170,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
         Assuming the person is still alive, we ask the simulation to create a new offspring.
 
-        :param person: the person the event happens to, i.e. the mother giving birth
+        :param mother: the person the event happens to, i.e. the mother giving birth
         """
         if mother.is_alive:
-            self.sim.do_birth
+            self.sim.do_birth(mother)
