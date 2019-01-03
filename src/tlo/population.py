@@ -48,7 +48,6 @@ class Population:
                 props[prop_name] = prop.create_series(prop_name, size)
         return props
 
-    @property
     def do_birth(self):
         """Create a new person within the population.
 
