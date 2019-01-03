@@ -13,14 +13,14 @@ class male_circumcision(Module):
     male circumcision, without health system links
     """
 
-    def __init__(self, name=None):
+    def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
+        self.workbook_path = workbook_path
         self.store = {'Time': [], 'proportion_circumcised': [], 'recently_circumcised': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'p_circumcision': Parameter(Types.REAL, 'Probability that an individual gets circumcised'),
         'initial_circumcision': Parameter(Types.REAL, 'Prevalence of circumcision in the population at baseline'),
     }
 
@@ -41,8 +41,13 @@ class male_circumcision(Module):
           Typically modules would read a particular file within here.
         """
         params = self.parameters
-        params['p_circumcision'] = 0.05
-        params['initial_circumcision'] = 0.1
+        params['initial_circumcision'] = 0.23
+
+        params['param_list'] = pd.read_excel(self.workbook_path,
+                                             sheet_name='circumcision')
+        print(self.param_list.head())
+        params['number_circumcisions'] = self.param_list.loc[self.param_list.year == 2014, 'target']
+        print(params['number_circumcisions'])
 
     def initialise_population(self, population):
         df = population.props
@@ -91,7 +96,7 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        self.p_infection = module.parameters['p_circumcision']
+        self.p_infection = module.parameters['number_circumcisions']
 
     def apply(self, population):
         params = self.module.parameters
@@ -99,12 +104,25 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
+        # estimate probability of circumcision using government targets
+        eligible_pop = len(df_age[(df_age.years >= 15) & df_age.is_alive & (
+            df_age.sex == 'M') & ~df_age.is_circumcised])  # all uncircumcised men >=15 years
+
+        # TODO: the target population has to be scaled to reflect the smaller test population
+        target = params['number_circumcisions']  # keep 2014 numbers
+        prob_circumcision = target / eligible_pop
+        print(prob_circumcision)
+
+
         # get a list of random numbers between 0 and 1 for the whole population
+        size = len(df_age) #[~df.is_circumcised & df.is_alive & (df_age.years >= 15) & (df_age.sex == 'M')])
+        print(size)
         random_draw = self.sim.rng.random_sample(size=len(df_age))
 
         # probability of circumcision
         circumcision_index = df_age.index[
-            (random_draw < params['p_circumcision']) & ~df.is_circumcised & df.is_alive & (df_age.years >= 15)]
+            (random_draw < prob_circumcision) & ~df.is_circumcised & df.is_alive & (df_age.years >= 15) & (
+                    df_age.sex == 'M')]
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
 
@@ -123,7 +141,7 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         circumcised_total = len(df_age[df_age.is_alive & (df_age.years >= 15) & df_age.is_circumcised])
-        proportion_circumcised = circumcised_total / len(df[df.is_alive & (df_age.years >= 15)])
+        proportion_circumcised = circumcised_total / len(df[df.is_alive & (df_age.years >= 15) & (df_age.sex == 'M')])
 
         mask = (df['date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
         circumcised_in_last_timestep = mask.sum()
