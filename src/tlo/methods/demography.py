@@ -15,7 +15,7 @@ from tlo import Module, Parameter, Property, Types, DateOffset
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -64,56 +64,6 @@ class Demography(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
-        self.store_PopulationStats = {
-            'Time': [],
-            'Population_Total': [],
-            'Population_Men': [],
-            'Population_Men_0-4': [],
-            'Population_Men_5-9': [],
-            'Population_Men_10-14': [],
-            'Population_Men_15-19': [],
-            'Population_Men_20-24': [],
-            'Population_Men_25-29': [],
-            'Population_Men_30-34': [],
-            'Population_Men_35-39': [],
-            'Population_Men_40-44': [],
-            'Population_Men_45-49': [],
-            'Population_Men_50-54': [],
-            'Population_Men_55-59': [],
-            'Population_Men_60-64': [],
-            'Population_Men_65-69': [],
-            'Population_Men_70-74': [],
-            'Population_Men_75-79': [],
-            'Population_Men_80-84': [],
-            'Population_Men_85-': [],
-            'Population_Women': [],
-            'Population_Women_0-4': [],
-            'Population_Women_5-9': [],
-            'Population_Women_10-14': [],
-            'Population_Women_15-19': [],
-            'Population_Women_20-24': [],
-            'Population_Women_25-29': [],
-            'Population_Women_30-34': [],
-            'Population_Women_35-39': [],
-            'Population_Women_40-44': [],
-            'Population_Women_45-49': [],
-            'Population_Women_50-54': [],
-            'Population_Women_55-59': [],
-            'Population_Women_60-64': [],
-            'Population_Women_65-69': [],
-            'Population_Women_70-74': [],
-            'Population_Women_75-79': [],
-            'Population_Women_80-84': [],
-            'Population_Women_85-': []}
-
-        self.store_EventsLog = {
-            'DeathEvent_Time': [],
-            'DeathEvent_Age': [],
-            'DeathEvent_Cause': [],
-            'BirthEvent_Time': [],
-            'BirthEvent_AgeOfMother': [],
-            'BirthEvent_Outcome': []}
-
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
@@ -381,9 +331,8 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         mother.is_pregnant = False
 
         # Log the birth:
-        self.module.store_EventsLog['BirthEvent_Time'].append(self.sim.date)
-        self.module.store_EventsLog['BirthEvent_AgeOfMother'].append(mother.age_years)
-        self.module.store_EventsLog['BirthEvent_Outcome'].append(0)
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    mother.age_years, 0)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
@@ -470,9 +419,8 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                      "is now officially dead and has died of %s", individual, self.cause)
 
         # Log the death
-        self.module.store_EventsLog['DeathEvent_Time'].append(self.sim.date)
-        self.module.store_EventsLog['DeathEvent_Age'].append(individual.age_years)
-        self.module.store_EventsLog['DeathEvent_Cause'].append(self.cause)
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    individual.age_years, self.cause)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -484,85 +432,25 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
         df = population.props
-        age_range = df.age_range
-        age = df.age_years
-        
-        # 0-4
-        # 5-9
-        # 10-14
-        # 15-19
-        # 20-24
-        # 25-29
-        # 30-34
-        # 35-39
-        # 40-44
-        # 45-49
-        # 50-54
-        # 55-59
-        # 60-64
-        # 65-69
-        # 70-74
-        # 75-79
-        # 80-84
-        # 85-89
-        # 90-94
-        # 95-99
-        # 100+
 
-        # TODO: to count use: df.age_range.value_counts()
+        sex_count = df[df.is_alive].groupby('sex').size()
 
-        num_women = ((df.sex == 'F') & df.is_alive).sum()
-        num_men = ((df.sex == 'M') & df.is_alive).sum()
-        num_total = df.is_alive.sum()
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    'Total', sum(sex_count))
 
-        logger.debug('>>>> %s - Demography: {Num_Women: %d; Num_Men: %d; Num_Total: %d}',
-                     self.sim.date,
-                     num_women, num_men, num_total)
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    'SexM', sex_count['M'])
 
-        ps = self.module.store_PopulationStats
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    'SexF', sex_count['F'])
 
-        ps['Time'].append(self.sim.date)
-        ps['Population_Total'].append(df.is_alive.sum())
-        male_alive = (df.sex == 'M') & df.is_alive
-        ps['Population_Men'].append(male_alive.sum())
-        ps['Population_Men_0-4'].append((male_alive & (age_range == '0-4')).sum())
-        ps['Population_Men_5-9'].append((male_alive & (age_range == '5-9')).sum())
-        ps['Population_Men_10-14'].append((male_alive & (age_range == '10-14')).sum())
-        ps['Population_Men_15-19'].append((male_alive & (age_range == '15-19')).sum())
-        ps['Population_Men_20-24'].append((male_alive & (age_range == '20-24')).sum())
-        ps['Population_Men_25-29'].append((male_alive & (age_range == '25-29')).sum())
-        ps['Population_Men_30-34'].append((male_alive & (age_range == '30-34')).sum())
-        ps['Population_Men_35-39'].append((male_alive & (age_range == '35-39')).sum())
-        ps['Population_Men_40-44'].append((male_alive & (age_range == '40-44')).sum())
-        ps['Population_Men_45-49'].append((male_alive & (age_range == '45-49')).sum())
-        ps['Population_Men_50-54'].append((male_alive & (age_range == '50-54')).sum())
-        ps['Population_Men_55-59'].append((male_alive & (age_range == '55-59')).sum())
-        ps['Population_Men_60-64'].append((male_alive & (age_range == '60-64')).sum())
-        ps['Population_Men_65-69'].append((male_alive & (age_range == '65-69')).sum())
-        ps['Population_Men_70-74'].append((male_alive & (age_range == '70-74')).sum())
-        ps['Population_Men_75-79'].append((male_alive & (age_range == '75-79')).sum())
-        ps['Population_Men_80-84'].append((male_alive & (age_range == '80-84')).sum())
-        ps['Population_Men_85-'].append((male_alive & (age >= 85)).sum())
+        m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
+        f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        female_alive = (df.sex == 'F') & df.is_alive
-        ps['Population_Women'].append(female_alive.sum())
-        ps['Population_Women_0-4'].append((female_alive & (age_range == '0-4')).sum())
-        ps['Population_Women_5-9'].append((female_alive & (age_range == '5-9')).sum())
-        ps['Population_Women_10-14'].append((female_alive & (age_range == '10-14')).sum())
-        ps['Population_Women_15-19'].append((female_alive & (age_range == '15-19')).sum())
-        ps['Population_Women_20-24'].append((female_alive & (age_range == '20-24')).sum())
-        ps['Population_Women_25-29'].append((female_alive & (age_range == '25-29')).sum())
-        ps['Population_Women_30-34'].append((female_alive & (age_range == '30-34')).sum())
-        ps['Population_Women_35-39'].append((female_alive & (age_range == '35-39')).sum())
-        ps['Population_Women_40-44'].append((female_alive & (age_range == '40-44')).sum())
-        ps['Population_Women_45-49'].append((female_alive & (age_range == '45-49')).sum())
-        ps['Population_Women_50-54'].append((female_alive & (age_range == '50-54')).sum())
-        ps['Population_Women_55-59'].append((female_alive & (age_range == '55-59')).sum())
-        ps['Population_Women_60-64'].append((female_alive & (age_range == '60-64')).sum())
-        ps['Population_Women_65-69'].append((female_alive & (age_range == '65-69')).sum())
-        ps['Population_Women_70-74'].append((female_alive & (age_range == '70-74')).sum())
-        ps['Population_Women_75-79'].append((female_alive & (age_range == '75-79')).sum())
-        ps['Population_Women_80-84'].append((female_alive & (age_range == '80-84')).sum())
-        ps['Population_Women_85-'].append((female_alive & (age >= 85)).sum())
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    'AgesM', ','.join(map(str, m_age_counts)))
+
+        logger.info('%s %s %s %s', self.sim.strdate, self.__class__.__name__,
+                    'AgesF', ','.join(map(str, f_age_counts)))
+
