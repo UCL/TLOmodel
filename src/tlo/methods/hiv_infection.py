@@ -100,7 +100,7 @@ class hiv(Module):
         params['rr_HIV_high_sexual_risk'] = 2
         params['rr_HIV_high_sexual_risk_fsw'] = 5
         params['proportion_on_ART_infectious'] = 0.2
-        params['beta'] = 0.9  # dummy value
+        params['beta'] = 3.5  # dummy value
         params['irr_hiv_f'] = 1.35
         params['prob_mtct'] = 0.2
         params['rr_circumcision'] = 0.6
@@ -574,7 +574,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         print('treated:', treated)
 
 
-        # calculate force of infection, modify for treated when available
+        # calculate force of infection
         infectious_term = ((acute + acute_early_treated) * params['rel_infectiousness_acute']) + \
                           chronic + chronic_early_treated +\
                           ((late + late_early_treated) * params['rel_infectiousness_late']) + \
@@ -586,21 +586,6 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: reduce force of infection if behaviour change available
         # TODO: reduce FOI due to condom use / male circumcision
-        # TODO: output FOI to parse to infection_event
-
-        # calculate expected number of new infections in >=15 years only
-        # new_infections = int(round(foi * len(df.index[~df.has_hiv & (df.age.years >= 15) & df.is_alive])))
-        # # print('number new hiv infections: ', new_infections)
-        #
-        # # allocate expected number of new infections using weights from irr_age and sexual risk group
-        # df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
-        # # print('df: ', df_with_irr.head(30))
-        # combined_irr = df_with_irr.loc[~df_with_irr.has_hiv, 'comb_irr'] * df_with_irr.loc[
-        #     ~df_with_irr.has_hiv, 'sexual_risk_group']
-        # # print(combined_irr)
-        # # weights are automatically scaled so no need to normalise
-        # new_cases = df_with_irr.loc[~df_with_irr.has_hiv].sample(n=new_infections, replace=False,
-        #                                                          weights=combined_irr).index
 
         df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
         # print('df: ', df_with_irr.head(30))

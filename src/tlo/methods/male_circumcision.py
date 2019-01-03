@@ -93,14 +93,16 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         now = self.sim.date
         df = population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.sim.rng.random_sample(size=len(df_age))
 
         # probability of circumcision
-        circumcision_index = df.index[(random_draw < params['p_circumcision']) & ~df.is_circumcised & df.is_alive]
+        circumcision_index = df_age.index[(random_draw < params['p_circumcision']) & ~df.is_circumcised & df.is_alive  & (df_age.years >= 15)]
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
+
 
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -114,9 +116,10 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        circumcised_total = len(df[df.is_alive & df.is_circumcised])
-        proportion_circumcised = circumcised_total / len(df[df.is_alive])
+        circumcised_total = len(df_age[df_age.is_alive & (df_age.years >= 15) & df_age.is_circumcised])
+        proportion_circumcised = circumcised_total / len(df[df.is_alive & (df_age.years >= 15)])
 
         mask = (df['date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
         circumcised_in_last_timestep = mask.sum()
@@ -124,3 +127,4 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Time'].append(self.sim.date)
         self.module.store['proportion_circumcised'].append(proportion_circumcised)
         self.module.store['recently_circumcised'].append(circumcised_in_last_timestep)
+
