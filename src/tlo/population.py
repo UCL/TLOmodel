@@ -6,6 +6,7 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Person:
     """An individual within the population.
 
