@@ -179,4 +179,3 @@ class HivArtDeathEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Number_dead_art'].append(total_deaths)
         self.module.store['Time'].append(self.sim.date)
 
-# TODO: cancel the scheduled hiv death if now on art

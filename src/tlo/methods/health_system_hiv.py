@@ -1,10 +1,11 @@
 """
 A skeleton template for disease methods.
 """
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 
 class health_system(Module):
@@ -19,6 +20,8 @@ class health_system(Module):
 
     PARAMETERS = {
         'testing_coverage': Parameter(Types.REAL, 'proportion of population tested'),
+        'high_risk_testing_coverage': Parameter(Types.REAL, 'proportion of high risk tested'),
+        'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
         'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage')
     }
 
@@ -33,12 +36,18 @@ class health_system(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
-        params['testing_coverage'] = 0.2  # dummy value
-        params['art_coverage'] = 0.5  # dummy value
+        params['param_list'] = pd.read_excel(self.workbook_path,
+                                                           sheet_name='parameters')
+
+        self.param_list.set_index("Parameter", inplace=True)
+
+        params['testing_coverage'] = self.param_list.loc['testing_coverage', 'Value1']
+        params['high_risk_testing_coverage'] = self.param_list.loc['high_risk_testing_coverage', 'Value1']
+        params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']
+        params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                        sheet_name='coverage')
-
 
 
     def initialise_population(self, population):
@@ -136,17 +145,52 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
-        # probability of HIV testing
-        #  TODO: allow HIV- to be repeat tested
-        testing_index = df.index[(random_draw < params['testing_coverage']) & ~df.ever_tested & df.is_alive]
+        # probability of HIV testing, once diagnosed assume no further testing
+        testing_index = df.index[(random_draw < params['testing_coverage']) & ~df.hiv_diagnosed & df.is_alive]
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
+
+        # probability of HIV testing in high risk groups (sexual_risk_group = high/fsw)
+        high_risk_testing_index = df.index[(random_draw < params['high_risk_testing_coverage']) &
+                                           ~df.hiv_diagnosed & df.is_alive & (df.sexual_risk_group != 'low')]
+        df.loc[high_risk_testing_index, 'ever_tested'] = True
+        df.loc[high_risk_testing_index, 'date_tested'] = now
 
         diagnosed_index = df.index[df.ever_tested & df.is_alive & df.has_hiv]
         # print('testing_index: ', testing_index)
         # print('diagnosed_index: ', testing_diagnosed_index)
 
         df.loc[diagnosed_index, 'hiv_diagnosed'] = True
+
+        # TODO: stratify infant testing (at birth?) and adult testing
+
+
+class IndividualTesting(Event, IndividualScopeEventMixin):
+    """ allows hiv tests for individuals triggered by certain events
+    e.g. pregnancy or tb diagnosis
+    """
+
+    def __init__(self, module, individual):
+        super().__init__(module, person=individual)
+
+    def apply(self, individual):
+
+        params = self.module.parameters
+
+        if individual.is_alive & ~individual.hiv_diagnosed:
+
+            # probability of HIV testing
+            individual.ever_tested = np.random.choice([True, False], size=1, p=[params['testing_prob_individual'],
+                                                                                1 - params['testing_prob_individual']])
+
+            individual.loc[individual.ever_tested, 'date_tested'] = self.sim.date
+
+            individual.loc[individual.ever_tested & individual.is_alive & individual.has_hiv, 'hiv_diagnosed'] = True
+
+
+
+
+
 
 
 # TODO: decide how to define probability of treatment / rates of ART initiation
