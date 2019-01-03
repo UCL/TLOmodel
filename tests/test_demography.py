@@ -16,7 +16,6 @@ def simulation():
     core_module = demography.Demography(workbook_path=path)
     sim.register(core_module)
     sim.seed_rngs(0)
-    simulation.verboseoutput = False
     return sim
 
 
