@@ -45,18 +45,22 @@ class male_circumcision(Module):
         params['initial_circumcision'] = 0.1
 
     def initialise_population(self, population):
-        df = population.props  # a shortcut to the dataframe storing data for individuals
+        df = population.props
 
         df['is_circumcised'] = False  # default: no individuals circumcised
         df['date_circumcised'] = pd.NaT  # default: not a time
 
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
         # randomly selected some individuals as circumcised
         initial_circumcised = self.parameters['initial_circumcision']
-        df.loc[df.is_alive, 'is_circumcised'] = np.random.choice([True, False], size=len(df[df.is_alive]),
-                                                                 p=[initial_circumcised, 1 - initial_circumcised])
+
+        df_age.loc[df_age.is_alive & (df_age.years >= 15), 'is_circumcised'] = \
+            np.random.choice([True, False], size=len(df_age[df_age.is_alive & (df_age.years >= 15)]),
+                             p=[initial_circumcised, 1 - initial_circumcised])
 
         # set the properties of circumcised individuals
-        df.loc[df.is_circumcised, 'date_infected'] = self.sim.date  # TODO: perhaps change to DOB
+        df.loc[df.is_circumcised, 'date_circumcised'] = self.sim.date
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -99,10 +103,10 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.sim.rng.random_sample(size=len(df_age))
 
         # probability of circumcision
-        circumcision_index = df_age.index[(random_draw < params['p_circumcision']) & ~df.is_circumcised & df.is_alive  & (df_age.years >= 15)]
+        circumcision_index = df_age.index[
+            (random_draw < params['p_circumcision']) & ~df.is_circumcised & df.is_alive & (df_age.years >= 15)]
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
-
 
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -127,4 +131,3 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Time'].append(self.sim.date)
         self.module.store['proportion_circumcised'].append(proportion_circumcised)
         self.module.store['recently_circumcised'].append(circumcised_in_last_timestep)
-
