@@ -217,6 +217,9 @@ class Demography(Module):
         df.at[child_id, 'age_years'] = 0
         df.at[child_id, 'age_range'] = self.AGE_RANGE_LOOKUP[0]
 
+        # Reset the mother's is_pregnant status showing that she is no longer pregnant
+        df.at[mother_id, 'is_pregnant'] = False
+
         # Log the birth:
         logger.info('%s:%s:mother delivered at age %s %s',
                     self.sim.strdate, self.__class__.__name__,
@@ -330,14 +333,8 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
 
-        df = self.sim.population.props
-
-        if df.at[mother_id, 'is_alive']:
+        if self.sim.population.props.at[mother_id, 'is_alive']:
             self.sim.do_birth(mother_id)
-            logger.info('going to update mother_id is_pregnant status %s', df.at[mother_id, 'is_pregnant'])
-            # Reset the mother's is_pregnant status showing that she is no longer pregnant
-            df.at[mother_id, 'is_pregnant'] = False
-            logger.info('updated mother_id is_pregnant status %s', df.at[mother_id, 'is_pregnant'])
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
