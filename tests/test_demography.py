@@ -22,7 +22,7 @@ def simulation():
     return sim
 
 
-def test_demography(simulation):
+def test_demography_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
@@ -37,10 +37,18 @@ def test_demography(simulation):
     assert df.sex.dtype == 'category'
 
 
+def test_mothers_female(simulation):
+    # check all mothers are female
+    df = simulation.population.props
+    mothers = df.loc[df.mother_id >= 0, 'mother_id']
+    is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
+    assert is_female.all()
+
+
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
-    test_demography(simulation)
+    test_demography_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
 
