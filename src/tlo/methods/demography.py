@@ -140,9 +140,7 @@ class Demography(Module):
                                                      size=len(df),
                                                      p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
-        months = pd.Series(pd.to_timedelta(self.sim.rng.randint(low=0,
-                                                                high=12,
-                                                                size=len(df)),
+        months = pd.Series(pd.to_timedelta(self.sim.rng.randint(low=0, high=12, size=len(df)),
                                            unit='M',
                                            box=False))
 
@@ -267,7 +265,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
-        females = df.loc[subset, ['contraception', 'is_married', 'is_pregnant', 'age_years']]
+        females = df.loc[subset, ['contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
         fertility_schedule = self.module.parameters['fertility_schedule']
@@ -361,6 +359,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         mort_sched = self.module.parameters['mortality_schedule']
 
         # round current year to closest year in spreadsheet
+        # TODO: currently rounding to the closest 5-year entry - fix or remain?
         closest_year = int(round(self.sim.date.year / 5) * 5)
 
         # get the subset of mortality rates for this year.
@@ -375,6 +374,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         alive = df.loc[df.is_alive, ['sex', 'age_years']].copy()
 
         # --------
+        # TODO: mortality schedule worksheet should be updated to use the property date ranges
         # add age-groups to each dataframe (this to be done by the population object later)
         # NB... the age-groups here are -1:<0 year-olds; 0:1-4 yearolds; 1:5-9 yearolds; etc..)
         alive['agegrp'] = -99
