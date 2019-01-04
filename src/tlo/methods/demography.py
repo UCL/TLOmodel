@@ -333,7 +333,10 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
         logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
 
-        if self.sim.population.props.at[mother_id, 'is_alive']:
+        df = self.sim.population.props
+
+        # If the mother is alive and still pregnant
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
 
 
