@@ -266,7 +266,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
         females = df.loc[subset, ['contraception', 'is_married', 'is_pregnant', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
@@ -281,12 +281,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                                               right_on=['age', 'cmeth'],
                                               how='inner').set_index('person')
         assert len(females) == len_before_merge
-
-        # clean up items that didn't merge (those with ages not referenced in the fert_schedule sheet)
-        females = females[females.basefert_dhs.notna()]
-
-        # zero-out risk of pregnancy if already pregnant
-        females.loc[females.is_pregnant, 'basefert_dhs'] = 0
 
         # flipping the coin to determine if this woman will become pregnant
         newly_pregnant = (self.sim.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
