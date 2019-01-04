@@ -19,7 +19,7 @@ class Population:
         A pandas DataFrame with the properties of all individuals as columns.
     """
 
-    __slots__ = ('props', 'sim', 'initial_size')
+    __slots__ = ('props', 'sim', 'initial_size', 'new_row')
 
     def __init__(self, sim, initial_size):
         """Create a new population.
@@ -33,9 +33,13 @@ class Population:
         """
         self.sim = sim
         self.initial_size = initial_size
+
         # Create empty property arrays
         self.props = self._create_props(initial_size)
         self.props.index.name = 'person'
+
+        # keep a copy of a new row, so we can quickly append as population grows
+        self.new_row = self.props[self.props.index == 0].copy()
 
     def _create_props(self, size):
         """Internal helper function to create a properties dataframe.
@@ -56,11 +60,10 @@ class Population:
         :return: id of the new person
         """
         new_index = len(self.props)
-        extra_props = self._create_props(1)
-        self.props = self.props.append(extra_props, ignore_index=True, sort=False)
-        self.props.index.name = 'person'
-
         logger.debug('do_birth:%s', new_index)
+
+        self.props = self.props.append(self.new_row.copy(), ignore_index=True, sort=False)
+        self.props.index.name = 'person'
 
         return new_index
 
