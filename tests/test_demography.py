@@ -9,11 +9,11 @@ path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE
 path = '/Users/tamuri/Documents/2018/thanzi/Demography_WorkingFile_Complete.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2050, 1, 1)
 popsize = 50
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
@@ -22,10 +22,12 @@ def simulation():
     return sim
 
 
-def test_demography_run(simulation):
+def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
+
+def test_dypes(simulation):
     # check types of columns
     df = simulation.population.props
     assert df.age_range.dtype == 'category'
@@ -38,6 +40,7 @@ def test_demography_run(simulation):
 
 
 def test_mothers_female(simulation):
+    print(simulation.date)
     # check all mothers are female
     df = simulation.population.props
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
@@ -48,7 +51,7 @@ def test_mothers_female(simulation):
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
-    test_demography_run(simulation)
+    test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
 
