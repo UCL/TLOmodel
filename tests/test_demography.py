@@ -34,13 +34,8 @@ def test_run(simulation):
 def test_dypes(simulation):
     # check types of columns
     df = simulation.population.props
-    assert df.age_range.dtype == 'category'
-    assert df.contraception.dtype == 'category'
-    assert df.date_of_birth.dtype == 'datetime64[ns]'
-    assert df.date_of_last_pregnancy.dtype == 'datetime64[ns]'
-    assert df.is_alive.dtype == 'bool'
-    assert df.mother_id.dtype == 'int64'
-    assert df.sex.dtype == 'category'
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
 
 def test_mothers_female(simulation):
