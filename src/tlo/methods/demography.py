@@ -156,11 +156,6 @@ class Demography(Module):
         df.is_pregnant = False
         df.date_of_last_pregnancy = pd.NaT
 
-        # assign that half the adult population is married (will be done in lifestyle module)
-        df.is_married = False  # TODO: Lifestyle module should look after married property
-        adults = (df.age_years >= 18)
-        df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5])
-
         # TODO: Lifestyle module should look after contraception property
         df.contraception.values[:] = 'not using'  # this will be ascribed by the lifestype module
 
@@ -168,6 +163,11 @@ class Demography(Module):
         df.age_exact_years = age_in_days / np.timedelta64(1, 'Y')
         df.age_years = df.age_exact_years.astype(int)
         df.age_range.values[:] = df.age_years.map(self.AGE_RANGE_LOOKUP).astype('category')
+
+        # assign that half the adult population is married (will be done in lifestyle module)
+        df.is_married = False  # TODO: Lifestyle module should look after married property
+        adults = (df.age_years >= 18)
+        df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
