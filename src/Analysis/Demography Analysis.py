@@ -1,13 +1,13 @@
 
-#%% Import Statements
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import datetime
 
-from tlo import Simulation, Date
-from tlo.methods import demography
+import matplotlib.pyplot as plt
+import numpy as np
+#%% Import Statements
+import pandas as pd
 
+from tlo import Date, Simulation
+from tlo.methods import demography
 
 #%% Run the Simulation
 path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file

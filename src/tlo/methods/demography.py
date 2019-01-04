@@ -4,15 +4,14 @@ The core demography module and its associated events.
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
-from collections import defaultdict
 import logging
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 
-from tlo import Date
-from tlo import Module, Parameter, Property, Types, DateOffset
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -275,7 +274,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
         females = females.reset_index().merge(fertility_schedule,
                                               left_on=['age_years', 'contraception'],
-                                              right_on=['age', 'cmeth'], how='left').set_index('person')
+                                              right_on=['age', 'cmeth'],
+                                              how='left').set_index('person')
 
         # clean up items that didn't merge (those with ages not referenced in the fert_schedule sheet)
         females = females[females.basefert_dhs.notna()]
@@ -300,13 +300,15 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            birth_date_of_child = self.sim.date + DateOffset(months=9) + DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
+            date_of_birth = self.sim.date + \
+                DateOffset(months=9) + \
+                DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
 
             # Schedule the Birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
-                                    birth_date_of_child)
+                                    date_of_birth)
 
-            logger.debug('birth booked for: %s', birth_date_of_child)
+            logger.debug('birth booked for: %s', date_of_birth)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -459,4 +461,3 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s:age_range_f:[ %s ]', self.sim.strdate,
                     ' '.join(map(str, f_age_counts)))
-
