@@ -221,8 +221,8 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
-        logger.info('%s:%s:mother %d delivered child %d at age %s %s',
-                    self.sim.strdate, self.__class__.__name__,
+        logger.info('%s:on_birth:{ mother: %d, child: %d, mother_age: %d, delivery: %d }',
+                    self.sim.strdate,
                     mother_id,
                     child_id,
                     df.at[mother_id, 'age_years'],
@@ -422,8 +422,10 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                      "is now officially dead and has died of %s", individual_id, self.cause)
 
         # Log the death
-        logger.info('%s:%s:%s %s', self.sim.strdate, self.__class__.__name__,
-                    df.at[individual_id, 'age_years'], self.cause)
+        logger.info('%s:death:{ age: %d, cause: %s }',
+                    self.sim.strdate,
+                    df.at[individual_id, 'age_years'],
+                    self.cause)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -439,21 +441,19 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
-                    'Total', sum(sex_count))
-
-        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
-                    'SexM', sex_count['M'])
-
-        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
-                    'SexF', sex_count['F'])
+        logger.info('%s:population:{ total: %d, male: %d, female: %d }',
+                    self.sim.strdate,
+                    sum(sex_count),
+                    sex_count['M'],
+                    sex_count['F'])
 
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
-                    'AgesM', ','.join(map(str, m_age_counts)))
+        logger.info('%s:age_range_m:[ %s ]',
+                    self.sim.strdate,
+                    ' '.join(map(str, m_age_counts)))
 
-        logger.info('%s:%s %s:%s', self.sim.strdate, self.__class__.__name__,
-                    'AgesF', ','.join(map(str, f_age_counts)))
+        logger.info('%s:age_range_f:[ %s ]', self.sim.strdate,
+                    ' '.join(map(str, f_age_counts)))
 
