@@ -253,6 +253,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        self.age_low = 15
+        self.age_high = 49
 
     def apply(self, population):
 
@@ -264,7 +266,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        females = df.loc[(df.sex == 'F') & df.is_alive, ['contraception', 'is_married', 'is_pregnant', 'age_years']]
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high)
+        females = df.loc[subset, ['contraception', 'is_married', 'is_pregnant', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
         fertility_schedule = self.module.parameters['fertility_schedule']
@@ -272,10 +275,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # --------
 
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
+        len_before_merge = len(females)
         females = females.reset_index().merge(fertility_schedule,
                                               left_on=['age_years', 'contraception'],
                                               right_on=['age', 'cmeth'],
-                                              how='left').set_index('person')
+                                              how='inner').set_index('person')
+        assert len(females) == len_before_merge
 
         # clean up items that didn't merge (those with ages not referenced in the fert_schedule sheet)
         females = females[females.basefert_dhs.notna()]
@@ -361,8 +366,11 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # load the mortality schedule (imported datasheet from excel workbook)
         mort_sched = self.module.parameters['mortality_schedule']
 
+        # round current year to closest year in spreadsheet
+        closest_year = int(round(self.sim.date.year / 5) * 5)
+
         # get the subset of mortality rates for this year.
-        mort_sched = mort_sched.loc[mort_sched.year == self.sim.date.year].copy()
+        mort_sched = mort_sched.loc[mort_sched.year == closest_year, ['age_from', 'gender', 'value']].copy()
 
         # create new variable that will align with population.sex
         mort_sched['sex'] = np.where(mort_sched['gender'] == 'male', 'M', 'F')
@@ -386,10 +394,12 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
         # mortality for each person in the model
+        len_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
                                           left_on=['agegrp', 'sex'],
                                           right_on=['agegrp', 'sex'],
-                                          how='left').set_index('person')
+                                          how='inner').set_index('person')
+        assert len(alive) == len_before_merge
 
         # flipping the coin to determine if this person will die
         will_die = (self.sim.rng.random_sample(size=len(alive)) < alive.value / 12)
