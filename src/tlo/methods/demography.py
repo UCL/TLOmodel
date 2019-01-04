@@ -218,7 +218,7 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
-        logger.info('%s:on_birth:{ mother: %d, child: %d, mother_age: %d, delivery: %d }',
+        logger.info('%s:on_birth:{ mother: %d, child: %d, mother_age: %d, xxx: %d }',
                     self.sim.strdate,
                     mother_id,
                     child_id,
