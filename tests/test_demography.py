@@ -1,15 +1,16 @@
+import os
 import time
 
 import pytest
 
-from tlo import Simulation, Date
+from tlo import Date, Simulation
 from tlo.methods import demography
 
 path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'  # Edit this path so it points to your own copy of the Demography.xlsx file
 path = '/Users/tamuri/Documents/2018/thanzi/Demography_WorkingFile_Complete.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 50
 
 
@@ -54,4 +55,3 @@ if __name__ == '__main__':
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
-

@@ -1,7 +1,6 @@
-import pandas as pd
 import pytest
 
-from tlo import Date, Property, Simulation, Types
+from tlo import Property, Types
 
 
 def test_categorical():
@@ -20,5 +19,3 @@ def test_categorical():
     # assignment of invalid category
     with pytest.raises(ValueError):
         s[0] = 'A'
-
-
