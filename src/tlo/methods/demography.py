@@ -221,12 +221,12 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
-        logger.info('%s:%s:mother delivered at age %s %s',
+        logger.info('%s:%s:mother %d delivered child %d at age %s %s',
                     self.sim.strdate, self.__class__.__name__,
-                    df.at[mother_id, 'age_years'], 0)
-        logger.debug('%s:%s:child born %s',
-                     self.sim.strdate, self.__class__.__name__,
-                     child_id)
+                    mother_id,
+                    child_id,
+                    df.at[mother_id, 'age_years'],
+                    0)
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
