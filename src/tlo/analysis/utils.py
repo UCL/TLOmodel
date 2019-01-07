@@ -62,5 +62,4 @@ def parse_output(filepath):
                 else:
                     raise ValueError('Cannot handle log object of type %s' % type(i['object']))
                 o[i['logger']][i['name']] = df.append(row, ignore_index=True)
-    print(o)
     return o
