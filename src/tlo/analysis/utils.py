@@ -55,7 +55,7 @@ def parse_output(filepath):
                     row['date'] = i['sim_date']
                 elif isinstance(i['object'], list):
                     if len(df.columns) - 1 != len(i['object']):
-                        logger.warn('List to dataframe %s, number of columns do not match', i['name'])
+                        logger.warning('List to dataframe %s, number of columns do not match', i['name'])
                     # add list to columns (skip first column, which is date)
                     row = dict(zip(df.columns[1:], i['object']))
                     row['date'] = i['sim_date']
