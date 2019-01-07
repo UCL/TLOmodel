@@ -113,7 +113,12 @@ class Demography(Module):
         workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
-        self.parameters['mortality_schedule'] = workbook['Mortality Rate']
+
+        ms = workbook['Mortality Rate']
+        ms['sex'] = np.where(ms['gender'] == 'male', 'M', 'F')
+        self.parameters['mortality_schedule'] = ms
+
+        # create new variable that will align with population.sex
         self.parameters['fraction_of_births_male'] = 0.5
 
     def initialise_population(self, population):
@@ -368,14 +373,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         closest_year = int(round(self.sim.date.year / 5) * 5)
 
         # get the subset of mortality rates for this year.
-        mort_sched = mort_sched.loc[mort_sched.year == closest_year, ['age_from', 'gender', 'value']].copy()
-
-        # create new variable that will align with population.sex
-        mort_sched['sex'] = np.where(mort_sched['gender'] == 'male', 'M', 'F')
+        mort_sched = mort_sched.loc[mort_sched.year == closest_year, ['age_from', 'sex', 'value']].copy()
 
         # get the population
         df = population.props
-
         alive = df.loc[df.is_alive, ['sex', 'age_years']].copy()
 
         # --------
