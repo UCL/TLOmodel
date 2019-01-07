@@ -221,12 +221,14 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
-        logger.info('%s:on_birth:{ mother: %d, child: %d, mother_age: %d, xxx: %d }',
+        logger.info('%s:on_birth:%s',
                     self.sim.strdate,
-                    mother_id,
-                    child_id,
-                    df.at[mother_id, 'age_years'],
-                    0)
+                    {
+                        'mother': mother_id,
+                        'child': child_id,
+                        'mother_age': df.at[mother_id, 'age_years'],
+                        'xxx': 0
+                    })
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -434,10 +436,11 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                      "is now officially dead and has died of %s", individual_id, self.cause)
 
         # Log the death
-        logger.info('%s:death:{ age: %d, cause: %s }',
-                    self.sim.strdate,
-                    df.at[individual_id, 'age_years'],
-                    self.cause)
+        logger.info('%s:death:%s', self.sim.strdate,
+                    {
+                        'age': df.at[individual_id, 'age_years'],
+                        'cause': self.cause
+                    })
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -453,18 +456,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s:population:{ total: %d, male: %d, female: %d }',
+        logger.info('%s:population:%s',
                     self.sim.strdate,
-                    sum(sex_count),
-                    sex_count['M'],
-                    sex_count['F'])
+                    {
+                        'total': sum(sex_count),
+                        'male': sex_count['M'],
+                        'female': sex_count['F']
+                    })
 
+        # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
+        # get the counts separately
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s:age_range_m:[ %s ]',
-                    self.sim.strdate,
-                    ' '.join(map(str, m_age_counts)))
+        logger.info('%s:age_range_m:%s', self.sim.strdate,
+                    list(m_age_counts))
 
-        logger.info('%s:age_range_f:[ %s ]', self.sim.strdate,
-                    ' '.join(map(str, f_age_counts)))
+        logger.info('%s:age_range_f:%s', self.sim.strdate,
+                    list(f_age_counts))
