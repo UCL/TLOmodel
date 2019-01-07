@@ -221,8 +221,8 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Log the birth:
-        logger.info('%s:on_birth:%s',
-                    self.sim.strdate,
+        logger.info('%s|on_birth|%s',
+                    self.sim.date,
                     {
                         'mother': mother_id,
                         'child': child_id,
@@ -436,7 +436,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                      "is now officially dead and has died of %s", individual_id, self.cause)
 
         # Log the death
-        logger.info('%s:death:%s', self.sim.strdate,
+        logger.info('%s|death|%s', self.sim.date,
                     {
                         'age': df.at[individual_id, 'age_years'],
                         'cause': self.cause
@@ -456,8 +456,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s:population:%s',
-                    self.sim.strdate,
+        logger.info('%s|population|%s',
+                    self.sim.date,
                     {
                         'total': sum(sex_count),
                         'male': sex_count['M'],
@@ -469,8 +469,8 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s:age_range_m:%s', self.sim.strdate,
+        logger.info('%s|age_range_m|%s', self.sim.date,
                     list(m_age_counts))
 
-        logger.info('%s:age_range_f:%s', self.sim.strdate,
+        logger.info('%s|age_range_f|%s', self.sim.date,
                     list(f_age_counts))
