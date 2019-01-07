@@ -144,26 +144,29 @@ class Demography(Module):
                                            unit='M',
                                            box=False))
 
+        # The entire initial population is alive!
         df.is_alive = True
-        df.date_of_birth = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y') + months)
-        df.sex.values[:] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
-        df.mother_id = -1  # we can't use np.nan because that casts the series into a float
+
+        df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y')
+                                                                + months)
+        df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
+        df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
 
         # assign that none of the adult (woman) population is pregnant
-        df.is_pregnant = False
-        df.date_of_last_pregnancy = pd.NaT
+        df.loc[df.is_alive, 'is_pregnant'] = False
+        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
 
         # TODO: Lifestyle module should look after contraception property
-        df.contraception.values[:] = 'not using'  # this will be ascribed by the lifestype module
+        df.loc[df.is_alive, 'contraception'] = 'not using'  # this will be ascribed by the lifestype module
 
-        age_in_days = self.sim.date - df.date_of_birth
-        df.age_exact_years = age_in_days / np.timedelta64(1, 'Y')
-        df.age_years = df.age_exact_years.astype(int)
-        df.age_range.values[:] = df.age_years.map(self.AGE_RANGE_LOOKUP).astype('category')
+        age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
+        df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
 
         # assign that half the adult population is married (will be done in lifestyle module)
-        df.is_married = False  # TODO: Lifestyle module should look after married property
-        adults = (df.age_years >= 18)
+        df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
+        adults = (df.loc[df.is_alive, 'age_years'] >= 18)
         df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
 
     def initialise_simulation(self, sim):
