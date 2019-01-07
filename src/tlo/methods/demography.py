@@ -237,11 +237,11 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        age_in_days = population.sim.date - df.date_of_birth
+        age_in_days = population.sim.date - df.loc[df.is_alive, 'date_of_birth']
 
-        df.age_exact_years = age_in_days / np.timedelta64(1, 'Y')
-        df.age_years = df.age_exact_years.astype(int)
-        df.age_range.values[:] = df.age_years.map(self.age_range_lookup).astype('category')
+        df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
+        df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
