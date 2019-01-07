@@ -17,9 +17,6 @@ from .simulation import Simulation  # noqa
 
 __version__ = '0.1.0'
 
-
-
-
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
