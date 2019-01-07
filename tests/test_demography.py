@@ -39,7 +39,6 @@ def test_dypes(simulation):
 
 
 def test_mothers_female(simulation):
-    print(simulation.date)
     # check all mothers are female
     df = simulation.population.props
     mothers = df.loc[df.mother_id >= 0, 'mother_id']
