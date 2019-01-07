@@ -18,8 +18,3 @@ def test_parse_log():
                                                        'age_range_f', 'on_birth'}
 
     return p
-
-
-if __name__ == '__main__':
-    p = test_parse_log()
-

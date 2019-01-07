@@ -1,9 +1,8 @@
 """
 General utility functions for TLO analysis
 """
-from ast import literal_eval
-
 import logging
+from ast import literal_eval
 
 import pandas as pd
 
