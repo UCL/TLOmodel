@@ -145,15 +145,16 @@ class Demography(Module):
                                                      size=len(df),
                                                      p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
-        months = pd.Series(pd.to_timedelta(self.sim.rng.randint(low=0, high=12, size=len(df)),
-                                           unit='M',
-                                           box=False))
+
+        # select a random number of months for the into age_range
+        months: pd.Series = pop_sample.month_range * self.sim.rng.random_sample(size=len(df))
+        months = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
         df.is_alive = True
 
-        df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - (pd.to_timedelta(pop_sample['age_from'], unit='Y')
-                                                                + months)
+        years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + months
+        df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
 
