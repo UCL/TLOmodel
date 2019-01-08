@@ -98,11 +98,11 @@ class RandomBirth(Module):
         """
         df = self.sim.population.props
 
-        df.loc[child_id, 'date_of_birth'] = self.sim.date
-        df.loc[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'date_of_birth'] = self.sim.date
+        df.at[child_id, 'is_pregnant'] = False
         df.at[child_id, 'children'] = []
-        df.loc[mother_id, 'children'].append(child_id)
-        df.loc[mother_id, 'is_pregnant'] = False
+        df.at[mother_id, 'children'].append(child_id)
+        df.at[mother_id, 'is_pregnant'] = False
 
 
 class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
