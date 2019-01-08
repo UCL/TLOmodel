@@ -94,7 +94,7 @@ class Demography(Module):
                                               'condom',
                                               'periodic abstinence',
                                               'norplant']),
-        # Age information is handled by demography module (was part of core module)
+        # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
         'age_range': Property(Types.CATEGORICAL,
