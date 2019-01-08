@@ -107,7 +107,7 @@ class IndividualScopeEventMixin:
         This calls the base class constructor, passing any arguments through,
         and sets the event target as the provided person.
 
-        :param person_id: the id of the erson this event applies to
+        :param person_id: the id of the person this event applies to
             (must be supplied as a keyword argument)
         """
         super().__init__(*args, **kwargs)
