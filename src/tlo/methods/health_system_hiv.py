@@ -22,10 +22,13 @@ class health_system(Module):
     PARAMETERS = {
         'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
         'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
-        'high_risk_testing_coverage': Parameter(Types.REAL, 'proportion of high risk tested'),
         'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
         'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage'),
-        'rr_testing_high_risk': Parameter(Types.DATA_FRAME, 'relative increase in testing probability if high sexual risk')
+        'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
+                                          'relative increase in testing probability if high sexual risk'),
+        'previously_negative': Parameter(Types.DATA_FRAME, 'previous negative HIV test result'),
+        'previously_positive': Parameter(Types.DATA_FRAME, 'previous positive HIV test result'),
+
     }
 
     PROPERTIES = {
@@ -46,10 +49,11 @@ class health_system(Module):
 
         params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
         params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
-        params['high_risk_testing_coverage'] = self.param_list.loc['high_risk_testing_coverage', 'Value1']
-        params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']
+        params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
         params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
         params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
+        params['previously_negative'] = self.param_list.loc['previously_negative', 'Value1']
+        params['previously_positive'] = self.param_list.loc['previously_positive', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -193,7 +197,14 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         df_with_rates.loc[high_risk_idx | sex_work_idx, 'testing_rates'] *= params['rr_testing_high_risk']
         print(df_with_rates.head(30))
 
+        df_with_rates.loc[df_with_rates.ever_tested & df_with_rates.hiv_diagnosed, 'testing_rates'] *= params[
+            'previously_positive']
+        df_with_rates.loc[df_with_rates.ever_tested & ~df_with_rates.hiv_diagnosed, 'testing_rates'] *= params[
+            'previously_negative']
+
         # probability of HIV testing, can allow repeat testing
+        # if repeat testing, will only store latest test date
+        # TODO: if needed, could add a counter for number of hiv tests per person (useful for costing?)
         testing_index = df_with_rates.index[
             (random_draw < df_with_rates.testing_rates) & df_with_rates.is_alive & (df_with_rates.years >= 15)]
         print('testing index', testing_index)
