@@ -499,6 +499,8 @@ class hiv(Module):
         child.date_aids_death = pd.NaT
         child.sexual_risk_group.values[:] = 'low'
 
+        # TODO: include risk during breastfeeding period
+
         random_draw = self.sim.rng.random_sample(size=1)
 
         if (random_draw < params['prob_mtct']) & mother.has_hiv:
@@ -606,7 +608,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # print('foi:', foi)
 
         # TODO: reduce force of infection if behaviour change available
-        # TODO: reduce FOI due to condom use / male circumcision
+        # TODO: reduce FOI due to condom use
 
         df_with_irr = df_age.merge(params['irr_age'], left_on=['years', 'sex'], right_on=['ages', 'sex'], how='left')
         # print('df: ', df_with_irr.head(30))

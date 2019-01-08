@@ -18,11 +18,14 @@ class health_system(Module):
         self.workbook_path = workbook_path
         self.store = {'Time': [], 'Number_tested': [], 'Number_treated': []}
 
+    # TODO: extract testing rates from Leigh's paper by single years of age
     PARAMETERS = {
-        'testing_coverage': Parameter(Types.REAL, 'proportion of population tested'),
+        'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
+        'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
         'high_risk_testing_coverage': Parameter(Types.REAL, 'proportion of high risk tested'),
         'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
-        'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage')
+        'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage'),
+        'rr_testing_high_risk': Parameter(Types.DATA_FRAME, 'relative increase in testing probability if high sexual risk')
     }
 
     PROPERTIES = {
@@ -37,18 +40,22 @@ class health_system(Module):
     def read_parameters(self, data_folder):
         params = self.parameters
         params['param_list'] = pd.read_excel(self.workbook_path,
-                                                           sheet_name='parameters')
+                                             sheet_name='parameters')
 
         self.param_list.set_index("Parameter", inplace=True)
 
-        params['testing_coverage'] = self.param_list.loc['testing_coverage', 'Value1']
+        params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
+        params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
         params['high_risk_testing_coverage'] = self.param_list.loc['high_risk_testing_coverage', 'Value1']
         params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']
         params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
+        params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
-                                                       sheet_name='coverage')
+                                                                sheet_name='coverage')
 
+        self.parameters['testing_rates'] = pd.read_excel(self.workbook_path,
+                                                         sheet_name='testing_rates')
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -61,7 +68,38 @@ class health_system(Module):
         df['on_art'] = False
         df['date_art_start'] = pd.NaT
 
+        self.baseline_tested(population)  # allocate baseline art coverage
         self.baseline_art(population)  # allocate baseline art coverage
+
+    def baseline_tested(self, population):
+        """ assign initial art coverage levels
+        """
+        now = self.sim.date
+        df = population.props
+
+        # add age to population.props
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.sim.rng.random_sample(size=len(df_age))
+
+        # probability of baseline population ever testing for HIV
+        art_index_male = df_age.index[
+            (random_draw < self.parameters['testing_coverage_male']) & df_age.is_alive & (df_age.sex == 'M') & (
+                df_age.years >= 15)]
+        # print('art_index: ', art_index)
+
+        art_index_female = df_age.index[
+            (random_draw < self.parameters['testing_coverage_female']) & df_age.is_alive & (df_age.sex == 'F') & (
+                df_age.years >= 15)]
+
+        # we don't know date tested, assume date = now
+        df.loc[art_index_male | art_index_female, 'ever_tested'] = True
+        df.loc[art_index_male | art_index_female, 'date_tested'] = now
+
+        # outcome of test
+        diagnosed_idx = df_age.index[df.ever_tested & df.is_alive & df.has_hiv]
+        df.loc[diagnosed_idx, 'hiv_diagnosed'] = True
 
     def baseline_art(self, population):
         """ assign initial art coverage levels
@@ -75,36 +113,32 @@ class health_system(Module):
         # print('coverage: ', coverage.head(20))
 
         # add age to population.props
-        df_with_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
         # print('df_with_age: ', df_with_age.head(10))
 
         # merge all susceptible individuals with their coverage probability based on sex and age
-        df_with_age = df_with_age.merge(coverage,
+        df_age = df_age.merge(coverage,
 
-                                        left_on=['years', 'sex'],
+                              left_on=['years', 'sex'],
 
-                                        right_on=['single_age', 'sex'],
+                              right_on=['single_age', 'sex'],
 
-                                        how='left')
+                              how='left')
 
         # no data for ages 100+ so fill missing values with 0
-        df_with_age['prop_coverage'] = df_with_age['prop_coverage'].fillna(0)
+        df_age['prop_coverage'] = df_age['prop_coverage'].fillna(0)
         # print('df_with_age_art_prob: ', df_with_age_art_prob.head(20))
 
-        assert df_with_age.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
+        assert df_age.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_with_age))
+        random_draw = self.sim.rng.random_sample(size=len(df_age))
 
-        # probability of baseline population receiving art
-        art_index = df_with_age.index[
-            (random_draw < df_with_age.prop_coverage) & df_with_age.has_hiv & df.is_alive]
+        # probability of baseline population receiving art: requirement = ever_tested
+        art_index = df_age.index[
+            (random_draw < df_age.prop_coverage) & df_age.has_hiv & df.ever_tested & df.is_alive]
         # print('art_index: ', art_index)
 
-        # we don't know proportion tested but not treated at baseline, assume same proportion
-        df.loc[art_index, 'ever_tested'] = True
-        df.loc[art_index, 'date_tested'] = now
-        df.loc[art_index, 'hiv_diagnosed'] = True
         df.loc[art_index, 'on_art'] = True
         df.loc[art_index, 'date_art_start'] = now
 
@@ -145,24 +179,35 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
-        # probability of HIV testing, once diagnosed assume no further testing
-        testing_index = df.index[(random_draw < params['testing_coverage']) & ~df.hiv_diagnosed & df.is_alive]
+        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+
+        # testing rates are for >=15 years only
+        df_with_rates = pd.merge(df_age, params['testing_rates'], left_on=['years', 'sex'], right_on=['age', 'sex'],
+                                 how='left')
+        # print(df_with_rates.head(10))
+
+        high_risk_idx = df_with_rates.index[df_with_rates.sexual_risk_group == 'high']
+        sex_work_idx = df_with_rates.index[df_with_rates.sexual_risk_group == 'sex_work']
+
+        # increased testing rate if high risk
+        df_with_rates.loc[high_risk_idx | sex_work_idx, 'testing_rates'] *= params['rr_testing_high_risk']
+        print(df_with_rates.head(30))
+
+        # probability of HIV testing, can allow repeat testing
+        testing_index = df_with_rates.index[
+            (random_draw < df_with_rates.testing_rates) & df_with_rates.is_alive & (df_with_rates.years >= 15)]
+        print('testing index', testing_index)
+
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
 
-        # probability of HIV testing in high risk groups (sexual_risk_group = high/fsw)
-        high_risk_testing_index = df.index[(random_draw < params['high_risk_testing_coverage']) &
-                                           ~df.hiv_diagnosed & df.is_alive & (df.sexual_risk_group != 'low')]
-        df.loc[high_risk_testing_index, 'ever_tested'] = True
-        df.loc[high_risk_testing_index, 'date_tested'] = now
-
-        diagnosed_index = df.index[df.ever_tested & df.is_alive & df.has_hiv]
+        diagnosed_index = df.index[(df.date_tested == now) & df.is_alive & df.has_hiv]
         # print('testing_index: ', testing_index)
         # print('diagnosed_index: ', testing_diagnosed_index)
 
         df.loc[diagnosed_index, 'hiv_diagnosed'] = True
 
-        # TODO: stratify infant testing (at birth?) and adult testing
+        # TODO: include infant testing (soon after birth?)
 
 
 class IndividualTesting(Event, IndividualScopeEventMixin):
@@ -174,11 +219,9 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
         super().__init__(module, person=individual)
 
     def apply(self, individual):
-
         params = self.module.parameters
 
         if individual.is_alive & ~individual.hiv_diagnosed:
-
             # probability of HIV testing
             individual.ever_tested = np.random.choice([True, False], size=1, p=[params['testing_prob_individual'],
                                                                                 1 - params['testing_prob_individual']])
