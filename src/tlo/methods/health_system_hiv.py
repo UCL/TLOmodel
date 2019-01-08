@@ -58,6 +58,9 @@ class health_system(Module):
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
 
+        self.parameters['art_initiation'] = pd.read_excel(self.workbook_path,
+                                                          sheet_name='art_initiators')
+
         self.parameters['testing_rates'] = pd.read_excel(self.workbook_path,
                                                          sheet_name='testing_rates')
 
@@ -195,7 +198,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # increased testing rate if high risk
         df_with_rates.loc[high_risk_idx | sex_work_idx, 'testing_rates'] *= params['rr_testing_high_risk']
-        print(df_with_rates.head(30))
+        # print(df_with_rates.head(30))
 
         df_with_rates.loc[df_with_rates.ever_tested & df_with_rates.hiv_diagnosed, 'testing_rates'] *= params[
             'previously_positive']
@@ -207,7 +210,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: if needed, could add a counter for number of hiv tests per person (useful for costing?)
         testing_index = df_with_rates.index[
             (random_draw < df_with_rates.testing_rates) & df_with_rates.is_alive & (df_with_rates.years >= 15)]
-        print('testing index', testing_index)
+        # print('testing index', testing_index)
 
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
@@ -255,6 +258,35 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         now = self.sim.date
         df = population.props
+
+        # numb_starting_art = params['art_initiation']
+        # numb_starting_art_year = numb_starting_art.loc[
+        #     numb_starting_art.year == now.year, ['sex', 'age', 'art_initiators']]
+        # # print('numb_starting_art_year type', type(numb_starting_art_year))
+        # print('numb_starting_art_year', numb_starting_art_year)
+        #
+        # # TODO: the number starting needs to be scaled to the test population size
+        #
+        #
+        # df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+        #
+        # # eligible population size
+        # df_diagnosed = df_age.loc[df_age.is_alive & df_age.hiv_diagnosed & ~df_age.on_art]
+        # # print(len(df_diagnosed))
+        #
+        # num_eligible = df_diagnosed.groupby(by=['years', 'sex'])['hiv_diagnosed'].count()
+        # test2 = pd.DataFrame(num_eligible)
+        # # print('test2', test2)
+        # test2_rm_index = pd.DataFrame(test2.to_records())  # remove multi-index
+        # # print('test2_rm_index', test2_rm_index)
+        # print('test2_rm_index head', test2_rm_index.head(10))
+        #
+        # comb = pd.merge(numb_starting_art_year, test2_rm_index, left_on=['age', 'sex'], right_on=['years', 'sex'],
+        #                          how='left')
+        # print('comb', comb)
+
+
+
 
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
