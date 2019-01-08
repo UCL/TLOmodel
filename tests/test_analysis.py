@@ -16,5 +16,3 @@ def test_parse_log():
     assert 'tlo.methods.demography' in p
     assert set(p['tlo.methods.demography'].keys()) == {'death', 'population', 'age_range_m',
                                                        'age_range_f', 'on_birth'}
-
-    return p
