@@ -13,7 +13,7 @@ logger.setLevel(logging.INFO)
 def parse_line(line):
     """
     Parses a single line of logged output. It has the format:
-    INFO:<logger name>:<simulation date>:<info key>:<python object>
+    INFO|<logger name>|<simulation date>|<log key>|<python object>
 
     It returns the dictionary:
         { 'logger': <logger name>,
