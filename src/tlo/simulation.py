@@ -2,6 +2,8 @@
 
 import heapq
 import itertools
+import logging
+import sys
 
 import numpy as np
 
@@ -42,6 +44,14 @@ class Simulation:
         self.modules = {}
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
+
+        # TODO: allow override of logging
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+        logging.basicConfig(level=logging.DEBUG)
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
