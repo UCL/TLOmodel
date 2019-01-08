@@ -304,13 +304,14 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # to the frequency with which the event is recurring
         # TODO: this should be linked to the self.frequency value
 
+        newly_pregnant_ids = females.index[newly_pregnant]
+
         # updating the pregancy status for that women
-        df.loc[females.index[newly_pregnant], 'is_pregnant'] = True
-        df.loc[females.index[newly_pregnant], 'date_of_last_pregnancy'] = self.sim.date
+        df.loc[newly_pregnant_ids, 'is_pregnant'] = True
+        df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
-        newly_pregnant_id = females.index[newly_pregnant]
-        for female_id in newly_pregnant_id:
+        for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
