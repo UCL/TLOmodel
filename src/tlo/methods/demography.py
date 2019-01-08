@@ -134,27 +134,32 @@ class Demography(Module):
 
         worksheet = self.parameters['interpolated_pop']
 
-        # get a subset of the rows from the worksheet
+        # get a subset of the rows from the interpolated population worksheet
         intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
+
+        # get the probability of occurrance for each sex+age range in the population
         intpop['probability'] = intpop.value / intpop.value.sum()
+
+        # calculate the month range interval for age ranges which are exactly 1 year
         intpop['month_range'] = 12
         is_age_range = (intpop['age_to'] != intpop['age_from'])
         intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
 
+        # randomly rows indices from the worksheet
         pop_sample = intpop.iloc[self.rng.choice(intpop.index.values,
                                                  size=len(df),
                                                  replace = True,
                                                  p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
 
-        # select a random number of months for the into age_range
-        months: pd.Series = pop_sample.month_range * self.sim.rng.random_sample(size=len(df))
-        months = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
+        # select a random number of months into age_range
+        months: pd.Series = pop_sample.month_range * self.rng.random_sample(size=len(df))
+        pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
         df.is_alive = True
 
-        years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + months
+        years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
