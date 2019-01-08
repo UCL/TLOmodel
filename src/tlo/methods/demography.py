@@ -148,7 +148,7 @@ class Demography(Module):
         # randomly rows indices from the worksheet
         pop_sample = intpop.iloc[self.rng.choice(intpop.index.values,
                                                  size=len(df),
-                                                 replace = True,
+                                                 replace=True,
                                                  p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
 
