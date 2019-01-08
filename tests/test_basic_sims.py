@@ -31,7 +31,7 @@ def test_individual_death():
     assert len(df) == 2
 
     # Test individual-based property access
-    assert df.loc[0, 'is_alive']
+    assert df.at[0, 'is_alive']
 
     # Test population-based property access
     assert len(df.is_alive) == 2
