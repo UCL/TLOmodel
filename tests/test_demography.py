@@ -1,6 +1,8 @@
 import os
 import time
 
+from io import StringIO
+
 import pytest
 
 from tlo import Date, Simulation
@@ -9,7 +11,7 @@ from tlo.methods import demography
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 50
 
 
@@ -47,8 +49,23 @@ def test_mothers_female(simulation):
 
 
 if __name__ == '__main__':
+    import logging
+    logger = logging.getLogger()
+    buffer = StringIO()
+    handler = logging.StreamHandler(buffer)
+    formatter = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
     t0 = time.time()
     simulation = simulation()
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
+
+    handler.flush()
+    buffer.flush()
+    output = buffer.getvalue()
+    lines = output.splitlines()
+    for i, x in enumerate(lines):
+        print(i, '----', x)
