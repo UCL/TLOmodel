@@ -114,11 +114,11 @@ class Demography(Module):
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
+        # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
         ms['sex'] = np.where(ms['gender'] == 'male', 'M', 'F')
         self.parameters['mortality_schedule'] = ms
 
-        # create new variable that will align with population.sex
         self.parameters['fraction_of_births_male'] = 0.5
 
     def initialise_population(self, population):
