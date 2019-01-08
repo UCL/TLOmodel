@@ -315,9 +315,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            date_of_birth = self.sim.date + \
-                DateOffset(months=9) + \
-                DateOffset(weeks=-2 + 4 * self.module.rng.random_sample())
+            date_of_birth = self.sim.date + DateOffset(months=9,
+                                                       weeks=-2 + 4 * self.module.rng.random_sample())
 
             # Schedule the Birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
