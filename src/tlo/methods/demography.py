@@ -141,9 +141,10 @@ class Demography(Module):
         is_age_range = (intpop['age_to'] != intpop['age_from'])
         intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
 
-        pop_sample = intpop.iloc[self.sim.rng.choice(intpop.index.values,
-                                                     size=len(df),
-                                                     p=intpop.probability.values)]
+        pop_sample = intpop.iloc[self.rng.choice(intpop.index.values,
+                                                 size=len(df),
+                                                 replace = True,
+                                                 p=intpop.probability.values)]
         pop_sample = pop_sample.reset_index()
 
         # select a random number of months for the into age_range
@@ -173,7 +174,7 @@ class Demography(Module):
         # assign that half the adult population is married (will be done in lifestyle module)
         df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
         adults = (df.loc[df.is_alive, 'age_years'] >= 18)
-        df.loc[adults, 'is_married'] = self.sim.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
+        df.loc[adults, 'is_married'] = self.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -210,7 +211,7 @@ class Demography(Module):
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
         f_male = self.parameters['fraction_of_births_male']
-        df.at[child_id, 'sex'] = self.sim.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
+        df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         df.at[child_id, 'mother_id'] = mother_id
         df.at[child_id, 'is_pregnant'] = False
@@ -292,7 +293,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         assert len(females) == len_before_merge
 
         # flipping the coin to determine if this woman will become pregnant
-        newly_pregnant = (self.sim.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
+        newly_pregnant = (self.module.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
 
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
@@ -310,7 +311,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             date_of_birth = self.sim.date + \
                 DateOffset(months=9) + \
-                DateOffset(weeks=-2 + 4 * self.sim.rng.random_sample())
+                DateOffset(weeks=-2 + 4 * self.module.rng.random_sample())
 
             # Schedule the Birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
@@ -403,7 +404,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         assert len(alive) == len_before_merge
 
         # flipping the coin to determine if this person will die
-        will_die = (self.sim.rng.random_sample(size=len(alive)) < alive.value / 12)
+        will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
 
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
