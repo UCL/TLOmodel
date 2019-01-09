@@ -46,7 +46,7 @@ def parse_log_file(filepath):
     :return: dictionary of parsed log data
     """
     with open(filepath) as log_file:
-        parse_output(log_file.readlines())
+        return parse_output(log_file.readlines())
 
 
 def parse_output(list_of_log_lines):
