@@ -1,7 +1,7 @@
 
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Person, Property, Simulation, Types
+from tlo import Date, DateOffset, Module, Property, Simulation, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.test import random_birth, random_death
 
@@ -27,23 +27,19 @@ def test_individual_death():
 
     # Create a population of 2 individuals
     sim.make_initial_population(n=2)
-    assert len(sim.population) == 2
+    df = sim.population.props
+    assert len(df) == 2
 
     # Test individual-based property access
-    assert isinstance(sim.population[0], Person)
-    assert sim.population[0].is_alive
-    assert sim.population[0, 'is_alive']
-    assert sim.population[0].props['is_alive'][0]  # Treat this as read-only! It may be removed.
+    assert df.at[0, 'is_alive']
 
     # Test population-based property access
-    assert len(sim.population.is_alive) == 2
-    assert isinstance(sim.population.is_alive, pd.Series)
+    assert len(df.is_alive) == 2
+    assert isinstance(df.is_alive, pd.Series)
     pd.testing.assert_series_equal(
         pd.Series([True, True]),
-        sim.population.is_alive,
+        df.is_alive,
         check_names=False)
-    assert sim.population.is_alive is sim.population['is_alive']
-    assert sim.population.is_alive is sim.population.props['is_alive']  # For now...
 
     # Simulate for 4 months
     assert sim.date == Date(2010, 1, 1)
@@ -53,11 +49,11 @@ def test_individual_death():
     # Check death dates match reference data
     pd.testing.assert_series_equal(
         pd.Series([False, False]),
-        sim.population.is_alive,
+        df.is_alive,
         check_names=False)
     pd.testing.assert_series_equal(
         pd.Series([Date(2010, 3, 1), Date(2010, 4, 1)]),
-        sim.population.date_of_death,
+        df.date_of_death,
         check_names=False)
 
 
@@ -81,7 +77,7 @@ def test_single_step_death():
 
     pd.testing.assert_series_equal(
         pd.Series([True, True, False, True, True, False, True, True, True, True]),
-        sim.population.is_alive,
+        sim.population.props.is_alive,
         check_names=False
     )
 
@@ -99,7 +95,7 @@ def test_make_test_property():
     assert len(pop.props.columns) == 1
     pd.testing.assert_series_equal(
         pd.Series([False, False, False]),
-        sim.population.test,
+        sim.population.props.test,
         check_names=False
     )
 
@@ -124,14 +120,7 @@ def test_birth_and_death():
 
     # Create a population of 10 individuals
     sim.make_initial_population(n=10)
-    assert len(sim.population) == 10
-
-    # Test iteration and individual-based property access
-    for i, person in enumerate(sim.population):
-        assert isinstance(person, Person)
-        assert person.index == i
-        assert person.is_alive
-        assert not person.is_pregnant
+    assert len(sim.population.props) == 10
 
     # Simulate for 2 years
     assert sim.date == Date(1950, 1, 1)
@@ -141,36 +130,38 @@ def test_birth_and_death():
     # Test further population indexing
     pd.testing.assert_series_equal(
         pd.Series([True, False], index=[4, 5]),
-        sim.population[4:5, 'is_alive'],
+        sim.population.props.loc[4:5, 'is_alive'],
         check_names=False)
     pd.testing.assert_frame_equal(
         pd.DataFrame({'is_alive': [True, True], 'is_pregnant': [False, True]}, index=[8, 9]),
-        sim.population[8:9, ('is_alive', 'is_pregnant')],
+        sim.population.props.loc[8:9, ('is_alive', 'is_pregnant')],
         check_names=False)
     pd.testing.assert_frame_equal(
         pd.DataFrame({'is_alive': [False], 'is_pregnant': [False]}, index=[6]),
-        sim.population[[6], ('is_alive', 'is_pregnant')],
+        sim.population.props.loc[[6], ('is_alive', 'is_pregnant')],
         check_names=False)
 
     # Check birth stats match reference data
-    assert len(sim.population) == 20
+    assert len(sim.population.props) == 20
 
     # Check no-one gave birth after dying
-    for person in sim.population:
+    df = sim.population.props
+
+    for person in df.itertuples():
         if not person.is_alive:
             for child_index in person.children:
-                child = sim.population[child_index]
-                assert child.date_of_birth <= person.date_of_death
+                assert df.loc[child_index, 'date_of_birth'] <= person.date_of_death
 
     # Check people can't become pregnant while already pregnant
-    for person in sim.population:
+    for person in df.itertuples():
         # Iterate over pairs of adjacent children
         for child1i, child2i in zip(person.children[:-1], person.children[1:]):
-            child1, child2 = sim.population[child1i], sim.population[child2i]
+            child1, child2 = df.at[child1i, 'date_of_birth'], \
+                             df.at[child2i, 'date_of_birth']
             # Children earlier in the list are born earlier
-            assert child1.date_of_birth < child2.date_of_birth
+            assert child1 < child2
             # Birth dates need to be at least 9 months apart
-            assert child1.date_of_birth + DateOffset(months=9) <= child2.date_of_birth
+            assert child1 + DateOffset(months=9) <= child2
 
 
 def test_regular_event_with_end():
@@ -192,7 +183,7 @@ def test_regular_event_with_end():
             super().__init__(module=module, frequency=DateOffset(days=1), end_date=end_date)
 
         def apply(self, population):
-            population.loc[0, 'last_run'] = population.sim.date
+            population.props.loc[0, 'last_run'] = population.sim.date
 
     class MyOtherEvent(PopulationScopeEventMixin, RegularEvent):
         def __init__(self, module):
@@ -216,6 +207,6 @@ def test_regular_event_with_end():
     sim.simulate(end_date=Date(2011, 1, 1))
 
     # The last update to the data frame is the last event run (not the end of the simulation)
-    assert sim.population.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
+    assert sim.population.props.loc[0, 'last_run'] == pd.Timestamp(Date(2010, 3, 1))
     # The last event the simulation ran was my_other_event that doesn't have end date
     assert sim.date == pd.Timestamp(Date(2011, 1, 1))
