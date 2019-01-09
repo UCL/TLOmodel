@@ -375,10 +375,6 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # load the mortality schedule (imported datasheet from excel workbook)
         mort_sched = self.module.parameters['mortality_schedule']
 
-        # round current year to closest year in spreadsheet
-        # TODO: currently rounding to the closest 5-year entry - fix or remain?
-        closest_year = int(round(self.sim.date.year / 5) * 5)
-
         # get the subset of mortality rates for this year.
         mort_sched = mort_sched.loc[mort_sched.year == self.sim.date.year, ['age_from', 'sex', 'value']].copy()
 
@@ -401,12 +397,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
         # mortality for each person in the model
-        len_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
                                           left_on=['agegrp', 'sex'],
                                           right_on=['agegrp', 'sex'],
                                           how='inner').set_index('person')
-        # assert len(alive) == len_before_merge
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
