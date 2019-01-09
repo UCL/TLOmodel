@@ -200,7 +200,7 @@ class Demography(Module):
         sim.schedule_event(OtherDeathPoll(self), sim.date+DateOffset(months=1))
 
         # Launch the repeating event that will store statistics about the population structure
-        sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -380,7 +380,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         closest_year = int(round(self.sim.date.year / 5) * 5)
 
         # get the subset of mortality rates for this year.
-        mort_sched = mort_sched.loc[mort_sched.year == closest_year, ['age_from', 'sex', 'value']].copy()
+        mort_sched = mort_sched.loc[mort_sched.year == self.sim.date.year, ['age_from', 'sex', 'value']].copy()
 
         # get the population
         df = population.props
@@ -406,7 +406,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                                           left_on=['agegrp', 'sex'],
                                           right_on=['agegrp', 'sex'],
                                           how='inner').set_index('person')
-        assert len(alive) == len_before_merge
+        # assert len(alive) == len_before_merge
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
