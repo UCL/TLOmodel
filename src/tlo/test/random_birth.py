@@ -63,17 +63,18 @@ class RandomBirth(Module):
 
         :param population: the population of individuals
         """
+        df = population.props
         # Everyone starts off not pregnant
         # We use 'broadcasting' to set the same value for every individual
-        population.is_pregnant = False
+        df.is_pregnant = False
         # We randomly sample birth dates for the initial population during the preceding decade
         start_date = population.sim.date
         dates = pd.date_range(start_date - DateOffset(years=10), start_date, freq='M')
-        population.date_of_birth = self.rng.choice(dates, size=len(population))
+        df.date_of_birth = self.rng.choice(dates, size=len(df))
         # No children have yet been born. We iterate over the population to ensure each
         # person gets a distinct list.
-        for person in population:
-            person.children = []
+        for index, row in df.iterrows():
+            df.at[index, 'children'] = []
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -87,19 +88,21 @@ class RandomBirth(Module):
         pregnancy_poll = RandomPregnancyEvent(self, self.pregnancy_probability)
         sim.schedule_event(pregnancy_poll, sim.date + DateOffset(months=1))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
-        child.date_of_birth = self.sim.date
-        child.is_pregnant = False
-        child.children = []
-        mother.children.append(child.index)
-        mother.is_pregnant = False
+        df = self.sim.population.props
+
+        df.at[child_id, 'date_of_birth'] = self.sim.date
+        df.at[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'children'] = []
+        df.at[mother_id, 'children'].append(child_id)
+        df.at[mother_id, 'is_pregnant'] = False
 
 
 class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -131,8 +134,9 @@ class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
+        df = population.props
         # Find live and non-pregnant individuals
-        candidates = population[population.is_alive & ~population.is_pregnant]
+        candidates = df[df.is_alive & ~df.is_pregnant]
         # OR: candidates = population.props.query('is_alive & ~is_pregnant')
         # Throw a die for each
         rng = self.module.rng
@@ -140,10 +144,9 @@ class RandomPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
         for person_index in candidates.index:
             if rng.rand() < self.pregnancy_probability:
                 # Schedule a birth event for this person
-                mother = population[person_index]
-                birth = DelayedBirthEvent(self.module, mother)
+                birth = DelayedBirthEvent(self.module, person_index)
                 self.sim.schedule_event(birth, birth_date)
-                mother.is_pregnant = True
+                df.loc[person_index, 'is_pregnant'] = True
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -153,7 +156,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     the constructor.
     """
 
-    def __init__(self, module, mother):
+    def __init__(self, module, mother_id):
         """Create a new birth event.
 
         We need to pass the person this event happens to to the base class constructor
@@ -161,16 +164,17 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         number generators can be scoped per-module.
 
         :param module: the module that created this event
-        :param mother: the person giving birth
+        :param mother_id: the person giving birth
         """
-        super().__init__(module, person=mother)
+        super().__init__(module, person_id=mother_id)
 
-    def apply(self, mother):
+    def apply(self, mother_id):
         """Apply this event to the given person.
 
         Assuming the person is still alive, we ask the simulation to create a new offspring.
 
-        :param person: the person the event happens to, i.e. the mother giving birth
+        :param mother_id: the person the event happens to, i.e. the mother giving birth
         """
-        if mother.is_alive:
-            self.sim.do_birth(mother)
+        df = self.sim.population.props
+        if df.at[mother_id, 'is_alive']:
+            self.sim.do_birth(mother_id)
