@@ -427,7 +427,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
 # todo  suicide, self-harm + de-bugging + checking of graphs for consistency of initial condittions and transitions....
 
-# remember 'de_prob_3m_resol_depression' is defined
+#       for person in alive.index[will_die]:
+#           # schedule the death for "now"
+#           self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
+#                                   self.sim.date)
+
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
