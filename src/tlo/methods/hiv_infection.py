@@ -7,6 +7,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo.methods import demography
 
 
 class hiv(Module):
@@ -635,12 +636,13 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         # schedule the death event
         for i in newly_infected_index:
-            person = population[i]
-            death = DeathEventHIV(self.module, person, cause='hiv')  # make that death event
+            person = population.index[i]
+            death = DeathEventHIV(self.module, individual_id=person, cause='hiv')  # make that death event
             time_death = death_dates[i]
             # print('time_death: ', time_death)
             # print('now: ', now)
             self.sim.schedule_event(death, time_death)  # schedule the death
+
 
 
 class DeathEventHIV(Event, IndividualScopeEventMixin):
@@ -648,19 +650,21 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
     Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, individual, cause):
-        super().__init__(module, person=individual)
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
         self.cause = cause
 
-    def apply(self, individual):
-        if individual.is_alive & ~individual.on_art:
+    def apply(self, individual_id):
+        df = self.sim.population.props
 
-            # TODO: pass this to InstantaneousDeath
-            individual.is_alive = False
+        if df.at[individual_id.is_alive & ~individual_id.on_art]:
+
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='Other'),
+                                    self.sim.date)
 
         # Log the death
         self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
-        self.module.store_DeathsLog['DeathEvent_Age'].append(self.sim.population.age.years[individual.index])
+        self.module.store_DeathsLog['DeathEvent_Age'].append(self.sim.population.age_years[individual_id])
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
 
 
