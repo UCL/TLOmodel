@@ -209,24 +209,48 @@ class Depression(Module):
         df['de_suicide'] = False
         df['de_on_antidepr'] = False
         df['de_ever_depr'] = False
-        df['de_prob_3m_resol_depression'] = 0   
+        df['de_prob_3m_resol_depression'] = 0
 
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
         df['de_wealth'] = 3
 
         #  this below calls the age dataframe / call age.years to get age in years
-        age = population.age
 
-        df['a_age'] = age.years
-
-        age_lt15_idx = df.index[(age.years < 15) & df.is_alive]
+        age_lt15_idx = df.index[(df.age_years < 15) & df.is_alive]
+        age_ge15_idx = df.index[(df.age_years >= 15) & df.is_alive]
         cc_idx = df.index[df.de_cc & df.is_alive]
-        age_2059_idx = df.index[(age.years >= 20) & (age.years < 60) & df.is_alive]
-        age_ge60_idx = df.index[(age.years >= 60) & df.is_alive]
+        age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
+        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
         wealth45_idx = df.index[df.de_wealth.isin([4, 5]) & df.is_alive]
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.is_alive]
+
+
+        # todo: build new code which does not create extra properties for probabilities from this below
+
+        """
+        
+        build new code from this below
+        
+        eff_prob_depression = pd.Series(params['base_3m_prob_depression'], index = df.index[df.age_years >= 15])
+        eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
+        eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
+        eff_prob_depression.loc[age_ge60_idx] *= self.init_rp_depr_agege60
+        eff_prob_depression.loc[wealth45_idx] *= self.init_rp_depr_wealth45
+        eff_prob_depression.loc[f_not_rec_preg_idx] *= self.init_rp_depr_f_not_rec_preg
+        eff_prob_depression.loc[f_rec_preg_idx] *= self.init_rp_depr_f_rec_preg
+
+        is_newly_depressed = eff_prob_depression > rng.rand(len(eff_prob_depression))
+        newly_depressed = is_newly_depressed[is_newly_depressed].index
+        df.loc[newly_depressed, 'de_depr'] = True
+        df.loc[newly_depressed, 'ever_depressed'] = True
+        df.loc[newly_depressed, 'date_init_depression'] = sim.date
+        df.[newly_depressed, 'date_depression_resolved'] = None
+        df.[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(
+            params['depression_resolution_rates'], size=len(newly_depressed))
+        
+        """
 
         df['de_base_p_depr'] = self.init_pr_depr_m_age1519_no_cc_wealth123
 
@@ -246,8 +270,8 @@ class Depression(Module):
         # note that this should be not recently pregnant rather than not currently pregnant,
         # but don't yet know how to access date of last pregnancy
 
-        f_index = df.index[(df.sex == 'F') & df.is_alive & (age.years >= 15)]
-        m_index = df.index[(df.sex == 'M') & df.is_alive & (age.years >= 15)]
+        f_index = df.index[(df.sex == 'F') & df.is_alive & (df.age_years >= 15)]
+        m_index = df.index[(df.sex == 'M') & df.is_alive & (df.age_years >= 15)]
 
         df.loc[f_index, 'p_xxx'] = age.loc[f_index, 'years'] * self.init_rp_ever_depr_per_year_older_f
         df.loc[m_index, 'p_xxx'] = age.loc[m_index, 'years'] * self.init_rp_ever_depr_per_year_older_m
@@ -286,7 +310,7 @@ class Depression(Module):
 
         df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2])
- 
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -372,10 +396,10 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         ago_20yr = now - DateOffset(years=20)
         ago_60yr = now - DateOffset(years=60)
 
-        age_lt15_idx = df.index[(age.years < 15) & df.is_alive]
+        age_lt15_idx = df.index[(df.age_years < 15) & df.is_alive]
         cc_idx = df.index[df.de_cc & df.is_alive]
-        age_1519_idx = df.index[(age.years >= 15) & (age.years < 20) & df.is_alive]
-        age_ge60_idx = df.index[(age.years >= 60) & df.is_alive]
+        age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
+        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
         wealth45_idx = df.index[df.de_wealth.isin([4, 5]) & df.is_alive]
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.is_alive]
@@ -447,11 +471,11 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         alive = df.is_alive.sum()
         age = population.age
 
-        n_ge15 = (df.is_alive & (age.years >= 15)).sum()
+        n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
-        n_depr = (df.de_depr & df.is_alive & (age.years >= 15)).sum()
-        n_depr_m = (df.de_depr & df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
-        n_depr_f = (df.de_depr & df.is_alive & (age.years >= 15) & (df.sex == 'F')).sum()
+        n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
+        n_depr_m = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
+        n_depr_f = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
         prop_depr = n_depr / alive
 
