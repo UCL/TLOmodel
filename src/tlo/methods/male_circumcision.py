@@ -70,6 +70,7 @@ class male_circumcision(Module):
         circum = np.random.choice([True, False], size=len(uncircum),
                                   p=[self.parameters['initial_circumcision'],
                                      1 - self.parameters['initial_circumcision']])
+        # TODO: change to self.rng.choice
 
         # print('circum', circum.sum())
 
