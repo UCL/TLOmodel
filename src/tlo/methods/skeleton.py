@@ -63,13 +63,13 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
         This is called by the simulation whenever a new person is born.
 
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
         raise NotImplementedError
 

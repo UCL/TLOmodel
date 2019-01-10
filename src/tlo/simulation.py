@@ -2,6 +2,8 @@
 
 import heapq
 import itertools
+import logging
+import sys
 
 import numpy as np
 
@@ -42,6 +44,14 @@ class Simulation:
         self.modules = {}
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
+
+        # TODO: allow override of logging
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
+        handler.setFormatter(formatter)
+        logging.getLogger().addHandler(handler)
+        logging.basicConfig(level=logging.DEBUG)
 
     def register(self, *modules):
         """Register one or more disease modules with the simulation.
@@ -112,19 +122,19 @@ class Simulation:
         self.date = date
         event.run()
 
-    def do_birth(self, mother):
+    def do_birth(self, mother_id):
         """Create a new child person.
 
         We create a new person in the population and then call the `on_birth` method in
         all modules to initialise the child's properties.
 
-        :param mother: the maternal parent
+        :param mother_id: the maternal parent
         :return: the new child
         """
-        child = self.population.do_birth()
+        child_id = self.population.do_birth()
         for module in self.modules.values():
-            module.on_birth(mother, child)
-        return child
+            module.on_birth(mother_id, child_id)
+        return child_id
 
 
 class EventQueue:
