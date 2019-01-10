@@ -1,26 +1,28 @@
+import logging
+
 import pytest
 
 from tlo import Simulation, Date
 from tlo.methods import demography, lifestyle
 from tlo.test import random_birth
 
-path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
+path = 'C:/Users/Andrew Phillips/Dropbox/Thanzi la Onse/05 - Resources\Demographic data\Demography_WorkingFile_Complete.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2032, 1, 1)
-popsize = 3000
+end_date = Date(2011, 1, 1)
+popsize = 100000
 
 
 @pytest.fixture
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
-    random_birth_module = random_birth.RandomBirth()
-    random_birth_module.pregnancy_probability = 0.005
     lifestyle_module = lifestyle.Lifestyle()
     sim.register(core_module)
     sim.register(lifestyle_module)
-    sim.register(random_birth_module)
+
+    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+
     return sim
 
 
@@ -49,10 +51,10 @@ if __name__ == '__main__':
   # stats = simulation.modules['Lifestyle'].o_prop_tob['prop_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w1_tob['prop_m_age1519_w1_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w1_tob['prop_m_age2039_w1_tob']
-  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w1_tob['prop_m_agege40_w1_tob'] 
-  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w1_tob['prop_f_age1519_w1_tob'] 
-  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w1_tob['prop_f_age2039_w1_tob'] 
-  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w1_tob['prop_f_agege40_w1_tob'] 
+  # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w1_tob['prop_m_agege40_w1_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age1519_w1_tob['prop_f_age1519_w1_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_age2039_w1_tob['prop_f_age2039_w1_tob']
+  # stats = simulation.modules['Lifestyle'].o_prop_f_agege40_w1_tob['prop_f_agege40_w1_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_m_age1519_w2_tob['prop_m_age1519_w2_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_m_age2039_w2_tob['prop_m_age2039_w2_tob']
   # stats = simulation.modules['Lifestyle'].o_prop_m_agege40_w2_tob['prop_m_agege40_w2_tob']

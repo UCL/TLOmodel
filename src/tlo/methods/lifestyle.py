@@ -361,9 +361,17 @@ class Lifestyle(Module):
                                    ('F', '100+',  0.002)],
                                   columns=['sex', 'age_range', 'p_tob'])
 
+        # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
+        tob_probs = df.loc[gte_15].merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'],
+                                      how='inner')
+
+#       assert np.array_equal(tob_probs.years_exact, df.years_exact)
+        # check the order of individuals is the same by comparing exact ages
+#       assert tob_probs.p_tob.isna().sum() == 0  # ensure we found a p_tob for every individual
+
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
-        tob_probs = df['li_wealth'].astype(int) * df['p_tob']
+        tob_probs = tob_probs['li_wealth'].astype(int) * tob_probs['p_tob']
 
         # we now have the probability of tobacco use for each individual where age >= 15
         # draw a random number between 0 and 1 for all of them
@@ -931,8 +939,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
-
-        age = population.age
 
         df['andrew_age'] = df.age_years
 
@@ -1604,8 +1610,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
-
-        age = population.age
 
         urban_alive = (df.is_alive & df.li_urban).sum()
         alive = df.is_alive.sum()
