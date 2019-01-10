@@ -59,13 +59,11 @@ class male_circumcision(Module):
         df['is_circumcised'] = False  # default: no individuals circumcised
         df['date_circumcised'] = pd.NaT  # default: not a time
 
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-
         self.parameters['initial_circumcision'] = self.param_list.loc[self.param_list.year == now, 'coverage'].values[0]
         # print('initial_circumcision', self.parameters['initial_circumcision'])
 
         # select all eligible uncircumcised men
-        uncircum = df_age.index[df_age.is_alive & (df_age.years >= 15) & ~df_age.is_circumcised & (df_age.sex == 'M')]
+        uncircum = df.index[df.is_alive & (df.age_years >= 15) & ~df.is_circumcised & (df.sex == 'M')]
         # print('uncircum', len(uncircum))
 
         # 2. baseline prevalence of circumcisions
@@ -122,8 +120,6 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-
         prob_df = params['param_list']
         # print('test', prob_df)
 
@@ -134,12 +130,12 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         # print('prob_circumcision', prob_circumcision)
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_age))
+        random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of circumcision
-        circumcision_index = df_age.index[
-            (random_draw < prob_circumcision) & ~df.is_circumcised & df.is_alive & (df_age.years >= 10) & (
-                df_age.years < 35) & (df_age.sex == 'M')]
+        circumcision_index = df.index[
+            (random_draw < prob_circumcision) & ~df.is_circumcised & df.is_alive & (df.age_years >= 10) & (
+                df.age_years < 35) & (df.sex == 'M')]
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
 
@@ -155,11 +151,10 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        circumcised_total = len(df_age.index[df_age.is_alive & (df_age.years >= 15) & df_age.is_circumcised])
+        circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.is_circumcised])
         proportion_circumcised = circumcised_total / len(
-            df.index[df.is_alive & (df_age.years >= 15) & (df_age.sex == 'M')])
+            df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
 
         mask = (df['date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
         circumcised_in_last_timestep = mask.sum()
