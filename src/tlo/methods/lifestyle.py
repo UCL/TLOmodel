@@ -1,12 +1,16 @@
 """
 A skeleton template for disease methods.
 """
+import logging
+from collections import defaultdict
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 import numpy as np
 import pandas as pd
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Lifestyle(Module):
     """
@@ -258,10 +262,10 @@ class Lifestyle(Module):
         df['andrew_age'] = 30
 
         #  this below calls the age dataframe / call age.years to get age in years
-        age = population.age
-        df['andrew_age'] = age.years
 
-        agelt15_index = df.index[age.years < 15]
+        df['andrew_age'] = df.age_years
+
+        agelt15_index = df.index[df.age_years < 15]
 
         # todo: allocate wealth level at baseline
 
@@ -285,7 +289,7 @@ class Lifestyle(Module):
                                                             p=self.parameters['init_p_wealth_rural'])
 
         # get indices of all individuals over 15 years
-        gte_15 = df.index[age.years >= 15]
+        gte_15 = df.index[df.age_years >= 15]
 
         # overwt;
         overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
@@ -357,21 +361,9 @@ class Lifestyle(Module):
                                    ('F', '100+',  0.002)],
                                   columns=['sex', 'age_range', 'p_tob'])
 
-        # join the population dataframe with age information (we need them both together)
-        df_with_age = df.loc[gte_15, ['sex', 'li_wealth']].merge(age, left_index=True, right_index=True, how='inner')
-        assert len(df_with_age) == len(gte_15)  # check we have the same number of individuals after the merge
-
-        # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
-        tob_probs = df_with_age.merge(tob_lookup, left_on=['sex', 'age_range'], right_on=['sex', 'age_range'],
-                                      how='left')
-
-        assert np.array_equal(tob_probs.years_exact, df_with_age.years_exact)
-        # check the order of individuals is the same by comparing exact ages
-        assert tob_probs.p_tob.isna().sum() == 0  # ensure we found a p_tob for every individual
-
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
-        tob_probs = tob_probs['li_wealth'].astype(int) * tob_probs['p_tob']
+        tob_probs = df['li_wealth'].astype(int) * df['p_tob']
 
         # we now have the probability of tobacco use for each individual where age >= 15
         # draw a random number between 0 and 1 for all of them
@@ -389,8 +381,8 @@ class Lifestyle(Module):
         i_p_ex_alc_f = self.parameters['init_p_ex_alc_f']
         i_p_not_ex_alc_f = 1 - i_p_ex_alc_f
 
-        m_agege15_index = df.index[(age.years >= 15) & (df.sex == 'M')]
-        f_agege15_index = df.index[(age.years >= 15) & (df.sex == 'F')]
+        m_agege15_index = df.index[(df.age_years >= 15) & (df.sex == 'M')]
+        f_agege15_index = df.index[(df.age_years >= 15) & (df.sex == 'F')]
 
         df.loc[m_agege15_index, 'li_ex_alc'] = np.random.choice([True, False], size=len(m_agege15_index),
                                                                 p=[i_p_ex_alc_m, i_p_not_ex_alc_m])
@@ -399,12 +391,12 @@ class Lifestyle(Module):
 
         # mar stat (marital status)
 
-        age1520_index = df.index[(age.years >= 15) & (age.years < 20) & df.is_alive]
-        age2030_index = df.index[(age.years >= 20) & (age.years < 30) & df.is_alive]
-        age3040_index = df.index[(age.years >= 30) & (age.years < 40) & df.is_alive]
-        age4050_index = df.index[(age.years >= 40) & (age.years < 50) & df.is_alive]
-        age5060_index = df.index[(age.years >= 50) & (age.years < 60) & df.is_alive]
-        agege60_index = df.index[(age.years >= 60) & df.is_alive]
+        age1520_index = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
+        age2030_index = df.index[(df.age_years >= 20) & (df.age_years < 30) & df.is_alive]
+        age3040_index = df.index[(df.age_years >= 30) & (df.age_years < 40) & df.is_alive]
+        age4050_index = df.index[(df.age_years >= 40) & (df.age_years < 50) & df.is_alive]
+        age5060_index = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
+        agege60_index = df.index[(df.age_years >= 60) & df.is_alive]
 
         df.loc[age1520_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age1520_index), p=self.parameters['init_dist_mar_stat_age1520'])
         df.loc[age2030_index, 'li_mar_stat'] = np.random.choice([1, 2, 3], size=len(age2030_index), p=self.parameters['init_dist_mar_stat_age2030'])
@@ -415,10 +407,10 @@ class Lifestyle(Module):
 
         # li_on_con (contraception)
 
-        f_age1550_idx = df.index[(age.years >= 15) & (age.years < 50) & df.is_alive & (df.sex == 'F')]
+        f_age1550_idx = df.index[(df.age_years >= 15) & (df.age_years < 50) & df.is_alive & (df.sex == 'F')]
         df.loc[f_age1550_idx, 'li_on_con'] = np.random.choice([True, False], size=len(f_age1550_idx), p=[self.parameters['init_p_on_contrac'], 1 - self.parameters['init_p_on_contrac']])
 
-        f_age1550_on_con_idx = df.index[(age.years >= 15) & (age.years < 50) & df.is_alive & (df.sex == 'F') & (df.li_on_con == True)]
+        f_age1550_on_con_idx = df.index[(df.age_years >= 15) & (df.age_years < 50) & df.is_alive & (df.sex == 'F') & (df.li_on_con == True)]
         df.loc[f_age1550_on_con_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(f_age1550_on_con_idx), p=self.parameters['init_dist_con_t'])
 
         # education (li_in_ed and li_ed_lev)
@@ -426,14 +418,14 @@ class Lifestyle(Module):
         ed_lev_1_ = 1 - self.parameters['init_age2030_w5_some_ed']
         ed_lev_3_ = self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_prop_age2030_w5_some_ed_sec']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age2030_w5_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 5) & df.is_alive]
+        age2030_w5_idx = df.index[(df.age_years >= 20) & (df.age_years < 30) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age2030_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
         ed_lev_1_ = 1 - (self.parameters['init_age2030_w5_some_ed'] * self.parameters['init_rp_some_ed_age0513'])
         ed_lev_3_ = 0
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age0513_w5_idx = df.index[(age.years >= 5) & (age.years < 13) & (df.li_wealth == 5) & df.is_alive]
+        age0513_w5_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age0513_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0513_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -442,7 +434,7 @@ class Lifestyle(Module):
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age1320']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age1320_w5_idx = df.index[(age.years >= 13) & (age.years < 20) & (df.li_wealth == 5) & df.is_alive]
+        age1320_w5_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age1320_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1320_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -451,7 +443,7 @@ class Lifestyle(Module):
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age4050']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age4050_w5_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 5) & df.is_alive]
+        age4050_w5_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age4050_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -460,7 +452,7 @@ class Lifestyle(Module):
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_age5060']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age5060_w5_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 5) & df.is_alive]
+        age5060_w5_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & (df.li_wealth == 5) & df.is_alive]
         df.loc[age5060_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -469,7 +461,7 @@ class Lifestyle(Module):
                     * self.parameters['init_prop_age2030_w5_some_ed_sec'] \
                     * self.parameters['init_rp_some_ed_sec_agege60']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        agege60_w5_idx = df.index[(age.years >= 60) & (df.li_wealth == 5) & df.is_alive]
+        agege60_w5_idx = df.index[(df.age_years >= 60) & (df.li_wealth == 5) & df.is_alive]
         df.loc[agege60_w5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w5_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -481,7 +473,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
 
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age2030_w4_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 4) & df.is_alive]
+        age2030_w4_idx = df.index[(df.age_years >= 20) & (df.age_years < 30) & (df.li_wealth == 4) & df.is_alive]
         df.loc[age2030_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -489,7 +481,7 @@ class Lifestyle(Module):
                          * self.parameters['init_rp_some_ed_per_higher_wealth'])
         ed_lev_3_ = 0
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age0513_w4_idx = df.index[(age.years >= 5) & (age.years < 13) & (df.li_wealth == 4) & df.is_alive]
+        age0513_w4_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & (df.li_wealth == 4) & df.is_alive]
         df.loc[age0513_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0513_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -501,7 +493,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_age1320'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age1320_w4_idx = df.index[(age.years >= 13) & (age.years < 20) & (df.li_wealth == 4) & df.is_alive]
+        age1320_w4_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df.li_wealth == 4) & df.is_alive]
         df.loc[age1320_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1320_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -513,7 +505,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_age4050'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age4050_w4_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 4) & df.is_alive]
+        age4050_w4_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & (df.li_wealth == 4) & df.is_alive]
         df.loc[age4050_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -525,7 +517,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_age5060'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age5060_w4_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 4) & df.is_alive]
+        age5060_w4_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & (df.li_wealth == 4) & df.is_alive]
         df.loc[age5060_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -537,7 +529,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_agege60'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        agege60_w4_idx = df.index[(age.years >= 60) & (df.li_wealth == 4) & df.is_alive]
+        agege60_w4_idx = df.index[(df.age_years >= 60) & (df.li_wealth == 4) & df.is_alive]
         df.loc[agege60_w4_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w4_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -551,7 +543,7 @@ class Lifestyle(Module):
                         * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                         * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age2030_w3_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 3) & df.is_alive]
+        age2030_w3_idx = df.index[(df.age_years >= 20) & (df.age_years < 30) & (df.li_wealth == 3) & df.is_alive]
         df.loc[age2030_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -560,7 +552,7 @@ class Lifestyle(Module):
                             * self.parameters['init_rp_some_ed_per_higher_wealth'])
         ed_lev_3_ = 0
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age0513_w3_idx = df.index[(age.years >= 5) & (age.years < 13) & (df.li_wealth == 3) & df.is_alive]
+        age0513_w3_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & (df.li_wealth == 3) & df.is_alive]
         df.loc[age0513_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0513_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -576,7 +568,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
 
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age1320_w3_idx = df.index[(age.years >= 13) & (age.years < 20) & (df.li_wealth == 3) & df.is_alive]
+        age1320_w3_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df.li_wealth == 3) & df.is_alive]
         df.loc[age1320_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1320_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -591,7 +583,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age4050_w3_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 3) & df.is_alive]
+        age4050_w3_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & (df.li_wealth == 3) & df.is_alive]
         df.loc[age4050_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -606,7 +598,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age5060_w3_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 3) & df.is_alive]
+        age5060_w3_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & (df.li_wealth == 3) & df.is_alive]
         df.loc[age5060_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -621,7 +613,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        agege60_w3_idx = df.index[(age.years >= 60) & (df.li_wealth == 3) & df.is_alive]
+        agege60_w3_idx = df.index[(df.age_years >= 60) & (df.li_wealth == 3) & df.is_alive]
         df.loc[agege60_w3_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w3_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -638,7 +630,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age2030_w2_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 2) & df.is_alive]
+        age2030_w2_idx = df.index[(df.age_years >= 20) & (df.age_years < 30) & (df.li_wealth == 2) & df.is_alive]
         df.loc[age2030_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -648,7 +640,7 @@ class Lifestyle(Module):
                             * self.parameters['init_rp_some_ed_per_higher_wealth'])
         ed_lev_3_ = 0
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age0513_w2_idx = df.index[(age.years >= 5) & (age.years < 13) & (df.li_wealth == 2) & df.is_alive]
+        age0513_w2_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & (df.li_wealth == 2) & df.is_alive]
         df.loc[age0513_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0513_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -667,7 +659,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
 
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age1320_w2_idx = df.index[(age.years >= 13) & (age.years < 20) & (df.li_wealth == 2) & df.is_alive]
+        age1320_w2_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df.li_wealth == 2) & df.is_alive]
         df.loc[age1320_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1320_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -685,7 +677,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age4050_w2_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 2) & df.is_alive]
+        age4050_w2_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & (df.li_wealth == 2) & df.is_alive]
         df.loc[age4050_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -703,7 +695,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age5060_w2_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 2) & df.is_alive]
+        age5060_w2_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & (df.li_wealth == 2) & df.is_alive]
         df.loc[age5060_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -721,7 +713,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        agege60_w2_idx = df.index[(age.years >= 60) & (df.li_wealth == 2) & df.is_alive]
+        agege60_w2_idx = df.index[(df.age_years >= 60) & (df.li_wealth == 2) & df.is_alive]
         df.loc[agege60_w2_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w2_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -741,7 +733,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age2030_w1_idx = df.index[(age.years >= 20) & (age.years < 30) & (df.li_wealth == 1) & df.is_alive]
+        age2030_w1_idx = df.index[(df.age_years >= 20) & (df.age_years < 30) & (df.li_wealth == 1) & df.is_alive]
         df.loc[age2030_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age2030_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -763,7 +755,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
 
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age1320_w1_idx = df.index[(age.years >= 13) & (age.years < 20) & (df.li_wealth == 1) & df.is_alive]
+        age1320_w1_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df.li_wealth == 1) & df.is_alive]
         df.loc[age1320_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age1320_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -773,7 +765,7 @@ class Lifestyle(Module):
                             * self.parameters['init_rp_some_ed_per_higher_wealth'])
         ed_lev_3_ = 0
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age0513_w1_idx = df.index[(age.years >= 5) & (age.years < 13) & (df.li_wealth == 1) & df.is_alive]
+        age0513_w1_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & (df.li_wealth == 1) & df.is_alive]
         df.loc[age0513_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age0513_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -794,7 +786,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age4050_w1_idx = df.index[(age.years >= 40) & (age.years < 50) & (df.li_wealth == 1) & df.is_alive]
+        age4050_w1_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & (df.li_wealth == 1) & df.is_alive]
         df.loc[age4050_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age4050_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -815,7 +807,7 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        age5060_w1_idx = df.index[(age.years >= 50) & (age.years < 60) & (df.li_wealth == 1) & df.is_alive]
+        age5060_w1_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & (df.li_wealth == 1) & df.is_alive]
         df.loc[age5060_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5060_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
@@ -836,17 +828,17 @@ class Lifestyle(Module):
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth'] \
                     * self.parameters['init_rp_some_ed_sec_per_higher_wealth']
         ed_lev_2_ = 1 - ed_lev_1_ - ed_lev_3_
-        agege60_w1_idx = df.index[(age.years >= 60) & (df.li_wealth == 1) & df.is_alive]
+        agege60_w1_idx = df.index[(df.age_years >= 60) & (df.li_wealth == 1) & df.is_alive]
         df.loc[agege60_w1_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(agege60_w1_idx),
                                                                p=[ed_lev_1_, ed_lev_2_, ed_lev_3_])
 
-        age_5_13_ed_lev_1_index = df.index[(age.years >= 5) & (age.years < 14) & (df['li_ed_lev'] == 1) & df.is_alive]
+        age_5_13_ed_lev_1_index = df.index[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 1) & df.is_alive]
         df.loc[age_5_13_ed_lev_1_index, 'li_in_ed'] = False
 
-        age_5_13_ed_lev_2_index = df.index[(age.years >= 5) & (age.years < 14) & (df['li_ed_lev'] == 2) & df.is_alive]
+        age_5_13_ed_lev_2_index = df.index[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 2) & df.is_alive]
         df.loc[age_5_13_ed_lev_2_index, 'li_in_ed'] = True
 
-        age_13_20_ed_lev_3_index = df.index[(age.years >= 13) & (age.years < 20) & (df['li_ed_lev'] == 3) & df.is_alive]
+        age_13_20_ed_lev_3_index = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df['li_ed_lev'] == 3) & df.is_alive]
         df.loc[age_13_20_ed_lev_3_index, 'li_in_ed'] = True
 
     def initialise_simulation(self, sim):
@@ -861,25 +853,26 @@ class Lifestyle(Module):
         event = LifestylesLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
         :param mother: the mother for this child
         :param child: the new child
         """
 
-        child.li_urban = mother.li_urban
-        child.li_wealth = mother.li_wealth
-        child.li_in_ed = False
-        child.li_ed_lev = 1
-        child.li_mar_stat = 1
-        child.li_on_con = False
-        child.li_con_t = 1
+        df = self.sim.population.props
 
-#      child.date_of_birth
- #      child.sex
- #      child.mother_id
- #      child.is_alive
+        df.at[child_id, 'is_alive'] = True
+        df.at[child_id, 'date_of_birth'] = self.sim.date
+        df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
+        df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
+
+        df.at[child_id, 'li_alive'] = True
+        df.at[child_id, 'li_in_ed'] = False
+        df.at[child_id, 'li_ed_lev'] = 1
+        df.at[child_id, 'li_mar_stat'] = 1
+        df.at[child_id, 'li_on_con'] = False
+        df.at[child_id, 'li_con_t'] = 1
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -941,7 +934,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         age = population.age
 
-        df['andrew_age'] = age.years
+        df['andrew_age'] = df.age_years
 
         # TODO: remove in live code!
         currently_alive = df[df.is_alive]
@@ -974,13 +967,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # transition to ovrwt depends on sex
 
         currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_overwt = df.index[df.li_overwt & df.is_alive]
 
         ri_overwt_f_urban = self.r_overwt * self.rr_overwt_f * self.rr_overwt_urban
@@ -1027,13 +1020,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # transition between low ex and not low ex
         currently_not_low_ex_f_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_low_ex_m_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_low_ex_f_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & ~df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_not_low_ex_m_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & ~df.li_urban
-                                                & (age.years >= 15)]
+                                                & (df.age_years >= 15)]
         currently_low_ex = df.index[df.li_low_ex & df.is_alive]
 
         ri_low_ex_f_urban = self.r_low_ex * self.rr_low_ex_f * self.rr_low_ex_urban
@@ -1079,65 +1072,65 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[not_low_ex_idx, 'li_low_ex'] = False
 
         # transition between not tob and tob
-        currently_not_tob_f_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 1)]
-        currently_not_tob_m_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 1)]
-        currently_not_tob_f_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 1)]
-        currently_not_tob_m_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 1)]
-        currently_not_tob_f_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 40)
+        currently_not_tob_f_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 1)]
+        currently_not_tob_m_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 1)]
+        currently_not_tob_f_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 1)]
+        currently_not_tob_m_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 1)]
+        currently_not_tob_f_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
                                                   & (df.li_wealth == 1)]
-        currently_not_tob_m_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 40)
+        currently_not_tob_m_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
                                                   & (df.li_wealth == 1)]
-        currently_not_tob_f_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 2)]
-        currently_not_tob_m_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 2)]
-        currently_not_tob_f_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 2)]
-        currently_not_tob_m_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 2)]
-        currently_not_tob_f_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 40)
+        currently_not_tob_f_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 2)]
+        currently_not_tob_m_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 2)]
+        currently_not_tob_f_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 2)]
+        currently_not_tob_m_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 2)]
+        currently_not_tob_f_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
                                                   & (df.li_wealth == 2)]
-        currently_not_tob_m_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 40)
+        currently_not_tob_m_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
                                                   & (df.li_wealth == 2)]
-        currently_not_tob_f_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 3)]
-        currently_not_tob_m_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 3)]
-        currently_not_tob_f_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 3)]
-        currently_not_tob_m_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 3)]
-        currently_not_tob_f_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 40)
+        currently_not_tob_f_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 3)]
+        currently_not_tob_m_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 3)]
+        currently_not_tob_f_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 3)]
+        currently_not_tob_m_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 3)]
+        currently_not_tob_f_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
                                                   & (df.li_wealth == 3)]
-        currently_not_tob_m_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 40)
+        currently_not_tob_m_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
                                                   & (df.li_wealth == 3)]
-        currently_not_tob_f_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 4)]
-        currently_not_tob_m_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 4)]
-        currently_not_tob_f_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 4)]
-        currently_not_tob_m_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 4)]
-        currently_not_tob_f_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 40)
+        currently_not_tob_f_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 4)]
+        currently_not_tob_m_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 4)]
+        currently_not_tob_f_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 4)]
+        currently_not_tob_m_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 4)]
+        currently_not_tob_f_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
                                                   & (df.li_wealth == 4)]
-        currently_not_tob_m_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 40)
+        currently_not_tob_m_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
                                                   & (df.li_wealth == 4)]
-        currently_not_tob_f_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 5)]
-        currently_not_tob_m_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 15)
-                                                  & (age.years < 20) & (df.li_wealth == 5)]
-        currently_not_tob_f_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 5)]
-        currently_not_tob_m_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 20)
-                                                  & (age.years < 40) & (df.li_wealth == 5)]
-        currently_not_tob_f_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (age.years >= 40)
+        currently_not_tob_f_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 5)]
+        currently_not_tob_m_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
+                                                  & (df.age_years < 20) & (df.li_wealth == 5)]
+        currently_not_tob_f_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 5)]
+        currently_not_tob_m_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
+                                                  & (df.age_years < 40) & (df.li_wealth == 5)]
+        currently_not_tob_f_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
                                                   & (df.li_wealth == 5)]
-        currently_not_tob_m_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (age.years >= 40)
+        currently_not_tob_m_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
                                                   & (df.li_wealth == 5)]
 
         currently_tob = df.index[df.li_tob & df.is_alive]
@@ -1426,8 +1419,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
     # transition to ex alc depends on sex
 
-        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (age.years >= 15)]
-        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (age.years >= 15)]
+        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
         currently_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
         ri_ex_alc_f = self.r_ex_alc*self.rr_ex_alc_f
@@ -1455,7 +1448,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
     # transitions in mar stat
 
-        curr_never_mar_index = df.index[df.is_alive & (age.years >= 15) & (age.years < 30) & (df.li_mar_stat == 1)]
+        curr_never_mar_index = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & (df.li_mar_stat == 1)]
         now_mar = np.random.choice([True, False], size=len(curr_never_mar_index), p=[self.r_mar, 1 - self.r_mar])
         if now_mar.sum():
             now_mar_index = curr_never_mar_index[now_mar]
@@ -1469,95 +1462,95 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating of contraceptive status
 
-        curr_not_on_con_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & ~df.li_on_con]
+        curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & ~df.li_on_con]
         now_on_con = np.random.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
         if now_on_con.sum():
             now_on_con_index = curr_not_on_con_idx[now_on_con]
             df.loc[now_on_con_index, 'li_on_con'] = True
 
-        curr_on_con_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con]
+        curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con]
         now_not_on_con = np.random.choice([True, False], size=len(curr_on_con_idx), p=[self.r_contrac_int, 1 - self.r_contrac_int])
         if now_not_on_con.sum():
             now_not_on_con_index = curr_on_con_idx[now_not_on_con]
             df.loc[now_not_on_con_index, 'li_on_con'] = False
 
-        f_age50_idx = df.index[df.is_alive & (age.years == 50) & (df.sex == 'F') & df.li_on_con]
+        f_age50_idx = df.index[df.is_alive & (df.age_years == 50) & (df.sex == 'F') & df.li_on_con]
         df.loc[f_age50_idx, 'li_on_con'] = False
 
-        curr_on_con_t_1_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
+        curr_on_con_t_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
         df.loc[curr_on_con_t_1_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_1_idx), p=self.r_con_from_1)
-        curr_on_con_t_2_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
+        curr_on_con_t_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
         df.loc[curr_on_con_t_2_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_2_idx), p=self.r_con_from_2)
-        curr_on_con_t_3_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
+        curr_on_con_t_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
         df.loc[curr_on_con_t_3_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_3_idx), p=self.r_con_from_3)
-        curr_on_con_t_4_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
+        curr_on_con_t_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
         df.loc[curr_on_con_t_4_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_4_idx), p=self.r_con_from_4)
-        curr_on_con_t_5_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
+        curr_on_con_t_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
         df.loc[curr_on_con_t_5_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_5_idx), p=self.r_con_from_5)
-        curr_on_con_t_6_idx = df.index[df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
+        curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
         df.loc[curr_on_con_t_6_idx, 'li_con_t'] = np.random.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
 
         # update education
 
         p_p_ed = self.p_ed_primary
-        age5_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_wealth == 5)]
+        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 5)]
         df.loc[age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 5)]
+        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 5)]
         df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
         p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_wealth == 4)]
+        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 4)]
         df.loc[age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 4)]
+        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 4)]
         df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
         p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_wealth == 3)]
+        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 3)]
         df.loc[age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 3)]
+        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 3)]
         df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
         p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth * \
             self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_wealth == 2)]
+        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 2)]
         df.loc[age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 2)]
+        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 2)]
         df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
         p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth * \
             self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_wealth == 1)]
+        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 1)]
         df.loc[age5_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(age.years_exact >= 5) & (age.years_exact < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 1)]
+        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 1)]
         df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
         p_s_ed = self.p_ed_secondary
-        age13_idx = df.index[(age.years_exact >= 13) & (age.years_exact < 14) & df.is_alive & (df.li_wealth == 5) & df.li_in_ed & (df.li_ed_lev == 2)]
+        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 5) & df.li_in_ed & (df.li_ed_lev == 2)]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
 
         p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(age.years_exact >= 13) & (age.years_exact < 14) & df.is_alive & (df.li_wealth == 4) & df.li_in_ed & (df.li_ed_lev == 2)]
+        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 4) & df.li_in_ed & (df.li_ed_lev == 2)]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
 
         p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(age.years_exact >= 13) & (age.years_exact < 14) & df.is_alive & (df.li_wealth == 3) & df.li_in_ed & (df.li_ed_lev == 2)]
+        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 3) & df.li_in_ed & (df.li_ed_lev == 2)]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
 
         p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth \
             * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(age.years_exact >= 13) & (age.years_exact < 14) & df.is_alive & (df.li_wealth == 2) & df.li_in_ed & (df.li_ed_lev == 2)]
+        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 2) & df.li_in_ed & (df.li_ed_lev == 2)]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
 
         p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth \
             * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(age.years_exact >= 13) & (age.years_exact < 14) & df.is_alive & (df.li_wealth == 1)
+        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 1)
                              & df.li_in_ed & (df.li_ed_lev == 2)]
         df.loc[age13_idx, 'li_ed_lev'] = np.random.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
 
-        age5_ad_lev_1_idx = df.index[(age.years_exact > 5) & df.is_alive & (df.li_ed_lev == 1)]
+        age5_ad_lev_1_idx = df.index[(df.age_exact_years > 5) & df.is_alive & (df.li_ed_lev == 1)]
         df.loc[age5_ad_lev_1_idx, 'li_in_ed'] = False
 
-        age13_ad_lev_2_idx = df.index[(age.years_exact > 13) & df.is_alive & (df.li_ed_lev == 2) & df.li_in_ed]
+        age13_ad_lev_2_idx = df.index[(df.age_exact_years > 13) & df.is_alive & (df.li_ed_lev == 2) & df.li_in_ed]
         df.loc[age13_ad_lev_2_idx, 'li_in_ed'] = False
 
         p_stop_ed_w1 = self.r_stop_ed
@@ -1596,7 +1589,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             now_not_in_ed_w5_idx = curr_in_ed_w5_idx[now_not_in_ed_w5]
             df.loc[now_not_in_ed_w5_idx, 'li_in_ed'] = False
 
-        curr_in_ed_age20_idx = df.index[df.is_alive & df.li_in_ed & (age.years == 20)]
+        curr_in_ed_age20_idx = df.index[df.is_alive & df.li_in_ed & (df.age_years == 20)]
         df.loc[curr_in_ed_age20_idx, 'li_in_ed'] = False
 
 
@@ -1617,164 +1610,164 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         urban_alive = (df.is_alive & df.li_urban).sum()
         alive = df.is_alive.sum()
 
-        ex_alc = (df.is_alive & (age.years >= 15) & df.li_ex_alc).sum()
+        ex_alc = (df.is_alive & (df.age_years >= 15) & df.li_ex_alc).sum()
 
         prop_urban = urban_alive / alive
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
 
-        wealth1_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (age.years >= 6)]
-        wealth1_ed_lev_3_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
-        wealth5_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (age.years >= 5)]
-        wealth5_ed_lev_3_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 3) & (age.years >= 5)]
-        wealth1_ed_lev_2_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 2) & (age.years >= 5)]
-        wealth5_ed_lev_2_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 2) & (age.years >= 5)]
+        wealth1_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.age_years >= 6)]
+        wealth1_ed_lev_3_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 3) & (df.age_years >= 5)]
+        wealth5_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.age_years >= 5)]
+        wealth5_ed_lev_3_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 3) & (df.age_years >= 5)]
+        wealth1_ed_lev_2_agege5 = df.index[(df.li_wealth == 1) & df.is_alive & (df.li_ed_lev == 2) & (df.age_years >= 5)]
+        wealth5_ed_lev_2_agege5 = df.index[(df.li_wealth == 5) & df.is_alive & (df.li_ed_lev == 2) & (df.age_years >= 5)]
 
         prop_wealth1_ed_lev_3_agege5 = len(wealth1_ed_lev_3_agege5) / len(wealth1_agege5)
         prop_wealth5_ed_lev_3_agege5 = len(wealth5_ed_lev_3_agege5) / len(wealth5_agege5)
         prop_wealth1_some_ed_agege5 = (len(wealth1_ed_lev_2_agege5) + len(wealth1_ed_lev_3_agege5)) / len(wealth1_agege5)
         prop_wealth5_some_ed_agege5 = (len(wealth5_ed_lev_2_agege5) + len(wealth5_ed_lev_3_agege5)) / len(wealth5_agege5)
 
-        mar_stat_1_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (age.years >= 15)]
-        mar_stat_2_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (age.years >= 15)]
-        mar_stat_3_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (age.years >= 15)]
+        mar_stat_1_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (df.age_years >= 15)]
+        mar_stat_2_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (df.age_years >= 15)]
+        mar_stat_3_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (df.age_years >= 15)]
 
-        m_idx = df.index[df.is_alive & (df.sex == 'M') & (age.years >= 15)]
-        f_idx = df.index[df.is_alive & (df.sex == 'F') & (age.years >= 15)]
-        ge15_idx = df.index[df.is_alive & (age.years >= 15)]
+        m_idx = df.index[df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
+        f_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+        ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
 
-        mar_stat_1_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (age.years >= 60)]
-        mar_stat_2_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (age.years >= 60)]
-        mar_stat_3_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (age.years >= 60)]
-        ge60_idx = df.index[df.is_alive & (age.years >= 60)]
+        mar_stat_1_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 1) & (df.age_years >= 60)]
+        mar_stat_2_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 2) & (df.age_years >= 60)]
+        mar_stat_3_agege60_idx = df.index[df.is_alive & (df.li_mar_stat == 3) & (df.age_years >= 60)]
+        ge60_idx = df.index[df.is_alive & (df.age_years >= 60)]
 
-        m_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & df.li_urban]
-        f_urban_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & df.li_urban]
-        m_rural_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & ~df.li_urban]
-        f_rural_ge15_overwt = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & ~df.li_urban]
+        m_urban_ge15_overwt = df.index[(df.age_years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & df.li_urban]
+        f_urban_ge15_overwt = df.index[(df.age_years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & df.li_urban]
+        m_rural_ge15_overwt = df.index[(df.age_years >= 15) & (df.sex == 'M') & df.li_overwt & df.is_alive & ~df.li_urban]
+        f_rural_ge15_overwt = df.index[(df.age_years >= 15) & (df.sex == 'F') & df.li_overwt & df.is_alive & ~df.li_urban]
 
-        m_urban_ge15_low_ex = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_low_ex & df.is_alive & df.li_urban]
-        f_urban_ge15_low_ex = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_low_ex & df.is_alive & df.li_urban]
-        m_rural_ge15_low_ex = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_low_ex & df.is_alive & ~df.li_urban]
-        f_rural_ge15_low_ex = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_low_ex & df.is_alive & ~df.li_urban]
+        m_urban_ge15_low_ex = df.index[(df.age_years >= 15) & (df.sex == 'M') & df.li_low_ex & df.is_alive & df.li_urban]
+        f_urban_ge15_low_ex = df.index[(df.age_years >= 15) & (df.sex == 'F') & df.li_low_ex & df.is_alive & df.li_urban]
+        m_rural_ge15_low_ex = df.index[(df.age_years >= 15) & (df.sex == 'M') & df.li_low_ex & df.is_alive & ~df.li_urban]
+        f_rural_ge15_low_ex = df.index[(df.age_years >= 15) & (df.sex == 'F') & df.li_low_ex & df.is_alive & ~df.li_urban]
 
-        m_urban_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & df.li_urban & df.is_alive]
-        f_urban_ge15 = df.index[(age.years >= 15) & (df.sex == 'F') & df.li_urban & df.is_alive]
-        m_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'M') & ~df.li_urban & df.is_alive]
-        f_rural_ge15 = df.index[(age.years >= 15) & (df.sex == 'F') & ~df.li_urban & df.is_alive]
+        m_urban_ge15 = df.index[(df.age_years >= 15) & (df.sex == 'M') & df.li_urban & df.is_alive]
+        f_urban_ge15 = df.index[(df.age_years >= 15) & (df.sex == 'F') & df.li_urban & df.is_alive]
+        m_rural_ge15 = df.index[(df.age_years >= 15) & (df.sex == 'M') & ~df.li_urban & df.is_alive]
+        f_rural_ge15 = df.index[(df.age_years >= 15) & (df.sex == 'F') & ~df.li_urban & df.is_alive]
 
-        tob = df.index[df.li_tob & df.is_alive & (age.years >= 15)]
+        tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15)]
 
-        m_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        m_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 1)]
-        m_age2039_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                     & (df.li_wealth == 1)]
-        m_agege40_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 1)]
-        f_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 1)]
+        f_age1519_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                     & (df.li_wealth == 1)]
-        f_age2039_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                     & (df.li_wealth == 1)]
-        f_agege40_w1_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 1)]
-        m_age1519_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w1_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 1)]
+        m_age1519_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 2)]
-        m_age2039_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                     & (df.li_wealth == 2)]
-        m_agege40_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 2)]
-        f_age1519_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 2)]
+        f_age1519_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                     & (df.li_wealth == 2)]
-        f_age2039_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                     & (df.li_wealth == 2)]
-        f_agege40_w2_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 2)]
-        m_age1519_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w2_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 2)]
+        m_age1519_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 3)]
-        m_age2039_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                     & (df.li_wealth == 3)]
-        m_agege40_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 3)]
-        f_age1519_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 3)]
+        f_age1519_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                     & (df.li_wealth == 3)]
-        f_age2039_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                     & (df.li_wealth == 3)]
-        f_agege40_w3_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 3)]
-        m_age1519_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w3_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 3)]
+        m_age1519_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 4)]
-        m_age2039_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                     & (df.li_wealth == 4)]
-        m_agege40_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 4)]
-        f_age1519_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 4)]
+        f_age1519_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                     & (df.li_wealth == 4)]
-        f_age2039_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                     & (df.li_wealth == 4)]
-        f_agege40_w4_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 4)]
-        m_age1519_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w4_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 4)]
+        m_age1519_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                     & (df.li_wealth == 5)]
-        m_age2039_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                     & (df.li_wealth == 5)]
-        m_agege40_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 5)]
-        f_age1519_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 5)]
+        f_age1519_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                     & (df.li_wealth == 5)]
-        f_age2039_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                     & (df.li_wealth == 5)]
-        f_agege40_w5_tob = df.index[df.li_tob & df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 5)]
-        m_age1519_w1 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w5_tob = df.index[df.li_tob & df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 5)]
+        m_age1519_w1 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                 & (df.li_wealth == 1)]
-        m_age2039_w1 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w1 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                 & (df.li_wealth == 1)]
-        m_agege40_w1 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 1)]
-        f_age1519_w1 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w1 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 1)]
+        f_age1519_w1 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                 & (df.li_wealth == 1)]
-        f_age2039_w1 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w1 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                 & (df.li_wealth == 1)]
-        f_agege40_w1 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 1)]
-        m_age1519_w2 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w1 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 1)]
+        m_age1519_w2 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                 & (df.li_wealth == 2)]
-        m_age2039_w2 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w2 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                 & (df.li_wealth == 2)]
-        m_agege40_w2 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 2)]
-        f_age1519_w2 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w2 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 2)]
+        f_age1519_w2 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                 & (df.li_wealth == 2)]
-        f_age2039_w2 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w2 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                 & (df.li_wealth == 2)]
-        f_agege40_w2 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 2)]
-        m_age1519_w3 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w2 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 2)]
+        m_age1519_w3 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                 & (df.li_wealth == 3)]
-        m_age2039_w3 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w3 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                 & (df.li_wealth == 3)]
-        m_agege40_w3 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 3)]
-        f_age1519_w3 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w3 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 3)]
+        f_age1519_w3 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                 & (df.li_wealth == 3)]
-        f_age2039_w3 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w3 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                 & (df.li_wealth == 3)]
-        f_agege40_w3 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 3)]
-        m_age1519_w4 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w3 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 3)]
+        m_age1519_w4 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                 & (df.li_wealth == 4)]
-        m_age2039_w4 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w4 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                 & (df.li_wealth == 4)]
-        m_agege40_w4 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 4)]
-        f_age1519_w4 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w4 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 4)]
+        f_age1519_w4 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                 & (df.li_wealth == 4)]
-        f_age2039_w4 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w4 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                 & (df.li_wealth == 4)]
-        f_agege40_w4 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 4)]
-        m_age1519_w5 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'M')
+        f_agege40_w4 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 4)]
+        m_age1519_w5 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'M')
                                 & (df.li_wealth == 5)]
-        m_age2039_w5 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'M')
+        m_age2039_w5 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'M')
                                 & (df.li_wealth == 5)]
-        m_agege40_w5 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'M') & (df.li_wealth == 5)]
-        f_age1519_w5 = df.index[df.is_alive & (age.years >= 15) & (age.years < 20) & (df.sex == 'F')
+        m_agege40_w5 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'M') & (df.li_wealth == 5)]
+        f_age1519_w5 = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 20) & (df.sex == 'F')
                                 & (df.li_wealth == 5)]
-        f_age2039_w5 = df.index[df.is_alive & (age.years >= 20) & (age.years < 39) & (df.sex == 'F')
+        f_age2039_w5 = df.index[df.is_alive & (df.age_years >= 20) & (df.age_years < 39) & (df.sex == 'F')
                                 & (df.li_wealth == 5)]
-        f_agege40_w5 = df.index[df.is_alive & (age.years >= 40) & (df.sex == 'F') & (df.li_wealth == 5)]
+        f_agege40_w5 = df.index[df.is_alive & (df.age_years >= 40) & (df.sex == 'F') & (df.li_wealth == 5)]
 
-        f_ex_alc = (df.is_alive & (age.years >= 15) & (df.sex == 'F') & df.li_ex_alc).sum()
-        m_ex_alc = (df.is_alive & (age.years >= 15) & (df.sex == 'M') & df.li_ex_alc).sum()
+        f_ex_alc = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F') & df.li_ex_alc).sum()
+        m_ex_alc = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M') & df.li_ex_alc).sum()
 
-        n_m_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'M')).sum()
-        n_f_ge15 = (df.is_alive & (age.years >= 15) & (df.sex == 'F')).sum()
-        n_ge15 = (df.is_alive & (age.years >= 15)).sum()
+        n_m_ge15 = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
+        n_f_ge15 = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
+        n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
-        n_f_age1550 = (df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F')).sum()
-        n_f_age1550_on_con = (df.is_alive & (age.years >= 15) & (age.years < 50) & (df.sex == 'F') & df.li_on_con).sum()
+        n_f_age1550 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F')).sum()
+        n_f_age1550_on_con = (df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con).sum()
 
         prop_f_1550_on_con = n_f_age1550_on_con / n_f_age1550
 
@@ -1786,37 +1779,37 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df['li_date_trans_to_urban'] > self.sim.date - DateOffset(months=self.repeat))
         newly_urban_in_last_3mths = mask.sum()
 
-        age6_w1_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 1)]
-        age6_w1_in_ed_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 1) & df.li_in_ed]
+        age6_w1_idx = df.index[df.is_alive & (df.age_years == 6) & (df.li_wealth == 1)]
+        age6_w1_in_ed_idx = df.index[df.is_alive & (df.age_years == 6) & (df.li_wealth == 1) & df.li_in_ed]
         prop_age6_in_ed_w1 = len(age6_w1_in_ed_idx) / len(age6_w1_idx)
-        age6_w5_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 5)]
-        age6_w5_in_ed_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 5) & df.li_in_ed]
+        age6_w5_idx = df.index[df.is_alive & (df.age_years == 6) & (df.li_wealth == 5)]
+        age6_w5_in_ed_idx = df.index[df.is_alive & (df.age_years == 6) & (df.li_wealth == 5) & df.li_in_ed]
         prop_age6_in_ed_w5 = len(age6_w5_in_ed_idx) / len(age6_w5_idx)
 
-        age14_w1_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 1)]
-        age14_w1_in_ed_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 1) & df.li_in_ed]
+        age14_w1_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 1)]
+        age14_w1_in_ed_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 1) & df.li_in_ed]
         prop_age14_in_ed_w1 = len(age14_w1_in_ed_idx) / len(age14_w1_idx)
-        age14_w5_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 5)]
-        age14_w5_in_ed_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 5) & df.li_in_ed]
+        age14_w5_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 5)]
+        age14_w5_in_ed_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 5) & df.li_in_ed]
         prop_age14_in_ed_w5 = len(age14_w5_in_ed_idx) / len(age14_w5_idx)
 
-        age19_w1_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 1)]
-        age19_w1_in_ed_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 1) & df.li_in_ed]
+        age19_w1_idx = df.index[df.is_alive & (df.age_years == 19) & (df.li_wealth == 1)]
+        age19_w1_in_ed_idx = df.index[df.is_alive & (df.age_years == 19) & (df.li_wealth == 1) & df.li_in_ed]
         prop_age19_in_ed_w1 = len(age19_w1_in_ed_idx) / len(age19_w1_idx)
-        age19_w5_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 5)]
-        age19_w5_in_ed_idx = df.index[df.is_alive & (age.years == 19) & (df.li_wealth == 5) & df.li_in_ed]
+        age19_w5_idx = df.index[df.is_alive & (df.age_years == 19) & (df.li_wealth == 5)]
+        age19_w5_in_ed_idx = df.index[df.is_alive & (df.age_years == 19) & (df.li_wealth == 5) & df.li_in_ed]
         prop_age19_in_ed_w5 = len(age19_w5_in_ed_idx) / len(age19_w5_idx)
 
-        age12_w5_idx = df.index[df.is_alive & (age.years == 12) & (df.li_wealth == 5)]
-        age12_w5_in_ed_idx = df.index[df.is_alive & (age.years == 12) & (df.li_wealth == 5) & df.li_in_ed]
+        age12_w5_idx = df.index[df.is_alive & (df.age_years == 12) & (df.li_wealth == 5)]
+        age12_w5_in_ed_idx = df.index[df.is_alive & (df.age_years == 12) & (df.li_wealth == 5) & df.li_in_ed]
         prop_age12_in_ed_w5 = len(age12_w5_in_ed_idx) / len(age12_w5_idx)
 
-        age6_w5_ed_lev_2_idx = df.index[df.is_alive & (age.years == 6) & (df.li_wealth == 5) & (df.li_ed_lev == 2)]
+        age6_w5_ed_lev_2_idx = df.index[df.is_alive & (df.age_years == 6) & (df.li_wealth == 5) & (df.li_ed_lev == 2)]
         prop_age6_ed_lev_2_w5 = len(age6_w5_ed_lev_2_idx) / len(age6_w5_idx)
 
-        age14_w5_ed_lev_3_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 5) & (df.li_ed_lev == 3)]
+        age14_w5_ed_lev_3_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 5) & (df.li_ed_lev == 3)]
         prop_age14_ed_lev_3_w5 = len(age14_w5_ed_lev_3_idx) / len(age14_w5_idx)
-        age14_w1_ed_lev_3_idx = df.index[df.is_alive & (age.years == 14) & (df.li_wealth == 1) & (df.li_ed_lev == 3)]
+        age14_w1_ed_lev_3_idx = df.index[df.is_alive & (df.age_years == 14) & (df.li_wealth == 1) & (df.li_ed_lev == 3)]
         prop_age14_ed_lev_3_w1 = len(age14_w1_ed_lev_3_idx) / len(age14_w1_idx)
 
         n_age14_w5_idx = len(age14_w5_idx)
