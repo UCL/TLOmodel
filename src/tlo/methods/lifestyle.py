@@ -259,11 +259,8 @@ class Lifestyle(Module):
         df['li_con_t'] = 1  # default: call contraceptive type 1, but when li_on_con = False this property becomes most recent contraceptive used
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
-        df['andrew_age'] = 30
 
         #  this below calls the age dataframe / call age.years to get age in years
-
-        df['andrew_age'] = df.age_years
 
         agelt15_index = df.index[df.age_years < 15]
 
@@ -875,7 +872,6 @@ class Lifestyle(Module):
         df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
         df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
 
-        df.at[child_id, 'li_alive'] = True
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
         df.at[child_id, 'li_mar_stat'] = 1
@@ -939,8 +935,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
-
-        df['andrew_age'] = df.age_years
 
         # TODO: remove in live code!
         currently_alive = df[df.is_alive]
