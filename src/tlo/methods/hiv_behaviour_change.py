@@ -90,15 +90,13 @@ class BehaviourChangeEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         df = population.props
 
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_age))
+        random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of TB testing
-        counselling_index = df_age.index[
-            (random_draw < params['p_behaviour']) & ~df_age.behaviour_change & df_age.is_alive
-            & (df_age.years >= 15)]
+        counselling_index = df.index[
+            (random_draw < params['p_behaviour']) & ~df.behaviour_change & df.is_alive
+            & (df.age_years >= 15)]
 
         df.loc[counselling_index, 'behaviour_change'] = True
         df.loc[counselling_index, 'date_behaviour_change'] = now
@@ -115,10 +113,9 @@ class BehaviourChangeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # get some summary statistics
         df = population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
-        total_counselled = len(df_age[df_age.is_alive & (df_age.years >= 15) & df_age.behaviour_change])
-        proportion_exposed = total_counselled / len(df[df.is_alive & (df_age.years >= 15)])
+        total_counselled = len(df[df.is_alive & (df.age_years >= 15) & df.behaviour_change])
+        proportion_exposed = total_counselled / len(df[df.is_alive & (df.age_years >= 15)])
 
         mask = (df['date_behaviour_change'] > self.sim.date - DateOffset(months=self.repeat))
         counselling_in_last_month = mask.sum()
