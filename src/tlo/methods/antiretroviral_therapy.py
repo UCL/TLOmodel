@@ -168,7 +168,7 @@ class HivArtDeathEvent(RegularEvent, PopulationScopeEventMixin):
         will_die = (df[deaths]).index
 
         for i in will_die:
-            person = population[i]
+            person = population.index[i]
             death = demography.InstantaneousDeath(self.module, person, cause='aids')  # make that death event
             self.sim.schedule_event(death, now)  # schedule the death for "now"
 
