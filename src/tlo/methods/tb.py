@@ -113,7 +113,7 @@ class tb_baseline(Module):
         then 2015-2018+ needs to run with beta in the FOI
         """
         df = population.props
-        age = population.age
+        # age = population.age
         now = self.sim.date
 
         # set-up baseline population
@@ -134,7 +134,7 @@ class tb_baseline(Module):
 
         for i in range(0, 81):
             # male
-            idx = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
+            idx = (df.age_years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -144,7 +144,7 @@ class tb_baseline(Module):
                 df.loc[male_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[male_latent_tb, 'date_latent_tb'] = now
 
-            idx_uninfected = (age.years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
+            idx_uninfected = (df.age_years == i) & (df.sex == 'M') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx_uninfected.any():
                 fraction_active_tb = active_tb_prob_year.loc[
@@ -154,7 +154,7 @@ class tb_baseline(Module):
                 df.loc[male_active_tb, 'date_active_tb'] = now
 
             # female
-            idx = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
+            idx = (df.age_years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 # sample from uninfected population using WHO prevalence
@@ -164,7 +164,7 @@ class tb_baseline(Module):
                 df.loc[female_latent_tb, 'has_tb'] = 'Latent'
                 df.loc[female_latent_tb, 'date_latent_tb'] = now
 
-            idx_uninfected = (age.years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
+            idx_uninfected = (df.age_years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
                 fraction_active_tb = active_tb_prob_year.loc[
@@ -231,6 +231,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
+        # TODO: no age structure in progression to active yet
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infection
         # remember event is occurring annually so scale rates accordingly
