@@ -85,27 +85,27 @@ class health_system(Module):
         df = population.props
 
         # add age to population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+        # df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_age))
+        random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of baseline population ever testing for HIV
-        art_index_male = df_age.index[
-            (random_draw < self.parameters['testing_coverage_male']) & df_age.is_alive & (df_age.sex == 'M') & (
-                df_age.years >= 15)]
+        art_index_male = df.index[
+            (random_draw < self.parameters['testing_coverage_male']) & df.is_alive & (df.sex == 'M') & (
+                df.age_years >= 15)]
         # print('art_index: ', art_index)
 
-        art_index_female = df_age.index[
-            (random_draw < self.parameters['testing_coverage_female']) & df_age.is_alive & (df_age.sex == 'F') & (
-                df_age.years >= 15)]
+        art_index_female = df.index[
+            (random_draw < self.parameters['testing_coverage_female']) & df.is_alive & (df.sex == 'F') & (
+                df.age_years >= 15)]
 
         # we don't know date tested, assume date = now
         df.loc[art_index_male | art_index_female, 'ever_tested'] = True
         df.loc[art_index_male | art_index_female, 'date_tested'] = now
 
         # outcome of test
-        diagnosed_idx = df_age.index[df.ever_tested & df.is_alive & df.has_hiv]
+        diagnosed_idx = df.index[df.ever_tested & df.is_alive & df.has_hiv]
         df.loc[diagnosed_idx, 'hiv_diagnosed'] = True
 
     def baseline_art(self, population):
@@ -119,31 +119,27 @@ class health_system(Module):
         coverage = worksheet.loc[worksheet.year == now.year, ['year', 'single_age', 'sex', 'prop_coverage']]
         # print('coverage: ', coverage.head(20))
 
-        # add age to population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-        # print('df_with_age: ', df_with_age.head(10))
-
         # merge all susceptible individuals with their coverage probability based on sex and age
-        df_age = df_age.merge(coverage,
+        df_art = df.merge(coverage,
 
-                              left_on=['years', 'sex'],
+                              left_on=['age_years', 'sex'],
 
                               right_on=['single_age', 'sex'],
 
                               how='left')
 
         # no data for ages 100+ so fill missing values with 0
-        df_age['prop_coverage'] = df_age['prop_coverage'].fillna(0)
+        df_art['prop_coverage'] = df_art['prop_coverage'].fillna(0)
         # print('df_with_age_art_prob: ', df_with_age_art_prob.head(20))
 
-        assert df_age.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
+        assert df_art.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_age))
+        random_draw = self.sim.rng.random_sample(size=len(df_art))
 
         # probability of baseline population receiving art: requirement = ever_tested
-        art_index = df_age.index[
-            (random_draw < df_age.prop_coverage) & df_age.has_hiv & df.ever_tested & df.is_alive]
+        art_index = df_art.index[
+            (random_draw < df_art.prop_coverage) & df_art.has_hiv & df.ever_tested & df.is_alive]
         # print('art_index: ', art_index)
 
         df.loc[art_index, 'on_art'] = True
@@ -186,10 +182,8 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-
         # testing rates are for >=15 years only
-        df_with_rates = pd.merge(df_age, params['testing_rates'], left_on=['years', 'sex'], right_on=['age', 'sex'],
+        df_with_rates = pd.merge(df, params['testing_rates'], left_on=['age_years', 'sex'], right_on=['age', 'sex'],
                                  how='left')
         # print(df_with_rates.head(10))
 
@@ -209,7 +203,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # if repeat testing, will only store latest test date
         # TODO: if needed, could add a counter for number of hiv tests per person (useful for costing?)
         testing_index = df_with_rates.index[
-            (random_draw < df_with_rates.testing_rates) & df_with_rates.is_alive & (df_with_rates.years >= 15)]
+            (random_draw < df_with_rates.testing_rates) & df_with_rates.is_alive & (df_with_rates.age_years >= 15)]
         # print('testing index', testing_index)
 
         df.loc[testing_index, 'ever_tested'] = True
