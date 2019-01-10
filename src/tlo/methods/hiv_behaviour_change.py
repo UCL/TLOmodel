@@ -68,15 +68,13 @@ class BehaviourChange(Module):
         sim.schedule_event(BehaviourChangeLoggingEvent(self), sim.date + DateOffset(months=6))
 
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
         """
-        pass
+        df = self.sim.population.props
+
+        df.at[child_id, 'behaviour_change'] = False
+        df.at[child_id, 'date_behaviour_change'] = pd.NaT
 
 
 class BehaviourChangeEvent(RegularEvent, PopulationScopeEventMixin):

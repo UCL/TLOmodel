@@ -48,8 +48,14 @@ class health_system_tb(Module):
         # add an event to log to screen
         sim.schedule_event(TbHealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
 
-    def on_birth(self, mother, child):
-        pass
+    def on_birth(self, mother_id, child_id):
+        """Initialise our properties for a newborn individual.
+        """
+        df = self.sim.population.props
+
+        df.at[child_id, 'tb_ever_tested'] = False
+        df.at[child_id, 'tb_date_tested'] = pd.NaT
+        df.at[child_id, 'tb_diagnosed'] = False
 
 
 class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):

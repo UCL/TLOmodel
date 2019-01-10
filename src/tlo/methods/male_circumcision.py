@@ -96,15 +96,13 @@ class male_circumcision(Module):
         # add an event to log to screen
         sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
         """
-        pass
+        df = self.sim.population.props
+
+        df.at[child_id, 'is_circumcised'] = False
+        df.at[child_id, 'date_latent_tb'] = pd.NaT
 
 
 class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):

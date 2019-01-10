@@ -467,28 +467,24 @@ class hiv(Module):
         # add an event to log to screen
         sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=12))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother: the mother for this child
-        :param child: the new child
         """
         params = self.parameters
+        df = self.sim.population.props
 
-        child.has_hiv = False
-        child.date_hiv_infection = pd.NaT
-        child.date_aids_death = pd.NaT
-        child.sexual_risk_group.values[:] = 'low'
+        df.at[child_id, 'has_hiv'] = False
+        df.at[child_id, 'date_hiv_infection'] = pd.NaT
+        df.at[child_id, 'date_aids_death'] = pd.NaT
+        df.at[child_id, 'sexual_risk_group'].values[:] = 'low'
 
         # TODO: include risk during breastfeeding period
 
         random_draw = self.sim.rng.random_sample(size=1)
 
-        if (random_draw < params['prob_mtct']) & mother.has_hiv:
-            child.has_hiv = True
-            child.date_hiv_infection = self.sim.date
+        if (random_draw < params['prob_mtct']) & df.at[mother_id, 'has_hiv']:
+            df.at[child_id, 'has_hiv'] = True
+            df.at[child_id, 'date_hiv_infection'] = self.sim.date
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
