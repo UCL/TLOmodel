@@ -190,17 +190,15 @@ class tb_baseline(Module):
         # add an event to log to screen
         sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-        This is called by the simulation whenever a new person is born.
-        :param mother: the mother for this child
-        :param child: the new child
         """
+        df = self.sim.population.props
 
-        child.has_tb.values[:] = 'Uninfected'
-        child.date_active_tb = pd.NaT
-        child.date_latent_tb = pd.NaT
-        child.date_tb_death = pd.NaT
+        df.at[child_id, 'has_tb.values'][:] = 'Uninfected'
+        df.at[child_id, 'date_active_tb'] = pd.NaT
+        df.at[child_id, 'date_latent_tb'] = pd.NaT
+        df.at[child_id, 'date_tb_death'] = pd.NaT
 
 
 class tb_event(RegularEvent, PopulationScopeEventMixin):
@@ -363,7 +361,7 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for i in will_die:
             person = population.index[i]
-            death = demography.InstantaneousDeath(self.module, person, cause='tb')  # make that death event
+            death = demography.InstantaneousDeath(self.module, individual_id=person, cause='tb')  # make that death event
             self.sim.schedule_event(death, now)  # schedule the death for "now"
 
         total_deaths = len(will_die)

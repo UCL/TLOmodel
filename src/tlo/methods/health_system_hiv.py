@@ -152,8 +152,17 @@ class health_system(Module):
         # add an event to log to screen
         sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
 
-    def on_birth(self, mother, child):
-        pass
+    def on_birth(self, mother_id, child_id):
+        """Initialise our properties for a newborn individual.
+        """
+        df = self.sim.population.props
+
+        df.at[child_id, 'ever_tested'] = False
+        df.at[child_id, 'date_tested'] = pd.NaT
+        df.at[child_id, 'hiv_diagnosed'] = False
+        df.at[child_id, 'on_art'] = False
+        df.at[child_id, 'date_art_start'] = pd.NaT
+
 
 
 class TestingEvent(RegularEvent, PopulationScopeEventMixin):
