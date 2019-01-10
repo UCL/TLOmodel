@@ -670,6 +670,8 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
 
     def apply(self, individual):
         if individual.is_alive & ~individual.on_art:
+
+            # TODO: pass this to InstantaneousDeath
             individual.is_alive = False
 
         # Log the death
