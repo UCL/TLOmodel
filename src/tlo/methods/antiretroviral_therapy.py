@@ -54,18 +54,15 @@ class art(Module):
         mort_rates = worksheet.loc[worksheet.time_on_treatment == '12months+', ['state', 'age', 'sex', 'mortality']]
         # print(mort_rates)
 
-        # add age to population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
-
         # merge the mortality rates by age, sex and cd4 state, all ages
-        df_age = pd.merge(df_age, mort_rates, left_on=['years', 'sex', 'cd4_state'],
+        df_mort = pd.merge(df, mort_rates, left_on=['age_years', 'sex', 'cd4_state'],
                           right_on=['age', 'sex', 'state'], how='left')
-        # print('df_age: ', df_age.head(20))
-        # df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
+        # print('df_mort: ', df_mort.head(20))
+        # df_mort.to_csv('P:/Documents/TLO/test.csv', sep=',')
 
         # retrieve index to assign mortality rates
-        idx = df_age.index[df_age.on_art]
-        df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'mortality']
+        idx = df_mort.index[df_mort.on_art]
+        df.loc[idx, 'art_mortality_rate'] = df_mort.loc[idx, 'mortality']
         # print(idx)
 
     def initialise_simulation(self, sim):
@@ -126,17 +123,17 @@ class ArtMortalityEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx, 'early_art'] = False
 
         # add age to population.props
-        df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
+        # df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # add updated mortality rates
-        df_age = pd.merge(df_age, worksheet, left_on=['years', 'sex', 'time_on_art', 'early_art'],
+        df_mort = pd.merge(df, worksheet, left_on=['age_years', 'sex', 'time_on_art', 'early_art'],
                           right_on=['age', 'sex', 'time_on_art', 'early'], how='left')
-        # df_age.to_csv('P:/Documents/TLO/test.csv', sep=',')
-        # print('df_age with art mortality: ', df_age.head(30))
+        # df_mort.to_csv('P:/Documents/TLO/test.csv', sep=',')
+        # print('df_mort with art mortality: ', df_mort.head(30))
 
         idx = df.index[df.on_art]
         # print(idx)
-        df.loc[idx, 'art_mortality_rate'] = df_age.loc[idx, 'rate']
+        df.loc[idx, 'art_mortality_rate'] = df_mort.loc[idx, 'rate']
         # df.to_csv('P:/Documents/TLO/test2.csv', sep=',')
 
 
