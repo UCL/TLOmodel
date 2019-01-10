@@ -195,7 +195,7 @@ class tb_baseline(Module):
         """
         df = self.sim.population.props
 
-        df.at[child_id, 'has_tb.values'][:] = 'Uninfected'
+        df.at[child_id, 'has_tb'] = 'Uninfected'
         df.at[child_id, 'date_active_tb'] = pd.NaT
         df.at[child_id, 'date_latent_tb'] = pd.NaT
         df.at[child_id, 'date_tb_death'] = pd.NaT
@@ -359,10 +359,12 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: add in date_tb_death as self.sim.date
 
-        for i in will_die:
-            person = population.index[i]
-            death = demography.InstantaneousDeath(self.module, individual_id=person, cause='tb')  # make that death event
-            self.sim.schedule_event(death, now)  # schedule the death for "now"
+        for person in will_die:
+            # person = population.index[i]
+            # death = demography.InstantaneousDeath(self.module, individual_id=person, cause='tb')  # make that death event
+            # self.sim.schedule_event(death, now)  # schedule the death for "now"
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'), now)
+
 
         total_deaths = len(will_die)
         self.module.store['TB_deaths'].append(total_deaths)
