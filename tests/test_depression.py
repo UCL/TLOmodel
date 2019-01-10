@@ -7,7 +7,8 @@ from tlo.test import random_birth
 path = 'C:/Users/Andrew Phillips/Documents/thanzi la onse/Demography.xlsx'
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+# if end_date = Date(2010, 1, 1) then population.props are the baseline values
+end_date = Date(2010, 4, 1)
 popsize = 1000
 
 
@@ -46,3 +47,4 @@ if __name__ == '__main__':
     plt.ylim(0, 0.4)
     plt.plot(xvals, yvals)
     plt.show()
+
