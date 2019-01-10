@@ -1,3 +1,4 @@
+import logging
 
 import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
@@ -14,20 +15,20 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, healt
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx'
-path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
-path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
+# path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
+# path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx' # update for new demog file
+# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
+# path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # for laptop
-# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
-# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 50000
+popsize = 5000
 
 
 @pytest.fixture
@@ -54,6 +55,8 @@ def simulation():
     sim.register(tb_module)
     sim.register(hs_tb_module)
 
+    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+
     return sim
 
 
@@ -68,8 +71,6 @@ if __name__ == '__main__':
 
 
 # add plots for infections on birth and deaths when done
-#  TODO: use the store to calculate scheduled hiv deaths and deaths actually occurring
-#  gap will be deaths averted due to ART
 
 # Make a nice plot
 hiv_output = simulation.modules['hiv'].store['Total_HIV']

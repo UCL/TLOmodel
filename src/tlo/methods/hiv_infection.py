@@ -87,7 +87,7 @@ class hiv(Module):
         """
         params = self.parameters
         params['param_list'] = pd.read_excel(self.workbook_path,
-                                                           sheet_name='parameters')
+                                             sheet_name='parameters')
         self.param_list.set_index("Parameter", inplace=True)
 
         params['prob_infant_fast_progressor'] = self.param_list.loc['prob_infant_fast_progressor'].values
@@ -215,9 +215,9 @@ class hiv(Module):
         # merge all susceptible individuals with their hiv probability based on sex and age
         df_hivprob = df.merge(prevalence, left_on=['age_years', 'sex'],
 
-                                                right_on=['age_from', 'sex'],
+                              right_on=['age_from', 'sex'],
 
-                                                how='left')
+                              how='left')
 
         # no prevalence in ages 80+ so fill missing values with 0
         df_hivprob['prev_prop'] = df_hivprob['prev_prop'].fillna(0)
@@ -260,9 +260,9 @@ class hiv(Module):
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '0_4'),
                 'probability']
             df.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
-                                                            size=len(idx),
-                                                            replace=True,
-                                                            p=cd4_probs.values)
+                                                        size=len(idx),
+                                                        replace=True,
+                                                        p=cd4_probs.values)
 
         # for those aged 5-14 years
         cd4_states = ['CD1000', 'CD750', 'CD500', 'CD350', 'CD200', 'CD0']
@@ -273,9 +273,9 @@ class hiv(Module):
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '5_14'),
                 'probability']
             df.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
-                                                            size=len(idx),
-                                                            replace=True,
-                                                            p=cd4_probs.values)
+                                                        size=len(idx),
+                                                        replace=True,
+                                                        p=cd4_probs.values)
 
         # for those aged >= 15 years
         cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
@@ -286,9 +286,9 @@ class hiv(Module):
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (
                     self.cd4_base.age == "15_80"), 'probability']
             df.loc[idx, 'cd4_state'] = np.random.choice(cd4_states,
-                                                            size=len(idx),
-                                                            replace=True,
-                                                            p=cd4_probs.values)
+                                                        size=len(idx),
+                                                        replace=True,
+                                                        p=cd4_probs.values)
 
         df.cd4_state = df.cd4_state  # output this as needed for baseline art mortality rates
         # print(df.cd4_state.head(40))
@@ -403,6 +403,8 @@ class hiv(Module):
 
         df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
 
+        # TODO: schedule the deaths
+
         # test2 = df.loc[hiv_inf]
         # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for infants
 
@@ -455,6 +457,8 @@ class hiv(Module):
         # test2 = df.loc[hiv_ad]
         # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for adults
 
+        # TODO: schedule the deaths
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -472,11 +476,12 @@ class hiv(Module):
         """
         params = self.parameters
         df = self.sim.population.props
+        now = self.sim.date
 
         df.at[child_id, 'has_hiv'] = False
         df.at[child_id, 'date_hiv_infection'] = pd.NaT
         df.at[child_id, 'date_aids_death'] = pd.NaT
-        df.at[child_id, 'sexual_risk_group'].values[:] = 'low'
+        df.at[child_id, 'sexual_risk_group'] = 'low'
 
         # TODO: include risk during breastfeeding period
 
@@ -485,6 +490,32 @@ class hiv(Module):
         if (random_draw < params['prob_mtct']) & df.at[mother_id, 'has_hiv']:
             df.at[child_id, 'has_hiv'] = True
             df.at[child_id, 'date_hiv_infection'] = self.sim.date
+
+            # assign fast/slow progressor
+            progr = self.rng.choice(['FAST', 'SLOW'], p=[params['prob_infant_fast_progressor'],
+                                                         1 - params['prob_infant_fast_progressor']])
+
+            # then draw death date and assign
+            if progr == 'SLOW':
+                # draw from weibull
+                time_death = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                              size=1) * params[
+                                 'weibull_scale_mort_infant_slow_progressor']
+
+            else:
+                # draw from exp
+                time_death = self.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
+                                                  size=1)
+
+            time_death = pd.to_timedelta(time_death * 365.25, unit='d')
+            # print(time_death_slow)
+            # remove microseconds
+            time_death = pd.Series(time_death).dt.floor("S")
+            # print(time_death_slow)
+
+            df.at[child_id, 'date_aids_death'] = now + time_death
+
+            # TODO: add in infant death dates and schedule their deaths
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
@@ -531,27 +562,27 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         chronic = len(
             df.index[df.has_hiv & (df.age_years >= 15) & df.is_alive & ~df.on_art & (time_inf >= 3)
-                         & (time_before_death >= 19)])
+                     & (time_before_death >= 19)])
         # print('chronic:', chronic)
 
         late = len(df.index[df.has_hiv & (df.age_years >= 15) & df.is_alive & ~df.on_art & (
-                time_before_death >= 10)
-                                & (time_before_death < 19)])
+            time_before_death >= 10)
+                            & (time_before_death < 19)])
         # print('late:', late)
 
         end = len(df.index[df.has_hiv & (df.age_years >= 15) & df.is_alive & ~df.on_art & (
-                time_before_death < 10)])
+            time_before_death < 10)])
         # print('end:', end)  # no transmission during end stage
 
         # if early treated, use same relative infectivity as untreated
         acute_early_treated = len(
             df.index[df.has_hiv & (df.age_years >= 15) & df.is_alive & df.on_art & time_inf < 3 & (
-                    time_on_treatment < 3)])
+                time_on_treatment < 3)])
         # print('acute_early_treated:', acute_early_treated)
 
         chronic_early_treated = len(
             df.index[df.has_hiv & (df.age_years >= 15) & df.is_alive & df.on_art & (time_inf >= 3)
-                         & (time_before_death >= 19) & (time_on_treatment < 3)])
+                     & (time_before_death >= 19) & (time_on_treatment < 3)])
         # print('chronic_early_treated:', chronic_early_treated)
 
         late_early_treated = len(
@@ -562,7 +593,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         end_early_treated = len(df.index[
                                     df.has_hiv & (df.age_years >= 15) & df.is_alive & df.on_art & (
-                                            time_before_death < 10) &
+                                        time_before_death < 10) &
                                     (time_on_treatment < 3)])
         # print('end_early_treated:', end_early_treated)  # no transmission during end stage
 
@@ -572,10 +603,9 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
                 df.has_hiv & (df.age_years >= 15) & df.is_alive & df.on_art & (time_on_treatment >= 3)])
         # print('treated:', treated)
 
-
         # calculate force of infection
         infectious_term = ((acute + acute_early_treated) * params['rel_infectiousness_acute']) + \
-                          chronic + chronic_early_treated +\
+                          chronic + chronic_early_treated + \
                           ((late + late_early_treated) * params['rel_infectiousness_late']) + \
                           (treated * params['proportion_on_ART_infectious'])
 
@@ -596,7 +626,8 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
                 df_with_irr.age_years >= 15) & df_with_irr.is_alive] = foi  # foi applied to all HIV- adults
 
         eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.age_years >= 15) & df_with_irr.is_alive] *= df_with_irr.loc[
-            ~df_with_irr.has_hiv & (df_with_irr.age_years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR
+            ~df_with_irr.has_hiv & (
+                df_with_irr.age_years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR
 
         eff_susc.loc[df_with_irr.sexual_risk_group == 'high'] *= params[
             'rr_HIV_high_sexual_risk']  # scaled by sexual risk group
@@ -631,14 +662,13 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         death_dates = df.date_aids_death[newly_infected_index]
 
         # schedule the death event
-        for i in newly_infected_index:
-            person = population.index[i]
+        for person in newly_infected_index:
+            # print('person', person)
             death = DeathEventHIV(self.module, individual_id=person, cause='hiv')  # make that death event
-            time_death = death_dates[i]
+            time_death = death_dates[person]
             # print('time_death: ', time_death)
             # print('now: ', now)
             self.sim.schedule_event(death, time_death)  # schedule the death
-
 
 
 class DeathEventHIV(Event, IndividualScopeEventMixin):
@@ -653,14 +683,13 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if df.at[individual_id.is_alive & ~individual_id.on_art]:
-
+        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'on_art']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='Other'),
                                     self.sim.date)
 
         # Log the death
         self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
-        self.module.store_DeathsLog['DeathEvent_Age'].append(self.sim.population.age_years[individual_id])
+        self.module.store_DeathsLog['DeathEvent_Age'].append(df.age_years[individual_id])
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
 
 
@@ -682,14 +711,15 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_aids_death = df.loc[df.has_hiv & df.is_alive, 'date_aids_death']
         # print('date_aids_death: ', date_aids_death)
         year_aids_death = date_aids_death.dt.year
-        # print('year_aids_death: ', year_aids_death)
+        print('year_aids_death: ', year_aids_death)
 
         #  this shows the deaths scheduled for this year, including those postponed due to ART
-        die = sum(1 for x in year_aids_death if int(x) == now.year)
+        # TODO: error because on_birth has pd.NaT values??
+        # die = sum(1 for x in year_aids_death if int(x) == now.year)
         # print('die: ', die)
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
-        self.module.store['HIV_scheduled_deaths'].append(die)
+        # self.module.store['HIV_scheduled_deaths'].append(die)
 
         # print('hiv outputs: ', self.sim.date, infected_total)
