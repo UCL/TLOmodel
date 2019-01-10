@@ -223,20 +223,21 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
     e.g. pregnancy or tb diagnosis
     """
 
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
 
-    def apply(self, individual):
+    def apply(self, individual_id):
         params = self.module.parameters
+        df = self.sim.population.props
 
-        if individual.is_alive & ~individual.hiv_diagnosed:
+        if df.at[individual_id.is_alive & ~individual_id.hiv_diagnosed]:
             # probability of HIV testing
-            individual.ever_tested = np.random.choice([True, False], size=1, p=[params['testing_prob_individual'],
+            df.at[individual_id, 'ever_tested'] = np.random.choice([True, False], size=1, p=[params['testing_prob_individual'],
                                                                                 1 - params['testing_prob_individual']])
 
-            individual.loc[individual.ever_tested, 'date_tested'] = self.sim.date
+            df.at[individual_id, 'date_tested'] = self.sim.date
 
-            individual.loc[individual.ever_tested & individual.is_alive & individual.has_hiv, 'hiv_diagnosed'] = True
+            df.at[individual_id.ever_tested & individual_id.is_alive & individual_id.has_hiv, 'hiv_diagnosed'] = True
 
 
 # TODO: decide how to define probability of treatment / rates of ART initiation
