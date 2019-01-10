@@ -362,7 +362,7 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: add in date_tb_death as self.sim.date
 
         for i in will_die:
-            person = population[i]
+            person = population.index[i]
             death = demography.InstantaneousDeath(self.module, person, cause='tb')  # make that death event
             self.sim.schedule_event(death, now)  # schedule the death for "now"
 
