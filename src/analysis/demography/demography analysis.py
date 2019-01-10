@@ -72,6 +72,8 @@ plt.savefig(figurepath+'PopSize'+ datestamp +'.pdf')
 plt.show()
 
 
+#use d_df.groupby(['year', 'age_range']).size() to get the table.s
+
 
 #%% Population Pyramid in 2015
 
