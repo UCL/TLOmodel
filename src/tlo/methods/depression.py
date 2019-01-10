@@ -218,7 +218,6 @@ class Depression(Module):
         #  this below calls the age dataframe / call age.years to get age in years
 
         age_lt15_idx = df.index[(df.age_years < 15) & df.is_alive]
-        age_ge15_idx = df.index[(df.age_years >= 15) & df.is_alive]
         cc_idx = df.index[df.de_cc & df.is_alive]
         age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
@@ -226,13 +225,8 @@ class Depression(Module):
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.is_alive]
 
-
         # todo: build new code which does not create extra properties for probabilities from this below
 
-        """
-        
-        build new code from this below
-        
         eff_prob_depression = pd.Series(params['base_3m_prob_depression'], index = df.index[df.age_years >= 15])
         eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
         eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
@@ -241,15 +235,8 @@ class Depression(Module):
         eff_prob_depression.loc[f_not_rec_preg_idx] *= self.init_rp_depr_f_not_rec_preg
         eff_prob_depression.loc[f_rec_preg_idx] *= self.init_rp_depr_f_rec_preg
 
-        is_newly_depressed = eff_prob_depression > rng.rand(len(eff_prob_depression))
-        newly_depressed = is_newly_depressed[is_newly_depressed].index
-        df.loc[newly_depressed, 'de_depr'] = True
-        df.loc[newly_depressed, 'ever_depressed'] = True
-        df.loc[newly_depressed, 'date_init_depression'] = sim.date
-        df.[newly_depressed, 'date_depression_resolved'] = None
-        df.[newly_depressed, 'prob_3m_resol_depression'] = rng.choice(
-            params['depression_resolution_rates'], size=len(newly_depressed))
-        
+        df.loc[age_lt15_idx, 'de_depr'] = eff_prob_depression > rng.rand(len(eff_prob_depression))
+
         """
 
         df['de_base_p_depr'] = self.init_pr_depr_m_age1519_no_cc_wealth123
@@ -265,6 +252,8 @@ class Depression(Module):
         # random_sample from numpy returns uniform(0,1)
         random_draw1 = self.rng.random_sample(size=len(df))
         df['de_depr'] = (random_draw1 < df['de_base_p_depr'])
+
+        """
 
         # todo
         # note that this should be not recently pregnant rather than not currently pregnant,
