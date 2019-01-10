@@ -101,23 +101,23 @@ class IndividualScopeEventMixin:
     behaviour.
     """
 
-    def __init__(self, *args, person, **kwargs):
+    def __init__(self, *args, person_id, **kwargs):
         """Create a new individual-scoped event.
 
         This calls the base class constructor, passing any arguments through,
         and sets the event target as the provided person.
 
-        :param person: the Person this event applies to
+        :param person_id: the id of the person this event applies to
             (must be supplied as a keyword argument)
         """
         super().__init__(*args, **kwargs)
-        self.target = person
+        self.target = person_id
 
-    def apply(self, person):
+    def apply(self, person_id):
         """Apply this event to the given person.
 
         Must be implemented by subclasses.
 
-        :param person: the person the event happens to
+        :param person_id: the person the event happens to
         """
         raise NotImplementedError
