@@ -67,10 +67,9 @@ class male_circumcision(Module):
         # print('uncircum', len(uncircum))
 
         # 2. baseline prevalence of circumcisions
-        circum = np.random.choice([True, False], size=len(uncircum),
+        circum = self.rng.choice([True, False], size=len(uncircum),
                                   p=[self.parameters['initial_circumcision'],
                                      1 - self.parameters['initial_circumcision']])
-        # TODO: change to self.rng.choice
 
         # print('circum', circum.sum())
 
@@ -84,11 +83,7 @@ class male_circumcision(Module):
 
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
+        """
         """
         # add the basic event (we will implement below)
         event = CircumcisionEvent(self)
