@@ -56,7 +56,7 @@ class art(Module):
 
         # merge the mortality rates by age, sex and cd4 state, all ages
         df_mort = pd.merge(df, mort_rates, left_on=['age_years', 'sex', 'cd4_state'],
-                          right_on=['age', 'sex', 'state'], how='left')
+                           right_on=['age', 'sex', 'state'], how='left')
         # print('df_mort: ', df_mort.head(20))
         # df_mort.to_csv('P:/Documents/TLO/test.csv', sep=',')
 
@@ -127,7 +127,7 @@ class ArtMortalityEvent(RegularEvent, PopulationScopeEventMixin):
 
         # add updated mortality rates
         df_mort = pd.merge(df, worksheet, left_on=['age_years', 'sex', 'time_on_art', 'early_art'],
-                          right_on=['age', 'sex', 'time_on_art', 'early'], how='left')
+                           right_on=['age', 'sex', 'time_on_art', 'early'], how='left')
         # df_mort.to_csv('P:/Documents/TLO/test.csv', sep=',')
         # print('df_mort with art mortality: ', df_mort.head(30))
 
@@ -168,13 +168,8 @@ class HivArtDeathEvent(RegularEvent, PopulationScopeEventMixin):
         will_die = (df[deaths]).index
 
         for person in will_die:
-            # death = demography.InstantaneousDeath(self.module, person, cause='aids')  # make that death event
-            # self.sim.schedule_event(death, now)  # schedule the death for "now"
-
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, person, cause='aids'), now)
-
 
         total_deaths = len(will_die)
         self.module.store['Number_dead_art'].append(total_deaths)
         self.module.store['Time'].append(self.sim.date)
-
