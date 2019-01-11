@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from tlo import Simulation, Date
@@ -16,12 +18,12 @@ popsize = 1000
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
-    random_birth_module = random_birth.RandomBirth()
-    random_birth_module.pregnancy_probability = 0.005
     depression_module = depression.Depression()
     sim.register(core_module)
     sim.register(depression_module)
-    sim.register(random_birth_module)
+
+    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+
     return sim
 
 

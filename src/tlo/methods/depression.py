@@ -2,11 +2,16 @@
 First draft of depression module based on Andrew's document.
 """
 
+import logging
+from collections import defaultdict
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 import numpy as np
 import pandas as pd
 import random
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class Depression(Module):
     """Models incidence and recovery from moderate/severe depression.
