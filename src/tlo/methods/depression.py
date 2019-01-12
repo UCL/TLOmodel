@@ -317,6 +317,8 @@ class Depression(Module):
         :param child: the new child
         """
 
+        df = self.sim.population.props
+
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
@@ -370,9 +372,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
+        df = population.props
         df['de_newly_depr'] = False
 
-        df = population.props
+
+        df['de_newly_depr'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr]
 
