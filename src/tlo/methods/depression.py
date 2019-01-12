@@ -239,7 +239,7 @@ class Depression(Module):
 
         # todo: build new code which does not create extra properties for probabilities from this below
 
-        eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index = df.index[df.age_years >= 15])
+        eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
         eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
         eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
         eff_prob_depression.loc[age_ge60_idx] *= self.init_rp_depr_agege60
@@ -279,7 +279,7 @@ class Depression(Module):
                                    p=[p_antidepr_ever_depr_not_curr,
                                       1 - p_antidepr_ever_depr_not_curr])
 
-        if antidepr_ev_de.sum():
+        if antidepr_ev_de_not_curr.sum():
             df.loc[ever_depr_not_curr_index, 'de_on_antidepr'] = antidepr_ev_de_not_curr
 
         curr_depr_index = df.index[df.de_depr & df.is_alive]
@@ -308,7 +308,7 @@ class Depression(Module):
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
         This is called by the simulation whenever a new person is born.
@@ -316,8 +316,12 @@ class Depression(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        child.de_depr = False
-        child.de_ever_depr = False
+
+        df.at[child_id, 'is_alive'] = True
+        df.at[child_id, 'date_of_birth'] = self.sim.date
+
+        df.at[child_id, 'de_depr'] = False
+        df.at[child_id, 'de_dever_epr'] = False
 
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
@@ -369,42 +373,29 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df['de_newly_depr'] = False
 
         df = population.props
-        age = population.age
 
-        now = self.sim.date
+        ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr]
 
-        ago_15yr = now - DateOffset(years=15)
-        ago_20yr = now - DateOffset(years=20)
-        ago_60yr = now - DateOffset(years=60)
-
-        age_lt15_idx = df.index[(df.age_years < 15) & df.is_alive]
-        cc_idx = df.index[df.de_cc & df.is_alive]
+        cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
         age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth45_idx = df.index[df.de_wealth.isin([4, 5]) & df.is_alive]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.de_is_pregnant & df.is_alive]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.de_is_pregnant & df.is_alive]
-        ever_depr_idx = df.index[df.de_ever_depr & df.is_alive]
-        onantidepr_idx = df.index[df.de_on_antidepr & df.is_alive]
+        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & df.age_years >= 15 & df.is_alive]
+        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.de_is_pregnant & df.age_years >= 15 & df.is_alive]
+        f_rec_preg_idx = df.index[(df.sex == 'F') & df.de_is_pregnant & df.age_years >= 15 & df.is_alive]
+        ever_depr_idx = df.index[df.de_ever_depr & df.age_years >= 15 & df.is_alive]
+        onantidepr_idx = df.index[df.de_on_antidepr & df.age_years >= 15 & df.is_alive]
 
-        df['de_p_new_depr'] = self.base_3m_prob_depr
+        eff_prob_newly_depr = pd.Series(self.base_3m_prob_depr,
+                                        index=df.index[(df.age_years >= 15) & ~df.de_depr])
+        eff_prob_newly_depr.loc[cc_ge15_idx] *= self.rr_depr_cc
+        eff_prob_newly_depr.loc[age_1519_idx] *= self.rr_depr_age1519
+        eff_prob_newly_depr.loc[age_ge60_idx] *= self.rr_depr_agege60
+        eff_prob_newly_depr.loc[wealth45_ge15_idx] *= self.rr_depr_wealth45
+        eff_prob_newly_depr.loc[f_not_rec_preg_idx] *= self.rr_depr_female
+        eff_prob_newly_depr.loc[f_rec_preg_idx] *= self.rr_depr_female*self.rr_depr_pregnancy
 
-        df.loc[age_lt15_idx, 'de_p_new_depr'] *= 0
-        df.loc[cc_idx, 'de_p_new_depr'] *= self.rr_depr_cc
-        df.loc[age_1519_idx, 'de_p_new_depr'] *= self.rr_depr_age1519
-        df.loc[age_ge60_idx, 'de_p_new_depr'] *= self.rr_depr_agege60
-        df.loc[wealth45_idx, 'de_p_new_depr'] *= self.rr_depr_wealth45
-        df.loc[f_rec_preg_idx, 'de_p_new_depr'] *= self.rr_depr_female*self.rr_depr_pregnancy
-        df.loc[f_not_rec_preg_idx, 'de_p_new_depr'] *= self.rr_depr_female
-        df.loc[ever_depr_idx, 'de_p_new_depr'] *= self.rr_prev_epis
-        df.loc[ever_depr_idx, 'de_p_new_depr'] *= self.rr_depr_on_antidepr
-
-        df['de_p_new_depr'] = min(1, df['de_p_new_depr'])
-
-        curr_not_depr_idx = df.index[~df.de_depr & df.is_alive]
-
-        random_draw2 = self.rng.random_sample(size=len(curr_not_depr_idx))
-        df.loc[curr_not_depr_idx, 'de_newly_depr'] = (random_draw2 < df['de_p_new_depr'])
+        random_draw2 = self.rng.random_sample(size=len(ge15_not_depr_idx))
+        df.loc[ge15_not_depr_idx, 'de_newly_depr'] = (random_draw2 < eff_prob_newly_depr)
 
         newly_depr_idx = df.index[df.de_newly_depr]
         df.loc[newly_depr_idx, 'de_depr'] = True
@@ -412,6 +403,10 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_depr_idx, 'de_date_init_most_rec_depr'] = self.sim.date
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
+
+
+
+
 
         curr_depr_idx = df.index[df.de_depr & df.is_alive]
         df.loc[curr_depr_idx, 'de_ever_depr'] = True
