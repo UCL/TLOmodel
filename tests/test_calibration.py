@@ -3,6 +3,7 @@ import logging
 import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 import pandas as pd
+from scipy import optimize
 
 from tlo import Date, Simulation
 from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system_hiv, health_system_tb, tb, \
@@ -92,10 +93,13 @@ def test_function(param1):
 
     total_ss = ss_inf_ad + ss_inf_child
     print('total_ss', total_ss)
+    return total_ss
 
-test_function(param1 = 0.3)
 
+# test_function(param1=0.3)
 
+res = optimize.minimize(test_function, 0.8, method="L-BFGS-B", bounds=[(0.3, 2)])
+print(res)
 
 
 # add plots for infections on birth and deaths when done

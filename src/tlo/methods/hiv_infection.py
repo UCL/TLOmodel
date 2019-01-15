@@ -129,8 +129,8 @@ class hiv(Module):
         params['rel_infectiousness_late'] = \
             self.param_list.loc['rel_infectiousness_late', 'Value1']
 
-        params['beta'] = self.beta_calib
-        print(params['beta'])
+        params['beta'] = float(self.beta_calib)
+        print('beta', params['beta'])
 
         # print(self.param_list.head())
         # print(params['infant_progression_category'])
@@ -627,7 +627,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         total_pop = len(df[(df.age_years >= 15) & df.is_alive])
         foi = params['beta'] * infectious_term / total_pop
-        # print('foi:', foi)
+        print('foi:', foi)
 
         # TODO: reduce force of infection if behaviour change available
         # TODO: reduce FOI due to condom use
