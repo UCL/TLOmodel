@@ -8,8 +8,6 @@ from tlo import Date, Simulation
 from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system_hiv, health_system_tb, tb, \
     male_circumcision, hiv_behaviour_change
 
-
-
 # for desktop
 # path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Old versions/Demography_WorkingFile.xlsx'
 # path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
@@ -34,20 +32,22 @@ path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 inc_data = pd.read_excel(path_hiv, sheet_name='incidence_calibration', header=0)
 inc_data = inc_data[inc_data.year >= 2011]
-print(inc_data)
+# print(inc_data)
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 2, 1)
+end_date = Date(2018, 2, 1)
 popsize = 10000
 
-for i in range(1, 3):
+
+def test_function(param1):
+
     @pytest.fixture
     def simulation():
         sim = Simulation(start_date=start_date)
 
         #  call modules
         core_module = demography.Demography(workbook_path=path_dem)
-        hiv_module = hiv_infection.hiv(workbook_path=path_hiv)
+        hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=param1)
         art_module = antiretroviral_therapy.art(workbook_path=path_hs)
         hs_module = health_system_hiv.health_system(workbook_path=path_hs)
         circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv)
@@ -69,18 +69,16 @@ for i in range(1, 3):
 
         return sim
 
-
     def test_simulation(simulation):
         simulation.make_initial_population(n=popsize)
         simulation.simulate(end_date=end_date)
-
 
     if __name__ == '__main__':
         simulation = simulation()
         test_simulation(simulation)
 
     # to calibrate: number infections (adult), number testing, number starting treatment
-    print('new infections', simulation.modules['hiv'].store['HIV_new_infections'])
+    print('new infections', simulation.modules['hiv'].store['HIV_new_infections_adult'])
     print('new tests', simulation.modules['health_system'].store['Number_tested'])
     print('new treatment', simulation.modules['health_system'].store['Number_treated'])
 
@@ -93,13 +91,9 @@ for i in range(1, 3):
     ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ^ 2)
 
     total_ss = ss_inf_ad + ss_inf_child
+    print('total_ss', total_ss)
 
-
-
-
-
-
-
+test_function(param1 = 0.3)
 
 
 
