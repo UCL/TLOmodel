@@ -46,7 +46,7 @@ class BehaviourChange(Module):
           Typically modules would read a particular file within here.
         """
         params = self.parameters
-        params['p_behaviour'] = 0.1
+        params['p_behaviour'] = 0.01
 
 
 
