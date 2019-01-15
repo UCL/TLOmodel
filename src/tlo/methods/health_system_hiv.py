@@ -150,7 +150,7 @@ class health_system(Module):
         sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -319,8 +319,11 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df['date_tested'] > self.sim.date - DateOffset(months=self.repeat))
         recently_tested = mask.sum()
 
+        mask = (df['date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
+        recently_treated = mask.sum()
+
         currently_on_art = len(df[df.on_art & df.is_alive])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Number_tested'].append(recently_tested)
-        self.module.store['Number_treated'].append(currently_on_art)
+        self.module.store['Number_treated'].append(recently_treated)

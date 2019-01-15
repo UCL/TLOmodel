@@ -18,7 +18,8 @@ class hiv(Module):
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
-        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': []}
+        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_new_infections_adult': [],
+                      'HIV_new_infections_child': []}
         self.store_DeathsLog = {'DeathEvent_Time': [], 'DeathEvent_Age': [], 'DeathEvent_Cause': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -273,9 +274,9 @@ class hiv(Module):
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '5_14'),
                 'probability']
             df.loc[idx, 'cd4_state'] = self.rng.choice(cd4_states,
-                                                        size=len(idx),
-                                                        replace=True,
-                                                        p=cd4_probs.values)
+                                                       size=len(idx),
+                                                       replace=True,
+                                                       p=cd4_probs.values)
 
         # for those aged >= 15 years
         cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
@@ -286,9 +287,9 @@ class hiv(Module):
                 (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (
                     self.cd4_base.age == "15_80"), 'probability']
             df.loc[idx, 'cd4_state'] = self.rng.choice(cd4_states,
-                                                        size=len(idx),
-                                                        replace=True,
-                                                        p=cd4_probs.values)
+                                                       size=len(idx),
+                                                       replace=True,
+                                                       p=cd4_probs.values)
 
         df.cd4_state = df.cd4_state  # output this as needed for baseline art mortality rates
         # print(df.cd4_state.head(40))
@@ -719,6 +720,12 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         infected_total = len(df[df.has_hiv & df.is_alive])
 
+        mask = (df[(df.age_years > 14), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
+        adult_new_inf = mask.sum()
+
+        mask = (df[(df.age_years < 15), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
+        child_new_inf = mask.sum()
+
         date_aids_death = df.loc[df.has_hiv & df.is_alive, 'date_aids_death']
         # print('date_aids_death: ', date_aids_death)
         year_aids_death = date_aids_death.dt.year
@@ -726,10 +733,12 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  this shows the deaths scheduled for this year, including those postponed due to ART
         die = sum(1 for x in year_aids_death if int(x) == now.year)
-        print('die: ', die)
+        # print('die: ', die)
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_HIV'].append(infected_total)
         self.module.store['HIV_scheduled_deaths'].append(die)
+        self.module.store['HIV_new_infections_adult'].append(adult_new_inf)
+        self.module.store['HIV_new_infections_child'].append(child_new_inf)
 
         # print('hiv outputs: ', self.sim.date, infected_total)
