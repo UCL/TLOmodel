@@ -15,9 +15,10 @@ class hiv(Module):
     baseline hiv infection
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, workbook_path=None, par_est=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+        self.beta_calib = par_est
         self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_new_infections_adult': [],
                       'HIV_new_infections_child': []}
         self.store_DeathsLog = {'DeathEvent_Time': [], 'DeathEvent_Age': [], 'DeathEvent_Cause': []}
@@ -113,8 +114,8 @@ class hiv(Module):
             self.param_list.loc['rr_HIV_high_sexual_risk_fsw', 'Value1']
         params['proportion_on_ART_infectious'] = \
             self.param_list.loc['proportion_on_ART_infectious', 'Value1']
-        params['beta'] = \
-            self.param_list.loc['beta', 'Value1']
+        # params['beta'] = \
+        #     self.param_list.loc['beta', 'Value1']
         params['irr_hiv_f'] = \
             self.param_list.loc['irr_hiv_f', 'Value1']
         params['prob_mtct'] = \
@@ -128,6 +129,9 @@ class hiv(Module):
         params['rel_infectiousness_late'] = \
             self.param_list.loc['rel_infectiousness_late', 'Value1']
 
+        params['beta'] = self.beta_calib
+        print(params['beta'])
+
         # print(self.param_list.head())
         # print(params['infant_progression_category'])
         # print(params['prob_infant_fast_progressor'])
@@ -137,7 +141,7 @@ class hiv(Module):
                                                            sheet_name=None)
 
         params['hiv_prev'], params['hiv_death'], params['hiv_inc'], params['cd4_base'], params['time_cd4'], \
-        params['initial_state_probs'], params['irr_age'] = self.method_hiv_data['prevalence'], \
+            params['initial_state_probs'], params['irr_age'] = self.method_hiv_data['prevalence'], \
                                                            self.method_hiv_data['deaths'], \
                                                            self.method_hiv_data['incidence'], \
                                                            self.method_hiv_data['CD4_distribution'], \
@@ -720,10 +724,11 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         infected_total = len(df[df.has_hiv & df.is_alive])
 
-        mask = (df[(df.age_years > 14), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years > 14), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
         adult_new_inf = mask.sum()
+        # print(adult_new_inf)
 
-        mask = (df[(df.age_years < 15), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years < 15), 'date_hiv_infection'] > self.sim.date - DateOffset(months=self.repeat))
         child_new_inf = mask.sum()
 
         date_aids_death = df.loc[df.has_hiv & df.is_alive, 'date_aids_death']
