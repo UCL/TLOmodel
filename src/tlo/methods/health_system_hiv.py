@@ -13,9 +13,12 @@ class health_system(Module):
     determines availability of ART for HIV+ dependent on UNAIDS coverage estimates
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, workbook_path=None, par_est1=None, par_est2=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+        self.testing_baseline_adult = par_est1
+        self.testing_baseline_child = par_est2
+
         self.store = {'Time': [], 'Number_tested': [], 'Number_treated': []}
 
     # TODO: extract testing rates from Leigh's paper by single years of age
@@ -26,8 +29,14 @@ class health_system(Module):
         'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage'),
         'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
                                           'relative increase in testing probability if high sexual risk'),
-        'previously_negative': Parameter(Types.DATA_FRAME, 'previous negative HIV test result'),
-        'previously_positive': Parameter(Types.DATA_FRAME, 'previous positive HIV test result'),
+        'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
+        'rr_testing_previously_negative': Parameter(Types.DATA_FRAME,
+                                                    'relative change in testing if previously negative versus never tested'),
+        'rr_testing_previously_positive': Parameter(Types.DATA_FRAME,
+                                                    'relative change in testing if previously positive versus never tested'),
+        'rr_testing_age_25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
+        'testing_baseline_adult': Parameter(Types.REAL, 'baseline testing rate of adults'),
+        'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
 
     }
 
@@ -51,9 +60,12 @@ class health_system(Module):
         params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
         params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
         params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
+
         params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
-        params['previously_negative'] = self.param_list.loc['previously_negative', 'Value1']
-        params['previously_positive'] = self.param_list.loc['previously_positive', 'Value1']
+        params['rr_testing_female'] = self.param_list.loc['rr_testing_female', 'Value1']
+        params['rr_testing_previously_negative'] = self.param_list.loc['rr_testing_previously_negative', 'Value1']
+        params['rr_testing_previously_positive'] = self.param_list.loc['rr_testing_previously_positive', 'Value1']
+        params['rr_testing_age_25'] = self.param_list.loc['rr_testing_age_25', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -61,8 +73,13 @@ class health_system(Module):
         self.parameters['art_initiation'] = pd.read_excel(self.workbook_path,
                                                           sheet_name='art_initiators')
 
-        self.parameters['testing_rates'] = pd.read_excel(self.workbook_path,
-                                                         sheet_name='testing_rates')
+        # self.parameters['testing_rates'] = pd.read_excel(self.workbook_path,
+        #                                                  sheet_name='testing_rates')
+
+        params['testing_baseline_adult'] = float(self.testing_baseline_adult)
+        params['testing_baseline_child'] = float(self.testing_baseline_child)
+        print('testing_baseline_adult', params['testing_baseline_adult'])
+
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -122,11 +139,11 @@ class health_system(Module):
         # merge all susceptible individuals with their coverage probability based on sex and age
         df_art = df.merge(coverage,
 
-                              left_on=['age_years', 'sex'],
+                          left_on=['age_years', 'sex'],
 
-                              right_on=['single_age', 'sex'],
+                          right_on=['single_age', 'sex'],
 
-                              how='left')
+                          how='left')
 
         # no data for ages 100+ so fill missing values with 0
         df_art['prop_coverage'] = df_art['prop_coverage'].fillna(0)
@@ -162,7 +179,6 @@ class health_system(Module):
         df.at[child_id, 'hiv_diagnosed'] = False
         df.at[child_id, 'on_art'] = False
         df.at[child_id, 'date_art_start'] = pd.NaT
-
 
 
 class TestingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -227,6 +243,8 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: include infant testing (soon after birth?)
 
 
+# pregnant women can trigger a testing event
+# all pregnant women will request hiv test, total number available fixed
 class IndividualTesting(Event, IndividualScopeEventMixin):
     """ allows hiv tests for individuals triggered by certain events
     e.g. pregnancy or tb diagnosis
@@ -241,8 +259,9 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id.is_alive & ~individual_id.hiv_diagnosed]:
             # probability of HIV testing
-            df.at[individual_id, 'ever_tested'] = np.random.choice([True, False], size=1, p=[params['testing_prob_individual'],
-                                                                                1 - params['testing_prob_individual']])
+            df.at[individual_id, 'ever_tested'] = np.random.choice([True, False], size=1,
+                                                                   p=[params['testing_prob_individual'],
+                                                                      1 - params['testing_prob_individual']])
 
             df.at[individual_id, 'date_tested'] = self.sim.date
 
@@ -288,9 +307,6 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # comb = pd.merge(numb_starting_art_year, test2_rm_index, left_on=['age', 'sex'], right_on=['years', 'sex'],
         #                          how='left')
         # print('comb', comb)
-
-
-
 
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
