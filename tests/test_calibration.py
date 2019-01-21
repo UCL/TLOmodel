@@ -88,6 +88,7 @@ def test_function(param1):
     new_tests = simulation.modules['health_system'].store['Number_tested']
     new_treatment = simulation.modules['health_system'].store['Number_treated']
 
+    # check years are matching - 2011-2018
     ss_inf_ad = sum((inc_data.new_cases_adults - new_inf_ad) ^ 2)
     ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ^ 2)
 
