@@ -15,16 +15,16 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, healt
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-# path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-# path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx' # update for new demog file
-# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
-# path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
+path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx' # update for new demog file
+path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
+path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # for laptop
-path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 # read in data files for calibration
 # number new infections
@@ -40,7 +40,7 @@ end_date = Date(2018, 2, 1)
 popsize = 10000
 
 
-def test_function(param1):
+def test_function(param1, param2, param3):
 
     @pytest.fixture
     def simulation():
@@ -50,7 +50,7 @@ def test_function(param1):
         core_module = demography.Demography(workbook_path=path_dem)
         hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=param1)
         art_module = antiretroviral_therapy.art(workbook_path=path_hs)
-        hs_module = health_system_hiv.health_system(workbook_path=path_hs)
+        hs_module = health_system_hiv.health_system(workbook_path=path_hs, par_est1=param2, par_est2=param3)
         circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv)
         behavioural_module = hiv_behaviour_change.BehaviourChange()
         tb_module = tb.tb_baseline(workbook_path=path_tb)
@@ -88,6 +88,7 @@ def test_function(param1):
     new_tests = simulation.modules['health_system'].store['Number_tested']
     new_treatment = simulation.modules['health_system'].store['Number_treated']
 
+    # calibrate using least squares
     # check years are matching - 2011-2018
     ss_inf_ad = sum((inc_data.new_cases_adults - new_inf_ad) ^ 2)
     ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ^ 2)
