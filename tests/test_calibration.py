@@ -28,12 +28,16 @@ path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # read in data files for calibration
 # number new infections
-# new tests
-# number starting treatment
-
 inc_data = pd.read_excel(path_hiv, sheet_name='incidence_calibration', header=0)
 inc_data = inc_data[inc_data.year >= 2011]
 # print(inc_data)
+
+# new tests
+test_data = pd.read_excel(path_hs, sheet_name='testing_calibration', header=0)
+
+# number starting treatment
+
+
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 2, 1)
@@ -80,12 +84,13 @@ def test_function(param1, param2, param3):
 
     # to calibrate: number infections (adult), number testing, number starting treatment
     print('new infections', simulation.modules['hiv'].store['HIV_new_infections_adult'])
-    print('new tests', simulation.modules['health_system'].store['Number_tested'])
+    print('new tests', simulation.modules['health_system'].store['Number_tested_adult'])
     print('new treatment', simulation.modules['health_system'].store['Number_treated'])
 
     new_inf_ad = simulation.modules['hiv'].store['HIV_new_infections_adult']
     new_inf_child = simulation.modules['hiv'].store['HIV_new_infections_child']
-    new_tests = simulation.modules['health_system'].store['Number_tested']
+    new_test_ad = simulation.modules['health_system'].store['Number_tested_adult']
+    new_test_child = simulation.modules['health_system'].store['Number_tested_child']
     new_treatment = simulation.modules['health_system'].store['Number_treated']
 
     # calibrate using least squares
@@ -93,15 +98,20 @@ def test_function(param1, param2, param3):
     ss_inf_ad = sum((inc_data.new_cases_adults - new_inf_ad) ^ 2)
     ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ^ 2)
 
-    total_ss = ss_inf_ad + ss_inf_child
+    ss_test_ad = sum((test_data.adult - new_test_ad) ^ 2)
+    ss_test_child = sum((test_data.children - new_test_child) ^ 2)
+
+    total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child
     print('total_ss', total_ss)
     return total_ss
 
 
-# test_function(param1=0.3)
+# test run with starting values
+test_function(param1=0.3, param2=0.4, param3=0.5)
 
-res = optimize.minimize(test_function, 0.8, method="L-BFGS-B", bounds=[(0.3, 2)])
-print(res)
+# calibration
+# res = optimize.minimize(test_function, 0.8, method="L-BFGS-B", bounds=[(0.3, 2)])
+# print(res)
 
 
 # add plots for infections on birth and deaths when done
