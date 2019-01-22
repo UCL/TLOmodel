@@ -901,62 +901,19 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             rural_idx = currently_urban[now_rural]
             df.loc[rural_idx, 'li_urban'] = False
 
-        # as above - transition between overwt and not overwt
-        # transition to ovrwt depends on sex
+    # as above - transition between overwt and not overwt
+        currently_not_overwt_age_ge15_idx = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
+        f_not_overwt_idx = df.index[(df.sex == 'F') & ~df.li_overwt & df.is_alive & (df.age_years >= 15)]
+        urban_not_overwt_idx = df.index[df.li_urban & ~df.li_overwt & df.is_alive & (df.age_years >= 15)]
 
-        currently_not_overwt_f_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_overwt_m_urban = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_overwt_f_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'F') & ~df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_overwt_m_rural = df.index[~df.li_overwt & df.is_alive & (df.sex == 'M') & ~df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_overwt = df.index[df.li_overwt & df.is_alive]
+        eff_prob_start_overwt = pd.Series(self.r_overwt, index=df.index[(df.age_years >= 15) & ~df.li_overwt & df.is_alive])
+        eff_prob_start_overwt.loc[f_not_overwt_idx] *= self.rr_overwt_f
+        eff_prob_start_overwt.loc[urban_not_overwt_idx] *= self.rr_overwt_urban
 
-        ri_overwt_f_urban = self.r_overwt * self.rr_overwt_f * self.rr_overwt_urban
-        ri_overwt_f_rural = self.r_overwt * self.rr_overwt_f
-        ri_overwt_m_urban = self.r_overwt * self.rr_overwt_urban
-        ri_overwt_m_rural = self.r_overwt
+        random_draw1 = self.module.rng.random_sample(size=len(currently_not_overwt_age_ge15_idx))
+        df.loc[currently_not_overwt_age_ge15_idx, 'li_overwt'] = (random_draw1 < eff_prob_start_overwt)
 
-        now_overwt_f_urban = self.module.rng.choice([True, False],
-                                              size=len(currently_not_overwt_f_urban),
-                                              p=[ri_overwt_f_urban, 1 - ri_overwt_f_urban])
-
-        if now_overwt_f_urban.sum():
-            overwt_f_urban_idx = currently_not_overwt_f_urban[now_overwt_f_urban]
-            df.loc[overwt_f_urban_idx, 'li_overwt'] = True
-
-        now_overwt_m_urban = self.module.rng.choice([True, False],
-                                              size=len(currently_not_overwt_m_urban),
-                                              p=[ri_overwt_m_urban, 1 - ri_overwt_m_urban])
-
-        if now_overwt_m_urban.sum():
-            overwt_m_urban_idx = currently_not_overwt_m_urban[now_overwt_m_urban]
-            df.loc[overwt_m_urban_idx, 'li_overwt'] = True
-
-        now_not_overwt = self.module.rng.choice([True, False], size=len(currently_overwt),
-                                          p=[self.r_not_overwt, 1 - self.r_not_overwt])
-
-        now_overwt_f_rural = self.module.rng.choice([True, False],
-                                              size=len(currently_not_overwt_f_rural),
-                                              p=[ri_overwt_f_rural, 1 - ri_overwt_f_rural])
-        if now_overwt_f_rural.sum():
-            overwt_f_rural_idx = currently_not_overwt_f_rural[now_overwt_f_rural]
-            df.loc[overwt_f_rural_idx, 'li_overwt'] = True
-
-        now_overwt_m_rural = self.module.rng.choice([True, False],
-                                              size=len(currently_not_overwt_m_rural),
-                                              p=[ri_overwt_m_rural, 1 - ri_overwt_m_rural])
-        if now_overwt_m_rural.sum():
-            overwt_m_rural_idx = currently_not_overwt_m_rural[now_overwt_m_rural]
-            df.loc[overwt_m_rural_idx, 'li_overwt'] = True
-
-        if now_not_overwt.sum():
-            not_overwt_idx = currently_overwt[now_not_overwt]
-            df.loc[not_overwt_idx, 'li_overwt'] = False
-
-        # transition between low ex and not low ex
+    # transition between low ex and not low ex
         currently_not_low_ex_age_ge15_idx = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
         f_not_low_ex_idx = df.index[(df.sex == 'F') & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
         urban_not_low_ex_idx = df.index[df.li_urban & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -968,8 +925,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw1 = self.module.rng.random_sample(size=len(currently_not_low_ex_age_ge15_idx))
         df.loc[currently_not_low_ex_age_ge15_idx, 'li_low_ex'] = (random_draw1 < eff_prob_start_low_ex)
         
-        # transition between not tob and tob
-        #  this below calls the age dataframe / call age.years to get age in years
+    # transition between not tob and tob
+    #  this below calls the age dataframe / call age.years to get age in years
         age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         age_2039_no_tob_idx = df.index[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob]
         age_ge40_no_tob_idx = df.index[(df.age_years >= 40) & df.is_alive & ~df.li_tob]
@@ -1043,7 +1000,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             now_div_wid_index = curr_mar_index[now_div_wid]
             df.loc[now_div_wid_index, 'li_mar_stat'] = 3
 
-        # updating of contraceptive status
+    # updating of contraceptive status
 
         curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & ~df.li_on_con]
         now_on_con = self.module.rng.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
@@ -1073,7 +1030,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
         df.loc[curr_on_con_t_6_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
 
-        # update education
+    # update education
 
         p_p_ed = self.p_ed_primary
         age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 5)]
