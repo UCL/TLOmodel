@@ -71,8 +71,8 @@ class health_system(Module):
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
 
-        self.parameters['art_initiation'] = pd.read_excel(self.workbook_path,
-                                                          sheet_name='art_initiators')
+        # self.parameters['art_initiation'] = pd.read_excel(self.workbook_path,
+        #                                                   sheet_name='art_initiators')
 
         params['testing_baseline_adult'] = float(self.testing_baseline_adult)
         params['testing_baseline_child'] = float(self.testing_baseline_child)
@@ -282,7 +282,7 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of treatment
         # if repeat testing, will only store latest test date
         treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art]
-        print('testing index', treatment_index)
+        print('treatment_index', treatment_index)
 
         df.loc[treatment_index, 'on_art'] = True
         df.loc[treatment_index, 'date_art_start'] = now
@@ -306,12 +306,16 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask = (df.loc[(df.age_years < 15), 'date_tested'] > self.sim.date - DateOffset(months=self.repeat))
         recently_tested_child = mask.sum()
 
-        mask = (df['date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
-        recently_treated = mask.sum()
+        mask = (df.loc[(df.age_years >= 15), 'date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
+        recently_treated_adult = mask.sum()
+
+        mask = (df.loc[(df.age_years < 15), 'date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
+        recently_treated_child = mask.sum()
 
         currently_on_art = len(df[df.on_art & df.is_alive])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Number_tested_adult'].append(recently_tested_adult)
         self.module.store['Number_tested_child'].append(recently_tested_child)
-        self.module.store['Number_treated'].append(recently_treated)
+        self.module.store['Number_treated_adult'].append(recently_treated_adult)
+        self.module.store['Number_treated_child'].append(recently_treated_child)
