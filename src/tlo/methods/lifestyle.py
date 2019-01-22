@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 class Lifestyle(Module):
     """
@@ -37,7 +37,7 @@ class Lifestyle(Module):
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low ex if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low ex if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob'),
+        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob if male age 15-19 wealth level 1'),
         'r_not_tob': Parameter(Types.REAL, 'probability per 3 mths of change from tob to not tob'),
         'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tob if age 20-39 compared with 15-19'),
         'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tob if age ge 40 compared with 15-19'),
@@ -1010,343 +1010,33 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[not_low_ex_idx, 'li_low_ex'] = False
 
         # transition between not tob and tob
-        currently_not_tob_f_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 1)]
-        currently_not_tob_m_age1519_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 1)]
-        currently_not_tob_f_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 1)]
-        currently_not_tob_m_age2039_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 1)]
-        currently_not_tob_f_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 1)]
-        currently_not_tob_m_agege40_w1 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 1)]
-        currently_not_tob_f_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 2)]
-        currently_not_tob_m_age1519_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 2)]
-        currently_not_tob_f_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 2)]
-        currently_not_tob_m_age2039_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 2)]
-        currently_not_tob_f_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 2)]
-        currently_not_tob_m_agege40_w2 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 2)]
-        currently_not_tob_f_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 3)]
-        currently_not_tob_m_age1519_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 3)]
-        currently_not_tob_f_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 3)]
-        currently_not_tob_m_age2039_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 3)]
-        currently_not_tob_f_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 3)]
-        currently_not_tob_m_agege40_w3 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 3)]
-        currently_not_tob_f_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 4)]
-        currently_not_tob_m_age1519_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 4)]
-        currently_not_tob_f_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 4)]
-        currently_not_tob_m_age2039_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 4)]
-        currently_not_tob_f_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 4)]
-        currently_not_tob_m_agege40_w4 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 4)]
-        currently_not_tob_f_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 5)]
-        currently_not_tob_m_age1519_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)
-                                                  & (df.age_years < 20) & (df.li_wealth == 5)]
-        currently_not_tob_f_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 5)]
-        currently_not_tob_m_age2039_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 20)
-                                                  & (df.age_years < 40) & (df.li_wealth == 5)]
-        currently_not_tob_f_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'F') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 5)]
-        currently_not_tob_m_agege40_w5 = df.index[~df.li_tob & df.is_alive & (df.sex == 'M') & (df.age_years >= 40)
-                                                  & (df.li_wealth == 5)]
+
+        #  this below calls the age dataframe / call age.years to get age in years
+        age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
+        age_2039_no_tob_idx = df.index[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob]
+        age_ge40_no_tob_idx = df.index[(df.age_years >= 40) & df.is_alive & ~df.li_tob]
+        wealth2_no_tob_idx = df.index[(df.li_wealth == 2) & df.is_alive & ~df.li_tob]
+        wealth3_no_tob_idx = df.index[(df.li_wealth == 3) & df.is_alive & ~df.li_tob]
+        wealth4_no_tob_idx = df.index[(df.li_wealth == 4) & df.is_alive & ~df.li_tob]
+        wealth5_no_tob_idx = df.index[(df.li_wealth == 5) & df.is_alive & ~df.li_tob]
+        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob]
+
+        eff_prob_start_tob = pd.Series(self.r_tob, index=df.index[(df.age_years >= 15) & ~df.li_tob & df.is_alive])
+
+        """
+        eff_prob_start_tob.loc[age_2039_no_tob_idx] *= self.rr_tob_age2039
+        eff_prob_start_tob.loc[age_ge40_no_tob_idx] *= self.rr_tob_agege40
+        eff_prob_start_tob.loc[f_no_tob_idx] *= self.rr_tob_f
+        eff_prob_start_tob.loc[wealth2_no_tob_idx] *= self.rr_tob_wealth
+        eff_prob_start_tob.loc[wealth3_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth
+        eff_prob_start_tob.loc[wealth4_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
+        eff_prob_start_tob.loc[wealth5_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
+        """
+
+        random_draw1 = self.module.rng.random_sample(size=len(age_ge15_no_tob_idx))
+        df.loc[age_ge15_no_tob_idx, 'li_tob'] = (random_draw1 < eff_prob_start_tob)
 
         currently_tob = df.index[df.li_tob & df.is_alive]
-
-        ri_tob_f_age1519_w1 = self.r_tob * self.rr_tob_f
-        ri_tob_f_age2039_w1 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039
-        ri_tob_f_agege40_w1 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40
-        ri_tob_m_age1519_w1 = self.r_tob
-        ri_tob_m_age2039_w1 = self.r_tob * self.rr_tob_age2039
-        ri_tob_m_agege40_w1 = self.r_tob * self.rr_tob_agege40
-
-        ri_tob_f_age1519_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth
-        ri_tob_f_age2039_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth
-        ri_tob_f_agege40_w2 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth
-        ri_tob_m_age1519_w2 = self.r_tob * self.rr_tob_wealth
-        ri_tob_m_age2039_w2 = self.r_tob * self.rr_tob_age2039 * self.rr_tob_wealth
-        ri_tob_m_agege40_w2 = self.r_tob * self.rr_tob_agege40 * self.rr_tob_wealth
-
-        ri_tob_f_age1519_w3 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_age2039_w3 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_agege40_w3 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age1519_w3 = self.r_tob * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age2039_w3 = self.r_tob * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_agege40_w3 = self.r_tob * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth
-
-        ri_tob_f_age1519_w4 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_age2039_w4 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_agege40_w4 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age1519_w4 = self.r_tob * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age2039_w4 = self.r_tob * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_agege40_w4 = self.r_tob * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-
-        ri_tob_f_age1519_w5 = self.r_tob * self.rr_tob_f * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_age2039_w5 = self.r_tob * self.rr_tob_f * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_f_agege40_w5 = self.r_tob * self.rr_tob_f * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age1519_w5 = self.r_tob * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_age2039_w5 = self.r_tob * self.rr_tob_age2039 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        ri_tob_m_agege40_w5 = self.r_tob * self.rr_tob_agege40 * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-
-        now_tob_f_age1519_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age1519_w1),
-                                                p=[ri_tob_f_age1519_w1, 1 - ri_tob_f_age1519_w1])
-
-        if now_tob_f_age1519_w1.sum():
-            tob_f_age1519_w1_idx = currently_not_tob_f_age1519_w1[now_tob_f_age1519_w1]
-            df.loc[tob_f_age1519_w1_idx, 'li_tob'] = True
-
-        now_tob_m_age1519_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age1519_w1),
-                                                p=[ri_tob_m_age1519_w1, 1 - ri_tob_m_age1519_w1])
-
-        if now_tob_m_age1519_w1.sum():
-            tob_m_age1519_w1_idx = currently_not_tob_m_age1519_w1[now_tob_m_age1519_w1]
-            df.loc[tob_m_age1519_w1_idx, 'li_tob'] = True
-
-        now_tob_f_age1519_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age1519_w2),
-                                                p=[ri_tob_f_age1519_w2, 1 - ri_tob_f_age1519_w2])
-
-        if now_tob_f_age1519_w2.sum():
-            tob_f_age1519_w2_idx = currently_not_tob_f_age1519_w2[now_tob_f_age1519_w2]
-            df.loc[tob_f_age1519_w2_idx, 'li_tob'] = True
-
-        now_tob_m_age1519_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age1519_w2),
-                                                p=[ri_tob_m_age1519_w2, 1 - ri_tob_m_age1519_w2])
-
-        if now_tob_m_age1519_w2.sum():
-            tob_m_age1519_w2_idx = currently_not_tob_m_age1519_w2[now_tob_m_age1519_w2]
-            df.loc[tob_m_age1519_w2_idx, 'li_tob'] = True
-
-        now_tob_f_age1519_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age1519_w3),
-                                                p=[ri_tob_f_age1519_w3, 1 - ri_tob_f_age1519_w3])
-
-        if now_tob_f_age1519_w3.sum():
-            tob_f_age1519_w3_idx = currently_not_tob_f_age1519_w3[now_tob_f_age1519_w3]
-            df.loc[tob_f_age1519_w3_idx, 'li_tob'] = True
-
-        now_tob_m_age1519_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age1519_w3),
-                                                p=[ri_tob_m_age1519_w3, 1 - ri_tob_m_age1519_w3])
-
-        if now_tob_m_age1519_w3.sum():
-            tob_m_age1519_w3_idx = currently_not_tob_m_age1519_w3[now_tob_m_age1519_w3]
-            df.loc[tob_m_age1519_w3_idx, 'li_tob'] = True
-
-        now_tob_f_age1519_w4 = self.module.rng.choice([True, False],
-                                               size=len(currently_not_tob_f_age1519_w4),
-                                               p=[ri_tob_f_age1519_w4, 1 - ri_tob_f_age1519_w4])
-
-        if now_tob_f_age1519_w4.sum():
-           tob_f_age1519_w4_idx = currently_not_tob_f_age1519_w4[now_tob_f_age1519_w4]
-           df.loc[tob_f_age1519_w4_idx, 'li_tob'] = True
-
-        now_tob_m_age1519_w4 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age1519_w4),
-                                                p=[ri_tob_m_age1519_w4, 1 - ri_tob_m_age1519_w4])
-
-        if now_tob_m_age1519_w4.sum():
-            tob_m_age1519_w4_idx = currently_not_tob_m_age1519_w4[now_tob_m_age1519_w4]
-            df.loc[tob_m_age1519_w4_idx, 'li_tob'] = True
-
-        now_tob_f_age1519_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age1519_w5),
-                                                p=[ri_tob_f_age1519_w5, 1 - ri_tob_f_age1519_w5])
-
-        if now_tob_f_age1519_w5.sum():
-            tob_f_age1519_w5_idx = currently_not_tob_f_age1519_w5[now_tob_f_age1519_w5]
-            df.loc[tob_f_age1519_w5_idx, 'li_tob'] = True
-
-        now_tob_m_age1519_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age1519_w5),
-                                                p=[ri_tob_m_age1519_w5, 1 - ri_tob_m_age1519_w5])
-
-        if now_tob_m_age1519_w5.sum():
-            tob_m_age1519_w5_idx = currently_not_tob_m_age1519_w5[now_tob_m_age1519_w5]
-            df.loc[tob_m_age1519_w5_idx, 'li_tob'] = True
-
-        now_tob_f_age2039_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age2039_w1),
-                                                p=[ri_tob_f_age2039_w1, 1 - ri_tob_f_age2039_w1])
-
-        if now_tob_f_age2039_w1.sum():
-            tob_f_age2039_w1_idx = currently_not_tob_f_age2039_w1[now_tob_f_age2039_w1]
-            df.loc[tob_f_age2039_w1_idx, 'li_tob'] = True
-
-        now_tob_m_age2039_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age2039_w1),
-                                                p=[ri_tob_m_age2039_w1, 1 - ri_tob_m_age2039_w1])
-
-        if now_tob_m_age2039_w1.sum():
-            tob_m_age2039_w1_idx = currently_not_tob_m_age2039_w1[now_tob_m_age2039_w1]
-            df.loc[tob_m_age2039_w1_idx, 'li_tob'] = True
-
-        now_tob_f_age2039_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age2039_w2),
-                                                p=[ri_tob_f_age2039_w2, 1 - ri_tob_f_age2039_w2])
-
-        if now_tob_f_age2039_w2.sum():
-            tob_f_age2039_w2_idx = currently_not_tob_f_age2039_w2[now_tob_f_age2039_w2]
-            df.loc[tob_f_age2039_w2_idx, 'li_tob'] = True
-
-        now_tob_m_age2039_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age2039_w2),
-                                                p=[ri_tob_m_age2039_w2, 1 - ri_tob_m_age2039_w2])
-
-        if now_tob_m_age2039_w2.sum():
-            tob_m_age2039_w2_idx = currently_not_tob_m_age2039_w2[now_tob_m_age2039_w2]
-            df.loc[tob_m_age2039_w2_idx, 'li_tob'] = True
-
-        now_tob_f_age2039_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age2039_w3),
-                                                p=[ri_tob_f_age2039_w3, 1 - ri_tob_f_age2039_w3])
-
-        if now_tob_f_age2039_w3.sum():
-            tob_f_age2039_w3_idx = currently_not_tob_f_age2039_w3[now_tob_f_age2039_w3]
-            df.loc[tob_f_age2039_w3_idx, 'li_tob'] = True
-
-        now_tob_m_age2039_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age2039_w3),
-                                                p=[ri_tob_m_age2039_w3, 1 - ri_tob_m_age2039_w3])
-
-        if now_tob_m_age2039_w3.sum():
-            tob_m_age2039_w3_idx = currently_not_tob_m_age2039_w3[now_tob_m_age2039_w3]
-            df.loc[tob_m_age2039_w3_idx, 'li_tob'] = True
-
-        now_tob_f_age2039_w4 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age2039_w4),
-                                                p=[ri_tob_f_age2039_w4, 1 - ri_tob_f_age2039_w4])
-
-        if now_tob_f_age2039_w4.sum():
-            tob_f_age2039_w4_idx = currently_not_tob_f_age2039_w4[now_tob_f_age2039_w4]
-            df.loc[tob_f_age2039_w4_idx, 'li_tob'] = True
-
-        now_tob_m_age2039_w4 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age2039_w4),
-                                                p=[ri_tob_m_age2039_w4, 1 - ri_tob_m_age2039_w4])
-
-        if now_tob_m_age2039_w4.sum():
-            tob_m_age2039_w4_idx = currently_not_tob_m_age2039_w4[now_tob_m_age2039_w4]
-            df.loc[tob_m_age2039_w4_idx, 'li_tob'] = True
-
-        now_tob_f_age2039_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_age2039_w5),
-                                                p=[ri_tob_f_age2039_w5, 1 - ri_tob_f_age2039_w5])
-
-        if now_tob_f_age2039_w5.sum():
-            tob_f_age2039_w5_idx = currently_not_tob_f_age2039_w5[now_tob_f_age2039_w5]
-            df.loc[tob_f_age2039_w5_idx, 'li_tob'] = True
-
-        now_tob_m_age2039_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_age2039_w5),
-                                                p=[ri_tob_m_age2039_w5, 1 - ri_tob_m_age2039_w5])
-
-        if now_tob_m_age2039_w5.sum():
-            tob_m_age2039_w5_idx = currently_not_tob_m_age2039_w5[now_tob_m_age2039_w5]
-            df.loc[tob_m_age2039_w5_idx, 'li_tob'] = True
-
-        now_tob_f_agege40_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_agege40_w1),
-                                                p=[ri_tob_f_agege40_w1, 1 - ri_tob_f_agege40_w1])
-
-        if now_tob_f_agege40_w1.sum():
-            tob_f_agege40_w1_idx = currently_not_tob_f_agege40_w1[now_tob_f_agege40_w1]
-            df.loc[tob_f_agege40_w1_idx, 'li_tob'] = True
-
-        now_tob_m_agege40_w1 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_agege40_w1),
-                                                p=[ri_tob_m_agege40_w1, 1 - ri_tob_m_agege40_w1])
-
-        if now_tob_m_agege40_w1.sum():
-            tob_m_agege40_w1_idx = currently_not_tob_m_agege40_w1[now_tob_m_agege40_w1]
-            df.loc[tob_m_agege40_w1_idx, 'li_tob'] = True
-
-        now_tob_f_agege40_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_agege40_w2),
-                                                p=[ri_tob_f_agege40_w2, 1 - ri_tob_f_agege40_w2])
-
-        if now_tob_f_agege40_w2.sum():
-            tob_f_agege40_w2_idx = currently_not_tob_f_agege40_w2[now_tob_f_agege40_w2]
-            df.loc[tob_f_agege40_w2_idx, 'li_tob'] = True
-
-        now_tob_m_agege40_w2 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_agege40_w2),
-                                                p=[ri_tob_m_agege40_w2, 1 - ri_tob_m_agege40_w2])
-
-        if now_tob_m_agege40_w2.sum():
-            tob_m_agege40_w2_idx = currently_not_tob_m_agege40_w2[now_tob_m_agege40_w2]
-            df.loc[tob_m_agege40_w2_idx, 'li_tob'] = True
-
-        now_tob_f_agege40_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_agege40_w3),
-                                                p=[ri_tob_f_agege40_w3, 1 - ri_tob_f_agege40_w3])
-
-        if now_tob_f_agege40_w3.sum():
-            tob_f_agege40_w3_idx = currently_not_tob_f_agege40_w3[now_tob_f_agege40_w3]
-            df.loc[tob_f_agege40_w3_idx, 'li_tob'] = True
-
-        now_tob_m_agege40_w3 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_agege40_w3),
-                                                p=[ri_tob_m_agege40_w3, 1 - ri_tob_m_agege40_w3])
-
-        if now_tob_m_agege40_w3.sum():
-            tob_m_agege40_w3_idx = currently_not_tob_m_agege40_w3[now_tob_m_agege40_w3]
-            df.loc[tob_m_agege40_w3_idx, 'li_tob'] = True
-
-        now_tob_f_agege40_w4 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_agege40_w4),
-                                                p=[ri_tob_f_agege40_w4, 1 - ri_tob_f_agege40_w4])
-
-        if now_tob_f_agege40_w4.sum():
-            tob_f_agege40_w4_idx = currently_not_tob_f_agege40_w4[now_tob_f_agege40_w4]
-            df.loc[tob_f_agege40_w4_idx, 'li_tob'] = True
-
-        now_tob_m_agege40_w4 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_agege40_w4),
-                                                p=[ri_tob_m_agege40_w4, 1 - ri_tob_m_agege40_w4])
-
-        if now_tob_m_agege40_w4.sum():
-            tob_m_agege40_w4_idx = currently_not_tob_m_agege40_w4[now_tob_m_agege40_w4]
-            df.loc[tob_m_agege40_w4_idx, 'li_tob'] = True
-
-        now_tob_f_agege40_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_f_agege40_w5),
-                                                p=[ri_tob_f_agege40_w5, 1 - ri_tob_f_agege40_w5])
-
-        if now_tob_f_agege40_w5.sum():
-            tob_f_agege40_w5_idx = currently_not_tob_f_agege40_w5[now_tob_f_agege40_w5]
-            df.loc[tob_f_agege40_w5_idx, 'li_tob'] = True
-
-        now_tob_m_agege40_w5 = self.module.rng.choice([True, False],
-                                                size=len(currently_not_tob_m_agege40_w5),
-                                                p=[ri_tob_m_agege40_w5, 1 - ri_tob_m_agege40_w5])
-
-        if now_tob_m_agege40_w5.sum():
-            tob_m_agege40_w5_idx = currently_not_tob_m_agege40_w5[now_tob_m_agege40_w5]
-            df.loc[tob_m_agege40_w5_idx, 'li_tob'] = True
 
         now_not_tob = self.module.rng.choice([True, False], size=len(currently_tob),
                                        p=[self.r_not_tob, 1 - self.r_not_tob])
@@ -1354,6 +1044,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         if now_not_tob.sum():
             not_tob_idx = currently_tob[now_not_tob]
             df.loc[not_tob_idx, 'li_tob'] = False
+
+
 
     # transition to ex alc depends on sex
 
@@ -1552,6 +1244,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
 
+        """
+        
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
@@ -1568,8 +1262,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
 
+        """
+
         logger.debug('%s|person_one|%s',
                      self.sim.date,
-                     df.loc[10].to_dict())
+                     df.loc[0].to_dict())
 
 
