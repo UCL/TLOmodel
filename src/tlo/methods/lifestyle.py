@@ -957,68 +957,27 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[not_overwt_idx, 'li_overwt'] = False
 
         # transition between low ex and not low ex
-        currently_not_low_ex_f_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_low_ex_m_urban = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_low_ex_f_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'F') & ~df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_not_low_ex_m_rural = df.index[~df.li_low_ex & df.is_alive & (df.sex == 'M') & ~df.li_urban
-                                                & (df.age_years >= 15)]
-        currently_low_ex = df.index[df.li_low_ex & df.is_alive]
+        currently_not_low_ex_age_ge15_idx = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
+        f_not_low_ex_idx = df.index[(df.sex == 'F') & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
+        urban_not_low_ex_idx = df.index[df.li_urban & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
 
-        ri_low_ex_f_urban = self.r_low_ex * self.rr_low_ex_f * self.rr_low_ex_urban
-        ri_low_ex_f_rural = self.r_low_ex * self.rr_low_ex_f
-        ri_low_ex_m_urban = self.r_low_ex * self.rr_low_ex_urban
-        ri_low_ex_m_rural = self.r_low_ex
+        eff_prob_start_low_ex = pd.Series(self.r_low_ex, index=df.index[(df.age_years >= 15) & ~df.li_low_ex & df.is_alive])
+        eff_prob_start_low_ex.loc[f_not_low_ex_idx] *= self.rr_low_ex_f
+        eff_prob_start_low_ex.loc[urban_not_low_ex_idx] *= self.rr_low_ex_urban
 
-        now_low_ex_f_urban = self.module.rng.choice([True, False],
-                                              size=len(currently_not_low_ex_f_urban),
-                                              p=[ri_low_ex_f_urban, 1 - ri_low_ex_f_urban])
-
-        if now_low_ex_f_urban.sum():
-            low_ex_f_urban_idx = currently_not_low_ex_f_urban[now_low_ex_f_urban]
-            df.loc[low_ex_f_urban_idx, 'li_low_ex'] = True
-
-        now_low_ex_m_urban = self.module.rng.choice([True, False],
-                                              size=len(currently_not_low_ex_m_urban),
-                                              p=[ri_low_ex_m_urban, 1 - ri_low_ex_m_urban])
-
-        if now_low_ex_m_urban.sum():
-            low_ex_m_urban_idx = currently_not_low_ex_m_urban[now_low_ex_m_urban]
-            df.loc[low_ex_m_urban_idx, 'li_low_ex'] = True
-
-        now_not_low_ex = self.module.rng.choice([True, False], size=len(currently_low_ex),
-                                          p=[self.r_not_low_ex, 1 - self.r_not_low_ex])
-
-        now_low_ex_f_rural = self.module.rng.choice([True, False],
-                                              size=len(currently_not_low_ex_f_rural),
-                                              p=[ri_low_ex_f_rural, 1 - ri_low_ex_f_rural])
-        if now_low_ex_f_rural.sum():
-            low_ex_f_rural_idx = currently_not_low_ex_f_rural[now_low_ex_f_rural]
-            df.loc[low_ex_f_rural_idx, 'li_low_ex'] = True
-
-        now_low_ex_m_rural = self.module.rng.choice([True, False],
-                                              size=len(currently_not_low_ex_m_rural),
-                                              p=[ri_low_ex_m_rural, 1 - ri_low_ex_m_rural])
-        if now_low_ex_m_rural.sum():
-            low_ex_m_rural_idx = currently_not_low_ex_m_rural[now_low_ex_m_rural]
-            df.loc[low_ex_m_rural_idx, 'li_low_ex'] = True
-
-        if now_not_low_ex.sum():
-            not_low_ex_idx = currently_low_ex[now_not_low_ex]
-            df.loc[not_low_ex_idx, 'li_low_ex'] = False
-
+        random_draw1 = self.module.rng.random_sample(size=len(currently_not_low_ex_age_ge15_idx))
+        df.loc[currently_not_low_ex_age_ge15_idx, 'li_low_ex'] = (random_draw1 < eff_prob_start_low_ex)
+        
         # transition between not tob and tob
         #  this below calls the age dataframe / call age.years to get age in years
         age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         age_2039_no_tob_idx = df.index[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob]
         age_ge40_no_tob_idx = df.index[(df.age_years >= 40) & df.is_alive & ~df.li_tob]
-        wealth2_no_tob_idx = df.index[(df.li_wealth == 2) & df.is_alive & ~df.li_tob]
-        wealth3_no_tob_idx = df.index[(df.li_wealth == 3) & df.is_alive & ~df.li_tob]
-        wealth4_no_tob_idx = df.index[(df.li_wealth == 4) & df.is_alive & ~df.li_tob]
-        wealth5_no_tob_idx = df.index[(df.li_wealth == 5) & df.is_alive & ~df.li_tob]
-        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob]
+        wealth2_no_tob_idx = df.index[(df.li_wealth == 2) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
+        wealth3_no_tob_idx = df.index[(df.li_wealth == 3) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
+        wealth4_no_tob_idx = df.index[(df.li_wealth == 4) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
+        wealth5_no_tob_idx = df.index[(df.li_wealth == 5) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
+        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15)]
 
         eff_prob_start_tob = pd.Series(self.r_tob, index=df.index[(df.age_years >= 15) & ~df.li_tob & df.is_alive])
         eff_prob_start_tob.loc[age_2039_no_tob_idx] *= self.rr_tob_age2039
@@ -1033,15 +992,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[age_ge15_no_tob_idx, 'li_tob'] = (random_draw1 < eff_prob_start_tob)
 
         currently_tob = df.index[df.li_tob & df.is_alive]
-
+  
         now_not_tob = self.module.rng.choice([True, False], size=len(currently_tob),
                                        p=[self.r_not_tob, 1 - self.r_not_tob])
 
         if now_not_tob.sum():
             not_tob_idx = currently_tob[now_not_tob]
             df.loc[not_tob_idx, 'li_tob'] = False
-
-
 
     # transition to ex alc depends on sex
 
