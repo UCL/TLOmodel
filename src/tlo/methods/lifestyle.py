@@ -1010,7 +1010,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[not_low_ex_idx, 'li_low_ex'] = False
 
         # transition between not tob and tob
-
         #  this below calls the age dataframe / call age.years to get age in years
         age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         age_2039_no_tob_idx = df.index[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob]
@@ -1022,8 +1021,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob]
 
         eff_prob_start_tob = pd.Series(self.r_tob, index=df.index[(df.age_years >= 15) & ~df.li_tob & df.is_alive])
-
-        """
         eff_prob_start_tob.loc[age_2039_no_tob_idx] *= self.rr_tob_age2039
         eff_prob_start_tob.loc[age_ge40_no_tob_idx] *= self.rr_tob_agege40
         eff_prob_start_tob.loc[f_no_tob_idx] *= self.rr_tob_f
@@ -1031,7 +1028,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_start_tob.loc[wealth3_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth
         eff_prob_start_tob.loc[wealth4_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
         eff_prob_start_tob.loc[wealth5_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        """
 
         random_draw1 = self.module.rng.random_sample(size=len(age_ge15_no_tob_idx))
         df.loc[age_ge15_no_tob_idx, 'li_tob'] = (random_draw1 < eff_prob_start_tob)
