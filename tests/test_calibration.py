@@ -36,6 +36,7 @@ inc_data = inc_data[inc_data.year >= 2011]
 test_data = pd.read_excel(path_hs, sheet_name='testing_calibration', header=0)
 
 # number starting treatment
+treat_data = pd.read_excel(path_hs, sheet_name='art_calibration', header=0)
 
 
 
@@ -44,7 +45,7 @@ end_date = Date(2018, 2, 1)
 popsize = 10000
 
 
-def test_function(param1, param2, param3):
+def test_function(params):
 
     @pytest.fixture
     def simulation():
@@ -52,9 +53,10 @@ def test_function(param1, param2, param3):
 
         #  call modules
         core_module = demography.Demography(workbook_path=path_dem)
-        hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=param1)
+        hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=params[0])
         art_module = antiretroviral_therapy.art(workbook_path=path_hs)
-        hs_module = health_system_hiv.health_system(workbook_path=path_hs, par_est1=param2, par_est2=param3)
+        hs_module = health_system_hiv.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
+                                                    par_est3=params[3], par_est4=params[4])
         circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv)
         behavioural_module = hiv_behaviour_change.BehaviourChange()
         tb_module = tb.tb_baseline(workbook_path=path_tb)
@@ -85,13 +87,14 @@ def test_function(param1, param2, param3):
     # to calibrate: number infections (adult), number testing, number starting treatment
     print('new infections', simulation.modules['hiv'].store['HIV_new_infections_adult'])
     print('new tests', simulation.modules['health_system'].store['Number_tested_adult'])
-    print('new treatment', simulation.modules['health_system'].store['Number_treated'])
+    print('new treatment_adult', simulation.modules['health_system'].store['Number_treated_adult'])
 
     new_inf_ad = simulation.modules['hiv'].store['HIV_new_infections_adult']
     new_inf_child = simulation.modules['hiv'].store['HIV_new_infections_child']
     new_test_ad = simulation.modules['health_system'].store['Number_tested_adult']
     new_test_child = simulation.modules['health_system'].store['Number_tested_child']
-    new_treatment = simulation.modules['health_system'].store['Number_treated']
+    new_treatment_adult = simulation.modules['health_system'].store['Number_treated_adult']
+    new_treatment_child = simulation.modules['health_system'].store['Number_treated_child']
 
     # calibrate using least squares
     # check years are matching - 2011-2018
@@ -101,13 +104,17 @@ def test_function(param1, param2, param3):
     ss_test_ad = sum((test_data.adult - new_test_ad) ^ 2)
     ss_test_child = sum((test_data.children - new_test_child) ^ 2)
 
-    total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child
+    ss_treat_ad = sum((treat_data.adults - new_treatment_adult) ^ 2)
+    ss_treat_child = sum((treat_data.children - new_treatment_child) ^ 2)
+
+    total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child + ss_treat_ad + ss_treat_child
     print('total_ss', total_ss)
     return total_ss
 
 
 # test run with starting values
-test_function(param1=0.3, param2=0.4, param3=0.5)
+params = [0.5, 0.5, 0.5, 0.5, 0.5]
+test_function(params)
 
 # calibration
 # res = optimize.minimize(test_function, 0.8, method="L-BFGS-B", bounds=[(0.3, 2)])
