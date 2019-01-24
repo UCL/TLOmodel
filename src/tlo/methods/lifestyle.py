@@ -934,7 +934,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         wealth3_no_tob_idx = df.index[(df.li_wealth == 3) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
         wealth4_no_tob_idx = df.index[(df.li_wealth == 4) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
         wealth5_no_tob_idx = df.index[(df.li_wealth == 5) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
-        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15)]
+        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15) & df.is_alive]
 
         eff_prob_start_tob = pd.Series(self.r_tob, index=df.index[(df.age_years >= 15) & ~df.li_tob & df.is_alive])
         eff_prob_start_tob.loc[age_2039_no_tob_idx] *= self.rr_tob_age2039
@@ -1167,7 +1167,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|li_ed_lev|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
-
+        """
         logger.info('%s|li_ed_lev_by_age|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
@@ -1177,5 +1177,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-
+ 
+        """
 
