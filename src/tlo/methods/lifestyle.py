@@ -412,14 +412,20 @@ class Lifestyle(Module):
                                              self.init_rp_some_ed_sec_per_higher_wealth * \
                                              self.init_rp_some_ed_sec_per_higher_wealth
 
-        random_draw1 = self.module.rng.random_sample(size=len(age_ge5_idx))
+        random_draw_01 = pd.Series(self.rng.random_sample(size=len(age_ge5_idx)), index=df.index[(df.age_years >= 5) & df.is_alive])
 
-        ### todo: have created two pd.series with (i) prob some education, (ii) prob some secondary education
-        ### todo: need to now assign li_ed_lev according to those probabilities
-        #   note: on individual level:
-        #   probability of being in ed_lev_1 = (1 - eff_prob_some_ed)
-        #   probability of being in ed_lev_1 = eff_prob_ed_lev_3
-        #   probability of being in ed_lev_1 = 1 - ed_lev_1_ - ed_lev_3_
+        dfx = pd.concat([eff_prob_ed_lev_3, eff_prob_some_ed, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
+
+        dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
+        dfx['p_ed_lev_3'] = dfx['eff_prob_ed_lev_3']
+        dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
+
+        dfx['li_ed_lev'] = 2
+        dfx.loc[dfx['cut_off_ed_levl_3'] < random_draw_01, 'li_ed_lev'] = 3
+        dfx.loc[dfx['p_ed_lev_1'] > random_draw_01, 'li_ed_lev'] = 1
+
+        df.loc[age_ge5_idx, 'li_ed_lev'] = dfx['li_ed_lev']
 
         age_5_13_ed_lev_1_index = df.index[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 1) & df.is_alive]
         df.loc[age_5_13_ed_lev_1_index, 'li_in_ed'] = False
