@@ -36,17 +36,4 @@ if __name__ == '__main__':
     simulation = simulation()
     test_depression_simulation(simulation)
 
-    # plot the total history
-
-    stats = simulation.modules['Depression'].o_prop_depr['prop_depr']
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    xvals = np.arange(0, len(stats))
-
-    yvals = stats
-    plt.ylim(0, 0.4)
-    plt.plot(xvals, yvals)
-    plt.show()
 
