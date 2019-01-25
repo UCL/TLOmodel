@@ -1,6 +1,3 @@
-"""
-First draft of depression module based on Andrew's document.
-"""
 
 import logging
 from collections import defaultdict
@@ -14,11 +11,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 class Depression(Module):
-    """Models incidence and recovery from moderate/severe depression.
-
-    Mild depression is excluded.
-    Treatment for depression is in the EHP.
-    """
 
     # Module parameters
     PARAMETERS = {
@@ -49,9 +41,12 @@ class Depression(Module):
         'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL,
             'initial relative prevalence ever depression per year older in women if not currently depressed'),
-        'init_pr_on_antidepr_curr_depressed': Parameter(
+       'init_pr_on_antidepr_curr_depressed': Parameter(
             Types.REAL,
             'initial prob of being on antidepressants if currently depressed'),
+        'init_rp_antidepr_ever_depr_not_curr': Parameter(
+            Types.REAL,
+            'initial relative prevalence of being on antidepressants if ever depressed but not currently'),
         'init_rp_never_depr': Parameter(
             Types.REAL,
             'initial relative prevalence of having never been depressed'),
@@ -114,7 +109,7 @@ class Depression(Module):
         'prob_3m_selfharm_depr': Parameter(
             Types.REAL,
             'rate of non-fatal self harm in (currently depressed)'),
-    }
+        }
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
@@ -130,28 +125,22 @@ class Depression(Module):
         'de_date_init_most_rec_depr': Property(
             Types.DATE, 'When this individual last initiated a depr episode'),
         'de_date_depr_resolved': Property(
-            Types.DATE, 'When the last episode of depr was resolved'),
+              Types.DATE, 'When the last episode of depr was resolved'),
         'de_ever_depr': Property(
-            Types.BOOL, 'Whether this person has ever experienced depr'),
+              Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depression': Property(
-            Types.REAL, 'probability per 3 months of resolution of depresssion'),
+              Types.REAL, 'probability per 3 months of resolution of depresssion'),
 
         # todo - this to be removed when defined in other modules
 
-        'de_is_pregnant': Property(
-            Types.BOOL, 'recently pregnant'),
         'de_wealth': Property(
-            Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
+              Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'de_cc': Property(
-            Types.BOOL, 'whether has chronic condition'),
-
+              Types.BOOL, 'whether has chronic condition')
     }
 
     def __init__(self):
         super().__init__()
-# todo update this below
-        self.store = {'alive': []}
-        self.o_prop_depr = {'prop_depr': []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -161,8 +150,6 @@ class Depression(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
-        # todo 2059 is base group for rr while 1519 is for prevalence at baseline
 
         self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.1
         self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
@@ -202,7 +189,6 @@ class Depression(Module):
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
 
-        :param population: the population of individuals
         """
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
@@ -215,17 +201,15 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
 
-        # todo these below to be removed as properties
+        # todo these below to be removed as properties when their use is eliminated
         df['de_p_new_depr'] = 0
         df['de_newly_depr'] = False
         df['de_resol_depr'] = False
         df['de_p_resol_depr'] = 0
 
-
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
         df['de_wealth'] = 3
-        df['de_is_pregnant'] = False
 
         #  this below calls the age dataframe / call age.years to get age in years
 
@@ -234,10 +218,8 @@ class Depression(Module):
         age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
         wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.de_is_pregnant & (df.age_years >= 15) & df.is_alive]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.de_is_pregnant & (df.age_years >= 15) & df.is_alive]
-
-        # todo: build new code which does not create extra properties for probabilities from this below
+        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive]
+        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive]
 
         eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
         eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
@@ -319,12 +301,15 @@ class Depression(Module):
 
         df = self.sim.population.props
 
-        df.at[child_id, 'is_alive'] = True
-        df.at[child_id, 'date_of_birth'] = self.sim.date
-
         df.at[child_id, 'de_depr'] = False
-        df.at[child_id, 'de_dever_epr'] = False
-
+        df.at[child_id, 'de_ever_depr'] = False
+        df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
+        df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
+        df.at[child_id, 'de_non_fatal_self_harm_event'] = False
+        df.at[child_id, 'de_suicide'] = False
+        df.at[child_id, 'de_on_antidepr'] = False
+        df.at[child_id, 'de_ever_depr'] = False
+        df.at[child_id, 'de_prob_3m_resol_depression'] = 0
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
@@ -384,8 +369,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
         wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & df.age_years >= 15 & df.is_alive]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.de_is_pregnant & df.age_years >= 15 & df.is_alive]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.de_is_pregnant & df.age_years >= 15 & df.is_alive]
+        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.age_years >= 15 & df.is_alive]
+        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.age_years >= 15 & df.is_alive]
         ever_depr_idx = df.index[df.de_ever_depr & df.age_years >= 15 & df.is_alive]
         onantidepr_idx = df.index[df.de_on_antidepr & df.age_years >= 15 & df.is_alive]
 
@@ -459,17 +444,26 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         prop_depr = n_depr / alive
 
-        self.module.store['alive'].append(alive)
+        logger.info('%s|li_urban|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby('li_urban').size().to_dict())
+        logger.info('%s|li_overwt|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
+        logger.info('%s|li_ed_lev|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
+        """
+        logger.info('%s|li_ed_lev_by_age|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
 
-        self.module.o_prop_depr['prop_depr'].append(prop_depr)
+        """
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
 
-#       self.module.o_prop_m_age1519_w1_tob['prop_m_age1519_w1_tob'].append(prop_m_age1519_w1_tob)
-
-#       wealth_count_alive = df.loc[df.is_alive, 'de_wealth'].value_counts()
-
-        print('%s ,  n_depr_m:%d ,n_depr_f:%d , alive: %d' %
-              (self.sim.date, n_depr_m, n_depr_f, alive),
-              flush=True)
+        """
 
 
 
