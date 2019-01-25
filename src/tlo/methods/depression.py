@@ -131,7 +131,7 @@ class Depression(Module):
         'de_prob_3m_resol_depression': Property(
               Types.REAL, 'probability per 3 months of resolution of depresssion'),
 
-        # todo - this to be removed when defined in other modules
+# todo - this to be removed when defined in other modules
 
         'de_wealth': Property(
               Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
@@ -201,13 +201,13 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
 
-        # todo these below to be removed as properties when their use is eliminated
+# todo these below to be removed as properties when their use is eliminated
         df['de_p_new_depr'] = 0
         df['de_newly_depr'] = False
         df['de_resol_depr'] = False
         df['de_p_resol_depr'] = 0
 
-        # todo - this to be removed when defined in other modules
+# todo - this to be removed when defined in other modules
         df['de_cc'] = False
         df['de_wealth'] = 3
 
@@ -267,9 +267,7 @@ class Depression(Module):
         curr_depr_index = df.index[df.de_depr & df.is_alive]
         df.loc[curr_depr_index, 'de_ever_depr'] = True
 
-        # todo
-        # - find a way to use depr_resolution_rates parameter list for resol
-        # rates rather than list 0.2, 0.3, 0.5, 0.7, 0.95]
+# todo: find a way to use depr_resolution_rates parameter list for resol rates rather than list 0.2, 0.3, 0.5, 0.7, 0.95]
 
         df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2])
@@ -360,30 +358,29 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         df['de_newly_depr'] = False
 
+        ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
 
-        df['de_newly_depr'] = False
-
-        ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr]
-
-        cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
-        age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
-        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & df.age_years >= 15 & df.is_alive]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.age_years >= 15 & df.is_alive]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.age_years >= 15 & df.is_alive]
-        ever_depr_idx = df.index[df.de_ever_depr & df.age_years >= 15 & df.is_alive]
-        onantidepr_idx = df.index[df.de_on_antidepr & df.age_years >= 15 & df.is_alive]
+        cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive & ~df.de_depr]
+        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive & ~df.de_depr]
+        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & df.age_years >= 15 & df.is_alive & ~df.de_depr]
+        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.age_years >= 15 & df.is_alive & ~df.de_depr]
+        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.age_years >= 15 & df.is_alive & ~df.de_depr]
+        ever_depr_idx = df.index[df.de_ever_depr & df.age_years >= 15 & df.is_alive & ~df.de_depr]
+        on_antidepr_idx = df.index[df.de_on_antidepr & df.age_years >= 15 & df.is_alive & ~df.de_depr]
 
         eff_prob_newly_depr = pd.Series(self.base_3m_prob_depr,
-                                        index=df.index[(df.age_years >= 15) & ~df.de_depr])
+                                        index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
         eff_prob_newly_depr.loc[cc_ge15_idx] *= self.rr_depr_cc
         eff_prob_newly_depr.loc[age_1519_idx] *= self.rr_depr_age1519
         eff_prob_newly_depr.loc[age_ge60_idx] *= self.rr_depr_agege60
         eff_prob_newly_depr.loc[wealth45_ge15_idx] *= self.rr_depr_wealth45
         eff_prob_newly_depr.loc[f_not_rec_preg_idx] *= self.rr_depr_female
         eff_prob_newly_depr.loc[f_rec_preg_idx] *= self.rr_depr_female*self.rr_depr_pregnancy
+        eff_prob_newly_depr.loc[ever_depr_idx] *= self.rr_depr_prev_epis
+        eff_prob_newly_depr.loc[on_antidepr_idx] *= self.rr_depr_on_antidepr
 
-        random_draw2 = self.rng.random_sample(size=len(ge15_not_depr_idx))
+        random_draw2 = self.module.rng.random_sample(size=len(ge15_not_depr_idx))
         df.loc[ge15_not_depr_idx, 'de_newly_depr'] = (random_draw2 < eff_prob_newly_depr)
 
         newly_depr_idx = df.index[df.de_newly_depr]
@@ -393,28 +390,30 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
 
-
-
-
-
-        curr_depr_idx = df.index[df.de_depr & df.is_alive]
+        curr_depr_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15)]
         df.loc[curr_depr_idx, 'de_ever_depr'] = True
 
         # resolution of depression
 
-        df.loc[cc_idx, 'de_p_resol_depr'] *= self.rr_resol_depr_cc
-        df.loc[onantidepr_idx, 'de_p_resol_depr'] *= self.rr_resol_depr_on_antidepr
-
         depr_idx = df.index[df.de_depr & df.is_alive]
+        cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
+        on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
 
-        random_draw3 = self.rng.random_sample(size=len(depr_idx))
-        df.loc[depr_idx, 'de_resol_depr'] = (random_draw3 > df['de_p_resol_depr'])
+# todo: this line below
+        eff_prob_depr_resolved = pd.Series(self.base_prob_depr_res,
+                                               index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
+        eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
+        eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
+
+# todo: we are not keeping 'de_resol_depr'
+        random_draw3 = self.module.rng.random_sample(size=len(depr_idx))
+        df.loc[depr_idx, 'de_resol_depr'] = (random_draw3 > eff_prob_depr_resolved)
 
         depr_resol_idx = df.index[df.de_resol_depr & df.is_alive]
         df.loc[depr_resol_idx, 'de_depr'] = False
         df.loc[depr_resol_idx, 'de_date_depr_resolved'] = self.sim.date
 
-# todo  suicide, self-harm + de-bugging + checking of graphs for consistency of initial condittions and transitions....
+# todo  suicide, self-harm + de-bugging + checking for consistency of initial condittions and transitions....
 
 #       for person in alive.index[will_die]:
 #           # schedule the death for "now"
@@ -431,6 +430,9 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
+
+        # todo: this below needs work
+
         # get some summary statistics
         df = population.props
         alive = df.is_alive.sum()
