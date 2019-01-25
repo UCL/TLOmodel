@@ -201,15 +201,14 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
 
-# todo these below to be removed as properties when their use is eliminated
-        df['de_p_new_depr'] = 0
+# todo: these below to be removed as properties ?
         df['de_newly_depr'] = False
         df['de_resol_depr'] = False
-        df['de_p_resol_depr'] = 0
+
 
 # todo - this to be removed when defined in other modules
         df['de_cc'] = False
-        df['de_wealth'] = 3
+        df['de_wealth'] = 4
 
         #  this below calls the age dataframe / call age.years to get age in years
 
@@ -359,15 +358,14 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df['de_newly_depr'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
-
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
         age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive & ~df.de_depr]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive & ~df.de_depr]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & df.age_years >= 15 & df.is_alive & ~df.de_depr]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & df.age_years >= 15 & df.is_alive & ~df.de_depr]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & df.age_years >= 15 & df.is_alive & ~df.de_depr]
-        ever_depr_idx = df.index[df.de_ever_depr & df.age_years >= 15 & df.is_alive & ~df.de_depr]
-        on_antidepr_idx = df.index[df.de_on_antidepr & df.age_years >= 15 & df.is_alive & ~df.de_depr]
+        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        ever_depr_idx = df.index[df.de_ever_depr & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        on_antidepr_idx = df.index[df.de_on_antidepr & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
 
         eff_prob_newly_depr = pd.Series(self.base_3m_prob_depr,
                                         index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
@@ -400,8 +398,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
 
 # todo: this line below
-        eff_prob_depr_resolved = pd.Series(self.base_prob_depr_res,
-                                               index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
+        eff_prob_depr_resolved = pd.Series(df.de_prob_3m_resol_depression,
+                                               index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive])
         eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
 
@@ -436,7 +434,6 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         alive = df.is_alive.sum()
-        age = population.age
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
@@ -446,26 +443,19 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         prop_depr = n_depr / alive
 
-        logger.info('%s|li_urban|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_urban').size().to_dict())
-        logger.info('%s|li_overwt|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-        logger.info('%s|li_ed_lev|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
         """
-        logger.info('%s|li_ed_lev_by_age|%s',
+        logger.info('%s|de_depr|%s',
                     self.sim.date,
-                    df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
-
+                    df[df.is_alive].groupby('de_depr').size().to_dict())
+        logger.info('%s|de_ever_depr|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
         """
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
 
-        """
+
 
 
 
