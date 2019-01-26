@@ -10,8 +10,8 @@ path = 'C:/Users/Andrew Phillips/Dropbox/Thanzi la Onse/05 - Resources\Demograph
 # Edit this path so it points to your own copy of the Demography.xlsx file
 start_date = Date(2010, 1, 1)
 # if end_date = Date(2010, 1, 1) then population.props are the baseline values
-end_date = Date(2012, 4, 1)
-popsize = 1000
+end_date = Date(2020, 4, 1)
+popsize = 1
 
 
 @pytest.fixture
