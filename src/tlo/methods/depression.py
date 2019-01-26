@@ -475,15 +475,21 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|de_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('de_depr').size().to_dict())
+        """
+
+        logger.info('%s|p_depr|%s',
+                    self.sim.date,
+                    prop_depr)
+
+        """
         logger.info('%s|de_ever_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
-        """
+        
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-
-
+        """
 
 
 
