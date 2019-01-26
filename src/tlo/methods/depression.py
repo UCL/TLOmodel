@@ -8,7 +8,8 @@ import pandas as pd
 import random
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 
 class Depression(Module):
 
@@ -41,7 +42,7 @@ class Depression(Module):
         'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL,
             'initial relative prevalence ever depression per year older in women if not currently depressed'),
-       'init_pr_on_antidepr_curr_depressed': Parameter(
+        'init_pr_on_antidepr_curr_depressed': Parameter(
             Types.REAL,
             'initial prob of being on antidepressants if currently depressed'),
         'init_rp_antidepr_ever_depr_not_curr': Parameter(
@@ -103,9 +104,9 @@ class Depression(Module):
         'prob_3m_suicide_depr_m': Parameter(
             Types.REAL,
             'rate of suicide in (currently depressed) men'),
-        'prob_3m_suicide_depr_f': Parameter(
+        'rr_suicide_depr_f': Parameter(
             Types.REAL,
-            'rate of suicide in (currently depressed) women'),
+            'relative rate of suicide in women compared with me'),
         'prob_3m_selfharm_depr': Parameter(
             Types.REAL,
             'rate of non-fatal self harm in (currently depressed)'),
@@ -114,11 +115,6 @@ class Depression(Module):
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
         'de_depr': Property(Types.BOOL, 'currently depr'),
-        'de_newly_depr': Property(Types.BOOL, 'newly depressed this period'),
-        'de_resol_depr': Property(Types.BOOL, 'resolved depression this period'),
-        'de_base_p_depr': Property(Types.REAL, 'baseline probability of depression'),
-        'de_p_new_depr': Property(Types.REAL, 'current probability of new depression'),
-        'de_p_resol_depr': Property(Types.REAL, 'current probability of resolution of depression'),
         'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
         'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
         'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
@@ -179,7 +175,7 @@ class Depression(Module):
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
         self.parameters['prob_3m_suicide_depr_m'] = 0.001
-        self.parameters['prob_3m_suicide_depr_f'] = 0.0005
+        self.parameters['rr_suicide_depr_f'] = 0.5
         self.parameters['prob_3m_selfharm_depr'] = 0.002
 
     def initialise_population(self, population):
@@ -200,11 +196,6 @@ class Depression(Module):
         df['de_on_antidepr'] = False
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
-
-# todo: these below to be removed as properties ?
-        df['de_newly_depr'] = False
-        df['de_resol_depr'] = False
-
 
 # todo - this to be removed when defined in other modules
         df['de_cc'] = False
@@ -234,7 +225,7 @@ class Depression(Module):
         f_index = df.index[(df.sex == 'F') & df.is_alive & (df.age_years >= 15)]
         m_index = df.index[(df.sex == 'M') & df.is_alive & (df.age_years >= 15)]
 
-        eff_prob_ever_depr = pd.Series(1, index = df.index[df.age_years >= 15])
+        eff_prob_ever_depr = pd.Series(1, index=df.index[df.age_years >= 15])
 
         eff_prob_ever_depr.loc[f_index] = df.age_years * self.init_rp_ever_depr_per_year_older_f
         eff_prob_ever_depr.loc[m_index] = df.age_years * self.init_rp_ever_depr_per_year_older_m
@@ -253,6 +244,8 @@ class Depression(Module):
 
         if antidepr_curr_de.sum():
             df.loc[curr_depr_index, 'de_on_antidepr'] = antidepr_curr_de
+        # for people depressed at baseline give de_date_init_most_rec_depr of sim.date
+            df.loc[curr_depr_index, 'de_date_init_most_rec_depr'] = self.sim.date
 
         ever_depr_not_curr_index = df.index[df.de_ever_depr & ~df.de_depr & df.is_alive]
 
@@ -299,7 +292,6 @@ class Depression(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'de_depr'] = False
-        df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
         df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
         df.at[child_id, 'de_non_fatal_self_harm_event'] = False
@@ -307,6 +299,7 @@ class Depression(Module):
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
+
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
@@ -355,7 +348,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
-        df['de_newly_depr'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
@@ -378,18 +370,25 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_newly_depr.loc[ever_depr_idx] *= self.rr_depr_prev_epis
         eff_prob_newly_depr.loc[on_antidepr_idx] *= self.rr_depr_on_antidepr
 
-        random_draw2 = self.module.rng.random_sample(size=len(ge15_not_depr_idx))
-        df.loc[ge15_not_depr_idx, 'de_newly_depr'] = (random_draw2 < eff_prob_newly_depr)
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(ge15_not_depr_idx)),
+                                   index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
 
-        newly_depr_idx = df.index[df.de_newly_depr]
-        df.loc[newly_depr_idx, 'de_depr'] = True
-        df.loc[newly_depr_idx, 'de_ever_depr'] = True
-        df.loc[newly_depr_idx, 'de_date_init_most_rec_depr'] = self.sim.date
+        dfx = pd.concat([eff_prob_newly_depr, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_newly_depr', 'random_draw_01']
+
+        dfx['x_depr'] = False
+        dfx['x_date_init_most_rec_depr'] = pd.NaT
+
+        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_depr'] = True
+        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_date_init_most_rec_depr'] = self.sim.date
+
+        df.loc[ge15_not_depr_idx, 'de_depr'] = dfx['x_depr']
+        df.loc[ge15_not_depr_idx, 'de_date_init_most_rec_depr'] = dfx['x_date_init_most_rec_depr']
+
+        newly_depr_idx = df.index[df.de_date_init_most_rec_depr == self.sim.date]
+
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
-
-        curr_depr_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15)]
-        df.loc[curr_depr_idx, 'de_ever_depr'] = True
 
         # resolution of depression
 
@@ -397,26 +396,49 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
 
-# todo: this line below
         eff_prob_depr_resolved = pd.Series(df.de_prob_3m_resol_depression,
                                                index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive])
         eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
 
-# todo: we are not keeping 'de_resol_depr'
-        random_draw3 = self.module.rng.random_sample(size=len(depr_idx))
-        df.loc[depr_idx, 'de_resol_depr'] = (random_draw3 > eff_prob_depr_resolved)
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(depr_idx)),
+                                   index=df.index[df.de_depr & df.is_alive])
 
-        depr_resol_idx = df.index[df.de_resol_depr & df.is_alive]
-        df.loc[depr_resol_idx, 'de_depr'] = False
-        df.loc[depr_resol_idx, 'de_date_depr_resolved'] = self.sim.date
+        dfx = pd.concat([eff_prob_depr_resolved, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_depr_resolved', 'random_draw_01']
 
-# todo  suicide, self-harm + de-bugging + checking for consistency of initial condittions and transitions....
+        dfx['x_depr'] = True
+        dfx['x_date_depr_resolved'] = pd.NaT
 
-#       for person in alive.index[will_die]:
-#           # schedule the death for "now"
-#           self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-#                                   self.sim.date)
+        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_depr'] = False
+        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_date_depr_resolved'] = self.sim.date
+
+        df.loc[depr_idx, 'de_depr'] = dfx['x_depr']
+        df.loc[depr_idx, 'de_date_depr_resolved'] = dfx['x_date_depr_resolved']
+
+        depr_resolved_now_idx = df.index[df.de_date_depr_resolved == self.sim.date]
+        df.loc[depr_resolved_now_idx, 'de_prob_3m_resol_depression'] = 0
+
+        curr_depr_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15)]
+        df.loc[curr_depr_idx, 'de_ever_depr'] = True
+
+        eff_prob_self_harm = pd.Series(self.prob_3m_selfharm_depr, index=df.index[(df.age_years >= 15)
+                                                                                  & df.de_depr & df.is_alive])
+
+        random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
+        df.loc[curr_depr_idx, 'de_non_fatal_self_harm_event'] = (eff_prob_self_harm > random_draw)
+
+        curr_depr_f_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15) and (df.sex == 'F')]
+
+        eff_prob_suicide = pd.Series(self.prob_3m_suicide_depr_m, index=df.index[(df.age_years >= 15)
+                                                                                  & df.de_depr & df.is_alive])
+        eff_prob_suicide.loc[curr_depr_f_idx] *= self.rr_suicide_depr_f
+
+        random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
+        df.loc[curr_depr_idx, 'de_suicide'] = (eff_prob_suicide > random_draw)
+
+# todo: schedule the death event for the suicide
+#       self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),self.sim.date)
 
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -429,7 +451,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # todo: this below needs work
+        # todo  checking for consistency of initial condittions and transitions....
 
         # get some summary statistics
         df = population.props
