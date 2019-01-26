@@ -336,7 +336,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
         self.rate_default_antidepr = module.parameters['rate_default_antidepr']
         self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
-        self.prob_3m_suicide_depr_f = module.parameters['prob_3m_suicide_depr_f']
+        self.rr_suicide_depr_f = module.parameters['rr_suicide_depr_f']
         self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
 
     def apply(self, population):
@@ -348,6 +348,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
+
+        df['de_non_fatal_self_harm_event'] = False
+        df['de_suicide'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
@@ -428,7 +431,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
         df.loc[curr_depr_idx, 'de_non_fatal_self_harm_event'] = (eff_prob_self_harm > random_draw)
 
-        curr_depr_f_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15) and (df.sex == 'F')]
+        curr_depr_f_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
         eff_prob_suicide = pd.Series(self.prob_3m_suicide_depr_m, index=df.index[(df.age_years >= 15)
                                                                                   & df.de_depr & df.is_alive])
@@ -436,6 +439,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
         df.loc[curr_depr_idx, 'de_suicide'] = (eff_prob_suicide > random_draw)
+
+        suicide_idx = df.index[df.de_suicide]
+        df.loc[suicide_idx, 'is_alive'] = False
 
 # todo: schedule the death event for the suicide
 #       self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),self.sim.date)
