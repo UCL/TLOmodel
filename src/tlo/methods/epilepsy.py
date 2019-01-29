@@ -167,7 +167,7 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_antiep'] = False
         df.at[child_id, 'ep_epi_death'] = False
 
-class DeprEvent(RegularEvent, PopulationScopeEventMixin):
+class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
 
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -186,8 +186,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=3))
 
-        self.init_epil_seiz_status = module.parameters['init_epil_seiz_status']
-        self.init_prop_antiepileptic = module.parameters['init_prop_antiepileptic']
         self.base_3m_prob_epilepsy = module.parameters['base_3m_prob_epilepsy']
         self.rr_epilepsy_age_ge20 = module.parameters['rr_epilepsy_age_ge20']
         self.prop_inc_epilepsy_seiz_freq = module.parameters['prop_inc_epilepsy_seiz_freq']
@@ -216,35 +214,26 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        df['de_non_fatal_self_harm_event'] = False
-        df['de_suicide'] = False
+        # update ep_seiz_stat
 
-        ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
-        cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
-        age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive & ~df.de_depr]
-        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive & ~df.de_depr]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
-        ever_depr_idx = df.index[df.de_ever_depr & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
-        on_antidepr_idx = df.index[df.de_on_antidepr & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat >= 2)]
+        ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat >= 2) & (df.age_years >= 20)]
 
-        eff_prob_newly_depr = pd.Series(self.base_3m_prob_depr,
-                                        index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
-        eff_prob_newly_depr.loc[cc_ge15_idx] *= self.rr_depr_cc
-        eff_prob_newly_depr.loc[age_1519_idx] *= self.rr_depr_age1519
-        eff_prob_newly_depr.loc[age_ge60_idx] *= self.rr_depr_agege60
-        eff_prob_newly_depr.loc[wealth45_ge15_idx] *= self.rr_depr_wealth45
-        eff_prob_newly_depr.loc[f_not_rec_preg_idx] *= self.rr_depr_female
-        eff_prob_newly_depr.loc[f_rec_preg_idx] *= self.rr_depr_female*self.rr_depr_pregnancy
-        eff_prob_newly_depr.loc[ever_depr_idx] *= self.rr_depr_prev_epis
-        eff_prob_newly_depr.loc[on_antidepr_idx] *= self.rr_depr_on_antidepr
+        eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy,
+                                      index=df.index[df.is_alive & (df.ep_seiz_stat >= 2)])
+        eff_prob_epilepsy.loc[age20_idx] *= self.rr_epilepsy_age_ge20
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(ge15_not_depr_idx)),
-                                   index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive])
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat >= 2)])
 
-        dfx = pd.concat([eff_prob_newly_depr, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_newly_depr', 'random_draw_01']
+        dfx = pd.concat([eff_prob_epilepsy, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_epilepsy', 'random_draw_01']
+
+
+
+
+
+
 
         dfx['x_depr'] = False
         dfx['x_date_init_most_rec_depr'] = pd.NaT
