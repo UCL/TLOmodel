@@ -42,26 +42,37 @@ class Epilepsy(Module):
         'rr_seiz_stat_infreq_freq_antiepileptic': Parameter(
             Types.REAL,
             'relative rate of seizure status infrequent if current frequent if on antiepileptic'),
-
-        base_prob_3b_seiz_stat_infreq_freq
-        rr_seiz_stat_infreq_freq_ onantiepileptic
-        base_prob_3m_seiz_stat_none_freq
-        rr_seiz_ stat_none_freq_onantiepileptic
-        base_prob_3m_seiz_stat_infreq_none
-        rr_seiz_stat_infreq_none_ onantiepileptic
-        base_prob_3m_seiz_stat_none_infreq
-        rr_seiz_stat_none_infreq_onantiepileptic
-        base_prob_3m_antiepileptic
-        rr_antiepileptic_seiz_infreq
-        rr_antiepileptic_seiz_freq
-        base_prob_3m_stop_antiepileptic
-        rr_antiepileptic_seiz_nonenow
-        rr_antiepileptic_seiz_infreq
-        rr_antiepileptic_seiz_freq
-        rr_epi_death_seiz_freq
-        base_prob_3m_epi_death_seiz_infreq
-
-    }
+        'base_prob_3m_seiz_stat_none_freq': Parameter(
+            Types.REAL,
+            'base probability per 3 months of seizure status nonenow if current frequent'),
+        'rr_seiz_stat_none_freq_antiepileptic': Parameter(
+            Types.REAL,
+            'relative rate of seizure status none if current frequent if on antiepileptic'),
+        'base_prob_3m_seiz_stat_none_infreq': Parameter(
+            Types.REAL,
+            'base probability per 3 months of seizure status nonenow if current infrequent'),
+        'rr_seiz_stat_none_infreq_antiepileptic': Parameter(
+            Types.REAL,
+            'relative rate of seizure status none if current infrequent if on antiepileptic'),
+        'base_prob_3m_antiepileptic': Parameter(
+            Types.REAL,
+            'base probability per 3 months of starting antiepileptic, if frequent seizures'),
+        'rr_antiepileptic_seiz_infreq': Parameter(
+            Types.REAL,
+            'relative rate of starting antiepileptic if infrequent seizures'),
+        'base_prob_3m_stop_antiepileptic': Parameter(
+            Types.REAL,
+            'base probability per 3 months of stopping antiepileptic, if nonenow seizures'),
+        'rr_stop_antiepileptic_seiz_infreq': Parameter(
+            Types.REAL,
+            'relative rate of stopping antiepileptic if infrequent seizures'),
+        'rr_stop_antiepileptic_seiz_freq': Parameter(
+            Types.REAL,
+            'relative rate of stopping antiepileptic if frequent seizures'),
+        'base_prob_3m_epi_death_seiz_infreq': Parameter(
+            Types.REAL,
+            'base probability per 3 months of epilepsy death'),
+     }
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
