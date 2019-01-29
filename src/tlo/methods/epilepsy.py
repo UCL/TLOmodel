@@ -31,30 +31,33 @@ class Depression(Module):
             Types.REAL,
             'proportion of incident epilepsy cases with frequent seizures'),
 
+        base_prob_3b_incr_seiz_stat
+        rr_incr_seiz_ onantiepileptic
+        base_prob_3b_seiz_stat_infreq_freq
+        rr_seiz_stat_infreq_freq_ onantiepileptic
+        base_prob_3m_seiz_stat_none_freq
+        rr_seiz_ stat_none_freq_onantiepileptic
+        base_prob_3m_seiz_stat_infreq_none
+        rr_seiz_stat_infreq_none_ onantiepileptic
+        base_prob_3m_seiz_stat_none_infreq
+        rr_seiz_stat_none_infreq_onantiepileptic
+        base_prob_3m_antiepileptic
+        rr_antiepileptic_seiz_infreq
+        rr_antiepileptic_seiz_freq
+        base_prob_3m_stop_antiepileptic
+        rr_antiepileptic_seiz_nonenow
+        rr_antiepileptic_seiz_infreq
+        rr_antiepileptic_seiz_freq
+        rr_epi_death_seiz_freq
+        base_prob_3m_epi_death_seiz_infreq
 
     }
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'de_depr': Property(Types.BOOL, 'currently depr'),
-        'de_non_fatal_self_harm_event': Property(Types.BOOL, 'non fatal self harm event this 3 month period'),
-        'de_suicide': Property(Types.BOOL, 'suicide this 3 month period'),
-        'de_on_antidepr': Property(Types.BOOL, 'on anti-depressants'),
-        'de_date_init_most_rec_depr': Property(
-            Types.DATE, 'When this individual last initiated a depr episode'),
-        'de_date_depr_resolved': Property(
-              Types.DATE, 'When the last episode of depr was resolved'),
-        'de_ever_depr': Property(
-              Types.BOOL, 'Whether this person has ever experienced depr'),
-        'de_prob_3m_resol_depression': Property(
-              Types.REAL, 'probability per 3 months of resolution of depresssion'),
-
-# todo - this to be removed when defined in other modules
-
-        'de_wealth': Property(
-              Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
-        'de_cc': Property(
-              Types.BOOL, 'whether has chronic condition')
+        'ep_seiz_stat': Property(Types.CATEGORICAL, 'seizure status'),
+        'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
+        'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
     }
 
     def __init__(self):
