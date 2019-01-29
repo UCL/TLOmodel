@@ -19,11 +19,11 @@ class Epilepsy(Module):
             Types.LIST,
             'Proportions in each seizure status category at baseline'),
         'init_prop_antiepileptic': Parameter(
-            Types.REAL,
-            'initial proportion on antiepileptic')
+            Types.LIST,
+            'initial proportions on antiepileptic by seizure status'),
         'base_3m_prob_epilepsy': Parameter(
             Types.REAL,
-            'base probability of epilepsy over a 3 month period if age < 20'),
+            'base probability of epilepsy per 3 month period if age < 20'),
         'rr_epilepsy_age_ge20': Parameter(
             Types.REAL,
             'relative rate of epilepsy if age over 20'),
@@ -93,36 +93,26 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.1
-        self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
-        self.parameters['init_rp_depr_f_rec_preg'] = 3
-        self.parameters['init_rp_depr_age2059'] = 1
-        self.parameters['init_rp_depr_agege60'] = 3
-        self.parameters['init_rp_depr_cc'] = 1
-        self.parameters['init_rp_depr_wealth45'] = 1
-        self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.007
-        self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.009
-        self.parameters['init_pr_antidepr_curr_depr'] = 0.15
-        self.parameters['init_rp_never_depr'] = 0
-        self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
-        self.parameters['base_3m_prob_depr'] = 0.0007
-        self.parameters['rr_depr_wealth45'] = 3
-        self.parameters['rr_depr_cc'] = 1.25
-        self.parameters['rr_depr_pregnancy'] = 3
-        self.parameters['rr_depr_female'] = 1.5
-        self.parameters['rr_depr_prev_epis'] = 50
-        self.parameters['rr_depr_on_antidepr'] = 30
-        self.parameters['rr_depr_age1519'] = 1
-        self.parameters['rr_depr_agege60'] = 3
-        self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
-        self.parameters['rr_resol_depr_cc'] = 0.5
-        self.parameters['rr_resol_depr_on_antidepr'] = 1.5
-        self.parameters['rate_init_antidep'] = 0.03
-        self.parameters['rate_stop_antidepr'] = 0.70
-        self.parameters['rate_default_antidepr'] = 0.20
-        self.parameters['prob_3m_suicide_depr_m'] = 0.001
-        self.parameters['rr_suicide_depr_f'] = 0.5
-        self.parameters['prob_3m_selfharm_depr'] = 0.002
+        self.parameters['init_epil_seiz_status'] = [0.98, 0.002, 0.008, 0.01]
+        self.parameters['init_prop_antiepileptic'] = [0, 0.1, 0.2, 0.3]
+        self.parameters['base_3m_prob_epilepsy':] = 0.001
+        self.parameters['rr_epilepsy_age_ge20'] = 0.0005
+        self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.5
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.01
+        self.parameters['rr_seiz_stat_freq_infreq_antiepileptic'] = 0.1
+        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.01
+        self.parameters['rr_seiz_stat_infreq_freq_antiepileptic'] = 0.2
+        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
+        self.parameters['rr_seiz_stat_none_freq_antiepileptic'] = 5
+        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.10
+        self.parameters['rr_seiz_stat_none_infreq_antiepileptic'] = 5
+        self.parameters['base_prob_3m_antiepileptic'] = 0.05
+        self.parameters['rr_antiepileptic_seiz_infreq'] = 0.3
+        self.parameters['base_prob_3m_stop_antiepileptic'] = 0.05
+        self.parameters['rr_stop_antiepileptic_seiz_infreq'] = 0.1
+        self.parameters['rr_stop_antiepileptic_seiz_freq'] = 0.1
+        self.parameters['base_prob_3m_epi_death_seiz_infreq'] = 0.1
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -134,30 +124,23 @@ class Epilepsy(Module):
         """
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        df['de_depr'] = False
-        df['de_date_init_most_rec_depr'] = pd.NaT
-        df['de_date_depr_resolved'] = pd.NaT
-        df['de_non_fatal_self_harm_event'] = False
-        df['de_suicide'] = False
-        df['de_on_antidepr'] = False
-        df['de_ever_depr'] = False
-        df['de_prob_3m_resol_depression'] = 0
 
-# todo - this to be removed when defined in other modules
-        df['de_cc'] = False
-        df['de_wealth'] = 4
+        df['ep_seiz_stat'] = 0
+        df['ep_antiep'] = False
+        df['ep_epi_death'] = False
 
-        #  this below calls the age dataframe / call age.years to get age in years
+        # allocate initial ep_seiz_stat
+        alive_idx = df.index[df.is_alive]
+        df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice([0, 1, 2, 3], size=len(alive_idx),
+                                                                   p=self.parameters['init_epil_seiz_status'])
 
-        age_ge15_idx = df.index[(df.age_years >= 15) & df.is_alive]
-        cc_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
-        age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
-        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
-        f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive]
-        f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive]
+        # allocate initial on antiepileptic
 
-        eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
+
+
+
+
+        eff_prob_epilepsy = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
         eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
         eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
         eff_prob_depression.loc[age_ge60_idx] *= self.init_rp_depr_agege60
