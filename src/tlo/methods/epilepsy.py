@@ -1,6 +1,5 @@
 
 import logging
-from collections import defaultdict
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 import numpy as np
@@ -95,7 +94,7 @@ class Epilepsy(Module):
 
         self.parameters['init_epil_seiz_status'] = [0.98, 0.002, 0.008, 0.01]
         self.parameters['init_prop_antiepileptic'] = [0, 0.1, 0.2, 0.3]
-        self.parameters['base_3m_prob_epilepsy':] = 0.001
+        self.parameters['base_3m_prob_epilepsy'] = 0.001
         self.parameters['rr_epilepsy_age_ge20'] = 0.0005
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.5
         self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.01
@@ -112,7 +111,6 @@ class Epilepsy(Module):
         self.parameters['rr_stop_antiepileptic_seiz_infreq'] = 0.1
         self.parameters['rr_stop_antiepileptic_seiz_freq'] = 0.1
         self.parameters['base_prob_3m_epi_death_seiz_infreq'] = 0.1
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -134,64 +132,9 @@ class Epilepsy(Module):
         df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice([0, 1, 2, 3], size=len(alive_idx),
                                                                    p=self.parameters['init_epil_seiz_status'])
 
-        # allocate initial on antiepileptic
-
-
-
-
-
-        eff_prob_epilepsy = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
-        eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
-        eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
-        eff_prob_depression.loc[age_ge60_idx] *= self.init_rp_depr_agege60
-        eff_prob_depression.loc[wealth45_ge15_idx] *= self.init_rp_depr_wealth45
-        eff_prob_depression.loc[f_not_rec_preg_idx] *= self.init_rp_depr_f_not_rec_preg
-        eff_prob_depression.loc[f_rec_preg_idx] *= self.init_rp_depr_f_rec_preg
-
-        random_draw1 = self.rng.random_sample(size=len(age_ge15_idx))
-        df.loc[age_ge15_idx, 'de_depr'] = (random_draw1 < eff_prob_depression)
-
-        f_index = df.index[(df.sex == 'F') & df.is_alive & (df.age_years >= 15)]
-        m_index = df.index[(df.sex == 'M') & df.is_alive & (df.age_years >= 15)]
-
-        eff_prob_ever_depr = pd.Series(1, index=df.index[df.age_years >= 15])
-
-        eff_prob_ever_depr.loc[f_index] = df.age_years * self.init_rp_ever_depr_per_year_older_f
-        eff_prob_ever_depr.loc[m_index] = df.age_years * self.init_rp_ever_depr_per_year_older_m
-
-        random_draw = self.rng.random_sample(size=len(age_ge15_idx))
-        df.loc[age_ge15_idx, 'de_ever_depr'] = (eff_prob_ever_depr > random_draw)
-
-        curr_depr_index = df.index[df.de_depr & df.is_alive]
-
-        p_antidepr_curr_depr = self.init_pr_antidepr_curr_depr
-        p_antidepr_ever_depr_not_curr = self.init_pr_antidepr_curr_depr * self.init_rp_antidepr_ever_depr_not_curr
-
-        antidepr_curr_de = np.random.choice([True, False], size=len(curr_depr_index),
-                                   p=[p_antidepr_curr_depr,
-                                      1 - p_antidepr_curr_depr])
-
-        if antidepr_curr_de.sum():
-            df.loc[curr_depr_index, 'de_on_antidepr'] = antidepr_curr_de
-        # for people depressed at baseline give de_date_init_most_rec_depr of sim.date
-            df.loc[curr_depr_index, 'de_date_init_most_rec_depr'] = self.sim.date
-
-        ever_depr_not_curr_index = df.index[df.de_ever_depr & ~df.de_depr & df.is_alive]
-
-        antidepr_ev_de_not_curr = np.random.choice([True, False], size=len(ever_depr_not_curr_index),
-                                   p=[p_antidepr_ever_depr_not_curr,
-                                      1 - p_antidepr_ever_depr_not_curr])
-
-        if antidepr_ev_de_not_curr.sum():
-            df.loc[ever_depr_not_curr_index, 'de_on_antidepr'] = antidepr_ev_de_not_curr
-
-        curr_depr_index = df.index[df.de_depr & df.is_alive]
-        df.loc[curr_depr_index, 'de_ever_depr'] = True
-
-# todo: find a way to use depr_resolution_rates parameter list for resol rates rather than list 0.2, 0.3, 0.5, 0.7, 0.95]
-
-        df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice \
-            ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2])
+        # allocate initial on antiepileptic according to seiz status
+        df.loc[alive_idx, 'ep_antiep'] = self.rng.choice([0, 1, 2, 3], size=len(alive_idx),
+                                                                   p=self.parameters['init_prop_antiepileptic'])
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -203,8 +146,8 @@ class Epilepsy(Module):
         Here we add our three-monthly event to poll the population for depr starting
         or stopping.
         """
-        depr_poll = DeprEvent(self)
-        sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
+        epilepsy_poll = EpilepsyEvent(self)
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=3))
 
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
@@ -220,15 +163,9 @@ class Epilepsy(Module):
 
         df = self.sim.population.props
 
-        df.at[child_id, 'de_depr'] = False
-        df.at[child_id, 'de_date_init_most_rec_depr'] = pd.NaT
-        df.at[child_id, 'de_date_depr_resolved'] = pd.NaT
-        df.at[child_id, 'de_non_fatal_self_harm_event'] = False
-        df.at[child_id, 'de_suicide'] = False
-        df.at[child_id, 'de_on_antidepr'] = False
-        df.at[child_id, 'de_ever_depr'] = False
-        df.at[child_id, 'de_prob_3m_resol_depression'] = 0
-
+        df.at[child_id, 'ep_seiz_stat'] = 0
+        df.at[child_id, 'ep_antiep'] = False
+        df.at[child_id, 'ep_epi_death'] = False
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
@@ -249,24 +186,25 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         """
         super().__init__(module, frequency=DateOffset(months=3))
 
-        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
-        self.rr_depr_wealth45 = module.parameters['rr_depr_wealth45']
-        self.rr_depr_cc = module.parameters['rr_depr_cc']
-        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
-        self.rr_depr_female = module.parameters['rr_depr_female']
-        self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
-        self.rr_depr_on_antidepr = module.parameters['rr_depr_on_antidepr']
-        self.rr_depr_age1519 = module.parameters['rr_depr_age1519']
-        self.rr_depr_agege60 = module.parameters['rr_depr_agege60']
-        self.depr_resolution_rates = module.parameters['depr_resolution_rates']
-        self.rr_resol_depr_cc = module.parameters['rr_resol_depr_cc']
-        self.rr_resol_depr_on_antidepr = module.parameters['rr_resol_depr_on_antidepr']
-        self.rate_init_antidep = module.parameters['rate_init_antidep']
-        self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
-        self.rate_default_antidepr = module.parameters['rate_default_antidepr']
-        self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
-        self.rr_suicide_depr_f = module.parameters['rr_suicide_depr_f']
-        self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
+        self.init_epil_seiz_status = module.parameters['init_epil_seiz_status']
+        self.init_prop_antiepileptic = module.parameters['init_prop_antiepileptic']
+        self.base_3m_prob_epilepsy = module.parameters['base_3m_prob_epilepsy']
+        self.rr_epilepsy_age_ge20 = module.parameters['rr_epilepsy_age_ge20']
+        self.prop_inc_epilepsy_seiz_freq = module.parameters['prop_inc_epilepsy_seiz_freq']
+        self.base_prob_3m_seiz_stat_freq_infreq = module.parameters['base_prob_3m_seiz_stat_freq_infreq']
+        self.rr_seiz_stat_freq_infreq_antiepileptic = module.parameters['rr_seiz_stat_freq_infreq_antiepileptic']
+        self.base_prob_3m_seiz_stat_infreq_freq = module.parameters['base_prob_3m_seiz_stat_infreq_freq']
+        self.rr_seiz_stat_infreq_freq_antiepileptic = module.parameters['rr_seiz_stat_infreq_freq_antiepileptic']
+        self.base_prob_3m_seiz_stat_none_freq = module.parameters['base_prob_3m_seiz_stat_none_freq']
+        self.rr_seiz_stat_none_freq_antiepileptic = module.parameters['rr_seiz_stat_none_freq_antiepileptic']
+        self.base_prob_3m_seiz_stat_none_infreq = module.parameters['base_prob_3m_seiz_stat_none_infreq']
+        self.rr_seiz_stat_none_infreq_antiepileptic = module.parameters['rr_seiz_stat_none_infreq_antiepileptic']
+        self.base_prob_3m_antiepileptic = module.parameters['base_prob_3m_antiepileptic']
+        self.rr_antiepileptic_seiz_infreq = module.parameters['rr_antiepileptic_seiz_infreq']
+        self.base_prob_3m_stop_antiepileptic = module.parameters['base_prob_3m_stop_antiepileptic']
+        self.rr_stop_antiepileptic_seiz_infreq = module.parameters['rr_stop_antiepileptic_seiz_infreq']
+        self.rr_stop_antiepileptic_seiz_freq = module.parameters['rr_stop_antiepileptic_seiz_freq']
+        self.base_prob_3m_epi_death_seiz_infreq = module.parameters['base_prob_3m_epi_death_seiz_infreq']
 
     def apply(self, population):
         """Apply this event to the population.
