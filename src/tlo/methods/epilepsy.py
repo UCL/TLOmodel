@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 
-class Depression(Module):
+class Epilepsy(Module):
 
     # Module parameters
     PARAMETERS = {
@@ -30,9 +30,19 @@ class Depression(Module):
         'prop_inc_epilepsy_seiz_freq': Parameter(
             Types.REAL,
             'proportion of incident epilepsy cases with frequent seizures'),
+        'base_prob_3m_seiz_stat_freq_infreq': Parameter(
+            Types.REAL,
+            'base probability per 3 months of seizure status frequent if current infrequent'),
+        'rr_seiz_stat_freq_infreq_antiepileptic': Parameter(
+            Types.REAL,
+            'relative rate of seizure status frequent if current infrequent if on antiepileptic'),
+        'base_prob_3m_seiz_stat_infreq_freq': Parameter(
+            Types.REAL,
+            'base probability per 3 months of seizure status infrequent if current frequent'),
+        'rr_seiz_stat_infreq_freq_antiepileptic': Parameter(
+            Types.REAL,
+            'relative rate of seizure status infrequent if current frequent if on antiepileptic'),
 
-        base_prob_3b_incr_seiz_stat
-        rr_incr_seiz_ onantiepileptic
         base_prob_3b_seiz_stat_infreq_freq
         rr_seiz_stat_infreq_freq_ onantiepileptic
         base_prob_3m_seiz_stat_none_freq
