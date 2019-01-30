@@ -32,27 +32,18 @@ class Epilepsy(Module):
         'base_prob_3m_seiz_stat_freq_infreq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status frequent if current infrequent'),
-        'rr_seiz_stat_freq_infreq_antiepileptic': Parameter(
+        'rr_effectiveness_antiepileptics': Parameter(
             Types.REAL,
             'relative rate of seizure status frequent if current infrequent if on antiepileptic'),
         'base_prob_3m_seiz_stat_infreq_freq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status infrequent if current frequent'),
-        'rr_seiz_stat_infreq_freq_antiepileptic': Parameter(
-            Types.REAL,
-            'relative rate of seizure status infrequent if current frequent if on antiepileptic'),
         'base_prob_3m_seiz_stat_none_freq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status nonenow if current frequent'),
-        'rr_seiz_stat_none_freq_antiepileptic': Parameter(
-            Types.REAL,
-            'relative rate of seizure status none if current frequent if on antiepileptic'),
         'base_prob_3m_seiz_stat_none_infreq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status nonenow if current infrequent'),
-        'rr_seiz_stat_none_infreq_antiepileptic': Parameter(
-            Types.REAL,
-            'relative rate of seizure status none if current infrequent if on antiepileptic'),
         'base_prob_3m_antiepileptic': Parameter(
             Types.REAL,
             'base probability per 3 months of starting antiepileptic, if frequent seizures'),
@@ -95,16 +86,13 @@ class Epilepsy(Module):
         self.parameters['init_epil_seiz_status'] = [0.98, 0.002, 0.008, 0.01]
         self.parameters['init_prop_antiepileptic'] = [0, 0.1, 0.2, 0.3]
         self.parameters['base_3m_prob_epilepsy'] = 0.001
-        self.parameters['rr_epilepsy_age_ge20'] = 0.0005
-        self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.5
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.01
-        self.parameters['rr_seiz_stat_freq_infreq_antiepileptic'] = 0.1
+        self.parameters['rr_epilepsy_age_ge20'] = 0.5
+        self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.001
+        self.parameters['rr_effectiveness_antiepileptics'] = 5
         self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.01
-        self.parameters['rr_seiz_stat_infreq_freq_antiepileptic'] = 0.2
         self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
-        self.parameters['rr_seiz_stat_none_freq_antiepileptic'] = 5
         self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.10
-        self.parameters['rr_seiz_stat_none_infreq_antiepileptic'] = 5
         self.parameters['base_prob_3m_antiepileptic'] = 0.05
         self.parameters['rr_antiepileptic_seiz_infreq'] = 0.3
         self.parameters['base_prob_3m_stop_antiepileptic'] = 0.05
