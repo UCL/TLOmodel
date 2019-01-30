@@ -53,12 +53,9 @@ class Epilepsy(Module):
         'base_prob_3m_stop_antiepileptic': Parameter(
             Types.REAL,
             'base probability per 3 months of stopping antiepileptic, if nonenow seizures'),
-        'rr_stop_antiepileptic_seiz_infreq': Parameter(
+        'rr_stop_antiepileptic_seiz_infreq_or_freq': Parameter(
             Types.REAL,
-            'relative rate of stopping antiepileptic if infrequent seizures'),
-        'rr_stop_antiepileptic_seiz_freq': Parameter(
-            Types.REAL,
-            'relative rate of stopping antiepileptic if frequent seizures'),
+            'relative rate of stopping antiepileptic if infrequent or frequent seizures'),
         'base_prob_3m_epi_death_seiz_infreq': Parameter(
             Types.REAL,
             'base probability per 3 months of epilepsy death'),
@@ -96,8 +93,7 @@ class Epilepsy(Module):
         self.parameters['base_prob_3m_antiepileptic'] = 0.05
         self.parameters['rr_antiepileptic_seiz_infreq'] = 0.3
         self.parameters['base_prob_3m_stop_antiepileptic'] = 0.05
-        self.parameters['rr_stop_antiepileptic_seiz_infreq'] = 0.1
-        self.parameters['rr_stop_antiepileptic_seiz_freq'] = 0.1
+        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.1
         self.parameters['base_prob_3m_epi_death_seiz_infreq'] = 0.1
 
     def initialise_population(self, population):
@@ -202,96 +198,43 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        # update ep_seiz_stat
+        # update ep_seiz_stat for people ep_seiz_stat = 0
 
-        alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat >= 2)]
-        ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat >= 2) & (df.age_years >= 20)]
+        alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == 0)]
+        ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == 0) & (df.age_years >= 20)]
 
         eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy,
-                                      index=df.index[df.is_alive & (df.ep_seiz_stat >= 2)])
-        eff_prob_epilepsy.loc[age20_idx] *= self.rr_epilepsy_age_ge20
+                                      index=df.index[df.is_alive & (df.ep_seiz_stat == 0)])
+        eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
 
         random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat >= 2)])
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat == 0)])
+        random_draw_02 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat == 0)])
 
-        dfx = pd.concat([eff_prob_epilepsy, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_epilepsy', 'random_draw_01']
+        dfx = pd.concat([eff_prob_epilepsy, random_draw_01, random_draw_02], axis=1)
+        dfx.columns = ['eff_prob_epilepsy', 'random_draw_01', 'random_draw_02']
 
+        dfx['ep_seiz_stat'] = 0
 
+        dfx.loc[(dfx['eff_prob_epilepsy'] > random_draw_01) & (self.prop_inc_epilepsy_seiz_freq > random_draw_02),
+                dfx['ep_seiz_stat']] = 3
+        dfx.loc[(dfx['eff_prob_epilepsy'] > random_draw_01) & (self.prop_inc_epilepsy_seiz_freq < random_draw_02),
+                dfx['ep_seiz_stat']] = 2
 
+        df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = dfx['ep_seiz_stat']
 
-
-
-
-        dfx['x_depr'] = False
-        dfx['x_date_init_most_rec_depr'] = pd.NaT
-
-        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_depr'] = True
-        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_date_init_most_rec_depr'] = self.sim.date
-
-        df.loc[ge15_not_depr_idx, 'de_depr'] = dfx['x_depr']
-        df.loc[ge15_not_depr_idx, 'de_date_init_most_rec_depr'] = dfx['x_date_init_most_rec_depr']
-
-        newly_depr_idx = df.index[df.de_date_init_most_rec_depr == self.sim.date]
-
-        df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
-            ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
-
-        # resolution of depression
-
-        depr_idx = df.index[df.de_depr & df.is_alive]
-        cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
-        on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
-
-        eff_prob_depr_resolved = pd.Series(df.de_prob_3m_resol_depression,
-                                               index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive])
-        eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
-        eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
-
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(depr_idx)),
-                                   index=df.index[df.de_depr & df.is_alive])
-
-        dfx = pd.concat([eff_prob_depr_resolved, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_depr_resolved', 'random_draw_01']
-
-        dfx['x_depr'] = True
-        dfx['x_date_depr_resolved'] = pd.NaT
-
-        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_depr'] = False
-        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_date_depr_resolved'] = self.sim.date
-
-        df.loc[depr_idx, 'de_depr'] = dfx['x_depr']
-        df.loc[depr_idx, 'de_date_depr_resolved'] = dfx['x_date_depr_resolved']
-
-        depr_resolved_now_idx = df.index[df.de_date_depr_resolved == self.sim.date]
-        df.loc[depr_resolved_now_idx, 'de_prob_3m_resol_depression'] = 0
-
-        curr_depr_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15)]
-        df.loc[curr_depr_idx, 'de_ever_depr'] = True
-
-        eff_prob_self_harm = pd.Series(self.prob_3m_selfharm_depr, index=df.index[(df.age_years >= 15)
-                                                                                  & df.de_depr & df.is_alive])
-
-        random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
-        df.loc[curr_depr_idx, 'de_non_fatal_self_harm_event'] = (eff_prob_self_harm > random_draw)
-
-        curr_depr_f_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
-
-        eff_prob_suicide = pd.Series(self.prob_3m_suicide_depr_m, index=df.index[(df.age_years >= 15)
-                                                                                  & df.de_depr & df.is_alive])
-        eff_prob_suicide.loc[curr_depr_f_idx] *= self.rr_suicide_depr_f
-
-        random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
-        df.loc[curr_depr_idx, 'de_suicide'] = (eff_prob_suicide > random_draw)
-
-        suicide_idx = df.index[df.de_suicide]
-        df.loc[suicide_idx, 'is_alive'] = False
-
-# todo: schedule the death event for the suicide
-#       self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),self.sim.date)
+        # todo
+        # update ep_seiz_stat for people ep_seiz_stat = 1
+        # update ep_seiz_stat for people ep_seiz_stat = 2
+        # update ep_seiz_stat for people ep_seiz_stat = 3
+        # update ep_antiep if ep_seiz_stat = 1
+        # update ep_antiep if ep_seiz_stat = 2
+        # update ep_antiep if ep_seiz_stat = 3
+        # update ep_epi_death
 
 
-class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
         """
@@ -309,31 +252,26 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
-        n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
-        n_depr_m = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
-        n_depr_f = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
-        prop_depr = n_depr / alive
-
-        """
+        """        
         logger.info('%s|de_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('de_depr').size().to_dict())
-        """
-
+        
         logger.info('%s|p_depr|%s',
                     self.sim.date,
                     prop_depr)
 
-        """
         logger.info('%s|de_ever_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
         
+        """
+
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-        """
+
 
 
 
