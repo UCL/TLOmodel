@@ -343,10 +343,52 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
 
-
-        # update ep_antiep if ep_seiz_stat = 1
         # update ep_antiep if ep_seiz_stat = 2
+
+        alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
+
+        eff_prob_antiep = pd.Series(self.base_prob_3m_antiepileptic,
+                                    index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep])
+
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep])
+
+        dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_antiep', 'random_draw_01']
+
+        dfx['x_ep_antiep'] = False
+        dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
+
+        df.loc[alive_seiz_stat_2_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+
         # update ep_antiep if ep_seiz_stat = 3
+
+        alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
+
+        eff_prob_antiep = pd.Series(self.base_prob_3m_antiepileptic,
+                                    index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep])
+
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep])
+
+        dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_antiep', 'random_draw_01']
+
+        dfx['x_ep_antiep'] = False
+        dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
+
+        df.loc[alive_seiz_stat_2_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+
+
+
+        base_prob_3m_antiepileptic( if current freq seizures)
+        (x rr_antiepileptic_seiz_infreq)
+
+        base_prob_3m_stop_antiepileptic( if nonenow)
+        (x rr_antiepileptic_seiz_infreq)
+        (x rr_antiepileptic_seiz_freq)
+
+
         # update ep_epi_death
         # todo above
 
