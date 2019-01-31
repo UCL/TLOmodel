@@ -44,6 +44,9 @@ class Epilepsy(Module):
         'base_prob_3m_seiz_stat_infreq_freq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status infrequent if current frequent'),
+        'base_prob_3m_seiz_stat_freq_none': Parameter(
+            Types.REAL,
+            'base probability per 3 months of seizure status frequent if current nonenow'),
         'base_prob_3m_seiz_stat_infreq_none': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status infrequent if current nonenow'),
@@ -96,11 +99,12 @@ class Epilepsy(Module):
         self.parameters['base_3m_prob_epilepsy'] = 0.001
         self.parameters['rr_epilepsy_age_ge20'] = 0.5
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.001
         self.parameters['rr_effectiveness_antiepileptics'] = 5
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.001
         self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.01
         self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
         self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.10
+        self.parameters['base_prob_3m_seiz_stat_freq_none'] = 0.01
         self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.01
         self.parameters['base_prob_3m_antiepileptic'] = 0.05
         self.parameters['rr_antiepileptic_seiz_infreq'] = 0.3
@@ -202,6 +206,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.base_prob_3m_seiz_stat_none_freq = module.parameters['base_prob_3m_seiz_stat_none_freq']
         self.base_prob_3m_seiz_stat_none_infreq = module.parameters['base_prob_3m_seiz_stat_none_infreq']
         self.base_prob_3m_seiz_stat_infreq_none = module.parameters['base_prob_3m_seiz_stat_infreq_none']
+        self.base_prob_3m_seiz_stat_freq_none = module.parameters['base_prob_3m_seiz_stat_freq_none']
         self.base_prob_3m_antiepileptic = module.parameters['base_prob_3m_antiepileptic']
         self.rr_antiepileptic_seiz_infreq = module.parameters['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = module.parameters['base_prob_3m_stop_antiepileptic']
@@ -298,15 +303,15 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_seiz_stat_3', 'random_draw_01']
 
         dfx['x_ep_seiz_stat'] = '2'
-        dfx.loc[(dfx.eff_prob_seiz_stat_1 > random_draw_01), 'x_ep_seiz_stat'] = '3'
+        dfx.loc[(dfx.eff_prob_seiz_stat_3 > random_draw_01), 'x_ep_seiz_stat'] = '3'
 
         df.loc[alive_seiz_stat_2_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
 
-       # transition from ep_seiz_stat 3 to 1
+        # transition from ep_seiz_stat 3 to 1
 
         alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
-        eff_prob_seiz_stat_1 = pd.Series(self.base_prob_3m_seiz_stat_freq_none,
+        eff_prob_seiz_stat_1 = pd.Series(self.base_prob_3m_seiz_stat_none_freq,
                                          index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
 
         random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
@@ -320,18 +325,31 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
 
+        # transition from ep_seiz_stat 3 to 2
+
+        alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+
+        eff_prob_seiz_stat_2 = pd.Series(self.base_prob_3m_seiz_stat_infreq_freq,
+                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+
+        dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
+
+        dfx['x_ep_seiz_stat'] = '3'
+        dfx.loc[(dfx.eff_prob_seiz_stat_2 > random_draw_01), 'x_ep_seiz_stat'] = '2'
+
+        df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
 
 
-
-
-
-
-    # update ep_seiz_stat for people ep_seiz_stat = 3
         # update ep_antiep if ep_seiz_stat = 1
         # update ep_antiep if ep_seiz_stat = 2
         # update ep_antiep if ep_seiz_stat = 3
         # update ep_epi_death
         # todo above
+
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
