@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import random
 
+# todo = check whether outputs for prevalence are plausible and consistent between baseline and follow-up
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
@@ -211,7 +213,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_antiepileptic_seiz_infreq = module.parameters['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = module.parameters['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = module.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq']
-        self.base_prob_3m_epi_death = module.parameters['self.base_prob_3m_epi_death']
+        self.base_prob_3m_epi_death = module.parameters['base_prob_3m_epi_death']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -360,7 +362,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-        df.loc[alive_seiz_stat_2_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
         # update ep_antiep if ep_seiz_stat = 3
 
@@ -378,18 +380,18 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-        df.loc[alive_seiz_stat_2_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+        df.loc[alive_seiz_stat_3_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
 
         eff_prob_stop_antiep = pd.Series(self.base_prob_3m_antiepileptic,
-                                    index=df.index[df.is_alive & df.ep_seiz_stat.isin['2', '3'] & df.ep_antiep])
+                                    index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep])
         eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
 
         random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_antiep_idx)),
-                                   index=df.index[df.is_alive & df.ep_seiz_stat.isin['2', '3'] & df.ep_antiep])
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep])
 
         dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_stop_antiep', 'random_draw_01']
@@ -420,13 +422,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # update ep_epi_death
 
-        alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
+        alive_seiz_stat_2_or_3_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
 
         eff_prob_epi_death = pd.Series(self.base_prob_3m_epi_death,
-                                       index=df.index[df.is_alive & df.ep_seiz_stat.isin['2', '3']])
+                                       index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))])
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_1_antiep_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep])
+        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_idx)),
+                                   index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))])
 
         dfx = pd.concat([eff_prob_epi_death, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_epi_death', 'random_draw_01']
@@ -434,7 +436,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_epi_death'] = False
         dfx.loc[(dfx.eff_prob_epi_death > random_draw_01), 'x_epi_death'] = True
 
-        df.loc[alive_seiz_stat_2_or_3_antiep_idx, 'ep_epi_death'] = dfx['x_epi_death']
+        df.loc[alive_seiz_stat_2_or_3_idx, 'ep_epi_death'] = dfx['x_epi_death']
 
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
