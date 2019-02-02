@@ -6,11 +6,10 @@ import numpy as np
 import pandas as pd
 import random
 
-# todo = check whether outputs for prevalence are plausible and consistent between baseline and follow-up
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-#logger.setLevel(logging.INFO)
+#logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 class Epilepsy(Module):
 
@@ -46,9 +45,6 @@ class Epilepsy(Module):
         'base_prob_3m_seiz_stat_infreq_freq': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status infrequent if current frequent'),
-        'base_prob_3m_seiz_stat_freq_none': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status frequent if current nonenow'),
         'base_prob_3m_seiz_stat_infreq_none': Parameter(
             Types.REAL,
             'base probability per 3 months of seizure status infrequent if current nonenow'),
@@ -94,24 +90,23 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_epil_seiz_status'] = [0.98, 0.002, 0.008, 0.01]
-        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.1
-        self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.2
-        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.3
-        self.parameters['base_3m_prob_epilepsy'] = 0.001
+        self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
+        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.30
+        self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.30
+        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.35
+        self.parameters['base_3m_prob_epilepsy'] = 0.00065
         self.parameters['rr_epilepsy_age_ge20'] = 0.5
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
         self.parameters['rr_effectiveness_antiepileptics'] = 5
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.001
-        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.01
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
+        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
         self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.10
-        self.parameters['base_prob_3m_seiz_stat_freq_none'] = 0.01
-        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.01
-        self.parameters['base_prob_3m_antiepileptic'] = 0.05
-        self.parameters['rr_antiepileptic_seiz_infreq'] = 0.3
-        self.parameters['base_prob_3m_stop_antiepileptic'] = 0.05
-        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.1
+        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
+        self.parameters['base_prob_3m_antiepileptic'] = 0.02
+        self.parameters['rr_antiepileptic_seiz_infreq'] = 0.8
+        self.parameters['base_prob_3m_stop_antiepileptic'] = 0.1
+        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.5
         self.parameters['base_prob_3m_epi_death'] = 0.001
 
     def initialise_population(self, population):
@@ -180,6 +175,7 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_antiep'] = False
         df.at[child_id, 'ep_epi_death'] = False
 
+
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
 
@@ -208,7 +204,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.base_prob_3m_seiz_stat_none_freq = module.parameters['base_prob_3m_seiz_stat_none_freq']
         self.base_prob_3m_seiz_stat_none_infreq = module.parameters['base_prob_3m_seiz_stat_none_infreq']
         self.base_prob_3m_seiz_stat_infreq_none = module.parameters['base_prob_3m_seiz_stat_infreq_none']
-        self.base_prob_3m_seiz_stat_freq_none = module.parameters['base_prob_3m_seiz_stat_freq_none']
         self.base_prob_3m_antiepileptic = module.parameters['base_prob_3m_antiepileptic']
         self.rr_antiepileptic_seiz_infreq = module.parameters['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = module.parameters['base_prob_3m_stop_antiepileptic']
@@ -224,6 +219,58 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
+
+        # ========================================================================================================
+
+        # logging - note this comes here before event code so initial values of properties are output
+
+        alive = df.is_alive.sum()
+        epilepsy_idx = df.index[df.is_alive & df.ep_seiz_stat.isin(['1', '2', '3'])]
+        prevalence_epilepsy = len(epilepsy_idx) / alive
+
+        epilepsy_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        prevalence_epilepsy_nonenow = len(epilepsy_nonenow_idx) / alive
+
+        epilepsy_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        prevalence_epilepsy_freq = len(epilepsy_freq_idx) / alive
+
+        epilepsy_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        prevalence_epilepsy_infreq = len(epilepsy_infreq_idx) / alive
+
+        seiz_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        seiz_freq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
+        prop_on_antiep_seiz_freq = len(seiz_freq_antiep_idx) / len(seiz_freq_idx)
+
+        seiz_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        seiz_infreq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
+        prop_on_antiep_seiz_infreq = len(seiz_infreq_antiep_idx) / len(seiz_infreq_idx)
+
+        seiz_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        seiz_nonenow_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+        prop_on_antiep_seiz_nonenow = len(seiz_nonenow_antiep_idx) / len(seiz_nonenow_idx)
+
+        logger.info('%s|prevalence_epilepsy|%s',
+                    self.sim.date, prevalence_epilepsy)
+
+        logger.info('%s|prevalence_epilepsy_freq|%s',
+                    self.sim.date, prevalence_epilepsy_freq)
+
+        logger.info('%s|prevalence_epilepsy_infreq|%s',
+                    self.sim.date, prevalence_epilepsy_infreq)
+
+        logger.info('%s|prevalence_epilepsy_nonenow|%s',
+                    self.sim.date, prevalence_epilepsy_nonenow)
+
+        logger.info('%s|prop_on_antiep_seiz_freq|%s',
+                    self.sim.date, prop_on_antiep_seiz_freq)
+
+        logger.info('%s|prop_on_antiep_seiz_infreq|%s',
+                    self.sim.date, prop_on_antiep_seiz_infreq)
+
+        logger.info('%s|prop_on_antiep_seiz_nonenow|%s',
+                    self.sim.date, prop_on_antiep_seiz_nonenow)
+
+        # ========================================================================================================
 
         # update ep_seiz_stat for people ep_seiz_stat = 0
 
@@ -438,6 +485,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[alive_seiz_stat_2_or_3_idx, 'ep_epi_death'] = dfx['x_epi_death']
 
+        # todo: register the death
+        # todo: disability weights - although these will map from ep_seiz_stat
+        # todo: I think code below can be removed as we are logging above
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -449,16 +499,45 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # todo  checking for consistency of initial condittions and transitions....
-
         # get some summary statistics
         df = population.props
         alive = df.is_alive.sum()
+        epilepsy_idx = df.index[df.is_alive & df.ep_seiz_stat.isin(['1', '2', '3'])]
+        prevalence_epilepsy = len(epilepsy_idx) / alive
 
-        n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
+        epilepsy_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        prevalence_epilepsy_nonenow = len(epilepsy_nonenow_idx) / alive
 
+        seiz_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        seiz_freq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
+        prop_on_antiep_seiz_freq = len(seiz_freq_antiep_idx) / len(seiz_freq_idx)
 
-        """        
+        seiz_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        seiz_infreq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
+        prop_on_antiep_seiz_infreq = len(seiz_infreq_antiep_idx) / len(seiz_infreq_idx)
+
+        seiz_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        seiz_nonenow_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+        prop_on_antiep_seiz_nonenow = len(seiz_nonenow_antiep_idx) / len(seiz_nonenow_idx)
+
+        """
+        logger.info('%s|prevalence_epilepsy|%s',
+                    self.sim.date, prevalence_epilepsy)
+           
+
+        logger.info('%s|prevalence_epilepsy_nonenow|%s',
+                    self.sim.date, prevalence_epilepsy_nonenow)
+
+        logger.info('%s|prop_on_antiep_seiz_freq|%s',
+                    self.sim.date, prop_on_antiep_seiz_freq)
+
+        logger.info('%s|prop_on_antiep_seiz_infreq|%s',
+                    self.sim.date, prop_on_antiep_seiz_infreq)
+
+        logger.info('%s|prop_on_antiep_seiz_nonenow|%s',
+                    self.sim.date, prop_on_antiep_seiz_nonenow)
+
+       
         logger.info('%s|de_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('de_depr').size().to_dict())
@@ -471,12 +550,10 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
         
-        """
-
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-
+        """
 
 
 
