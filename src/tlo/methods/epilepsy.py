@@ -91,9 +91,9 @@ class Epilepsy(Module):
         """
 
         self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
-        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.30
+        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.25
         self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.30
-        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.35
+        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.30
         self.parameters['base_3m_prob_epilepsy'] = 0.00065
         self.parameters['rr_epilepsy_age_ge20'] = 0.5
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
