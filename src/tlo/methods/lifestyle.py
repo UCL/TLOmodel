@@ -533,18 +533,18 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # 2. handle new transitions
-        now_urban = self.module.rng.random_sample(size=len(currently_rural)) < self.r_urban
+        now_urban: pd.Series = self.module.rng.random_sample(size=len(currently_rural)) < self.r_urban
 
         # if any have transitioned to urban
-        if now_urban.sum():
+        if now_urban.any():
             urban_idx = currently_rural[now_urban]
             df.loc[urban_idx, 'li_urban'] = True
             df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
         # 3. handle new transitions to rural
-        now_rural = self.module.rng.random_sample(size=len(currently_urban)) < self.r_rural
+        now_rural: pd.Series = self.module.rng.random_sample(size=len(currently_urban)) < self.r_rural
         # if any have transitioned to rural
-        if now_rural.sum():
+        if now_rural.any():
             rural_idx = currently_urban[now_rural]
             df.loc[rural_idx, 'li_urban'] = False
 
@@ -571,7 +571,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw1 = self.module.rng.random_sample(size=len(currently_not_low_ex_age_ge15_idx))
         df.loc[currently_not_low_ex_age_ge15_idx, 'li_low_ex'] = (random_draw1 < eff_prob_start_low_ex)
-        
+
     # transition between not tob and tob
     #  this below calls the age dataframe / call age.years to get age in years
         age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
@@ -596,11 +596,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[age_ge15_no_tob_idx, 'li_tob'] = (random_draw1 < eff_prob_start_tob)
 
         currently_tob = df.index[df.li_tob & df.is_alive]
-  
+
         now_not_tob = self.module.rng.choice([True, False], size=len(currently_tob),
                                        p=[self.r_not_tob, 1 - self.r_not_tob])
 
-        if now_not_tob.sum():
+        if now_not_tob.any():
             not_tob_idx = currently_tob[now_not_tob]
             df.loc[not_tob_idx, 'li_tob'] = False
 
@@ -616,20 +616,20 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_ex_alc_f = self.module.rng.choice([True, False],
                                         size=len(currently_not_ex_alc_f),
                                         p=[ri_ex_alc_f, 1 - ri_ex_alc_f])
-        if now_ex_alc_f.sum():
+        if now_ex_alc_f.any():
             ex_alc_f_idx = currently_not_ex_alc_f[now_ex_alc_f]
             df.loc[ex_alc_f_idx, 'li_ex_alc'] = True
 
         now_ex_alc_m = self.module.rng.choice([True, False],
                                         size=len(currently_not_ex_alc_m),
                                         p=[ri_ex_alc_m, 1 - ri_ex_alc_m])
-        if now_ex_alc_m.sum():
+        if now_ex_alc_m.any():
             ex_alc_m_idx = currently_not_ex_alc_m[now_ex_alc_m]
             df.loc[ex_alc_m_idx, 'li_ex_alc'] = True
 
         now_not_ex_alc = self.module.rng.choice([True, False], size=len(currently_ex_alc),
                                           p=[self.r_not_ex_alc, 1 - self.r_not_ex_alc])
-        if now_not_ex_alc.sum():
+        if now_not_ex_alc.any():
             not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
             df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
 
@@ -637,13 +637,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         curr_never_mar_index = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & (df.li_mar_stat == 1)]
         now_mar = self.module.rng.choice([True, False], size=len(curr_never_mar_index), p=[self.r_mar, 1 - self.r_mar])
-        if now_mar.sum():
+        if now_mar.any():
             now_mar_index = curr_never_mar_index[now_mar]
             df.loc[now_mar_index, 'li_mar_stat'] = 2
 
         curr_mar_index = df.index[df.is_alive & (df.li_mar_stat == 2)]
         now_div_wid = self.module.rng.choice([True, False], size=len(curr_mar_index), p=[self.r_div_wid, 1 - self.r_div_wid])
-        if now_div_wid.sum():
+        if now_div_wid.any():
             now_div_wid_index = curr_mar_index[now_div_wid]
             df.loc[now_div_wid_index, 'li_mar_stat'] = 3
 
@@ -651,13 +651,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & ~df.li_on_con]
         now_on_con = self.module.rng.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
-        if now_on_con.sum():
+        if now_on_con.any():
             now_on_con_index = curr_not_on_con_idx[now_on_con]
             df.loc[now_on_con_index, 'li_on_con'] = True
 
         curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con]
         now_not_on_con = self.module.rng.choice([True, False], size=len(curr_on_con_idx), p=[self.r_contrac_int, 1 - self.r_contrac_int])
-        if now_not_on_con.sum():
+        if now_not_on_con.any():
             now_not_on_con_index = curr_on_con_idx[now_not_on_con]
             df.loc[now_not_on_con_index, 'li_on_con'] = False
 
@@ -743,28 +743,28 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         p_stop_ed_w1 = self.r_stop_ed
         curr_in_ed_w1_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 1)]
         now_not_in_ed_w1 = self.module.rng.choice([True, False], size=len(curr_in_ed_w1_idx), p=[p_stop_ed_w1, 1 - p_stop_ed_w1])
-        if now_not_in_ed_w1.sum():
+        if now_not_in_ed_w1.any():
             now_not_in_ed_w1_idx = curr_in_ed_w1_idx[now_not_in_ed_w1]
             df.loc[now_not_in_ed_w1_idx, 'li_in_ed'] = False
 
         p_stop_ed_w2 = self.r_stop_ed * self.rr_stop_ed_lower_wealth
         curr_in_ed_w2_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 2)]
         now_not_in_ed_w2 = self.module.rng.choice([True, False], size=len(curr_in_ed_w2_idx), p=[p_stop_ed_w2, 1 - p_stop_ed_w2])
-        if now_not_in_ed_w2.sum():
+        if now_not_in_ed_w2.any():
             now_not_in_ed_w2_idx = curr_in_ed_w2_idx[now_not_in_ed_w2]
             df.loc[now_not_in_ed_w2_idx, 'li_in_ed'] = False
 
         p_stop_ed_w3 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
         curr_in_ed_w3_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 3)]
         now_not_in_ed_w3 = self.module.rng.choice([True, False], size=len(curr_in_ed_w3_idx), p=[p_stop_ed_w3, 1 - p_stop_ed_w3])
-        if now_not_in_ed_w3.sum():
+        if now_not_in_ed_w3.any():
             now_not_in_ed_w3_idx = curr_in_ed_w3_idx[now_not_in_ed_w3]
             df.loc[now_not_in_ed_w3_idx, 'li_in_ed'] = False
 
         p_stop_ed_w4 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
         curr_in_ed_w4_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 4)]
         now_not_in_ed_w4 = self.module.rng.choice([True, False], size=len(curr_in_ed_w4_idx), p=[p_stop_ed_w4, 1 - p_stop_ed_w4])
-        if now_not_in_ed_w4.sum():
+        if now_not_in_ed_w4.any():
             now_not_in_ed_w4_idx = curr_in_ed_w4_idx[now_not_in_ed_w4]
             df.loc[now_not_in_ed_w4_idx, 'li_in_ed'] = False
 
@@ -772,7 +772,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
         curr_in_ed_w5_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 5)]
         now_not_in_ed_w5 = self.module.rng.choice([True, False], size=len(curr_in_ed_w5_idx), p=[p_stop_ed_w5, 1 - p_stop_ed_w5])
-        if now_not_in_ed_w5.sum():
+        if now_not_in_ed_w5.any():
             now_not_in_ed_w5_idx = curr_in_ed_w5_idx[now_not_in_ed_w5]
             df.loc[now_not_in_ed_w5_idx, 'li_in_ed'] = False
 
