@@ -530,11 +530,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
-        # 1. get (and hold) index of current urban rural status
+        # get index of current urban/rural status
         currently_rural = df.index[~df.li_urban & df.is_alive]
         currently_urban = df.index[df.li_urban & df.is_alive]
 
-        # 2. handle new transitions
+        # handle new transitions
         now_urban: pd.Series = self.module.rng.random_sample(size=len(currently_rural)) < self.r_urban
 
         # if any have transitioned to urban
@@ -543,8 +543,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[urban_idx, 'li_urban'] = True
             df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
-        # 3. handle new transitions to rural
+        # handle new transitions to rural
         now_rural: pd.Series = self.module.rng.random_sample(size=len(currently_urban)) < self.r_rural
+
         # if any have transitioned to rural
         if now_rural.any():
             rural_idx = currently_urban[now_rural]
