@@ -610,17 +610,16 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
-        curr_never_mar_index = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & (df.li_mar_stat == 1)]
-        now_mar = self.module.rng.choice([True, False], size=len(curr_never_mar_index), p=[self.r_mar, 1 - self.r_mar])
-        if now_mar.any():
-            now_mar_index = curr_never_mar_index[now_mar]
-            df.loc[now_mar_index, 'li_mar_stat'] = 2
+        curr_never_mar = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & (df.li_mar_stat == 1)]
+        curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
-        curr_mar_index = df.index[df.is_alive & (df.li_mar_stat == 2)]
-        now_div_wid = self.module.rng.choice([True, False], size=len(curr_mar_index), p=[self.r_div_wid, 1 - self.r_div_wid])
-        if now_div_wid.any():
-            now_div_wid_index = curr_mar_index[now_div_wid]
-            df.loc[now_div_wid_index, 'li_mar_stat'] = 3
+        # update if now married
+        now_mar = self.module.rng.random_sample(len(curr_never_mar)) < self.r_mar
+        df.loc[curr_never_mar[now_mar], 'li_mar_stat'] = 2
+
+        # update if now divorced/widowed
+        now_div_wid = self.module.rng.random_sample(len(curr_mar)) < self.r_div_wid
+        df.loc[curr_mar[now_div_wid]] = 3
 
         # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
 
