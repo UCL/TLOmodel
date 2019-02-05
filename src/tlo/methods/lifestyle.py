@@ -567,16 +567,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
-        currently_not_low_ex_age_ge15_idx = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
-        f_not_low_ex_idx = df.index[(df.sex == 'F') & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
-        urban_not_low_ex_idx = df.index[df.li_urban & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
+        adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
 
-        eff_prob_start_low_ex = pd.Series(self.r_low_ex, index=df.index[(df.age_years >= 15) & ~df.li_low_ex & df.is_alive])
-        eff_prob_start_low_ex.loc[f_not_low_ex_idx] *= self.rr_low_ex_f
-        eff_prob_start_low_ex.loc[urban_not_low_ex_idx] *= self.rr_low_ex_urban
+        eff_p_low_ex = pd.Series(self.r_low_ex, index=adults_not_low_ex)
+        eff_p_low_ex.loc[(df.sex == 'F') & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)] *= self.rr_low_ex_f
+        eff_p_low_ex.loc[df.li_urban & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)] *= self.rr_low_ex_urban
 
-        random_draw1 = self.module.rng.random_sample(size=len(currently_not_low_ex_age_ge15_idx))
-        df.loc[currently_not_low_ex_age_ge15_idx, 'li_low_ex'] = (random_draw1 < eff_prob_start_low_ex)
+        rnd_draw = self.module.rng.random_sample(size=len(adults_not_low_ex))
+        df.loc[adults_not_low_ex, 'li_low_ex'] = (rnd_draw < eff_p_low_ex)
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
