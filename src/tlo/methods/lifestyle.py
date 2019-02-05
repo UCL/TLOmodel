@@ -604,29 +604,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
         currently_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
-        ri_ex_alc_f = self.r_ex_alc*self.rr_ex_alc_f
-        ri_ex_alc_m = self.r_ex_alc
-
-        now_ex_alc_f = self.module.rng.choice([True, False],
-                                              size=len(currently_not_ex_alc_f),
-                                              p=[ri_ex_alc_f, 1 - ri_ex_alc_f])
-        if now_ex_alc_f.any():
-            ex_alc_f_idx = currently_not_ex_alc_f[now_ex_alc_f]
-            df.loc[ex_alc_f_idx, 'li_ex_alc'] = True
-
-        now_ex_alc_m = self.module.rng.choice([True, False],
-                                              size=len(currently_not_ex_alc_m),
-                                              p=[ri_ex_alc_m, 1 - ri_ex_alc_m])
-        if now_ex_alc_m.any():
-            ex_alc_m_idx = currently_not_ex_alc_m[now_ex_alc_m]
-            df.loc[ex_alc_m_idx, 'li_ex_alc'] = True
-
-        now_not_ex_alc = self.module.rng.choice([True, False],
-                                                size=len(currently_ex_alc),
-                                                p=[self.r_not_ex_alc, 1 - self.r_not_ex_alc])
-        if now_not_ex_alc.any():
-            not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
-            df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
+        df.loc[currently_not_ex_alc_f, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_f)) < self.r_ex_alc * self.rr_ex_alc_f
+        df.loc[currently_not_ex_alc_m, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_m)) < self.r_ex_alc
+        df.loc[currently_ex_alc, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_ex_alc)) < self.r_not_ex_alc
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
