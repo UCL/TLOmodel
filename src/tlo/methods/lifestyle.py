@@ -2,15 +2,15 @@
 A skeleton template for disease methods.
 """
 import logging
-from collections import defaultdict
+
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
-import numpy as np
-import pandas as pd
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 class Lifestyle(Module):
     """
@@ -70,7 +70,7 @@ class Lifestyle(Module):
         'r_stop_ed': Parameter(Types.REAL, 'prob per 3 months of stopping education if wealth level 5'),
         'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
-        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 higher wealth level' ),
+        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 higher wealth level'),
         'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 if in primary education and wealth level 5'),
         'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'),
         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'),
@@ -198,7 +198,7 @@ class Lifestyle(Module):
         df['li_tob'] = False  # default all not tob
         df['li_ex_alc'] = False  # default all not ex alc
         df['li_mar_stat'] = 1  # default: all individuals never married
-        df['li_on_con'] = False # default: all not on contraceptives
+        df['li_on_con'] = False  # default: all not on contraceptives
         df['li_con_t'] = 1  # default: call contraceptive type 1, but when li_on_con = False this property becomes most recent contraceptive used
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
@@ -218,14 +218,14 @@ class Lifestyle(Module):
         urban_index = df.index[df.is_alive & df.li_urban]
         # randomly sample wealth category according to urban wealth probs and assign to urban ind.
         df.loc[urban_index, 'li_wealth'] = self.rng.choice([1, 2, 3, 4, 5],
-                                                            size=len(urban_index),
-                                                            p=self.parameters['init_p_wealth_urban'])
+                                                           size=len(urban_index),
+                                                           p=self.parameters['init_p_wealth_urban'])
 
         # get the indicies of all individual who are rural (i.e. not urban)
         rural_index = df.index[df.is_alive & ~df.li_urban]
         df.loc[rural_index, 'li_wealth'] = self.rng.choice([1, 2, 3, 4, 5],
-                                                            size=len(rural_index),
-                                                            p=self.parameters['init_p_wealth_rural'])
+                                                           size=len(rural_index),
+                                                           p=self.parameters['init_p_wealth_rural'])
 
         # get indices of all individuals over 15 years
         gte_15 = df.index[df.is_alive & (df.age_years >= 15)]
@@ -384,15 +384,15 @@ class Lifestyle(Module):
         eff_prob_some_ed.loc[age_5060_idx] *= self.init_rp_some_ed_age5060
         eff_prob_some_ed.loc[age_ge60_idx] *= self.init_rp_some_ed_agege60
         eff_prob_some_ed.loc[wealth4_idx] *= self.init_rp_some_ed_per_higher_wealth
-        eff_prob_some_ed.loc[wealth3_idx] *= self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth
-        eff_prob_some_ed.loc[wealth2_idx] *= self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth
-        eff_prob_some_ed.loc[wealth1_idx] *= self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth * \
-                                             self.init_rp_some_ed_per_higher_wealth
+        eff_prob_some_ed.loc[wealth3_idx] *= (self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth)
+        eff_prob_some_ed.loc[wealth2_idx] *= (self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth)
+        eff_prob_some_ed.loc[wealth1_idx] *= (self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth *
+                                              self.init_rp_some_ed_per_higher_wealth)
 
         eff_prob_ed_lev_3 = pd.Series(self.init_prop_age2030_w5_some_ed_sec,
                                       index=df.index[(df.age_years >= 5) & df.is_alive])
@@ -402,15 +402,15 @@ class Lifestyle(Module):
         eff_prob_ed_lev_3.loc[age_5060_idx] *= self.init_rp_some_ed_sec_age5060
         eff_prob_ed_lev_3.loc[age_ge60_idx] *= self.init_rp_some_ed_sec_agege60
         eff_prob_ed_lev_3.loc[wealth4_idx] *= self.init_rp_some_ed_sec_per_higher_wealth
-        eff_prob_ed_lev_3.loc[wealth3_idx] *= self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth
-        eff_prob_ed_lev_3.loc[wealth2_idx] *= self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth
-        eff_prob_ed_lev_3.loc[wealth1_idx] *= self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth * \
-                                             self.init_rp_some_ed_sec_per_higher_wealth
+        eff_prob_ed_lev_3.loc[wealth3_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth)
+        eff_prob_ed_lev_3.loc[wealth2_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth)
+        eff_prob_ed_lev_3.loc[wealth1_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth *
+                                               self.init_rp_some_ed_sec_per_higher_wealth)
 
         random_draw_01 = pd.Series(self.rng.random_sample(size=len(age_ge5_idx)), index=df.index[(df.age_years >= 5) & df.is_alive])
 
@@ -451,8 +451,8 @@ class Lifestyle(Module):
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         This is called by the simulation whenever a new person is born.
-        :param mother: the mother for this child
-        :param child: the new child
+        :param mother_id: the mother for this child
+        :param child_id: the new child
         """
 
         df = self.sim.population.props
@@ -597,8 +597,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         currently_tob = df.index[df.li_tob & df.is_alive]
 
-        now_not_tob = self.module.rng.choice([True, False], size=len(currently_tob),
-                                       p=[self.r_not_tob, 1 - self.r_not_tob])
+        now_not_tob = self.module.rng.choice([True, False],
+                                             size=len(currently_tob),
+                                             p=[self.r_not_tob, 1 - self.r_not_tob])
 
         if now_not_tob.any():
             not_tob_idx = currently_tob[now_not_tob]
@@ -614,21 +615,22 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         ri_ex_alc_m = self.r_ex_alc
 
         now_ex_alc_f = self.module.rng.choice([True, False],
-                                        size=len(currently_not_ex_alc_f),
-                                        p=[ri_ex_alc_f, 1 - ri_ex_alc_f])
+                                              size=len(currently_not_ex_alc_f),
+                                              p=[ri_ex_alc_f, 1 - ri_ex_alc_f])
         if now_ex_alc_f.any():
             ex_alc_f_idx = currently_not_ex_alc_f[now_ex_alc_f]
             df.loc[ex_alc_f_idx, 'li_ex_alc'] = True
 
         now_ex_alc_m = self.module.rng.choice([True, False],
-                                        size=len(currently_not_ex_alc_m),
-                                        p=[ri_ex_alc_m, 1 - ri_ex_alc_m])
+                                              size=len(currently_not_ex_alc_m),
+                                              p=[ri_ex_alc_m, 1 - ri_ex_alc_m])
         if now_ex_alc_m.any():
             ex_alc_m_idx = currently_not_ex_alc_m[now_ex_alc_m]
             df.loc[ex_alc_m_idx, 'li_ex_alc'] = True
 
-        now_not_ex_alc = self.module.rng.choice([True, False], size=len(currently_ex_alc),
-                                          p=[self.r_not_ex_alc, 1 - self.r_not_ex_alc])
+        now_not_ex_alc = self.module.rng.choice([True, False],
+                                                size=len(currently_ex_alc),
+                                                p=[self.r_not_ex_alc, 1 - self.r_not_ex_alc])
         if now_not_ex_alc.any():
             not_ex_alc_idx = currently_ex_alc[now_not_ex_alc]
             df.loc[not_ex_alc_idx, 'li_ex_alc'] = False
@@ -826,4 +828,3 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                      df.loc[0].to_dict())
  
         """
-
