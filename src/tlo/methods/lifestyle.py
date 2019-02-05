@@ -553,16 +553,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- OVERWEIGHT ----------------------------------------------------------
 
-        currently_not_overwt_age_ge15_idx = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
-        f_not_overwt_idx = df.index[(df.sex == 'F') & ~df.li_overwt & df.is_alive & (df.age_years >= 15)]
-        urban_not_overwt_idx = df.index[df.li_urban & ~df.li_overwt & df.is_alive & (df.age_years >= 15)]
+        # get all adult who are not overweight
+        adults_not_ow = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
 
-        eff_prob_start_overwt = pd.Series(self.r_overwt, index=df.index[(df.age_years >= 15) & ~df.li_overwt & df.is_alive])
-        eff_prob_start_overwt.loc[f_not_overwt_idx] *= self.rr_overwt_f
-        eff_prob_start_overwt.loc[urban_not_overwt_idx] *= self.rr_overwt_urban
+        # calculate the effective prob of becoming overweight; use the index of adults not ow
+        eff_p_ow = pd.Series(self.r_overwt, index=adults_not_ow)
+        eff_p_ow.loc[(df.sex == 'F') & ~df.li_overwt & df.is_alive & (df.age_years >= 15)] *= self.rr_overwt_f
+        eff_p_ow.loc[df.li_urban & ~df.li_overwt & df.is_alive & (df.age_years >= 15)] *= self.rr_overwt_urban
 
-        random_draw1 = self.module.rng.random_sample(size=len(currently_not_overwt_age_ge15_idx))
-        df.loc[currently_not_overwt_age_ge15_idx, 'li_overwt'] = (random_draw1 < eff_prob_start_overwt)
+        # random draw and start of overweight status
+        rnd_draw = self.module.rng.random_sample(size=len(adults_not_ow))
+        df.loc[adults_not_ow, 'li_overwt'] = (rnd_draw < eff_p_ow)
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
