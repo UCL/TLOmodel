@@ -578,36 +578,25 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
-        age_ge15_no_tob_idx = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
-        age_2039_no_tob_idx = df.index[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob]
-        age_ge40_no_tob_idx = df.index[(df.age_years >= 40) & df.is_alive & ~df.li_tob]
-        wealth2_no_tob_idx = df.index[(df.li_wealth == 2) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
-        wealth3_no_tob_idx = df.index[(df.li_wealth == 3) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
-        wealth4_no_tob_idx = df.index[(df.li_wealth == 4) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
-        wealth5_no_tob_idx = df.index[(df.li_wealth == 5) & df.is_alive & ~df.li_tob & (df.age_years >= 15)]
-        f_no_tob_idx = df.index[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15) & df.is_alive]
-
-        eff_prob_start_tob = pd.Series(self.r_tob, index=df.index[(df.age_years >= 15) & ~df.li_tob & df.is_alive])
-        eff_prob_start_tob.loc[age_2039_no_tob_idx] *= self.rr_tob_age2039
-        eff_prob_start_tob.loc[age_ge40_no_tob_idx] *= self.rr_tob_agege40
-        eff_prob_start_tob.loc[f_no_tob_idx] *= self.rr_tob_f
-        eff_prob_start_tob.loc[wealth2_no_tob_idx] *= self.rr_tob_wealth
-        eff_prob_start_tob.loc[wealth3_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth
-        eff_prob_start_tob.loc[wealth4_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        eff_prob_start_tob.loc[wealth5_no_tob_idx] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-
-        random_draw1 = self.module.rng.random_sample(size=len(age_ge15_no_tob_idx))
-        df.loc[age_ge15_no_tob_idx, 'li_tob'] = (random_draw1 < eff_prob_start_tob)
-
+        adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         currently_tob = df.index[df.li_tob & df.is_alive]
 
-        now_not_tob = self.module.rng.choice([True, False],
-                                             size=len(currently_tob),
-                                             p=[self.r_not_tob, 1 - self.r_not_tob])
+        # start tobacco use
+        eff_p_tob = pd.Series(self.r_tob, index=adults_not_tob)
+        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob] *= self.rr_tob_age2039
+        eff_p_tob.loc[(df.age_years >= 40) & df.is_alive & ~df.li_tob] *= self.rr_tob_agege40
+        eff_p_tob.loc[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15) & df.is_alive] *= self.rr_tob_f
 
-        if now_not_tob.any():
-            not_tob_idx = currently_tob[now_not_tob]
-            df.loc[not_tob_idx, 'li_tob'] = False
+        eff_p_tob.loc[(df.li_wealth == 2) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth
+        eff_p_tob.loc[(df.li_wealth == 3) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth
+        eff_p_tob.loc[(df.li_wealth == 4) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
+        eff_p_tob.loc[(df.li_wealth == 5) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
+
+        rnd_draw = self.module.rng.random_sample(size=len(adults_not_tob))
+        df.loc[adults_not_tob, 'li_tob'] = (rnd_draw < eff_p_tob)
+
+        # stop tobacco use
+        df.loc[currently_tob, 'li_tob'] = self.module.rng.random_sample(len(currently_tob)) < self.r_not_tob
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
