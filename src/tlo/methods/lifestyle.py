@@ -510,6 +510,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         df = population.props
+        rng = self.module.rng
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
@@ -518,7 +519,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # handle new transitions
-        now_urban: pd.Series = self.module.rng.random_sample(size=len(currently_rural)) < self.r_urban
+        now_urban: pd.Series = rng.random_sample(size=len(currently_rural)) < self.r_urban
 
         # if any have transitioned to urban
         if now_urban.any():
@@ -527,7 +528,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
         # handle new transitions to rural
-        now_rural: pd.Series = self.module.rng.random_sample(size=len(currently_urban)) < self.r_rural
+        now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < self.r_rural
 
         # if any have transitioned to rural
         if now_rural.any():
@@ -541,11 +542,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # calculate the effective prob of becoming overweight; use the index of adults not ow
         eff_p_ow = pd.Series(self.r_overwt, index=adults_not_ow)
-        eff_p_ow.loc[(df.sex == 'F') & ~df.li_overwt & df.is_alive & (df.age_years >= 15)] *= self.rr_overwt_f
-        eff_p_ow.loc[df.li_urban & ~df.li_overwt & df.is_alive & (df.age_years >= 15)] *= self.rr_overwt_urban
+        eff_p_ow.loc[df.sex == 'F'] *= self.rr_overwt_f
+        eff_p_ow.loc[df.li_urban] *= self.rr_overwt_urban
 
         # random draw and start of overweight status
-        rnd_draw = self.module.rng.random_sample(size=len(adults_not_ow))
+        rnd_draw = rng.random_sample(size=len(adults_not_ow))
         df.loc[adults_not_ow, 'li_overwt'] = (rnd_draw < eff_p_ow)
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
@@ -553,10 +554,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
 
         eff_p_low_ex = pd.Series(self.r_low_ex, index=adults_not_low_ex)
-        eff_p_low_ex.loc[(df.sex == 'F') & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)] *= self.rr_low_ex_f
-        eff_p_low_ex.loc[df.li_urban & ~df.li_low_ex & df.is_alive & (df.age_years >= 15)] *= self.rr_low_ex_urban
+        eff_p_low_ex.loc[df.sex == 'F'] *= self.rr_low_ex_f
+        eff_p_low_ex.loc[df.li_urban] *= self.rr_low_ex_urban
 
-        rnd_draw = self.module.rng.random_sample(size=len(adults_not_low_ex))
+        rnd_draw = rng.random_sample(size=len(adults_not_low_ex))
         df.loc[adults_not_low_ex, 'li_low_ex'] = (rnd_draw < eff_p_low_ex)
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
@@ -567,29 +568,25 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # start tobacco use
         eff_p_tob = pd.Series(self.r_tob, index=adults_not_tob)
         eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= self.rr_tob_age2039
-        eff_p_tob.loc[(df.age_years >= 40)] *= self.rr_tob_agege40
-        eff_p_tob.loc[(df.sex == 'F')] *= self.rr_tob_f
+        eff_p_tob.loc[df.age_years >= 40] *= self.rr_tob_agege40
+        eff_p_tob.loc[df.sex == 'F'] *= self.rr_tob_f
+        eff_p_tob *= self.rr_tob_wealth ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
-        eff_p_tob.loc[df.li_wealth == 2] *= self.rr_tob_wealth
-        eff_p_tob.loc[df.li_wealth == 3] *= self.rr_tob_wealth**2
-        eff_p_tob.loc[df.li_wealth == 4] *= self.rr_tob_wealth**3
-        eff_p_tob.loc[df.li_wealth == 5] *= self.rr_tob_wealth**4
-
-        rnd_draw = self.module.rng.random_sample(size=len(adults_not_tob))
+        rnd_draw = rng.random_sample(size=len(adults_not_tob))
         df.loc[adults_not_tob, 'li_tob'] = (rnd_draw < eff_p_tob)
 
         # stop tobacco use
-        df.loc[currently_tob, 'li_tob'] = ~(self.module.rng.random_sample(len(currently_tob)) < self.r_not_tob)
+        df.loc[currently_tob, 'li_tob'] = ~(rng.random_sample(len(currently_tob)) < self.r_not_tob)
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
-        currently_not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
-        currently_not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
-        currently_ex_alc = df.index[df.li_ex_alc & df.is_alive]
+        not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+        not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
+        now_ex_alc = df.index[df.li_ex_alc & df.is_alive]
 
-        df.loc[currently_not_ex_alc_f, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_f)) < self.r_ex_alc * self.rr_ex_alc_f
-        df.loc[currently_not_ex_alc_m, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_m)) < self.r_ex_alc
-        df.loc[currently_ex_alc, 'li_ex_alc'] = ~(self.module.rng.random_sample(len(currently_ex_alc)) < self.r_not_ex_alc)
+        df.loc[not_ex_alc_f, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_f)) < self.r_ex_alc * self.rr_ex_alc_f
+        df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < self.r_ex_alc
+        df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < self.r_not_ex_alc)
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -597,23 +594,23 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
         # update if now married
-        now_mar = self.module.rng.random_sample(len(curr_never_mar)) < self.r_mar
+        now_mar = rng.random_sample(len(curr_never_mar)) < self.r_mar
         df.loc[curr_never_mar[now_mar], 'li_mar_stat'] = 2
 
         # update if now divorced/widowed
-        now_div_wid = self.module.rng.random_sample(len(curr_mar)) < self.r_div_wid
+        now_div_wid = rng.random_sample(len(curr_mar)) < self.r_div_wid
         df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
 
         # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
 
         curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & ~df.li_on_con]
-        now_on_con = self.module.rng.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
+        now_on_con = rng.choice([True, False], size=len(curr_not_on_con_idx), p=[self.r_contrac, 1 - self.r_contrac])
         if now_on_con.any():
             now_on_con_index = curr_not_on_con_idx[now_on_con]
             df.loc[now_on_con_index, 'li_on_con'] = True
 
         curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con]
-        now_not_on_con = self.module.rng.choice([True, False], size=len(curr_on_con_idx), p=[self.r_contrac_int, 1 - self.r_contrac_int])
+        now_not_on_con = rng.choice([True, False], size=len(curr_on_con_idx), p=[self.r_contrac_int, 1 - self.r_contrac_int])
         if now_not_on_con.any():
             now_not_on_con_index = curr_on_con_idx[now_not_on_con]
             df.loc[now_not_on_con_index, 'li_on_con'] = False
@@ -622,17 +619,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[f_age50_idx, 'li_on_con'] = False
 
         curr_on_con_t_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
-        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_1_idx), p=self.r_con_from_1)
+        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_1_idx), p=self.r_con_from_1)
         curr_on_con_t_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
-        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_2_idx), p=self.r_con_from_2)
+        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_2_idx), p=self.r_con_from_2)
         curr_on_con_t_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
-        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_3_idx), p=self.r_con_from_3)
+        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_3_idx), p=self.r_con_from_3)
         curr_on_con_t_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
-        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_4_idx), p=self.r_con_from_4)
+        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_4_idx), p=self.r_con_from_4)
         curr_on_con_t_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
-        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_5_idx), p=self.r_con_from_5)
+        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_5_idx), p=self.r_con_from_5)
         curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
-        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
+        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
 
         # -------------------- EDUCATION --------------------
 
@@ -650,7 +647,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         prob_primary *= self.rp_ed_primary_higher_wealth ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
-        age5_in_primary = self.module.rng.random_sample(len(age5)) < prob_primary
+        age5_in_primary = rng.random_sample(len(age5)) < prob_primary
         df.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
         df.loc[age5[age5_in_primary], 'li_in_ed'] = True
 
@@ -667,7 +664,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         prob_secondary *= self.rp_ed_secondary_higher_wealth ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
 
         # randomly select some to get secondary education
-        age13_to_secondary = self.module.rng.random_sample(len(age13_in_primary)) < prob_secondary
+        age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
         df.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
 
         # those who did not go on to secondary education are no longer in education
@@ -683,7 +680,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         p_leave_ed *= self.rr_stop_ed_lower_wealth ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
-        now_not_in_ed = self.module.rng.random_sample(len(in_ed)) < p_leave_ed
+        now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
 
         df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
