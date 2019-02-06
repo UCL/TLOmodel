@@ -589,7 +589,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[currently_not_ex_alc_f, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_f)) < self.r_ex_alc * self.rr_ex_alc_f
         df.loc[currently_not_ex_alc_m, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_not_ex_alc_m)) < self.r_ex_alc
-        df.loc[currently_ex_alc, 'li_ex_alc'] = self.module.rng.random_sample(len(currently_ex_alc)) < self.r_not_ex_alc
+        df.loc[currently_ex_alc, 'li_ex_alc'] = ~(self.module.rng.random_sample(len(currently_ex_alc)) < self.r_not_ex_alc)
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
