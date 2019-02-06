@@ -315,7 +315,7 @@ class Lifestyle(Module):
 
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
-        tob_probs = tob_probs['li_wealth'].astype(int) * tob_probs['p_tob']
+        tob_probs = pd.to_numeric(tob_probs['li_wealth']) * tob_probs['p_tob']
 
         # we now have the probability of tobacco use for each individual where age >= 15
         # draw a random number between 0 and 1 for all of them
@@ -659,7 +659,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # create a series to hold the probablity of primary education for children at age 5
         prob_primary = pd.Series(self.p_ed_primary, index=age5)
-        prob_primary *= self.rp_ed_primary_higher_wealth ** (5 - df.loc[age5, 'li_wealth'].astype(int))
+        prob_primary *= self.rp_ed_primary_higher_wealth ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
         age5_in_primary = self.module.rng.random_sample(len(age5)) < prob_primary
@@ -676,7 +676,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # they have a probability of gaining secondary education (level 3), based on wealth
         prob_secondary = pd.Series(self.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= self.rp_ed_secondary_higher_wealth ** (5 - df.loc[age13_in_primary, 'li_wealth'].astype(int))
+        prob_secondary *= self.rp_ed_secondary_higher_wealth ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
 
         # randomly select some to get secondary education
         age13_to_secondary = self.module.rng.random_sample(len(age13_in_primary)) < prob_secondary
@@ -692,7 +692,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # baseline rate of leaving education then adjust for wealth level
         p_leave_ed = pd.Series(self.r_stop_ed, index=in_ed)
-        p_leave_ed *= self.rr_stop_ed_lower_wealth ** (df.loc[in_ed, 'li_wealth'].astype(int) - 1)
+        p_leave_ed *= self.rr_stop_ed_lower_wealth ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
         now_not_in_ed = self.module.rng.random_sample(len(in_ed)) < p_leave_ed
