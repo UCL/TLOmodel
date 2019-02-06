@@ -37,12 +37,14 @@ class Lifestyle(Module):
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low ex if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low ex if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob if male age 15-19 wealth level 1'),
+        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob if male '
+                                       'age 15-19 wealth level 1'),
         'r_not_tob': Parameter(Types.REAL, 'probability per 3 mths of change from tob to not tob'),
         'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tob if age 20-39 compared with 15-19'),
         'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tob if age ge 40 compared with 15-19'),
         'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tob if female'),
-        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tob per 1 higher wealth level (higher wealth level = lower wealth)'),
+        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tob per 1 higher wealth level '
+                                               '(higher wealth level = lower wealth)'),
         'r_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
         'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
@@ -60,7 +62,8 @@ class Lifestyle(Module):
         'init_p_on_contrac': Parameter(Types.REAL, 'initial proportion of women age 15-49 on contraceptives'),
         'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
         'r_contrac': Parameter(Types.REAL, 'prob per 3 months of starting contraceptive if age 15-50'),
-        'r_contrac_int': Parameter(Types.REAL, 'prob per 3 months of interrupting or stopping contraception (note current method of contrac is a different propeerty'),
+        'r_contrac_int': Parameter(Types.REAL, 'prob per 3 months of interrupting or stopping contraception '
+                                               '(note current method of contrac is a different propeerty'),
         'r_con_from_1': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 1'),
         'r_con_from_2': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 2'),
         'r_con_from_3': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 3'),
@@ -68,26 +71,35 @@ class Lifestyle(Module):
         'r_con_from_5': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 5'),
         'r_con_from_6': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 6'),
         'r_stop_ed': Parameter(Types.REAL, 'prob per 3 months of stopping education if wealth level 5'),
-        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'),
+        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
+                                                         '1 lower wealth quintile'),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
-        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 higher wealth level'),
-        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 if in primary education and wealth level 5'),
-        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary school per 1 higher wealth level'),
-        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some education at baseline'),
-        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 1520'),
-        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 1520'),
-        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 2030'),
-        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 3040'),
-        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 4050'),
-        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline if age 5060'),
-        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline per higher wealth level'),
-        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL, 'proportion of low wealth aged 20-30 with some education who have secondary education at baseline'),
+        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 '
+                                                             'higher wealth level'),
+        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 '
+                                                'if in primary education and wealth level 5'),
+        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
+                                                               'school per 1 higher wealth level'),
+        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
+                                                         'education at baseline'),
+        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'rel prev of some education at baseline if age 1520'),
+        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'rel prev of some education at baseline if age 1520'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'rel prev of some education at baseline if age 2030'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'rel prev of some education at baseline if age 3040'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'rel prev of some education at baseline if age 4050'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'rel prev of some education at baseline if age 5060'),
+        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline '
+                                                                   'per higher wealth level'),
+        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
+                                                      'proportion of low wealth aged 20-30 with some education who '
+                                                      'have secondary education at baseline'),
         'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 15-20'),
         'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 30-40'),
         'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 40-50'),
         'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 50-60'),
         'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 60+'),
-        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of sec_ed per higher wealth level'),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL,
+                                                           'relative prevalence of sec_ed per higher wealth level'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -101,7 +113,9 @@ class Lifestyle(Module):
         'li_low_ex': Property(Types.BOOL, 'currently low ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
-        'li_mar_stat': Property(Types.CATEGORICAL, 'marital status - never, current, past (widowed or divorced)', categories=[1, 2, 3]),
+        'li_mar_stat': Property(Types.CATEGORICAL,
+                                'marital status - never, current, past (widowed or divorced)',
+                                categories=[1, 2, 3]),
         'li_on_con': Property(Types.BOOL, 'on contraceptive'),
         'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
@@ -200,7 +214,11 @@ class Lifestyle(Module):
         df['li_ex_alc'] = False  # default all not ex alc
         df['li_mar_stat'].values[:] = 1  # default: all individuals never married
         df['li_on_con'] = False  # default: all not on contraceptives
-        df['li_con_t'].values[:] = 1  # default: call contraceptive type 1, but when li_on_con = False this property becomes most recent contraceptive used
+
+        # default: call contraceptive type 1, but when li_on_con = False this property becomes most
+        # recent contraceptive used
+        df['li_con_t'].values[:] = 1
+
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
 
@@ -347,20 +365,30 @@ class Lifestyle(Module):
         age5060_index = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
         agege60_index = df.index[(df.age_years >= 60) & df.is_alive]
 
-        df.loc[age1520_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age1520_index), p=self.parameters['init_dist_mar_stat_age1520'])
-        df.loc[age2030_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age2030_index), p=self.parameters['init_dist_mar_stat_age2030'])
-        df.loc[age3040_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age3040_index), p=self.parameters['init_dist_mar_stat_age3040'])
-        df.loc[age4050_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age4050_index), p=self.parameters['init_dist_mar_stat_age4050'])
-        df.loc[age5060_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age5060_index), p=self.parameters['init_dist_mar_stat_age5060'])
-        df.loc[agege60_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(agege60_index), p=self.parameters['init_dist_mar_stat_agege60'])
+        df.loc[age1520_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age1520_index),
+                                                               p=self.parameters['init_dist_mar_stat_age1520'])
+        df.loc[age2030_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age2030_index),
+                                                               p=self.parameters['init_dist_mar_stat_age2030'])
+        df.loc[age3040_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age3040_index),
+                                                               p=self.parameters['init_dist_mar_stat_age3040'])
+        df.loc[age4050_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age4050_index),
+                                                               p=self.parameters['init_dist_mar_stat_age4050'])
+        df.loc[age5060_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(age5060_index),
+                                                               p=self.parameters['init_dist_mar_stat_age5060'])
+        df.loc[agege60_index, 'li_mar_stat'] = self.rng.choice([1, 2, 3], size=len(agege60_index),
+                                                               p=self.parameters['init_dist_mar_stat_agege60'])
 
         # li_on_con (contraception)
 
         f_age1550_idx = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
-        df.loc[f_age1550_idx, 'li_on_con'] = self.rng.random_sample(size=len(f_age1550_idx)) < self.parameters['init_p_on_contrac']
+        df.loc[f_age1550_idx, 'li_on_con'] = (self.rng.random_sample(size=len(f_age1550_idx)) <
+                                              self.parameters['init_p_on_contrac'])
 
-        f_age1550_on_con_idx = df.index[(df.age_years >= 15) & (df.age_years < 50) & df.is_alive & (df.sex == 'F') & df.li_on_con]
-        df.loc[f_age1550_on_con_idx, 'li_con_t'] = self.rng.choice([1, 2, 3, 4, 5, 6], size=len(f_age1550_on_con_idx), p=self.parameters['init_dist_con_t'])
+        f_age1550_on_con_idx = df.index[(df.age_years >= 15) & (df.age_years < 50) & df.is_alive &
+                                        (df.sex == 'F') & df.li_on_con]
+        df.loc[f_age1550_on_con_idx, 'li_con_t'] = self.rng.choice([1, 2, 3, 4, 5, 6],
+                                                                   size=len(f_age1550_on_con_idx),
+                                                                   p=self.parameters['init_dist_con_t'])
 
         # education (li_in_ed and li_ed_lev)
 
@@ -411,14 +439,9 @@ class Lifestyle(Module):
 
         df.loc[age_ge5_idx, 'li_ed_lev'] = dfx['li_ed_lev']
 
-        age_5_13_ed_lev_1_index = df.index[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 1) & df.is_alive]
-        df.loc[age_5_13_ed_lev_1_index, 'li_in_ed'] = False
-
-        age_5_13_ed_lev_2_index = df.index[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 2) & df.is_alive]
-        df.loc[age_5_13_ed_lev_2_index, 'li_in_ed'] = True
-
-        age_13_20_ed_lev_3_index = df.index[(df.age_years >= 13) & (df.age_years < 20) & (df['li_ed_lev'] == 3) & df.is_alive]
-        df.loc[age_13_20_ed_lev_3_index, 'li_in_ed'] = True
+        df.loc[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
+        df.loc[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
+        df.loc[(df.age_years >= 13) & (df.age_years < 20) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -570,14 +593,20 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
 
-        curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & ~df.li_on_con]
-        now_on_con = rng.choice([True, False], size=len(curr_not_on_con_idx), p=[p['r_contrac'], 1 - p['r_contrac']])
+        curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & ~df.li_on_con]
+        now_on_con = rng.choice([True, False],
+                                size=len(curr_not_on_con_idx),
+                                p=[p['r_contrac'], 1 - p['r_contrac']])
         if now_on_con.any():
             now_on_con_index = curr_not_on_con_idx[now_on_con]
             df.loc[now_on_con_index, 'li_on_con'] = True
 
-        curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con]
-        now_not_on_con = rng.choice([True, False], size=len(curr_on_con_idx), p=[p['r_contrac_int'], 1 - p['r_contrac_int']])
+        curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                   (df.sex == 'F') & df.li_on_con]
+        now_not_on_con = rng.choice([True, False],
+                                    size=len(curr_on_con_idx),
+                                    p=[p['r_contrac_int'], 1 - p['r_contrac_int']])
         if now_not_on_con.any():
             now_not_on_con_index = curr_on_con_idx[now_not_on_con]
             df.loc[now_not_on_con_index, 'li_on_con'] = False
@@ -585,18 +614,41 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         f_age50_idx = df.index[df.is_alive & (df.age_years == 50) & (df.sex == 'F') & df.li_on_con]
         df.loc[f_age50_idx, 'li_on_con'] = False
 
-        curr_on_con_t_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
-        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_1_idx), p=p['r_con_from_1'])
-        curr_on_con_t_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
-        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_2_idx), p=p['r_con_from_2'])
-        curr_on_con_t_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
-        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_3_idx), p=p['r_con_from_3'])
-        curr_on_con_t_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
-        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_4_idx), p=p['r_con_from_4'])
-        curr_on_con_t_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
-        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_5_idx), p=p['r_con_from_5'])
-        curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) & (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
-        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=p['r_con_from_6'])
+        curr_on_con_t_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
+        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_1_idx),
+                                                             p=p['r_con_from_1'])
+
+        curr_on_con_t_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
+        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_2_idx),
+                                                             p=p['r_con_from_2'])
+
+        curr_on_con_t_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
+        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_3_idx),
+                                                             p=p['r_con_from_3'])
+
+        curr_on_con_t_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
+        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_4_idx),
+                                                             p=p['r_con_from_4'])
+
+        curr_on_con_t_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
+        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_5_idx),
+                                                             p=p['r_con_from_5'])
+
+        curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
+                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
+        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                             size=len(curr_on_con_t_6_idx),
+                                                             p=p['r_con_from_6'])
 
         # -------------------- EDUCATION --------------------
 
@@ -671,7 +723,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|li_ed_lev|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
-                    
+
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())

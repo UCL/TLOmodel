@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from tlo import Simulation, Date
+from tlo import Date, Simulation
 from tlo.methods import demography, lifestyle
 
 workbook_name = 'demography.xlsx'
@@ -44,4 +44,3 @@ def test_dypes(simulation):
 if __name__ == '__main__':
     simulation = simulation()
     test_lifestyle_simulation(simulation)
-
