@@ -578,20 +578,20 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # start tobacco use
         eff_p_tob = pd.Series(self.r_tob, index=adults_not_tob)
-        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40) & df.is_alive & ~df.li_tob] *= self.rr_tob_age2039
-        eff_p_tob.loc[(df.age_years >= 40) & df.is_alive & ~df.li_tob] *= self.rr_tob_agege40
-        eff_p_tob.loc[(df.sex == 'F') & ~df.li_tob & (df.age_years >= 15) & df.is_alive] *= self.rr_tob_f
+        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= self.rr_tob_age2039
+        eff_p_tob.loc[(df.age_years >= 40)] *= self.rr_tob_agege40
+        eff_p_tob.loc[(df.sex == 'F')] *= self.rr_tob_f
 
-        eff_p_tob.loc[(df.li_wealth == 2) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth
-        eff_p_tob.loc[(df.li_wealth == 3) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth
-        eff_p_tob.loc[(df.li_wealth == 4) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
-        eff_p_tob.loc[(df.li_wealth == 5) & df.is_alive & ~df.li_tob & (df.age_years >= 15)] *= self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth * self.rr_tob_wealth
+        eff_p_tob.loc[df.li_wealth == 2] *= self.rr_tob_wealth
+        eff_p_tob.loc[df.li_wealth == 3] *= self.rr_tob_wealth**2
+        eff_p_tob.loc[df.li_wealth == 4] *= self.rr_tob_wealth**3
+        eff_p_tob.loc[df.li_wealth == 5] *= self.rr_tob_wealth**4
 
         rnd_draw = self.module.rng.random_sample(size=len(adults_not_tob))
         df.loc[adults_not_tob, 'li_tob'] = (rnd_draw < eff_p_tob)
 
         # stop tobacco use
-        df.loc[currently_tob, 'li_tob'] = self.module.rng.random_sample(len(currently_tob)) < self.r_not_tob
+        df.loc[currently_tob, 'li_tob'] = ~(self.module.rng.random_sample(len(currently_tob)) < self.r_not_tob)
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
