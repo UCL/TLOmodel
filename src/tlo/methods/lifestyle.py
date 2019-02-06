@@ -614,7 +614,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # update if now divorced/widowed
         now_div_wid = self.module.rng.random_sample(len(curr_mar)) < self.r_div_wid
-        df.loc[curr_mar[now_div_wid]] = 3
+        df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
 
         # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
 
@@ -695,7 +695,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         p_leave_ed *= self.rr_stop_ed_lower_wealth ** (df.loc[in_ed, 'li_wealth'].astype(int) - 1)
 
         # randomly select some individuals to leave education
-        now_not_in_ed = self.module.rnd.random_sample(len(in_ed)) < p_leave_ed
+        now_not_in_ed = self.module.rng.random_sample(len(in_ed)) < p_leave_ed
 
         df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
