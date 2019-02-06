@@ -364,55 +364,50 @@ class Lifestyle(Module):
         # education (li_in_ed and li_ed_lev)
 
         age_ge5_idx = df.index[(df.age_years >= 5) & df.is_alive]
-        age_512_idx = df.index[(df.age_years >= 5) & (df.age_years < 13) & df.is_alive]
-        age_1320_idx = df.index[(df.age_years >= 13) & (df.age_years < 20) & df.is_alive]
-        age_3040_idx = df.index[(df.age_years >= 30) & (df.age_years < 40) & df.is_alive]
-        age_4050_idx = df.index[(df.age_years >= 40) & (df.age_years < 50) & df.is_alive]
-        age_5060_idx = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
-        age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth1_idx = df.index[(df.age_years >= 5) & df.is_alive & (df.li_wealth == 1)]
-        wealth2_idx = df.index[(df.age_years >= 5) & df.is_alive & (df.li_wealth == 2)]
-        wealth3_idx = df.index[(df.age_years >= 5) & df.is_alive & (df.li_wealth == 3)]
-        wealth4_idx = df.index[(df.age_years >= 5) & df.is_alive & (df.li_wealth == 4)]
 
-        eff_prob_some_ed = pd.Series(self.init_age2030_w5_some_ed,
-                                     index=df.index[(df.age_years >= 5) & df.is_alive])
-        eff_prob_some_ed.loc[age_512_idx] *= self.init_rp_some_ed_age0513
-        eff_prob_some_ed.loc[age_1320_idx] *= self.init_rp_some_ed_age1320
-        eff_prob_some_ed.loc[age_3040_idx] *= self.init_rp_some_ed_age3040
-        eff_prob_some_ed.loc[age_4050_idx] *= self.init_rp_some_ed_age4050
-        eff_prob_some_ed.loc[age_5060_idx] *= self.init_rp_some_ed_age5060
-        eff_prob_some_ed.loc[age_ge60_idx] *= self.init_rp_some_ed_agege60
-        eff_prob_some_ed.loc[wealth4_idx] *= self.init_rp_some_ed_per_higher_wealth
-        eff_prob_some_ed.loc[wealth3_idx] *= (self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth)
-        eff_prob_some_ed.loc[wealth2_idx] *= (self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth)
-        eff_prob_some_ed.loc[wealth1_idx] *= (self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth *
-                                              self.init_rp_some_ed_per_higher_wealth)
+        # calculate the probability of education for all individuals over 5 years old
+        eff_prob_some_ed = pd.Series(self.init_age2030_w5_some_ed, index=age_ge5_idx)
 
-        eff_prob_ed_lev_3 = pd.Series(self.init_prop_age2030_w5_some_ed_sec,
-                                      index=df.index[(df.age_years >= 5) & df.is_alive])
-        eff_prob_ed_lev_3.loc[age_1320_idx] *= self.init_rp_some_ed_sec_age1320
-        eff_prob_ed_lev_3.loc[age_3040_idx] *= self.init_rp_some_ed_sec_age3040
-        eff_prob_ed_lev_3.loc[age_4050_idx] *= self.init_rp_some_ed_sec_age4050
-        eff_prob_ed_lev_3.loc[age_5060_idx] *= self.init_rp_some_ed_sec_age5060
-        eff_prob_ed_lev_3.loc[age_ge60_idx] *= self.init_rp_some_ed_sec_agege60
-        eff_prob_ed_lev_3.loc[wealth4_idx] *= self.init_rp_some_ed_sec_per_higher_wealth
-        eff_prob_ed_lev_3.loc[wealth3_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth)
-        eff_prob_ed_lev_3.loc[wealth2_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth)
-        eff_prob_ed_lev_3.loc[wealth1_idx] *= (self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth *
-                                               self.init_rp_some_ed_sec_per_higher_wealth)
+        # adjust probability of some education based on age
+        eff_prob_some_ed.loc[df.age_years < 13] *= self.init_rp_some_ed_age0513
+        eff_prob_some_ed.loc[(df.age_years >= 13) & (df.age_years < 20)] *= self.init_rp_some_ed_age1320
+        eff_prob_some_ed.loc[(df.age_years >= 30) & (df.age_years < 40)] *= self.init_rp_some_ed_age3040
+        eff_prob_some_ed.loc[(df.age_years >= 40) & (df.age_years < 50)] *= self.init_rp_some_ed_age4050
+        eff_prob_some_ed.loc[(df.age_years >= 50) & (df.age_years < 60)] *= self.init_rp_some_ed_age5060
+        eff_prob_some_ed.loc[(df.age_years >= 60)] *= self.init_rp_some_ed_agege60
 
-        random_draw_01 = pd.Series(self.rng.random_sample(size=len(age_ge5_idx)), index=df.index[(df.age_years >= 5) & df.is_alive])
+        # adjust probability of some education based on wealth
+        eff_prob_some_ed.loc[df.li_wealth == 4] *= self.init_rp_some_ed_per_higher_wealth
+        eff_prob_some_ed.loc[df.li_wealth == 3] *= (self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth)
+        eff_prob_some_ed.loc[df.li_wealth == 2] *= (self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth)
+        eff_prob_some_ed.loc[df.li_wealth == 1] *= (self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth *
+                                                    self.init_rp_some_ed_per_higher_wealth)
+
+        # calculate baseline of education level 3, and adjust for age and wealth
+        eff_prob_ed_lev_3 = pd.Series(self.init_prop_age2030_w5_some_ed_sec, index=age_ge5_idx)
+
+        eff_prob_ed_lev_3.loc[(df.age_years >= 13) & (df.age_years < 20)] *= self.init_rp_some_ed_sec_age1320
+        eff_prob_ed_lev_3.loc[(df.age_years >= 30) & (df.age_years < 40)] *= self.init_rp_some_ed_sec_age3040
+        eff_prob_ed_lev_3.loc[(df.age_years >= 40) & (df.age_years < 50)] *= self.init_rp_some_ed_sec_age4050
+        eff_prob_ed_lev_3.loc[(df.age_years >= 50) & (df.age_years < 60)] *= self.init_rp_some_ed_sec_age5060
+        eff_prob_ed_lev_3.loc[(df.age_years >= 60)] *= self.init_rp_some_ed_sec_agege60
+        eff_prob_ed_lev_3.loc[df.li_wealth == 4] *= self.init_rp_some_ed_sec_per_higher_wealth
+        eff_prob_ed_lev_3.loc[df.li_wealth == 3] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth)
+        eff_prob_ed_lev_3.loc[df.li_wealth == 2] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth)
+        eff_prob_ed_lev_3.loc[df.li_wealth == 1] *= (self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth *
+                                                     self.init_rp_some_ed_sec_per_higher_wealth)
+
+        random_draw_01 = pd.Series(self.rng.random_sample(size=len(age_ge5_idx)), index=age_ge5_idx)
 
         dfx = pd.concat([eff_prob_ed_lev_3, eff_prob_some_ed, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
