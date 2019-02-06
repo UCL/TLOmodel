@@ -470,7 +470,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # note: if change this offset from 3 months need to consider code conditioning on age.years_exact
         super().__init__(module, frequency=DateOffset(months=3))
-        self.parameters = module.parameters
 
     def apply(self, population):
         """Apply this event to the population.
@@ -478,7 +477,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
         rng = self.module.rng
-        p = self.parameters
+        p = self.module.parameters
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
