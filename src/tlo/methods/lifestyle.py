@@ -652,105 +652,60 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[curr_on_con_t_6_idx, 'li_con_t'] = self.module.rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_t_6_idx), p=self.r_con_from_6)
 
         # -------------------- EDUCATION --------------------
-        p_p_ed = self.p_ed_primary
-        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 5)]
-        df.loc[age5_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 5)]
-        df.loc[age5_in_ed_idx, 'li_in_ed'] = True
 
-        p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 4)]
-        df.loc[age5_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 4)]
-        df.loc[age5_in_ed_idx, 'li_in_ed'] = True
+        # ---- PRIMARY EDUCATION
 
-        p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 3)]
-        df.loc[age5_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 3)]
-        df.loc[age5_in_ed_idx, 'li_in_ed'] = True
+        # get index of all children who are alive and between 5 and 5.25 years old
+        age5 = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive]
 
-        p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth * \
-            self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 2)]
-        df.loc[age5_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 2)]
-        df.loc[age5_in_ed_idx, 'li_in_ed'] = True
+        # by default, these children are not in education and have education level 1
+        df.loc[age5, 'li_ed_lev'] = 1
+        df.loc[age5, 'li_in_ed'] = False
 
-        p_p_ed = self.p_ed_primary * self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth * \
-            self.rp_ed_primary_higher_wealth * self.rp_ed_primary_higher_wealth
-        age5_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_wealth == 1)]
-        df.loc[age5_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age5_idx), p=[1 - p_p_ed, p_p_ed, 0])
-        age5_in_ed_idx = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive & (df.li_ed_lev == 2) & (df.li_wealth == 1)]
-        df.loc[age5_in_ed_idx, 'li_in_ed'] = True
+        # create a series to hold the probablity of primary education for children at age 5
+        prob_primary = pd.Series(self.p_ed_primary, index=age5)
+        prob_primary *= self.rp_ed_primary_higher_wealth ** (5 - df.loc[age5, 'li_wealth'])
 
-        p_s_ed = self.p_ed_secondary
-        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 5) & df.li_in_ed & (df.li_ed_lev == 2)]
-        df.loc[age13_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
+        # randomly select some to have primary education
+        age5_in_primary = self.module.rng.random_sample(len(age5)) < prob_primary
+        df.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
+        df.loc[age5[age5_in_primary], 'li_in_ed'] = True
 
-        p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 4) & df.li_in_ed & (df.li_ed_lev == 2)]
-        df.loc[age13_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
+        # TODO: do we need to keep the following code, anyone over 5, ed level 1 is not in education?
+        # df.loc[(df.age_exact_years > 5) & df.is_alive & (df.li_ed_lev == 1), 'li_in_ed'] = False
 
-        p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 3) & df.li_in_ed & (df.li_ed_lev == 2)]
-        df.loc[age13_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
+        # ---- SECONDARY EDUCATION
 
-        p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth \
-            * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 2) & df.li_in_ed & (df.li_ed_lev == 2)]
-        df.loc[age13_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
+        # get thirteen year olds that are in primary education, any wealth level
+        age13_in_primary = df.index[(df.age_years == 13) & df.is_alive & df.li_in_ed & (df.li_ed_lev == 2)]
 
-        p_s_ed = self.p_ed_secondary * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth \
-            * self.rp_ed_secondary_higher_wealth * self.rp_ed_secondary_higher_wealth
-        age13_idx = df.index[(df.age_exact_years >= 13) & (df.age_exact_years < 14) & df.is_alive & (df.li_wealth == 1)
-                             & df.li_in_ed & (df.li_ed_lev == 2)]
-        df.loc[age13_idx, 'li_ed_lev'] = self.module.rng.choice([1, 2, 3], size=len(age13_idx), p=[0, 1 - p_s_ed, p_s_ed])
+        # they have a probability of gaining secondary education (level 3), based on wealth
+        prob_secondary = pd.Series(self.p_ed_secondary, index=age13_in_primary)
+        prob_secondary *= self.rp_ed_secondary_higher_wealth ** (5 - df.loc[age13_in_primary, 'li_wealth'])
 
-        age5_ad_lev_1_idx = df.index[(df.age_exact_years > 5) & df.is_alive & (df.li_ed_lev == 1)]
-        df.loc[age5_ad_lev_1_idx, 'li_in_ed'] = False
+        # randomly select some to get secondary education
+        age13_to_secondary = self.module.rng.random_sample(len(age13_in_primary)) < prob_secondary
+        df.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
 
-        age13_ad_lev_2_idx = df.index[(df.age_exact_years > 13) & df.is_alive & (df.li_ed_lev == 2) & df.li_in_ed]
-        df.loc[age13_ad_lev_2_idx, 'li_in_ed'] = False
+        # those who did not go on to secondary education are no longer in education
+        df.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
 
-        p_stop_ed_w1 = self.r_stop_ed
-        curr_in_ed_w1_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 1)]
-        now_not_in_ed_w1 = self.module.rng.choice([True, False], size=len(curr_in_ed_w1_idx), p=[p_stop_ed_w1, 1 - p_stop_ed_w1])
-        if now_not_in_ed_w1.any():
-            now_not_in_ed_w1_idx = curr_in_ed_w1_idx[now_not_in_ed_w1]
-            df.loc[now_not_in_ed_w1_idx, 'li_in_ed'] = False
+        # ---- DROP OUT OF EDUCATION
 
-        p_stop_ed_w2 = self.r_stop_ed * self.rr_stop_ed_lower_wealth
-        curr_in_ed_w2_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 2)]
-        now_not_in_ed_w2 = self.module.rng.choice([True, False], size=len(curr_in_ed_w2_idx), p=[p_stop_ed_w2, 1 - p_stop_ed_w2])
-        if now_not_in_ed_w2.any():
-            now_not_in_ed_w2_idx = curr_in_ed_w2_idx[now_not_in_ed_w2]
-            df.loc[now_not_in_ed_w2_idx, 'li_in_ed'] = False
+        # get all individuals in education
+        in_ed = df.index[df.is_alive & df.li_in_ed]
 
-        p_stop_ed_w3 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
-        curr_in_ed_w3_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 3)]
-        now_not_in_ed_w3 = self.module.rng.choice([True, False], size=len(curr_in_ed_w3_idx), p=[p_stop_ed_w3, 1 - p_stop_ed_w3])
-        if now_not_in_ed_w3.any():
-            now_not_in_ed_w3_idx = curr_in_ed_w3_idx[now_not_in_ed_w3]
-            df.loc[now_not_in_ed_w3_idx, 'li_in_ed'] = False
+        # baseline rate of leaving education then adjust for wealth level
+        p_leave_ed = pd.Series(self.r_stop_ed, index=in_ed)
+        p_leave_ed *= self.rr_stop_ed_lower_wealth ** (df.loc[in_ed, 'li_wealth'] - 1)
 
-        p_stop_ed_w4 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
-        curr_in_ed_w4_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 4)]
-        now_not_in_ed_w4 = self.module.rng.choice([True, False], size=len(curr_in_ed_w4_idx), p=[p_stop_ed_w4, 1 - p_stop_ed_w4])
-        if now_not_in_ed_w4.any():
-            now_not_in_ed_w4_idx = curr_in_ed_w4_idx[now_not_in_ed_w4]
-            df.loc[now_not_in_ed_w4_idx, 'li_in_ed'] = False
+        # randomly select some individuals to leave education
+        now_not_in_ed = self.module.rnd.random_sample(len(in_ed)) < p_leave_ed
 
-        p_stop_ed_w5 = self.r_stop_ed * self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth * \
-            self.rr_stop_ed_lower_wealth * self.rr_stop_ed_lower_wealth
-        curr_in_ed_w5_idx = df.index[df.is_alive & df.li_in_ed & (df.li_wealth == 5)]
-        now_not_in_ed_w5 = self.module.rng.choice([True, False], size=len(curr_in_ed_w5_idx), p=[p_stop_ed_w5, 1 - p_stop_ed_w5])
-        if now_not_in_ed_w5.any():
-            now_not_in_ed_w5_idx = curr_in_ed_w5_idx[now_not_in_ed_w5]
-            df.loc[now_not_in_ed_w5_idx, 'li_in_ed'] = False
+        df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
-        curr_in_ed_age20_idx = df.index[df.is_alive & df.li_in_ed & (df.age_years == 20)]
-        df.loc[curr_in_ed_age20_idx, 'li_in_ed'] = False
+        # everyone leaves education at age 20
+        df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
