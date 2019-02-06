@@ -715,37 +715,36 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        urban_alive = (df.is_alive & df.li_urban).sum()
-        alive = df.is_alive.sum()
-
-        ex_alc = (df.is_alive & (df.age_years >= 15) & df.li_ex_alc).sum()
-
-        prop_urban = urban_alive / alive
-
-        wealth1 = df.index[(df.li_wealth == 1) & df.is_alive]
-
         """
-        
+        logger.info('%s|li_ed_lev|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
+                    
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
+        """
+
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
+
+        logger.info('%s|li_wealth|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby('li_wealth').size().to_dict())
 
         logger.info('%s|li_overwt|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
 
-        logger.info('%s|li_ed_lev|%s',
+        logger.info('%s|li_low_ex|%s',
                     self.sim.date,
-                    df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
-        """
+                    df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+
+        logger.info('%s|li_tob|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+
         logger.info('%s|li_ed_lev_by_age|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
-
-        """
-
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
- 
-        """
