@@ -24,13 +24,9 @@ def simulation():
                                        'resources',
                                        workbook_name)
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(1)
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
-
-    # turn off demography module logging
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-
+    sim.seed_rngs(1)
     return sim
 
 
@@ -85,5 +81,6 @@ def test_dypes(simulation):
 
 if __name__ == '__main__':
     simulation = simulation()
+    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
