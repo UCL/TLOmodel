@@ -509,20 +509,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # handle new transitions
         now_urban: pd.Series = m.rng.random_sample(size=len(currently_rural)) < m.r_urban
-
-        # if any have transitioned to urban
-        if now_urban.any():
-            urban_idx = currently_rural[now_urban]
-            df.loc[urban_idx, 'li_urban'] = True
-            df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
+        urban_idx = currently_rural[now_urban]
+        df.loc[urban_idx, 'li_urban'] = True
+        df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
 
         # handle new transitions to rural
         now_rural: pd.Series = m.rng.random_sample(size=len(currently_urban)) < m.r_rural
-
-        # if any have transitioned to rural
-        if now_rural.any():
-            rural_idx = currently_urban[now_rural]
-            df.loc[rural_idx, 'li_urban'] = False
+        df.loc[currently_urban[now_rural], 'li_urban'] = False
 
         # -------------------- OVERWEIGHT ----------------------------------------------------------
 
@@ -535,8 +528,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_ow.loc[df.li_urban] *= m.rr_overwt_urban
 
         # random draw and start of overweight status
-        rnd_draw = m.rng.random_sample(size=len(adults_not_ow))
-        df.loc[adults_not_ow, 'li_overwt'] = (rnd_draw < eff_p_ow)
+        df.loc[adults_not_ow, 'li_overwt'] = (m.rng.random_sample(len(adults_not_ow)) < eff_p_ow)
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
@@ -546,8 +538,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_low_ex.loc[df.sex == 'F'] *= m.rr_low_ex_f
         eff_p_low_ex.loc[df.li_urban] *= m.rr_low_ex_urban
 
-        rnd_draw = m.rng.random_sample(size=len(adults_not_low_ex))
-        df.loc[adults_not_low_ex, 'li_low_ex'] = (rnd_draw < eff_p_low_ex)
+        df.loc[adults_not_low_ex, 'li_low_ex'] = (m.rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex)
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -561,8 +552,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_tob.loc[df.sex == 'F'] *= m.rr_tob_f
         eff_p_tob *= m.rr_tob_wealth ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
-        rnd_draw = m.rng.random_sample(size=len(adults_not_tob))
-        df.loc[adults_not_tob, 'li_tob'] = (rnd_draw < eff_p_tob)
+        df.loc[adults_not_tob, 'li_tob'] = (m.rng.random_sample(len(adults_not_tob)) < eff_p_tob)
 
         # stop tobacco use
         df.loc[currently_tob, 'li_tob'] = ~(m.rng.random_sample(len(currently_tob)) < m.r_not_tob)
