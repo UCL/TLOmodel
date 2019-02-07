@@ -13,6 +13,11 @@ end_date = Date(2015, 4, 1)
 popsize = 1000
 
 
+@pytest.fixture(autouse=True)
+def disable_logging():
+    logging.disable(logging.INFO)
+
+
 @pytest.fixture(scope='module')
 def simulation():
     demography_workbook = os.path.join(os.path.dirname(__file__),
@@ -55,11 +60,19 @@ def __check_properties(df):
     assert not ((df.age_years > 20) & df.li_in_ed).any()
 
 
-def test_lifestyle_simulation(simulation):
+def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
+
+
+def test_initial_population(simulation):
     __check_properties(simulation.population.props)
 
+
+def test_simulate(simulation):
     simulation.simulate(end_date=end_date)
+
+
+def test_final_population(simulation):
     __check_properties(simulation.population.props)
 
 
@@ -72,4 +85,5 @@ def test_dypes(simulation):
 
 if __name__ == '__main__':
     simulation = simulation()
-    test_lifestyle_simulation(simulation)
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
