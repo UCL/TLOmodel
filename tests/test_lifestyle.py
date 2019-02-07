@@ -29,9 +29,35 @@ def simulation():
     return sim
 
 
+def __check_properties(df):
+    # no one under 15 can be overweight, low exercise, tobacco, excessive alcohol, married
+    under15 = df.age_years < 15
+    assert not (under15 & df.li_overwt).any()
+    assert not (under15 & df.li_low_ex).any()
+    assert not (under15 & df.li_tob).any()
+    assert not (under15 & df.li_ex_alc).any()
+    assert not (under15 & (df.li_mar_stat != 1)).any()
+    assert not (under15 & df.li_on_con).any()
+
+    # only adult females 15-50 can use contraceptives
+    assert not (df.li_on_con & ~(df.sex == 'F') & (under15 | (df.age_years >= 50))).any()
+
+    # education: no one under 5 in education
+    assert not (df.li_in_ed & (df.age_years < 5)).any()
+
+    # education: age 5-13 can't be in secondary education
+    assert not ((df.age_years >= 5) & (df.age_years < 13) & (df.li_ed_lev == 3)).any()
+
+    # education: no one over age 20 in education
+    assert not ((df.age_years > 20) & df.li_in_ed).any()
+
+
 def test_lifestyle_simulation(simulation):
     simulation.make_initial_population(n=popsize)
+    __check_properties(simulation.population.props)
+
     simulation.simulate(end_date=end_date)
+    __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
