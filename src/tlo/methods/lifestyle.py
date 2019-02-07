@@ -414,6 +414,7 @@ class Lifestyle(Module):
         # calculate baseline of education level 3, and adjust for age and wealth
         eff_prob_ed_lev_3 = pd.Series(self.init_prop_age2030_w5_some_ed_sec, index=age_ge5_idx)
 
+        eff_prob_ed_lev_3.loc[(df.age_years < 13)] *= 0
         eff_prob_ed_lev_3.loc[(df.age_years >= 13) & (df.age_years < 20)] *= self.init_rp_some_ed_sec_age1320
         eff_prob_ed_lev_3.loc[(df.age_years >= 30) & (df.age_years < 40)] *= self.init_rp_some_ed_sec_age3040
         eff_prob_ed_lev_3.loc[(df.age_years >= 40) & (df.age_years < 50)] *= self.init_rp_some_ed_sec_age4050
