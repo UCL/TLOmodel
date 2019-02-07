@@ -116,9 +116,6 @@ class Lifestyle(Module):
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
     }
 
-    def __init__(self):
-        super().__init__()
-
     def read_parameters(self, data_folder):
         """Setup parameters used by the lifestyle module
         """
