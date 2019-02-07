@@ -454,7 +454,7 @@ class Lifestyle(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
         event = LifestylesLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=3))
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
