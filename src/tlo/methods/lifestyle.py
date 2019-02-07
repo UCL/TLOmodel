@@ -1,5 +1,7 @@
 """
-A skeleton template for disease methods.
+Lifestyle module
+
+Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import logging
 
@@ -14,18 +16,10 @@ logger.setLevel(logging.DEBUG)
 
 class Lifestyle(Module):
     """
-    One line summary goes here...
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    Lifestyle module provides properties that are used by all disease modules if they are affected
+    by urban/rural, wealth, tobacco usage etc.
     """
 
-    # Here we declare parameters for this module. Each parameter has a name, data type,
-    # and longer description.
     PARAMETERS = {
         'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
@@ -126,10 +120,7 @@ class Lifestyle(Module):
         super().__init__()
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-        Here we do nothing.
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
+        """Setup parameters used by the lifestyle module
         """
         p = self.parameters
         p['r_urban'] = 0.002
@@ -199,9 +190,6 @@ class Lifestyle(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
@@ -447,10 +435,7 @@ class Lifestyle(Module):
         df.loc[(df.age_years >= 13) & (df.age_years < 20) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
+        """Add lifestyle events to the simulation
         """
         event = LifestyleEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
@@ -459,8 +444,7 @@ class Lifestyle(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
-        This is called by the simulation whenever a new person is born.
+        """Initialise properties for a newborn individual.
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -482,19 +466,16 @@ class Lifestyle(Module):
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
-    """A skeleton class for an event
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
+    """
+    Regular event that updates all lifestyle properties for population
     """
     def __init__(self, module):
-        """One line summary here
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
+        """schedule to run every 3 months
+
+        note: if change this offset from 3 months need to consider code conditioning on age.years_exact
+
         :param module: the module that created this event
         """
-        # note: if change this offset from 3 months need to consider code conditioning on age.years_exact
         super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
@@ -695,14 +676,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    """Handles lifestyle logging"""
     def __init__(self, module):
-        """comments...
+        """schedule logging to repeat every 3 months
         """
-        # run this event every 3 month
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
+        """Apply this event to the population.
+        :param population: the current population
+        """
         # get some summary statistics
         df = population.props
 
