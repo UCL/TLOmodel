@@ -638,9 +638,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
                                                                size=len(curr_on_con_t_6_idx),
                                                                p=m.r_con_from_6)
 
-        # -------------------- EDUCATION --------------------
+        # -------------------- EDUCATION -----------------------------------------------------------
 
-        # get all individuals in education
+        # get all individuals currently in education
         in_ed = df.index[df.is_alive & df.li_in_ed]
 
         # ---- PRIMARY EDUCATION
@@ -660,9 +660,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         age5_in_primary = m.rng.random_sample(len(age5)) < prob_primary
         df.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
         df.loc[age5[age5_in_primary], 'li_in_ed'] = True
-
-        # TODO: do we need to keep the following code, anyone over 5, ed level 1 is not in education?
-        # df.loc[(df.age_exact_years > 5) & df.is_alive & (df.li_ed_lev == 1), 'li_in_ed'] = False
 
         # ---- SECONDARY EDUCATION
 
