@@ -325,16 +325,11 @@ class Lifestyle(Module):
         df.loc[gte_15, 'li_tob'] = (random_draw < tob_probs.values)
 
         # ex alc;
-        df.loc[agelt15_index, 'li_ex_alc'] = False
-
-        i_p_ex_alc_m = p['init_p_ex_alc_m']
-        i_p_ex_alc_f = p['init_p_ex_alc_f']
-
         m_agege15_index = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
         f_agege15_index = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
-        df.loc[m_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(m_agege15_index)) < i_p_ex_alc_m
-        df.loc[f_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(f_agege15_index)) < i_p_ex_alc_f
+        df.loc[m_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(m_agege15_index)) < p['init_p_ex_alc_m']
+        df.loc[f_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(f_agege15_index)) < p['init_p_ex_alc_f']
 
         # mar stat (marital status)
 
