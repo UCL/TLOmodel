@@ -103,7 +103,7 @@ class Demography(Module):
         'age_range': Property(Types.CATEGORICAL,
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
-        'age_days': Property(Types.INT,'The age of the individual in whole days')
+        'age_days': Property(Types.INT, 'The age of the individual in whole days')
     }
 
     def read_parameters(self, data_folder):
@@ -132,8 +132,6 @@ class Demography(Module):
         ms_new = pd.DataFrame(ms_new)
         ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
-        # self.parameters['mortality_schedule'] = ms_new
-
         self.parameters['fraction_of_births_male'] = 0.5
 
     def initialise_population(self, population):
@@ -190,6 +188,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, 'age_days'] = age_in_days.astype(int)
 
         # assign that half the adult population is married (will be done in lifestyle module)
         df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
@@ -396,7 +395,8 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         mort_sched = self.module.parameters['mortality_schedule']
 
         # get the subset of mortality rates for this year.
-        fallbackyear= int(math.floor(self.sim.date.year/5)*5) # confirms that we go to the five year period that we are in, not the exact year.
+        # confirms that we go to the five year period that we are in, not the exact year.
+        fallbackyear = int(math.floor(self.sim.date.year/5)*5)
 
         mort_sched = mort_sched.loc[mort_sched.year == fallbackyear, ['age_years', 'sex', 'value']].copy()
 
@@ -405,19 +405,17 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
         # mortality for each person in the model
-        length_before_merge=len(alive)
+        length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
                                           left_on=['age_years', 'sex'],
                                           right_on=['age_years', 'sex'],
                                           how='inner').set_index('person')
         assert length_before_merge == len(alive)
 
-
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
 
         logger.debug('Will die count: %d', will_die.sum())
-
 
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
