@@ -675,15 +675,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        """
-        logger.info('%s|li_ed_lev|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
+        # logger.info('%s|li_ed_lev|%s',
+        #             self.sim.date,
+        #             df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
 
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
-        """
+        # logger.debug('%s|person_one|%s',
+        #              self.sim.date,
+        #              df.loc[0].to_dict())
 
         logger.info('%s|li_urban|%s',
                     self.sim.date,
