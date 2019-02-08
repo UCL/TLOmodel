@@ -557,27 +557,20 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
 
         # everyone stops using contraceptives at age 50
-        f_age_50 = df.index[possibly_using & (df.age_years == 50) & df.li_on_con]
+        f_age_50 = df.index[(df.age_years == 50) & df.li_on_con]
         df.loc[f_age_50, 'li_on_con'] = False
 
         # contraceptive method transitions
-        curr_on_con_1 = df.index[curr_on_con & (df.li_con_t == 1)]
-        df.loc[curr_on_con_1, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_1), p=m.r_con_from_1)
+        def con_method_transition(con_type, rates):
+            curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
+            df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
 
-        curr_on_con_2 = df.index[curr_on_con & (df.li_con_t == 2)]
-        df.loc[curr_on_con_2, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_2), p=m.r_con_from_2)
-
-        curr_on_con_3 = df.index[curr_on_con & (df.li_con_t == 3)]
-        df.loc[curr_on_con_3, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_3), p=m.r_con_from_3)
-
-        curr_on_con_4 = df.index[curr_on_con & (df.li_con_t == 4)]
-        df.loc[curr_on_con_4, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_4), p=m.r_con_from_4)
-
-        curr_on_con_5 = df.index[curr_on_con & (df.li_con_t == 5)]
-        df.loc[curr_on_con_5, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_5), p=m.r_con_from_5)
-
-        curr_on_con_6 = df.index[curr_on_con & (df.li_con_t == 6)]
-        df.loc[curr_on_con_6, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_6), p=m.r_con_from_6)
+        con_method_transition(1, m.r_con_from_1)
+        con_method_transition(2, m.r_con_from_2)
+        con_method_transition(3, m.r_con_from_3)
+        con_method_transition(4, m.r_con_from_4)
+        con_method_transition(5, m.r_con_from_5)
+        con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
