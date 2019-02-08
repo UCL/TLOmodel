@@ -210,11 +210,7 @@ class Lifestyle(Module):
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
 
-        #  this below calls the age dataframe / call age.years to get age in years
-
         agelt15_index = df.index[df.is_alive & (df.age_years < 15)]
-
-        # todo: allocate wealth level at baseline
 
         # urban
         # randomly selected some individuals as urban
@@ -315,10 +311,6 @@ class Lifestyle(Module):
                                          right_on=['sex', 'age_range'],
                                          how='inner')
         assert len(gte_15) == len(tob_probs)
-
-#       assert np.array_equal(tob_probs.years_exact, df.years_exact)
-        # check the order of individuals is the same by comparing exact ages
-#       assert tob_probs.p_tob.isna().sum() == 0  # ensure we found a p_tob for every individual
 
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
