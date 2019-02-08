@@ -109,7 +109,7 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
-        'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
+        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
