@@ -414,8 +414,8 @@ class Lifestyle(Module):
 
         df.loc[age_ge5_idx, 'li_ed_lev'] = dfx['li_ed_lev']
 
-        df.loc[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
-        df.loc[(df.age_years >= 5) & (df.age_years < 14) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
+        df.loc[(df.age_years >= 5) & (df.age_years < 13) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
+        df.loc[(df.age_years >= 5) & (df.age_years < 13) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[(df.age_years >= 13) & (df.age_years < 20) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
     def initialise_simulation(self, sim):
