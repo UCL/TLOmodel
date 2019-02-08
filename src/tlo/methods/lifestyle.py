@@ -552,6 +552,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_on_con = rng.random_sample(size=len(curr_not_on_con)) < m.r_contrac
         df.loc[curr_not_on_con[now_on_con], 'li_on_con'] = True
 
+        # todo: default contraceptive type is 1; should type be chosen here?
+
         # currently using contraceptives -> interrupted
         now_not_on_con = rng.random_sample(size=len(curr_on_con)) < m.r_contrac_int
         df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
@@ -561,6 +563,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[f_age_50, 'li_on_con'] = False
 
         # contraceptive method transitions
+        # note: transitions contr. type for those already using, not those who just started in this event
         def con_method_transition(con_type, rates):
             curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
             df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
