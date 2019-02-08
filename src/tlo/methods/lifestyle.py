@@ -353,7 +353,7 @@ class Lifestyle(Module):
         df.loc[age_5060, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_5060), p=m.init_dist_mar_stat_age5060)
         df.loc[age_ge60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_ge60), p=m.init_dist_mar_stat_agege60)
 
-        # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
+        # -------------------- CONTRACEPTION STATUS ------------------------------------------------
 
         f_age_1550 = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
         df.loc[f_age_1550, 'li_on_con'] = (rng.random_sample(size=len(f_age_1550)) < m.init_p_on_contrac)
@@ -542,62 +542,42 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_div_wid = rng.random_sample(len(curr_mar)) < m.r_div_wid
         df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
 
-        # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
+        # -------------------- CONTRACEPTION USE ---------------------------------------------------
 
-        curr_not_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & ~df.li_on_con]
-        now_on_con = rng.choice([True, False], size=len(curr_not_on_con_idx), p=[m.r_contrac, 1 - m.r_contrac])
-        if now_on_con.any():
-            now_on_con_index = curr_not_on_con_idx[now_on_con]
-            df.loc[now_on_con_index, 'li_on_con'] = True
+        possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+        curr_not_on_con = df.index[possibly_using & ~df.li_on_con]
+        curr_on_con = df.index[possibly_using & df.li_on_con]
 
-        curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                   (df.sex == 'F') & df.li_on_con]
-        now_not_on_con = rng.choice([True, False],
-                                    size=len(curr_on_con_idx),
-                                    p=[m.r_contrac_int, 1 - m.r_contrac_int])
-        if now_not_on_con.any():
-            now_not_on_con_index = curr_on_con_idx[now_not_on_con]
-            df.loc[now_not_on_con_index, 'li_on_con'] = False
+        # currently not on contraceptives -> start using contraceptives
+        now_on_con = rng.random_sample(size=len(curr_not_on_con)) < m.r_contrac
+        df.loc[curr_not_on_con[now_on_con], 'li_on_con'] = True
 
-        f_age50_idx = df.index[df.is_alive & (df.age_years == 50) & (df.sex == 'F') & df.li_on_con]
-        df.loc[f_age50_idx, 'li_on_con'] = False
+        # currently using contraceptives -> interrupted
+        now_not_on_con = rng.random_sample(size=len(curr_on_con)) < m.r_contrac_int
+        df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
 
-        curr_on_con_t_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 1)]
-        df.loc[curr_on_con_t_1_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_1_idx),
-                                                             p=m.r_con_from_1)
+        # everyone stops using contraceptives at age 50
+        f_age_50 = df.index[possibly_using & (df.age_years == 50) & df.li_on_con]
+        df.loc[f_age_50, 'li_on_con'] = False
 
-        curr_on_con_t_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 2)]
-        df.loc[curr_on_con_t_2_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_2_idx),
-                                                             p=m.r_con_from_2)
+        # contraceptive method transitions
+        curr_on_con_1 = df.index[curr_on_con & (df.li_con_t == 1)]
+        df.loc[curr_on_con_1, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_1), p=m.r_con_from_1)
 
-        curr_on_con_t_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 3)]
-        df.loc[curr_on_con_t_3_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_3_idx),
-                                                             p=m.r_con_from_3)
+        curr_on_con_2 = df.index[curr_on_con & (df.li_con_t == 2)]
+        df.loc[curr_on_con_2, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_2), p=m.r_con_from_2)
 
-        curr_on_con_t_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 4)]
-        df.loc[curr_on_con_t_4_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_4_idx),
-                                                             p=m.r_con_from_4)
+        curr_on_con_3 = df.index[curr_on_con & (df.li_con_t == 3)]
+        df.loc[curr_on_con_3, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_3), p=m.r_con_from_3)
 
-        curr_on_con_t_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 5)]
-        df.loc[curr_on_con_t_5_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_5_idx),
-                                                             p=m.r_con_from_5)
+        curr_on_con_4 = df.index[curr_on_con & (df.li_con_t == 4)]
+        df.loc[curr_on_con_4, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_4), p=m.r_con_from_4)
 
-        curr_on_con_t_6_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
-                                       (df.sex == 'F') & df.li_on_con & (df.li_con_t == 6)]
-        df.loc[curr_on_con_t_6_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                             size=len(curr_on_con_t_6_idx),
-                                                             p=m.r_con_from_6)
+        curr_on_con_5 = df.index[curr_on_con & (df.li_con_t == 5)]
+        df.loc[curr_on_con_5, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_5), p=m.r_con_from_5)
+
+        curr_on_con_6 = df.index[curr_on_con & (df.li_con_t == 6)]
+        df.loc[curr_on_con_6, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_6), p=m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
