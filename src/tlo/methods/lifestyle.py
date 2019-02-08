@@ -197,8 +197,10 @@ class Lifestyle(Module):
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        p = self.parameters
-        rng = self.rng
+        m = self
+        rng = m.rng
+
+        # -------------------- DEFAULTS ------------------------------------------------------------
 
         df['li_urban'] = False  # default: all individuals rural
         df['li_date_trans_to_urban'] = pd.NaT
@@ -217,60 +219,58 @@ class Lifestyle(Module):
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
 
-        # urban
+        # -------------------- URBAN-RURAL STATUS --------------------------------------------------
+
         # randomly selected some individuals as urban
-        initial_urban = p['init_p_urban']
-        df['li_urban'] = (rng.random_sample(size=len(df)) < initial_urban)
+        df['li_urban'] = (rng.random_sample(size=len(df)) < m.init_p_urban)
 
-        # get the indices of all individuals who are urban
+        # get the indices of all individuals who are urban or rural
         urban_index = df.index[df.is_alive & df.li_urban]
-        # randomly sample wealth category according to urban wealth probs and assign to urban ind.
-        df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5],
-                                                      size=len(urban_index),
-                                                      p=p['init_p_wealth_urban'])
-
-        # get the indicies of all individual who are rural (i.e. not urban)
         rural_index = df.index[df.is_alive & ~df.li_urban]
-        df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5],
-                                                      size=len(rural_index),
-                                                      p=p['init_p_wealth_rural'])
+
+        # randomly sample wealth category according to urban/rural wealth probs
+        df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_index), p=m.init_p_wealth_urban)
+        df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_index), p=m.init_p_wealth_rural)
+
+        # -------------------- OVERWEIGHT ----------------------------------------------------------
 
         # get indices of all individuals over 15 years
-        gte_15 = df.index[df.is_alive & (df.age_years >= 15)]
+        age_gte15 = df.index[df.is_alive & (df.age_years >= 15)]
 
-        # overwt;
         overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
                                                ('M', False, 0.27),
                                                ('F', True, 0.32),
                                                ('F', False, 0.17)],
                                          columns=['sex', 'is_urban', 'p_ow'])
 
-        overweight_probs = df.loc[gte_15, ['sex', 'li_urban']].merge(overweight_lookup,
-                                                                     left_on=['sex', 'li_urban'],
-                                                                     right_on=['sex', 'is_urban'],
-                                                                     how='inner')['p_ow']
-        assert len(overweight_probs) == len(gte_15)
+        overweight_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(overweight_lookup,
+                                                                        left_on=['sex', 'li_urban'],
+                                                                        right_on=['sex', 'is_urban'],
+                                                                        how='inner')['p_ow']
+        assert len(overweight_probs) == len(age_gte15)
 
-        random_draw = rng.random_sample(size=len(gte_15))
-        df.loc[gte_15, 'li_overwt'] = (random_draw < overweight_probs.values)
+        random_draw = rng.random_sample(size=len(age_gte15))
+        df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
 
-        # low_ex;
+        # -------------------- LOW EXERCISE --------------------------------------------------------
+
         low_ex_lookup = pd.DataFrame(data=[('M', True, 0.32),
                                            ('M', False, 0.11),
                                            ('F', True, 0.18),
                                            ('F', False, 0.07)],
                                      columns=['sex', 'is_urban', 'p_low_ex'])
 
-        low_ex_probs = df.loc[gte_15, ['sex', 'li_urban']].merge(low_ex_lookup,
-                                                                 left_on=['sex', 'li_urban'],
-                                                                 right_on=['sex', 'is_urban'],
-                                                                 how='inner')['p_low_ex']
-        assert len(low_ex_probs) == len(gte_15)
+        low_ex_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(low_ex_lookup,
+                                                                    left_on=['sex', 'li_urban'],
+                                                                    right_on=['sex', 'is_urban'],
+                                                                    how='inner')['p_low_ex']
+        assert len(low_ex_probs) == len(age_gte15)
 
-        random_draw = rng.random_sample(size=len(gte_15))
-        df.loc[gte_15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
+        random_draw = rng.random_sample(size=len(age_gte15))
+        df.loc[age_gte15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
 
-        # tob ;
+        # -------------------- TOBACCO USE ---------------------------------------------------------
+
         tob_lookup = pd.DataFrame([('M', '15-19', 0.01),
                                    ('M', '20-24', 0.04),
                                    ('M', '25-29', 0.04),
@@ -311,11 +311,11 @@ class Lifestyle(Module):
                                   columns=['sex', 'age_range', 'p_tob'])
 
         # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
-        tob_probs = df.loc[gte_15].merge(tob_lookup,
-                                         left_on=['sex', 'age_range'],
-                                         right_on=['sex', 'age_range'],
-                                         how='inner')
-        assert len(gte_15) == len(tob_probs)
+        tob_probs = df.loc[age_gte15].merge(tob_lookup,
+                                            left_on=['sex', 'age_range'],
+                                            right_on=['sex', 'age_range'],
+                                            how='inner')
+        assert len(age_gte15) == len(tob_probs)
 
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
@@ -323,90 +323,78 @@ class Lifestyle(Module):
 
         # we now have the probability of tobacco use for each individual where age >= 15
         # draw a random number between 0 and 1 for all of them
-        random_draw = rng.random_sample(size=len(gte_15))
+        random_draw = rng.random_sample(size=len(age_gte15))
 
         # decide on tobacco use based on the individual probability is greater than random draw
         # this is a list of True/False. assign to li_tob
-        df.loc[gte_15, 'li_tob'] = (random_draw < tob_probs.values)
+        df.loc[age_gte15, 'li_tob'] = (random_draw < tob_probs.values)
 
-        # ex alc;
-        m_agege15_index = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
-        f_agege15_index = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
+        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
-        df.loc[m_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(m_agege15_index)) < p['init_p_ex_alc_m']
-        df.loc[f_agege15_index, 'li_ex_alc'] = rng.random_sample(size=len(f_agege15_index)) < p['init_p_ex_alc_f']
+        m_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
+        f_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
-        # mar stat (marital status)
+        df.loc[m_gte15, 'li_ex_alc'] = rng.random_sample(size=len(m_gte15)) < m.init_p_ex_alc_m
+        df.loc[f_gte15, 'li_ex_alc'] = rng.random_sample(size=len(f_gte15)) < m.init_p_ex_alc_f
 
-        age1520_index = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
-        age2030_index = df.index[(df.age_years >= 20) & (df.age_years < 30) & df.is_alive]
-        age3040_index = df.index[(df.age_years >= 30) & (df.age_years < 40) & df.is_alive]
-        age4050_index = df.index[(df.age_years >= 40) & (df.age_years < 50) & df.is_alive]
-        age5060_index = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
-        agege60_index = df.index[(df.age_years >= 60) & df.is_alive]
+        # -------------------- MARITAL STATUS ------------------------------------------------------
 
-        df.loc[age1520_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age1520_index),
-                                                          p=p['init_dist_mar_stat_age1520'])
-        df.loc[age2030_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age2030_index),
-                                                          p=p['init_dist_mar_stat_age2030'])
-        df.loc[age3040_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age3040_index),
-                                                          p=p['init_dist_mar_stat_age3040'])
-        df.loc[age4050_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age4050_index),
-                                                          p=p['init_dist_mar_stat_age4050'])
-        df.loc[age5060_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age5060_index),
-                                                          p=p['init_dist_mar_stat_age5060'])
-        df.loc[agege60_index, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(agege60_index),
-                                                          p=p['init_dist_mar_stat_agege60'])
+        age_1520 = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
+        age_2030 = df.index[(df.age_years >= 20) & (df.age_years < 30) & df.is_alive]
+        age_3040 = df.index[(df.age_years >= 30) & (df.age_years < 40) & df.is_alive]
+        age_4050 = df.index[(df.age_years >= 40) & (df.age_years < 50) & df.is_alive]
+        age_5060 = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
+        age_ge60 = df.index[(df.age_years >= 60) & df.is_alive]
 
-        # li_on_con (contraception)
+        df.loc[age_1520, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_1520), p=m.init_dist_mar_stat_age1520)
+        df.loc[age_2030, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_2030), p=m.init_dist_mar_stat_age2030)
+        df.loc[age_3040, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_3040), p=m.init_dist_mar_stat_age3040)
+        df.loc[age_4050, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_4050), p=m.init_dist_mar_stat_age4050)
+        df.loc[age_5060, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_5060), p=m.init_dist_mar_stat_age5060)
+        df.loc[age_ge60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_ge60), p=m.init_dist_mar_stat_agege60)
 
-        f_age1550_idx = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
-        df.loc[f_age1550_idx, 'li_on_con'] = (rng.random_sample(size=len(f_age1550_idx)) < p['init_p_on_contrac'])
+        # -------------------- CONTRACEPTIVE STATUS ------------------------------------------------
 
-        f_age1550_on_con_idx = df.index[(df.age_years >= 15) & (df.age_years < 50) & df.is_alive &
-                                        (df.sex == 'F') & df.li_on_con]
-        df.loc[f_age1550_on_con_idx, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                              size=len(f_age1550_on_con_idx),
-                                                              p=p['init_dist_con_t'])
+        f_age_1550 = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
+        df.loc[f_age_1550, 'li_on_con'] = (rng.random_sample(size=len(f_age_1550)) < m.init_p_on_contrac)
 
-        # education (li_in_ed and li_ed_lev)
+        f_age_1550_on_con = df.index[df.age_years.between(14, 49) & df.is_alive & (df.sex == 'F') & df.li_on_con]
+        df.loc[f_age_1550_on_con, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
+                                                           size=len(f_age_1550_on_con),
+                                                           p=m.init_dist_con_t)
 
-        age_ge5_idx = df.index[(df.age_years >= 5) & df.is_alive]
+        # -------------------- EDUCATION -----------------------------------------------------------
+
+        age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
 
         # calculate the probability of education for all individuals over 5 years old
-        eff_prob_some_ed = pd.Series(self.init_age2030_w5_some_ed, index=age_ge5_idx)
+        p_some_ed = pd.Series(m.init_age2030_w5_some_ed, index=age_gte5)
 
         # adjust probability of some education based on age
-        eff_prob_some_ed.loc[df.age_years < 13] *= self.init_rp_some_ed_age0513
-        eff_prob_some_ed.loc[(df.age_years >= 13) & (df.age_years < 20)] *= self.init_rp_some_ed_age1320
-        eff_prob_some_ed.loc[(df.age_years >= 30) & (df.age_years < 40)] *= self.init_rp_some_ed_age3040
-        eff_prob_some_ed.loc[(df.age_years >= 40) & (df.age_years < 50)] *= self.init_rp_some_ed_age4050
-        eff_prob_some_ed.loc[(df.age_years >= 50) & (df.age_years < 60)] *= self.init_rp_some_ed_age5060
-        eff_prob_some_ed.loc[(df.age_years >= 60)] *= self.init_rp_some_ed_agege60
+        p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
+        p_some_ed.loc[(df.age_years >= 13) & (df.age_years < 20)] *= m.init_rp_some_ed_age1320
+        p_some_ed.loc[(df.age_years >= 30) & (df.age_years < 40)] *= m.init_rp_some_ed_age3040
+        p_some_ed.loc[(df.age_years >= 40) & (df.age_years < 50)] *= m.init_rp_some_ed_age4050
+        p_some_ed.loc[(df.age_years >= 50) & (df.age_years < 60)] *= m.init_rp_some_ed_age5060
+        p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
 
         # adjust probability of some education based on wealth
-        eff_prob_some_ed.loc[df.li_wealth == 4] *= self.init_rp_some_ed_per_higher_wealth
-        eff_prob_some_ed.loc[df.li_wealth == 3] *= self.init_rp_some_ed_per_higher_wealth**2
-        eff_prob_some_ed.loc[df.li_wealth == 2] *= self.init_rp_some_ed_per_higher_wealth**3
-        eff_prob_some_ed.loc[df.li_wealth == 1] *= self.init_rp_some_ed_per_higher_wealth**4
+        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         # calculate baseline of education level 3, and adjust for age and wealth
-        eff_prob_ed_lev_3 = pd.Series(self.init_prop_age2030_w5_some_ed_sec, index=age_ge5_idx)
+        p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
 
-        eff_prob_ed_lev_3.loc[(df.age_years < 13)] *= 0
-        eff_prob_ed_lev_3.loc[(df.age_years >= 13) & (df.age_years < 20)] *= self.init_rp_some_ed_sec_age1320
-        eff_prob_ed_lev_3.loc[(df.age_years >= 30) & (df.age_years < 40)] *= self.init_rp_some_ed_sec_age3040
-        eff_prob_ed_lev_3.loc[(df.age_years >= 40) & (df.age_years < 50)] *= self.init_rp_some_ed_sec_age4050
-        eff_prob_ed_lev_3.loc[(df.age_years >= 50) & (df.age_years < 60)] *= self.init_rp_some_ed_sec_age5060
-        eff_prob_ed_lev_3.loc[(df.age_years >= 60)] *= self.init_rp_some_ed_sec_agege60
-        eff_prob_ed_lev_3.loc[df.li_wealth == 4] *= self.init_rp_some_ed_sec_per_higher_wealth
-        eff_prob_ed_lev_3.loc[df.li_wealth == 3] *= self.init_rp_some_ed_sec_per_higher_wealth**2
-        eff_prob_ed_lev_3.loc[df.li_wealth == 2] *= self.init_rp_some_ed_sec_per_higher_wealth**3
-        eff_prob_ed_lev_3.loc[df.li_wealth == 1] *= self.init_rp_some_ed_sec_per_higher_wealth**4
+        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
+        p_ed_lev_3.loc[(df.age_years >= 13) & (df.age_years < 20)] *= m.init_rp_some_ed_sec_age1320
+        p_ed_lev_3.loc[(df.age_years >= 30) & (df.age_years < 40)] *= m.init_rp_some_ed_sec_age3040
+        p_ed_lev_3.loc[(df.age_years >= 40) & (df.age_years < 50)] *= m.init_rp_some_ed_sec_age4050
+        p_ed_lev_3.loc[(df.age_years >= 50) & (df.age_years < 60)] *= m.init_rp_some_ed_sec_age5060
+        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
+        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
-        random_draw_01 = pd.Series(rng.random_sample(size=len(age_ge5_idx)), index=age_ge5_idx)
+        rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
-        dfx = pd.concat([eff_prob_ed_lev_3, eff_prob_some_ed, random_draw_01], axis=1)
+        dfx = pd.concat([p_ed_lev_3, p_some_ed, rnd_draw], axis=1)
         dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
 
         dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
@@ -414,10 +402,10 @@ class Lifestyle(Module):
         dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
 
         dfx['li_ed_lev'] = 2
-        dfx.loc[dfx['cut_off_ed_levl_3'] < random_draw_01, 'li_ed_lev'] = 3
-        dfx.loc[dfx['p_ed_lev_1'] > random_draw_01, 'li_ed_lev'] = 1
+        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
+        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
 
-        df.loc[age_ge5_idx, 'li_ed_lev'] = dfx['li_ed_lev']
+        df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
         df.loc[(df.age_years >= 5) & (df.age_years < 13) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
         df.loc[(df.age_years >= 5) & (df.age_years < 13) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
