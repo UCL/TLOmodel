@@ -57,7 +57,7 @@ class Lifestyle(Module):
         'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
         'r_contrac': Parameter(Types.REAL, 'prob per 3 months of starting contraceptive if age 15-50'),
         'r_contrac_int': Parameter(Types.REAL, 'prob per 3 months of interrupting or stopping contraception '
-                                               '(note current method of contrac is a different propeerty'),
+                                               '(note current method of contrac is a different property'),
         'r_con_from_1': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 1'),
         'r_con_from_2': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 2'),
         'r_con_from_3': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 3'),
