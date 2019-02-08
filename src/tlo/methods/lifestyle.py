@@ -115,7 +115,7 @@ class Lifestyle(Module):
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
         'li_mar_stat': Property(Types.CATEGORICAL,
-                                'marital status - never, current, past (widowed or divorced)',
+                                'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
                                 categories=[1, 2, 3]),
         'li_on_con': Property(Types.BOOL, 'on contraceptive'),
         'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
