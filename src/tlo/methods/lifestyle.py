@@ -566,8 +566,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         curr_on_con_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 50) &
                                    (df.sex == 'F') & df.li_on_con]
         now_not_on_con = rng.choice([True, False],
-                                      size=len(curr_on_con_idx),
-                                      p=[m.r_contrac_int, 1 - m.r_contrac_int])
+                                    size=len(curr_on_con_idx),
+                                    p=[m.r_contrac_int, 1 - m.r_contrac_int])
         if now_not_on_con.any():
             now_not_on_con_index = curr_on_con_idx[now_not_on_con]
             df.loc[now_not_on_con_index, 'li_on_con'] = False
