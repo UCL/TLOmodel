@@ -339,19 +339,19 @@ class Lifestyle(Module):
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
-        age_1520 = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive]
-        age_2030 = df.index[(df.age_years >= 20) & (df.age_years < 30) & df.is_alive]
-        age_3040 = df.index[(df.age_years >= 30) & (df.age_years < 40) & df.is_alive]
-        age_4050 = df.index[(df.age_years >= 40) & (df.age_years < 50) & df.is_alive]
-        age_5060 = df.index[(df.age_years >= 50) & (df.age_years < 60) & df.is_alive]
-        age_ge60 = df.index[(df.age_years >= 60) & df.is_alive]
+        age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
+        age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
+        age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
+        age_40_49 = df.index[df.age_years.between(40, 49) & df.is_alive]
+        age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
+        age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
 
-        df.loc[age_1520, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_1520), p=m.init_dist_mar_stat_age1520)
-        df.loc[age_2030, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_2030), p=m.init_dist_mar_stat_age2030)
-        df.loc[age_3040, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_3040), p=m.init_dist_mar_stat_age3040)
-        df.loc[age_4050, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_4050), p=m.init_dist_mar_stat_age4050)
-        df.loc[age_5060, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_5060), p=m.init_dist_mar_stat_age5060)
-        df.loc[age_ge60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_ge60), p=m.init_dist_mar_stat_agege60)
+        df.loc[age_15_19, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_15_19), p=m.init_dist_mar_stat_age1520)
+        df.loc[age_20_29, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_20_29), p=m.init_dist_mar_stat_age2030)
+        df.loc[age_30_39, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_30_39), p=m.init_dist_mar_stat_age3040)
+        df.loc[age_40_49, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_40_49), p=m.init_dist_mar_stat_age4050)
+        df.loc[age_50_59, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_50_59), p=m.init_dist_mar_stat_age5060)
+        df.loc[age_gte60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_gte60), p=m.init_dist_mar_stat_agege60)
 
         # -------------------- CONTRACEPTION STATUS ------------------------------------------------
 
@@ -372,10 +372,10 @@ class Lifestyle(Module):
 
         # adjust probability of some education based on age
         p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
-        p_some_ed.loc[(df.age_years >= 13) & (df.age_years < 20)] *= m.init_rp_some_ed_age1320
-        p_some_ed.loc[(df.age_years >= 30) & (df.age_years < 40)] *= m.init_rp_some_ed_age3040
-        p_some_ed.loc[(df.age_years >= 40) & (df.age_years < 50)] *= m.init_rp_some_ed_age4050
-        p_some_ed.loc[(df.age_years >= 50) & (df.age_years < 60)] *= m.init_rp_some_ed_age5060
+        p_some_ed.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_age1320
+        p_some_ed.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_age3040
+        p_some_ed.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_age4050
+        p_some_ed.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_age5060
         p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
 
         # adjust probability of some education based on wealth
@@ -385,10 +385,10 @@ class Lifestyle(Module):
         p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
 
         p_ed_lev_3.loc[(df.age_years < 13)] *= 0
-        p_ed_lev_3.loc[(df.age_years >= 13) & (df.age_years < 20)] *= m.init_rp_some_ed_sec_age1320
-        p_ed_lev_3.loc[(df.age_years >= 30) & (df.age_years < 40)] *= m.init_rp_some_ed_sec_age3040
-        p_ed_lev_3.loc[(df.age_years >= 40) & (df.age_years < 50)] *= m.init_rp_some_ed_sec_age4050
-        p_ed_lev_3.loc[(df.age_years >= 50) & (df.age_years < 60)] *= m.init_rp_some_ed_sec_age5060
+        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
+        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
+        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
+        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
         p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
         p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
@@ -531,7 +531,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
-        curr_never_mar = df.index[df.is_alive & (df.age_years >= 15) & (df.age_years < 30) & (df.li_mar_stat == 1)]
+        curr_never_mar = df.index[df.is_alive & df.age_years.between(15, 29) & (df.li_mar_stat == 1)]
         curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
 
         # update if now married
