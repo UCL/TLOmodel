@@ -21,27 +21,33 @@ class Lifestyle(Module):
     """
 
     PARAMETERS = {
-        'r_urban': Parameter(Types.REAL, 'probability per 3 mths of change from rural to urban'),
-        'r_rural': Parameter(Types.REAL, 'probability per 3 mths of change from urban to rural'),
-        'r_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from not_overwt to overwt if male'),
-        'r_not_overwt': Parameter(Types.REAL, 'probability per 3 mths of change from overwt to not overwt'),
-        'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overwt if female rather than male'),
-        'rr_overwt_urban': Parameter(Types.REAL, 'risk ratio for becoming overwt if urban rather than rural'),
-        'r_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from not low ex to low ex'),
-        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 mths of change from low ex to not low ex'),
-        'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low ex if female rather than male'),
-        'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low ex if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 mths of change from not tob to tob if male '
-                                       'age 15-19 wealth level 1'),
-        'r_not_tob': Parameter(Types.REAL, 'probability per 3 mths of change from tob to not tob'),
-        'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tob if age 20-39 compared with 15-19'),
-        'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tob if age ge 40 compared with 15-19'),
-        'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tob if female'),
-        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tob per 1 higher wealth level '
+        'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
+        'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
+        'r_overwt': Parameter(Types.REAL, 'probability per 3 months of change from not overweight to '
+                                          'overweight if male'),
+        'r_not_overwt': Parameter(Types.REAL, 'probability per 3 months of change from overweight to '
+                                              'not overweight'),
+        'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overweight if female rather than male'),
+        'rr_overwt_urban': Parameter(Types.REAL, 'risk ratio for becoming overweight if urban rather than rural'),
+        'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
+        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to '
+                                              'not low exercise'),
+        'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
+        'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
+        'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
+                                       'tobacco if male age 15-19 wealth level 1'),
+        'r_not_tob': Parameter(Types.REAL, 'probability per 3 months of change from tobacco using to '
+                                           'not tobacco using'),
+        'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
+        'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
+        'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tobacco using if female'),
+        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
                                                '(higher wealth level = lower wealth)'),
-        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from not ex alc to ex alc'),
-        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 mths of change from excess alc to not excess alc'),
-        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming ex alc if female rather than male'),
+        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
+                                          'excess alcohol'),
+        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
+                                              'not excess alcohol'),
+        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -51,20 +57,21 @@ class Lifestyle(Module):
         'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
         'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
         'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
-        'r_mar': Parameter(Types.REAL, 'prob per 3 months of marriage when age 15-30'),
-        'r_div_wid': Parameter(Types.REAL, 'prob per 3 months of becoming divorced or widowed, amongst those married'),
+        'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
+        'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
+                                           'amongst those married'),
         'init_p_on_contrac': Parameter(Types.REAL, 'initial proportion of women age 15-49 on contraceptives'),
         'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
-        'r_contrac': Parameter(Types.REAL, 'prob per 3 months of starting contraceptive if age 15-50'),
-        'r_contrac_int': Parameter(Types.REAL, 'prob per 3 months of interrupting or stopping contraception '
-                                               '(note current method of contrac is a different property'),
-        'r_con_from_1': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 1'),
-        'r_con_from_2': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 2'),
-        'r_con_from_3': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 3'),
-        'r_con_from_4': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 4'),
-        'r_con_from_5': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 5'),
-        'r_con_from_6': Parameter(Types.LIST, 'probs per 3 months of moving from contraception method 6'),
-        'r_stop_ed': Parameter(Types.REAL, 'prob per 3 months of stopping education if wealth level 5'),
+        'r_contrac': Parameter(Types.REAL, 'probability per 3 months of starting contraceptive if age 15-50'),
+        'r_contrac_int': Parameter(Types.REAL, 'probability per 3 months of interrupting or stopping contraception '
+                                               '(note current method of contraception is a different property'),
+        'r_con_from_1': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 1'),
+        'r_con_from_2': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 2'),
+        'r_con_from_3': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 3'),
+        'r_con_from_4': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 4'),
+        'r_con_from_5': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 5'),
+        'r_con_from_6': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 6'),
+        'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
         'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
                                                          '1 lower wealth quintile'),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
@@ -76,24 +83,24 @@ class Lifestyle(Module):
                                                                'school per 1 higher wealth level'),
         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
                                                          'education at baseline'),
-        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'rel prev of some education at baseline if age 1520'),
-        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'rel prev of some education at baseline if age 1520'),
-        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'rel prev of some education at baseline if age 2030'),
-        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'rel prev of some education at baseline if age 3040'),
-        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'rel prev of some education at baseline if age 4050'),
-        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'rel prev of some education at baseline if age 5060'),
+        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
+        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
         'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline '
                                                                    'per higher wealth level'),
         'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
                                                       'proportion of low wealth aged 20-30 with some education who '
                                                       'have secondary education at baseline'),
-        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 15-20'),
-        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 30-40'),
-        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 40-50'),
-        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 50-60'),
-        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of sec_ed for age 60+'),
-        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL,
-                                                           'relative prevalence of sec_ed per higher wealth level'),
+        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
+        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
+        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
+        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
+        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of secondary education '
+                                                                       'per higher wealth level'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -104,7 +111,7 @@ class Lifestyle(Module):
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
-        'li_low_ex': Property(Types.BOOL, 'currently low ex'),
+        'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
         'li_mar_stat': Property(Types.CATEGORICAL,
