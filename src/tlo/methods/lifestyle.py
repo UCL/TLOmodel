@@ -210,8 +210,6 @@ class Lifestyle(Module):
         df['li_in_ed'] = False   # default: not in education
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
 
-        agelt15_index = df.index[df.is_alive & (df.age_years < 15)]
-
         # urban
         # randomly selected some individuals as urban
         initial_urban = p['init_p_urban']
