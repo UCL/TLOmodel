@@ -111,37 +111,68 @@ class Oesophageal_Cancer(Module):
                                                                      'oesophageal dysplasia/cancer treated'),
     }
 
-
-
-
-
-
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'li_urban': Property(Types.BOOL, 'Currently urban'),
-        'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
-        'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_overwt': Property(Types.BOOL, 'currently overweight'),
-        'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
-        'li_tob': Property(Types.BOOL, 'current using tobacco'),
-        'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
-        'li_mar_stat': Property(Types.CATEGORICAL,
-                                'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
-                                categories=[1, 2, 3]),
-        'li_on_con': Property(Types.BOOL, 'on contraceptive'),
-        'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
-        'li_in_ed': Property(Types.BOOL, 'currently in education'),
-        'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
+        'ca_oesophagus': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage: none, low grade dysplasia'
+                                                     'high grade dysplasia, stage 1, stage 2, stage 3, stage 4',
+                                   categories=['none', 'low grade dysplasia', 'high grade dysplasia', 'stage 1',
+                                               'stage 2', 'stage 3', 'stage 4']),
+        'ca_oesophagus_curative_treatment': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage at'
+                                                     'time of curative treatment: never had treatment'
+                                                     'low grade dysplasia'
+                                                     'high grade dysplasia, stage 1, stage 2, stage 3',
+                                  categories=['never','low grade dysplasia', 'high grade dysplasia', 'stage 1',
+                                              'stage 2', 'stage 3']),
+        'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer')
     }
 
     def read_parameters(self, data_folder):
-        """Setup parameters used by the lifestyle module
+        """Setup parameters used by the module
         """
         p = self.parameters
-        p['r_urban'] = 0.002
-        p['r_rural'] = 0.0001
+        p['r_low_grade_dysplasia_none'] = 0.00001
+        p['rr_low_grade_dysplasia_none_female'] = 1.3
+        p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
+        p['rr_low_grade_dysplasia_none_tobacco'] = 2.0
+        p['rr_low_grade_dysplasia_none_ex_alc'] = 1.0
+        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
+        p['rr_high_grade_dysp_undergone_curative_treatment'] = 0.1
+        p['r_stage1_high_grade_dysp'] = 0.01
+        p['rr_stage1_undergone_curative_treatment'] = 0.1
+
+
+        :
+        :
+        :
+        :
+        'r_stage2_stage1':
+        'rr_stage2_undergone_curative_treatment':
+        'r_stage3_stage2':
+        'rr_stage3_undergone_curative_treatment':
+        'r_stage4_stage3':
+        'rr_stage4_undergone_curative_treatment':
+        'r_death_oesoph_cancer':
+        'r_curative_treatment_low_grade_dysp':
+        'rr_curative_treatment_high_grade_dysp':
+        'rr_curative_treatment_stage1':
+        'rr_curative_treatment_stage2':
+        'rr_curative_treatment_stage3':
+        'r_diagnosis_low_grade_dysp':
+        'rr_diagnosis_high_grade_dysp':
+        'rr_diagnosis_stage1':
+        'rr_diagnosis_stage2':
+        'rr_diagnosis_stage3':
+        'rr_diagnosis_stage4':
+        'init_prop_oes_cancer_stage':
+        'rp_oes_cancer_female':
+        'rp_oes_cancer_per_year_older':
+        'rp_oes_cancer_tobacco':
+        'rp_oes_cancer_ex_alc':
+        'init_prop_diagnosed_oes_cancer_by_stage':
+        'init_prop_treatment_status_oes_cancer':
+
         p['r_overwt'] = 0.0025
         p['r_not_overwt'] = 0.001
         p['rr_overwt_f'] = 0.8
