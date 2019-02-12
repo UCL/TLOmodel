@@ -141,100 +141,32 @@ class Oesophageal_Cancer(Module):
         p['rr_high_grade_dysp_undergone_curative_treatment'] = 0.1
         p['r_stage1_high_grade_dysp'] = 0.01
         p['rr_stage1_undergone_curative_treatment'] = 0.1
+        p['r_stage2_stage1'] = 0.05
+        p['rr_stage2_undergone_curative_treatment'] = 0.1
+        p['r_stage3_stage2'] = 0.05
+        p['rr_stage3_undergone_curative_treatment'] = 0.1
+        p['r_stage4_stage3'] = 0.05
+        p['rr_stage4_undergone_curative_treatment'] = 0.3
+        p['r_death_oesoph_cancer'] = 0.4
+        p['r_curative_treatment_low_grade_dysp'] = 0.01
+        p['rr_curative_treatment_high_grade_dysp'] = 1.0
+        p['rr_curative_treatment_stage1'] = 1.0
+        p['rr_curative_treatment_stage2'] = 1.0
+        p['rr_curative_treatment_stage3'] = 1.0
+        p['r_diagnosis_low_grade_dysp'] = 0.002
+        p['rr_diagnosis_high_grade_dysp'] = 2
+        p['rr_diagnosis_stage1'] = 10
+        p['rr_diagnosis_stage2'] = 30
+        p['rr_diagnosis_stage3'] = 40
+        p['rr_diagnosis_stage4'] = 50
+        p['init_prop_oes_cancer_stage'] = [0.9995, 0.0003, 0.0001,0.00005,0.00003, 0.000005,0.000001]
+        p['rp_oes_cancer_female'] = 1.3
+        p['rp_oes_cancer_per_year_older'] = 1.1
+        p['rp_oes_cancer_tobacco'] = 2.0
+        p['rp_oes_cancer_ex_alc'] = 1.0
+        p['init_prop_diagnosed_oes_cancer_by_stage'] = [0.01,0.03,0.10,0.20,0.30,0.8]
+        p['init_p_wealth_rural'] = [0.01,0.01,0.05,0.05,0.05]
 
-
-        :
-        :
-        :
-        :
-        'r_stage2_stage1':
-        'rr_stage2_undergone_curative_treatment':
-        'r_stage3_stage2':
-        'rr_stage3_undergone_curative_treatment':
-        'r_stage4_stage3':
-        'rr_stage4_undergone_curative_treatment':
-        'r_death_oesoph_cancer':
-        'r_curative_treatment_low_grade_dysp':
-        'rr_curative_treatment_high_grade_dysp':
-        'rr_curative_treatment_stage1':
-        'rr_curative_treatment_stage2':
-        'rr_curative_treatment_stage3':
-        'r_diagnosis_low_grade_dysp':
-        'rr_diagnosis_high_grade_dysp':
-        'rr_diagnosis_stage1':
-        'rr_diagnosis_stage2':
-        'rr_diagnosis_stage3':
-        'rr_diagnosis_stage4':
-        'init_prop_oes_cancer_stage':
-        'rp_oes_cancer_female':
-        'rp_oes_cancer_per_year_older':
-        'rp_oes_cancer_tobacco':
-        'rp_oes_cancer_ex_alc':
-        'init_prop_diagnosed_oes_cancer_by_stage':
-        'init_prop_treatment_status_oes_cancer':
-
-        p['r_overwt'] = 0.0025
-        p['r_not_overwt'] = 0.001
-        p['rr_overwt_f'] = 0.8
-        p['rr_overwt_urban'] = 1.5
-        p['r_low_ex'] = 0.001
-        p['r_not_low_ex'] = 0.0001
-        p['rr_low_ex_f'] = 0.6
-        p['rr_low_ex_urban'] = 2.0
-        p['r_tob'] = 0.0004
-        p['r_not_tob'] = 0.000
-        p['rr_tob_f'] = 0.1
-        p['rr_tob_age2039'] = 1.2
-        p['rr_tob_agege40'] = 1.5
-        p['rr_tob_wealth'] = 1.3
-        p['r_ex_alc'] = 0.003
-        p['r_not_ex_alc'] = 0.000
-        p['rr_ex_alc_f'] = 0.07
-        p['init_p_urban'] = 0.17
-        p['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
-        p['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
-        p['init_p_overwt_agelt15'] = 0.0
-        p['init_p_ex_alc_m'] = 0.15
-        p['init_p_ex_alc_f'] = 0.01
-        p['init_dist_mar_stat_age1520'] = [0.70, 0.30, 0.00]
-        p['init_dist_mar_stat_age2030'] = [0.15, 0.80, 0.05]
-        p['init_dist_mar_stat_age3040'] = [0.05, 0.70, 0.25]
-        p['init_dist_mar_stat_age4050'] = [0.03, 0.50, 0.47]
-        p['init_dist_mar_stat_age5060'] = [0.03, 0.30, 0.67]
-        p['init_dist_mar_stat_agege60'] = [0.03, 0.20, 0.77]
-        p['r_mar'] = 0.03
-        p['r_div_wid'] = 0.01
-        p['init_p_on_contrac'] = 0.30
-        p['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
-        p['r_contrac'] = 0.05
-        p['r_contrac_int'] = 0.1
-        p['r_con_from_1'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        p['r_con_from_2'] = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-        p['r_con_from_3'] = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
-        p['r_con_from_4'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-        p['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-        p['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        p['r_stop_ed'] = 0.001
-        p['rr_stop_ed_lower_wealth'] = 1.5
-        p['p_ed_primary'] = 0.94
-        p['rp_ed_primary_higher_wealth'] = 1.01
-        p['p_ed_secondary'] = 0.20
-        p['rp_ed_secondary_higher_wealth'] = 1.45
-        p['init_age2030_w5_some_ed'] = 0.97
-        p['init_rp_some_ed_age0513'] = 1.01
-        p['init_rp_some_ed_age1320'] = 1.00
-        p['init_rp_some_ed_age3040'] = 1.00
-        p['init_rp_some_ed_age4050'] = 0.99
-        p['init_rp_some_ed_age5060'] = 0.99
-        p['init_rp_some_ed_agege60'] = 0.98
-        p['init_rp_some_ed_per_higher_wealth'] = 1.005
-        p['init_prop_age2030_w5_some_ed_sec'] = 0.20
-        p['init_rp_some_ed_sec_age1320'] = 1.00
-        p['init_rp_some_ed_sec_age3040'] = 0.90
-        p['init_rp_some_ed_sec_age4050'] = 0.85
-        p['init_rp_some_ed_sec_age5060'] = 0.80
-        p['init_rp_some_ed_sec_agege60'] = 0.75
-        p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
