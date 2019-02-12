@@ -32,31 +32,31 @@ class Oesophageal_Cancer(Module):
         'r_high_grade_dysplasia_low_grade_dysp': Parameter(Types.REAL, 'probabilty per 3 months of high grade '
                                                                        'oesophageal dysplasia, amongst people with '
                                                                        'low grade dysplasia'),
-        'rr_undergone_curative_treatment_low_grade_dysp': Parameter(Types.REAL, 'rate ratio for high grade dysplasia '
+        'rr_high_grade_dysp_undergone_curative_treatment': Parameter(Types.REAL, 'rate ratio for high grade dysplasia '
                                                                                  'for people with low grade dysplasia '
                                                                                  'if had curative treatment at low '
                                                                                  'grade dysplasia stage'),
         'r_stage1_high_grade_dysp': Parameter(Types.REAL, 'probabilty per 3 months of stage 1 oesophageal cancer '
                                                           'amongst people with high grade dysplasia'),
-        'rr_undergone_curative_treatment_high_grade_dysp': Parameter(Types.REAL, 'rate ratio for stage 1 oesophageal '
+        'rr_stage1_undergone_curative_treatment': Parameter(Types.REAL, 'rate ratio for stage 1 oesophageal '
                                                                                  'cancer for people with high grade '
                                                                                  'dysplasia if had curative treatment '
                                                                                  'at high grade dysplasia stage'),
         'r_stage2_stage1': Parameter(Types.REAL, 'probabilty per 3 months of stage 2 oesophageal cancer '
                                                           'amongst people with stage 1'),
-        'rr_undergone_curative_treatment_stage1': Parameter(Types.REAL, 'rate ratio for stage 2 oesophageal '
+        'rr_stage2_undergone_curative_treatment': Parameter(Types.REAL, 'rate ratio for stage 2 oesophageal '
                                                                                  'cancer for people with stage 1 '
                                                                                  'oesophageal cancer if had curative '
                                                                                  'treatment at stage 1'),
         'r_stage3_stage2': Parameter(Types.REAL, 'probabilty per 3 months of stage 3 oesophageal cancer '
                                                                              'amongst people with stage 2'),
-        'rr_undergone_curative_treatment_stage2': Parameter(Types.REAL, 'rate ratio for stage 3 oesophageal '
+        'rr_stage3_undergone_curative_treatment': Parameter(Types.REAL, 'rate ratio for stage 3 oesophageal '
                                                                         'cancer for people with stage 2 '
                                                                         'oesophageal cancer if had curative '
                                                                         'treatment at stage 2'),
         'r_stage4_stage3': Parameter(Types.REAL, 'probabilty per 3 months of stage 4 oesophageal cancer '
                                                  'amongst people with stage 3'),
-        'rr_undergone_curative_treatment_stage3': Parameter(Types.REAL, 'rate ratio for stage 4 oesophageal '
+        'rr_stage4_undergone_curative_treatment': Parameter(Types.REAL, 'rate ratio for stage 4 oesophageal '
                                                                         'cancer for people with stage 3 '
                                                                         'oesophageal cancer if had curative '
                                                                         'treatment at stage 3'),
@@ -65,139 +65,56 @@ class Oesophageal_Cancer(Module):
         'r_curative_treatment_low_grade_dysp': Parameter(Types.REAL, 'probabilty per 3 months of receiving medical '
                                                                      'treatment aimed at cure if have low grade '
                                                                      'dysplasia, given diagnosis (surgery, '
-                                                                     'radiotherapy, chemotherapy'),
+                                                                     'radiotherapy and/or chemotherapy'),
+        'rr_curative_treatment_high_grade_dysp': Parameter(Types.REAL, 'relative rate of receiving medical '
+                                                                     'treatment aimed at cure if have high grade '
+                                                                     'dysplasia, given diagnosis (surgery, '
+                                                                     'radiotherapy and/or chemotherapy'),
+        'rr_curative_treatment_stage1': Parameter(Types.REAL, 'relative rate of receiving medical '
+                                                                      'treatment aimed at cure if have stage1, '
+                                                                      'given diagnosis (surgery, '
+                                                                      'radiotherapy and/or chemotherapy'),
+        'rr_curative_treatment_stage2': Parameter(Types.REAL, 'relative rate of receiving medical '
+                                                             'treatment aimed at cure if have stage2, '
+                                                             'given diagnosis (surgery, '
+                                                             'radiotherapy and/or chemotherapy'),
+        'rr_curative_treatment_stage3': Parameter(Types.REAL, 'relative rate of receiving medical '
+                                                             'treatment aimed at cure if have stage3, '
+                                                             'given diagnosis (surgery, '
+                                                             'radiotherapy and/or chemotherapy'),
+        'r_diagnosis_low_grade_dysp': Parameter(Types.REAL, 'probability per 3 months of diagnosis in a person with '
+                                                            'low grade oesophageal dysplasia'),
+        'rr_diagnosis_high_grade_dysp': Parameter(Types.REAL, 'rate ratio for diagnosis if have high grade oesophageal '
+                                                              'dysplasia'),
+        'rr_diagnosis_stage1': Parameter(Types.REAL, 'rate ratio for diagnosis if have high stage 1 oesophageal '
+                                                     'cancer'),
+        'rr_diagnosis_stage2': Parameter(Types.REAL, 'rate ratio for diagnosis if have high stage 2 oesophageal '
+                                                     'cancer'),
+        'rr_diagnosis_stage3': Parameter(Types.REAL, 'rate ratio for diagnosis if have high stage 3 oesophageal '
+                                                     'cancer'),
+        'rr_diagnosis_stage4': Parameter(Types.REAL, 'rate ratio for diagnosis if have high stage 4 oesophageal '
+                                                     'cancer'),
+        'init_prop_oes_cancer_stage': Parameter(Types.REAL, 'initial proportions in ca_oesophagus categories for '
+                                                     'man aged 20 with no excess alcohol and no tobacco'),
+        'rp_oes_cancer_female': Parameter(Types.REAL, 'relative prevalence at baseline of oesophageal dysplasia/cancer '
+                                                      'if female '),
+        'rp_oes_cancer_per_year_older': Parameter(Types.REAL, 'relative prevalence at baseline of oesophageal '
+                                                              'dysplasia/cancer per year older than 20 '),
+        'rp_oes_cancer_tobacco': Parameter(Types.REAL, 'relative prevalence at baseline of oesophageal dysplasia/cancer '
+                                                      'if tobacco '),
+        'rp_oes_cancer_ex_alc': Parameter(Types.REAL,
+                                           'relative prevalence at baseline of oesophageal dysplasia/cancer ')
+        'init_prop_diagnosed_oes_cancer_by_stage': Parameter(Types.REAL, 'initial proportions of people with'
+                                                                         'oesophageal dysplasia/cancer diagnosed'),
 
-
-
-'),
-
-
-            rr_curative_treatment_high_grade_dysp
-        rr_curative_treatment_stage1
-            rr_curative_treatment_stage2
-        rr_curative_treatment_stage3
-            r_diagnosis_low_grade_dysp
-        rr_diagnosis_high_grade_dysp
-            rr_diagnosis_stage1
-        rr_diagnosis_stage2
-            rr_diagnosis_stage3
-        rr_diagnosis_stage4
-            init_prop_oes_cancer_stage
-        rp_oes_cancer_female
-            rp_oes_cancer_per_year_older
-        init_prop_diagnosed_oes_cancer_by_stage
-            init_prop_treatment_status_oes_cancer
-
-
-
-
-        rate ratio for receiving treatment aimed at cure if have high grade dysplasia
-    rate ratio for receiving treatment aimed at cure if have stage 1 oesophageal caancer
-    rate ratio for receiving treatment aimed at cure if have stage 2 oesophageal caancer
-    rate ratio for receiving treatment aimed at cure if have stage 3 oesophageal caancer
-    probability per 3 months of diagnosis in a person with low grade oesophageal dysplasia
-    rate ratio for diagnosis if have high grade oesophageal dysplasia
-    rate ratio for diagnosis if have stage1 oesophageal cancer
-    rate ratio for diagnosis if have stage2 oesophageal cancer
-    rate ratio for diagnosis if have stage3 oesophageal cancer
-    rate ratio for diagnosis if have stage4 oesophageal cancer
-    oesophageal cancer stage at baseline (value of ca_oesophagus at baseline) if age 20 and male
-    relative prevalence of oesophageal cancer at baseline if female
-    relative prevalence of oesophageal cancer at baseline per year older
-    whether diagnosed with oesophageal cancer at baseline  (value of ca_oesophagus_diagnosed) (applies to low grade dysplasia to stage 4)
-    whether treated for oes cancer and stage of treatment  (value of ca_oesophagus_curative_treatment at baseline) (applies for low grade dysplasia to stage3)
-
-
-
-
-
-
-
-
-
-
-
-
-       'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
-        'r_overwt': Parameter(Types.REAL, 'probability per 3 months of change from not overweight to '
-                                          'overweight if male'),
-        'r_not_overwt': Parameter(Types.REAL, 'probability per 3 months of change from overweight to '
-                                              'not overweight'),
-        'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overweight if female rather than male'),
-        'rr_overwt_urban': Parameter(Types.REAL, 'risk ratio for becoming overweight if urban rather than rural'),
-        'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
-        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to '
-                                              'not low exercise'),
-        'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
-        'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
-                                       'tobacco if male age 15-19 wealth level 1'),
-        'r_not_tob': Parameter(Types.REAL, 'probability per 3 months of change from tobacco using to '
-                                           'not tobacco using'),
-        'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
-        'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
-        'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tobacco using if female'),
-        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
-                                               '(higher wealth level = lower wealth)'),
-        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
-                                          'excess alcohol'),
-        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
-                                              'not excess alcohol'),
-        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
-        'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
-        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
-        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_dist_mar_stat_age1320': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
-        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
-        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
-        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
-        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
-        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
-        'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
-        'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
-                                           'amongst those married'),
-        'init_p_on_contrac': Parameter(Types.REAL, 'initial proportion of women age 15-49 on contraceptives'),
-        'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
-        'r_contrac': Parameter(Types.REAL, 'probability per 3 months of starting contraceptive if age 15-50'),
-        'r_contrac_int': Parameter(Types.REAL, 'probability per 3 months of interrupting or stopping contraception '
-                                               '(note current method of contraception is a different property'),
-        'r_con_from_1': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 1'),
-        'r_con_from_2': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 2'),
-        'r_con_from_3': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 3'),
-        'r_con_from_4': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 4'),
-        'r_con_from_5': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 5'),
-        'r_con_from_6': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 6'),
-        'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
-        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
-                                                         '1 lower wealth quintile'),
-        'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
-        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 '
-                                                             'higher wealth level'),
-        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 '
-                                                'if in primary education and wealth level 5'),
-        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
-                                                               'school per 1 higher wealth level'),
-        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
-                                                         'education at baseline'),
-        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
-        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
-        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
-        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
-        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
-        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
-        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline '
-                                                                   'per higher wealth level'),
-        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
-                                                      'proportion of low wealth aged 20-30 with some education who '
-                                                      'have secondary education at baseline'),
-        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
-        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
-        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
-        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
-        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
-        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of secondary education '
-                                                                       'per higher wealth level'),
+        'init_prop_treatment_status_oes_cancer': Parameter(Types.REAL,'initial proportions of people with'
+                                                                     'oesophageal dysplasia/cancer treated'),
     }
+
+
+
+
+
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
