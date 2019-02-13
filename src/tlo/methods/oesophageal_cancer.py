@@ -103,7 +103,7 @@ class Oesophageal_Cancer(Module):
         'rp_oes_cancer_tobacco': Parameter(Types.REAL, 'relative prevalence at baseline of oesophageal dysplasia/cancer '
                                                       'if tobacco '),
         'rp_oes_cancer_ex_alc': Parameter(Types.REAL,
-                                           'relative prevalence at baseline of oesophageal dysplasia/cancer ')
+                                           'relative prevalence at baseline of oesophageal dysplasia/cancer '),
         'init_prop_diagnosed_oes_cancer_by_stage': Parameter(Types.REAL, 'initial proportions of people with'
                                                                          'oesophageal dysplasia/cancer diagnosed'),
 
@@ -159,7 +159,7 @@ class Oesophageal_Cancer(Module):
         p['rr_diagnosis_stage2'] = 30
         p['rr_diagnosis_stage3'] = 40
         p['rr_diagnosis_stage4'] = 50
-        p['init_prop_oes_cancer_stage'] = [0.9995, 0.0003, 0.0001,0.00005,0.00003, 0.000005,0.000001]
+        p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
         p['rp_oes_cancer_female'] = 1.3
         p['rp_oes_cancer_per_year_older'] = 1.1
         p['rp_oes_cancer_tobacco'] = 2.0
@@ -178,35 +178,60 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['li_urban'] = False  # default: all individuals rural
-        df['li_date_trans_to_urban'] = pd.NaT
-        df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
-        df['li_overwt'] = False  # default: all not overwt
-        df['li_low_ex'] = False  # default all not low ex
-        df['li_tob'] = False  # default all not tob
-        df['li_ex_alc'] = False  # default all not ex alc
-        df['li_mar_stat'].values[:] = 1  # default: all individuals never married
-        df['li_on_con'] = False  # default: all not on contraceptives
+        df['ca_oesophagus'].values[:] = 'none'  # default: all individuals do not have oesophageal dysplasia/cancer
+        df['ca_oesophagus_curative_treatment'].values[:] = 'never'  # default: all individuals never had treatment for oesophageal dysplasia/cancer
+        df['ca_oesophagus_diagnosed'] = False  # default: all individuals do not have oesophageal dysplasia/cancer
 
-        # default: call contraceptive type 1, but when li_on_con = False this property becomes most
-        # recent contraceptive used
-        df['li_con_t'].values[:] = 1
+        # -------------------- OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE--------------------------------------------------
 
-        df['li_in_ed'] = False   # default: not in education
-        df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
+        agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
 
-        # -------------------- URBAN-RURAL STATUS --------------------------------------------------
+        # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
+ #      p_oes_dys_can = pd.Series(m.init_prop_oes_cancer_stage)
 
-        # randomly selected some individuals as urban
-        df['li_urban'] = (rng.random_sample(size=len(df)) < m.init_p_urban)
+        p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage],
+                                     columns=['low grade dysplasia', 'high grade dysplasia', 'stage 1',
+                                              'stage 2', 'stage 3', 'stage 4'], index=agege20_idx)
 
-        # get the indices of all individuals who are urban or rural
-        urban_index = df.index[df.is_alive & df.li_urban]
-        rural_index = df.index[df.is_alive & ~df.li_urban]
+        p_oes_dys_can.loc[df.sex == 'F'] *= m.rp_oes_cancer_female
+        p_oes_dys_can.loc[df.li_ex_alc == 'F'] *= m.rp_oes_cancer_female
 
-        # randomly sample wealth category according to urban/rural wealth probs
-        df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_index), p=m.init_p_wealth_urban)
-        df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_index), p=m.init_p_wealth_rural)
+        # adjust probability of some education based on age
+        p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
+        p_some_ed.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_age1320
+        p_some_ed.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_age3040
+        p_some_ed.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_age4050
+        p_some_ed.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_age5060
+        p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
+
+        # adjust probability of some education based on wealth
+        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+
+        # calculate baseline of education level 3, and adjust for age and wealth
+        p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
+
+        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
+        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
+        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
+        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
+        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
+        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
+        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+
+        rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
+
+        dfx = pd.concat([p_ed_lev_3, p_some_ed, rnd_draw], axis=1)
+        dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
+
+        dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
+        dfx['p_ed_lev_3'] = dfx['eff_prob_ed_lev_3']
+        dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
+
+        dfx['li_ed_lev'] = 2
+        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
+        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
+
+        df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
 
         # -------------------- OVERWEIGHT ----------------------------------------------------------
 
