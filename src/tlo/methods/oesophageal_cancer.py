@@ -193,8 +193,12 @@ class Oesophageal_Cancer(Module):
                                      columns=['low grade dysplasia', 'high grade dysplasia', 'stage 1',
                                               'stage 2', 'stage 3', 'stage 4'], index=agege20_idx)
 
-        p_oes_dys_can.loc[df.sex == 'F'] *= m.rp_oes_cancer_female
-        p_oes_dys_can.loc[df.li_ex_alc == 'F'] *= m.rp_oes_cancer_female
+ #      p_oes_dys_can.loc[df.sex == 'F' & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
+ #      p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
+ #      p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
+        p_oes_dys_can.loc[(df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_per_year_older ** (df['age_years']
+                                                                                                    - 20)
+
 
         # adjust probability of some education based on age
         p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
