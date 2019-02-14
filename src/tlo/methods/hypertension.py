@@ -71,8 +71,8 @@ class HT(Module):
         """
 
         params = self.parameters
-        params['prob_HT_basic'] = 1
-        params['prob_HTgivenHC'] = 2 # 1.28
+        params['prob_HT_basic'] = 1.0
+        params['prob_HTgivenHC'] = 2.0 # 1.28
         # params['prob_HTgivenDiab'] = 1.4
         # params['prob_HTgivenHIV'] = 1.49
         params['prob_success_treat'] = 0.5
@@ -92,39 +92,48 @@ class HT(Module):
         now = self.sim.date
 
         # 2. Set default values for all variables to be initialised
-        df['ht_risk'] = 'N'  # Default setting: no risk given pre-existing conditions
+        df['ht_risk'] = 1.0  # Default setting: no risk given pre-existing conditions
         df['ht_current_status'] = False   # Default setting: no one has hypertension
         df['ht_historic_status'] = 'N'    # Default setting: no one has hypertension
         df['ht_date_case'] = pd.NaT       # Default setting: no one has a date for hypertension
         df['ht_treatment_status'] = 'N'   # Default setting: no one is treated
         df['ht_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
 
+        # TODO: REMOVE THIS!
+        population.make_test_property('hc_current_status', Types.BOOL)
+        population.props['hc_current_status'] = False
 
         # 3. Assign prevalence as per data, by using probability by age
-        joined = pd.merge(population.age, HT_prevalence, left_on=['years'], right_on=['age'], how='left')
-        random_numbers = np.random.rand(len(df))
+        alive_count = df.is_alive.sum()
+        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence,
+                                               left_on=['age_years'],
+                                               right_on=['age'],
+                                               how='inner')['probability']
+        assert alive_count == len(ht_prob)
 
         # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
-        df.loc[~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic           # Basic risk, no pre-existing conditions
-        df.loc[df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC           # Risk if pre-existing high cholesterol
-        joined.probability_updated = joined.probability * df.ht_risk            # Update 'real' prevalence
-        df['ht_current_status'] = (joined.probability_updated > random_numbers) # Assign prevalence at t0
+        df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic           # Basic risk, no pre-existing conditions
+        df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC           # Risk if pre-existing high cholesterol
+
+        ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
+
+        random_numbers = self.rng.random_sample(size=alive_count)
+        df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)  # Assign prevalence at t0
 
         # 3.2 Ways to check what's happening
         # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
         # temp = pd.DataFrame([population.age.years, joined.Proportion, random_numbers, df['ht_current_status']])
 
         # 4. Count all individuals by status at the start
-        hypertension_count = df.ht_current_status.sum()
-        pop_count = len(df.ht_current_status)
+        hypertension_count = (df.is_alive & df.ht_current_status).sum()
 
         # 5. Set date of hypertension amongst those with prevalent cases
-        ht_years_ago = np.random.exponential(scale=5, size=hypertension_count)
-        infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
+        ht_years_ago = self.rng.exponential(scale=5, size=hypertension_count)
+        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
 
         # 5.1 Set the properties of those with prevalent hypertension
-        df.loc[df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
-        df.loc[df.ht_current_status, 'ht_historic_status'] = 'C'
+        df.loc[df.is_alive & df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
+        df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
         print("\n", "Population has been initialised, prevalent cases have been assigned.  ")
 
@@ -150,7 +159,16 @@ class HT(Module):
         :param mother: the mother for this child
         :param child: the new child
         """
-        pass
+        df = self.sim.population.props
+        df.at[child, 'ht_risk'] = 1.0  # Default setting: no risk given pre-existing conditions
+        df.at[child, 'ht_current_status'] = False   # Default setting: no one has hypertension
+        df.at[child, 'ht_historic_status'] = 'N'    # Default setting: no one has hypertension
+        df.at[child, 'ht_date_case'] = pd.NaT       # Default setting: no one has a date for hypertension
+        df.at[child, 'ht_treatment_status'] = 'N'   # Default setting: no one is treated
+        df.at[child, 'ht_date_treatment'] = pd.NaT  # Details setting: no one has a date of treatment
+
+        # TODO: REMOVE THIS!
+        df.at[child, 'hc_current_status'] = False
 
 
 class HTEvent(RegularEvent, PopulationScopeEventMixin):
@@ -185,55 +203,42 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. Basic items and output
         df = population.props
-        ht_total = df.ht_current_status.sum()
-        proportion_ht = ht_total / len(df)
+        rng = self.module.rng
+
+        ht_total = (df.is_alive & df.ht_current_status).sum()
 
         # 2. Get (and hold) index of people with and w/o hypertension
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
 
         # 3. Handle new cases of hypertension
-        ages_of_no_ht = population.age.loc[currently_ht_no]
-        joined = pd.merge(ages_of_no_ht.reset_index(), HT_incidence, left_on=['years'], right_on=['age'], how='left').set_index('person')
-        random_numbers = np.random.rand(len(joined))
+        ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
+                                               left_on=['age_years'],
+                                               right_on=['age'],
+                                               how='inner').set_index('person')['probability']
+
+        assert len(currently_ht_no) == len(ht_prob)
 
         # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
-        df.loc[~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
-        df.loc[df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
-        joined.probability_updated = joined.probability * df.ht_risk  # Update 'real' incidence
-        now_hypertensive = (joined.probability_updated > random_numbers)  # Assign incidence
+        df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
+        ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
+
+        random_numbers = rng.random_sample(size=len(ht_prob))
+        now_hypertensive = (ht_prob > random_numbers)  # Assign incidence
 
         # 3.2 Ways to check what's happening
-        temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
-        temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])
+        #temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
+        #temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])
 
         # 3.3 If newly hypertensive
-        if now_hypertensive.sum():
+        ht_idx = currently_ht_no[now_hypertensive]
 
-            ht_idx = currently_ht_no[now_hypertensive]
-
-            df.loc[ht_idx, 'ht_current_status'] = True
-            df.loc[ht_idx, 'ht_historic_status'] = 'C'
-            df.loc[ht_idx, 'ht_date_case'] = self.sim.date
+        df.loc[ht_idx, 'ht_current_status'] = True
+        df.loc[ht_idx, 'ht_historic_status'] = 'C'
+        df.loc[ht_idx, 'ht_date_case'] = self.sim.date
 
         print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  ")
-
-        # 4. Handle cure
-        ages_of_yes_ht = population.age.loc[currently_ht_yes]
-
-        joined = pd.merge(ages_of_yes_ht.reset_index(), HT_treatment, left_on=['years'], right_on=['age'],
-                          how='left').set_index('person')
-        random_numbers = np.random.rand(len(joined))
-        now_treated = (joined.probability > random_numbers)
-
-        # 4.1 If newly treated
-        if now_treated.sum():
-            ht_idx = currently_ht_yes[now_treated]
-
-            df.loc[ht_idx, 'ht_treatment_status'] = 'C'
-            df.loc[ht_idx, 'ht_date_treatment'] = self.sim.date
-
-        print("\n", "Treatment has been assigned.  ")
 
 
 class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
