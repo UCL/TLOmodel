@@ -1,5 +1,5 @@
 """
-A skeleton template for disease methods.
+Male circumcision
 """
 import numpy as np
 import pandas as pd
@@ -13,9 +13,10 @@ class male_circumcision(Module):
     male circumcision, without health system links
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, workbook_path=None, par_est5=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+        self.rate_circum = par_est5
         self.store = {'Time': [], 'proportion_circumcised': [], 'recently_circumcised': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -47,10 +48,9 @@ class male_circumcision(Module):
         params['param_list'] = pd.read_excel(self.workbook_path,
                                              sheet_name='circumcision')
         # print('param_list', self.param_list.head())
-        #
-        # # params['initial_circumcision'] = self.param_list.loc[self.param_list.year == now, 'coverage'].values
-        # params['initial_circumcision'] = 0.23
-        # print('initial_circumcision', params['initial_circumcision'])
+
+        params['rate_circum'] = float(self.rate_circum)
+
 
     def initialise_population(self, population):
         df = population.props
@@ -81,16 +81,15 @@ class male_circumcision(Module):
             df.loc[circum_idx, 'is_circumcised'] = True
             df.loc[circum_idx, 'date_circumcised'] = self.sim.date
 
-
     def initialise_simulation(self, sim):
         """
         """
-        # add the basic event (we will implement below)
+        # add the basic event
         event = CircumcisionEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
         # add an event to log to screen
-        sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -98,7 +97,7 @@ class male_circumcision(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'is_circumcised'] = False
-        df.at[child_id, 'date_latent_tb'] = pd.NaT
+        df.at[child_id, 'date_circumcised'] = pd.NaT
 
 
 class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
@@ -114,21 +113,12 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        prob_df = params['param_list']
-        # print('test', prob_df)
-
-        # probability of circumcision using reported coverage
-        # print('year', now.year)
-        prob_circumcision = prob_df.loc[prob_df.year == now.year, 'prob_circum'].values[0]
-
-        # print('prob_circumcision', prob_circumcision)
-
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of circumcision
         circumcision_index = df.index[
-            (random_draw < prob_circumcision) & ~df.is_circumcised & df.is_alive & (df.age_years >= 10) & (
+            (random_draw < params['rate_circum']) & ~df.is_circumcised & df.is_alive & (df.age_years >= 10) & (
                 df.age_years < 35) & (df.sex == 'M')]
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
@@ -138,15 +128,15 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
         """
-        # run this event every month
-        self.repeat = 6
+        # run this event every year
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         # get some summary statistics
         df = population.props
 
-        circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.is_circumcised])
+        circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.is_circumcised & (df.sex == 'M')])
         proportion_circumcised = circumcised_total / len(
             df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
 

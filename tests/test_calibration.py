@@ -1,9 +1,7 @@
 import logging
 
-import pytest  # this is the library for testing
-import matplotlib.pyplot as plt
 import pandas as pd
-from scipy import optimize
+import pytest  # this is the library for testing
 
 from tlo import Date, Simulation
 from tlo.methods import demography, antiretroviral_therapy, hiv_infection, health_system_hiv, health_system_tb, tb, \
@@ -16,7 +14,7 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, healt
 
 # York
 path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx' # update for new demog file
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
 path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
 path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
@@ -38,7 +36,8 @@ test_data = pd.read_excel(path_hs, sheet_name='testing_calibration', header=0)
 # number starting treatment
 treat_data = pd.read_excel(path_hs, sheet_name='art_calibration', header=0)
 
-
+# coverage of VMMC
+circumcision_data = pd.read_excel(path_hiv, sheet_name='circumcision', header=0)
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 2, 1)
@@ -46,7 +45,6 @@ popsize = 10000
 
 
 def test_function(params):
-
     @pytest.fixture
     def simulation():
         sim = Simulation(start_date=start_date)
@@ -57,7 +55,7 @@ def test_function(params):
         art_module = antiretroviral_therapy.art(workbook_path=path_hs)
         hs_module = health_system_hiv.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
                                                     par_est3=params[3], par_est4=params[4])
-        circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv)
+        circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
         behavioural_module = hiv_behaviour_change.BehaviourChange()
         tb_module = tb.tb_baseline(workbook_path=path_tb)
         hs_tb_module = health_system_tb.health_system_tb()
@@ -95,6 +93,7 @@ def test_function(params):
     new_test_child = simulation.modules['health_system'].store['Number_tested_child']
     new_treatment_adult = simulation.modules['health_system'].store['Number_treated_adult']
     new_treatment_child = simulation.modules['health_system'].store['Number_treated_child']
+    coverage_circumcision = simulation.modules['male_circumcision'].store['proportion_circumcised']
 
     # calibrate using least squares
     # check years are matching - 2011-2018
@@ -107,13 +106,19 @@ def test_function(params):
     ss_treat_ad = sum((treat_data.adults - new_treatment_adult) ^ 2)
     ss_treat_child = sum((treat_data.children - new_treatment_child) ^ 2)
 
-    total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child + ss_treat_ad + ss_treat_child
+    # coverage estimates VMMC 2013, 2015
+    ss_vmmc2013 = sum((circumcision_data[3] - coverage_circumcision[3]) ^ 2)
+    ss_vmmc2015 = sum((circumcision_data[5] - coverage_circumcision[5]) ^ 2)
+
+    total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child + ss_treat_ad + ss_treat_child + ss_vmmc2013 + \
+        ss_vmmc2015
+
     print('total_ss', total_ss)
     return total_ss
 
 
 # test run with starting values
-params = [0.5, 0.5, 0.5, 0.5, 0.5]
+params = [0.5, 0.5, 0.5, 0.5, 0.5, 0.1]
 test_function(params)
 
 # calibration
