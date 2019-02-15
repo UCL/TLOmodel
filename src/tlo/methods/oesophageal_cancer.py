@@ -178,8 +178,8 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['ca_oesophagus'].values[:] = 'none'  # default: all individuals do not have oesophageal dysplasia/cancer
-        df['ca_oesophagus_curative_treatment'].values[:] = 'never'  # default: all individuals never had treatment for oesophageal dysplasia/cancer
+        df['ca_oesophagus'] = 'none'  # default: all individuals do not have oesophageal dysplasia/cancer
+        df['ca_oesophagus_curative_treatment'] = 'never'  # default: all individuals never had treatment for oesophageal dysplasia/cancer
         df['ca_oesophagus_diagnosed'] = False  # default: all individuals do not have oesophageal dysplasia/cancer
 
         # -------------------- OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE--------------------------------------------------
@@ -187,17 +187,55 @@ class Oesophageal_Cancer(Module):
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
 
         # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
- #      p_oes_dys_can = pd.Series(m.init_prop_oes_cancer_stage)
-
         p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage],
                                      columns=['low grade dysplasia', 'high grade dysplasia', 'stage 1',
                                               'stage 2', 'stage 3', 'stage 4'], index=agege20_idx)
 
- #      p_oes_dys_can.loc[df.sex == 'F' & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
- #      p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
- #      p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
-        p_oes_dys_can.loc[(df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_per_year_older ** (df['age_years']
-                                                                                                    - 20)
+        # create probabilities of oes dysplasia and oe cancer for all over age 20
+        p_oes_dys_can.loc[(df.sex == 'F') & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
+        p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
+        p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
+
+        p_oes_dys_can_age_muliplier = pd.Series(m.rp_oes_cancer_per_year_older ** (df.age_years - 20),
+                                                index=agege20_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(agege20_idx)),
+                                   index=df.index[(df.age_years >= 20) & df.is_alive])
+        dfx = pd.concat([p_oes_dys_can, p_oes_dys_can_age_muliplier, random_draw], axis=1)
+        dfx.columns = ['p_low_grade_dysplasia', 'p_high_grade_dysplasia', 'p_stage1',
+                                              'p_stage2', 'p_stage3', 'p_stage4', 'p_oes_dys_can_age_muliplier',
+                                               'random_draw']
+
+        dfx.p_low_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
+        dfx.p_high_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
+        dfx.p_stage1 *= dfx.p_oes_dys_can_age_muliplier
+        dfx.p_stage2 *= dfx.p_oes_dys_can_age_muliplier
+        dfx.p_stage3 *= dfx.p_oes_dys_can_age_muliplier
+        dfx.p_stage4 *= dfx.p_oes_dys_can_age_muliplier
+
+        dfx.cut_off_low_grade_dysplasia = dfx.p_low_grade_dysplasia
+        dfx.cut_off_high_grade_dysplasia = dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia
+        dfx.cut_off_stage1 = dfx.cut_off_high_grade_dysplasia + dfx.p_stage1
+        dfx.cut_off_stage2 = dfx.cut_off_stage1 + dfx.p_stage2
+        dfx.cut_off_stage3 = dfx.cut_off_stage2 + dfx.p_stage3
+        dfx.cut_off_stage4 = dfx.cut_off_stage3 + dfx.p_stage3
+
+        idx_low_grade_dysplasia = dfx.index[dfx.cut_off_low_grade_dysplasia > dfx.random_draw]
+        idx_high_grade_dysplasia = dfx.index[(dfx.cut_off_low_grade_dysplasia < dfx.random_draw) &
+                                             (dfx.cut_off_high_grade_dysplasia > dfx.random_draw)]
+        idx_stage1 = dfx.index[(dfx.cut_off_high_grade_dysplasia < dfx.random_draw) &
+                                             (dfx.cut_off_stage1 > dfx.random_draw)]
+        idx_stage2 = dfx.index[(dfx.cut_off_stage1 < dfx.random_draw) & (dfx.cut_off_stage2 > dfx.random_draw)]
+        idx_stage3 = dfx.index[(dfx.cut_off_stage2 < dfx.random_draw) & (dfx.cut_off_stage3 > dfx.random_draw)]
+        idx_stage4 = dfx.index[(dfx.cut_off_stage3 < dfx.random_draw) & (dfx.cut_off_stage4 > dfx.random_draw)]
+
+        df.loc[idx_low_grade_dysplasia, 'ca_oesophagus'] = 'low_grade_dysplasia'
+        df.loc[idx_high_grade_dysplasia, 'ca_oesophagus'] = 'high_grade_dysplasia'
+        df.loc[idx_stage1, 'ca_oesophagus'] = 'stage 1'
+        df.loc[idx_stage2, 'ca_oesophagus'] = 'stage 2'
+        df.loc[idx_stage3, 'ca_oesophagus'] = 'stage 3'
+        df.loc[idx_stage4, 'ca_oesophagus'] = 'stage 4'
+
 
 
         # adjust probability of some education based on age
