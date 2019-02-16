@@ -27,7 +27,7 @@ path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 # path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 2, 1)
+end_date = Date(2013, 2, 1)
 popsize = 10000
 
 params = [0.5, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
@@ -102,47 +102,54 @@ tb_tests = simulation.modules['health_system_tb'].store['Number_tested_tb']
 plt.figure(1)
 
 # hiv cases
-ax = plt.subplot(221)  # numrows, numcols, fignum
+ax = plt.subplot(321)  # numrows, numcols, fignum
 plt.plot(time, hiv_output)
 plt.legend(['HIV'], loc='upper right')
 ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
 # hiv deaths
-ax = plt.subplot(222)  # numrows, numcols, fignum
+ax = plt.subplot(322)  # numrows, numcols, fignum
 plt.plot(time, hiv_deaths)
 plt.plot(time_deaths_art, deaths_art)
 plt.legend(['AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
 ax.set_xticklabels([])
 plt.ylabel('Number of death')
 
-# tb cases
-# ax = plt.subplot(222)
-# plt.plot(time2, active_tb)
-# plt.plot(time_tb_death, tb_deaths)
-# plt.ylim(bottom=0)
-# plt.legend(['TB', 'TB deaths'], loc='upper right')
-# ax.set_xticklabels([])
-# plt.ylabel('Number of cases')
-
 # testing hiv/tb
-plt.subplot(223)
+plt.subplot(323)
 plt.plot(testing_dates, number_tested)
 plt.plot(time_test_tb, tb_tests)
-plt.plot(testing_dates, number_treated)
 plt.ylim(bottom=0)
-plt.legend(['HIV testing', 'TB testing', 'on ART'], loc='upper right')
+plt.legend(['HIV testing', 'TB testing'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Number of tests')
 
+# treatment hiv/tb
+plt.subplot(324)
+plt.plot(testing_dates, number_treated)
+plt.ylim(bottom=0)
+plt.legend(['on ART'], loc='upper right')
+plt.xticks(rotation=45)
+plt.ylabel('Number on treatment')
+
 # counselling / circumcised
-plt.subplot(224)
+plt.subplot(325)
 plt.plot(time_circum, prop_circum)
 plt.plot(time_behav, prop_counselled)
 plt.ylim(bottom=0)
 plt.legend(['circumcised', 'counselled'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Proportion')
+
+# tb cases
+ax = plt.subplot(326)
+plt.plot(time2, active_tb)
+plt.plot(time_tb_death, tb_deaths)
+plt.ylim(bottom=0)
+plt.legend(['TB', 'TB deaths'], loc='upper right')
+ax.set_xticklabels([])
+plt.ylabel('Number of cases')
 
 plt.show()
 

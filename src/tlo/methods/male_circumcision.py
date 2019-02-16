@@ -116,10 +116,13 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
+        print('rate_circum', params['rate_circum'])
+
         # probability of circumcision
         circumcision_index = df.index[
             (random_draw < params['rate_circum']) & ~df.is_circumcised & df.is_alive & (df.age_years >= 10) & (
                 df.age_years < 35) & (df.sex == 'M')]
+        print('circumcision_index', circumcision_index)
         df.loc[circumcision_index, 'is_circumcised'] = True
         df.loc[circumcision_index, 'date_circumcised'] = now
 
@@ -129,7 +132,7 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """comments...
         """
         # run this event every year
-        self.repeat = 12
+        self.repeat = 6
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
