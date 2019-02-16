@@ -513,7 +513,7 @@ class hiv(Module):
         df.at[child_id, 'date_aids_death'] = pd.NaT
         df.at[child_id, 'sexual_risk_group'] = 'low'
 
-        # TODO: include risk during breastfeeding period
+        # TODO: include risk during breastfeeding period - scheduled event during whole period of exposure
 
         #  MTCT
         #  transmission during pregnancy / delivery
