@@ -10,7 +10,7 @@ workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 4, 1)
-popsize = 500
+popsize = 10000
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +27,7 @@ def simulation():
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
     sim.register(oesophageal_cancer.Oesophageal_Cancer())
-    sim.seed_rngs(1)
+#   sim.seed_rngs(1)
     return sim
 
 

@@ -104,10 +104,10 @@ class Oesophageal_Cancer(Module):
                                                       'if tobacco '),
         'rp_oes_cancer_ex_alc': Parameter(Types.REAL,
                                            'relative prevalence at baseline of oesophageal dysplasia/cancer '),
-        'init_prop_diagnosed_oes_cancer_by_stage': Parameter(Types.REAL, 'initial proportions of people with'
+        'init_prop_diagnosed_oes_cancer_by_stage': Parameter(Types.LIST, 'initial proportions of people with'
                                                                          'oesophageal dysplasia/cancer diagnosed'),
 
-        'init_prop_treatment_status_oes_cancer': Parameter(Types.REAL,'initial proportions of people with'
+        'init_prop_treatment_status_oes_cancer': Parameter(Types.LIST,'initial proportions of people with'
                                                                      'oesophageal dysplasia/cancer treated'),
     }
 
@@ -115,16 +115,16 @@ class Oesophageal_Cancer(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'ca_oesophagus': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage: none, low grade dysplasia'
-                                                     'high grade dysplasia, stage 1, stage 2, stage 3, stage 4',
-                                   categories=['none', 'low grade dysplasia', 'high grade dysplasia', 'stage 1',
-                                               'stage 2', 'stage 3', 'stage 4']),
+        'ca_oesophagus': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage: none, low_grade_dysplasia'
+                                                     'high_grade_dysplasia, stage1, stage2, stage3, stage4',
+                                   categories=['none', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
+                                               'stage2', 'stage3', 'stage4']),
         'ca_oesophagus_curative_treatment': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage at'
                                                      'time of curative treatment: never had treatment'
                                                      'low grade dysplasia'
                                                      'high grade dysplasia, stage 1, stage 2, stage 3',
-                                  categories=['never','low grade dysplasia', 'high grade dysplasia', 'stage 1',
-                                              'stage 2', 'stage 3']),
+                                  categories=['never','low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
+                                              'stage2', 'stage3']),
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer')
     }
 
@@ -164,8 +164,9 @@ class Oesophageal_Cancer(Module):
         p['rp_oes_cancer_per_year_older'] = 1.1
         p['rp_oes_cancer_tobacco'] = 2.0
         p['rp_oes_cancer_ex_alc'] = 1.0
-        p['init_prop_diagnosed_oes_cancer_by_stage'] = [0.01,0.03,0.10,0.20,0.30,0.8]
-        p['init_p_wealth_rural'] = [0.01,0.01,0.05,0.05,0.05]
+ #      p['init_prop_diagnosed_oes_cancer_by_stage'] = [0.01, 0.03, 0.10, 0.20, 0.30, 0.8]
+        p['init_prop_diagnosed_oes_cancer_by_stage'] = [1   , 1   , 1   , 1   , 1   ,1   ]
+        p['init_prop_treatment_status_oes_cancer'] = [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]
 
 
     def initialise_population(self, population):
@@ -178,11 +179,11 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['ca_oesophagus'] = 'none'  # default: all individuals do not have oesophageal dysplasia/cancer
-        df['ca_oesophagus_curative_treatment'] = 'never'  # default: all individuals never had treatment for oesophageal dysplasia/cancer
-        df['ca_oesophagus_diagnosed'] = False  # default: all individuals do not have oesophageal dysplasia/cancer
+        df['ca_oesophagus'] = 'none'
+        df['ca_oesophagus_diagnosed'] = False
+        df['ca_oesophagus_curative_treatment'] = 'never'
 
-        # -------------------- OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE--------------------------------------------------
+        # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
 
@@ -201,10 +202,11 @@ class Oesophageal_Cancer(Module):
 
         random_draw = pd.Series(rng.random_sample(size=len(agege20_idx)),
                                    index=df.index[(df.age_years >= 20) & df.is_alive])
+
+        # create a temporary dataframe called dfx to hold values of probabilities and random draw
         dfx = pd.concat([p_oes_dys_can, p_oes_dys_can_age_muliplier, random_draw], axis=1)
-        dfx.columns = ['p_low_grade_dysplasia', 'p_high_grade_dysplasia', 'p_stage1',
-                                              'p_stage2', 'p_stage3', 'p_stage4', 'p_oes_dys_can_age_muliplier',
-                                               'random_draw']
+        dfx.columns = ['p_low_grade_dysplasia', 'p_high_grade_dysplasia', 'p_stage1', 'p_stage2', 'p_stage3',
+                       'p_stage4', 'p_oes_dys_can_age_muliplier', 'random_draw']
 
         dfx.p_low_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
         dfx.p_high_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
@@ -213,28 +215,71 @@ class Oesophageal_Cancer(Module):
         dfx.p_stage3 *= dfx.p_oes_dys_can_age_muliplier
         dfx.p_stage4 *= dfx.p_oes_dys_can_age_muliplier
 
-        dfx.cut_off_low_grade_dysplasia = dfx.p_low_grade_dysplasia
-        dfx.cut_off_high_grade_dysplasia = dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia
-        dfx.cut_off_stage1 = dfx.cut_off_high_grade_dysplasia + dfx.p_stage1
-        dfx.cut_off_stage2 = dfx.cut_off_stage1 + dfx.p_stage2
-        dfx.cut_off_stage3 = dfx.cut_off_stage2 + dfx.p_stage3
-        dfx.cut_off_stage4 = dfx.cut_off_stage3 + dfx.p_stage3
+        # based on probabilities of being in each category, define cut-offs to determine status from
+        # random draw uniform(0,1)
 
-        idx_low_grade_dysplasia = dfx.index[dfx.cut_off_low_grade_dysplasia > dfx.random_draw]
-        idx_high_grade_dysplasia = dfx.index[(dfx.cut_off_low_grade_dysplasia < dfx.random_draw) &
-                                             (dfx.cut_off_high_grade_dysplasia > dfx.random_draw)]
-        idx_stage1 = dfx.index[(dfx.cut_off_high_grade_dysplasia < dfx.random_draw) &
-                                             (dfx.cut_off_stage1 > dfx.random_draw)]
-        idx_stage2 = dfx.index[(dfx.cut_off_stage1 < dfx.random_draw) & (dfx.cut_off_stage2 > dfx.random_draw)]
-        idx_stage3 = dfx.index[(dfx.cut_off_stage2 < dfx.random_draw) & (dfx.cut_off_stage3 > dfx.random_draw)]
-        idx_stage4 = dfx.index[(dfx.cut_off_stage3 < dfx.random_draw) & (dfx.cut_off_stage4 > dfx.random_draw)]
+        # assign baseline values of ca_oesophagus based on probabilities and value of random draw
+        idx_low_grade_dysplasia = dfx.index[dfx.p_low_grade_dysplasia > dfx.random_draw]
+        idx_high_grade_dysplasia = dfx.index[(dfx.p_low_grade_dysplasia < dfx.random_draw) &
+                   ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia) > dfx.random_draw)]
+        idx_stage1 = dfx.index[((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia) < dfx.random_draw) &
+                   ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1) > dfx.random_draw)]
+        idx_stage2 = dfx.index[((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1)
+                               < dfx.random_draw) & ((dfx.p_low_grade_dysplasia +
+                                dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2) > dfx.random_draw)]
+        idx_stage3 = dfx.index[((dfx.p_low_grade_dysplasia +
+                                dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2) < dfx.random_draw)
+        & ((dfx.p_low_grade_dysplasia +
+                                dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2 + dfx.p_stage3)
+                               > dfx.random_draw)]
+        idx_stage4 = dfx.index[((dfx.p_low_grade_dysplasia +
+                                dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2 + dfx.p_stage3)
+                               < dfx.random_draw) & ((dfx.p_low_grade_dysplasia +
+                                dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2 + dfx.p_stage3
+                                                     + dfx.p_stage4) > dfx.random_draw)]
 
         df.loc[idx_low_grade_dysplasia, 'ca_oesophagus'] = 'low_grade_dysplasia'
         df.loc[idx_high_grade_dysplasia, 'ca_oesophagus'] = 'high_grade_dysplasia'
-        df.loc[idx_stage1, 'ca_oesophagus'] = 'stage 1'
-        df.loc[idx_stage2, 'ca_oesophagus'] = 'stage 2'
-        df.loc[idx_stage3, 'ca_oesophagus'] = 'stage 3'
-        df.loc[idx_stage4, 'ca_oesophagus'] = 'stage 4'
+        df.loc[idx_stage1, 'ca_oesophagus'] = 'stage1'
+        df.loc[idx_stage2, 'ca_oesophagus'] = 'stage2'
+        df.loc[idx_stage3, 'ca_oesophagus'] = 'stage3'
+        df.loc[idx_stage4, 'ca_oesophagus'] = 'stage4'
+
+        # -------------------- ASSIGNING VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
+
+        low_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')]
+        high_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')]
+        stage1_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')]
+        stage2_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2')]
+        stage3_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
+        stage4_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
+
+        random_draw = pd.Series(rng.random_sample(size=len(low_grade_dys_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')])
+        df.loc[low_grade_dys_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[0]
+        random_draw = pd.Series(rng.random_sample(size=len(high_grade_dys_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')])
+        df.loc[high_grade_dys_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[1]
+        random_draw = pd.Series(rng.random_sample(size=len(stage1_oes_can_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')])
+        df.loc[stage1_oes_can_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[2]
+        random_draw = pd.Series(rng.random_sample(size=len(stage2_oes_can_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')])
+        df.loc[stage2_oes_can_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[3]
+        random_draw = pd.Series(rng.random_sample(size=len(stage3_oes_can_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')])
+        df.loc[stage3_oes_can_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[4]
+        random_draw = pd.Series(rng.random_sample(size=len(stage4_oes_can_idx)),
+                                  index=df.index[df.is_alive & (df.ca_oesophagus == 'stage4')])
+        df.loc[stage4_oes_can_idx, 'ca_oesophagus_diagnosed'] = \
+            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[5]
+
+
 
 
 
