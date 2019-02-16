@@ -80,7 +80,7 @@ class health_system(Module):
         params['treatment_baseline_adult'] = float(self.treatment_baseline_adult)
         params['treatment_baseline_child'] = float(self.treatment_baseline_child)
 
-        print('testing_baseline_adult', params['testing_baseline_adult'])
+        # print('testing_baseline_adult', params['testing_baseline_adult'])
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -218,14 +218,14 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of HIV testing, can allow repeat testing
         # if repeat testing, will only store latest test date
         testing_index = df.index[(random_draw < eff_testing) & df.is_alive]
-        print('testing index', testing_index)
+        # print('testing index', testing_index)
 
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
         df.loc[testing_index, 'number_hiv_tests'] = df.loc[testing_index, 'number_hiv_tests'] + 1
 
         diagnosed_index = df.index[(df.date_tested == now) & df.is_alive & df.has_hiv]
-        print('diagnosed_index: ', diagnosed_index)
+        # print('diagnosed_index: ', diagnosed_index)
 
         df.loc[diagnosed_index, 'hiv_diagnosed'] = True
 
@@ -282,7 +282,7 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of treatment
         # if repeat testing, will only store latest test date
         treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art]
-        print('treatment_index', treatment_index)
+        # print('treatment_index', treatment_index)
 
         df.loc[treatment_index, 'on_art'] = True
         df.loc[treatment_index, 'date_art_start'] = now

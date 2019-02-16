@@ -15,21 +15,22 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, healt
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-# path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-# path_dem = 'P:/Documents/TLO/Demography_WorkingFile.xlsx' # update for new demog file
-# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
-# path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
+path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
+path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
+path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # for laptop
-path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 2, 1)
+end_date = Date(2012, 2, 1)
 popsize = 10000
 
+params = [0.5, 0.5, 0.5, 0.5, 0.5, 0.05]  # sample params for runs
 
 @pytest.fixture
 def simulation():
@@ -37,10 +38,11 @@ def simulation():
 
     #  call modules
     core_module = demography.Demography(workbook_path=path_dem)
-    hiv_module = hiv_infection.hiv(workbook_path=path_hiv)
+    hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=params[0])
     art_module = antiretroviral_therapy.art(workbook_path=path_hs)
-    hs_module = health_system_hiv.health_system(workbook_path=path_hs)
-    circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv)
+    hs_module = health_system_hiv.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
+                                                par_est3=params[3], par_est4=params[4])
+    circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
     behavioural_module = hiv_behaviour_change.BehaviourChange()
     tb_module = tb.tb_baseline(workbook_path=path_tb)
     hs_tb_module = health_system_tb.health_system_tb()
