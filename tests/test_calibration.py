@@ -83,9 +83,9 @@ def test_function(params):
         test_simulation(simulation)
 
     # to calibrate: number infections (adult), number testing, number starting treatment
-    print('new infections', simulation.modules['hiv'].store['HIV_new_infections_adult'])
-    print('new tests', simulation.modules['health_system'].store['Number_tested_adult'])
-    print('new treatment_adult', simulation.modules['health_system'].store['Number_treated_adult'])
+    # print('new infections', simulation.modules['hiv'].store['HIV_new_infections_adult'])
+    # print('new tests', simulation.modules['health_system'].store['Number_tested_adult'])
+    # print('new treatment_adult', simulation.modules['health_system'].store['Number_treated_adult'])
 
     new_inf_ad = simulation.modules['hiv'].store['HIV_new_infections_adult']
     new_inf_child = simulation.modules['hiv'].store['HIV_new_infections_child']
@@ -97,18 +97,18 @@ def test_function(params):
 
     # calibrate using least squares
     # check years are matching - 2011-2018
-    ss_inf_ad = sum((inc_data.new_cases_adults - new_inf_ad) ^ 2)
-    ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ^ 2)
+    ss_inf_ad = sum((inc_data.new_cases_adults - new_inf_ad) ** 2)
+    ss_inf_child = sum((inc_data.new_cases_children - new_inf_child) ** 2)
 
-    ss_test_ad = sum((test_data.adult - new_test_ad) ^ 2)
-    ss_test_child = sum((test_data.children - new_test_child) ^ 2)
+    ss_test_ad = sum((test_data.adult - new_test_ad) ** 2)
+    ss_test_child = sum((test_data.children - new_test_child) ** 2)
 
-    ss_treat_ad = sum((treat_data.adults - new_treatment_adult) ^ 2)
-    ss_treat_child = sum((treat_data.children - new_treatment_child) ^ 2)
+    ss_treat_ad = sum((treat_data.adults - new_treatment_adult) ** 2)
+    ss_treat_child = sum((treat_data.children - new_treatment_child) ** 2)
 
     # coverage estimates VMMC 2013, 2015
-    ss_vmmc2013 = sum((circumcision_data[3] - coverage_circumcision[3]) ^ 2)
-    ss_vmmc2015 = sum((circumcision_data[5] - coverage_circumcision[5]) ^ 2)
+    ss_vmmc2013 = (circumcision_data.coverage[3] - coverage_circumcision[3]) ** 2
+    ss_vmmc2015 = (circumcision_data.coverage[5] - coverage_circumcision[5]) ** 2
 
     total_ss = ss_inf_ad + ss_inf_child + ss_test_ad + ss_test_child + ss_treat_ad + ss_treat_child + ss_vmmc2013 + \
         ss_vmmc2015
@@ -118,7 +118,7 @@ def test_function(params):
 
 
 # test run with starting values
-params = [0.5, 0.5, 0.5, 0.5, 0.5, 0.1]
+params = [0.5, 0.5, 0.5, 0.5, 0.5, 0.05]
 test_function(params)
 
 # calibration

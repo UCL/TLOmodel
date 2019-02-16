@@ -54,16 +54,22 @@ class hiv(Module):
             Parameter(Types.REAL, 'transmission rate'),
         'irr_hiv_f':
             Parameter(Types.REAL, 'incidence rate ratio for females vs males'),
-        'prob_mtct':
-            Parameter(Types.REAL, 'probability of mother to child transmission'),
         'rr_circumcision':
             Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
         'rr_behaviour_change':
             Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
         'rel_infectiousness_acute':
             Parameter(Types.REAL, 'relative infectiousness during acute stage'),
-        'rel_infectiousness_late':
-            Parameter(Types.REAL, 'relative infectiousness during late stage')
+        'prob_mtct':
+            Parameter(Types.REAL, 'probability of mother to child transmission'),
+        'prob_mtct_treated':
+            Parameter(Types.REAL, 'probability of mother to child transmission, mother on ART'),
+        'prob_mtct_incident':
+            Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during pregnancy'),
+        'prob_mtct_breastfeeding':
+            Parameter(Types.REAL, 'probability of mother to child transmission during breastfeeding'),
+        'prob_mtct_breastfeeding_incident':
+            Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during breastfeeding')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -118,8 +124,6 @@ class hiv(Module):
         #     self.param_list.loc['beta', 'Value1']
         params['irr_hiv_f'] = \
             self.param_list.loc['irr_hiv_f', 'Value1']
-        params['prob_mtct'] = \
-            self.param_list.loc['prob_mtct', 'Value1']
         params['rr_circumcision'] = \
             self.param_list.loc['rr_circumcision', 'Value1']
         params['rr_behaviour_change'] = \
@@ -128,9 +132,18 @@ class hiv(Module):
             self.param_list.loc['rel_infectiousness_acute', 'Value1']
         params['rel_infectiousness_late'] = \
             self.param_list.loc['rel_infectiousness_late', 'Value1']
-
+        params['prob_mtct'] = \
+            self.param_list.loc['prob_mtct', 'Value1']
+        params['prob_mtct_treated'] = \
+            self.param_list.loc['prob_mtct_treated', 'Value1']
+        params['prob_mtct_incident'] = \
+            self.param_list.loc['prob_mtct_incident', 'Value1']
+        params['prob_mtct_breastfeeding'] = \
+            self.param_list.loc['prob_mtct_breastfeeding', 'Value1']
+        params['prob_mtct_breastfeeding_treated'] = \
+            self.param_list.loc['prob_mtct_breastfeeding_treated', 'Value1']
         params['beta'] = float(self.beta_calib)
-        print('beta', params['beta'])
+        # print('beta', params['beta'])
 
         # print(self.param_list.head())
         # print(params['infant_progression_category'])
@@ -141,7 +154,7 @@ class hiv(Module):
                                                            sheet_name=None)
 
         params['hiv_prev'], params['hiv_death'], params['hiv_inc'], params['cd4_base'], params['time_cd4'], \
-            params['initial_state_probs'], params['irr_age'] = self.method_hiv_data['prevalence'], \
+        params['initial_state_probs'], params['irr_age'] = self.method_hiv_data['prevalence'], \
                                                            self.method_hiv_data['deaths'], \
                                                            self.method_hiv_data['incidence'], \
                                                            self.method_hiv_data['CD4_distribution'], \
@@ -502,10 +515,29 @@ class hiv(Module):
 
         # TODO: include risk during breastfeeding period
 
+        #  MTCT
+        #  transmission during pregnancy / delivery
         random_draw = self.sim.rng.random_sample(size=1)
 
-        if (random_draw < params['prob_mtct']) & df.at[mother_id, 'has_hiv']:
+        # mother not on ART
+        if (random_draw < params['prob_mtct']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and not \
+            df.at[mother_id, 'on_art']:
             df.at[child_id, 'has_hiv'] = True
+
+        #  mother on ART
+        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and \
+            df.at[mother_id, 'on_art']:
+            df.at[child_id, 'has_hiv'] = True
+
+        #  mother has incident infection during pregnancy
+        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and not \
+            df.at[mother_id, 'on_art'] and \
+            (((now - df.at[mother_id, 'date_hiv_infection'])/np.timedelta64(1, 'M')) < 9):
+            df.at[child_id, 'has_hiv'] = True
+
+
+        #  assign deaths dates and schedule death for newly infected infant
+        if df.at[child_id, 'is_alive'] and df.at[child_id, 'has_hiv']:
             df.at[child_id, 'date_hiv_infection'] = self.sim.date
 
             # assign fast/slow progressor
@@ -627,7 +659,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         total_pop = len(df[(df.age_years >= 15) & df.is_alive])
         foi = params['beta'] * infectious_term / total_pop
-        print('foi:', foi)
+        # print('foi:', foi)
 
         # TODO: reduce force of infection if behaviour change available
         # TODO: reduce FOI due to condom use
