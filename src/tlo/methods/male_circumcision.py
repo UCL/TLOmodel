@@ -89,7 +89,7 @@ class male_circumcision(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
         # add an event to log to screen
-        sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.

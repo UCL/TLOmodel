@@ -535,7 +535,6 @@ class hiv(Module):
             (((now - df.at[mother_id, 'date_hiv_infection'])/np.timedelta64(1, 'M')) < 9):
             df.at[child_id, 'has_hiv'] = True
 
-
         #  assign deaths dates and schedule death for newly infected infant
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'has_hiv']:
             df.at[child_id, 'date_hiv_infection'] = self.sim.date
@@ -739,6 +738,77 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
         self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
         self.module.store_DeathsLog['DeathEvent_Age'].append(df.age_years[individual_id])
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
+
+
+class hiv_mtct_event(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
+    Regular events automatically reschedule themselves at a fixed frequency,
+    and thus implement discrete timestep type behaviour. The frequency is
+    specified when calling the base class constructor in our __init__ method.
+    """
+
+    def __init__(self, module):
+        """One line summary here
+        We need to pass the frequency at which we want to occur to the base class
+        constructor using super(). We also pass the module that created this event,
+        so that random number generators can be scoped per-module.
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 months
+
+    def apply(self, population):
+        """Apply this event to the population.
+        :param population: the current population
+        """
+        df = population.props
+        params = self.module.parameters
+        now = self.sim.date
+
+        # find uninfected infants < 18 months
+        infant_ids = df.index[df.age_exact_years < 1.5 and not df.has_hiv]
+
+        for id in infant_ids:
+            #  find mother's hiv status
+            mother = df.at[id, 'mother_id']
+            if df.at[mother, 'is_alive'] and df.at[mother, 'has_hiv'] and df.at[mother, 'on_art'] and (self.sim.rng.random_sample(size=1) < params['prob_mtct_breastfeeding_treated']):
+                df.at[id, 'has_hiv'] = True
+
+            #  assign deaths dates and schedule death for newly infected infant
+            if df.at[id, 'is_alive'] and df.at[id, 'has_hiv']:
+                df.at[id, 'date_hiv_infection'] = self.sim.date
+
+                # assign fast/slow progressor
+                progr = self.sim.rng.choice(['FAST', 'SLOW'], size=1, p=[params['prob_infant_fast_progressor'][0],
+                                                                     params['prob_infant_fast_progressor'][1]])
+
+                # then draw death date and assign
+                if progr == 'SLOW':
+                    # draw from weibull
+                    time_death = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                                  size=1) * params[
+                                     'weibull_scale_mort_infant_slow_progressor']
+
+                else:
+                    # draw from exp
+                    time_death = self.sim.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
+                                                      size=1)
+                    # returns an array not a single value!!
+
+                time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
+                df.at[id, 'date_aids_death'] = now + time_death
+
+                # schedule the death event
+                death = DeathEventHIV(self, individual_id=id, cause='hiv')  # make that death event
+                death_scheduled = df.at[id, 'date_aids_death']
+                self.sim.schedule_event(death, death_scheduled)  # schedule the death
+
+
+
+
+
+
+
+
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
