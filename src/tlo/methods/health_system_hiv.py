@@ -67,6 +67,7 @@ class health_system(Module):
         params['rr_testing_previously_negative'] = self.param_list.loc['rr_testing_previously_negative', 'Value1']
         params['rr_testing_previously_positive'] = self.param_list.loc['rr_testing_previously_positive', 'Value1']
         params['rr_testing_age25'] = self.param_list.loc['rr_testing_age25', 'Value1']
+        params['testing_increase'] = self.param_list.loc['testing_increase', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -81,6 +82,22 @@ class health_system(Module):
         params['treatment_baseline_child'] = float(self.treatment_baseline_child)
 
         # print('testing_baseline_adult', params['testing_baseline_adult'])
+
+    def create_testing_rates(self):
+        years = list(range(2011, 2030))
+        curr_testing_rate_adult = [None] * len(years)
+        curr_testing_rate_adult[0] = self.params['testing_baseline_adult']
+
+        curr_testing_rate_child = [None] * len(years)
+        curr_testing_rate_child[0] = self.params['testing_baseline_child']
+
+        for ind in range(1, len(years)):
+            curr_testing_rate_adult[ind] = curr_testing_rate_adult[ind - 1] + self.params['testing_increase']
+            curr_testing_rate_child[ind] = curr_testing_rate_child[ind - 1] + self.params['testing_increase']
+
+        data = {'year': years, 'testing_rates_adult': curr_testing_rate_adult, 'testing_rates_child': curr_testing_rate_child}
+        testing_rate_df = pd.DataFrame(data)
+
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -197,13 +214,16 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         df = population.props
 
+        current_testing_rate_adult = self.sim.testing_rate_df.loc[self.sim.testing_rate_df.year == now.year, 'testing_rates_adult']
+        current_testing_rate_child = self.sim.testing_rate_df.loc[self.sim.testing_rate_df.year == now.year, 'testing_rates_achild']
+
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         # assign relative testing rates
         eff_testing = pd.Series(0, index=df.index)
 
-        eff_testing.loc[(df.age_years >= 15) & df.is_alive] = params['testing_baseline_adult']  # baseline adult
+        eff_testing.loc[(df.age_years >= 15) & df.is_alive] = current_testing_rate_adult
         eff_testing.loc[(df.age_years >= 25)] *= params['rr_testing_age25']  # for ages >= 25
         eff_testing.loc[(df.sex == 'F')] *= params['rr_testing_female']  # for females
         eff_testing.loc[df.ever_tested & ~df.hiv_diagnosed] *= params[
@@ -213,7 +233,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         eff_testing.loc[(df.sexual_risk_group == 'high') | (df.sexual_risk_group == 'sex_work')] *= params[
             'rr_testing_high_risk']  # for high risk
 
-        eff_testing.loc[(df.age_years < 15) & df.is_alive] = params['testing_baseline_child']  # baseline children
+        eff_testing.loc[(df.age_years < 15) & df.is_alive] = current_testing_rate_child
 
         # probability of HIV testing, can allow repeat testing
         # if repeat testing, will only store latest test date
