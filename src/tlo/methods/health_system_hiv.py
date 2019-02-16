@@ -8,6 +8,25 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 
+def create_testing_rates(self):
+    years = list(range(2011, 2030))
+    curr_testing_rate_adult = [None] * len(years)
+    curr_testing_rate_adult[0] = self.parameters['testing_baseline_adult']
+
+    curr_testing_rate_child = [None] * len(years)
+    curr_testing_rate_child[0] = self.parameters['testing_baseline_child']
+
+    for ind in range(1, len(years)):
+        curr_testing_rate_adult[ind] = curr_testing_rate_adult[ind - 1] + self.parameters['testing_increase']
+        curr_testing_rate_child[ind] = curr_testing_rate_child[ind - 1] + self.parameters['testing_increase']
+
+    data = {'year': years, 'testing_rates_adult': curr_testing_rate_adult,
+            'testing_rates_child': curr_testing_rate_child}
+    testing_rate_df = pd.DataFrame(data)
+
+    return testing_rate_df
+
+
 class health_system(Module):
     """ routinely tests proportion of the population and
     determines availability of ART for HIV+ dependent on UNAIDS coverage estimates
@@ -83,21 +102,8 @@ class health_system(Module):
 
         # print('testing_baseline_adult', params['testing_baseline_adult'])
 
-    def create_testing_rates(self):
-        years = list(range(2011, 2030))
-        curr_testing_rate_adult = [None] * len(years)
-        curr_testing_rate_adult[0] = self.params['testing_baseline_adult']
-
-        curr_testing_rate_child = [None] * len(years)
-        curr_testing_rate_child[0] = self.params['testing_baseline_child']
-
-        for ind in range(1, len(years)):
-            curr_testing_rate_adult[ind] = curr_testing_rate_adult[ind - 1] + self.params['testing_increase']
-            curr_testing_rate_child[ind] = curr_testing_rate_child[ind - 1] + self.params['testing_increase']
-
-        data = {'year': years, 'testing_rates_adult': curr_testing_rate_adult, 'testing_rates_child': curr_testing_rate_child}
-        testing_rate_df = pd.DataFrame(data)
-
+        self.parameters['testing_rate_df'] = create_testing_rates(self)
+        # print(self.parameters['testing_rate_df'])
 
     def initialise_population(self, population):
         """ set the default values for the new fields
@@ -139,6 +145,7 @@ class health_system(Module):
         # we don't know date tested, assume date = now
         df.loc[art_index_male | art_index_female, 'ever_tested'] = True
         df.loc[art_index_male | art_index_female, 'date_tested'] = now
+        df.loc[art_index_male | art_index_female, 'number_hiv_tests'] = 1
 
         # outcome of test
         diagnosed_idx = df.index[df.ever_tested & df.is_alive & df.has_hiv]
@@ -173,9 +180,9 @@ class health_system(Module):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df_art))
 
-        # probability of baseline population receiving art: requirement = ever_tested
+        # probability of baseline population receiving art: requirement = hiv_diagnosed
         art_index = df_art.index[
-            (random_draw < df_art.prop_coverage) & df_art.has_hiv & df.ever_tested & df.is_alive]
+            (random_draw < df_art.prop_coverage) & df_art.has_hiv & df.hiv_diagnosed & df.is_alive]
         # print('art_index: ', art_index)
 
         df.loc[art_index, 'on_art'] = True
@@ -206,7 +213,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+        super().__init__(module, frequency=DateOffset(months=3))  # every 3 months
         # make sure any rates are annual if frequency of event is annual
 
     def apply(self, population):
@@ -214,8 +221,13 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         df = population.props
 
-        current_testing_rate_adult = self.sim.testing_rate_df.loc[self.sim.testing_rate_df.year == now.year, 'testing_rates_adult']
-        current_testing_rate_child = self.sim.testing_rate_df.loc[self.sim.testing_rate_df.year == now.year, 'testing_rates_achild']
+        worksheet = params['testing_rate_df']
+
+        current_testing_rate_adult = worksheet.loc[worksheet.year == now.year, 'testing_rates_adult'].iat[0]
+        current_testing_rate_child = worksheet.loc[worksheet.year == now.year, 'testing_rates_child']
+
+        # print(current_testing_rate_adult)
+        # print(type(current_testing_rate_adult))
 
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
@@ -242,7 +254,7 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[testing_index, 'ever_tested'] = True
         df.loc[testing_index, 'date_tested'] = now
-        df.loc[testing_index, 'number_hiv_tests'] = df.loc[testing_index, 'number_hiv_tests'] + 1
+        df.loc[testing_index, 'number_hiv_tests'] += 1
 
         diagnosed_index = df.index[(df.date_tested == now) & df.is_alive & df.has_hiv]
         # print('diagnosed_index: ', diagnosed_index)
@@ -300,8 +312,7 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         treatment_rate.loc[(df.age_years < 15) & df.is_alive] = params['treatment_baseline_child']  # baseline adult
 
         # probability of treatment
-        # if repeat testing, will only store latest test date
-        treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art]
+        treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art & df.hiv_diagnosed]
         # print('treatment_index', treatment_index)
 
         df.loc[treatment_index, 'on_art'] = True
