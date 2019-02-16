@@ -57,7 +57,8 @@ class health_system(Module):
                                                     'relative change in testing if previously positive versus never tested'),
         'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
         'testing_baseline_adult': Parameter(Types.REAL, 'baseline testing rate of adults'),
-        'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children')
+        'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
+        'treatment_increase2016': Parameter(Types.REAL, 'increase in treatment rates with eligibility guideline changes')
     }
 
     PROPERTIES = {
@@ -87,6 +88,7 @@ class health_system(Module):
         params['rr_testing_previously_positive'] = self.param_list.loc['rr_testing_previously_positive', 'Value1']
         params['rr_testing_age25'] = self.param_list.loc['rr_testing_age25', 'Value1']
         params['testing_increase'] = self.param_list.loc['testing_increase', 'Value1']
+        params['treatment_increase2016'] = self.param_list.loc['treatment_increase2016', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -223,8 +225,9 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         worksheet = params['testing_rate_df']
 
+        # use iat[0] because the rate is a pd.series value, need to convert to scalar (numpy float)
         current_testing_rate_adult = worksheet.loc[worksheet.year == now.year, 'testing_rates_adult'].iat[0]
-        current_testing_rate_child = worksheet.loc[worksheet.year == now.year, 'testing_rates_child']
+        current_testing_rate_child = worksheet.loc[worksheet.year == now.year, 'testing_rates_child'].iat[0]
 
         # print(current_testing_rate_adult)
         # print(type(current_testing_rate_adult))
@@ -302,14 +305,23 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         df = population.props
 
+        curr_treatment_adult = params['treatment_baseline_adult']
+        curr_treatment_child = params['treatment_baseline_child']
+
+        if now.year >= 2016:
+            curr_treatment_adult = params['treatment_baseline_adult'] * params['treatment_increase2016']
+            curr_treatment_child = params['treatment_baseline_child'] * params['treatment_increase2016']
+
+        # print(curr_treatment_adult)
+
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         # assign treatment rates
         treatment_rate = pd.Series(0, index=df.index)
 
-        treatment_rate.loc[(df.age_years >= 15) & df.is_alive] = params['treatment_baseline_adult']  # baseline adult
-        treatment_rate.loc[(df.age_years < 15) & df.is_alive] = params['treatment_baseline_child']  # baseline adult
+        treatment_rate.loc[(df.age_years >= 15) & df.is_alive] = curr_treatment_adult
+        treatment_rate.loc[(df.age_years < 15) & df.is_alive] = curr_treatment_child
 
         # probability of treatment
         treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art & df.hiv_diagnosed]
