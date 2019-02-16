@@ -71,16 +71,13 @@ if __name__ == '__main__':
     simulation = simulation()
     test_simulation(simulation)
 
-
-# add plots for infections on birth and deaths when done
-
 # Make a nice plot
 hiv_output = simulation.modules['hiv'].store['Total_HIV']
 time = simulation.modules['hiv'].store['Time']
 hiv_deaths = simulation.modules['hiv'].store['HIV_scheduled_deaths']
 
-number_tested = simulation.modules['health_system'].store['Number_tested']
-number_treated = simulation.modules['health_system'].store['Number_treated']
+number_tested = simulation.modules['health_system'].store['Number_tested_adult']
+number_treated = simulation.modules['health_system'].store['Number_treated_adult']
 testing_dates = simulation.modules['health_system'].store['Time']
 
 deaths_art = simulation.modules['art'].store['Number_dead_art']
