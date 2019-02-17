@@ -123,7 +123,7 @@ class Oesophageal_Cancer(Module):
                                                      'time of curative treatment: never had treatment'
                                                      'low grade dysplasia'
                                                      'high grade dysplasia, stage 1, stage 2, stage 3',
-                                  categories=['never','low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
+                                  categories=['never', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
                                               'stage2', 'stage3']),
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer')
     }
@@ -132,12 +132,14 @@ class Oesophageal_Cancer(Module):
         """Setup parameters used by the module
         """
         p = self.parameters
-        p['r_low_grade_dysplasia_none'] = 0.00001
+#       p['r_low_grade_dysplasia_none'] = 0.00001
+        p['r_low_grade_dysplasia_none'] = 0.1
         p['rr_low_grade_dysplasia_none_female'] = 1.3
         p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
         p['rr_low_grade_dysplasia_none_tobacco'] = 2.0
         p['rr_low_grade_dysplasia_none_ex_alc'] = 1.0
-        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
+#       p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
+        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.5
         p['rr_high_grade_dysp_undergone_curative_treatment'] = 0.1
         p['r_stage1_high_grade_dysp'] = 0.01
         p['rr_stage1_undergone_curative_treatment'] = 0.1
@@ -159,15 +161,16 @@ class Oesophageal_Cancer(Module):
         p['rr_diagnosis_stage2'] = 30
         p['rr_diagnosis_stage3'] = 40
         p['rr_diagnosis_stage4'] = 50
-        p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
+ #      p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
+        p['init_prop_oes_cancer_stage'] = [0.000 ,0.000 ,0.00   ,0.0000 ,0.00000 ,0.00000 ]
         p['rp_oes_cancer_female'] = 1.3
         p['rp_oes_cancer_per_year_older'] = 1.1
         p['rp_oes_cancer_tobacco'] = 2.0
         p['rp_oes_cancer_ex_alc'] = 1.0
  #      p['init_prop_diagnosed_oes_cancer_by_stage'] = [0.01, 0.03, 0.10, 0.20, 0.30, 0.8]
-        p['init_prop_diagnosed_oes_cancer_by_stage'] = [1   , 1   , 1   , 1   , 1   ,1   ]
-        p['init_prop_treatment_status_oes_cancer'] = [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]
-
+        p['init_prop_diagnosed_oes_cancer_by_stage'] = [1   , 0.03, 0.70, 0.20, 0.30, 0.8]
+ #      p['init_prop_treatment_status_oes_cancer'] = [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]
+        p['init_prop_treatment_status_oes_cancer'] = [0.01, 0.51, 0.55, 0.55, 0.55, 0.55]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -245,7 +248,7 @@ class Oesophageal_Cancer(Module):
         df.loc[idx_stage3, 'ca_oesophagus'] = 'stage3'
         df.loc[idx_stage4, 'ca_oesophagus'] = 'stage4'
 
-        # -------------------- ASSIGNING VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
+        # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
 
         low_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')]
         high_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')]
@@ -279,233 +282,94 @@ class Oesophageal_Cancer(Module):
         df.loc[stage4_oes_can_idx, 'ca_oesophagus_diagnosed'] = \
             random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[5]
 
+        # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
 
+        low_grade_dys_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
+                                            & df.ca_oesophagus_diagnosed]
+        high_grade_dys_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
+                                            & df.ca_oesophagus_diagnosed]
+        stage1_oes_can_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
+                                            & df.ca_oesophagus_diagnosed]
+        stage2_oes_can_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
+                                            & df.ca_oesophagus_diagnosed]
+        stage3_oes_can_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
+                                            & df.ca_oesophagus_diagnosed]
+        stage4_oes_can_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')
+                                            & df.ca_oesophagus_diagnosed]
 
+        random_draw = pd.Series(rng.random_sample(size=len(low_grade_dys_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[0], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'low_grade_dysplasia')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_low_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_low_grade_dysplasia_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
 
+        random_draw = pd.Series(rng.random_sample(size=len(high_grade_dys_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[1], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'high_grade_dysplasia')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_high_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_high_grade_dysplasia_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
 
-        # adjust probability of some education based on age
-        p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
-        p_some_ed.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_age1320
-        p_some_ed.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_age3040
-        p_some_ed.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_age4050
-        p_some_ed.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_age5060
-        p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
+        random_draw = pd.Series(rng.random_sample(size=len(stage1_oes_can_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[2], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'stage1')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_stage1_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_stage1_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage1'
 
-        # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        random_draw = pd.Series(rng.random_sample(size=len(stage2_oes_can_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[3], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'stage2')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_stage2_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_stage2_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage2'
 
-        # calculate baseline of education level 3, and adjust for age and wealth
-        p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
+        random_draw = pd.Series(rng.random_sample(size=len(stage3_oes_can_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[4], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'stage3')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_stage3_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_stage3_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage3'
 
-        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
-        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
-        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
-        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
-        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
-        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
-
-        rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
-
-        dfx = pd.concat([p_ed_lev_3, p_some_ed, rnd_draw], axis=1)
-        dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
-
-        dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
-        dfx['p_ed_lev_3'] = dfx['eff_prob_ed_lev_3']
-        dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
-
-        dfx['li_ed_lev'] = 2
-        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
-        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
-
-        df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
-
-        # -------------------- OVERWEIGHT ----------------------------------------------------------
-
-        # get indices of all individuals over 15 years
-        age_gte15 = df.index[df.is_alive & (df.age_years >= 15)]
-
-        overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
-                                               ('M', False, 0.27),
-                                               ('F', True, 0.32),
-                                               ('F', False, 0.17)],
-                                         columns=['sex', 'is_urban', 'p_ow'])
-
-        overweight_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(overweight_lookup,
-                                                                        left_on=['sex', 'li_urban'],
-                                                                        right_on=['sex', 'is_urban'],
-                                                                        how='inner')['p_ow']
-        assert len(overweight_probs) == len(age_gte15)
-
-        random_draw = rng.random_sample(size=len(age_gte15))
-        df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
-
-        # -------------------- LOW EXERCISE --------------------------------------------------------
-
-        low_ex_lookup = pd.DataFrame(data=[('M', True, 0.32),
-                                           ('M', False, 0.11),
-                                           ('F', True, 0.18),
-                                           ('F', False, 0.07)],
-                                     columns=['sex', 'is_urban', 'p_low_ex'])
-
-        low_ex_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(low_ex_lookup,
-                                                                    left_on=['sex', 'li_urban'],
-                                                                    right_on=['sex', 'is_urban'],
-                                                                    how='inner')['p_low_ex']
-        assert len(low_ex_probs) == len(age_gte15)
-
-        random_draw = rng.random_sample(size=len(age_gte15))
-        df.loc[age_gte15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
-
-        # -------------------- TOBACCO USE ---------------------------------------------------------
-
-        tob_lookup = pd.DataFrame([('M', '15-19', 0.01),
-                                   ('M', '20-24', 0.04),
-                                   ('M', '25-29', 0.04),
-                                   ('M', '30-34', 0.04),
-                                   ('M', '35-39', 0.04),
-                                   ('M', '40-44', 0.06),
-                                   ('M', '45-49', 0.06),
-                                   ('M', '50-54', 0.06),
-                                   ('M', '55-59', 0.06),
-                                   ('M', '60-64', 0.06),
-                                   ('M', '65-69', 0.06),
-                                   ('M', '70-74', 0.06),
-                                   ('M', '75-79', 0.06),
-                                   ('M', '80-84', 0.06),
-                                   ('M', '85-89', 0.06),
-                                   ('M', '90-94', 0.06),
-                                   ('M', '95-99', 0.06),
-                                   ('M', '100+',  0.06),
-
-                                   ('F', '15-19', 0.002),
-                                   ('F', '20-24', 0.002),
-                                   ('F', '25-29', 0.002),
-                                   ('F', '30-34', 0.002),
-                                   ('F', '35-39', 0.002),
-                                   ('F', '40-44', 0.002),
-                                   ('F', '45-49', 0.002),
-                                   ('F', '50-54', 0.002),
-                                   ('F', '55-59', 0.002),
-                                   ('F', '60-64', 0.002),
-                                   ('F', '65-69', 0.002),
-                                   ('F', '70-74', 0.002),
-                                   ('F', '75-79', 0.002),
-                                   ('F', '80-84', 0.002),
-                                   ('F', '85-89', 0.002),
-                                   ('F', '90-94', 0.002),
-                                   ('F', '95-99', 0.002),
-                                   ('F', '100+',  0.002)],
-                                  columns=['sex', 'age_range', 'p_tob'])
-
-        # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
-        tob_probs = df.loc[age_gte15].merge(tob_lookup,
-                                            left_on=['sex', 'age_range'],
-                                            right_on=['sex', 'age_range'],
-                                            how='inner')
-        assert len(age_gte15) == len(tob_probs)
-
-        # each individual has a baseline probability
-        # multiply this probability by the wealth level. wealth is a category, so convert to integer
-        tob_probs = pd.to_numeric(tob_probs['li_wealth']) * tob_probs['p_tob']
-
-        # we now have the probability of tobacco use for each individual where age >= 15
-        # draw a random number between 0 and 1 for all of them
-        random_draw = rng.random_sample(size=len(age_gte15))
-
-        # decide on tobacco use based on the individual probability is greater than random draw
-        # this is a list of True/False. assign to li_tob
-        df.loc[age_gte15, 'li_tob'] = (random_draw < tob_probs.values)
-
-        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
-
-        m_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
-        f_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
-
-        df.loc[m_gte15, 'li_ex_alc'] = rng.random_sample(size=len(m_gte15)) < m.init_p_ex_alc_m
-        df.loc[f_gte15, 'li_ex_alc'] = rng.random_sample(size=len(f_gte15)) < m.init_p_ex_alc_f
-
-        # -------------------- MARITAL STATUS ------------------------------------------------------
-
-        age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
-        age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
-        age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
-        age_40_49 = df.index[df.age_years.between(40, 49) & df.is_alive]
-        age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
-        age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
-
-        df.loc[age_15_19, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_15_19), p=m.init_dist_mar_stat_age1520)
-        df.loc[age_20_29, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_20_29), p=m.init_dist_mar_stat_age2030)
-        df.loc[age_30_39, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_30_39), p=m.init_dist_mar_stat_age3040)
-        df.loc[age_40_49, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_40_49), p=m.init_dist_mar_stat_age4050)
-        df.loc[age_50_59, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_50_59), p=m.init_dist_mar_stat_age5060)
-        df.loc[age_gte60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_gte60), p=m.init_dist_mar_stat_agege60)
-
-        # -------------------- CONTRACEPTION STATUS ------------------------------------------------
-
-        f_age_1550 = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
-        df.loc[f_age_1550, 'li_on_con'] = (rng.random_sample(size=len(f_age_1550)) < m.init_p_on_contrac)
-
-        f_age_1550_on_con = df.index[df.age_years.between(14, 49) & df.is_alive & (df.sex == 'F') & df.li_on_con]
-        df.loc[f_age_1550_on_con, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                           size=len(f_age_1550_on_con),
-                                                           p=m.init_dist_con_t)
-
-        # -------------------- EDUCATION -----------------------------------------------------------
-
-        age_gte5 = df.index[(df.age_years >= 5) & df.is_alive]
-
-        # calculate the probability of education for all individuals over 5 years old
-        p_some_ed = pd.Series(m.init_age2030_w5_some_ed, index=age_gte5)
-
-        # adjust probability of some education based on age
-        p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
-        p_some_ed.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_age1320
-        p_some_ed.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_age3040
-        p_some_ed.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_age4050
-        p_some_ed.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_age5060
-        p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
-
-        # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
-
-        # calculate baseline of education level 3, and adjust for age and wealth
-        p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
-
-        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
-        p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
-        p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
-        p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
-        p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
-        p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
-
-        rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
-
-        dfx = pd.concat([p_ed_lev_3, p_some_ed, rnd_draw], axis=1)
-        dfx.columns = ['eff_prob_ed_lev_3', 'eff_prob_some_ed', 'random_draw_01']
-
-        dfx['p_ed_lev_1'] = 1 - dfx['eff_prob_some_ed']
-        dfx['p_ed_lev_3'] = dfx['eff_prob_ed_lev_3']
-        dfx['cut_off_ed_levl_3'] = 1 - dfx['eff_prob_ed_lev_3']
-
-        dfx['li_ed_lev'] = 2
-        dfx.loc[dfx['cut_off_ed_levl_3'] < rnd_draw, 'li_ed_lev'] = 3
-        dfx.loc[dfx['p_ed_lev_1'] > rnd_draw, 'li_ed_lev'] = 1
-
-        df.loc[age_gte5, 'li_ed_lev'] = dfx['li_ed_lev']
-
-        df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
-        df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
-        df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
+        random_draw = pd.Series(rng.random_sample(size=len(stage4_oes_can_diagnosed_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage4')
+                                               & df.ca_oesophagus_diagnosed])
+        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[5], index=df.index[df.is_alive &
+                                            (df.ca_oesophagus == 'stage4')
+                                            & df.ca_oesophagus_diagnosed])
+        dfx = pd.concat([p_treatment, random_draw], axis=1)
+        dfx.columns = ['p_treatment', 'random_draw']
+        idx_stage4_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
+        df.loc[idx_stage4_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage4'
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
-        event = LifestyleEvent(self)
+        event = OesCancerEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
 
-        event = LifestylesLoggingEvent(self)
+        event = OesCancerLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
@@ -516,29 +380,18 @@ class Oesophageal_Cancer(Module):
 
         df = self.sim.population.props
 
-        df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
-        df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
-        df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
-        df.at[child_id, 'li_overwt'] = False
-        df.at[child_id, 'li_low_ex'] = False
-        df.at[child_id, 'li_tob'] = False
-        df.at[child_id, 'li_ex_alc'] = False
-        df.at[child_id, 'li_mar_stat'] = 1
-        df.at[child_id, 'li_on_con'] = False
-        df.at[child_id, 'li_con_t'] = 1
-        df.at[child_id, 'li_in_ed'] = False
-        df.at[child_id, 'li_ed_lev'] = 1
+        df.at[child_id, 'ca_oesophagus'] = 'none'
+        df.at[child_id, 'ca_oesophagus_diagnosed'] = False
+        df.at[child_id, 'ca_oesophagus_curative_treatment'] = 'never'
 
 
-class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
+class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all lifestyle properties for population
+    Regular event that updates all oesophagealcancer properties for population
     """
     def __init__(self, module):
         """schedule to run every 3 months
-
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
-
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))
@@ -551,173 +404,130 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # -------------------- URBAN-RURAL STATUS --------------------------------------------------
+        # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
-        # get index of current urban/rural status
-        currently_rural = df.index[~df.li_urban & df.is_alive]
-        currently_urban = df.index[df.li_urban & df.is_alive]
+        # updating for peopl aged over 20 with current status 'none'
 
-        # handle new transitions
-        now_urban: pd.Series = m.rng.random_sample(size=len(currently_rural)) < m.r_urban
-        urban_idx = currently_rural[now_urban]
-        df.loc[urban_idx, 'li_urban'] = True
-        df.loc[urban_idx, 'li_date_trans_to_urban'] = self.sim.date
+        ca_oes_current_none_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20)]
+        ca_oes_current_none_f_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
+                                           (df.sex == 'F')]
+        ca_oes_current_none_tob_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
+                                           df.li_tob]
+        ca_oes_current_none_ex_alc_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
+                                           df.li_ex_alc]
 
-        # handle new transitions to rural
-        now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < m.r_rural
-        df.loc[currently_urban[now_rural], 'li_urban'] = False
+        eff_prob_low_grade_dysp = pd.Series(m.r_low_grade_dysplasia_none,
+                                    index=df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20)])
 
-        # -------------------- OVERWEIGHT ----------------------------------------------------------
+        eff_prob_low_grade_dysp.loc[ca_oes_current_none_f_idx] *= m.rr_low_grade_dysplasia_none_female
+        eff_prob_low_grade_dysp.loc[ca_oes_current_none_tob_idx] *= m.rr_low_grade_dysplasia_none_tobacco
+        eff_prob_low_grade_dysp.loc[ca_oes_current_none_ex_alc_idx] *= m.rr_low_grade_dysplasia_none_ex_alc
 
-        # get all adult who are not overweight
-        adults_not_ow = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
+        p_oes_dys_can_age_muliplier = pd.Series(m.rr_low_grade_dysplasia_none_per_year_older ** (df.age_years - 20),
+                                                index=ca_oes_current_none_idx)
 
-        # calculate the effective prob of becoming overweight; use the index of adults not ow
-        eff_p_ow = pd.Series(m.r_overwt, index=adults_not_ow)
-        eff_p_ow.loc[df.sex == 'F'] *= m.rr_overwt_f
-        eff_p_ow.loc[df.li_urban] *= m.rr_overwt_urban
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_none_idx)),
+                                   index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == 'none')])
 
-        # random draw and start of overweight status
-        df.loc[adults_not_ow, 'li_overwt'] = (rng.random_sample(len(adults_not_ow)) < eff_p_ow)
+        dfx = pd.concat([eff_prob_low_grade_dysp, p_oes_dys_can_age_muliplier, random_draw], axis=1)
+        dfx.columns = ['eff_prob_low_grade_dysp', 'p_oes_dys_can_age_muliplier', 'random_draw']
+        dfx.eff_prob_low_grade_dysp *= p_oes_dys_can_age_muliplier
+        idx_incident_low_grade_dysp = dfx.index[dfx.eff_prob_low_grade_dysp > dfx.random_draw]
+        df.loc[idx_incident_low_grade_dysp, 'ca_oesophagus'] = 'low_grade_dysplasia'
 
-        # -------------------- LOW EXERCISE --------------------------------------------------------
+        # updating for people aged over 20 with current status 'low grade dysplasia'
 
-        adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
+        ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+                                                     (df.age_years >= 20)]
+        eff_prob_high_grade_dysp = pd.Series(m.r_high_grade_dysplasia_low_grade_dysp,
+                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
+                                                            & (df.age_years >= 20)])
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_low_grade_dysp_idx)),
+                                index=df.index[(df.age_years >= 20) & df.is_alive &
+                                               (df.ca_oesophagus == 'low_grade_dysplasia')])
+        dfx = pd.concat([eff_prob_high_grade_dysp, random_draw], axis=1)
+        dfx.columns = ['eff_prob_high_grade_dysp', 'random_draw']
+        idx_incident_high_grade_dysp = dfx.index[dfx.eff_prob_high_grade_dysp > dfx.random_draw]
+        df.loc[idx_incident_high_grade_dysp, 'ca_oesophagus'] = 'high_grade_dysplasia'
 
-        eff_p_low_ex = pd.Series(m.r_low_ex, index=adults_not_low_ex)
-        eff_p_low_ex.loc[df.sex == 'F'] *= m.rr_low_ex_f
-        eff_p_low_ex.loc[df.li_urban] *= m.rr_low_ex_urban
+        # updating for people aged over 20 with current status 'high grade dysplasia'
 
-        df.loc[adults_not_low_ex, 'li_low_ex'] = (rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex)
+        ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                                     (df.age_years >= 20)]
+        eff_prob_grade1_oes_can = pd.Series(m.r_stage1_high_grade_dysp,
+                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
+                                                            & (df.age_years >= 20)])
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_high_grade_dysp_idx)),
+                                index=df.index[(df.age_years >= 20) & df.is_alive &
+                                               (df.ca_oesophagus == 'high_grade_dysplasia')])
+        dfx = pd.concat([eff_prob_grade1_oes_can, random_draw], axis=1)
+        dfx.columns = ['eff_prob_grade1_oes_can', 'random_draw']
+        idx_incident_stage1_oes_can = dfx.index[dfx.eff_prob_grade1_oes_can > dfx.random_draw]
+        df.loc[idx_incident_stage1_oes_can, 'ca_oesophagus'] = 'stage1'
 
-        # -------------------- TOBACCO USE ---------------------------------------------------------
+        # updating for people aged over 20 with current status stage 1 oes cancer
 
-        adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
-        currently_tob = df.index[df.li_tob & df.is_alive]
+        ca_oes_current_stage1_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                                     (df.age_years >= 20)]
+        eff_prob_grade2_oes_can = pd.Series(m.r_stage2_high_grade_dysp,
+                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
+                                                            & (df.age_years >= 20)])
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage1_oes_can_idx)),
+                                index=df.index[(df.age_years >= 20) & df.is_alive &
+                                               (df.ca_oesophagus == 'stage1')])
+        dfx = pd.concat([eff_prob_grade2_oes_can, random_draw], axis=1)
+        dfx.columns = ['eff_prob_grade2_oes_can', 'random_draw']
+        idx_incident_stage2_oes_can = dfx.index[dfx.eff_prob_grade2_oes_can > dfx.random_draw]
+        df.loc[idx_incident_stage2_oes_can, 'ca_oesophagus'] = 'stage2'
 
-        # start tobacco use
-        eff_p_tob = pd.Series(m.r_tob, index=adults_not_tob)
-        eff_p_tob.loc[(df.age_years >= 20) & (df.age_years < 40)] *= m.rr_tob_age2039
-        eff_p_tob.loc[df.age_years >= 40] *= m.rr_tob_agege40
-        eff_p_tob.loc[df.sex == 'F'] *= m.rr_tob_f
-        eff_p_tob *= m.rr_tob_wealth ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
+        # updating for people aged over 20 with current status stage 2 oes cancer
 
-        df.loc[adults_not_tob, 'li_tob'] = (rng.random_sample(len(adults_not_tob)) < eff_p_tob)
+        ca_oes_current_stage2_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
+                                                     (df.age_years >= 20)]
+        eff_prob_grade3_oes_can = pd.Series(m.r_stage3_high_grade_dysp,
+                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
+                                                            & (df.age_years >= 20)])
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage2_oes_can_idx)),
+                                index=df.index[(df.age_years >= 20) & df.is_alive &
+                                               (df.ca_oesophagus == 'stage2')])
+        dfx = pd.concat([eff_prob_grade3_oes_can, random_draw], axis=1)
+        dfx.columns = ['eff_prob_grade3_oes_can', 'random_draw']
+        idx_incident_stage3_oes_can = dfx.index[dfx.eff_prob_grade3_oes_can > dfx.random_draw]
+        df.loc[idx_incident_stage3_oes_can, 'ca_oesophagus'] = 'stage3'
 
-        # stop tobacco use
-        df.loc[currently_tob, 'li_tob'] = ~(rng.random_sample(len(currently_tob)) < m.r_not_tob)
+        # updating for people aged over 20 with current status stage 3 oes cancer
 
-        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
-
-        not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
-        not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
-        now_ex_alc = df.index[df.li_ex_alc & df.is_alive]
-
-        df.loc[not_ex_alc_f, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_f)) < m.r_ex_alc * m.rr_ex_alc_f
-        df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.r_ex_alc
-        df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.r_not_ex_alc)
-
-        # -------------------- MARITAL STATUS ------------------------------------------------------
-
-        curr_never_mar = df.index[df.is_alive & df.age_years.between(15, 29) & (df.li_mar_stat == 1)]
-        curr_mar = df.index[df.is_alive & (df.li_mar_stat == 2)]
-
-        # update if now married
-        now_mar = rng.random_sample(len(curr_never_mar)) < m.r_mar
-        df.loc[curr_never_mar[now_mar], 'li_mar_stat'] = 2
-
-        # update if now divorced/widowed
-        now_div_wid = rng.random_sample(len(curr_mar)) < m.r_div_wid
-        df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
-
-        # -------------------- CONTRACEPTION USE ---------------------------------------------------
-
-        possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
-        curr_not_on_con = df.index[possibly_using & ~df.li_on_con]
-        curr_on_con = df.index[possibly_using & df.li_on_con]
-
-        # currently not on contraceptives -> start using contraceptives
-        now_on_con = rng.random_sample(size=len(curr_not_on_con)) < m.r_contrac
-        df.loc[curr_not_on_con[now_on_con], 'li_on_con'] = True
-
-        # todo: default contraceptive type is 1; should type be chosen here?
-
-        # currently using contraceptives -> interrupted
-        now_not_on_con = rng.random_sample(size=len(curr_on_con)) < m.r_contrac_int
-        df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
-
-        # everyone stops using contraceptives at age 50
-        f_age_50 = df.index[(df.age_years == 50) & df.li_on_con]
-        df.loc[f_age_50, 'li_on_con'] = False
-
-        # contraceptive method transitions
-        # note: transitions contr. type for those already using, not those who just started in this event
-        def con_method_transition(con_type, rates):
-            curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
-            df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
-
-        con_method_transition(1, m.r_con_from_1)
-        con_method_transition(2, m.r_con_from_2)
-        con_method_transition(3, m.r_con_from_3)
-        con_method_transition(4, m.r_con_from_4)
-        con_method_transition(5, m.r_con_from_5)
-        con_method_transition(6, m.r_con_from_6)
-
-        # -------------------- EDUCATION -----------------------------------------------------------
-
-        # get all individuals currently in education
-        in_ed = df.index[df.is_alive & df.li_in_ed]
-
-        # ---- PRIMARY EDUCATION
-
-        # get index of all children who are alive and between 5 and 5.25 years old
-        age5 = df.index[(df.age_exact_years >= 5) & (df.age_exact_years < 5.25) & df.is_alive]
-
-        # by default, these children are not in education and have education level 1
-        df.loc[age5, 'li_ed_lev'] = 1
-        df.loc[age5, 'li_in_ed'] = False
-
-        # create a series to hold the probablity of primary education for children at age 5
-        prob_primary = pd.Series(m.p_ed_primary, index=age5)
-        prob_primary *= m.rp_ed_primary_higher_wealth**(5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
-
-        # randomly select some to have primary education
-        age5_in_primary = rng.random_sample(len(age5)) < prob_primary
-        df.loc[age5[age5_in_primary], 'li_ed_lev'] = 2
-        df.loc[age5[age5_in_primary], 'li_in_ed'] = True
-
-        # ---- SECONDARY EDUCATION
-
-        # get thirteen year olds that are in primary education, any wealth level
-        age13_in_primary = df.index[(df.age_years == 13) & df.is_alive & df.li_in_ed & (df.li_ed_lev == 2)]
-
-        # they have a probability of gaining secondary education (level 3), based on wealth
-        prob_secondary = pd.Series(m.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= m.rp_ed_secondary_higher_wealth**(5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
-
-        # randomly select some to get secondary education
-        age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
-        df.loc[age13_in_primary[age13_to_secondary], 'li_ed_lev'] = 3
-
-        # those who did not go on to secondary education are no longer in education
-        df.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
-
-        # ---- DROP OUT OF EDUCATION
-
-        # baseline rate of leaving education then adjust for wealth level
-        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
-        p_leave_ed *= m.rr_stop_ed_lower_wealth**(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
-
-        # randomly select some individuals to leave education
-        now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
-
-        df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
-
-        # everyone leaves education at age 20
-        df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
+        ca_oes_current_stage3_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
+                                                     (df.age_years >= 20)]
+        eff_prob_grade4_oes_can = pd.Series(m.r_stage4_high_grade_dysp,
+                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
+                                                            & (df.age_years >= 20)])
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage3_oes_can_idx)),
+                                index=df.index[(df.age_years >= 20) & df.is_alive &
+                                               (df.ca_oesophagus == 'stage3')])
+        dfx = pd.concat([eff_prob_grade4_oes_can, random_draw], axis=1)
+        dfx.columns = ['eff_prob_grade4_oes_can', 'random_draw']
+        idx_incident_stage4_oes_can = dfx.index[dfx.eff_prob_grade4_oes_can > dfx.random_draw]
+        df.loc[idx_incident_stage4_oes_can, 'ca_oesophagus'] = 'stage4'
 
 
-class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
+
+
+        """
+        p['r_stage1_high_grade_dysp'] = 0.01
+        p['rr_stage1_undergone_curative_treatment'] = 0.1
+        p['r_stage2_stage1'] = 0.05
+        p['rr_stage2_undergone_curative_treatment'] = 0.1
+        p['r_stage3_stage2'] = 0.05
+        p['rr_stage3_undergone_curative_treatment'] = 0.1
+        p['r_stage4_stage3'] = 0.05
+        p['rr_stage4_undergone_curative_treatment'] = 0.3
+        p['r_death_oesoph_cancer'] = 0.4
+        """
+
+
+class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
     def __init__(self, module):
         """schedule logging to repeat every 3 months
@@ -732,34 +542,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # logger.info('%s|li_ed_lev|%s',
-        #             self.sim.date,
-        #             df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
+        logger.debug('%s|person_one|%s',
+                       self.sim.date,
+                       df.loc[0].to_dict())
 
-        # logger.debug('%s|person_one|%s',
-        #              self.sim.date,
-        #              df.loc[0].to_dict())
+#       logger.info('%s|ca_oesophagus|%s',
+#                   self.sim.date,
+#                   df[df.is_alive].groupby('ca_oesophagus').size().to_dict())
 
-        logger.info('%s|li_urban|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_urban').size().to_dict())
+#       logger.info('%s|li_ed_lev_by_age|%s',
+#                   self.sim.date,
+#                   df[df.is_alive].groupby(['age_range', 'ca_oesophagus']).size().to_dict())
 
-        logger.info('%s|li_wealth|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('li_wealth').size().to_dict())
-
-        logger.info('%s|li_overwt|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-
-        logger.info('%s|li_low_ex|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-
-        logger.info('%s|li_tob|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-
-        logger.info('%s|li_ed_lev_by_age|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())

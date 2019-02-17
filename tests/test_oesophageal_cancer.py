@@ -9,8 +9,8 @@ from tlo.methods import demography, lifestyle, oesophageal_cancer
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 4, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
@@ -33,31 +33,7 @@ def simulation():
 
 def __check_properties(df):
 
-    """
-    # no one under 15 can be overweight, low exercise, tobacco, excessive alcohol, married
-    under15 = df.age_years < 15
-    assert not (under15 & df.li_overwt).any()
-    assert not (under15 & df.li_low_ex).any()
-    assert not (under15 & df.li_tob).any()
-    assert not (under15 & df.li_ex_alc).any()
-    assert not (under15 & (df.li_mar_stat != 1)).any()
-    assert not (under15 & df.li_on_con).any()
-
-    # only adult females 15-50 can use contraceptives
-    assert not (df.li_on_con & ((df.sex != 'F') | under15 | (df.age_years > 50))).any()
-
-    # education: no one 0-5 should be in education
-    assert not ((df.age_years < 5) & (df.li_in_ed | (df.li_ed_lev != 1))).any()
-
-    # education: no one under 13 can be in secondary education
-    assert not ((df.age_years < 13) & (df.li_ed_lev == 3)).any()
-
-    # education: no one over age 20 in education
-    assert not ((df.age_years > 20) & df.li_in_ed).any()
-
-    """
-
-def test_make_initial_population(simulation):
+ def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
 
 
