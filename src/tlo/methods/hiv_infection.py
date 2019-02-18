@@ -803,14 +803,6 @@ class hiv_mtct_event(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
 
-
-
-
-
-
-
-
-
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
