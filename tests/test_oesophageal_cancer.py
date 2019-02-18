@@ -9,8 +9,8 @@ from tlo.methods import demography, lifestyle, oesophageal_cancer
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2035, 1, 1)
+popsize = 1
 
 
 @pytest.fixture(autouse=True)
