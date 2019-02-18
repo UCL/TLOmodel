@@ -439,9 +439,14 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
                                                      (df.age_years >= 20)]
+        ca_oes_current_low_grade_dysp_treated_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+                                                     (df.age_years >= 20)
+                                                     & (df.ca_oesophagus_curative_treatment == 'low_grade_dysplasia')]
         eff_prob_high_grade_dysp = pd.Series(m.r_high_grade_dysplasia_low_grade_dysp,
                                              index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
                                                             & (df.age_years >= 20)])
+        eff_prob_high_grade_dysp.loc[ca_oes_current_low_grade_dysp_treated_idx] \
+            *= m.rr_high_grade_dysp_undergone_curative_treatment
         random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_low_grade_dysp_idx)),
                                 index=df.index[(df.age_years >= 20) & df.is_alive &
                                                (df.ca_oesophagus == 'low_grade_dysplasia')])
@@ -454,77 +459,227 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
                                                      (df.age_years >= 20)]
-        eff_prob_grade1_oes_can = pd.Series(m.r_stage1_high_grade_dysp,
+        ca_oes_current_high_grade_dysp_treated_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                                     (df.age_years >= 20)
+                                                     & (df.ca_oesophagus_curative_treatment == 'high_grade_dysplasia')]
+        eff_prob_stage1 = pd.Series(m.r_stage1_high_grade_dysp,
                                              index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
                                                             & (df.age_years >= 20)])
+        eff_prob_stage1.loc[ca_oes_current_high_grade_dysp_treated_idx] \
+            *= m.rr_stage1_undergone_curative_treatment
         random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_high_grade_dysp_idx)),
                                 index=df.index[(df.age_years >= 20) & df.is_alive &
                                                (df.ca_oesophagus == 'high_grade_dysplasia')])
-        dfx = pd.concat([eff_prob_grade1_oes_can, random_draw], axis=1)
-        dfx.columns = ['eff_prob_grade1_oes_can', 'random_draw']
-        idx_incident_stage1_oes_can = dfx.index[dfx.eff_prob_grade1_oes_can > dfx.random_draw]
-        df.loc[idx_incident_stage1_oes_can, 'ca_oesophagus'] = 'stage1'
+        dfx = pd.concat([eff_prob_stage1, random_draw], axis=1)
+        dfx.columns = ['eff_prob_stage1', 'random_draw']
+        idx_incident_stage1 = dfx.index[dfx.eff_prob_stage1 > dfx.random_draw]
+        df.loc[idx_incident_stage1, 'ca_oesophagus'] = 'stage1'
 
         # updating for people aged over 20 with current status stage 1 oes cancer
 
-        ca_oes_current_stage1_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
-                                                     (df.age_years >= 20)]
-        eff_prob_grade2_oes_can = pd.Series(m.r_stage2_high_grade_dysp,
-                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
-                                                            & (df.age_years >= 20)])
-        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage1_oes_can_idx)),
+        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                             (df.age_years >= 20)]
+        ca_oes_current_stage1_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'stage1') &
+            (df.age_years >= 20)
+            & (df.ca_oesophagus_curative_treatment == 'stage1')]
+        eff_prob_stage2 = pd.Series(m.r_stage2_stage1,
+                                    index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
+                                                   & (df.age_years >= 20)])
+        eff_prob_stage2.loc[ca_oes_current_stage1_treated_idx] \
+            *= m.rr_stage2_undergone_curative_treatment
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage1_idx)),
                                 index=df.index[(df.age_years >= 20) & df.is_alive &
                                                (df.ca_oesophagus == 'stage1')])
-        dfx = pd.concat([eff_prob_grade2_oes_can, random_draw], axis=1)
-        dfx.columns = ['eff_prob_grade2_oes_can', 'random_draw']
-        idx_incident_stage2_oes_can = dfx.index[dfx.eff_prob_grade2_oes_can > dfx.random_draw]
-        df.loc[idx_incident_stage2_oes_can, 'ca_oesophagus'] = 'stage2'
+        dfx = pd.concat([eff_prob_stage2, random_draw], axis=1)
+        dfx.columns = ['eff_prob_stage2', 'random_draw']
+        idx_incident_stage2 = dfx.index[dfx.eff_prob_stage2 > dfx.random_draw]
+        df.loc[idx_incident_stage2, 'ca_oesophagus'] = 'stage2'
 
         # updating for people aged over 20 with current status stage 2 oes cancer
 
-        ca_oes_current_stage2_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
-                                                     (df.age_years >= 20)]
-        eff_prob_grade3_oes_can = pd.Series(m.r_stage3_high_grade_dysp,
-                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
-                                                            & (df.age_years >= 20)])
-        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage2_oes_can_idx)),
+        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
+                                             (df.age_years >= 20)]
+        ca_oes_current_stage2_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'stage2') &
+            (df.age_years >= 20)
+            & (df.ca_oesophagus_curative_treatment == 'stage2')]
+        eff_prob_stage3 = pd.Series(m.r_stage3_stage2,
+                                    index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
+                                                   & (df.age_years >= 20)])
+        eff_prob_stage3.loc[ca_oes_current_stage2_treated_idx] \
+            *= m.rr_stage3_undergone_curative_treatment
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage2_idx)),
                                 index=df.index[(df.age_years >= 20) & df.is_alive &
                                                (df.ca_oesophagus == 'stage2')])
-        dfx = pd.concat([eff_prob_grade3_oes_can, random_draw], axis=1)
-        dfx.columns = ['eff_prob_grade3_oes_can', 'random_draw']
-        idx_incident_stage3_oes_can = dfx.index[dfx.eff_prob_grade3_oes_can > dfx.random_draw]
-        df.loc[idx_incident_stage3_oes_can, 'ca_oesophagus'] = 'stage3'
+        dfx = pd.concat([eff_prob_stage3, random_draw], axis=1)
+        dfx.columns = ['eff_prob_stage3', 'random_draw']
+        idx_incident_stage3 = dfx.index[dfx.eff_prob_stage3 > dfx.random_draw]
+        df.loc[idx_incident_stage3, 'ca_oesophagus'] = 'stage3'
 
         # updating for people aged over 20 with current status stage 3 oes cancer
 
-        ca_oes_current_stage3_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
-                                                     (df.age_years >= 20)]
-        eff_prob_grade4_oes_can = pd.Series(m.r_stage4_high_grade_dysp,
-                                             index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
-                                                            & (df.age_years >= 20)])
-        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage3_oes_can_idx)),
+        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
+                                             (df.age_years >= 20)]
+        ca_oes_current_stage3_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'stage3') &
+            (df.age_years >= 20)
+            & (df.ca_oesophagus_curative_treatment == 'stage3')]
+        eff_prob_stage4 = pd.Series(m.r_stage4_stage3,
+                                    index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
+                                                   & (df.age_years >= 20)])
+        eff_prob_stage4.loc[ca_oes_current_stage3_treated_idx] \
+            *= m.rr_stage4_undergone_curative_treatment
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_stage3_idx)),
                                 index=df.index[(df.age_years >= 20) & df.is_alive &
                                                (df.ca_oesophagus == 'stage3')])
-        dfx = pd.concat([eff_prob_grade4_oes_can, random_draw], axis=1)
-        dfx.columns = ['eff_prob_grade4_oes_can', 'random_draw']
-        idx_incident_stage4_oes_can = dfx.index[dfx.eff_prob_grade4_oes_can > dfx.random_draw]
-        df.loc[idx_incident_stage4_oes_can, 'ca_oesophagus'] = 'stage4'
+        dfx = pd.concat([eff_prob_stage4, random_draw], axis=1)
+        dfx.columns = ['eff_prob_stage4', 'random_draw']
+        idx_incident_stage4 = dfx.index[dfx.eff_prob_stage4 > dfx.random_draw]
+        df.loc[idx_incident_stage4, 'ca_oesophagus'] = 'stage4'
+
+        # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
+
+        # update diagnosis status for undiagnosed people with low grade dysplasia
+
+        ca_oes_current_low_grade_dysp_not_diag_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+            (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp,
+                                  index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+                                                 (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_low_grade_dysp_not_diag_idx))
+        df.loc[ca_oes_current_low_grade_dysp_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # update diagnosis status for undiagnosed people with high grade dysplasia
+
+        ca_oes_current_high_grade_dysp_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                                          (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_high_grade_dysp*m.rr_diagnosis_high_grade_dysp,
+                              index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_high_grade_dysp_not_diag_idx))
+        df.loc[ca_oes_current_high_grade_dysp_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # update diagnosis status for undiagnosed people with stage 1 oes cancer
+
+        ca_oes_current_stage1_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                                      (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_high_grade_dysp * m.rr_diagnosis_stage1,
+                                  index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                                 (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_stage1_not_diag_idx))
+        df.loc[ca_oes_current_stage1_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # update diagnosis status for undiagnosed people with stage 2 oes cancer
+
+        ca_oes_current_stage2_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
+                                                          (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_high_grade_dysp*m.rr_diagnosis_stage2,
+                              index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
+                                             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_stage2_not_diag_idx))
+        df.loc[ca_oes_current_stage2_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # update diagnosis status for undiagnosed people with stage 3 oes cancer
+
+        ca_oes_current_stage3_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
+                                                          (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_high_grade_dysp*m.rr_diagnosis_stage3,
+                              index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
+                                             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_stage3_not_diag_idx))
+        df.loc[ca_oes_current_stage3_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # update diagnosis status for undiagnosed people with stage 4 oes cancer
+
+        ca_oes_current_stage4_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4') &
+                                                          (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        eff_prob_diag = pd.Series(m.r_diagnosis_high_grade_dysp*m.rr_diagnosis_stage4,
+                              index=df.index[df.is_alive & (df.ca_oesophagus == 'stage4') &
+                                             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
+        random_draw = rng.random_sample(size=len(ca_oes_current_stage4_not_diag_idx))
+        df.loc[ca_oes_current_stage4_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+
+        # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
+
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
+
+        ca_oes_diag_low_grade_dysp_not_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+            (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (df.ca_oesophagus_curative_treatment == 'never')]
+        eff_prob_treatment = pd.Series(m.r_curative_treatment_low_grade_dysp,
+                                       index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+                                                      (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (
+                                                              df.ca_oesophagus_curative_treatment == 'never')]}
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_diag_low_grade_dysp_not_treated_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
+                                               (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (
+                                                       df.ca_oesophagus_curative_treatment == 'never')])
+        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
+        dfx.columns = ['eff_prob_treatment', 'random_draw']
+        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
+
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with high grade dysplasia w
+
+        ca_oes_diag_high_grade_dysp_not_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+            (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (df.ca_oesophagus_curative_treatment == 'never')]
+        eff_prob_treatment = pd.Series(m.r_curative_treatment_high_grade_dysp*m.rr_curative_treatment_high_grade_dysp,
+                                       index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                                      (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (
+                                                              df.ca_oesophagus_curative_treatment == 'never')]}
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_diag_high_grade_dysp_not_treated_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
+                                               (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (
+                                                       df.ca_oesophagus_curative_treatment == 'never')])
+        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
+        dfx.columns = ['eff_prob_treatment', 'random_draw']
+        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'high_grade_dysplasia'
+
+
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 1
+
+        ca_oes_diag_stage1_not_treated_idx = df.index[
+            df.is_alive & (df.ca_oesophagus == 'stage1') &
+            (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (df.ca_oesophagus_curative_treatment == 'never')]
+        eff_prob_treatment = pd.Series(m.r_curative_treatment_low_grade_dysp*m.rr_curative_treatment_stage1,
+                                       index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                                      (df.age_years >= 20) & df.ca_oesophagus_diagnosed &
+                                                      (df.ca_oesophagus_curative_treatment == 'never')]}
+        random_draw = pd.Series(rng.random_sample(size=len(ca_oes_diag_stage1_not_treated_idx)),
+                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
+                                               (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (
+                                                       df.ca_oesophagus_curative_treatment == 'never')])
+        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
+        dfx.columns = ['eff_prob_treatment', 'random_draw']
+        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage1'
 
 
 
 
 
-        """
-        p['r_stage1_high_grade_dysp'] = 0.01
-        p['rr_stage1_undergone_curative_treatment'] = 0.1
-        p['r_stage2_stage1'] = 0.05
-        p['rr_stage2_undergone_curative_treatment'] = 0.1
-        p['r_stage3_stage2'] = 0.05
-        p['rr_stage3_undergone_curative_treatment'] = 0.1
-        p['r_stage4_stage3'] = 0.05
-        p['rr_stage4_undergone_curative_treatment'] = 0.3
-        p['r_death_oesoph_cancer'] = 0.4
-        """
+    'r_curative_treatment_low_grade_dysp': 
+        'rr_curative_treatment_high_grade_dysp': 
+        'rr_curative_treatment_stage1': 
+        'rr_curative_treatment_stage2': 
+        'rr_curative_treatment_stage3': 
+
+
+
+        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
+
+        'r_death_oesoph_cancer': Parameter(Types.REAL, 'probabilty per 3 months of death from oesophageal cancer '
+                                                       'mongst people with stage 4 oesophageal cancer'),
+
+
+        # create a property for ca_oes_cancer_death ?
+
+
+
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
