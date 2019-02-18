@@ -18,7 +18,7 @@ outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx''
+resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx'
 
 
 # %% Run the Simulation
@@ -32,7 +32,7 @@ popsize = 1000
 sim = Simulation(start_date=start_date)
 
 # this block of code is to capture the output to file
-logfile = dirpath + 'LogFile' + datestamp  +'.log'
+logfile = outputpath + 'LogFile' + datestamp  +'.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
