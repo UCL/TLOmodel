@@ -18,7 +18,7 @@ outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/tests/resources/demography.xlsx'
+resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx''
 
 
 # %% Run the Simulation
