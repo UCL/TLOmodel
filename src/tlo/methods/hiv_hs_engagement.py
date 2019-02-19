@@ -295,15 +295,17 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
 
-        if df.at[individual_id.is_alive & ~individual_id.hiv_diagnosed]:
-            # probability of HIV testing
-            df.at[individual_id, 'ever_tested'] = np.random.choice([True, False], size=1,
-                                                                   p=[params['testing_prob_individual'],
-                                                                      1 - params['testing_prob_individual']])
+        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'df.hiv_diagnosed'] & np.random.choice(
+            [True, False], size=1,
+            p=[params['testing_prob_individual'],
+               1 - params['testing_prob_individual']]):
 
+            # probability of HIV testing
+            df.at[individual_id, 'ever_tested'] = True
             df.at[individual_id, 'date_tested'] = self.sim.date
 
-            df.at[individual_id.ever_tested & individual_id.is_alive & individual_id.has_hiv, 'hiv_diagnosed'] = True
+            if df.at[individual_id, df.has_hiv]:
+                df.at[individual_id, 'hiv_diagnosed'] = True
 
 
 class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
@@ -368,19 +370,16 @@ class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
         # extract time on art
         time_on_art = (now - df_art['date_art_start']) / np.timedelta64(1, 'M')
         time_on_art2 = time_on_art.astype(int)
-        df_art.loc[:, 'art_months'] = pd.Series(time_on_art2, index=df_art.index)
-        # print(df_art.head(30))
 
         # request for viral load
-        df_art.loc[:, 'vl_needed'] = pd.Series(df_art['art_months'].isin(vl_times), index=df_art.index)
+        vl_needed = time_on_art2.isin(vl_times)
 
         # allocate viral load testing using coin flip - later will be linked with hs resources module
         # allocate vl if requested and coin toss is true
-        df_art.loc[:, 'vl_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_art), p=[0.5, 0.5]),
-                                                  index=df_art.index)
-        # print(df_art.head(40))
-        vl_index = df_art.index[df_art.vl_needed & df_art.vl_allocated]
-        # print(vl_index)
+        vl_allocated = np.random.choice([True, False], size=len(df_art), p=[0.5, 0.5])
+
+        vl_index = df_art.index[vl_needed & vl_allocated]
+        # print('vl_index', vl_index)
 
         df.loc[vl_index, 'viral_load_test'] = now
 
@@ -401,16 +400,16 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. HIV-exposed infants, from 4 weeks to 18 months
         df_inf = df[df.is_alive & ~df.has_hiv & df.mother_hiv & ~df.on_cotrim & (df.age_exact_years > 0.083) & (
-                df.age_exact_years < 1.5)]
+            df.age_exact_years < 1.5)]
 
         # request for cotrim, dependent on access to health facility / demographic characteristics?
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0]),
-                                                   index=df_inf)
+                                  index=df_inf)
 
         # allocate cotrim using coin flip - later will be linked with hs resources module
         # allocate cotrim if requested and coin toss is true
         cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0.]),
-                                                      index=df_inf)
+                                     index=df_inf)
         # print('df_inf', df_inf.head(30))
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
@@ -423,7 +422,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         df_child = df[
             df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_exact_years >= 1.5) & (df.age_exact_years < 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_child), p=[1, 0]),
-                                                     index=df_child)
+                                  index=df_child)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_child), p=[1, 0]), index=df_child)
 
@@ -433,11 +432,10 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[ct_child_index, 'on_cotrim'] = True
             df.loc[ct_child_index, 'date_cotrim'] = now
 
-            
         # 3. TB/HIV+ adults
         df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
-                                                     index=df_coinf)
+                                  index=df_coinf)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_coinf), p=[1, 0]), index=df_coinf)
 
@@ -450,20 +448,19 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         # 4. pregnant women with HIV
         df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
-                                                    index=df_preg)
+                                  index=df_preg)
         cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
-                                                       index=df_preg)
+                                     index=df_preg)
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
             ct_preg_index = df_preg.index[z]
             df.loc[ct_preg_index, 'on_cotrim'] = True
             df.loc[ct_preg_index, 'date_cotrim'] = now
 
-
         # 5. all adults with HIV
         df_adult = df[df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_adult), p=[1, 0]),
-                                                     index=df_adult)
+                                  index=df_adult)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_adult), p=[1, 0]), index=df_adult)
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]

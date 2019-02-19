@@ -252,7 +252,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(0, index=df.index)
-        eff_prob_active_tb.loc[df.has_tb == 'Latent'] = params['progression_to_active_rate']
+        eff_prob_active_tb.loc[(df.has_tb == 'Latent')] = params['progression_to_active_rate']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
         hiv_stage1 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
