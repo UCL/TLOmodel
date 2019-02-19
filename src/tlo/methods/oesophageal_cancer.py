@@ -127,23 +127,22 @@ class Oesophageal_Cancer(Module):
                                               'stage2', 'stage3']),
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer'),
         'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer')
+        'ca_incident_oes_cancer_diagnosis_this_3_month_period': Property(Types.BOOL, 'incident oesophageal cancer'
+                                                                'diagnosis this 3 month period')
     }
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module
         """
         p = self.parameters
-#       p['r_low_grade_dysplasia_none'] = 0.00001
-        p['r_low_grade_dysplasia_none'] = 0.01
+        p['r_low_grade_dysplasia_none'] = 0.00001
         p['rr_low_grade_dysplasia_none_female'] = 1.3
         p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
         p['rr_low_grade_dysplasia_none_tobacco'] = 2.0
         p['rr_low_grade_dysplasia_none_ex_alc'] = 1.0
-#       p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
-        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.2
+        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
         p['rr_high_grade_dysp_undergone_curative_treatment'] = 0.1
-#       p['r_stage1_high_grade_dysp'] = 0.01
-        p['r_stage1_high_grade_dysp'] = 0.3
+        p['r_stage1_high_grade_dysp'] = 0.01
         p['rr_stage1_undergone_curative_treatment'] = 0.1
         p['r_stage2_stage1'] = 0.05
         p['rr_stage2_undergone_curative_treatment'] = 0.1
@@ -157,15 +156,13 @@ class Oesophageal_Cancer(Module):
         p['rr_curative_treatment_stage1'] = 1.0
         p['rr_curative_treatment_stage2'] = 1.0
         p['rr_curative_treatment_stage3'] = 1.0
-#       p['r_diagnosis_low_grade_dysp'] = 0.002
-        p['r_diagnosis_low_grade_dysp'] = 0.2  
-        p['rr_diagnosis_high_grade_dysp'] = 2
-        p['rr_diagnosis_stage1'] = 10
-        p['rr_diagnosis_stage2'] = 30
-        p['rr_diagnosis_stage3'] = 40
-        p['rr_diagnosis_stage4'] = 50
- #      p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
-        p['init_prop_oes_cancer_stage'] = [0.000 ,0.000 ,0.00   ,0.0000 ,0.00000 ,0.00000 ]
+        p['r_diagnosis_low_grade_dysp'] = 0.001
+        p['rr_diagnosis_high_grade_dysp'] = 1
+        p['rr_diagnosis_stage1'] = 20
+        p['rr_diagnosis_stage2'] = 60
+        p['rr_diagnosis_stage3'] = 80
+        p['rr_diagnosis_stage4'] = 100
+        p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
         p['rp_oes_cancer_female'] = 1.3
         p['rp_oes_cancer_per_year_older'] = 1.1
         p['rp_oes_cancer_tobacco'] = 2.0
@@ -187,6 +184,7 @@ class Oesophageal_Cancer(Module):
         df['ca_oesophagus_diagnosed'] = False
         df['ca_oesophagus_curative_treatment'] = 'never'
         df['ca_oesophageal_cancer_death'] = False
+        df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
@@ -385,6 +383,8 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, 'ca_oesophagus'] = 'none'
         df.at[child_id, 'ca_oesophagus_diagnosed'] = False
         df.at[child_id, 'ca_oesophagus_curative_treatment'] = 'never'
+        df.at[child_id, 'ca_oesophageal_cancer_death'] = 'never'
+        df.at[child_id, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
 
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
@@ -552,6 +552,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                  (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_low_grade_dysp_not_diag_idx))
         df.loc[ca_oes_current_low_grade_dysp_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_low_grade_dysp_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with high grade dysplasia
 
@@ -562,6 +564,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_high_grade_dysp_not_diag_idx))
         df.loc[ca_oes_current_high_grade_dysp_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_high_grade_dysp_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 1 oes cancer
 
@@ -572,6 +576,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                  (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage1_not_diag_idx))
         df.loc[ca_oes_current_stage1_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_stage1_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 2 oes cancer
 
@@ -582,6 +588,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage2_not_diag_idx))
         df.loc[ca_oes_current_stage2_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_stage2_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 3 oes cancer
 
@@ -592,6 +600,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage3_not_diag_idx))
         df.loc[ca_oes_current_stage3_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_stage3_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 4 oes cancer
 
@@ -602,6 +612,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage4_not_diag_idx))
         df.loc[ca_oes_current_stage4_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        df.loc[ca_oes_current_stage4_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
+            = (random_draw < eff_prob_diag)
 
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
 
@@ -697,9 +709,14 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
 
-        stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'satge4')]
+        stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
         random_draw = m.rng.random_sample(size=len(stage4_idx))
         df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
+
+        # todo - this code dealth with centrally
+        dead_oes_can_idx = df.index[df.ca_oesophageal_cancer_death]
+        df.loc[dead_oes_can_idx, 'is_alive'] = False
+
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -716,15 +733,30 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        logger.debug('%s|person_one|%s',
-                       self.sim.date,
-                       df.loc[0].to_dict())
+ #      logger.debug('%s|person_one|%s',
+ #                     self.sim.date,
+ #                     df.loc[0].to_dict())
 
 #       logger.info('%s|ca_oesophagus|%s',
 #                   self.sim.date,
-#                   df[df.is_alive].groupby('ca_oesophagus').size().to_dict())
+#                   df[df.is_alive].groupby(['ca_oesophagus']).size().to_dict())
 
-#       logger.info('%s|li_ed_lev_by_age|%s',
+        # note below remove is_alive
+#       logger.info('%s|ca_oesophagus_death|%s',
+#                   self.sim.date,
+#                   df[df.age_years >= 20].groupby(['ca_oesophageal_cancer_death']).size().to_dict())
+
+
+        logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
+                    self.sim.date,
+                    df[df.age_years >= 20].groupby(['age_range','ca_incident_oes_cancer_diagnosis_this_3_month_period']).size().to_dict())
+
+
+        logger.info('%s|ca_oesophagus_diagnosed|%s',
+                    self.sim.date,
+                    df[df.age_years >= 20].groupby(['ca_oesophagus', 'ca_oesophagus_diagnosed']).size().to_dict())
+
+#       logger.info('%s|ca_oesophagus|%s',
 #                   self.sim.date,
 #                   df[df.is_alive].groupby(['age_range', 'ca_oesophagus']).size().to_dict())
 

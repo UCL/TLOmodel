@@ -564,16 +564,16 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # contraceptive method transitions
         # note: transitions contr. type for those already using, not those who just started in this event
-        def con_method_transition(con_type, rates):
-            curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
-            df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
+#       def con_method_transition(con_type, rates):
+#           curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
+#           df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
 
-        con_method_transition(1, m.r_con_from_1)
-        con_method_transition(2, m.r_con_from_2)
-        con_method_transition(3, m.r_con_from_3)
-        con_method_transition(4, m.r_con_from_4)
-        con_method_transition(5, m.r_con_from_5)
-        con_method_transition(6, m.r_con_from_6)
+#       con_method_transition(1, m.r_con_from_1)
+#       con_method_transition(2, m.r_con_from_2)
+#       con_method_transition(3, m.r_con_from_3)
+#       con_method_transition(4, m.r_con_from_4)
+#       con_method_transition(5, m.r_con_from_5)
+#       con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
