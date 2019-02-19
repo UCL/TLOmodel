@@ -414,7 +414,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         # print('df_inf', df_inf.head(30))
         if len(cotrim_needed) & len(cotrim_allocated):
             ct_inf_index = df_inf.index[cotrim_needed & cotrim_allocated]
-            print('ct_inf_index', ct_inf_index)
+            # print('ct_inf_index', ct_inf_index)
 
         # 2. HIV+ children <15 years
         df_child = df[
@@ -424,7 +424,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_child), p=[1, 0]), index=df_child)
         ct_child_index = df_child.index[cotrim_needed & cotrim_allocated]
-        print('ct_child_index', ct_child_index)
+        # print('ct_child_index', ct_child_index)
 
         # 3. TB/HIV+ adults
         df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
@@ -433,7 +433,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_coinf), p=[1, 0]), index=df_coinf)
         ct_coinf_index = df_coinf.index[cotrim_needed & cotrim_allocated]
-        print('ct_coinf_index', ct_coinf_index)
+        # print('ct_coinf_index', ct_coinf_index)
 
         # 4. pregnant women with HIV
         df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
@@ -454,7 +454,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         # print('cotrim_allocated', cotrim_allocated)
 
         ct_adult_index = df_adult.index[cotrim_needed & cotrim_allocated]
-        print('ct_adult_index', ct_adult_index)
+        # print('ct_adult_index', ct_adult_index)
 
         df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'on_cotrim'] = True
         df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'date_cotrim'] = now

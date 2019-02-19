@@ -91,7 +91,7 @@ class BehaviourChangeEvent(RegularEvent, PopulationScopeEventMixin):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
 
-        # probability of TB testing
+        # probability of counselling
         counselling_index = df.index[
             (random_draw < params['p_behaviour']) & ~df.behaviour_change & df.is_alive
             & (df.age_years >= 15)]
