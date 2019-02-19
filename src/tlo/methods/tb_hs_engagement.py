@@ -97,49 +97,51 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of TB smear test
         # can be repeat tested
         testing_index = df.index[(random_draw < params['tb_testing_coverage']) & df.is_alive]
-        print(testing_index)
+        # print('testing_index', testing_index)
         df.loc[testing_index, 'tb_ever_tested'] = True
         df.loc[testing_index, 'tb_smear_test'] = True
         df.loc[testing_index, 'tb_date_smear_test'] = now
 
-        # # 80% of smear tested active cases will be diagnosed
-        # # this is lower for HIV+ (higher prop of extrapulmonary tb
-        # tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & ~df.has_hiv]
-        # diagnosed_idx = pd.Series(np.random.choice([True, False], size=len(tested_idx),
-        #                                            p=[params['prop_smear_positive'],
-        #                                               (1 - params['prop_smear_positive'])]),
-        #                           index=tested_idx)
-        # idx = tested_idx[diagnosed_idx]
-        #
-        # tested_idx_hiv = df.index[
-        #     (df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & df.has_hiv]
-        #
-        # diagnosed_idx_hiv = pd.Series(np.random.choice([True, False], size=len(tested_idx_hiv),
-        #                                                p=[params['prop_smear_positive_hiv'],
-        #                                                   (1 - params['prop_smear_positive_hiv'])]),
-        #                               index=tested_idx_hiv)
-        # idx_hiv = tested_idx_hiv[diagnosed_idx_hiv]
-        #
-        # if len(idx):
-        #     df.loc[idx, 'result_smear_test'] = True
-        #     df.loc[idx, 'tb_diagnosed'] = True
-        #
-        # if len(idx_hiv):
-        #     df.loc[idx_hiv, 'result_smear_test'] = True
-        #     df.loc[idx_hiv, 'tb_diagnosed'] = True
-        #
-        # # remaining 20% of active cases referred for xpert testing with some delay
-        # # also some true negatives may have follow-up testing
-        # # schedule xpert testing at future date
-        # # random draw approx 2 months?
-        # undiagnosed_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & ~df.tb_diagnosed]
-        #
-        # for person in undiagnosed_idx:
-        #     refer_xpert = tbXpertTest(self.module, individual_id=person)
-        #     referral_time = np.random.normal(loc=(2 / 12), scale=(1 / 12), size=1)
-        #     referral_time_yrs = pd.to_timedelta(referral_time, unit='y')
-        #     future_referral_time = now + referral_time_yrs
-        #     self.sim.schedule_event(refer_xpert, future_referral_time)
+        # 80% of smear tested active cases will be diagnosed
+        # this is lower for HIV+ (higher prop of extrapulmonary tb
+        tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & ~df.has_hiv]
+        diagnosed_idx = pd.Series(np.random.choice([True, False], size=len(tested_idx),
+                                                   p=[params['prop_smear_positive'],
+                                                      (1 - params['prop_smear_positive'])]),
+                                  index=tested_idx)
+        idx = tested_idx[diagnosed_idx]
+
+        tested_idx_hiv = df.index[
+            (df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & df.has_hiv]
+
+        diagnosed_idx_hiv = pd.Series(np.random.choice([True, False], size=len(tested_idx_hiv),
+                                                       p=[params['prop_smear_positive_hiv'],
+                                                          (1 - params['prop_smear_positive_hiv'])]),
+                                      index=tested_idx_hiv)
+        idx_hiv = tested_idx_hiv[diagnosed_idx_hiv]
+
+        if len(idx):
+            df.loc[idx, 'result_smear_test'] = True
+            df.loc[idx, 'tb_diagnosed'] = True
+
+        if len(idx_hiv):
+            df.loc[idx_hiv, 'result_smear_test'] = True
+            df.loc[idx_hiv, 'tb_diagnosed'] = True
+
+        print('test date', now)
+
+        # remaining 20% of active cases referred for xpert testing with some delay
+        # also some true negatives may have follow-up testing
+        # schedule xpert testing at future date
+        # random draw approx 2 months?
+        undiagnosed_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & ~df.tb_diagnosed]
+
+        for person in undiagnosed_idx:
+            refer_xpert = tbXpertTest(self.module, individual_id=person)
+            referral_time = np.random.normal(loc=(2 / 12), scale=(1 / 12), size=1)
+            referral_time_yrs = pd.to_timedelta(referral_time, unit='y')
+            future_referral_time = now + referral_time_yrs
+            self.sim.schedule_event(refer_xpert, future_referral_time)
 
 
 class tbXpertTest(Event, IndividualScopeEventMixin):
@@ -153,24 +155,26 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
         now = self.sim.date
+        print('xpert date now', now)
 
-        # if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'tb_diagnosed'] and (
-        #     np.random.choice([True, False], size=1,
-        #                      p=[params['testing_prob_xpert'],
-        #                         1 - params[
-        #                             'testing_prob_xpert']])):
-        #     print('xpert test happening')
-        #
-        #     df.at[individual_id, 'tb_xpert_test'] = True
-        #     df.at[individual_id, 'tb_date_xpert_test'] = now
-        #
-        #     # around 50% of active cases will still be negative, different for HIV+?
-        #     if df.at[individual_id, (df.has_tb == 'Active') & df.tb_xpert_test]:
-        #         df.at[individual_id, 'tb_result_xpert_test'] = np.random.choice([True, False], size=1,
-        #                                                                         p=[params['prop_xpert_positive'],
-        #                                                                            1 - params['prop_xpert_positive']])
-        #         df.at[individual_id, 'tb_result_xpert_test'] = True
-        #         df.at[individual_id, 'tb_diagnosed'] = True
+        # prob of receiving xpert test
+        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'tb_diagnosed'] and (
+            np.random.choice([True, False], size=1,
+                             p=[params['testing_prob_xpert'],
+                                1 - params[
+                                    'testing_prob_xpert']])):
+            # print('xpert test happening')
+
+            df.at[individual_id, 'tb_xpert_test'] = True
+            # df.at[individual_id, 'tb_date_xpert_test'] = now
+
+            diagnosed = np.random.choice([True, False], size=1,
+                                         p=[params['prop_xpert_positive'],
+                                            (1 - params['prop_xpert_positive'])])
+
+            if len(diagnosed):
+                df.at[individual_id, 'tb_result_xpert_test'] = True
+                df.at[individual_id, 'tb_diagnosed'] = True
 
 
 class TbHealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
