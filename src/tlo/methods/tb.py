@@ -39,6 +39,9 @@ class tb_baseline(Module):
         'rr_tb_art': Parameter(
             Types.REAL,
             'relative risk of tb in hiv+ on art'),
+        'rr_tb_ipt': Parameter(
+            Types.REAL,
+            'relative risk of tb on ipt'),
         'rr_tb_malnourished': Parameter(Types.REAL, 'relative risk of tb with malnourishment'),
         'rr_tb_diabetes1': Parameter(Types.REAL, 'relative risk of tb with diabetes type 1'),
         'rr_tb_alcohol': Parameter(Types.REAL, 'relative risk of tb with heavy alcohol use'),
@@ -79,19 +82,20 @@ class tb_baseline(Module):
         """
         params = self.parameters
         params['prop_fast_progressor'] = 0.14
-        params['transmission_rate'] = 0.0001  # 4.9 (Juan)
-        params['progression_to_active_rate'] = 0.5
+        params['transmission_rate'] = 4.9  # (Juan)
+        params['progression_to_active_rate'] = 0.001  # horsburgh
 
-        params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]
-        params['rr_tb_art'] = 0.39
-        params['rr_tb_malnourished'] = 2.1
-        params['rr_tb_diabetes1'] = 3
-        params['rr_tb_alcohol'] = 2.9
-        params['rr_tb_smoking'] = 2.6
-        params['rr_tb_pollution'] = 1.5
+        params['rr_tb_with_hiv_stages'] = [3.44, 6.76, 13.28, 26.06]  # williams 9 african countries
+        params['rr_tb_art'] = 0.39  # 0.35 suthar
+        params['rr_tb_ipt'] = 0.63  # 0.35 rangaka
+        params['rr_tb_malnourished'] = 2.1  # lonroth 2010 (DCP3)
+        params['rr_tb_diabetes1'] = 3  # joen 2008 (DCP3)
+        params['rr_tb_alcohol'] = 2.9  # lonnroth 2008 (DCP3)
+        params['rr_tb_smoking'] = 2.6  # lin 2007 (DCP3)
+        params['rr_tb_pollution'] = 1.5  # lin 2007 (DCP3)
 
         params['rel_infectiousness_hiv'] = 0.68  # Juan
-        params['prob_self_cure'] = 0.15
+        params['prob_self_cure'] = 0.15  # juan
         params['self_cure'] = 0.33  # tiemersma plos one 2011, self-cure/death in 3 yrs
         params['tb_mortality_rate'] = 0.15  # Juan
         params['tb_mortality_HIV'] = 0.84  # Juan
@@ -105,15 +109,8 @@ class tb_baseline(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-        :param population: the population of individuals
-        initial pop is 2014
-        then 2015-2018+ needs to run with beta in the FOI
         """
         df = population.props
-        # age = population.age
         now = self.sim.date
 
         # set-up baseline population
@@ -157,7 +154,7 @@ class tb_baseline(Module):
             idx = (df.age_years == i) & (df.sex == 'F') & (df.has_tb == 'Uninfected') & df.is_alive
 
             if idx.any():
-                # sample from uninfected population using WHO prevalence
+                # sample from uninfected population using WHO latent prevalence estimates
                 fraction_latent_tb = latent_tb_data.loc[
                     (latent_tb_data.sex == 'F') & (latent_tb_data.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
@@ -173,20 +170,13 @@ class tb_baseline(Module):
                 df.loc[female_active_tb, 'has_tb'] = 'Active'
                 df.loc[female_active_tb, 'date_active_tb'] = now
 
-        # print(df.head(20))
-
 
     def initialise_simulation(self, sim):
-        """Get ready for simulation start.
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-        """
-        # add the basic event (we will implement below)
         sim.schedule_event(tb_event(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(tbDeathEvent(self), sim.date + DateOffset(
             months=12))
+
         # add an event to log to screen
         sim.schedule_event(tb_LoggingEvent(self), sim.date + DateOffset(months=12))
 
@@ -202,19 +192,10 @@ class tb_baseline(Module):
 
 
 class tb_event(RegularEvent, PopulationScopeEventMixin):
-    """A skeleton class for an event
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
+    """ tb infection events
     """
 
     def __init__(self, module):
-        """One line summary here
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-        :param module: the module that created this event
-        """
         super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
         # make sure any rates are annual if frequency of event is annual
 
@@ -229,7 +210,8 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        # TODO: no age structure in progression to active yet
+        ######  FORCE OF INFECTION   ######
+
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infection
         # remember event is occurring annually so scale rates accordingly
@@ -242,6 +224,9 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
             'rel_infectiousness_hiv']) * uninfected_total) / total_population
         # print('force_of_infection: ', force_of_infection)
 
+
+        ######  NEW INFECTIONS   ######
+        #  everyone at same risk of latent infection
         prob_tb_new = pd.Series(force_of_infection, index=df[(df.has_tb == 'Uninfected') & df.is_alive].index)
         # print('prob_tb_new: ', prob_tb_new)
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
@@ -249,6 +234,8 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_case, 'has_tb'] = 'Latent'
         df.loc[new_case, 'date_latent_tb'] = now
 
+
+        ######  FAST PROGRESSORS TO ACTIVE DISEASE   ######
         # if any newly infected latent cases, 14% become active directly
         new_latent = df[(df.has_tb == 'Latent') & (df.date_latent_tb == now) & df.is_alive].sum()
         # print(new_latent)
@@ -259,11 +246,12 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[fast_progression, 'has_tb'] = 'Active'
             df.loc[fast_progression, 'date_active_tb'] = now
 
+
+        ######  SLOW PROGRESSORS TO ACTIVE DISEASE   ######
+
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(0, index=df.index)
-        # print('eff_prob_active_tb - all zeros: ', eff_prob_active_tb)
-
         eff_prob_active_tb.loc[df.has_tb == 'Latent'] = params['progression_to_active_rate']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
@@ -306,6 +294,8 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_active_case, 'has_tb'] = 'Active'
         df.loc[new_active_case, 'date_active_tb'] = now
 
+
+        ######  SELF-CURE   ######
         # self-cure - move back from active to latent, make sure it's not the ones that just became active
         self_cure_tb = df[(df.has_tb == 'Active') & df.is_alive & (df.date_active_tb < now)].sample(
             frac=(params['prob_self_cure'] * params['self_cure'])).index
@@ -357,20 +347,12 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         will_die = (df[deaths]).index
         # print('will_die: ', will_die)
 
-        # TODO: add in date_tb_death as self.sim.date
+        # TODO: add in treatment status as conditions for death
 
         for person in will_die:
-            # person = population.index[i]
-            # death = demography.InstantaneousDeath(self.module, individual_id=person, cause='tb')  # make that death event
-            # self.sim.schedule_event(death, now)  # schedule the death for "now"
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'), now)
-
-
-        total_deaths = len(will_die)
-        self.module.store['TB_deaths'].append(total_deaths)
-        self.module.store['Time_death_TB'].append(self.sim.date)
-
-
+            if df.at[person, 'is_alive']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'), now)
+                df.at[person, 'date_tb_death'] = now
 
 
 class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
