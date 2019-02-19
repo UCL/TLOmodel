@@ -9,8 +9,8 @@ from tlo.methods import demography, lifestyle, oesophageal_cancer
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2035, 1, 1)
-popsize = 1
+end_date = Date(2020, 1, 1)
+popsize = 17000
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +27,8 @@ def simulation():
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
     sim.register(oesophageal_cancer.Oesophageal_Cancer())
-    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
+    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
+#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)
     return sim
 
