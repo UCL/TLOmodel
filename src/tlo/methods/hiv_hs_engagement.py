@@ -203,7 +203,7 @@ class health_system(Module):
         sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(ClinMonitoringEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(CotrimoxazoleEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CotrimoxazoleEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
@@ -412,9 +412,12 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0.]),
                                                       index=df_inf)
         # print('df_inf', df_inf.head(30))
-        if len(cotrim_needed) & len(cotrim_allocated):
-            ct_inf_index = df_inf.index[cotrim_needed & cotrim_allocated]
+        z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
+        if len(z):
+            ct_inf_index = df_inf.index[z]
             # print('ct_inf_index', ct_inf_index)
+            df.loc[ct_inf_index, 'on_cotrim'] = True
+            df.loc[ct_inf_index, 'date_cotrim'] = now
 
         # 2. HIV+ children <15 years
         df_child = df[
@@ -423,17 +426,26 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
                                                      index=df_child)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_child), p=[1, 0]), index=df_child)
-        ct_child_index = df_child.index[cotrim_needed & cotrim_allocated]
-        # print('ct_child_index', ct_child_index)
 
+        z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
+        if len(z):
+            ct_child_index = df_child.index[z]
+            df.loc[ct_child_index, 'on_cotrim'] = True
+            df.loc[ct_child_index, 'date_cotrim'] = now
+
+            
         # 3. TB/HIV+ adults
         df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
                                                      index=df_coinf)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_coinf), p=[1, 0]), index=df_coinf)
-        ct_coinf_index = df_coinf.index[cotrim_needed & cotrim_allocated]
-        # print('ct_coinf_index', ct_coinf_index)
+
+        z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
+        if len(z):
+            ct_coinf_index = df_coinf.index[z]
+            df.loc[ct_coinf_index, 'on_cotrim'] = True
+            df.loc[ct_coinf_index, 'date_cotrim'] = now
 
         # 4. pregnant women with HIV
         df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
@@ -441,8 +453,12 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
                                                     index=df_preg)
         cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
                                                        index=df_preg)
-        ct_preg_index = df_preg.index[cotrim_needed & cotrim_allocated]
-        # print('ct_preg_index', ct_preg_index)
+        z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
+        if len(z):
+            ct_preg_index = df_preg.index[z]
+            df.loc[ct_preg_index, 'on_cotrim'] = True
+            df.loc[ct_preg_index, 'date_cotrim'] = now
+
 
         # 5. all adults with HIV
         df_adult = df[df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_years >= 15)]
@@ -450,14 +466,11 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
                                                      index=df_adult)
         cotrim_allocated = pd.Series(
             np.random.choice([True, False], size=len(df_adult), p=[1, 0]), index=df_adult)
-        # print('cotrim_needed', cotrim_needed)
-        # print('cotrim_allocated', cotrim_allocated)
-
-        ct_adult_index = df_adult.index[cotrim_needed & cotrim_allocated]
-        # print('ct_adult_index', ct_adult_index)
-
-        df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'on_cotrim'] = True
-        df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'date_cotrim'] = now
+        z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
+        if len(z):
+            ct_adult_index = df_adult.index[z]
+            df.loc[ct_adult_index, 'on_cotrim'] = True
+            df.loc[ct_adult_index, 'date_cotrim'] = now
 
 
 class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
