@@ -58,7 +58,8 @@ class health_system(Module):
         'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
         'testing_baseline_adult': Parameter(Types.REAL, 'baseline testing rate of adults'),
         'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
-        'treatment_increase2016': Parameter(Types.REAL, 'increase in treatment rates with eligibility guideline changes'),
+        'treatment_increase2016': Parameter(Types.REAL,
+                                            'increase in treatment rates with eligibility guideline changes'),
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start')
     }
 
@@ -69,7 +70,9 @@ class health_system(Module):
         'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
         'on_art': Property(Types.BOOL, 'on art'),
         'date_art_start': Property(Types.DATE, 'date art started'),
-        'viral_load_test': Property(Types.DATE, 'date last viral load test')
+        'viral_load_test': Property(Types.DATE, 'date last viral load test'),
+        'on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
+        'date_cotrim': Property(Types.DATE, 'date cotrimoxazole started')
     }
 
     def read_parameters(self, data_folder):
@@ -96,7 +99,7 @@ class health_system(Module):
                                                                 sheet_name='coverage')
 
         self.parameters['VL_monitoring_times'] = pd.read_excel(self.workbook_path,
-                                                          sheet_name='VL_monitoring')
+                                                               sheet_name='VL_monitoring')
 
         params['testing_baseline_adult'] = float(self.testing_baseline_adult)
         params['testing_baseline_child'] = float(self.testing_baseline_child)
@@ -120,6 +123,9 @@ class health_system(Module):
         df['hiv_diagnosed'] = False
         df['on_art'] = False
         df['date_art_start'] = pd.NaT
+        df['viral_load_test'] = pd.NaT
+        df['on_cotrim'] = False
+        df['date_cotrim'] = pd.NaT
 
         self.baseline_tested(population)  # allocate baseline art coverage
         self.baseline_art(population)  # allocate baseline art coverage
@@ -197,6 +203,7 @@ class health_system(Module):
         sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(ClinMonitoringEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CotrimoxazoleEvent(self), sim.date + DateOffset(months=1))
 
         # add an event to log to screen
         sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
@@ -212,6 +219,9 @@ class health_system(Module):
         df.at[child_id, 'hiv_diagnosed'] = False
         df.at[child_id, 'on_art'] = False
         df.at[child_id, 'date_art_start'] = pd.NaT
+        df.at[child_id, 'viral_load_test'] = pd.NaT
+        df.at[child_id, 'on_cotrim'] = False
+        df.at[child_id, 'date_cotrim'] = pd.NaT
 
 
 class TestingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -331,7 +341,7 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art & df.hiv_diagnosed]
         # print('treatment_index', treatment_index)
 
-        # add in here a link to request resources
+        # TODO: add in here a link to request resources
 
         df.loc[treatment_index, 'on_art'] = True
         df.loc[treatment_index, 'date_art_start'] = now
@@ -356,21 +366,91 @@ class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
         df_art = df[df.on_art & df.is_alive]
 
         # extract time on art
-        df_art['art_months'] = (now - df_art['date_art_start']) / np.timedelta64(1, 'M')
-        df_art['art_months'] = df_art['art_months'].astype(int)
+        time_on_art = (now - df_art['date_art_start']) / np.timedelta64(1, 'M')
+        time_on_art2 = time_on_art.astype(int)
+        df_art.loc[:, 'art_months'] = pd.Series(time_on_art2, index=df_art.index)
+        # print(df_art.head(30))
 
         # request for viral load
-        # df_art['request_vl'] = df_art['art_months'] in vl_times
-        df_art['vl_needed'] = df_art['art_months'].isin(vl_times)
+        df_art.loc[:, 'vl_needed'] = pd.Series(df_art['art_months'].isin(vl_times), index=df_art.index)
 
         # allocate viral load testing using coin flip - later will be linked with hs resources module
         # allocate vl if requested and coin toss is true
-        df_art['vl_allocated'] = np.random.choice([True, False], size=len(df_art), p=[0.5, 0.5])
+        df_art.loc[:, 'vl_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_art), p=[0.5, 0.5]),
+                                                  index=df_art.index)
         # print(df_art.head(40))
         vl_index = df_art.index[df_art.vl_needed & df_art.vl_allocated]
         # print(vl_index)
 
         df.loc[vl_index, 'viral_load_test'] = now
+
+
+class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
+    """ cotrimoxazole prophylaxis for HIV-exposed infants and HIV+ people (all ages)
+    prioritise if limited resources
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
+
+    def apply(self, population):
+        now = self.sim.date
+        df = population.props
+
+        # 1. HIV-exposed infants, from 4 weeks to 18 months
+        df_inf = df[df.is_alive & ~df.has_hiv & df.mother_hiv & ~df.on_cotrim & (df.age_exact_years > 0.083) & (
+                df.age_exact_years < 1.5)]
+
+        # request for cotrim, dependent on access to health facility / demographic characteristics?
+        df_inf.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0]),
+                                                   index=df_inf)
+
+        # allocate cotrim using coin flip - later will be linked with hs resources module
+        # allocate cotrim if requested and coin toss is true
+        df_inf.loc[:, 'cotrim_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[0.75, 0.25]),
+                                                      index=df_inf)
+        ct_inf_index = df_inf.index[df_inf.cotrim_needed & df_inf.cotrim_allocated]
+        print('ct_inf_index', ct_inf_index)
+
+        # 2. HIV+ children <15 years
+        df_child = df[
+            df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_exact_years >= 1.5) & (df.age_exact_years < 15)]
+        df_child.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_child), p=[0.5, 0.5]),
+                                                     index=df_child)
+        df_child.loc[:, 'cotrim_allocated'] = pd.Series(
+            np.random.choice([True, False], size=len(df_child), p=[0.5, 0.5]), index=df_child)
+        ct_child_index = df_child.index[df_child.cotrim_needed & df_child.cotrim_allocated]
+        print('ct_child_index', ct_child_index)
+
+        # 3. TB/HIV+ adults
+        df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
+        df_coinf.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
+                                                     index=df_coinf)
+        df_coinf.loc[:, 'cotrim_allocated'] = pd.Series(
+            np.random.choice([True, False], size=len(df_coinf), p=[0.75, 0.25]), index=df_coinf)
+        ct_coinf_index = df_coinf.index[df_coinf.cotrim_needed & df_coinf.cotrim_allocated]
+        print('ct_coinf_index', ct_coinf_index)
+
+        # 4. pregnant women with HIV
+        df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
+        df_preg.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
+                                                    index=df_preg)
+        df_preg.loc[:, 'cotrim_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[0.75, 0.25]),
+                                                       index=df_preg)
+        ct_preg_index = df_preg.index[df_preg.cotrim_needed & df_preg.cotrim_allocated]
+        print('ct_preg_index', ct_preg_index)
+
+        # 5. all adults with HIV
+        df_adult = df[df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_years >= 15)]
+        df_adult.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_adult), p=[0.5, 0.5]),
+                                                     index=df_adult)
+        df_adult.loc[:, 'cotrim_allocated'] = pd.Series(
+            np.random.choice([True, False], size=len(df_adult), p=[0.5, 0.5]), index=df_adult)
+        ct_adult_index = df_adult.index[df_adult.cotrim_needed & df_adult.cotrim_allocated]
+        print('ct_adult_index', ct_adult_index)
+
+        df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'on_cotrim'] = True
+        df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'date_cotrim'] = now
 
 
 class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
