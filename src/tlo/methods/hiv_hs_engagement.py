@@ -390,6 +390,8 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
     prioritise if limited resources
     """
 
+    # TODO: if none allocated to a group can throw errors, include more checks
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
 
@@ -402,51 +404,56 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
                 df.age_exact_years < 1.5)]
 
         # request for cotrim, dependent on access to health facility / demographic characteristics?
-        df_inf.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0]),
+        cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0]),
                                                    index=df_inf)
 
         # allocate cotrim using coin flip - later will be linked with hs resources module
         # allocate cotrim if requested and coin toss is true
-        df_inf.loc[:, 'cotrim_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[0.75, 0.25]),
+        cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0.]),
                                                       index=df_inf)
-        ct_inf_index = df_inf.index[df_inf.cotrim_needed & df_inf.cotrim_allocated]
-        print('ct_inf_index', ct_inf_index)
+        # print('df_inf', df_inf.head(30))
+        if len(cotrim_needed) & len(cotrim_allocated):
+            ct_inf_index = df_inf.index[cotrim_needed & cotrim_allocated]
+            print('ct_inf_index', ct_inf_index)
 
         # 2. HIV+ children <15 years
         df_child = df[
             df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_exact_years >= 1.5) & (df.age_exact_years < 15)]
-        df_child.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_child), p=[0.5, 0.5]),
+        cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_child), p=[1, 0]),
                                                      index=df_child)
-        df_child.loc[:, 'cotrim_allocated'] = pd.Series(
-            np.random.choice([True, False], size=len(df_child), p=[0.5, 0.5]), index=df_child)
-        ct_child_index = df_child.index[df_child.cotrim_needed & df_child.cotrim_allocated]
+        cotrim_allocated = pd.Series(
+            np.random.choice([True, False], size=len(df_child), p=[1, 0]), index=df_child)
+        ct_child_index = df_child.index[cotrim_needed & cotrim_allocated]
         print('ct_child_index', ct_child_index)
 
         # 3. TB/HIV+ adults
         df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
-        df_coinf.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
+        cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
                                                      index=df_coinf)
-        df_coinf.loc[:, 'cotrim_allocated'] = pd.Series(
-            np.random.choice([True, False], size=len(df_coinf), p=[0.75, 0.25]), index=df_coinf)
-        ct_coinf_index = df_coinf.index[df_coinf.cotrim_needed & df_coinf.cotrim_allocated]
+        cotrim_allocated = pd.Series(
+            np.random.choice([True, False], size=len(df_coinf), p=[1, 0]), index=df_coinf)
+        ct_coinf_index = df_coinf.index[cotrim_needed & cotrim_allocated]
         print('ct_coinf_index', ct_coinf_index)
 
         # 4. pregnant women with HIV
         df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
-        df_preg.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
+        cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
                                                     index=df_preg)
-        df_preg.loc[:, 'cotrim_allocated'] = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[0.75, 0.25]),
+        cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
                                                        index=df_preg)
-        ct_preg_index = df_preg.index[df_preg.cotrim_needed & df_preg.cotrim_allocated]
-        print('ct_preg_index', ct_preg_index)
+        ct_preg_index = df_preg.index[cotrim_needed & cotrim_allocated]
+        # print('ct_preg_index', ct_preg_index)
 
         # 5. all adults with HIV
         df_adult = df[df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_years >= 15)]
-        df_adult.loc[:, 'cotrim_needed'] = pd.Series(np.random.choice([True, False], size=len(df_adult), p=[0.5, 0.5]),
+        cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_adult), p=[1, 0]),
                                                      index=df_adult)
-        df_adult.loc[:, 'cotrim_allocated'] = pd.Series(
-            np.random.choice([True, False], size=len(df_adult), p=[0.5, 0.5]), index=df_adult)
-        ct_adult_index = df_adult.index[df_adult.cotrim_needed & df_adult.cotrim_allocated]
+        cotrim_allocated = pd.Series(
+            np.random.choice([True, False], size=len(df_adult), p=[1, 0]), index=df_adult)
+        # print('cotrim_needed', cotrim_needed)
+        # print('cotrim_allocated', cotrim_allocated)
+
+        ct_adult_index = df_adult.index[cotrim_needed & cotrim_allocated]
         print('ct_adult_index', ct_adult_index)
 
         df.loc[ct_inf_index | ct_child_index | ct_coinf_index | ct_preg_index | ct_adult_index, 'on_cotrim'] = True
