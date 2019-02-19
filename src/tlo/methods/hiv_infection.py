@@ -334,15 +334,6 @@ class hiv(Module):
 
         assert len(infected_age_cd4) == len(infected)  # check merged row count
 
-        # print(time_cd4)
-        # print(infected_age_cd4.head(20))
-        # infected_age_cd4.to_csv('Q:/Thanzi la Onse/HIV/test2.csv', sep=',')  # output a test csv file
-
-        # assert np.array_equal(infected_age.years_exact,
-        #                      infected_age_cd4.years_exact)  # check rows are in the same order
-
-        # assert infctd_age_cd4.prob1.isna().sum() == 0  # check that we found a probability for every individual
-
         # note prob2 is 1-prob1
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(infected))
@@ -370,8 +361,6 @@ class hiv(Module):
         # check time infected is less than time alive
         early_doi = ((now - df.date_hiv_infection).dt.days / 365.25) > \
                     ((now - df.date_of_birth).dt.days / 365.25)  # time infected earlier than time alive!
-
-        # early_doi.to_csv('Q:/Thanzi la Onse/HIV/test3.csv', sep=',')
 
         if early_doi.any():
             tmp2 = df.loc[early_doi, 'date_of_birth']
