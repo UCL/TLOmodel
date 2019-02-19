@@ -39,12 +39,14 @@ def simulation():
     #  call modules
     core_module = demography.Demography(workbook_path=path_dem)
     hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=params[0])
-    art_module = antiretroviral_therapy.art(workbook_path=path_hs)
+    tb_module = tb.tb_baseline(workbook_path=path_tb)
+
     hs_module = hiv_hs_engagement.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
                                                 par_est3=params[3], par_est4=params[4])
+    art_module = antiretroviral_therapy.art(workbook_path=path_hs)
+
     circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
     behavioural_module = hiv_behaviour_change.BehaviourChange()
-    tb_module = tb.tb_baseline(workbook_path=path_tb)
     hs_tb_module = tb_hs_engagement.health_system_tb()
 
     #  register modules

@@ -93,7 +93,6 @@ class ArtMortalityEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=2))  # every 12 months
         # make sure any rates are annual if frequency of event is annual
 
-    # TODO: include early and late values of mortality on art for infants
     def apply(self, population):
         params = self.module.parameters
         now = self.sim.date

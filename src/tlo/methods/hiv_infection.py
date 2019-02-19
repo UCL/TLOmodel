@@ -83,6 +83,8 @@ class hiv(Module):
         'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
                               categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
                                           'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
+        'mother_hiv': Property(Types.BOOL, 'HIV status of mother'),
+        'mother_art': Property(Types.BOOL, 'ART status of mother')
     }
 
     def read_parameters(self, data_folder):
@@ -171,6 +173,9 @@ class hiv(Module):
         df['date_hiv_infection'] = pd.NaT
         df['date_aids_death'] = pd.NaT
         df['sexual_risk_group'].values[:] = 'low'
+        df['cd4_state'].values[:] = None
+        df['mother_hiv'] = False
+        df['mother_art'] = False
 
         self.high_risk(population)  # assign high sexual risk
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
@@ -513,6 +518,12 @@ class hiv(Module):
         df.at[child_id, 'date_aids_death'] = pd.NaT
         df.at[child_id, 'sexual_risk_group'] = 'low'
 
+        if df.at[mother_id, 'has_hiv']:
+            df.at[child_id, 'mother_hiv'] = True
+
+            if df.at[mother_id, 'on_art']:
+                df.at[child_id, 'mother_art'] = True
+
         # TODO: include risk during breastfeeding period - scheduled event during whole period of exposure
 
         #  MTCT
@@ -520,18 +531,18 @@ class hiv(Module):
         random_draw = self.sim.rng.random_sample(size=1)
 
         # mother not on ART
-        if (random_draw < params['prob_mtct']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and not \
-            df.at[mother_id, 'on_art']:
+        if (random_draw < params['prob_mtct']) and df.at[child_id, 'is_alive'] and df.at[child_id, 'mother_hiv'] and not \
+            df.at[child_id, 'mother_art']:
             df.at[child_id, 'has_hiv'] = True
 
         #  mother on ART
-        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and \
-            df.at[mother_id, 'on_art']:
+        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[child_id, 'mother_hiv'] and \
+            df.at[child_id, 'mother_art']:
             df.at[child_id, 'has_hiv'] = True
 
         #  mother has incident infection during pregnancy
-        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[mother_id, 'has_hiv'] and not \
-            df.at[mother_id, 'on_art'] and \
+        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[child_id, 'mother_hiv'] and not \
+            df.at[child_id, 'mother_art'] and \
             (((now - df.at[mother_id, 'date_hiv_infection'])/np.timedelta64(1, 'M')) < 9):
             df.at[child_id, 'has_hiv'] = True
 
@@ -674,7 +685,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         eff_susc.loc[~df_with_irr.has_hiv & (df_with_irr.age_years >= 15) & df_with_irr.is_alive] *= df_with_irr.loc[
             ~df_with_irr.has_hiv & (
-                df_with_irr.age_years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR
+                df_with_irr.age_years >= 15) & df_with_irr.is_alive, 'comb_irr']  # scaled by age IRR and sex
 
         eff_susc.loc[df_with_irr.sexual_risk_group == 'high'] *= params[
             'rr_HIV_high_sexual_risk']  # scaled by sexual risk group
