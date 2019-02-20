@@ -183,7 +183,7 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
         now = self.sim.date
-        print('xpert date now', now)
+        # print('xpert date now', now)
 
         # prob of receiving xpert test
         if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'tb_diagnosed'] and (
