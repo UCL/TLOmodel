@@ -156,13 +156,13 @@ class Oesophageal_Cancer(Module):
         p['rr_curative_treatment_stage1'] = 1.0
         p['rr_curative_treatment_stage2'] = 1.0
         p['rr_curative_treatment_stage3'] = 1.0
-        p['r_diagnosis_low_grade_dysp'] = 0.001
-        p['rr_diagnosis_high_grade_dysp'] = 1
-        p['rr_diagnosis_stage1'] = 20
-        p['rr_diagnosis_stage2'] = 60
-        p['rr_diagnosis_stage3'] = 80
-        p['rr_diagnosis_stage4'] = 100
-        p['init_prop_oes_cancer_stage'] = [0.0003,0.0001,0.00005,0.00003,0.000005,0.000001]
+        p['r_diagnosis_stage1'] = 0.1
+        p['rr_diagnosis_low_grade_dysp'] = 0.1
+        p['rr_diagnosis_high_grade_dysp'] = 0.1
+        p['rr_diagnosis_stage2'] = 3
+        p['rr_diagnosis_stage3'] = 4
+        p['rr_diagnosis_stage4'] = 5
+        p['init_prop_oes_cancer_stage'] = [0.0003, 0.0001, 0.00005, 0.00003, 0.000005, 0.000001]
         p['rp_oes_cancer_female'] = 1.3
         p['rp_oes_cancer_per_year_older'] = 1.1
         p['rp_oes_cancer_tobacco'] = 2.0
@@ -549,7 +549,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_current_low_grade_dysp_not_diag_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_low_grade_dysp,
                                   index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
                                                  (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_low_grade_dysp_not_diag_idx))
@@ -561,7 +561,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_high_grade_dysp_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp*m.rr_diagnosis_high_grade_dysp,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_high_grade_dysp,
                               index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_high_grade_dysp_not_diag_idx))
@@ -573,7 +573,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_stage1_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
                                                       (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp * m.rr_diagnosis_stage1,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1,
                                   index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
                                                  (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage1_not_diag_idx))
@@ -585,7 +585,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_stage2_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp*m.rr_diagnosis_stage2,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_stage2,
                               index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage2_not_diag_idx))
@@ -597,7 +597,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_stage3_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp*m.rr_diagnosis_stage3,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_stage3,
                               index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage3_not_diag_idx))
@@ -609,7 +609,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         ca_oes_current_stage4_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
-        eff_prob_diag = pd.Series(m.r_diagnosis_low_grade_dysp*m.rr_diagnosis_stage4,
+        eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_stage4,
                               index=df.index[df.is_alive & (df.ca_oesophagus == 'stage4') &
                                              (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_stage4_not_diag_idx))
@@ -673,7 +673,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
         df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage1'
 
-       # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 2
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 2
 
         ca_oes_diag_stage2_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'stage2') &
@@ -691,7 +691,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
         df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage2'
 
-       # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 3
+        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 3
 
         ca_oes_diag_stage3_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'stage3') &
