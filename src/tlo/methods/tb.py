@@ -277,10 +277,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         eff_prob_active_tb.loc[hiv_stage2] *= params['rr_tb_with_hiv_stages'][1]
         eff_prob_active_tb.loc[hiv_stage3] *= params['rr_tb_with_hiv_stages'][2]
         eff_prob_active_tb.loc[hiv_stage4] *= params['rr_tb_with_hiv_stages'][3]
-        # print('eff_prob_active_tb with hiv stages: ', eff_prob_active_tb)
-        # eff_prob_active_tb.to_csv('Q:/Thanzi la Onse/TB/eff_prob.csv', sep=',')
-
-        # eff_prob_active_tb.loc[df.on_art] *= params['rr_tb_art']
+        eff_prob_active_tb.loc[df.on_art] *= params['rr_tb_art']
         # eff_prob_active_tb.loc[df.is_malnourished] *= params['rr_tb_malnourished']
         # eff_prob_active_tb.loc[df.has_diabetes1] *= params['rr_tb_diabetes1']
         # eff_prob_active_tb.loc[df.high_alcohol] *= params['rr_tb_alcohol']
