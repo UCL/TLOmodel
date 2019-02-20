@@ -77,10 +77,10 @@ class health_system_tb(Module):
         df['tb_date_treatedMDR'] = pd.NaT
         df['request_mdr_regimen'] = False
 
-
-
     def initialise_simulation(self, sim):
         sim.schedule_event(TbTestingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(tbTreatmentEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(tbTreatmentMDREvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(TbHealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
@@ -208,8 +208,7 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
 class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
-        self.p_behaviour = module.parameters['p_behaviour']
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         params = self.module.parameters
@@ -230,14 +229,15 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw2 = self.sim.rng.random_sample(size=len(df))
         cure_idx = df.index[
             df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (random_draw2 < (
-                    1 - params['prob_mdr']))]
+                1 - params['prob_mdr']))]
         df.loc[cure_idx, 'tb_treated'] = False
         df.loc[cure_idx, 'has_tb'] = 'Latent'
 
         # if on treatment for 6 months, 5% will not be cured and request MDR regimen
         random_draw3 = self.sim.rng.random_sample(size=len(df))
         mdr_idx = df.index[
-            df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (random_draw3 < params['prob_mdr'])]
+            df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (
+                    random_draw3 < params['prob_mdr'])]
         df.loc[mdr_idx, 'tb_treated'] = False
         df.loc[mdr_idx, 'request_mdr_regimen'] = True
 
@@ -245,8 +245,7 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
 class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
-        self.p_behaviour = module.parameters['p_behaviour']
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         params = self.module.parameters
