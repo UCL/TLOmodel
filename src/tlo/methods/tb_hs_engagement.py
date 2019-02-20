@@ -23,7 +23,11 @@ class health_system_tb(Module):
         'prop_smear_positive_hiv': Parameter(Types.REAL, 'proportion of HIV/TB cases smear positive'),
         'testing_prob_xpert': Parameter(Types.REAL, 'probability of individual receiving xpert test'),
         'prop_xpert_positive': Parameter(Types.REAL,
-                                         'proportion active tb cases tested with xpert with positive results')
+                                         'proportion active tb cases tested with xpert with positive results'),
+        'prob_tb_treatment': Parameter(Types.REAL, 'probability of individual starting treatment'),
+        'prob_mdr': Parameter(Types.REAL, 'probability tb case is mdr'),
+        'prob_tb_mdr_treatment': Parameter(Types.REAL, 'probability of individual starting mdr treatment'),
+
     }
 
     PROPERTIES = {
@@ -34,16 +38,26 @@ class health_system_tb(Module):
         'tb_xpert_test': Property(Types.BOOL, 'ever had a tb Xpert test'),
         'tb_result_xpert_test': Property(Types.BOOL, 'result from tb Xpert test'),
         'tb_date_xpert_test': Property(Types.DATE, 'date of tb Xpert test'),
-        'tb_diagnosed': Property(Types.BOOL, 'active tb and tested')
+        'tb_diagnosed': Property(Types.BOOL, 'active tb and tested'),
+        'tb_treated': Property(Types.BOOL, 'on tb treatment regimen'),
+        'tb_date_treated': Property(Types.DATE, 'date tb treatment started'),
+        'tb_treatment_failure': Property(Types.BOOL, 'failed first line tb treatment'),
+        'tb_treatedMDR': Property(Types.BOOL, 'on tb treatment MDR regimen'),
+        'tb_date_treatedMDR': Property(Types.DATE, 'date tb MDR treatment started'),
+        'request_mdr_regimen': Property(Types.BOOL, 'request for mdr treatment'),
     }
 
     def read_parameters(self, data_folder):
+        # TODO: if events run every 3months, probabilities need to be 3-monthly
         params = self.parameters
         params['tb_testing_coverage'] = 0.1  # dummy value
         params['prop_smear_positive'] = 0.8
         params['prop_smear_positive_hiv'] = 0.5
         params['testing_prob_xpert'] = 0.7
         params['prop_xpert_positive'] = 0.5
+        params['prob_tb_treatment'] = 0.75
+        params['prob_mdr'] = 0.05
+        params['prob_tb_mdr_treatment'] = 0.8
 
     def initialise_population(self, population):
         df = population.props
@@ -56,6 +70,14 @@ class health_system_tb(Module):
         df['tb_result_xpert_test'] = False
         df['tb_date_xpert_test'] = pd.NaT
         df['tb_diagnosed'] = False
+        df['tb_treated'] = False
+        df['tb_date_treated'] = pd.NaT
+        df['tb_treatment_failure'] = False
+        df['tb_treatedMDR'] = False
+        df['tb_date_treatedMDR'] = pd.NaT
+        df['request_mdr_regimen'] = False
+
+
 
     def initialise_simulation(self, sim):
         sim.schedule_event(TbTestingEvent(self), sim.date + DateOffset(months=12))
@@ -76,6 +98,12 @@ class health_system_tb(Module):
         df.at[child_id, 'tb_result_xpert_test'] = False
         df.at[child_id, 'tb_date_xpert_test'] = pd.NaT
         df.at[child_id, 'tb_diagnosed'] = False
+        df.at[child_id, 'tb_treated'] = False
+        df.at[child_id, 'tb_date_treated'] = pd.NaT
+        df.at[child_id, 'tb_treatment_failure'] = False
+        df.at[child_id, 'tb_treatedMDR'] = False
+        df.at[child_id, 'tb_date_treatedMDR'] = pd.NaT
+        df.at[child_id, 'request_mdr_regimen'] = False
 
 
 class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -175,6 +203,73 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
             if len(diagnosed):
                 df.at[individual_id, 'tb_result_xpert_test'] = True
                 df.at[individual_id, 'tb_diagnosed'] = True
+
+
+class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=3))
+        self.p_behaviour = module.parameters['p_behaviour']
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        df = population.props
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.sim.rng.random_sample(size=len(df))
+
+        # probability of treatment
+        treat_idx = df.index[
+            (random_draw < params['prob_tb_treatment']) & ~df.tb_diagnosed & df.is_alive]
+
+        df.loc[treat_idx, 'tb_treated'] = True
+        df.loc[treat_idx, 'date_tb_treated'] = now
+
+        # if on treatment for 6 months, take off and change to cured (95%)
+        random_draw2 = self.sim.rng.random_sample(size=len(df))
+        cure_idx = df.index[
+            df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (random_draw2 < (
+                    1 - params['prob_mdr']))]
+        df.loc[cure_idx, 'tb_treated'] = False
+        df.loc[cure_idx, 'has_tb'] = 'Latent'
+
+        # if on treatment for 6 months, 5% will not be cured and request MDR regimen
+        random_draw3 = self.sim.rng.random_sample(size=len(df))
+        mdr_idx = df.index[
+            df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (random_draw3 < params['prob_mdr'])]
+        df.loc[mdr_idx, 'tb_treated'] = False
+        df.loc[mdr_idx, 'request_mdr_regimen'] = True
+
+
+class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=3))
+        self.p_behaviour = module.parameters['p_behaviour']
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        df = population.props
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.sim.rng.random_sample(size=len(df))
+
+        # probability of mdr treatment
+        mdr_treated_idx = df.index[
+            (random_draw < params['prob_tb_mdr_treatment']) & ~df.request_mdr_regimen & df.is_alive]
+
+        df.loc[mdr_treated_idx, 'request_mdr_regimen'] = False  # switch off this flag
+        df.loc[mdr_treated_idx, 'tb_treatedMDR'] = True
+        df.loc[mdr_treated_idx, 'tb_date_treatedMDR'] = now
+
+        # if on treatment for 6 months, take off and change to cured (100%)
+        random_draw = self.sim.rng.random_sample(size=len(df))
+        cure_idx = df.index[
+            df.tb_treatedMDR & (((now - df.tb_date_treatedMDR) / np.timedelta64(1, 'M')) >= 6)]
+        df.loc[cure_idx, 'tb_treated'] = False
+        df.loc[cure_idx, 'has_tb'] = 'Latent'
 
 
 class TbHealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
