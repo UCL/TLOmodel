@@ -126,7 +126,7 @@ class Oesophageal_Cancer(Module):
                                   categories=['never', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
                                               'stage2', 'stage3']),
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer'),
-        'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer')
+        'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer'),
         'ca_incident_oes_cancer_diagnosis_this_3_month_period': Property(Types.BOOL, 'incident oesophageal cancer'
                                                                 'diagnosis this 3 month period')
     }
@@ -542,6 +542,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
 
+        df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+
         # update diagnosis status for undiagnosed people with low grade dysplasia
 
         ca_oes_current_low_grade_dysp_not_diag_idx = df.index[
@@ -733,6 +735,18 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        # calculate incidence of oesophageal cancer diagnosis in people aged > 60+
+        # (this includes people diagnosed with dysplasia, but diagnosis rate at this stage is very low)
+
+        incident_oes_cancer_diagnosis_agege60_idx = df.index[df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+        & (df.age_years >= 60)]
+        agege60_without_diagnosed_oes_cancer_idx = df.index[(df.age_years >= 60) & ~df.ca_oesophagus_diagnosed]
+
+        incidence_per_year_oes_cancer_diagnosis = (4 * 100000 * len(incident_oes_cancer_diagnosis_agege60_idx))/\
+                                                  len(agege60_without_diagnosed_oes_cancer_idx)
+
+        incidence_per_year_oes_cancer_diagnosis = round(incidence_per_year_oes_cancer_diagnosis, 3)
+
  #      logger.debug('%s|person_one|%s',
  #                     self.sim.date,
  #                     df.loc[0].to_dict())
@@ -749,12 +763,12 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
                     self.sim.date,
-                    df[df.age_years >= 20].groupby(['age_range','ca_incident_oes_cancer_diagnosis_this_3_month_period']).size().to_dict())
+                    incidence_per_year_oes_cancer_diagnosis)
 
 
-        logger.info('%s|ca_oesophagus_diagnosed|%s',
-                    self.sim.date,
-                    df[df.age_years >= 20].groupby(['ca_oesophagus', 'ca_oesophagus_diagnosed']).size().to_dict())
+#       logger.info('%s|ca_oesophagus_diagnosed|%s',
+#                   self.sim.date,
+#                   df[df.age_years >= 20].groupby(['ca_oesophagus', 'ca_oesophagus_diagnosed']).size().to_dict())
 
 #       logger.info('%s|ca_oesophagus|%s',
 #                   self.sim.date,
