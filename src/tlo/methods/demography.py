@@ -252,8 +252,7 @@ class Demography(Module):
                     {
                         'mother': mother_id,
                         'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years'],
-                        'xxx': 0
+                        'mother_age': df.at[mother_id, 'age_years']
                     })
 
 

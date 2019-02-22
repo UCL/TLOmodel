@@ -3,6 +3,7 @@ import os
 import logging
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, lifestyle, oesophageal_cancer
 from tlo.methods import healthsystem
 
@@ -35,6 +36,9 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
+logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+
 
 # Register the appropriate modules
 sim.register(demography.Demography(workbook_path=resourcefile_demography))
@@ -50,6 +54,7 @@ sim.simulate(end_date=end_date)
 fh.flush()
 
 
-
+# %% read the results
+output = parse_log_file(logfile)
 
 
