@@ -3,7 +3,7 @@ import os
 import logging
 
 from tlo import Date, Simulation
-from tlo.methods import demography
+from tlo.methods import demography, lifestyle, oesophageal_cancer
 from tlo.methods import healthsystem
 
 
@@ -37,10 +37,11 @@ logging.getLogger().addHandler(fh)
 
 
 # Register the appropriate modules
-demography_module = demography.Demography(workbook_path=resourcefile_demography)
-healthsystem_module= healthsystem.HealthSystem()
+sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(healthsystem.HealthSystem())
+sim.register(lifestyle.Lifestyle())
+sim.register(oesophageal_cancer.Oesophageal_Cancer())
 
-sim.register(demography_module,healthsystem_module)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
