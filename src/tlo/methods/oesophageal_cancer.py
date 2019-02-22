@@ -712,11 +712,20 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
         random_draw = m.rng.random_sample(size=len(stage4_idx))
-        df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
+        # df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
 
+        df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < 0.7)
         # todo - this code dealth with centrally
         dead_oes_can_idx = df.index[df.ca_oesophageal_cancer_death]
         df.loc[dead_oes_can_idx, 'is_alive'] = False
+
+
+        # @@@@ [TEMPLATE] Execute an instantaneous death:
+
+        death = tlo.methods.demography.InstantaneousDeath(self.module, person_id, cause='Oseophageal Cancer')
+        self.sim.schedule_event(death, self.sim.date)
+
+
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):

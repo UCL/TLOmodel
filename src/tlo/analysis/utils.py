@@ -90,6 +90,7 @@ def parse_output(list_of_log_lines):
 
     # for each logged line
     for line in list_of_log_lines:
+        print(line)
         # we only parse 'INFO' lines
         if line.startswith('INFO'):
             i = parse_line(line.strip())
@@ -104,7 +105,7 @@ def parse_output(list_of_log_lines):
                     columns = ['col_%d' % x for x in range(0, len(i['object']))]
                 else:
                     # create column names from the keys of the dictionary
-                    columns = list(i['object'].keys())
+                    columns = list(i['object'].key())
                 columns.insert(0, 'date')
                 o[i['logger']][i['key']] = pd.DataFrame(columns=columns)
 
