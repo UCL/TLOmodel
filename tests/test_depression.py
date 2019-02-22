@@ -1,39 +1,67 @@
 import logging
+import os
 
 import pytest
 
-from tlo import Simulation, Date
-from tlo.methods import demography, depression
-from tlo.test import random_birth
+from tlo import Date, Simulation
+from tlo.methods import demography, lifestyle, depression
 
-path = 'C:/Users/Andrew Phillips/Dropbox/Thanzi la Onse/05 - Resources\Demographic data\Demography_WorkingFile_Complete.xlsx'
-# Edit this path so it points to your own copy of the Demography.xlsx file
+workbook_name = 'demography.xlsx'
+
 start_date = Date(2010, 1, 1)
-# if end_date = Date(2010, 1, 1) then population.props are the baseline values
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2020, 1, 1)
+popsize = 1000
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
+def disable_logging():
+    logging.disable(logging.INFO)
+
+
+@pytest.fixture(scope='module')
 def simulation():
+    demography_workbook = os.path.join(os.path.dirname(__file__),
+                                       'resources',
+                                       workbook_name)
     sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(workbook_path=path)
-    depression_module = depression.Depression()
-    sim.register(core_module)
-    sim.register(depression_module)
-
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-
+    sim.register(demography.Demography(workbook_path=demography_workbook))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(depression.Depression())
+    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
+#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
+#   sim.seed_rngs(1)
     return sim
 
 
-def test_depression_simulation(simulation):
+def __check_properties(df):
+
+ def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
+
+
+def test_initial_population(simulation):
+    __check_properties(simulation.population.props)
+
+
+def test_simulate(simulation):
     simulation.simulate(end_date=end_date)
+
+
+def test_final_population(simulation):
+    __check_properties(simulation.population.props)
+
+
+def test_dypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
 
 
 if __name__ == '__main__':
     simulation = simulation()
-    test_depression_simulation(simulation)
+    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
 
 

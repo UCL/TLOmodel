@@ -1,6 +1,5 @@
 """
 The core demography module and its associated events.
-
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
@@ -104,9 +103,7 @@ class Demography(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
         Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
@@ -123,11 +120,9 @@ class Demography(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
         """
         df = population.props
@@ -183,7 +178,6 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
@@ -204,9 +198,7 @@ class Demography(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
         This is called by the simulation whenever a new person is born.
-
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -331,11 +323,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, mother_id):
         """Create a new birth event.
-
         We need to pass the person this event happens to to the base class constructor
         using super(). We also pass the module that created this event, so that random
         number generators can be scoped per-module.
-
         :param module: the module that created this event
         :param mother_id: the person giving birth
         """
