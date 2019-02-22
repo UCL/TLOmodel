@@ -9,7 +9,7 @@ import random
 
 logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
 
@@ -73,7 +73,9 @@ class Epilepsy(Module):
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'ep_seiz_stat': Property(Types.CATEGORICAL, 'seizure status', categories=['0', '1', '2', '3']),
+        'ep_seiz_stat': Property(Types.CATEGORICAL, '(0 = never epilepsy, 1 = previous seizures none now, '
+                                                    '2 = infrequent seizures, 3 = frequent seizures)',
+                                 categories=['0', '1', '2', '3']),
         'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
         'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
     }
@@ -158,7 +160,7 @@ class Epilepsy(Module):
         sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=3))
 
         event = EpilepsyLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=3))
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -219,58 +221,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
-
-        # ========================================================================================================
-
-        # logging - note this comes here before event code so initial values of properties are output
-
-        alive = df.is_alive.sum()
-        epilepsy_idx = df.index[df.is_alive & df.ep_seiz_stat.isin(['1', '2', '3'])]
-        prevalence_epilepsy = len(epilepsy_idx) / alive
-
-        epilepsy_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-        prevalence_epilepsy_nonenow = len(epilepsy_nonenow_idx) / alive
-
-        epilepsy_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-        prevalence_epilepsy_freq = len(epilepsy_freq_idx) / alive
-
-        epilepsy_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-        prevalence_epilepsy_infreq = len(epilepsy_infreq_idx) / alive
-
-        seiz_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-        seiz_freq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
-        prop_on_antiep_seiz_freq = len(seiz_freq_antiep_idx) / len(seiz_freq_idx)
-
-        seiz_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-        seiz_infreq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
-        prop_on_antiep_seiz_infreq = len(seiz_infreq_antiep_idx) / len(seiz_infreq_idx)
-
-        seiz_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-        seiz_nonenow_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
-        prop_on_antiep_seiz_nonenow = len(seiz_nonenow_antiep_idx) / len(seiz_nonenow_idx)
-
-        logger.info('%s|prevalence_epilepsy|%s',
-                    self.sim.date, prevalence_epilepsy)
-
-        logger.info('%s|prevalence_epilepsy_freq|%s',
-                    self.sim.date, prevalence_epilepsy_freq)
-
-        logger.info('%s|prevalence_epilepsy_infreq|%s',
-                    self.sim.date, prevalence_epilepsy_infreq)
-
-        logger.info('%s|prevalence_epilepsy_nonenow|%s',
-                    self.sim.date, prevalence_epilepsy_nonenow)
-
-        logger.info('%s|prop_on_antiep_seiz_freq|%s',
-                    self.sim.date, prop_on_antiep_seiz_freq)
-
-        logger.info('%s|prop_on_antiep_seiz_infreq|%s',
-                    self.sim.date, prop_on_antiep_seiz_infreq)
-
-        logger.info('%s|prop_on_antiep_seiz_nonenow|%s',
-                    self.sim.date, prop_on_antiep_seiz_nonenow)
-
-        # ========================================================================================================
 
         # update ep_seiz_stat for people ep_seiz_stat = 0
 
@@ -489,6 +439,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: disability weights - although these will map from ep_seiz_stat
         # todo: I think code below can be removed as we are logging above
 
+
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -502,6 +453,8 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
         alive = df.is_alive.sum()
+
+        """
         epilepsy_idx = df.index[df.is_alive & df.ep_seiz_stat.isin(['1', '2', '3'])]
         prevalence_epilepsy = len(epilepsy_idx) / alive
 
@@ -520,7 +473,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         seiz_nonenow_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
         prop_on_antiep_seiz_nonenow = len(seiz_nonenow_antiep_idx) / len(seiz_nonenow_idx)
 
-        """
+        
         logger.info('%s|prevalence_epilepsy|%s',
                     self.sim.date, prevalence_epilepsy)
            
