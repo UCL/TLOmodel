@@ -162,10 +162,69 @@ class RespiratoryInfections(Module):
         """Setup parameters used by the module
         """
         p = self.parameters
+        p['base_incidence_rate_cold'] =
         p['base_incidence_rate_pneumonia'] = 0.001
+        p['base_incidence_rate_severe_pneumonia'] =
+        p['init_prevalence_cold'] =
         p['init_prevalence_pneumonia'] = 0.2
-        p['rp_pneumonia_agelt1'] = 5
-        p['rr_pneumonia_agelt1'] = 5
+        p['init_prevalence_severe_pneumonia'] =
+        p['ri_prob_progress_to_severe_pneumonia'] =
+        p['rr_cold_age_under2months'] =
+        p['rr_cold_age_2-11months'] =
+        p['rr_cold_age_12-23months'] =
+        p['rr_cold_age_24-59months'] =
+        p['rr_pneumonia_age_under2months'] =
+        p['rr_pneumonia_age_2-11months'] =
+        p['rr_pneumonia_age_12-23months'] =
+        p['rr_pneumonia_age_24-59months'] =
+        p['rr_severe_pneumonia_age_under2months'] =
+        p['rr_severe_pneumonia_age_2-11months'] =
+        p['rr_severe_pneumonia_age_12-23months'] =
+        p['rr_severe_pneumonia_age_24-59months'] =
+        p['base_death_rate_pneumonia'] =
+        p['rr_cold_HIV'] =
+        p['rr_pneumonia_HIV'] =
+        p['rr_severe_pneumonia_HIV'] =
+        p['rr_cold_wealth'] =
+        p['rr_pneumonia_wealth'] =
+        p['rr_severe_pneumonia_wealth'] =
+        p['rr_cold_mother_education'] =
+        p['rr_pneumonia_mother_education'] =
+        p['rr_severe_pneumonia_mother_education'] =
+        p['rr_pneumonia_malnutrition'] =
+        p['rr_severe_pneumonia_malnutrition'] =
+        p['base_recovery_incidence_rate_cold'] =
+        p['base_recovery_incidence_rate_pneumonia'] =
+        p['base_recovery_incidence_rate_severe_pneumonia'] =
+        p['rr_recovery_cold_age_under2months'] =
+        p['rr_recovery_cold_age_12-23months'] =
+        p['rr_recovery_cold_age_24-59months'] =
+        p['rr_recovery_pneumonia_age_under2months'] =
+        p['rr_recovery_pneumonia_age_2-11months'] =
+        p['rr_recovery_pneumonia_age_12-23months'] =
+        p['rr_recovery_pneumonia_age_24-59months'] =
+        p['rr_recovery_severe_pneumonia_age_under2months'] =
+        p['rr_recovery_severe_pneumonia_age_2-11months'] =
+        p['rr_recovery_severe_pneumonia_age_12-23months'] =
+        p['rr_recovery_severe_pneumonia_age_24-59months'] =
+        p['rr_recovery_cold_HIV'] =
+        p['rr_recovery_pneumonia_HIV'] =
+        p['rr_recovery_severe_pneumonia_HIV'] =
+        p['rr_recovery_cold_malnutrition'] =
+        p['rr_recovery_pneumonia_malnutrition'] =
+        p['rr_recovery_severe_pneumonia_malnutrition'] =
+        p['rr_recovery_pneumonia_treatment_adherence'] =
+        p['rr_recovery_severe_pneumonia_treatment_adherence'] =
+        p['rr_death_rate_pneumonia_treatment_adherence'] =
+        p['rr_death_rate_pneumonia_HIV'] =
+        p['rr_death_rate_pneumonia_malnutrition'] =
+        p['rr_death_pneumonia_age_under2months'] =
+        p['rr_death_pneumonia_age_2-11months'] =
+        p['rr_death_pneumonia_age_12-23months'] =
+        p['rr_death_pneumonia_age_24-59months'] =
+
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
