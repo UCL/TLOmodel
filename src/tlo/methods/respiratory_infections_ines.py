@@ -27,6 +27,8 @@ class RespiratoryInfections(Module):
                                                ),
         'init_prevalence_severe_pneumonia': Parameter(Types.REAL, 'prevalence of severe pneumonia at baseline for under 5s'
                                                ),
+        'ri_prob_progress_to_severe_pneumonia': Parameter(Types.REAL, 'probability of progressing from pneumonia to severe penumonia'
+                                                          ),
         'rr_cold_age_under2months': Parameter(Types.REAL, 'relative rate of common cold for age  < 2 months'
                                               ),
         'rr_cold_age_2-11months': Parameter(Types.REAL, 'relative rate of common cold for age between 2 to 11 months'
@@ -49,16 +51,95 @@ class RespiratoryInfections(Module):
                                             ),
         'rr_severe_pneumonia_age_12-23months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age between 12 to 23 months'
                                              ),
-        'rr_severe_pneumonia_age_24-59months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age between 24 to 59 months'
+        'rr_severe_pneumonia_age_24-59months': Parameter(Types.REAL,
+                     'relative rate of severe pneumonia for age between 24 to 59 months'
                                              ),
-        'ri_prob_progress_to_severe_pneumonia': Parameter(Types.REAL, 'probability of progressing from pneumonia to severe penumonia'
-                                                  ),
         'base_death_rate_pneumonia': Parameter(Types.REAL, 'death rate from pneumonia/severe pneumonia at baseline'),
-        'rr_cold_HHhandwash': Parameter(Types.REAL, 'relative rate of common cold among household with good handwash practices'),
-        'rr_pneumonia_HHhandwash': Parameter(Types.REAL, 'relative rate of pneumonia among household with good handwash practices'),
-        'rr_severe_pneumonia_HHhandwash': Parameter(Types.REAL, 'relative rate of severe pneumonia among household with good handwash practices'
+        'rr_cold_HIV': Parameter(Types.REAL, 'relative rate of common cold for HIV positive status'),
+        'rr_pneumonia_HIV': Parameter(Types.REAL, 'relative rate of pneumonia for HIV positive status'),
+        'rr_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative rate of severe pneumonia for HIV positive status'),
+        'rr_cold_wealth': Parameter(Types.REAL, 'relative rate of common cold for higher wealth level'),
+        'rr_pneumonia_wealth': Parameter(Types.REAL, 'relative rate of pneumonia for higher wealth level'),
+        'rr_severe_pneumonia_wealth': Parameter(Types.REAL, 'relative rate of severe pneumonia for higher wealth level'),
+        'rr_cold_mother_education': Parameter(Types.REAL, 'relative rate of common cold if mother has higher education level'),
+        'rr_pneumonia_mother_education': Parameter(Types.REAL, 'relative rate of pneumonia if mother has higher education level'),
+        'rr_severe_pneumonia_mother_education': Parameter(Types.REAL, 'relative rate of severe pneumonia if mother has higher education level'),
+        'rr_pneumonia_malnutrition': Parameter(Types.REAL,
+                                                   'relative rate of pneumonia for acute malnutrition'),
+        'rr_severe_pneumonia_malnutrition': Parameter(Types.REAL,
+                                                   'relative rate of severe pneumonia for acute malnutrition'),
+        'base_recovery_incidence_rate_cold': Parameter(Types.REAL, 'recovery rate from common cold at baseline'),
+        'base_recovery_incidence_rate_pneumonia': Parameter(Types.REAL, 'recovery rate from pneumonia at baseline'),
+        'base_recovery_incidence_rate_severe_pneumonia': Parameter(Types.REAL, 'recovery rate from severe pneumonia at baseline'),
+        'rr_recovery_cold_age_2-11months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age between 2 to 11 months'
+                                            ),
+        'rr_recovery_cold_age_12-23months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age between 12 to 23 months'
+                                             ),
+        'rr_recovery_cold_age_24-59months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age between 24 to 59 months'
+                                             ),
+        'rr_recovery_pneumonia_age_under2months': Parameter(Types.REAL, 'relative rate of recovery from pneumonia for age  < 2 months'
+                                                   ),
+        'rr_recovery_pneumonia_age_2-11months': Parameter(Types.REAL, 'relative rate of recovery from pneumonia for age between 2 to 11 months'
+                                                 ),
+        'rr_recovery_pneumonia_age_12-23months': Parameter(Types.REAL,
+                                                  'relative rate of recovery from pneumonia for age between 12 to 23 months'
+                                                  ),
+        'rr_recovery_pneumonia_age_24-59months': Parameter(Types.REAL,
+                                                  'relative rate of recovery from pneumonia for age between 24 to 59 months'
+                                                  ),
+        'rr_recovery_severe_pneumonia_age_under2months': Parameter(Types.REAL,
+                                                          'relative rate of recovery from severe pneumonia for age <2 months'
+                                                          ),
+        'rr_recovery_severe_pneumonia_age_2-11months': Parameter(Types.REAL,
+                                                        'relative rate of recovery from severe pneumonia for age between 2 to 11 months'
+                                                        ),
+        'rr_recovery_severe_pneumonia_age_12-23months': Parameter(Types.REAL,
+                                                         'relative rate of recovery from severe pneumonia for age between 12 to 23 months'
+                                                         ),
+        'rr_recovery_severe_pneumonia_age_24-59months': Parameter(Types.REAL,
+                                                         'relative rate of recovery from severe pneumonia for age between 24 to 59 months'
+                                                         ),
+        'rr_recovery_cold_HIV': Parameter(Types.REAL,
+                                                      'relative rate of recovery from common cold for HIV positive status'
+                                                      ),
+        'rr_recovery_pneumonia_HIV': Parameter(Types.REAL,
+                                          'relative rate of recovery from pneumonia for HIV positive status'
+                                          ),
+        'rr_recovery_severe_pneumonia_HIV': Parameter(Types.REAL,
+                                          'relative rate of recovery from severe pneumonia for HIV positive status'
+                                          ),
+        'rr_recovery_cold_malnutrition': Parameter(Types.REAL,
+                                          'relative rate of recovery from common cold for acute malnutrition'
+                                          ),
+        'rr_recovery_pneumonia_malnutrition': Parameter(Types.REAL,
+                                                   'relative rate of recovery from pneumonia for acute malnutrition'
+                                                   ),
+        'rr_recovery_severe_pneumonia_malnutrition': Parameter(Types.REAL,
+                                                   'relative rate of recovery from severe pneumonia for acute malnutrition'
+                                                   ),
+        'rr_recovery_pneumonia_treatment_adherence': Parameter(Types.REAL,
+                                                   'relative rate of recovery from pneumonia if imcompleted treatment'
+                                                   ),
+        'rr_recovery_severe_pneumonia_treatment_adherence': Parameter(Types.REAL,
+                                                               'relative rate of recovery from severe pneumonia if imcompleted treatment'
+                                                               ),
+        'rr_death_rate_pneumonia_treatment_adherence': Parameter(Types.REAL, 'death rate from pneumonia if completed treatment'),
+        'rr_death_rate_pneumonia_HIV': Parameter(Types.REAL, 'death rate from pneumonia for HIV positive status'),
+        'rr_death_rate_pneumonia_malnutrition': Parameter(Types.REAL, 'death rate from pneumonia for acute malnutrition'),
+        'rr_death_pneumonia_age_under2months': Parameter(Types.REAL,
+                                                            'relative rate of death from pneumonia for age  < 2 months'
+                                                            ),
+        'rr_death_pneumonia_age_2-11months': Parameter(Types.REAL,
+                                                          'relative rate of death from pneumonia for age between 2 to 11 months'
+                                                          ),
+        'rr_death_pneumonia_age_12-23months': Parameter(Types.REAL,
+                                                           'relative rate of death from pneumonia for age between 12 to 23 months'
+                                                           ),
+        'rr_death_pneumonia_age_24-59months': Parameter(Types.REAL,
+                                                           'relative rate of death from pneumonia for age between 24 to 59 months'
+                                                           )
 
-        }
+    }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -71,7 +152,7 @@ class RespiratoryInfections(Module):
         'ri_fast_breathing': Property(Types.BOOL, 'respiratory infection symptoms fast breathing'),
         'ri_chest_indraw': Property(Types.BOOL, 'respiratory infection symptoms chest indrawing'),
         'ri_stridor': Property(Types.BOOL, 'respiratory infection symptoms stridor'),
-        'ri_not_able_drink_breastfeed': Property(Types.BOOL, 'respiratory infection symptoms not able to drink or breastfeed'),
+        'ri_not_able_drink_breastfeed': Property(Types.BOOL, 'resp infection symptoms not able to drink or breastfeed'),
         'ri_convulsions': Property(Types.BOOL, 'respiratory infection symptoms convulsions'),
         'ri_lethargic_unconscious': Property(Types.BOOL, 'respiratory infection symptoms lethargic or unconscious'),
         'ri_diagnosis': Property(Types.BOOL, 'respiratory infection diagnosis')
