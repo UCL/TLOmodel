@@ -4,7 +4,7 @@ import logging
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, oesophageal_cancer
+from tlo.methods import demography, lifestyle
 from tlo.methods import healthsystem
 
 
@@ -44,7 +44,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 sim.register(demography.Demography(workbook_path=resourcefile_demography))
 sim.register(healthsystem.HealthSystem())
 sim.register(lifestyle.Lifestyle())
-sim.register(oesophageal_cancer.Oesophageal_Cancer())
+
 
 
 # Run the simulation and flush the logger
