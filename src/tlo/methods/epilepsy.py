@@ -8,8 +8,8 @@ import random
 
 
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.DEBUG)
+# logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
 
@@ -507,7 +507,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-        
+
 
 
 
