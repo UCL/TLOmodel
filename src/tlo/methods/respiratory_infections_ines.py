@@ -5,7 +5,6 @@ Documentation: 04 - Methods Repository/Method_Respiratory_Infection.xlsx
 import logging
 
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -16,20 +15,66 @@ logger.setLevel(logging.DEBUG)
 class RespiratoryInfections(Module):
 
     PARAMETERS = {
-        'base_incidence_rate_pneumonia': Parameter(Types.REAL, 'probabilty per 1 week of incident pneumonis'
+        'base_incidence_rate_cold': Parameter(Types.REAL, 'probability per 1 week of incident cold at baseline'
                                                             ),
-        'init_prevalence_pneumonia': Parameter(Types.REAL, 'prevalence of pneumonia at baseline for age 1-5'
-                                                            ),
-        'rr_pneumonia_agelt1': Parameter(Types.REAL, 'relative rate of pnemonia for age  < 1'),
-        'rp_pneumonia_agelt1': Parameter(Types.REAL, 'relative prevalence of pnemonia for age  < 1 at baseline')
-    }
+        'base_incidence_rate_pneumonia': Parameter(Types.REAL, 'probability per 1 week of incident pneumonia at baseline'
+                                                   ),
+        'base_incidence_rate_severe_pneumonia': Parameter(Types.REAL, 'probability per 1 week of incident pneumonia at baseline'
+                                                   ),
+        'init_prevalence_cold': Parameter(Types.REAL, 'prevalence of common cold at baseline for under 5s'
+                                               ),
+        'init_prevalence_pneumonia': Parameter(Types.REAL, 'prevalence of pneumonia at baseline for under 5s'
+                                               ),
+        'init_prevalence_severe_pneumonia': Parameter(Types.REAL, 'prevalence of severe pneumonia at baseline for under 5s'
+                                               ),
+        'rr_cold_age_under2months': Parameter(Types.REAL, 'relative rate of common cold for age  < 2 months'
+                                              ),
+        'rr_cold_age_2-11months': Parameter(Types.REAL, 'relative rate of common cold for age between 2 to 11 months'
+                                              ),
+        'rr_cold_age_12-23months': Parameter(Types.REAL, 'relative rate of common cold for age between 12 to 23 months'
+                                            ),
+        'rr_cold_age_24-59months': Parameter(Types.REAL, 'relative rate of common cold for age between 24 to 59 months'
+                                            ),
+        'rr_pneumonia_age_under2months': Parameter(Types.REAL, 'relative rate of pneumonia for age  < 2 months'
+                                              ),
+        'rr_pneumonia_age_2-11months': Parameter(Types.REAL, 'relative rate of pneumonia for age between 2 to 11 months'
+                                            ),
+        'rr_pneumonia_age_12-23months': Parameter(Types.REAL, 'relative rate of pneumonia for age between 12 to 23 months'
+                                             ),
+        'rr_pneumonia_age_24-59months': Parameter(Types.REAL, 'relative rate of pneumonia for age between 24 to 59 months'
+                                             ),
+        'rr_severe_pneumonia_age_under2months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age <2 months'
+                                              ),
+        'rr_severe_pneumonia_age_2-11months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age between 2 to 11 months'
+                                            ),
+        'rr_severe_pneumonia_age_12-23months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age between 12 to 23 months'
+                                             ),
+        'rr_severe_pneumonia_age_24-59months': Parameter(Types.REAL, 'relative rate of severe pneumonia for age between 24 to 59 months'
+                                             ),
+        'ri_prob_progress_to_severe_pneumonia': Parameter(Types.REAL, 'probability of progressing from pneumonia to severe penumonia'
+                                                  ),
+        'base_death_rate_pneumonia': Parameter(Types.REAL, 'death rate from pneumonia/severe pneumonia at baseline'),
+        'rr_cold_HHhandwash': Parameter(Types.REAL, 'relative rate of common cold among household with good handwash practices'),
+        'rr_pneumonia_HHhandwash': Parameter(Types.REAL, 'relative rate of pneumonia among household with good handwash practices'),
+        'rr_severe_pneumonia_HHhandwash': Parameter(Types.REAL, 'relative rate of severe pneumonia among household with good handwash practices'
+
+        }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'ri_respiratory_infection_status': Property(Types.CATEGORICAL, 'respiratory infection status',
-                                  categories=['none', 'cold', 'pneumonia', 'severe pneumonia'])
+                                  categories=['none', 'common cold', 'pneumonia', 'severe pneumonia']),
+        'ri_cough': Property(Types.BOOL, 'respiratory infection symptoms cough'),
+        'ri_fever': Property(Types.BOOL, 'respiratory infection symptoms fever'),
+        'ri_fast_breathing': Property(Types.BOOL, 'respiratory infection symptoms fast breathing'),
+        'ri_chest_indraw': Property(Types.BOOL, 'respiratory infection symptoms chest indrawing'),
+        'ri_stridor': Property(Types.BOOL, 'respiratory infection symptoms stridor'),
+        'ri_not_able_drink_breastfeed': Property(Types.BOOL, 'respiratory infection symptoms not able to drink or breastfeed'),
+        'ri_convulsions': Property(Types.BOOL, 'respiratory infection symptoms convulsions'),
+        'ri_lethargic_unconscious': Property(Types.BOOL, 'respiratory infection symptoms lethargic or unconscious'),
+        'ri_diagnosis': Property(Types.BOOL, 'respiratory infection diagnosis')
     }
 
     def read_parameters(self, data_folder):
