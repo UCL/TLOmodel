@@ -503,10 +503,11 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
         
+        """
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-        """
+        
 
 
 
