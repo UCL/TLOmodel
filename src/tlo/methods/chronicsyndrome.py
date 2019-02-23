@@ -171,16 +171,30 @@ class ChronicSyndrome(Module):
         # df['cs_unified_symptom_code']
         # df['cs_specific_symptoms']
 
+        # Map the specific symptoms for this disease onto the unified coding scheme
         df=self.sim.population.props # shortcut to population properties dataframe
 
-        df['cs_unified_symptom_code']=1
-        #df['mi_specific_symptoms']
+        df['cs_unified_symptom_code'] = df['cs_specific_symptoms'].map({
+            'none':0,
+            'extreme illness':4
+        })
 
         return df['cs_unified_symptom_code']
 
+    def on_healthsystem_interaction(self,person_id):
+        print('This is chronicsyndrome, being asked what to do at a health system appointment for person', person_id)
 
-        pass
+        # Queries whether treatment is allowable under global policy
+        Allowable = True
 
+        # Queries whether treatment is available locally
+        Available= True
+
+        if (Allowable and Available):
+            # # Commission treatment for this individual
+            event=ChronicSyndromeTreatmentEvent(self,person_id)
+            self.sim.schedule_event(event, self.sim.date)
+            pass
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -245,6 +259,24 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(death, self.sim.date)
 
 
+
+class ChronicSyndromeTreatmentEvent(Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        print("We are now ready to treat this person", person_id)
+
+        df = self.sim.population.props
+        treatmentworks = self.sim.rng.rand() < self.module.parameters['p_cure']
+
+        if treatmentworks:
+            df.at[person_id, 'cs_has_cs'] = False
+            df.at[person_id, 'cs_status'] = 'P'
+            df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT # (in this we nullify the death event that has been scheduled.)
+            df.at[person_id, 'cs_date_cure'] = self.sim.date
+            df.at[person_id, 'cs_specific_symptoms'] = 'none'
+            df.at[person_id, 'cs_unified_symptom_code'] = 0
 
 
 

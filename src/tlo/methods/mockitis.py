@@ -203,12 +203,33 @@ class Mockitis(Module):
         # And report it on the unified symptomology scale
         print("This is mockitis, being asked to report unified symptomology")
 
+        # Map the specific symptoms for this disease onto the unified coding scheme
         df=self.sim.population.props # shortcut to population properties dataframe
 
-        df['mi_unified_symptom_code']=0
-        #df['mi_specific_symptoms']
+        df['mi_unified_symptom_code'] = df['mi_specific_symptoms'].map({
+            'none':0,
+            'mild sneezing':1,
+            'coughing and irritable':2,
+            'extreme emergency':4
+        })
 
         return df['mi_unified_symptom_code']
+
+    def on_healthsystem_interaction(self,person_id):
+        print('This is mockitis, being asked what to do at a health system appointment for person', person_id)
+
+        # Queries whether treatment is allowable under global policy
+        Allowable = True
+
+        # Queries whether treatment is available locally
+        Available= True
+
+        if (Allowable and Available):
+            # Commission treatment for this individual
+            event=MockitisTreatmentEvent(self,person_id)
+            self.sim.schedule_event(event, self.sim.date)
+
+
 
 
 
@@ -256,16 +277,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
 
-        #
-        # # 3. handle cures
-        # cured = np.random.choice([True, False], size=len(currently_infected), p=[self.p_cure, 1 - self.p_cure])
-        #
-        # if cured.sum():
-        #     cured = currently_infected[cured]
-        #     df.loc[cured, 'mi_is_infected'] = False
-        #     df.loc[cured, 'mi_status'] = 'P'
-        #     df.loc[cured, 'mi_date_death'] = pd.NaT
-        #     df.loc[cured, 'mi_date_cure'] = self.sim.date
+
 
 
 class MockitisDeathEvent(Event, IndividualScopeEventMixin):
@@ -278,7 +290,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id,'mi_status']=='C':
+        if df.at[person_id,'mi_status']=='C': # CHECK ABOUT NaT for **cured person
             # Fire the centralised death event:
             death = tlo.methods.demography.InstantaneousDeath(self.module, person_id, cause='Mockitis')
             self.sim.schedule_event(death, self.sim.date)
@@ -286,8 +298,24 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
 
 
+class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
 
+    def apply(self, person_id):
+        print("We are now ready to treat this person", person_id)
 
+        df = self.sim.population.props
+        treatmentworks = self.sim.rng.rand() < self.module.parameters['p_cure']
+
+        if treatmentworks:
+            df.at[person_id, 'mi_is_infected'] = False
+            df.at[person_id, 'mi_status'] = 'P'
+            df.at[person_id, 'mi_scheduled_date_death']=pd.NaT  # (in this we nullify the death event that has been scheduled.)
+            df.at[person_id, 'mi_date_cure'] = self.sim.date
+            df.at[person_id, 'mi_specific_symptoms']= 'none'
+            df.at[person_id, 'mi_unified_symptom_code']=0
+            pass
 
 
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):

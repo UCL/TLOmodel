@@ -144,8 +144,57 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if (self.sim.rng.rand() < prob_seek_care) :
-                    event=InteractionWithHealthSystem(person_index)
+                    event=InteractionWithHealthSystem(self,person_index)
                     self.sim.schedule_event(event, self.sim.date)
+
+
+class OutreachEvent(Event, PopulationScopeEventMixin):
+    # This event can be used to simulate the occurance of a one-off 'outreach event'
+    # It does not automatically reschedule.
+    # It commissions Interactions with the Health System for persons based location (and other variables)
+    # in a different manner to HealthCareSeeking process
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=3))
+
+    def apply(self, population):
+
+        print("@@@@@ Outreach event @@@@@@")
+
+        # 1) Work out the overall unified symptom code for all the differet diseases (and taking maxmium of them)
+        UnifiedSymptomsCode = pd.DataFrame()
+
+        # Ask each module to update and report-out the symptoms it is currently causing on the unified symptomology scale:
+        RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+        for module in RegisteredDiseaseModules.values():
+            out = module.query_symptoms_now()
+            UnifiedSymptomsCode = pd.concat([UnifiedSymptomsCode, out],
+                                            axis=1)  # each column of this dataframe gives the reports from each module of the unified symptom code
+        pass
+
+        # Look across the columns of the unified symptoms code reports to determine an overall symmtom level
+        OverallSymptomCode = UnifiedSymptomsCode.max(
+            axis=1)  # Maximum Value of reported Symptom is taken as overall level of symptoms
+
+        # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
+        df = population.props
+        indicies_of_alive_person = df[df['is_alive'] == True].index
+
+        for person_index in indicies_of_alive_person:
+
+            # Collect up characteristics that will inform whether this person will seek care at thie moment...
+            age = df.at[person_index, 'age_years']
+            healthlevel = OverallSymptomCode.at[person_index]
+            education = df.at[person_index, 'li_ed_lev']
+
+            # Fill-in the regression equation about health-care seeking behaviour
+            prob_seek_care = 0.8 # TODO; Have this have a location or subpopulation mask passed in, to control this.
+
+            # determine if there will be health-care contact and schedule if so
+            if (self.sim.rng.rand() < prob_seek_care):
+                event = InteractionWithHealthSystem(self, person_index)
+                self.sim.schedule_event(event, self.sim.date)
+
 
 
 
@@ -158,5 +207,13 @@ class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
         # This is a meeting between the person and the health system
         # Symptoms (across all diseases) will be assessed and care will be provided for each condition, if its allowable and available
 
-        print("@@@@ We are now having an health appointment with individdual", person_id)
+        df = self.sim.population.props
+        print("@@@@ We are now having an health appointment with individual", person_id)
+
+        # For each disease module, trigger the on_healthsystem() event
+        RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+        for module in RegisteredDiseaseModules.values():
+            module.on_healthsystem_interaction(person_id)
         pass
+
+
