@@ -9,9 +9,9 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
 
 
-class Mockitis(Module):
+class ChronicSyndrome(Module):
     """
-    One line summary goes here...
+    This is a dummy chronic disease
 
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
@@ -25,7 +25,7 @@ class Mockitis(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'p_infection': Parameter(
+        'p_acquisition': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'level_of_symptoms': Parameter(
             Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
@@ -40,15 +40,15 @@ class Mockitis(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'mi_is_infected': Property(Types.BOOL, 'Current status of mockitis'),
-        'mi_status': Property(Types.CATEGORICAL,
+        'cs_has_cs': Property(Types.BOOL, 'Current status of mockitis'),
+        'cs_status': Property(Types.CATEGORICAL,
                               'Historical status: N=never; C=currently 2; P=previously',
                               categories=['N', 'C', 'P']),
-        'mi_date_infected': Property(Types.DATE, 'Date of latest infection'),
-        'mi_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
-        'mi_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
-        'mi_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for mockitiis specifically',
-                                categories=['none', 'mild sneezing', 'coughing and irritable', 'extreme emergency'])
+        'cs_date_acquired': Property(Types.DATE, 'Date of latest infection'),
+        'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
+        'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
+        'cs_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for mockitiis specifically',
+                                categories=['none', 'extreme illness'])
     }
 
     def read_parameters(self, data_folder):
@@ -57,10 +57,10 @@ class Mockitis(Module):
         For now, we are going to hard code them explicity
         """
 
-        self.parameters['p_infection']=0.001
-        self.parameters['p_cure']=0.50
-        self.parameters['initial_prevalence']=0.5
-        self.parameters['level_of_symptoms'] = pd.DataFrame(data={'level_of_symptoms':['none','mild sneezing','coughing and irritable','extreme emergency'], 'probability':[0.25,0.25,0.25,0.25]})
+        self.parameters['p_acquisition_per_year']=0.02
+        self.parameters['p_cure']=0.10
+        self.parameters['initial_prevalence']=0.08
+        self.parameters['level_of_symptoms'] = pd.DataFrame(data={'level_of_symptoms':['none', 'extreme illness'], 'probability':[0.95,0.05]})
 
 
     def initialise_population(self, population):
@@ -76,40 +76,39 @@ class Mockitis(Module):
         df = population.props  # a shortcut to the dataframe storing data for individiuals
 
         # Set default for properties
-        df['mi_is_infected'] = False  # default: no individuals infected
-        df['mi_status'].values[:] = 'N'  # default: never infected
-        df['mi_date_infected'] = pd.NaT  # default: not a time
-        df['mi_scheduled_date_death'] = pd.NaT  # default: not a time
-        df['mi_date_cure'] = pd.NaT  # default: not a time
-        df['mi_symptoms']='none'
+        df['cs_has_cs'] = False  # default: no individuals infected
+        df['cs_status'].values[:] = 'N'  # default: never infected
+        df['cs_date_acquired'] = pd.NaT  # default: not a time
+        df['cs_scheduled_date_death'] = pd.NaT  # default: not a time
+        df['cs_date_cure'] = pd.NaT  # default: not a time
+        df['cs_symptoms']='none'
+
 
         # randomly selected some individuals as infected
-        initial_infected = self.parameters['initial_prevalence']
-        initial_uninfected = 1 - initial_infected
-        df['mi_is_infected'] = np.random.choice([True, False], size=len(df), p=[initial_infected, initial_uninfected])
+        df['cs_has_cs'] = np.random.choice([True, False], size=len(df), p=[self.parameters['initial_prevalence'], 1-self.parameters['initial_prevalence']])
 
-        df.loc[df['mi_is_infected'] == True, 'mi_status']='C'
+        df.loc[df['cs_has_cs'] == True, 'cs_status']='C'
 
         # Assign time of infections and dates of scheduled death for all those infected
         # get all the infected individuals
-        infected_count = df.mi_is_infected.sum()
+        acquired_count = df.cs_has_cs.sum()
 
         # Assign level of symptoms
-        random_choice = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'], size=infected_count, p=self.parameters['level_of_symptoms']['probability'])
-        df.loc[df['mi_is_infected']==True,'mi_symptoms']=random_choice
+        symptoms = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'], size=acquired_count, p=self.parameters['level_of_symptoms']['probability'])
+        df.loc[df['cs_has_cs']==True,'cs_symptoms']=symptoms
 
-        # date of infection of infected individuals
-        infected_years_ago = np.random.exponential(scale=5, size=infected_count)  # sample years in the past
+        # date acquired cs
+        acquired_years_ago = np.random.exponential(scale=10, size=acquired_count)  # sample years in the past
         # pandas requires 'timedelta' type for date calculations
-        infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
+        acquired_td_ago = pd.to_timedelta(acquired_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=2, size=infected_count)
+        death_years_ahead = np.random.exponential(scale=20, size=acquired_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
-        df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
-        df.loc[df.mi_is_infected, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
+        df.loc[df.cs_has_cs, 'cs_date_infected'] = self.sim.date - acquired_td_ago
+        df.loc[df.cs_has_cs, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
 
 
 
@@ -123,19 +122,17 @@ class Mockitis(Module):
         """
 
         # add the basic event (we will implement below)
-        event = MockitisEvent(self)
+        event = ChronicSyndromeEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
         # add an event to log to screen
-        sim.schedule_event(MockitisLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(ChronicSyndromeLoggingEvent(self), sim.date + DateOffset(months=6))
 
-        # # add the death event of infected individuals
-        # schedule the mockitis death event
-
+        # # add the death event of individuals with ChronicSyndrome
         df = sim.population.props  # a shortcut to the dataframe storing data for individiuals
         indicies_of_persons_who_will_die=df[df['mi_is_infected']==True].index
         for person_index in indicies_of_persons_who_will_die:
-            death_event = MockitisDeathEvent(self, person_index)
+            death_event = ChronicSyndromeDeathEvent(self, person_index)
             self.sim.schedule_event(death_event, df.at[person_index,'mi_scheduled_date_death'])
 
 
@@ -152,45 +149,16 @@ class Mockitis(Module):
         df=self.sim.population.props # shortcut to the population props dataframe
 
         # Initialise all the properties that this module looks after:
-
-        child_is_infected= df.at[mother_id, 'mi_is_infected'] # is infected if mother is infected
-
-        if child_is_infected:
-
-            # Scheduled death date
-            death_years_ahead = np.random.exponential(scale=20)
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-
-            # Level of symptoms
-            symptoms = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'],p=self.parameters['level_of_symptoms']['probability'])
-
-            # Assign properties
-            df.at[child_id, 'mi_is_infected'] = True
-            df.at[child_id,'mi_status'] = 'C'
-            df.at[child_id,'mi_date_infected'] = self.sim.date
-            df.at[child_id,'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
-            df.at[child_id,'mi_date_cure'] = pd.NaT
-            df.at[child_id,'mi_symptoms'] = symptoms
-
-            # Schedule death event:
-            death_event = MockitisDeathEvent(self, child_id)
-            self.sim.schedule_event(death_event, df.at[child_id, 'mi_scheduled_date_death'])
-
-
-        else:
-
-            # Assign the default for a child who is not infected
-            df.at[child_id,'mi_is_infected'] = False
-            df.at[child_id,'mi_status'] = 'N'
-            df.at[child_id,'mi_date_infected'] = pd.NaT
-            df.at[child_id,'mi_scheduled_date_death'] = pd.NaT
-            df.at[child_id,'mi_date_cure'] = pd.NaT
-            df.at[child_id,'mi_symptoms'] = 'none'
+        df.at[child_id,'cs_has_cs'] = False
+        df.at[child_id,'cs_status']= 'N'
+        df.at[child_id,'cs_date_acquired'] = pd.NaT
+        df.at[child_id,'cs_scheduled_date_death'] = pd.NaT
+        df.at[child_id,'cs_date_cure'] = pd.NaT
+        df.at[child_id,'cs_symptoms'] = 'none'
 
 
 
-
-class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
+class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
     # This event is occuring regularly at one monthly intervals
 
@@ -201,52 +169,42 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[df.mi_is_infected & df.is_alive]
-        currently_uninfected = df.index[~df.mi_is_infected & df.is_alive]
-        prevalence = len(currently_infected)/ (len(currently_infected)+len(currently_uninfected))
+        currently_cs = df.index[df.cs_has_cs & df.is_alive]
+        currently_notcs = df.index[~df.cs_has_cs & df.is_alive]
 
-        # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
+        # 2. handle new cases
+        p_aq=self.module.parameters['p_acquisition_per_year']/12
+        now_acquired = np.random.choice([True, False], size=len(currently_notcs),
+                                        p=[p_aq, 1 - p_aq])
 
 
         # if any are infected
-        if now_infected.sum():
-            infected_idx = currently_uninfected[now_infected]
+        if now_acquired.sum():
+            newcases_idx = currently_notcs[now_acquired]
 
-            death_years_ahead = np.random.exponential(scale=2, size=now_infected.sum())
+            death_years_ahead = np.random.exponential(scale=20, size=now_acquired.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
             symptoms = self.sim.rng.choice(self.module.parameters['level_of_symptoms']['level_of_symptoms'],
                                             size=now_infected.sum(), p=self.module.parameters['level_of_symptoms']['probability'])
 
-
-            df.loc[infected_idx, 'mi_is_infected'] = True
-            df.loc[infected_idx, 'mi_status'] = 'C'
-            df.loc[infected_idx, 'mi_date_infected'] = self.sim.date
-            df.loc[infected_idx, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
-            df.loc[infected_idx, 'mi_date_cure'] = pd.NaT
-            df.loc[infected_idx, 'mi_symptoms'] = symptoms
-
-
-            # schedule death events for newly infected individuals
-            for person_index in infected_idx:
-                death_event = MockitisDeathEvent(self, person_index)
-                self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
+            df.loc[newcases_idx, 'cs_has_cs'] = True
+            df.loc[newcases_idx, 'cs_status'] = 'C'
+            df.loc[newcases_idx, 'cs_date_acquired'] = self.sim.date
+            df.loc[newcases_idx, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
+            df.loc[newcases_idx, 'cs_date_cure'] = pd.NaT
+            df.loc[newcases_idx, 'cs_symptoms'] = symptoms
 
 
-        #
-        # # 3. handle cures
-        # cured = np.random.choice([True, False], size=len(currently_infected), p=[self.p_cure, 1 - self.p_cure])
-        #
-        # if cured.sum():
-        #     cured = currently_infected[cured]
-        #     df.loc[cured, 'mi_is_infected'] = False
-        #     df.loc[cured, 'mi_status'] = 'P'
-        #     df.loc[cured, 'mi_date_death'] = pd.NaT
-        #     df.loc[cured, 'mi_date_cure'] = self.sim.date
+            # schedule death events for new cases
+            for person_index in newcases_idx:
+                death_event = ChronicSyndromeDeathEvent(self, person_index)
+                self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
 
 
-class MockitisDeathEvent(Event, IndividualScopeEventMixin):
+
+
+
+class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -258,17 +216,14 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
         # Apply checks to ensure that this death should occur
         if df.at[person_id,'mi_status']=='C':
             # Fire the centralised death event:
-            death = tlo.methods.demography.InstantaneousDeath(self.module, person_id, cause='Mockitis')
+            death = tlo.methods.demography.InstantaneousDeath(self.module, person_id, cause='ChronicSyndrome')
             self.sim.schedule_event(death, self.sim.date)
 
 
 
 
 
-
-
-
-class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
         """
@@ -280,22 +235,6 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        infected_total = df.mi_is_infected.sum()
-        proportion_infected = infected_total / len(df)
+        hascs_total = (df['cs_has_cs'] & df['is_alive']).sum()
+        proportion_infected = hascs_total / df['is_alive'].sum()
 
-        mask = (df['mi_date_infected'] > self.sim.date - DateOffset(months=self.repeat))
-        infected_in_last_month = mask.sum()
-        mask = (df['mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
-        cured_in_last_month = mask.sum()
-
-        counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        counts.update(df['mi_status'].value_counts().to_dict())
-        status = 'Status: { N: %(N)d; T1: %(T1)d; T2: %(T2)d; P: %(P)d }' % counts
-
-        print('%s - Mockitis: {TotInf: %d; PropInf: %.3f; PrevMonth: {Inf: %d; Cured: %d}; %s }' %
-              (self.sim.date,
-               infected_total,
-               proportion_infected,
-               infected_in_last_month,
-               cured_in_last_month,
-               status), flush=True)

@@ -11,7 +11,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeE
 
 class Mockitis(Module):
     """
-    One line summary goes here...
+    This is a dummy infectious disease
 
     All disease modules need to be implemented as a class inheriting from Module.
     They need to provide several methods which will be called by the simulation
@@ -30,7 +30,7 @@ class Mockitis(Module):
         'level_of_symptoms': Parameter(
             Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
         'p_cure': Parameter(
-            Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
+            Types.REAL, 'Probability that a treatment is successful in curing the individual'),
         'initial_prevalence': Parameter(
             Types.REAL,'Prevalence of the disease in the initial population'
         )
@@ -95,8 +95,8 @@ class Mockitis(Module):
         infected_count = df.mi_is_infected.sum()
 
         # Assign level of symptoms
-        random_choice = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'], size=infected_count, p=self.parameters['level_of_symptoms']['probability'])
-        df.loc[df['mi_is_infected']==True,'mi_symptoms']=random_choice
+        symptoms= self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'], size=infected_count, p=self.parameters['level_of_symptoms']['probability'])
+        df.loc[df['mi_is_infected']==True,'mi_symptoms']=symptoms
 
         # date of infection of infected individuals
         infected_years_ago = np.random.exponential(scale=5, size=infected_count)  # sample years in the past

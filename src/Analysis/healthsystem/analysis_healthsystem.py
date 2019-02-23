@@ -4,7 +4,7 @@ import logging
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, mockitis
+from tlo.methods import demography, lifestyle, mockitis, chronicsyndrome
 from tlo.methods import healthsystem
 
 
@@ -45,6 +45,7 @@ sim.register(demography.Demography(workbook_path=resourcefile_demography))
 sim.register(healthsystem.HealthSystem())
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
+sim.register(chronicsyndrome.ChronicSyndrome())
 
 
 

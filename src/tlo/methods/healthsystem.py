@@ -96,4 +96,6 @@ class HealthSystem(Module):
             super().__init__(module, frequency=DateOffset(months=3))
 
         def apply(self, population):
+            pass
+
 
