@@ -197,6 +197,18 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
 
 
+class EmergencyCareSeeking(Event,IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        # This is an event call by a disease module and care
+        # The on_healthsystem_interaction function is called only for the module that called for the EmergencyCare
+
+        print('let me see who has claled me')
+        pass
+
+
 
 class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
 
@@ -214,6 +226,6 @@ class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
         RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
         for module in RegisteredDiseaseModules.values():
             module.on_healthsystem_interaction(person_id)
-        pass
+
 
 
