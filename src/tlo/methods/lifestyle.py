@@ -652,6 +652,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #              self.sim.date,
         #              df.loc[0].to_dict())
 
+        """
+
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
@@ -675,3 +677,5 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|li_ed_lev_by_age|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
+
+        """
