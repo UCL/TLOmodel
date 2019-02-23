@@ -86,3 +86,14 @@ class HealthSystem(Module):
 
         return GetsService
 
+
+
+    class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
+        # This event is occuring regularly at 3-monthly intervals
+        # It asseess who has symptoms that are sufficient to bring them into care
+
+        def __init__(self, module):
+            super().__init__(module, frequency=DateOffset(months=3))
+
+        def apply(self, population):
+
