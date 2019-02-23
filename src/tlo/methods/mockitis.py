@@ -8,6 +8,7 @@ import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
 from tlo.methods import healthsystem
+from tlo.methods.healthsystem import OutreachEvent
 
 
 class Mockitis(Module):
@@ -147,6 +148,8 @@ class Mockitis(Module):
         self.sim.modules['HealthSystem'].Register_Disease_Module(self)
 
 
+
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -215,7 +218,7 @@ class Mockitis(Module):
 
         return df['mi_unified_symptom_code']
 
-    def on_healthsystem_interaction(self,person_id):
+    def on_first_healthsystem_interaction(self,person_id):
         print('This is mockitis, being asked what to do at a health system appointment for person', person_id)
 
         # Queries whether treatment is allowable under global policy
@@ -229,6 +232,8 @@ class Mockitis(Module):
             event=MockitisTreatmentEvent(self,person_id)
             self.sim.schedule_event(event, self.sim.date)
 
+    def on_followup_healthsystem_interaction(self,person_id):
+        print('This is a follow-up appointment. Nothing to do')
 
 
 
@@ -297,7 +302,6 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
 
 
-
 class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -316,6 +320,13 @@ class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'mi_specific_symptoms']= 'none'
             df.at[person_id, 'mi_unified_symptom_code']=0
             pass
+
+        # schedule a short series of follow-up appointments at six monthly intervals
+        followup_appt= healthsystem.InteractionWithHealthSystem_Followups(self.module,person_id)
+        self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=6))
+        self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=12))
+        self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=18))
+        self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=24))
 
 
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -349,3 +360,14 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                infected_in_last_month,
                cured_in_last_month,
                status), flush=True)
+
+
+class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
+    def __init__(self, module):
+
+        super().__init__(module)
+
+    def apply(self, population):
+
+        pass
+
