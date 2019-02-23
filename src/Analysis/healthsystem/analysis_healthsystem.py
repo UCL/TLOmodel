@@ -4,7 +4,7 @@ import logging
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle
+from tlo.methods import demography, lifestyle, mockitis
 from tlo.methods import healthsystem
 
 
@@ -37,13 +37,14 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+
 
 
 # Register the appropriate modules
 sim.register(demography.Demography(workbook_path=resourcefile_demography))
 sim.register(healthsystem.HealthSystem())
 sim.register(lifestyle.Lifestyle())
+sim.register(mockitis.Mockitis())
 
 
 
@@ -55,6 +56,6 @@ fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
 
 
