@@ -171,8 +171,8 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         if self.type=='this_disease_only':
             # Schedule a first appointment for each person for this disease only
             for person_index in self.indicies:
-                event = self.module.on_first_healthsystem_interaction(person_index)
-                self.sim.schedule_event(event, self.sim.date)
+                self.module.on_first_healthsystem_interaction(person_index)
+
         else:
             # Schedule a first appointment for each person for all disease
             for person_index in self.indicies:

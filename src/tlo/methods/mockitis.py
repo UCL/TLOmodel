@@ -372,13 +372,13 @@ class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # This intervention is apply to women aged 15-24 only
+        # This intervention is apply to women only
 
         df=population.props
-        indicies_of_person_to_be_reached=df.index[ (df['is_alive']==True) & (df['sex']=='F') & (df['age_years']>=15.0) & (df['age_years']<25.0) ]
+        indicies_of_person_to_be_reached=df.index[ (df['is_alive']==True) & (df['sex']=='F')]
 
         # make and run the actual outreach event by the healthsystem
-        outreachevent=healthsystem.OutreachEvent(self,'this_disease_only',indicies_of_person_to_be_reached)
+        outreachevent=healthsystem.OutreachEvent(self.module,'this_disease_only',indicies_of_person_to_be_reached)
         self.sim.schedule_event(outreachevent,self.sim.date)
 
 
