@@ -47,8 +47,10 @@ class ChronicSyndrome(Module):
         'cs_date_acquired': Property(Types.DATE, 'Date of latest infection'),
         'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
         'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
-        'cs_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for mockitiis specifically',
-                                categories=['none', 'extreme illness'])
+        'cs_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for chronic syndrome specifically',
+                                categories=['none', 'extreme illness']),
+        'cs_unified_symptom_code': Property(Types.CATEGORICAL, 'Level of symptoms on the standardised scale (governing health-care seeking): 0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
+                                categories=[0,1,2,3,4])
     }
 
     def read_parameters(self, data_folder):
@@ -81,7 +83,8 @@ class ChronicSyndrome(Module):
         df['cs_date_acquired'] = pd.NaT  # default: not a time
         df['cs_scheduled_date_death'] = pd.NaT  # default: not a time
         df['cs_date_cure'] = pd.NaT  # default: not a time
-        df['cs_symptoms']='none'
+        df['cs_specific_symptoms']='none'
+        df['cs_unified_symptom_code']=0
 
 
         # randomly selected some individuals as infected
@@ -95,7 +98,7 @@ class ChronicSyndrome(Module):
 
         # Assign level of symptoms
         symptoms = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'], size=acquired_count, p=self.parameters['level_of_symptoms']['probability'])
-        df.loc[df['cs_has_cs']==True,'cs_symptoms']=symptoms
+        df.loc[df['cs_has_cs']==True,'cs_specific_symptoms']=symptoms
 
         # date acquired cs
         acquired_years_ago = np.random.exponential(scale=10, size=acquired_count)  # sample years in the past
@@ -135,7 +138,8 @@ class ChronicSyndrome(Module):
             death_event = ChronicSyndromeDeathEvent(self, person_index)
             self.sim.schedule_event(death_event, df.at[person_index,'mi_scheduled_date_death'])
 
-
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].Register_Disease_Module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -154,7 +158,28 @@ class ChronicSyndrome(Module):
         df.at[child_id,'cs_date_acquired'] = pd.NaT
         df.at[child_id,'cs_scheduled_date_death'] = pd.NaT
         df.at[child_id,'cs_date_cure'] = pd.NaT
-        df.at[child_id,'cs_symptoms'] = 'none'
+        df.at[child_id,'cs_specific_symptoms'] = 'none'
+        df.at[child_id,'cs_unified_symptom_code'] = 0
+
+    def query_symptoms_now(self):
+        # This is called by the health-care seeking module
+        # All modules refresh the symptomology of persons at this time
+        # And report it on the unified symptomology scale
+
+        print("This is chronicsyndome, being asked to report unified symptomology")
+        # print('Now being asked to update symptoms')
+        # df['cs_unified_symptom_code']
+        # df['cs_specific_symptoms']
+
+        df=self.sim.population.props # shortcut to population properties dataframe
+
+        df['cs_unified_symptom_code']=1
+        #df['mi_specific_symptoms']
+
+        return df['cs_unified_symptom_code']
+
+
+        pass
 
 
 
@@ -185,15 +210,15 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             death_years_ahead = np.random.exponential(scale=20, size=now_acquired.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
             symptoms = self.sim.rng.choice(self.module.parameters['level_of_symptoms']['level_of_symptoms'],
-                                            size=now_infected.sum(), p=self.module.parameters['level_of_symptoms']['probability'])
+                                            size=now_acquired.sum(), p=self.module.parameters['level_of_symptoms']['probability'])
 
             df.loc[newcases_idx, 'cs_has_cs'] = True
             df.loc[newcases_idx, 'cs_status'] = 'C'
             df.loc[newcases_idx, 'cs_date_acquired'] = self.sim.date
             df.loc[newcases_idx, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
             df.loc[newcases_idx, 'cs_date_cure'] = pd.NaT
-            df.loc[newcases_idx, 'cs_symptoms'] = symptoms
-
+            df.loc[newcases_idx, 'cs_specific_symptoms'] = symptoms
+            df.loc[newcases_idx, 'cs_unified_symptom_code'] = 0
 
             # schedule death events for new cases
             for person_index in newcases_idx:

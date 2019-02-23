@@ -6,7 +6,7 @@ It will be replaced by the Health Care Seeking Behaviour Module and the
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
 
 class HealthSystem(Module):
@@ -20,6 +20,8 @@ class HealthSystem(Module):
             'Skilled Birth Attendance': []
         }
         self.Service_Availabilty=Service_Availability
+
+        self.RegisteredDiseaseModules = {}
 
         print('----------------------------------------------------------------------')
         print("Setting up the Health System With the Following Service Availabilty: ")
@@ -48,11 +50,23 @@ class HealthSystem(Module):
 
     def initialise_simulation(self, sim):
 
+        sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
+
         pass
 
     def on_birth(self, mother, child):
 
         pass
+
+
+    def Register_Disease_Module(self, *NewDiseaseModule):
+
+        # Register Disease Modules (in order that the health system can trigger things in each module)...
+
+        for module in NewDiseaseModule:
+            assert module.name not in self.RegisteredDiseaseModules, (
+                'A module named {} has already been registered'.format(module.name))
+            self.RegisteredDiseaseModules[module.name] = module
 
 
 
@@ -88,7 +102,7 @@ class HealthSystem(Module):
 
 
 
-    class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
+class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
         # This event is occuring regularly at 3-monthly intervals
         # It asseess who has symptoms that are sufficient to bring them into care
 
@@ -96,6 +110,53 @@ class HealthSystem(Module):
             super().__init__(module, frequency=DateOffset(months=3))
 
         def apply(self, population):
+
+            print('@@@@@@@@ Health Care Seeking Poll:::::')
+
+            # 1) Work out the overall unified symptom code for all the differet diseases (and taking maxmium of them)
+
+            UnifiedSymptomsCode=pd.DataFrame()
+
+            # Ask each module to update and report-out the symptoms it is currently causing on the unified symptomology scale:
+            RegisteredDiseaseModules=self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            for module in RegisteredDiseaseModules.values():
+                out=module.query_symptoms_now()
+                UnifiedSymptomsCode=pd.concat([UnifiedSymptomsCode, out], axis=1) # each column of this dataframe gives the reports from each module of the unified symptom code
             pass
 
+            # Look across the columns of the unified symptoms code reports to determine an overall symmtom level
+            OverallSymptomCode = UnifiedSymptomsCode.max(axis=1) # Maximum Value of reported Symptom is taken as overall level of symptoms
 
+
+            # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
+            df=population.props
+            indicies_of_alive_person = df[df['is_alive']==True].index
+
+            for person_index in indicies_of_alive_person:
+
+                # Collect up characteristics that will inform whether this person will seek care at thie moment...
+                age=df.at[person_index,'age_years']
+                healthlevel=OverallSymptomCode.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
+                education=df.at[person_index,'li_ed_lev']
+
+                # Fill-in the regression equation about health-care seeking behaviour
+                prob_seek_care = min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2)
+
+                # determine if there will be health-care contact and schedule if so
+                if (self.sim.rng.rand() < prob_seek_care) :
+                    event=InteractionWithHealthSystem(person_index)
+                    self.sim.schedule_event(event, self.sim.date)
+
+
+
+class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        # This is a meeting between the person and the health system
+        # Symptoms (across all diseases) will be assessed and care will be provided for each condition, if its allowable and available
+
+        print("@@@@ We are now having an health appointment with individdual", person_id)
+        pass
