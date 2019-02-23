@@ -39,7 +39,6 @@ logging.getLogger().addHandler(fh)
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 
-
 # Register the appropriate modules
 sim.register(demography.Demography(workbook_path=resourcefile_demography))
 sim.register(healthsystem.HealthSystem())
