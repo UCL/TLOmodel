@@ -110,7 +110,7 @@ class Mockitis(Module):
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=2, size=infected_count)
+        death_years_ahead = np.random.exponential(scale=20, size=infected_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
@@ -147,6 +147,9 @@ class Mockitis(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].Register_Disease_Module(self)
 
+        # Schedule the outreach event...
+        event=MockitisOutreachEvent(self,'this_module_only')
+        self.sim.schedule_event(event,self.sim.date+DateOffset(months=24))
 
 
 
@@ -363,11 +366,21 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
-    def __init__(self, module):
+    def __init__(self, module, type):
 
         super().__init__(module)
 
     def apply(self, population):
 
-        pass
+        # This intervention is apply to women aged 15-24 only
+
+        df=population.props
+        indicies_of_person_to_be_reached=df.index[ (df['is_alive']==True) & (df['sex']=='F') & (df['age_years']>=15.0) & (df['age_years']<25.0) ]
+
+        # make and run the actual outreach event by the healthsystem
+        outreachevent=healthsystem.OutreachEvent(self,'this_disease_only',indicies_of_person_to_be_reached)
+        self.sim.schedule_event(outreachevent,self.sim.date)
+
+
+
 
