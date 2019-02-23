@@ -101,6 +101,7 @@ class HealthSystem(Module):
         return GetsService
 
 
+# --------- FORMS OF HEALTH-CARE SEEKING -----
 
 class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
         # This event is occuring regularly at 3-monthly intervals
@@ -144,7 +145,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if (self.sim.rng.rand() < prob_seek_care) :
-                    event=InteractionWithHealthSystem(self,person_index)
+                    event=InteractionWithHealthSystem_FirstAppt(self,person_index)
                     self.sim.schedule_event(event, self.sim.date)
 
 
@@ -154,12 +155,15 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
     # It commissions Interactions with the Health System for persons based location (and other variables)
     # in a different manner to HealthCareSeeking process
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+    def __init__(self, module,type):
+        super().__init__(module)
+
+        print("@@@@@ Outreach event being created!!!! @@@@@@")
+        print("@@@ type: ", type)
 
     def apply(self, population):
 
-        print("@@@@@ Outreach event @@@@@@")
+        print("@@@@@ Outreach event running now @@@@@@")
 
         # 1) Work out the overall unified symptom code for all the differet diseases (and taking maxmium of them)
         UnifiedSymptomsCode = pd.DataFrame()
@@ -168,13 +172,11 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
         for module in RegisteredDiseaseModules.values():
             out = module.query_symptoms_now()
-            UnifiedSymptomsCode = pd.concat([UnifiedSymptomsCode, out],
-                                            axis=1)  # each column of this dataframe gives the reports from each module of the unified symptom code
+            UnifiedSymptomsCode = pd.concat([UnifiedSymptomsCode, out],axis=1)  # each column of this dataframe gives the reports from each module of the unified symptom code
         pass
 
         # Look across the columns of the unified symptoms code reports to determine an overall symmtom level
-        OverallSymptomCode = UnifiedSymptomsCode.max(
-            axis=1)  # Maximum Value of reported Symptom is taken as overall level of symptoms
+        OverallSymptomCode = UnifiedSymptomsCode.max(axis=1)  # Maximum Value of reported Symptom is taken as overall level of symptoms
 
         # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
         df = population.props
@@ -192,12 +194,14 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
             # determine if there will be health-care contact and schedule if so
             if (self.sim.rng.rand() < prob_seek_care):
-                event = InteractionWithHealthSystem(self, person_index)
+                event = InteractionWithHealthSystem_FirstAppt(self, person_index)
                 self.sim.schedule_event(event, self.sim.date)
 
 
 
-class EmergencyCareSeeking(Event,IndividualScopeEventMixin):
+# --------- TRIGGERING INTERACTIONS WITH THE HEALTH SYSTEM -----
+
+class InteractionWithHealthSystem_Emergency(Event,IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -205,19 +209,21 @@ class EmergencyCareSeeking(Event,IndividualScopeEventMixin):
         # This is an event call by a disease module and care
         # The on_healthsystem_interaction function is called only for the module that called for the EmergencyCare
 
-        print('let me see who has claled me')
+        print('@@ EMERGENCY: I have been called by', self.module, 'to act on person', person_id)
+        self.module.on_first_healthsystem_interaction(person_id)
+
         pass
 
 
 
-class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
+class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        # This is a meeting between the person and the health system
-        # Symptoms (across all diseases) will be assessed and care will be provided for each condition, if its allowable and available
+        # This is a FIRST meeting between the person and the health system
+        # Symptoms (across all diseases) will be assessed and the disease-specific on-health-system function is called
 
         df = self.sim.population.props
         print("@@@@ We are now having an health appointment with individual", person_id)
@@ -225,7 +231,20 @@ class InteractionWithHealthSystem(Event, IndividualScopeEventMixin):
         # For each disease module, trigger the on_healthsystem() event
         RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
         for module in RegisteredDiseaseModules.values():
-            module.on_healthsystem_interaction(person_id)
+            module.on_first_healthsystem_interaction(person_id)
 
 
 
+class InteractionWithHealthSystem_Followups(Event,IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+
+        # Use this interaction type for persons once they are in care for monitoring and follow-up for a specific disease
+        print("in a follow-up appoinntment")
+
+
+
+
+        pass

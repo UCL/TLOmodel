@@ -62,11 +62,12 @@ class ChronicSyndrome(Module):
         For now, we are going to hard code them explicity
         """
 
-        self.parameters['p_acquisition_per_year']=0.02
+        self.parameters['p_acquisition_per_year']=0.10
         self.parameters['p_cure']=0.10
-        self.parameters['initial_prevalence']=0.08
+        self.parameters['initial_prevalence']=0.30
         self.parameters['level_of_symptoms'] = pd.DataFrame(data={'level_of_symptoms':['none', 'extreme illness'], 'probability':[0.95,0.05]})
-        self.parameters['prob_dev_severe_symptoms_per_year']=0.05
+        self.parameters['prob_dev_severe_symptoms_per_year']=0.50
+        self.parameters['prob_severe_symptoms_seek_emergency_care']=0.95
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -184,7 +185,7 @@ class ChronicSyndrome(Module):
 
         return df['cs_unified_symptom_code']
 
-    def on_healthsystem_interaction(self,person_id):
+    def on_first_healthsystem_interaction(self,person_id):
         print('This is chronicsyndrome, being asked what to do at a health system appointment for person', person_id)
 
         # Queries whether treatment is allowable under global policy
@@ -198,6 +199,9 @@ class ChronicSyndrome(Module):
             event=ChronicSyndromeTreatmentEvent(self,person_id)
             self.sim.schedule_event(event, self.sim.date)
             pass
+
+    def on_followup_healthsystem_interaction(self, person_id):
+        print('This is a follow-up appointment. Nothing to do')
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -243,18 +247,21 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         # 3) Handle progression to severe symptoms
-        currently_cs_and_not_severe_symptoms=df[df['cs_specific_symptoms']=='extreme illness']
+        currently_cs_and_not_severe_symptoms_idx=df.index[ (df['cs_has_cs']==True) & (df['is_alive']==True) & (df['cs_specific_symptoms']!='extreme illness') ]
+        will_start_severe_symptoms= self.sim.rng.random_sample(size=len(currently_cs_and_not_severe_symptoms_idx)) < (self.module.parameters['prob_dev_severe_symptoms_per_year']/12)
+        will_start_severe_symptoms_idx=currently_cs_and_not_severe_symptoms_idx[will_start_severe_symptoms]
+        df.loc[will_start_severe_symptoms_idx,'cs_specific_symptoms']='extreme illness'
 
-        [df['cs_has_cs']==True, df['is_alive']==True,df['cs_specific_symptoms']=='extreme illness'].all((axis='columns'))
 
-        will_start_severe_symptoms= self.rng.random_sample(size=len(currently_cs_and_not_severe_symptoms)) < (self.module.parameters['prob_dev_severe_symptoms_per_year']/12)
-        df[will_start_severe_symptoms,'cs_specific_symptoms']='extreme illness'
+        # 4) With some probability, the new severe cases seek "Emergency care"...
 
-        # 4) With some probability, the severe cases seek "Emergency care"...
-        sampled_indices = np.random.choice(df.index.values, int(len(will_start_severe_symptoms) * self.module.parameters['prob_severe_symptoms_seek_emergency_care']))
-        for person_index in sampled_indices:
-            event= tlo.methods.healthsystem.EmergencyCareSeeking(self.module,person_index)
-            self.sim.schedule_event(event,self.sim.date)
+        if len(will_start_severe_symptoms_idx)>0:
+            will_seek_emergency_care= self.sim.rng.random_sample(size=len(will_start_severe_symptoms_idx)) < (self.module.parameters['prob_severe_symptoms_seek_emergency_care'])
+            will_seek_emergency_care_idx=will_start_severe_symptoms_idx[will_seek_emergency_care]
+
+            for person_index in will_seek_emergency_care_idx:
+                event= tlo.methods.healthsystem.InteractionWithHealthSystem_Emergency(self.module,person_index)
+                self.sim.schedule_event(event,self.sim.date)
 
 
 
