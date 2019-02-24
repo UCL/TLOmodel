@@ -14,8 +14,10 @@ class HealthSystem(Module):
     Requests for access to particular services are lodged here.
     """
 
-    def __init__(self, name=None, Service_Availability=pd.DataFrame(data=[],columns=['Service','Available'])):
+    def __init__(self, name=None, resourcefilepath=None, Service_Availability=pd.DataFrame(data=[],columns=['Service','Available'])):
         super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
         self.store_ServiceUse={
             'Skilled Birth Attendance': []
         }
@@ -29,7 +31,8 @@ class HealthSystem(Module):
         print('----------------------------------------------------------------------')
 
 
-    PARAMETERS = {'Probability_Skilled_Birth_Attendance': Parameter(Types.DATA_FRAME, 'Interpolated population structure')}
+    PARAMETERS = {'Probability_Skilled_Birth_Attendance': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
+                  'Master_Facility_List':Parameter(Types.DATA_FRAME,'Imported Master Facility List workbook')}
 
 
     def read_parameters(self, data_folder):
@@ -42,6 +45,7 @@ class HealthSystem(Module):
             ],
             columns=['Availability','Location_Of_Births','prob'])
 
+        self.parameters['Master_Facility_List']=pd.read_csv(self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 
 
     def initialise_population(self, population):
@@ -52,7 +56,17 @@ class HealthSystem(Module):
 
         sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
 
-        pass
+        # Check that people can find their health facilities:
+        print(2)
+        pop=self.sim.population.props
+        hf=self.parameters['Master_Facility_List']
+
+        for person_id in pop.index:
+            my_village=pop.at[person_id, 'village_of_residence']
+            my_health_facilities=hf.loc[hf['Village']==myvillage]
+
+        #TODO: Consider whether this should insert a property (type.list) for each individual to save the health faciliites to which they have access
+
 
     def on_birth(self, mother, child):
 
