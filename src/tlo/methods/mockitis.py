@@ -154,11 +154,11 @@ class Mockitis(Module):
 
         # Register with the HealthSystem the treatment interventions that this module runs
         # and define the footprint that each intervention has on the common resources
-        registered_string_for_treatment='Mockitis_Treatment'
+        self.registered_string_for_treatment='Mockitis_Treatment'
 
         # Define the footprint for the intervention on the common resources
         footprint_for_treatment=pd.DataFrame(index=np.arange(1),data={
-                                                            'Name':registered_string_for_treatment,
+                                                            'Name':self.registered_string_for_treatment,
                                                             'Nurse_Time':5,
                                                             'Doctor_Time':10,
                                                             'Electricity':False,
@@ -241,13 +241,10 @@ class Mockitis(Module):
     def on_first_healthsystem_interaction(self,person_id):
         print('This is mockitis, being asked what to do at a health system appointment for person', person_id)
 
-        # Queries whether treatment is allowable under global policy
-        Allowable = True
+        # Querry with health system whether this individual will get a desired treatment
+        gets_treatment=self.sim.modules['HealthSystem'].Query_Access_To_Service(person_id,self.registered_string_for_treatment)
 
-        # Queries whether treatment is available locally
-        Available= True
-
-        if (Allowable and Available):
+        if gets_treatment:
             # Commission treatment for this individual
             event=MockitisTreatmentEvent(self,person_id)
             self.sim.schedule_event(event, self.sim.date)

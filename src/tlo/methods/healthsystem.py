@@ -69,7 +69,7 @@ class HealthSystem(Module):
 
         # Establish the MasterCapacitiesList
         # (Maybe this will become imported, or maybe it will stay being generated here)
-        HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
+        self.HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
                                     'Doctor_Time':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# Minutes of work time per month
                                     'Electricity':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# available: yes/no
                                     'Water':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse'])}       # available: yes/no
@@ -77,17 +77,17 @@ class HealthSystem(Module):
         # Fill in some simple patterns for now
 
         #Water: False in outreach and Health post, True otherwise
-        HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
-        HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
 
-        HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
-        HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
 
-        HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
-        HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
 
-        HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
-        HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
+        self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
+        self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
 
 
 
@@ -116,33 +116,72 @@ class HealthSystem(Module):
 
     def Query_Access_To_Service(self,person,service):
 
-        if self.sim.verboseoutput:
-            print("Querying whether this person,", person, "will have access to this service:", service, ' ...')
 
-        GetsService=False
+        print("Querying whether this person,", person, "will have access to this service:", service, ' ...')
 
-
-        try:
-            availability=int( self.Service_Availabilty.Available[self.Service_Availabilty['Service']==service] )
+        GetsService=False # Default to fault (this is the variable that is returned to the disease module that does the request)
 
 
-            if service == "Skilled Birth Attendance":
+        # Check if policy allows the offering of this treatment
 
-                location_of_birth=person.Location_Of_Births
-                df=self.parameters['Probability_Skilled_Birth_Attendance']
+        # try:
+        #     availability=int( self.Service_Availabilty.Available[self.Service_Availabilty['Service']==service] )
+        #
+        #
+        #     if service == "Skilled Birth Attendance":
+        #
+        #         location_of_birth=person.Location_Of_Births
+        #         df=self.parameters['Probability_Skilled_Birth_Attendance']
+        #
+        #         prob=float(df[( df['Availability'] ==availability ) & ( df['Location_Of_Births']==location_of_birth )].prob)
+        #
+        #
+        #         if self.sim.rng.rand() < prob:
+        #             GetsService=True
+        #
+        #             if self.sim.verboseoutput:
+        #                 print('         .... They will! ')
+        # except:
+        #     print("A request for a service was met with an error")
 
-                prob=float(df[( df['Availability'] ==availability ) & ( df['Location_Of_Births']==location_of_birth )].prob)
 
 
-                if self.sim.rng.rand() < prob:
-                    GetsService=True
 
-                    if self.sim.verboseoutput:
-                        print('         .... They will! ')
-        except:
-            print("A request for a service was met with an error")
+
+        # Check capacitiy
+        EnoughCapacity=False # Default to False unless it can be proved there is capacity
+
+        # Look-up resources for the requested service:
+        needed=self.RegisteredInterventions.loc[self.RegisteredInterventions['Name']==service]
+
+        # Look-up what health facilities this person has access to:
+        village=self.sim.population.props.at[person,'village_of_residence']
+        hf = self.parameters['Master_Facility_List']
+        local_facilities=hf.loc[hf['Village']==village]
+        local_facilities_idx = local_facilities['Facility_ID'].values
+
+        # Sum capacity across the facilities to which persons in this village have access
+        available_Nurse_Time=0
+        available_Doctor_Time=0
+        for lf_id in local_facilities_idx:
+            available_Nurse_Time+=self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse']
+            available_Doctor_Time+= self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse']
+
+        # See if there is enough capacity
+        if (needed.Nurse_Time.values < available_Nurse_Time) and (needed.Doctor_Time.values < available_Doctor_Time):
+            EnoughCapacity=True
+
+
+        if PolicyAllows and EnoughCapacity:
+            GetsService=True
 
         return GetsService
+
+
+
+
+
+
 
 
 # --------- FORMS OF HEALTH-CARE SEEKING -----
