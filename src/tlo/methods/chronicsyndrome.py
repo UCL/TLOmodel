@@ -145,6 +145,22 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].Register_Disease_Module(self)
 
+
+        # Register with the HealthSystem the treatment interventions that this module runs
+        # and define the footprint that each intervention has on the common resources
+        registered_string_for_treatment='ChronicSyndrome_Treatment'
+
+        # Define the footprint for the intervention on the common resources
+        footprint_for_treatment=pd.DataFrame(index=np.arange(1),data={
+                                                            'Name':registered_string_for_treatment,
+                                                            'Nurse_Time':30,
+                                                            'Doctor_Time':200,
+                                                            'Electricity':True,
+                                                            'Water':True})
+
+        self.sim.modules['HealthSystem'].Register_Interventions(footprint_for_treatment)
+
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 

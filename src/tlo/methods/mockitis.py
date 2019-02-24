@@ -152,6 +152,23 @@ class Mockitis(Module):
         self.sim.schedule_event(event,self.sim.date+DateOffset(months=24))
 
 
+        # Register with the HealthSystem the treatment interventions that this module runs
+        # and define the footprint that each intervention has on the common resources
+        registered_string_for_treatment='Mockitis_Treatment'
+
+        # Define the footprint for the intervention on the common resources
+        footprint_for_treatment=pd.DataFrame(index=np.arange(1),data={
+                                                            'Name':registered_string_for_treatment,
+                                                            'Nurse_Time':5,
+                                                            'Doctor_Time':10,
+                                                            'Electricity':False,
+                                                            'Water':False})
+
+        self.sim.modules['HealthSystem'].Register_Interventions(footprint_for_treatment)
+
+
+
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -254,7 +271,11 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
         # 1. get (and hold) index of currently infected and uninfected individuals
         currently_infected = df.index[df.mi_is_infected & df.is_alive]
         currently_uninfected = df.index[~df.mi_is_infected & df.is_alive]
-        prevalence = len(currently_infected)/ (len(currently_infected)+len(currently_uninfected))
+
+        if df.is_alive.sum():
+            prevalence = len(currently_infected)/ (len(currently_infected)+len(currently_uninfected))
+        else:
+            prevalence=0
 
         # 2. handle new infections
         now_infected = np.random.choice([True, False], size=len(currently_uninfected),
