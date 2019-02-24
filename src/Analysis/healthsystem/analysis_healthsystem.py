@@ -15,7 +15,7 @@ outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx'
+resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 
 
 start_date = Date(2010, 1, 1)
@@ -40,7 +40,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 
 # Register the appropriate modules
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem())
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())

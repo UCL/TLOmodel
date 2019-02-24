@@ -63,9 +63,9 @@ class Demography(Module):
     'is_alive' status
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath= resourcefilepath
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
@@ -77,7 +77,8 @@ class Demography(Module):
         'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
-        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio')
+        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
+        'PopBreakdownbyDistirct_Census':Parameter(Types.DATA_FRAME,'Census data on the number of person in residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -103,7 +104,10 @@ class Demography(Module):
         'age_range': Property(Types.CATEGORICAL,
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
-        'age_days': Property(Types.INT, 'The age of the individual in whole days')
+        'age_days': Property(Types.INT, 'The age of the individual in whole days'),
+        'region_of_residence': Property(Types.INT, 'The region in which the person in resident'),       # TODO: We would like a string class definition here (but use INT For now and overwrite)
+        'district_of_residence': Property(Types.INT,'The district in which the person is resident'),
+        'village_of_residence': Property(Types.INT,'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -114,7 +118,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(self.workbook_path, sheet_name=None)
+        workbook = pd.read_excel(self.resourcefilepath+'Demography_WorkingFile_Complete.xlsx', sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
@@ -133,6 +137,11 @@ class Demography(Module):
         ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
+
+        self.parameters['PopBreakdownbyDistirct_Census']=pd.read_excel(self.resourcefilepath+'ResourceFile_PopBreakdownbyDistrict_Census.xlsx',sheet_name='PopBreakdownByDistrict_Census')
+        self.parameters['PopBreakdownbyDistirct_Census']=pd.read_excel(self.resourcefilepath+'ResourceFile_PopBreakdownbyDistrict_Census.xlsx',sheet_name='Listing of villages from MFL') #TODO: clean this file so that it no duplicates
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -176,6 +185,10 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
+
+
+        # Assign village, district and region of residence
+
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
