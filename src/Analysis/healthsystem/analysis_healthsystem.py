@@ -41,7 +41,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem())
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
