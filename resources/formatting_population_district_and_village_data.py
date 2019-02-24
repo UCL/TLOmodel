@@ -7,9 +7,8 @@
 
 import pandas as pd
 
-
-workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/village-district-breakdown/ResourceFile_PopBreakdownbyDistrict_Census.xlsx'
-outputfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/village-district-breakdown/ResourceFile_PopBreakdownByVillage.xlsx'
+workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/village-district-breakdown/Census Data and Health System Data.xlsx'
+outputfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Demographic data/village-district-breakdown/ResourceFile_PopBreakdownByVillage.csv'
 
 # Load census data on pop sizes in each distrct
 district_wb=pd.read_excel(workingfile,sheet_name='PopBreakdownByDistrict_Census')
@@ -53,7 +52,7 @@ len(district_wb_trimmed.District.unique())
 
 
 set(villages_wb.District.unique()) - set(district_wb_trimmed.District.unique())
-# join the "Mzimba South" and "Mzimba South
+# join the "Mzimba South" and "Mzimba South in the Health System Dataset
 villages_wb.loc[villages_wb['District']=='Mzimba North','District']='Mzimba'
 villages_wb.loc[villages_wb['District']=='Mzimba South','District']='Mzimba'
 
@@ -62,21 +61,23 @@ set(district_wb_trimmed.District.unique()) - set(villages_wb.District.unique())
 # rename Blantyre City --> Blantyre
 district_wb_trimmed.loc[district_wb_trimmed['District']=='Blantyre City','District']='Blantyre'
 
-# rename Lilongwe City --> Lilongwe
-district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe City','District']='Lilongwe'
-
 # rename Zomba City --> Zomba
 district_wb_trimmed.loc[district_wb_trimmed['District']=='Zomba City','District']='Zomba'
 
+# Join Lilongwe City and Lilongwe in the census dataset
+num_ppl_in_Lilongwe_total=district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe','District Total'].values + district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe City','District Total'].values
+district_wb_trimmed=district_wb_trimmed.drop(district_wb_trimmed.index[district_wb_trimmed['District']=='Lilongwe City'])
+
 # "Mzuzu" is identified in the census data but NOT the UNICEF health-facility data
-# TODO: Resolve this better
 # For now, just add those people from Mzuzu into Lilongwe and remove Mzuzu
+# TODO: Resolve this better
 num_ppl_in_Mzuzu=district_wb_trimmed.loc[district_wb_trimmed['District']=='Mzuzu City','District Total'].values
-num_ppl_in_Lilongwe=district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe','District Total'].values
-district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe','District Total']=num_ppl_in_Lilongwe+num_ppl_in_Mzuzu
+district_wb_trimmed.loc[district_wb_trimmed['District']=='Lilongwe','District Total']=num_ppl_in_Lilongwe_total+num_ppl_in_Mzuzu
+district_wb_trimmed=district_wb_trimmed.drop(district_wb_trimmed.index[district_wb_trimmed['District']=='Mzuzu City'])
 
 len(villages_wb.District.unique())
 len(district_wb_trimmed.District.unique())
+
 
 # merge in the disrict total population size
 joined=villages_wb.merge(district_wb_trimmed,how='left',on='District')
@@ -92,8 +93,9 @@ joined['Village Total']=joined['District Total'] / joined['NumVillagesPerDistric
 
 PopBreakdownByVillage=joined.drop(['District Total','NumVillagesPerDistrict'],axis=1)
 PopBreakdownByVillage=PopBreakdownByVillage.rename(columns={'Village Total':'Population'})
-PopBreakdownByVillage.to_excel(outputfile,sheet_name='PopBreakdownByVillage')
+PopBreakdownByVillage.to_csv(outputfile)
 
 # checks
-PopBreakdownByVillage['Village Total'].sum()
+PopBreakdownByVillage['Population'].sum()
 district_wb_trimmed['District Total'].sum()
+#TODO: Some proble with the merge, but fix this later.
