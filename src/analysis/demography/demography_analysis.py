@@ -17,9 +17,9 @@ outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx'
 
+# The resource files
+resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 
 # %% Run the Simulation
 
@@ -42,7 +42,7 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

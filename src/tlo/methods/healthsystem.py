@@ -54,7 +54,7 @@ class HealthSystem(Module):
 
     def initialise_simulation(self, sim):
 
-        sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
+        sim.schedule_event(HealthCareSeekingPoll(self), sim.date) #Launch the healthcare seeking poll
 
         # Check that people can find their health facilities:
         print(2)
@@ -65,7 +65,8 @@ class HealthSystem(Module):
             my_village=pop.at[person_id, 'village_of_residence']
             my_health_facilities=hf.loc[hf['Village']==myvillage]
 
-        #TODO: Consider whether this should insert a property (type.list) for each individual to save the health faciliites to which they have access
+        # Establish the MasterCapacitiesList
+
 
 
     def on_birth(self, mother, child):

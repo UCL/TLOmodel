@@ -118,7 +118,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(self.resourcefilepath+'Demography_WorkingFile_Complete.xlsx', sheet_name=None)
+        workbook = pd.read_excel(self.resourcefilepath+'ResourceFile_DemographicData.xlsx', sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
