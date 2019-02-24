@@ -78,7 +78,7 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'PopBreakdownbyDistirct_Census':Parameter(Types.DATA_FRAME,'Census data on the number of person in residence in each district')
+        'Village_District_Region_Data':Parameter(Types.DATA_FRAME,'Census data on the number of person in residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -138,8 +138,7 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['PopBreakdownbyDistirct_Census']=pd.read_excel(self.resourcefilepath+'ResourceFile_PopBreakdownbyDistrict_Census.xlsx',sheet_name='PopBreakdownByDistrict_Census')
-        self.parameters['PopBreakdownbyDistirct_Census']=pd.read_excel(self.resourcefilepath+'ResourceFile_PopBreakdownbyDistrict_Census.xlsx',sheet_name='Listing of villages from MFL') #TODO: clean this file so that it no duplicates
+        self.parameters['Village_District_Region_Data']=pd.read_csv(self.resourcefilepath+'ResourceFile_PopBreakdownbyVillage.csv')
 
 
 
@@ -188,6 +187,14 @@ class Demography(Module):
 
 
         # Assign village, district and region of residence
+        popinfo=self.parameters['Village_District_Region_Data']
+        prob_in_village=popinfo['Population']/popinfo['Population'].sum()
+        village_indx=self.rng.choice(np.arange(len(popinfo)), size=df.is_alive.sum(), p=prob_in_village)
+
+        df['region_of_residence']=popinfo.loc[village_indx,'Region'].values
+        df['district_of_residence']=popinfo.loc[village_indx,'District'].values
+        df['village_of_residence']=popinfo.loc[village_indx,'Village'].values
+
 
 
         # assign that none of the adult (woman) population is pregnant
