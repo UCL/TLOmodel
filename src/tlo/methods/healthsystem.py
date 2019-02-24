@@ -123,6 +123,8 @@ class HealthSystem(Module):
 
 
         # Check if policy allows the offering of this treatment
+        PolicyAllows=False # default
+
 
         # try:
         #     availability=int( self.Service_Availabilty.Available[self.Service_Availabilty['Service']==service] )
