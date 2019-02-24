@@ -25,6 +25,9 @@ class HealthSystem(Module):
 
         self.RegisteredDiseaseModules = {}
 
+        self.RegisteredInterventions=pd.DataFrame()
+
+
         print('----------------------------------------------------------------------')
         print("Setting up the Health System With the Following Service Availabilty: ")
         print(Service_Availability)
@@ -57,15 +60,34 @@ class HealthSystem(Module):
         sim.schedule_event(HealthCareSeekingPoll(self), sim.date) #Launch the healthcare seeking poll
 
         # Check that people can find their health facilities:
-        print(2)
         pop=self.sim.population.props
         hf=self.parameters['Master_Facility_List']
 
         for person_id in pop.index:
             my_village=pop.at[person_id, 'village_of_residence']
-            my_health_facilities=hf.loc[hf['Village']==myvillage]
+            my_health_facilities=hf.loc[hf['Village']==my_village]
 
         # Establish the MasterCapacitiesList
+        # (Maybe this will become imported, or maybe it will stay being generated here)
+        HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
+                                    'Doctor_Time':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# Minutes of work time per month
+                                    'Electricity':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# available: yes/no
+                                    'Water':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse'])}       # available: yes/no
+
+        # Fill in some simple patterns for now
+
+        #Water: False in outreach and Health post, True otherwise
+        HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
+        HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
+
+        HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
+        HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
+
+        HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
+        HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
+
+        HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
+        HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
 
 
 
@@ -83,6 +105,13 @@ class HealthSystem(Module):
                 'A module named {} has already been registered'.format(module.name))
             self.RegisteredDiseaseModules[module.name] = module
 
+
+    def Register_Interventions(self,footprint_df):
+
+        # Register the interventions that each disease module can offer and will ask for permission to use.
+
+        print('Now registering a new intervention')
+        self.RegisteredInterventions=self.RegisteredInterventions.append(footprint_df)
 
 
     def Query_Access_To_Service(self,person,service):
