@@ -15,16 +15,16 @@ from tlo.methods import demography, antiretroviral_therapy, hiv_infection, hiv_h
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
-path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
-path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
+# path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
+# path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
+# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
+# path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
 
 # for laptop
-# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 2, 1)
