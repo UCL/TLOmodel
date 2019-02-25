@@ -144,7 +144,10 @@ class hiv(Module):
             self.param_list.loc['prob_mtct_breastfeeding', 'Value1']
         params['prob_mtct_breastfeeding_treated'] = \
             self.param_list.loc['prob_mtct_breastfeeding_treated', 'Value1']
-        params['beta'] = float(self.beta_calib)
+        # TODO: put beta in worksheet for default
+
+        if self.beta_calib:
+            params['beta'] = float(self.beta_calib)
         # print('beta', params['beta'])
 
         # print(self.param_list.head())
@@ -191,16 +194,22 @@ class hiv(Module):
 
     def high_risk(self, population):
         """ Stratify the adult (age >15) population in high or low sexual risk """
+        # TODO: upper age limit for high sexual risk
 
         df = population.props
 
         male_sample = df[(df.sex == 'M') & (df.age_years >= 15)].sample(
-            frac=self.parameters['proportion_high_sexual_risk_male']).index
+            frac=self.parameters['proportion_high_sexual_risk_male'], replace=False).index
         female_sample = df[(df.sex == 'F') & (df.age_years >= 15)].sample(
-            frac=self.parameters['proportion_high_sexual_risk_female']).index
+            frac=self.parameters['proportion_high_sexual_risk_female'], replace=False).index
 
         # these individuals have higher risk of hiv
         df.loc[male_sample | female_sample, 'sexual_risk_group'] = 'high'
+
+        # TODO: each year for 15-49 prob of sex work / high risk
+        # also need prob of returning to low sexual risk
+
+        # may not need age RR on top of that
 
     def fsw(self, population):
         """ Assign female sex work to sample of women and change sexual risk to high value
@@ -351,7 +360,6 @@ class hiv(Module):
         df.loc[infected, 'date_hiv_infection'] = date_infected.values
 
         # del df['cd4_state']  # this doesn't delete the column, just the values in it
-
         # assign time of infection for children <15 years
         inf_child = df.index[df.has_hiv & (df.age_years < 15)]
         df.loc[inf_child, 'date_hiv_infection'] = df.date_of_birth.values[inf_child]
