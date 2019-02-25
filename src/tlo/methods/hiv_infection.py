@@ -206,9 +206,7 @@ class hiv(Module):
         # these individuals have higher risk of hiv
         df.loc[male_sample | female_sample, 'sexual_risk_group'] = 'high'
 
-        # TODO: each year for 15-49 prob of sex work / high risk
-        # also need prob of returning to low sexual risk
-
+        # TODO: each year for 15-49 prob of sex work / high risk, also need prob of returning to low sexual risk,
         # may not need age RR on top of that
 
     def fsw(self, population):
@@ -222,6 +220,8 @@ class hiv(Module):
 
         # these individuals have higher risk of hiv
         df.loc[fsw, 'sexual_risk_group'] = 'sex_work'
+
+        # TODO: fsw risk should end at certain age
 
     def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
         df = population.props
@@ -533,14 +533,16 @@ class hiv(Module):
             df.at[child_id, 'has_hiv'] = True
 
         #  mother on ART
-        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[child_id, 'mother_hiv'] and \
+        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[
+            child_id, 'mother_hiv'] and \
             df.at[child_id, 'mother_art']:
             df.at[child_id, 'has_hiv'] = True
 
         #  mother has incident infection during pregnancy
-        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[child_id, 'mother_hiv'] and not \
+        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[
+            child_id, 'mother_hiv'] and not \
             df.at[child_id, 'mother_art'] and \
-            (((now - df.at[mother_id, 'date_hiv_infection'])/np.timedelta64(1, 'M')) < 9):
+            (((now - df.at[mother_id, 'date_hiv_infection']) / np.timedelta64(1, 'M')) < 9):
             df.at[child_id, 'has_hiv'] = True
 
         #  assign deaths dates and schedule death for newly infected infant
@@ -571,6 +573,8 @@ class hiv(Module):
             death = DeathEventHIV(self, individual_id=child_id, cause='hiv')  # make that death event
             death_scheduled = df.at[child_id, 'date_aids_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
+
+# TODO: include high risk / fsw as ongoing event with recruitment and removal back to low
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
@@ -778,7 +782,8 @@ class hiv_mtct_event(RegularEvent, PopulationScopeEventMixin):
         for id in infant_ids:
             #  find mother's hiv status
             mother = df.at[id, 'mother_id']
-            if df.at[mother, 'is_alive'] and df.at[mother, 'has_hiv'] and df.at[mother, 'on_art'] and (self.sim.rng.random_sample(size=1) < params['prob_mtct_breastfeeding_treated']):
+            if df.at[mother, 'is_alive'] and df.at[mother, 'has_hiv'] and df.at[mother, 'on_art'] and (
+                self.sim.rng.random_sample(size=1) < params['prob_mtct_breastfeeding_treated']):
                 df.at[id, 'has_hiv'] = True
 
             #  assign deaths dates and schedule death for newly infected infant
@@ -787,19 +792,19 @@ class hiv_mtct_event(RegularEvent, PopulationScopeEventMixin):
 
                 # assign fast/slow progressor
                 progr = self.sim.rng.choice(['FAST', 'SLOW'], size=1, p=[params['prob_infant_fast_progressor'][0],
-                                                                     params['prob_infant_fast_progressor'][1]])
+                                                                         params['prob_infant_fast_progressor'][1]])
 
                 # then draw death date and assign
                 if progr == 'SLOW':
                     # draw from weibull
                     time_death = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                  size=1) * params[
+                                                      size=1) * params[
                                      'weibull_scale_mort_infant_slow_progressor']
 
                 else:
                     # draw from exp
                     time_death = self.sim.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
-                                                      size=1)
+                                                          size=1)
                     # returns an array not a single value!!
 
                 time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
