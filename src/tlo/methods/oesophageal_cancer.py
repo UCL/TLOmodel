@@ -715,7 +715,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = m.rng.random_sample(size=len(stage4_idx))
         df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
 
-        # todo - this code dealth with centrally
+        # todo - this code dealt with centrally
  #      dead_oes_can_idx = df.index[df.ca_oesophageal_cancer_death]
  #      df.loc[dead_oes_can_idx, 'is_alive'] = False
 
@@ -742,10 +742,10 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         & (df.age_years >= 60)]
         agege60_without_diagnosed_oes_cancer_idx = df.index[(df.age_years >= 60) & ~df.ca_oesophagus_diagnosed]
 
-        incidence_per_year_oes_cancer_diagnosis = (4 * 100000 * len(incident_oes_cancer_diagnosis_agege60_idx))/\
-                                                  len(agege60_without_diagnosed_oes_cancer_idx)
+#       incidence_per_year_oes_cancer_diagnosis = (4 * 100000 * len(incident_oes_cancer_diagnosis_agege60_idx))/\
+#                                                 len(agege60_without_diagnosed_oes_cancer_idx)
 
-        incidence_per_year_oes_cancer_diagnosis = round(incidence_per_year_oes_cancer_diagnosis, 3)
+#       incidence_per_year_oes_cancer_diagnosis = round(incidence_per_year_oes_cancer_diagnosis, 3)
 
         logger.debug('%s|person_one|%s',
                        self.sim.date,
