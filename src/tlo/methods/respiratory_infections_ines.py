@@ -222,66 +222,66 @@ class RespiratoryInfections(Module):
         """
         p = self.parameters
         p['r_ri_cold'] = 0.005
-        p['rr_cold_age_<2months'] =
-        p['rr_cold_age_12-23months'] =
-        p['rr_cold_age_24-59months'] =
+        p['rr_cold_age_<2months'] = 0.002
+        p['rr_cold_age_12-23months'] =  0.002
+        p['rr_cold_age_24-59months'] = 0.002
         p['rr_cold_HIV'] = 0.1
-        p['rr_cold_weight_moderate_underw'] =
-        p['rr_cold_weight_severe_underw'] =
-        p['rr_cold_malnutrition'] =
-        p['rr_cold_indoor_air_pollution'] =
+        p['rr_cold_weight_moderate_underw'] = 0.002
+        p['rr_cold_weight_severe_underw'] = 0.002
+        p['rr_cold_malnutrition'] = 0.002
+        p['rr_cold_indoor_air_pollution'] = 0.002
         p['r_ri_pneumonia'] = 0.003
-        p['rr_pneumonia_age_<2months'] =
-        p['rr_pneumonia_age_12-23months'] =
-        p['rr_pneumonia_age_24-59months'] =
+        p['rr_pneumonia_age_<2months'] = 0.002
+        p['rr_pneumonia_age_12-23months'] = 0.002
+        p['rr_pneumonia_age_24-59months'] = 0.002
         p['rr_pneumonia_HIV'] = 0.1
-        p['rr_pneumonia_weight_moderate_underw'] =
-        p['rr_pneumonia_weight_severe_underw'] =
-        p['rr_pneumonia_malnutrition'] =
-        p['rr_pneumonia_indoor_air_pollution'] =
+        p['rr_pneumonia_weight_moderate_underw'] = 0.002
+        p['rr_pneumonia_weight_severe_underw'] = 0.002
+        p['rr_pneumonia_malnutrition'] = 0.002
+        p['rr_pneumonia_indoor_air_pollution'] = 0.002
         p['r_ri_severe_pneumonia'] = 0.001
-        p['rr_severe_pneumonia_age_<2months'] =
-        p['rr_severe_pneumonia_age_12-23months'] =
-        p['rr_severe_pneumonia_age_24-59months'] =
+        p['rr_severe_pneumonia_age_<2months'] = 0.002
+        p['rr_severe_pneumonia_age_12-23months'] = 0.002
+        p['rr_severe_pneumonia_age_24-59months'] = 0.002
         p['rr_severe_pneumonia_HIV'] = 0.1
-        p['rr_severe_pneumonia_weight_moderate_underw'] =
-        p['rr_severe_pneumonia_weight_severe_underw'] =
-        p['rr_severe_pneumonia_malnutrition'] =
-        p['rr_severe_pneumonia_indoor_air_pollution'] =
-        p['r_progress_to_severe_pneumonia'] =
-        p['rr_progress_severe_pneumonia_age_<2months'] =
-        p['rr_progress_severe_pneumonia_age_12-23months'] =
-        p['rr_progress_severe_pneumonia_age_24-59months'] =
-        p['rr_progress_severe_pneumonia_HIV'] =
-        p['rr_progress_severe_pneumonia_weight_moderate_underw'] =
-        p['rr_progress_severe_pneumonia_weight_severe_underw'] =
-        p['rr_progress_severe_pneumonia_malnutrition'] =
-        p['rr_progress_severe_pneumonia_indoor_air_pollution'] =
-        p['r_death_pneumonia'] =
-        p['rr_death_pneumonia_age_<2months'] =
-        p['rr_death_pneumonia_age_12-23months'] =
-        p['rr_death_pneumonia_age_24-59months'] =
-        p['rr_death_pneumonia_HIV'] =
-        p['rr_death_pneumonia_weight_moderate_underw'] =
-        p['rr_death_pneumonia_weight_severe_underw'] =
-        p['rr_death_pneumonia_malnutrition'] =
-        p['rr_death_pneumonia_indoor_air_pollution'] =
-        p['rr_death_pneumonia_treatment_adherence'] =
-        p['r_recovery_cold'] =
+        p['rr_severe_pneumonia_weight_moderate_underw'] = 0.002
+        p['rr_severe_pneumonia_weight_severe_underw'] = 0.002
+        p['rr_severe_pneumonia_malnutrition'] = 0.002
+        p['rr_severe_pneumonia_indoor_air_pollution'] = 0.002
+        p['r_progress_to_severe_pneumonia'] = 0.002
+        p['rr_progress_severe_pneumonia_age_<2months'] = 0.002
+        p['rr_progress_severe_pneumonia_age_12-23months'] = 0.002
+        p['rr_progress_severe_pneumonia_age_24-59months'] = 0.002
+        p['rr_progress_severe_pneumonia_HIV'] = 0.002
+        p['rr_progress_severe_pneumonia_weight_moderate_underw'] = 0.002
+        p['rr_progress_severe_pneumonia_weight_severe_underw'] = 0.002
+        p['rr_progress_severe_pneumonia_malnutrition'] = 0.002
+        p['rr_progress_severe_pneumonia_indoor_air_pollution'] = 0.002
+        p['r_death_pneumonia'] = 0.002
+        p['rr_death_pneumonia_age_<2months'] = 0.002
+        p['rr_death_pneumonia_age_12-23months'] = 0.002
+        p['rr_death_pneumonia_age_24-59months'] = 0.002
+        p['rr_death_pneumonia_HIV'] = 0.002
+        p['rr_death_pneumonia_weight_moderate_underw'] = 0.002
+        p['rr_death_pneumonia_weight_severe_underw'] = 0.002
+        p['rr_death_pneumonia_malnutrition'] = 0.002
+        p['rr_death_pneumonia_indoor_air_pollution'] = 0.002
+        p['rr_death_pneumonia_treatment_adherence'] = 0.002
+        p['r_recovery_cold'] = 0.002
         p['rr_recovery_cold_age_<2months'] = 0.6
         p['rr_recovery_cold_age_12-23months'] = 0.8
         p['rr_recovery_cold_age_24-59months'] = 0.9
         p['rr_recovery_cold_HIV'] = 0.7
         p['rr_recovery_cold_malnutrition'] = 0.8
         p['rr_recovery_cold_treatment_adherence'] = 0.6
-        p['r_recovery_pneumonia'] =
+        p['r_recovery_pneumonia'] = 0.002
         p['rr_recovery_pneumonia_age_under2months'] = 0.2
         p['rr_recovery_pneumonia_age_12-23months'] = 0.4
         p['rr_recovery_pneumonia_age_24-59months'] = 0.4
         p['rr_recovery_pneumonia_HIV'] = 0.3
         p['rr_recovery_pneumonia_malnutrition'] = 0.3
         p['rr_recovery_pneumonia_treatment_adherence'] = 0.6
-        p['r_recovery_severe_pneumonia'] =
+        p['r_recovery_severe_pneumonia'] = 0.002
         p['rr_recovery_severe_pneumonia_age_under2months'] = 0.05
         p['rr_recovery_severe_pneumonia_age_12-23months'] = 0.15
         p['rr_recovery_severe_pneumonia_age_24-59months'] = 0.2
@@ -291,24 +291,25 @@ class RespiratoryInfections(Module):
         p['init_prevalence_cold'] = 0.2
         p['init_prevalence_pneumonia'] = 0.15
         p['init_prevalence_severe_pneumonia'] = 0.08
-        p['rp_pneumonia_agelt2mo'] =
-        p['rp_pneumonia_age2to11mo'] =
-        p['rp_pneumonia_age12to23mo'] =
-        p['rp_pneumonia_age24to59mo'] =
-        p['rp_pneumonia_HIV_positive'] =
-        p['rp_pneumonia_HIV_negative'] =
-        p['rp_pneumonia_weight_normal'] =
-        p['rp_pneumonia_weight_moderate_under'] =
-        p['rp_pneumonia_weight_severe_under'] =
-        p['rp_pneumonia_age24to59mo'] =
-        p['rp_severe_pneumonia_age_<2mo'] =
-        p['rp_severe_pneumonia_age2to11mo'] =
-        p['rp_severe_pneumonia_age12to23mo'] =
-        p['rp_severe_pneumonia_age24to59mo'] =
+        p['rp_pneumonia_agelt2mo'] = 0.002
+        p['rp_pneumonia_age2to11mo'] = 0.002
+        p['rp_pneumonia_age12to23mo'] = 0.002
+        p['rp_pneumonia_age24to59mo'] = 0.002
+        p['rp_pneumonia_HIV_positive'] = 0.002
+        p['rp_pneumonia_HIV_negative'] = 0.002
+        p['rp_pneumonia_weight_normal'] = 0.002
+        p['rp_pneumonia_weight_moderate_under'] = 0.002
+        p['rp_pneumonia_weight_severe_under'] = 0.002
+        p['rp_pneumonia_age24to59mo'] = 0.002
+        p['rp_severe_pneumonia_age_<2mo'] = 0.002
+        p['rp_severe_pneumonia_age2to11mo'] = 0.002
+        p['rp_severe_pneumonia_age12to23mo'] = 0.002
+        p['rp_severe_pneumonia_age24to59mo'] = 0.002
         p['init_prop_resp_infection_status'] = [0.50, 0.2, 0.2, 0.1]
 
 
 def initialise_population(self, population):
+
         """Set our property values for the initial population.
         :param population: the population of individuals
         """
@@ -339,48 +340,45 @@ def initialise_population(self, population):
                                      columns=['none', 'common cold', 'pneumonia',
                                               'severe pneumonia'], index=agelt5_idx)
 
+        # create probabilities of cold for all age under 5
+        p_resp_infect_stat.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= m.rp_cold_agelt2mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 1.1667) & (df.age_exact_years < 1) & df.is_alive] *= m.rp_cold_age2to11mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= m.rp_cold_age12to23mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= m.rp_cold_age24to59mo
+        p_resp_infect_stat.loc[(df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= m.rp_cold_HIV
+        p_resp_infect_stat.loc[(df.weight == 'underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_cold_weight_under
+        p_resp_infect_stat.loc[(df.weight == 'severely underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_cold_weight_sevre_under
+        p_resp_infect_stat.loc[(df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= m.rp_cold_malnutrition
+        p_resp_infect_stat.loc[(df.indoor_air_pollution == True) & (df.age_year < 5) & df.is_alive] *= m.rp_cold_indoor_pollution
+
         # create probabilities of pneumonia for all age under 5
         p_resp_infect_stat.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= m.rp_pneumonia_agelt2mo
         p_resp_infect_stat.loc[(df.age_exact_years >= 1.1667) & (df.age_exact_years < 1) & df.is_alive] *= m.rp_pneumonia_age2to11mo
         p_resp_infect_stat.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= m.rp_pneumonia_age12to23mo
         p_resp_infect_stat.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= m.rp_pneumonia_age24to59mo
         p_resp_infect_stat.loc[(df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= m.rp_pneumonia_HIV
-        p_resp_infect_stat.loc[(df.weight == 'normal') & (df.age_years < 5) & df.is_alive] *= m.rp_pneumonia_weight
+        p_resp_infect_stat.loc[(df.weight == 'underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_pneumonia_weight_under
+        p_resp_infect_stat.loc[(df.weight == 'severely underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_pneumonia_weight_sevre_under
         p_resp_infect_stat.loc[(df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= m.rp_pneumonia_malnutrition
         p_resp_infect_stat.loc[(df.indoor_air_pollution == True) & (df.age_year <5) & df.is_alive] *= m.rp_pneumonia_indoor_pollution
+
+        # create probabilities of pneumonia for all age under 5
+        p_resp_infect_stat.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= m.rp_pneumonia_agelt2mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 1.1667) & (df.age_exact_years < 1) & df.is_alive] *= m.rp_severe_pneumonia_age2to11mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= m.rp_severe_pneumonia_age12to23mo
+        p_resp_infect_stat.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= m.rp_severe_pneumonia_age24to59mo
+        p_resp_infect_stat.loc[(df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= m.rp_severe_pneumonia_HIV
+        p_resp_infect_stat.loc[(df.weight == 'underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_severe_pneumonia_weight_under
+        p_resp_infect_stat.loc[(df.weight == 'severely underweight') & (df.age_years < 5) & df.is_alive] *= m.rp_severe_pneumonia_weight_sevre_under
+        p_resp_infect_stat.loc[(df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= m.rp_severe_pneumonia_malnutrition
+        p_resp_infect_stat.loc[(df.indoor_air_pollution == True) & (df.age_year < 5) & df.is_alive] *= m.rp_severe_pneumonia_indoor_pollution
 
         random_draw = pd.Series(rng.random_sample(size=len(agelt5_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive])
 
         # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([p_oes_dys_can, p_oes_dys_can_age_muliplier, random_draw], axis=1)
-        dfx.columns = ['p_low_grade_dysplasia', 'p_high_grade_dysplasia', 'p_stage1', 'p_stage2', 'p_stage3',
-                       'p_stage4', 'p_oes_dys_can_age_muliplier', 'random_draw']
-
-        random_draw = pd.Series(rng.random_sample(size=len(agelt5_idx)),
-                                index=df.index[(df.age_years <= 5) & df.is_alive])
-
-        dfx = pd.concat([eff_prob_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_pneumonia', 'random_draw']
-        has_pneumonia_idx = dfx.index[dfx.eff_prob_pneumonia > dfx.random_draw]
-        df.loc[has_pneumonia_idx, 'ri_respiratory_infection_status'] = 'pneumonia'
-
-        eff_prob_severe_pneumonia = pd.Series(m.init_prevalence_sevre_pneumonia,
-                                       index=df.index[(df.age_years <= 5) & df.is_alive])
-
-        eff_prob_severe_pneumonia.loc[agelt2mo_idx] *= m.rp_severe_pneumonia_agelt2months
-        eff_prob_severe_pneumonia.loc[age2to11mo_idx] *= m.rp_severe_neumonia_age2to11months
-        eff_prob_severe_pneumonia.loc[age12to23mo_idx] *= m.rp_severe_pneumonia_age12to23months
-        eff_prob_severe_pneumonia.loc[age24to59mo_idx] *= m.rp_severe_pneumonia_age24to59months
-
-        random_draw = pd.Series(rng.random_sample(size=len(agelt5_idx)),
-                                index=df.index[(df.age_years <= 5) & df.is_alive])
-
-        dfx = pd.concat([eff_prob_severe_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_severe_pneumonia', 'random_draw']
-        has_severe_pneumonia_idx = dfx.index[dfx.eff_prob_severe_pneumonia > dfx.random_draw]
-        df.loc[has_severe_pneumonia_idx, 'ri_respiratory_infection_status'] = 'severe pneumonia'
-
+        dfx = pd.concat([p_resp_infect_stat, random_draw], axis=1)
+        dfx.columns = ['p_none', 'p_common_cold', 'p_pneumonia', 'p_severe_pneumonia']
 
 
 
@@ -411,7 +409,6 @@ def initialise_population(self, population):
         df.at[child_id, 'ri_convulsions'] = False
         df.at[child_id, 'ri_lethargic_unconscious'] = False
         df.at[child_id, 'ri_diagnosis'] = False
-
 
 
 
