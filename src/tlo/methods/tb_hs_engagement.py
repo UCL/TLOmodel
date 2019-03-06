@@ -156,7 +156,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_hiv, 'result_smear_test'] = True
             df.loc[idx_hiv, 'tb_diagnosed'] = True
 
-        print('test date', now)
+        # print('test date', now)
 
         # remaining 20% of active cases referred for xpert testing with some delay
         # also some true negatives may have follow-up testing
@@ -166,9 +166,11 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in undiagnosed_idx:
             refer_xpert = tbXpertTest(self.module, individual_id=person)
-            referral_time = np.random.normal(loc=(2 / 12), scale=(1 / 12), size=1)
-            referral_time_yrs = pd.to_timedelta(referral_time, unit='y')
+            # TODO: take absolute value so no negatives
+            referral_time = np.random.normal(loc=(2/12), scale=(0.5/12), size=1)  # in years
+            referral_time_yrs = pd.to_timedelta(referral_time[0] * 365.25, unit='d')
             future_referral_time = now + referral_time_yrs
+            print('future_referral_time', now, referral_time_yrs, future_referral_time)
             self.sim.schedule_event(refer_xpert, future_referral_time)
 
 
@@ -183,7 +185,7 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
         now = self.sim.date
-        # print('xpert date now', now)
+        print('xpert date now', now)
 
         # prob of receiving xpert test
         if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'tb_diagnosed'] and (
@@ -194,7 +196,7 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
             # print('xpert test happening')
 
             df.at[individual_id, 'tb_xpert_test'] = True
-            # df.at[individual_id, 'tb_date_xpert_test'] = now
+            df.at[individual_id, 'tb_date_xpert_test'] = now
 
             diagnosed = np.random.choice([True, False], size=1,
                                          p=[params['prop_xpert_positive'],
@@ -269,6 +271,58 @@ class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
             df.tb_treatedMDR & (((now - df.tb_date_treatedMDR) / np.timedelta64(1, 'M')) >= 6)]
         df.loc[cure_idx, 'tb_treated'] = False
         df.loc[cure_idx, 'has_tb'] = 'Latent'
+
+
+
+class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
+    """ IPT to all paediatric contacts of a TB case - randomly select 5 children <5 yrs old
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        df = population.props
+
+        #  sum number of active TB cases * 5
+        ipt_needed = len(df.index[df.has_tb & df.is_alive & ~df.tb_treated]) * 5
+
+        # randomly sample from <5 yr olds
+        ipt_sample = df[(df.age_years <= 5) & (~df.has_tb == 'Active')].sample(
+            n=ipt_needed, replace=False).index
+
+        df.loc[ipt_sample, 'on_ipt'] = True
+        df.loc[ipt_sample, 'date_ipt'] = now
+
+        # TODO: ending ipt
+
+
+
+class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
+    """ IPT to all adults and adolescents with HIV
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        df = population.props
+
+        # randomly sample from >=15 yrs with HIV
+        ipt_sample = df[(df.age_years >= 15) & (~df.has_hiv)].sample(
+            frac=0.5, replace=False).index
+
+        df.loc[ipt_sample, 'on_ipt'] = True
+        df.loc[ipt_sample, 'date_ipt'] = now
+
+        # TODO: ending ipt
+
+
+
 
 
 class TbHealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
