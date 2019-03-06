@@ -239,10 +239,42 @@ class hiv(Module):
         assign baseline hiv prevalence
         """
 
+        # TODO: assign baseline prevalence by risk factors age, sex, wealth, education, district etc.
+        # odds ratios from Wingston's analysis dropbox Data-MDHS
         now = self.sim.date
         df = population.props
+        params = self.parameters
 
-        prevalence = self.hiv_prev.loc[self.hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
+        prevalence = params['hiv_prev_2010']
+
+        # only for 15-54
+        prob_hiv = pd.Series(0, index=df.index)
+        prob_hiv.loc[df.is_alive & (df.age_years >= 15) & (df.age_years < 55)] = prevalence  # applied to all adults
+        prob_hiv.loc[(df.sex == 'F')] *= params['or_sex_f']
+        prob_hiv.loc[(df.age_years >= 20) & (df.age_years < 25)] *= params['or_age_gp20']
+        prob_hiv.loc[(df.age_years >= 25) & (df.age_years < 30)] *= params['or_age_gp25']
+        prob_hiv.loc[(df.age_years >= 30) & (df.age_years < 35)] *= params['or_age_gp30']
+        prob_hiv.loc[(df.age_years >= 35) & (df.age_years < 40)] *= params['or_age_gp35']
+        prob_hiv.loc[(df.age_years >= 40) & (df.age_years < 45)] *= params['or_age_gp40']
+        prob_hiv.loc[(df.age_years >= 45) & (df.age_years < 50)] *= params['or_age_gp45']
+        prob_hiv.loc[(df.age_years >= 50)] *= params['or_age_gp50']
+        prob_hiv.loc[~df.li_urban] *= params['or_rural']
+        prob_hiv.loc[(df.li_wealth == '2')] *= params['or_windex_poorer']
+        prob_hiv.loc[(df.li_wealth == '3')] *= params['or_windex_middle']
+        prob_hiv.loc[(df.li_wealth == '4')] *= params['or_windex_richer']
+        prob_hiv.loc[(df.li_wealth == '5')] *= params['or_windex_richest']
+        prob_hiv.loc[(df.li_ed_lev == '2')] *= params['or_edlevel_primary']
+        prob_hiv.loc[(df.li_ed_lev == '3')] *= params['or_edlevel_secondary']  # li_ed_lev=3 secondary and higher
+
+
+
+
+
+
+
+        # TODO: include baseline children's prevalence
+        #  they don't transmit but have long term health implications of early infection
+
 
         # merge all susceptible individuals with their hiv probability based on sex and age
         df_hivprob = df.merge(prevalence, left_on=['age_years', 'sex'],
