@@ -80,9 +80,6 @@ class hiv(Module):
         'hiv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
         'hiv_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'hiv_sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk groups', categories=['low', 'high', 'sex_work']),
-        'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
-                              categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
-                                          'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
         'hiv_mother_inf': Property(Types.BOOL, 'HIV status of mother'),
         'hiv_mother_art': Property(Types.BOOL, 'ART status of mother')
     }
@@ -393,7 +390,7 @@ class hiv(Module):
 
         if df.at[mother_id, 'hiv_inf']:
             df.at[child_id, 'hiv_mother_inf'] = True
-
+    # TODO: change the on_art to a categorical variable
             if df.at[mother_id, 'hiv_on_art']:
                 df.at[child_id, 'hiv_mother_art'] = True
 
@@ -528,7 +525,7 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'on_art']:
+        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'hiv_on_art']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='hiv'),
                                     self.sim.date)
 
