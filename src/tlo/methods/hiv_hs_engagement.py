@@ -64,15 +64,15 @@ class health_system(Module):
     }
 
     PROPERTIES = {
-        'ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
-        'date_tested': Property(Types.DATE, 'date of hiv test'),
-        'number_hiv_tests': Property(Types.INT, 'number of hiv tests taken'),
+        'hiv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
+        'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
+        'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
         'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
-        'on_art': Property(Types.BOOL, 'on art'),
-        'date_art_start': Property(Types.DATE, 'date art started'),
-        'viral_load_test': Property(Types.DATE, 'date last viral load test'),
-        'on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
-        'date_cotrim': Property(Types.DATE, 'date cotrimoxazole started')
+        'hiv_on_art': Property(Types.BOOL, 'on art'),
+        'hiv_date_art_start': Property(Types.DATE, 'date art started'),
+        'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
+        'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
+        'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started')
     }
 
     def read_parameters(self, data_folder):
