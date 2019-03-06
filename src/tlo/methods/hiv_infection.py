@@ -76,15 +76,15 @@ class hiv(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'has_hiv': Property(Types.BOOL, 'HIV status'),
-        'date_hiv_infection': Property(Types.DATE, 'Date acquired HIV infection'),
-        'date_aids_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
-        'sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk groups', categories=['low', 'high', 'sex_work']),
+        'hiv_inf': Property(Types.BOOL, 'HIV status'),
+        'hiv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
+        'hiv_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
+        'hiv_sexual_risk_group': Property(Types.CATEGORICAL, 'Sexual risk groups', categories=['low', 'high', 'sex_work']),
         'cd4_state': Property(Types.CATEGORICAL, 'CD4 state',
                               categories=['CD1000', 'CD750', 'CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50',
                                           'CD0', 'CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5']),
-        'mother_hiv': Property(Types.BOOL, 'HIV status of mother'),
-        'mother_art': Property(Types.BOOL, 'ART status of mother')
+        'hiv_mother_inf': Property(Types.BOOL, 'HIV status of mother'),
+        'hiv_mother_art': Property(Types.BOOL, 'ART status of mother')
     }
 
     def read_parameters(self, data_folder):
@@ -172,13 +172,12 @@ class hiv(Module):
         """
         df = population.props
 
-        df['has_hiv'] = False
-        df['date_hiv_infection'] = pd.NaT
-        df['date_aids_death'] = pd.NaT
-        df['sexual_risk_group'].values[:] = 'low'
-        df['cd4_state'].values[:] = None
-        df['mother_hiv'] = False
-        df['mother_art'] = False
+        df['hiv_inf'] = False
+        df['hiv_date_inf'] = pd.NaT
+        df['hiv_date_death'] = pd.NaT
+        df['hiv_sexual_risk_group'].values[:] = 'low'
+        df['hiv_mother_inf'] = False
+        df['hiv_mother_art'] = False
 
         self.high_risk(population)  # assign high sexual risk
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
@@ -204,9 +203,9 @@ class hiv(Module):
             frac=self.parameters['proportion_high_sexual_risk_female'], replace=False).index
 
         # these individuals have higher risk of hiv
-        df.loc[male_sample | female_sample, 'sexual_risk_group'] = 'high'
+        df.loc[male_sample | female_sample, 'hiv_sexual_risk_group'] = 'high'
 
-        # TODO: each year for 15-49 prob of sex work / high risk, also need prob of returning to low sexual risk,
+        # TODO: each year EVENT for 15-49 prob of sex work / high risk, also need prob of returning to low sexual risk,
         # may not need age RR on top of that
 
     def fsw(self, population):
@@ -219,15 +218,15 @@ class hiv(Module):
             frac=self.parameters['proportion_female_sex_workers']).index
 
         # these individuals have higher risk of hiv
-        df.loc[fsw, 'sexual_risk_group'] = 'sex_work'
+        df.loc[fsw, 'hiv_sexual_risk_group'] = 'sex_work'
 
         # TODO: fsw risk should end at certain age
 
-    def get_index(self, population, has_hiv, sex, age_low, age_high, cd4_state):
+    def get_index(self, population, hiv_inf, sex, age_low, age_high, cd4_state):
         df = population.props
 
         index = df.index[
-            df.has_hiv &
+            df.hiv_inf &
             (df.sex == sex) &
             (df.age_years >= age_low) & (df.age_years < age_high) &
             (df.cd4_state == cd4_state)]
@@ -266,145 +265,32 @@ class hiv(Module):
         prob_hiv.loc[(df.li_ed_lev == '2')] *= params['or_edlevel_primary']
         prob_hiv.loc[(df.li_ed_lev == '3')] *= params['or_edlevel_secondary']  # li_ed_lev=3 secondary and higher
 
+        #  sample scaled by relative susceptibility
+        infected_idx = df.index[(self.rng.random_sample(size=len(df)) < prob_hiv)]
 
+        print(infected_idx)
+        test = infected_idx.isnull().sum()  # sum number of nan
+        print("number of nan: ", test)
 
+        df.loc[infected_idx, 'hiv_inf'] = True
 
+        # for date since infection use a reverse weibull distribution
+        # hold the index of all adults with hiv
+        inf_adult = df.index[df.hiv_inf & (df.age_years >= 15)]
+        times = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(inf_adult)) * \
+                        np.exp(self.log_scale(df.loc[inf_adult, 'age_years']))
 
-
+        time_inf = pd.to_timedelta(times * 365.25, unit='d')
+        df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
 
         # TODO: include baseline children's prevalence
         #  they don't transmit but have long term health implications of early infection
+        child_infected_idx = df.index[(df.age_years < 15) & df.is_alive &
+                                      (self.rng.random_sample(size=len(df)) < params['child_hiv_prev2010'])]
 
+        # children are infected at time of birth
+        df.loc[child_infected_idx, 'hiv_date_inf'] = df.loc[child_infected_idx, 'date_of_birth']
 
-        # merge all susceptible individuals with their hiv probability based on sex and age
-        df_hivprob = df.merge(prevalence, left_on=['age_years', 'sex'],
-
-                              right_on=['age_from', 'sex'],
-
-                              how='left')
-
-        # no prevalence in ages 80+ so fill missing values with 0
-        df_hivprob['prev_prop'] = df_hivprob['prev_prop'].fillna(0)
-
-        # print(df_with_age.head(10))
-        # print(df_with_age_hivprob.head(20))
-        # df_with_age_hivprob.to_csv('Q:/Thanzi la Onse/HIV/test.csv', sep=',')  # output a test csv file
-        # print(list(df_with_age_hivprob.head(0)))  # prints list of column names in merged df
-
-        # assert df_with_age_hivprob.prev_prop.isna().sum() == 0  # check there is a probability for every individual
-
-        # get a list of random numbers between 0 and 1 for each infected individual
-        random_draw = self.rng.random_sample(size=len(df_hivprob))
-
-        # probability of HIV > random number, assign has_hiv = True
-        hiv_index = df_hivprob.index[(df_hivprob.prev_prop > random_draw)]
-
-        # print(hiv_index)
-        # test = hiv_index.isnull().sum()  # sum number of nan
-        # print("number of nan: ", test)
-
-        df.loc[hiv_index, 'has_hiv'] = True
-        df.loc[hiv_index, 'date_hiv_infection'] = now
-
-    def time_since_infection(self, population):
-        """
-        calculate the time since infection based on the CD4_state
-        this only applies for those aged >=15 years
-        assume everyone <15 was infected at birth
-        """
-
-        df = population.props
-        now = self.sim.date
-
-        # for those aged 0-4 years
-        cd4_states = ['CD30', 'CD26', 'CD21', 'CD16', 'CD11', 'CD5', 'CD0']
-        for sex in ['M', 'F']:
-            idx = df.index[df.has_hiv & (df.sex == sex) & (df.age_years < 5)]
-            cd4_probs = self.cd4_base.loc[
-                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '0_4'),
-                'probability']
-            df.loc[idx, 'cd4_state'] = self.rng.choice(cd4_states,
-                                                       size=len(idx),
-                                                       replace=True,
-                                                       p=cd4_probs.values)
-
-        # for those aged 5-14 years
-        cd4_states = ['CD1000', 'CD750', 'CD500', 'CD350', 'CD200', 'CD0']
-
-        for sex in ['M', 'F']:
-            idx = df.index[df.has_hiv & (df.sex == sex) & (df.age_years >= 5) & (df.age_years <= 14)]
-            cd4_probs = self.cd4_base.loc[
-                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (self.cd4_base.age == '5_14'),
-                'probability']
-            df.loc[idx, 'cd4_state'] = self.rng.choice(cd4_states,
-                                                       size=len(idx),
-                                                       replace=True,
-                                                       p=cd4_probs.values)
-
-        # for those aged >= 15 years
-        cd4_states = ['CD500', 'CD350', 'CD250', 'CD200', 'CD100', 'CD50', 'CD0']
-
-        for sex in ['M', 'F']:
-            idx = df.index[df.has_hiv & (df.sex == sex) & (df.age_years >= 15)]
-            cd4_probs = self.cd4_base.loc[
-                (self.cd4_base.sex == sex) & (self.cd4_base.year == now.year) & (
-                    self.cd4_base.age == "15_80"), 'probability']
-            df.loc[idx, 'cd4_state'] = self.rng.choice(cd4_states,
-                                                       size=len(idx),
-                                                       replace=True,
-                                                       p=cd4_probs.values)
-
-        df.cd4_state = df.cd4_state  # output this as needed for baseline art mortality rates
-        # print(df.cd4_state.head(40))
-
-        # print(df.head(20))
-
-        # hold the index of all individuals with hiv
-        infected = df.index[df.has_hiv & (df.age_years >= 15)]
-
-        # select all individuals with hiv and over 15 years of age
-        infected_age = df.loc[infected, ['cd4_state', 'sex', 'age_years']]
-
-        # print(infected_age.head(10))
-
-        # merge all infected individuals with their cd4 infected row based on CD4 state, sex and age
-        infected_age_cd4 = infected_age.merge(self.time_cd4,
-                                              left_on=['cd4_state', 'sex', 'age_years'],
-                                              right_on=['cd4_state', 'sex', 'age'],
-                                              how='left')
-
-        assert len(infected_age_cd4) == len(infected)  # check merged row count
-
-        # note prob2 is 1-prob1
-        # get a list of random numbers between 0 and 1 for each infected individual
-        random_draw = self.rng.random_sample(size=len(infected))
-
-        # get a list of time infected which is 'years1' if the random number is less than 'prob1', otherwise 'years2'
-        time_infected = infected_age_cd4.years1.where(infected_age_cd4.prob1 < random_draw,
-                                                      infected_age_cd4.years2)
-
-        # convert those years to a date in the past
-        time_infected = pd.to_timedelta(time_infected, unit='Y')
-        date_infected = now - time_infected
-
-        # assign the calculated dates back to the original population dataframe
-        # NOTE: we use the '.values' to assign back, ignoring the index of the 'date_infected' series
-        df.loc[infected, 'date_hiv_infection'] = date_infected.values
-
-        # del df['cd4_state']  # this doesn't delete the column, just the values in it
-        # assign time of infection for children <15 years
-        inf_child = df.index[df.has_hiv & (df.age_years < 15)]
-        df.loc[inf_child, 'date_hiv_infection'] = df.date_of_birth.values[inf_child]
-
-        # print(inf_child)
-
-        # check time infected is less than time alive
-        early_doi = ((now - df.date_hiv_infection).dt.days / 365.25) > \
-                    ((now - df.date_of_birth).dt.days / 365.25)  # time infected earlier than time alive!
-
-        if early_doi.any():
-            tmp2 = df.loc[early_doi, 'date_of_birth']
-            df.loc[early_doi, 'date_HIV_infection'] = tmp2  # replace with year of birth
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
@@ -414,57 +300,40 @@ class hiv(Module):
         params = self.parameters
 
         # PAEDIATRIC time of death - untreated
-        hiv_inf = df.index[df.has_hiv & (df.age_years < 3)]
-        # print('hiv_inf: ', hiv_inf)
+        infants = df.index[df.hiv_inf & (df.age_years < 3)]
 
         # need a two parameter Weibull with size parameter, multiply by scale instead
         time_death_slow = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                           size=len(hiv_inf)) * params['weibull_scale_mort_infant_slow_progressor']
-        # print('time_death_slow: ', time_death_slow)
+                                           size=len(infants)) * params['weibull_scale_mort_infant_slow_progressor']
 
-        time_death_slow = pd.Series(time_death_slow, index=hiv_inf)
-        # print('testing_index: ', test)
-
-        time_infected = now - df.loc[hiv_inf, 'date_hiv_infection']
-        # print(time_infected)
-        # print(time_death_slow)
+        time_death_slow = pd.Series(time_death_slow, index=infants)
+        time_infected = now - df.loc[infants, 'hiv_date_inf']
 
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
                      (pd.to_timedelta(time_death_slow * 365.25, unit='d'))):
             redraw = time_infected.index[time_infected >
                                          (pd.to_timedelta(time_death_slow * 365.25, unit='d'))]
-            # print('redraw: ', redraw)
 
             new_time_death_slow = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                    size=len(redraw)) * params[
                                       'weibull_scale_mort_infant_slow_progressor']
-            # print('new_time_death: ', new_time_death_slow)
 
             time_death_slow[redraw] = new_time_death_slow
 
         time_death_slow = pd.to_timedelta(time_death_slow * 365.25, unit='d')
-        # print(time_death_slow)
 
         # remove microseconds
-        # time_death_slow = pd.to_timedelta(time_death_slow).values.astype('timedelta64[s]')
-        # time_death_slow = time_death_slow.floor('s')
         time_death_slow = pd.Series(time_death_slow).dt.floor("S")
-
-        # print(time_death_slow)
-
-        df.loc[hiv_inf, 'date_aids_death'] = df.loc[hiv_inf, 'date_hiv_infection'] + time_death_slow
-
-        death_dates = df.loc[hiv_inf, 'date_aids_death']
+        df.loc[infants, 'hiv_date_death'] = df.loc[infants, 'hiv_date_inf'] + time_death_slow
+        death_dates = df.loc[infants, 'hiv_date_death']
 
         # schedule the death event
-        for person in hiv_inf:
+        for person in infants:
             death = DeathEventHIV(self, individual_id=person, cause='hiv')  # make that death event
             time_death = death_dates[person]
             self.sim.schedule_event(death, time_death)  # schedule the death
 
-        # test2 = df.loc[hiv_inf]
-        # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for infants
 
     def initial_pop_deaths_adults(self, population):
         """ assign death dates to baseline hiv-infected population - ADULTS
