@@ -342,18 +342,13 @@ class hiv(Module):
         now = self.sim.date
         params = self.parameters
 
-        # ADULT time of death, adults are all those aged >3
-        hiv_ad = df.index[df.has_hiv & (df.age_years >= 3)]
-        # print('hiv_ad: ', hiv_ad)
+        # adults are all those aged >=15
+        hiv_ad = df.index[df.hiv_inf & (df.age_years >= 15)]
 
         time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(hiv_ad)) * \
                         np.exp(self.log_scale(df.loc[hiv_ad, 'age_years']))
 
-        # print('length time_of_death:', len(time_of_death))
-        # print('time_death: ', time_of_death)
-
-        time_infected = now - df.loc[hiv_ad, 'date_hiv_infection']
-        # print(time_infected)
+        time_infected = now - df.loc[hiv_ad, 'hiv_date_inf']
 
         # while time of death is shorter than time infected - redraw
         while np.any(time_infected >
@@ -361,27 +356,19 @@ class hiv(Module):
             redraw = time_infected.index[time_infected >
                                          (pd.to_timedelta(time_of_death * 365.25, unit='d'))]
 
-            # print("redraw: ", redraw)
-
             new_time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(redraw)) * \
                                 np.exp(self.log_scale(df.loc[redraw, 'age_years']))
-            # print('new_time_of_death:', new_time_of_death)
 
             time_of_death[redraw] = new_time_of_death
 
         time_of_death = pd.to_timedelta(time_of_death * 365.25, unit='d')
-        # print(time_of_death)
 
         # remove microseconds
-        # time_of_death = pd.to_timedelta(time_of_death).values.astype('timedelta64[s]')
-        # time_of_death = time_of_death.floor('s')
         time_of_death = pd.Series(time_of_death).dt.floor("S")
 
-        # print(time_death_slow)
+        df.loc[hiv_ad, 'hiv_date_death'] = df.loc[hiv_ad, 'hiv_date_inf'] + time_of_death
 
-        df.loc[hiv_ad, 'date_aids_death'] = df.loc[hiv_ad, 'date_hiv_infection'] + time_of_death
-
-        death_dates = df.loc[hiv_ad, 'date_aids_death']
+        death_dates = df.loc[hiv_ad, 'hiv_date_death']
 
         # schedule the death event
         for person in hiv_ad:
@@ -389,8 +376,6 @@ class hiv(Module):
             time_death = death_dates[person]
             self.sim.schedule_event(death, time_death)  # schedule the death
 
-        # test2 = df.loc[hiv_ad]
-        # test2.to_csv('Q:/Thanzi la Onse/HIV/test4.csv', sep=',')  # check data for adults
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
