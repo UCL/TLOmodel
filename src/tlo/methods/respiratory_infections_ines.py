@@ -17,7 +17,7 @@ class ChildhoodPneumonia (Module):
     PARAMETERS = {
         'initial_prev_cold_base': Parameter(Types.REAL, 'initial prevalence of common cold, among children '
                                                         'aged 2-11 months, HIV negative, '
-                                                        'normal weight, no SAM, no indoor air pollution '
+                                                        'no SAM, no indoor air pollution '
                                                             ),
         'rp_cold_agelt2mo': Parameter(Types.REAL, 'relative prevalence of common cold for age < 2 months'
                                               ),
@@ -27,17 +27,30 @@ class ChildhoodPneumonia (Module):
                                              ),
         'rp_cold_HIV': Parameter(Types.REAL, 'relative prevalence of common cold for HIV positive'
                                              ),
-        'rp_cold_weight_moderate_underw': Parameter(Types.REAL, 'relative prevalence of common cold for moderate underweight'
-                                             ),
-        'rp_cold_weight_severe_underw': Parameter(Types.REAL, 'relative prevalence of common cold for severely underweight'
-                                                    ),
         'rp_cold_malnutrition': Parameter(Types.REAL, 'relative prevalence of common cold for severe acute malnutrition'
                                                     ),
-        'rp_cold_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of common cold for indoor air pollution'
-                                                    ),
+        'rp_cold_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of common cold '
+                                                              'for indoor air pollution' ),
+        'base_incidence_ri_cold': Parameter(Types.REAL, 'baseline incidence of common cold, among children '
+                                                        'aged 2-11 months, HIV negative, '
+                                                        'no SAM, no indoor air pollution '
+                                                            ),
+        'rr_cold_agelt2mo': Parameter(Types.REAL, 'relative rate of common cold for age < 2 months'
+                                      ),
+        'rr_cold_age_12to23mo': Parameter(Types.REAL, 'relative rate of common cold for age 12 to 23 months'
+                                          ),
+        'rr_cold_age_24to59mo': Parameter(Types.REAL, 'relative rate of common cold for age 24 to 59 months'
+                                          ),
+        'rr_cold_HIV': Parameter(Types.REAL, 'relative rate of common cold for HIV positive'
+                                 ),
+        'rr_cold_malnutrition': Parameter(Types.REAL, 'relative rate of common cold for severe acute malnutrition'
+                                          ),
+        'rr_cold_indoor_air_pollution': Parameter(Types.REAL,
+                                                  'relative rate of common cold for indoor air pollution'
+                                                  ),
         'initial_prev_pneumonia_base': Parameter(Types.REAL, 'initial prevalence of pneumonia, among children '
                                                              'aged 2-11 months, HIV negative, '
-                                                             'normal weight, no SAM, no indoor air pollution '
+                                                             'no SAM, no indoor air pollution '
                                                     ),
         'rp_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative prevalence of pneumonia for age < 2 months'
                                           ),
@@ -47,150 +60,174 @@ class ChildhoodPneumonia (Module):
                                              ),
         'rp_pneumonia_HIV': Parameter(Types.REAL, 'relative prevalence of pneumonia for HIV positive'
                                  ),
-        'rp_pneumonia_weight_moderate_underw': Parameter(Types.REAL, 'relative prevalence of pneumonia for moderate underweight'
-                                                    ),
-        'rp_pneumonia_weight_severe_underw': Parameter(Types.REAL, 'relative prevalence of pneumonia for severely underweight'
-                                                  ),
-        'rp_pneumonia_malnutrition': Parameter(Types.REAL, 'relative prevalence of pneumonia for severe acute malnutrition'
+        'rp_pneumonia_malnutrition': Parameter(Types.REAL, 'relative prevalence of pneumonia '
+                                                           'for severe acute malnutrition'
                                           ),
-        'rp_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of pneumonia for indoor air pollution'
+        'rp_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of pneumonia '
+                                                                   'for indoor air pollution'
                                                   ),
+        'base_incidence_ri_pneumonia': Parameter(Types.REAL, 'baseline incidence of common cold, among children '
+                                                             'aged 2-11 months, HIV negative,'
+                                                             'no SAM, no indoor air pollution '
+                                            ),
+        'rr_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative rate of pneumonia for age < 2 months'
+                                           ),
+        'rr_pneumonia_age_12to23mo': Parameter(Types.REAL, 'relative rate of pneumonia for age 12 to 23 months'
+                                               ),
+        'rr_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative rate of pneumonia for age 24 to 59 months'
+                                               ),
+        'rr_pneumonia_HIV': Parameter(Types.REAL, 'relative rate of pneumonia for HIV positive'
+                                      ),
+        'rr_pneumonia_malnutrition': Parameter(Types.REAL,
+                                               'relative rate of pneumonia for severe acute malnutrition'
+                                               ),
+        'rr_pneumonia_indoor_air_pollution': Parameter(Types.REAL,
+                                                       'relative rate of pneumonia for indoor air pollution'
+                                                       ),
         'initial_prev_severe_pneumonia_base': Parameter(Types.REAL, 'inicial prevalence of severe pneumonia,'
                                                                     'among children aged 3-11 months, HIV negative, '
                                                                     'normal weight, no SAM, no indoor air pollution '
                                                    ),
-        'rp_severe_pneumonia_agelt2mo': Parameter(Types.REAL,
-                                                          'relative prevalence of severe pneumonia for age <2 months'
+        'rp_severe_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative prevalence of severe pneumonia'
+                                                              ' for age <2 months'
                                                           ),
-        'rp_severe_pneumonia_age_12to23mo': Parameter(Types.REAL,
-                                                         'relative prevalence of severe pneumonia for age 12 to 23 months'
+        'rp_severe_pneumonia_age_12to23mo': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                                  'for age 12 to 23 months'
                                                          ),
-        'rp_severe_pneumonia_age_24to59mo': Parameter(Types.REAL,
-                                                         'relative prevalence of severe pneumonia for age 24 to 59 months'
+        'rp_severe_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative prevalence of severe pneumonia'
+                                                                  ' for age 24 to 59 months'
                                                          ),
-        'rp_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative prevalence of severe pneumonia for HIV positive status'
+        'rp_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                         'for HIV positive status'
                                       ),
-        'rp_severe_pneumonia_weight_moderate_underw': Parameter(Types.REAL,
-                                                         'relative prevalence of severe pneumonia for moderate underweight'
-                                                         ),
-        'rp_severe_pneumonia_weight_severe_underw': Parameter(Types.REAL, 'relative prevalence of severe pneumonia for severely underweight'
-                                                       ),
-        'rp_severe_pneumonia_malnutrition': Parameter(Types.REAL, 'relative prevalence of severe pneumonia for severe acute malnutrition'
+        'rp_severe_pneumonia_malnutrition': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                                  'for severe acute malnutrition'
                                                ),
-        'rp_severe_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of severe pneumonia for indoor air pollution'
+        'rp_severe_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                                          'for indoor air pollution'
                                                        ),
-        'r_progress_to_severe_pneumonia': Parameter(Types.REAL,
-                                                    'probability of progressing from pneumonia to severe pneumonia'
+        'rr_severe_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative rate of severe pneumonia for age <2 months'
+                                                  ),
+        'rr_severe_pneumonia_age_12to23mo': Parameter(Types.REAL,
+                                                      'relative rate of severe pneumonia for age 12 to 23 months'),
+
+        'rr_severe_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative rate of severe pneumonia'
+                                                                  ' for age 24 to 59 months'
+                                                      ),
+        'rr_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative rate of severe pneumonia for HIV positive status'
+                                             ),
+        'rr_severe_pneumonia_malnutrition': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                                  'for severe acute malnutrition'
+                                                      ),
+        'rr_severe_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative prevalence of severe pneumonia '
+                                                                          'for indoor air pollution'
+                                                              ),
+        'r_progress_to_severe_pneumonia': Parameter(Types.REAL, 'probability of progressing from pneumonia to severe pneumonia'
                                                     'among children aged 2-11 months, HIV negative, normal weight,'
                                                     'no SAM, no indoor air pollution'
                                                     ),
-        'rr_progress_severe_pneumonia_agelt2mo': Parameter(Types.REAL,
-                                                      'relative risk of progression to severe pneumonia for age <2 months'
+        'rr_progress_severe_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative rate of progression '
+                                                                       'to severe pneumonia for age <2 months'
                                                       ),
-        'rr_progress_severe_pneumonia_age_12to23mo': Parameter(Types.REAL,
-                                                         'relative risk of progression to severe pneumonia for age 12 to 23 months'
+        'rr_progress_severe_pneumonia_age_12to23mo': Parameter(Types.REAL, 'relative rate of progression '
+                                                                           'to severe pneumonia for age 12 to 23 months'
                                                          ),
-        'rr_progress_severe_pneumonia_age_24to59mo': Parameter(Types.REAL,
-                                                         'relative risk of progression to severe pneumonia for age 24 to 59 months'
+        'rr_progress_severe_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative rate of progression '
+                                                                           'to severe pneumonia for age 24 to 59 months'
                                                          ),
-        'rr_progress_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative risk of progression to severe pneumonia for HIV positive status'
+        'rr_progress_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative risk of progression to '
+                                                                  'severe pneumonia for HIV positive status'
                                              ),
-        'rr_progress_severe_pneumonia_weight_moderate_underw': Parameter(Types.REAL,
-                                                                'relative risk of progression to severe pneumonia for moderate underweight'
-                                                                ),
-        'rr_progress_severe_pneumonia_weight_severe_underw': Parameter(Types.REAL,
-                                                              'relative risk of progression to severe pneumonia for severely underweight'
-                                                              ),
-        'rr_progress_severe_pneumonia_malnutrition': Parameter(Types.REAL,
-                                                      'relative risk of progression to severe pneumonia for severe acute malnutrition'
+        'rr_progress_severe_pneumonia_malnutrition': Parameter(Types.REAL, 'relative rate of progression to '
+                                                                           'severe pneumonia for severe acute malnutrition'
                                                       ),
-        'rr_progress_severe_pneumonia_indoor_air_pollution': Parameter(Types.REAL,
-                                                              'relative risk of progression severe pneumonia for indoor air pollution'
+        'rr_progress_severe_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative risk of progression to '
+                                                                                   'severe pneumonia for indoor air pollution'
                                                               ),
         'r_death_pneumonia': Parameter(Types.REAL, 'death rate from pneumonia among children aged 2-11 months,'
-                                                    'HIV negative, normal weight, no SAM, no indoor air pollution'),
+                                                   'HIV negative, no SAM, no indoor air pollution'),
         'rr_death_pneumonia_age_<2months': Parameter(Types.REAL, 'relative risk of common cold for age < 2 months'
                                           ),
-        'rr_death_pneumonia_age_12-23months': Parameter(Types.REAL, 'relative risk of death from pneumonia for age 12 to 23 months'
+        'rr_death_pneumonia_age_12-23months': Parameter(Types.REAL, 'relative risk of death from pneumonia '
+                                                                    'for age 12 to 23 months'
                                              ),
-        'rr_death_pneumonia_age_24-59months': Parameter(Types.REAL, 'relative risk of death from pneumonia for age 24 to 59 months'
+        'rr_death_pneumonia_age_24-59months': Parameter(Types.REAL, 'relative risk of death from pneumonia '
+                                                                    'for age 24 to 59 months'
                                              ),
         'rr_death_pneumonia_HIV': Parameter(Types.REAL, 'relative risk of death from pneumonia for HIV positive'
                                  ),
-        'rr_death_pneumonia_weight_moderate_underw': Parameter(Types.REAL, 'relative risk of death from pneumonia for moderate underweight'
-                                                    ),
-        'rr_death_pneumonia_weight_severe_underw': Parameter(Types.REAL, 'relative risk of death from pneumonia for severely underweight'
-                                                  ),
-        'rr_death_pneumonia_malnutrition': Parameter(Types.REAL, 'relative risk of death from pneumonia for severe acute malnutrition'
+        'rr_death_pneumonia_malnutrition': Parameter(Types.REAL, 'relative risk of death from pneumonia '
+                                                                 'for severe acute malnutrition'
                                           ),
-        'rr_death_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative risk of death from pneumonia for indoor air pollution'
+        'rr_death_pneumonia_indoor_air_pollution': Parameter(Types.REAL, 'relative risk of death from pneumonia '
+                                                                         'for indoor air pollution'
                                                   ),
-        'rr_death_pneumonia_treatment_adherence': Parameter(Types.REAL,
-                                                                 'death rate from pneumonia if completed treatment'),
+        'rr_death_pneumonia_treatment_adherence': Parameter(Types.REAL, 'relative risk of death from pneumonia '
+                                                                        'for completed treatment'),
         'r_recovery_cold': Parameter(Types.REAL, 'recovery rate from common cold among children aged 2-11 months,'
-                                                 ' HIV negative, normal weight, no SAM, no indoor air pollution'
+                                                 ' HIV negative, no SAM, no indoor air pollution'
                                      ),
-        'rr_recovery_cold_age_<2months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age < 2 months'
+        'rr_recovery_cold_agelt2mo': Parameter(Types.REAL, 'relative rate of recovery from common cold '
+                                                           'for age < 2 months'
                                           ),
-        'rr_recovery_cold_age_12-23months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age 12 to 23 months'
+        'rr_recovery_cold_age_12to23mo': Parameter(Types.REAL, 'relative rate of recovery from common cold '
+                                                               'for age 12 to 23 months'
                                              ),
-        'rr_recovery_cold_age_24-59months': Parameter(Types.REAL, 'relative rate of recovery from common cold for age 24 to 59 months'
+        'rr_recovery_cold_age_24to59months': Parameter(Types.REAL, 'relative rate of recovery from common cold '
+                                                                   'for age 24 to 59 months'
                                              ),
         'rr_recovery_cold_HIV': Parameter(Types.REAL, 'relative rate of recovery from common cold for HIV positive'
                                  ),
-        'rr_recovery_cold_weight_moderate_underw': Parameter(Types.REAL, 'relative rate of recovery from common cold for moderate underweight'
-                                                    ),
-        'rr_recovery_cold_weight_severe_underw': Parameter(Types.REAL, 'relative rate of recovery from common cold for severely underweight'
-                                                  ),
-        'rr_recovery_cold_malnutrition': Parameter(Types.REAL, 'relative rate of recovery from common cold for severe acute malnutrition'
+        'rr_recovery_cold_malnutrition': Parameter(Types.REAL, 'relative rate of recovery from common cold '
+                                                               'for severe acute malnutrition'
                                           ),
-        'rr_recovery_cold_indoor_air_pollution': Parameter(Types.REAL, 'relative rate of recovery from common cold for indoor air pollution'
+        'rr_recovery_cold_indoor_air_pollution': Parameter(Types.REAL, 'relative rate of recovery from common cold '
+                                                                       'for indoor air pollution'
                                                   ),
         'r_recovery_pneumonia': Parameter(Types.REAL, 'recovery rate from pneumonia among children aged 2-11 months,'
-                                                 ' HIV negative, normal weight, no SAM, no indoor air pollution '),
-        'rr_recovery_pneumonia_age_<2months': Parameter(Types.REAL,
+                                                      ' HIV negative, no SAM, no indoor air pollution '),
+        'rr_recovery_pneumonia_agelt2mo': Parameter(Types.REAL,
                                                         'relative rate of recovery from pneumonia for age < 2 months'
                                                         ),
-        'rr_recovery_pneumonia_age_12-23months': Parameter(Types.REAL,
-                                                           'relative rate of recovery from pneumonia for age between 12 to 23 months'
+        'rr_recovery_pneumonia_age_12to23mo': Parameter(Types.REAL, 'relative rate of recovery from pneumonia '
+                                                           'for age between 12 to 23 months'
                                                            ),
-        'rr_recovery_pneumonia_age_24-59months': Parameter(Types.REAL,
-                                                           'relative rate of recovery from pneumonia for age between 24 to 59 months'
+        'rr_recovery_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative rate of recovery from pneumonia '
+                                                                    'for age between 24 to 59 months'
                                                            ),
         'rr_recovery_pneumonia_HIV': Parameter(Types.REAL,
                                                'relative rate of recovery from pneumonia for HIV positive status'
                                                ),
-        'rr_recovery_pneumonia_malnutrition': Parameter(Types.REAL,
-                                                        'relative rate of recovery from pneumonia for acute malnutrition'
+        'rr_recovery_pneumonia_malnutrition': Parameter(Types.REAL, 'relative rate of recovery from pneumonia '
+                                                                    'for acute malnutrition'
                                                         ),
         'rr_recovery_pneumonia_treatment_adherence': Parameter(Types.REAL,
                                                                'relative rate of recovery from pneumonia if incompleted treatment'
                                                                ),
-        'r_recovery_severe_pneumonia': Parameter(Types.REAL, 'recovery rate from severe pneumonia at baseline'),
-
-        'rr_recovery_severe_pneumonia_age_under2months': Parameter(Types.REAL,
-                                                          'relative rate of recovery from severe pneumonia for age <2 months'
+        'r_recovery_severe_pneumonia': Parameter(Types.REAL, 'baseline recovery rate from severe pneumonia '
+                                                             'among children ages 2 to 11 months,'
+                                                             'HIV negative, no SAM, no indoor air pollution'),
+        'rr_recovery_severe_pneumonia_agelt2mo': Parameter(Types.REAL, 'relative rate of recovery from severe pneumonia'
+                                                                       ' for age <2 months'
                                                           ),
-        'rr_recovery_severe_pneumonia_age_12-23months': Parameter(Types.REAL,
-                                                         'relative rate of recovery from severe pneumonia for age between 12 to 23 months'
+        'rr_recovery_severe_pneumonia_age_12to23mo': Parameter(Types.REAL, 'relative rate of recovery from'
+                                                                  ' severe pneumonia for age between 12 to 23 months'
                                                          ),
-        'rr_recovery_severe_pneumonia_age_24-59months': Parameter(Types.REAL,
-                                                         'relative rate of recovery from severe pneumonia for age between 24 to 59 months'
+        'rr_recovery_severe_pneumonia_age_24to59mo': Parameter(Types.REAL, 'relative rate of recovery from '
+                                                                           'severe pneumonia for age between 24 to 59 months'
                                                  ),
-        'rr_recovery_severe_pneumonia_HIV': Parameter(Types.REAL,
-                                          'relative rate of recovery from severe pneumonia for HIV positive status'
+        'rr_recovery_severe_pneumonia_HIV': Parameter(Types.REAL, 'relative rate of recovery from severe pneumonia'
+                                                                  ' for HIV positive status'
                                           ),
-
-        'rr_recovery_severe_pneumonia_malnutrition': Parameter(Types.REAL,
-                                                   'relative rate of recovery from severe pneumonia for acute malnutrition'
+        'rr_recovery_severe_pneumonia_malnutrition': Parameter(Types.REAL, 'relative rate of recovery from '
+                                                                           'severe pneumonia for acute malnutrition'
                                                    ),
-        'rr_recovery_severe_pneumonia_treatment_adherence': Parameter(Types.REAL,
-                                                               'relative rate of recovery from severe pneumonia if incompleted treatment'
+        'rr_recovery_severe_pneumonia_treatment_adherence': Parameter(Types.REAL, 'relative rate of recovery from '
+                                                                                  'severe pneumonia if incompleted treatment'
                                                                ),
         'init_prop_resp_infection_status': Parameter(Types.REAL, 'initial proportions in ri_respiratory_infection_status categories '
-                                                                 'for children aged 2-11 months, HIV negative, normal weight, '
-                                                                 'no SAM, no indoor air pollution' )
-
+                                                                 'for children aged 2-11 months, HIV negative,'
+                                                                 'no SAM, no indoor air pollution')
     }
 
     # Next we declare the properties of individuals that this module provides.
