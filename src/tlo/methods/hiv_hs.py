@@ -68,7 +68,7 @@ class health_system(Module):
         'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
         'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
         'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
-        'hiv_on_art': Property(Types.BOOL, 'on art'),
+        'hiv_on_art': Property(Types.CATEGORICAL, 'art status', categories=['0', '1', '2']),
         'hiv_date_art_start': Property(Types.DATE, 'date art started'),
         'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
         'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
@@ -121,7 +121,7 @@ class health_system(Module):
         df['date_tested'] = pd.NaT
         df['number_hiv_tests'] = 0
         df['hiv_diagnosed'] = False
-        df['on_art'] = False
+        df['on_art'].values[:] = '0'
         df['date_art_start'] = pd.NaT
         df['viral_load_test'] = pd.NaT
         df['on_cotrim'] = False

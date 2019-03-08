@@ -3,7 +3,7 @@ import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.methods import demography, hiv_infection, tb
+from tlo.methods import demography, hiv, tb
 
 # for desktop
 path = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile.xlsx'  # Edit this path so it points to Demography.xlsx file
@@ -20,7 +20,7 @@ popsize = 10000
 def simulation():
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(workbook_path=path)
-    hiv_module = hiv_infection.hiv()
+    hiv_module = hiv.hiv()
     tb_module = tb.tb_baseline()
 
     sim.register(core_module)
