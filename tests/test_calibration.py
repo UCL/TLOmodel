@@ -4,7 +4,7 @@ import pandas as pd
 import pytest  # this is the library for testing
 
 from tlo import Date, Simulation
-from tlo.methods import demography, antiretroviral_therapy, hiv_infection, hiv_hs_engagement, tb_hs_engagement, tb, \
+from tlo.methods import demography, antiretroviral_therapy, hiv, hiv_hs, tb_hs_engagement, tb, \
     male_circumcision, hiv_behaviour_change
 
 # for desktop
@@ -51,10 +51,10 @@ def test_function(params):
 
         #  call modules
         core_module = demography.Demography(workbook_path=path_dem)
-        hiv_module = hiv_infection.hiv(workbook_path=path_hiv, par_est=params[0])
+        hiv_module = hiv.hiv(workbook_path=path_hiv, par_est=params[0])
         art_module = antiretroviral_therapy.art(workbook_path=path_hs)
-        hs_module = hiv_hs_engagement.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
-                                                    par_est3=params[3], par_est4=params[4])
+        hs_module = hiv_hs.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
+                                         par_est3=params[3], par_est4=params[4])
         circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
         behavioural_module = hiv_behaviour_change.BehaviourChange()
         tb_module = tb.tb_baseline(workbook_path=path_tb)
