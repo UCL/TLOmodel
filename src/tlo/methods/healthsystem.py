@@ -37,6 +37,8 @@ class HealthSystem(Module):
     PARAMETERS = {'Probability_Skilled_Birth_Attendance': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
                   'Master_Facility_List':Parameter(Types.DATA_FRAME,'Imported Master Facility List workbook')}
 
+    PROPERTIES = {'Distance_To_Nearest_HealthFacility': Property(Types.REAL,'The distance for each person to their nearest clinic (of an type)')}
+
 
     def read_parameters(self, data_folder):
 
@@ -52,6 +54,15 @@ class HealthSystem(Module):
 
 
     def initialise_population(self, population):
+
+
+        df = population.props
+
+        # Assign Distance_To_Nearest_HealthFacility'
+        # For now, let this be a random number, but in future it will be properly informed
+        # Note that this characteritic is inherited from mother to child.
+
+        df['Distance_To_Nearest_HealthFacility']=self.sim.rng.randn(len(df))
 
         pass
 
@@ -91,9 +102,11 @@ class HealthSystem(Module):
 
 
 
-    def on_birth(self, mother, child):
+    def on_birth(self, mother_id, child_id):
 
-        pass
+        df = self.sim.population.props
+        df.at[child_id,'Distance_To_Nearest_HealthFacility']=df.at[mother_id,'Distance_To_Nearest_HealthFacility']
+
 
 
     def Register_Disease_Module(self, *NewDiseaseModule):
@@ -166,8 +179,8 @@ class HealthSystem(Module):
         available_Nurse_Time=0
         available_Doctor_Time=0
         for lf_id in local_facilities_idx:
-            available_Nurse_Time+=self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse']
-            available_Doctor_Time+= self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse']
+            available_Nurse_Time+=self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse'].values[0]
+            available_Doctor_Time+= self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0]
 
         # See if there is enough capacity
         if (needed.Nurse_Time.values < available_Nurse_Time) and (needed.Doctor_Time.values < available_Doctor_Time):
