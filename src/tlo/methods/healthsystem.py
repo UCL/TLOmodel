@@ -44,19 +44,34 @@ class HealthSystem(Module):
 
     def read_parameters(self, data_folder):
 
-        self.parameters['Probability_Skilled_Birth_Attendance']=pd.DataFrame(
-            data=[
-                (0, 'Facility', 0.00), (0, 'Home', 0.00), (0, 'Roadside', 0.00),         # No availability
-                (1,'Facility',0.95),(1,'Home',0.5),(1,'Roadside',0.05),                 # Default levels of availability
-                (2, 'Facility', 1.00), (2, 'Home', 1.00), (2, 'Roadside', 1.00)          # Maximal levels of availability
-            ],
-            columns=['Availability','Location_Of_Births','prob'])
-
         self.parameters['Master_Facility_List']=pd.read_csv(self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 
 
-    def initialise_population(self, population):
+        # Establish the MasterCapacitiesList
+        # (Maybe this will become imported, or maybe it will stay being generated here)
+        hf = self.parameters['Master_Facility_List']
 
+        self.HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
+                                    'Doctor_Time':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# Minutes of work time per month
+                                    'Electricity':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# available: yes/no
+                                    'Water':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse'])}       # available: yes/no
+
+        # Fill in some simple patterns for now
+        #Water: False in outreach and Health post, True otherwise
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
+
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
+
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
+
+        self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
+        self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
+
+
+    def initialise_population(self, population):
 
         df = population.props
 
@@ -79,28 +94,6 @@ class HealthSystem(Module):
         for person_id in pop.index:
             my_village=pop.at[person_id, 'village_of_residence']
             my_health_facilities=hf.loc[hf['Village']==my_village]
-
-        # Establish the MasterCapacitiesList
-        # (Maybe this will become imported, or maybe it will stay being generated here)
-        self.HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
-                                    'Doctor_Time':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# Minutes of work time per month
-                                    'Electricity':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# available: yes/no
-                                    'Water':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse'])}       # available: yes/no
-
-        # Fill in some simple patterns for now
-
-        #Water: False in outreach and Health post, True otherwise
-        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
-        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
-
-        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
-        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
-
-        self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
-        self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
-
-        self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
-        self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
 
 
 
@@ -137,35 +130,18 @@ class HealthSystem(Module):
         GetsService=False # Default to fault (this is the variable that is returned to the disease module that does the request)
 
 
-        # Check if policy allows the offering of this treatment
-        PolicyAllows=False # default
 
-
-        # try:
-        #     availability=int( self.Service_Availabilty.Available[self.Service_Availabilty['Service']==service] )
-        #
-        #
-        #     if service == "Skilled Birth Attendance":
-        #
-        #         location_of_birth=person.Location_Of_Births
-        #         df=self.parameters['Probability_Skilled_Birth_Attendance']
-        #
-        #         prob=float(df[( df['Availability'] ==availability ) & ( df['Location_Of_Births']==location_of_birth )].prob)
-        #
-        #
-        #         if self.sim.rng.rand() < prob:
-        #             GetsService=True
-        #
-        #             if self.sim.verboseoutput:
-        #                 print('         .... They will! ')
-        # except:
-        #     print("A request for a service was met with an error")
+        # 1) Check if policy allows the offering of this treatment
+        PolicyAllows=False # default to False
+        try:
+            # Overwrite with the boolean value in the look-up table provided by the user, if a match can be found in the table for the service that is requested
+            PolicyAllows=self.Service_Availabilty.loc[self.Service_Availabilty['Service']==service,'Available'].values[0]
+        except:
+            pass
 
 
 
-
-
-        # Check capacitiy
+        # 2) Check capacitiy
         EnoughCapacity=False # Default to False unless it can be proved there is capacity
 
         # Look-up resources for the requested service:
@@ -193,7 +169,7 @@ class HealthSystem(Module):
             GetsService=True
 
 
-         # Log the occurance of this rqequest for service
+         # Log the occurance of this request for services
         logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
                         {
                             'person_id': person,

@@ -1,6 +1,7 @@
 import datetime
 import os
 import logging
+import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -39,13 +40,20 @@ logging.getLogger().addHandler(fh)
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 
+# make a dataframe that contains the switches for which interventions are allowed or not allowed during this run.
+# NB. These must use the exact 'registered strings' that the disease modules allow
+
+service_availability=pd.DataFrame(data=[],columns=['Service','Available'])
+service_availability.loc[0]=['Mockitis_Treatment',True]
+service_availability.loc[1]=['ChronicSyndrome_Treatment',False]
+
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, Service_Availability=service_availability))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath)) # NB. This relies on the health system module having been registered first.
+sim.register(qaly.QALY(resourcefilepath=resourcefilepath)) # NB.This relies on the health system module having been registered first.
 
 
 # Run the simulation and flush the logger
