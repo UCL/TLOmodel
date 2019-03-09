@@ -16,4 +16,17 @@ wb['Facility_ID']=np.arange(len(wb))
 wb.to_csv(outputfile)
 
 
+# Add that every village is also attaching to a Referral Hospital based on regio
 
+# Add that every village is also attching to all the hospitals in the district
+
+
+# Add it that there is a central hospital at the top of the hierarchy for all villages
+
+# experiment with the data:
+# reduce it to one villge
+
+
+myvillage='Iyela'
+
+df=wb.loc[wb['Village']==myvillage]

@@ -203,7 +203,7 @@ class ChronicSyndrome(Module):
             'extreme illness':4
         })
 
-        return df['cs_unified_symptom_code']
+        return df.loc[df['is_alive']==True,'cs_unified_symptom_code']
 
     def on_first_healthsystem_interaction(self,person_id,cue_type):
         print('This is chronicsyndrome, being asked what to do at a health system appointment for person', person_id)
@@ -235,7 +235,7 @@ class ChronicSyndrome(Module):
             'extreme illness':self.qalywt_ill
         })
 
-        return  HealthValues
+        return HealthValues.loc[df['is_alive'] == True]
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):

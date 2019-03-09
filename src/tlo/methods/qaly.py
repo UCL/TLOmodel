@@ -111,6 +111,7 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
         # 2) Reconcile the QALY scores into a unifed score
         df=self.sim.population.props
 
+        df['qa_QALY'] = 0 # setting to zero ensures that all dead people are given zero values
         df['qa_QALY']=disease_specific_qaly_values.prod(axis=1)
 
 
