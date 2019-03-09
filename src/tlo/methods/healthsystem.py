@@ -49,6 +49,7 @@ class HealthSystem(Module):
 
         # Establish the MasterCapacitiesList
         # (Maybe this will become imported, or maybe it will stay being generated here)
+
         hf = self.parameters['Master_Facility_List']
 
         self.HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
@@ -250,6 +251,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         self.type=type
         self.indicies=indicies
 
+
     def apply(self, population):
 
         print("@@@@@ Outreach event running now @@@@@@")
@@ -257,14 +259,17 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         if self.type=='this_disease_only':
             # Schedule a first appointment for each person for this disease only
             for person_index in self.indicies:
-                self.module.on_first_healthsystem_interaction(person_index,'OutreachEvent_ThisDiseaseOnly')
+
+                if self.sim.population.props.at[person_index,'is_alive']:
+                    self.module.on_first_healthsystem_interaction(person_index,'OutreachEvent_ThisDiseaseOnly')
 
         else:
             # Schedule a first appointment for each person for all disease
             for person_index in self.indicies:
-                RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
-                for module in RegisteredDiseaseModules.values():
-                    module.on_first_healthsystem_interaction(person_index,'OutreachEvent_AllDiseases')
+                if self.sim.population.props.at[person_index, 'is_alive']:
+                    RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+                    for module in RegisteredDiseaseModules.values():
+                        module.on_first_healthsystem_interaction(person_index,'OutreachEvent_AllDiseases')
 
         # Log the occurance of the outreach event
         logger.info('%s|outreach_event|%s', self.sim.date,
@@ -305,19 +310,21 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
         # Symptoms (across all diseases) will be assessed and the disease-specific on-health-system function is called
 
         df = self.sim.population.props
-        print("@@@@ We are now having an health appointment with individual", person_id)
 
-        # For each disease module, trigger the on_healthsystem() event
-        RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
-        for module in RegisteredDiseaseModules.values():
-            module.on_first_healthsystem_interaction(person_id,self.cue_type)
+        if df.at[person_id,'is_alive']:
+            print("@@@@ We are now having an health appointment with individual", person_id)
 
-        # Log the occurance of this interaction with the health system
-        logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s', self.sim.date,
-                {
-                    'person_id': person_id,
-                    'cue_type': self.cue_type
-                })
+            # For each disease module, trigger the on_healthsystem() event
+            RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            for module in RegisteredDiseaseModules.values():
+                module.on_first_healthsystem_interaction(person_id,self.cue_type)
+
+            # Log the occurance of this interaction with the health system
+            logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s', self.sim.date,
+                    {
+                        'person_id': person_id,
+                        'cue_type': self.cue_type
+                    })
 
 
 
@@ -329,11 +336,14 @@ class InteractionWithHealthSystem_Followups(Event,IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
-        # Use this interaction type for persons once they are in care for monitoring and follow-up for a specific disease
-        print("in a follow-up appoinntment")
+        df = self.sim.population.props
 
-        # Log the occurance of this interaction with the health system
-        logger.info('%s|InteractionWithHealthSystem_Followups|%s', self.sim.date,
-                    {
-                        'person_id': person_id
-                    })
+        if df.at[person_id,'is_alive']:
+            # Use this interaction type for persons once they are in care for monitoring and follow-up for a specific disease
+            print("in a follow-up appoinntment")
+
+            # Log the occurance of this interaction with the health system
+            logger.info('%s|InteractionWithHealthSystem_Followups|%s', self.sim.date,
+                        {
+                            'person_id': person_id
+                        })

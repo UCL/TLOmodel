@@ -241,7 +241,7 @@ class Mockitis(Module):
             'extreme emergency':4
         })
 
-        return df['mi_unified_symptom_code']
+        return df.loc[df['is_alive'] == True, 'mi_unified_symptom_code']
 
     def on_first_healthsystem_interaction(self,person_id,cue_type):
         print('This is mockitis, being asked what to do at a health system appointment for person', person_id,' triggered by: ',cue_type)
@@ -272,7 +272,7 @@ class Mockitis(Module):
                 'extreme emergency':self.qalywt_advanced
         })
 
-        return HealthValues
+        return HealthValues.loc[df['is_alive']==True]
 
 
 
