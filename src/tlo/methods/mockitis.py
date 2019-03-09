@@ -168,6 +168,11 @@ class Mockitis(Module):
 
 
 
+        # get the QALY values that this module will use from the weight database (these codes are just random!)
+        self.qalywt_mild_sneezing = sim.modules['QALY'].get_qaly_weight(50)
+        self.qalywt_coughing = sim.modules['QALY'].get_qaly_weight(52)
+        self.qalywt_advanced = sim.modules['QALY'].get_qaly_weight(589)
+
 
 
     def on_birth(self, mother_id, child_id):
@@ -253,7 +258,7 @@ class Mockitis(Module):
         print('This is a follow-up appointment. Nothing to do')
 
 
-    def report_HealthValues(self):
+    def report_QALY_Values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
 
         print('This is mockities reporting my health values')
@@ -262,9 +267,9 @@ class Mockitis(Module):
 
         HealthValues = df['mi_specific_symptoms'].map({
                 'none':0,
-            'mild sneezing':0.99,
-            'coughing and irritable':0.7,
-            'extreme emergency':0.1
+                'mild sneezing':self.qalywt_mild_sneezing,
+                'coughing and irritable':self.qalywt_coughing,
+                'extreme emergency':self.qalywt_advanced
         })
 
         return HealthValues
