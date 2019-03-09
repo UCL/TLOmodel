@@ -10,16 +10,15 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
-
 # Where will output go
 outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/tests/resources/demography.xlsx'
 
+# The resource files
+resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 
 # %% Run the Simulation
 
@@ -32,7 +31,7 @@ popsize = 1000
 sim = Simulation(start_date=start_date)
 
 # this block of code is to capture the output to file
-logfile = dirpath + 'LogFile' + datestamp  +'.log'
+logfile = outputpath + 'LogFile' + datestamp  +'.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -42,7 +41,7 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -154,19 +153,19 @@ tab = df.pivot_table(values="value", index=["gender", "agegrp"], aggfunc=np.sum)
 Data_Women_2045 = np.asarray(tab[tab.index.get_level_values('gender') == 'female']).flatten()
 Data_Men_2045 = np.asarray(tab[tab.index.get_level_values('gender') == 'male']).flatten()
 
-# Traditional Populaiton Pyramid
+# Traditional Populaiton Pyramid: Model Only
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-y = np.arange(ModelOutput_Men_2015.size)
-axes[0][0].barh(y, ModelOutput_Women_2015 / ModelOutput_Women_2015.sum(),
+y = np.arange(len(Age_Group_Labels))
+axes[0][0].barh(y, ModelOutput_Women_2015_trimmed / ModelOutput_Women_2015_trimmed.sum(),
                 align='center', color='red', zorder=10)
 axes[0][0].set(title='Women, 2015')
-axes[0][1].barh(y, ModelOutput_Men_2015/ ModelOutput_Men_2015.sum(),
+axes[0][1].barh(y, ModelOutput_Men_2015_trimmed/ ModelOutput_Men_2015_trimmed.sum(),
                 align='center', color='blue', zorder=10)
 axes[0][1].set(title='Men, 2015')
-axes[1][0].barh(y, ModelOutput_Women_2045 / ModelOutput_Women_2045.sum(),
+axes[1][0].barh(y, ModelOutput_Women_2045_trimmed / ModelOutput_Women_2045_trimmed.sum(),
                 align='center', color='red', zorder=10)
 axes[1][0].set(title='Women, 2045')
-axes[1][1].barh(y, ModelOutput_Men_2045 / ModelOutput_Men_2045.sum(),
+axes[1][1].barh(y, ModelOutput_Men_2045_trimmed / ModelOutput_Men_2045_trimmed.sum(),
                 align='center', color='blue', zorder=10)
 axes[1][1].set(title='Men, 2045')
 axes[0][0].invert_xaxis()
@@ -182,22 +181,24 @@ for ax in axes.flat:
 
 fig.tight_layout()
 fig.subplots_adjust(wspace=0.09)
-plt.savefig(outputpath  + 'PopPyramidDataOnly' + datestamp + '.pdf')
+plt.savefig(outputpath  + 'PopPyramidModelOnly' + datestamp + '.pdf')
 plt.show()
 
+# Model Vs Data Pop Pyramid
+
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-y = np.arange(ModelOutput_Men_2015.size)
-axes[0][0].plot(y, ModelOutput_Women_2015/ ModelOutput_Women_2015.sum())
+y = np.arange(len(Age_Group_Labels))
+axes[0][0].plot(y, ModelOutput_Women_2015_trimmed/ ModelOutput_Women_2015_trimmed.sum())
 axes[0][0].plot(y, Data_Women_2015 / Data_Women_2015.sum())
 axes[0][0].set(title='Women, 2015')
 axes[0][0].legend(['Model', 'Data'])
-axes[0][1].plot(y, ModelOutput_Men_2015.flatten() / ModelOutput_Men_2015.flatten().sum())
+axes[0][1].plot(y, ModelOutput_Men_2015_trimmed / ModelOutput_Men_2015_trimmed.sum())
 axes[0][1].plot(y, Data_Men_2015.flatten() / Data_Men_2015.flatten().sum())
 axes[0][1].set(title='Men, 2015')
-axes[1][0].plot(y, ModelOutput_Women_2045.flatten() / ModelOutput_Women_2045.flatten().sum())
+axes[1][0].plot(y, ModelOutput_Women_2045_trimmed / ModelOutput_Women_2045_trimmed.sum())
 axes[1][0].plot(y, Data_Women_2045.flatten() / Data_Women_2045.flatten().sum())
 axes[1][0].set(title='Women, 2045')
-axes[1][1].plot(y, ModelOutput_Men_2045.flatten() / ModelOutput_Men_2045.flatten().sum())
+axes[1][1].plot(y, ModelOutput_Men_2045_trimmed / ModelOutput_Men_2045_trimmed.sum())
 axes[1][1].plot(y, Data_Men_2045.flatten() / Data_Men_2045.flatten().sum())
 axes[1][1].set(title='Men, 2045')
 axes[1][0].set(xticks=y, xticklabels=Age_Group_Labels)

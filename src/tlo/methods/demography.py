@@ -266,6 +266,11 @@ class Demography(Module):
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
 
+        # Child's residence is inherited from the mother
+        df.at[child_id,'region_of_residence']=df.at[mother_id,'region_of_residence']
+        df.at[child_id,'district_of_residence']=df.at[mother_id,'district_of_residence']
+        df.at[child_id,'village_of_residence']=df.at[mother_id,'village_of_residence']
+
         # Log the birth:
         logger.info('%s|on_birth|%s',
                     self.sim.date,
