@@ -238,8 +238,8 @@ class Mockitis(Module):
 
         return df['mi_unified_symptom_code']
 
-    def on_first_healthsystem_interaction(self,person_id):
-        print('This is mockitis, being asked what to do at a health system appointment for person', person_id)
+    def on_first_healthsystem_interaction(self,person_id,cue_type):
+        print('This is mockitis, being asked what to do at a health system appointment for person', person_id,' triggered by: ',cue_type)
 
         # Querry with health system whether this individual will get a desired treatment
         gets_treatment=self.sim.modules['HealthSystem'].Query_Access_To_Service(person_id,self.registered_string_for_treatment)
@@ -251,6 +251,24 @@ class Mockitis(Module):
 
     def on_followup_healthsystem_interaction(self,person_id):
         print('This is a follow-up appointment. Nothing to do')
+
+
+    def report_HealthValues(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
+
+        print('This is mockities reporting my health values')
+
+        df=self.sim.population.props # shortcut to population properties dataframe
+
+        HealthValues = df['mi_specific_symptoms'].map({
+                'none':0,
+            'mild sneezing':0.99,
+            'coughing and irritable':0.7,
+            'extreme emergency':0.1
+        })
+
+        return HealthValues
+
 
 
 

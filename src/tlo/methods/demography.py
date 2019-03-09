@@ -477,7 +477,8 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         logger.info('%s|death|%s', self.sim.date,
                     {
                         'age': df.at[individual_id, 'age_years'],
-                        'cause': self.cause
+                        'cause': self.cause,
+                        'person_id': individual_id
                     })
 
 

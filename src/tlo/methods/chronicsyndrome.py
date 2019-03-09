@@ -201,7 +201,7 @@ class ChronicSyndrome(Module):
 
         return df['cs_unified_symptom_code']
 
-    def on_first_healthsystem_interaction(self,person_id):
+    def on_first_healthsystem_interaction(self,person_id,cue_type):
         print('This is chronicsyndrome, being asked what to do at a health system appointment for person', person_id)
 
         # Queries whether treatment is allowable under global policy
@@ -218,6 +218,20 @@ class ChronicSyndrome(Module):
 
     def on_followup_healthsystem_interaction(self, person_id):
         print('This is a follow-up appointment. Nothing to do')
+
+    def report_HealthValues(self):
+        #This must send back a dataframe that reports on the HealthStates for all individuals over the past year
+
+        print('This is chronicsyndrome reporting my health values')
+
+        df=self.sim.population.props # shortcut to population properties dataframe
+
+        HealthValues = df['cs_specific_symptoms'].map({
+            'none':1,
+            'extreme illness':0.2
+        })
+
+        return  HealthValues
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
