@@ -160,6 +160,10 @@ class ChronicSyndrome(Module):
 
         self.sim.modules['HealthSystem'].Register_Interventions(footprint_for_treatment)
 
+        # get the QALY values that this module will use from the weight database (these codes are just random!)
+        self.qalywt_ill = sim.modules['QALY'].get_qaly_weight(87)
+
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -219,7 +223,7 @@ class ChronicSyndrome(Module):
     def on_followup_healthsystem_interaction(self, person_id):
         print('This is a follow-up appointment. Nothing to do')
 
-    def report_HealthValues(self):
+    def report_QALY_Values(self):
         #This must send back a dataframe that reports on the HealthStates for all individuals over the past year
 
         print('This is chronicsyndrome reporting my health values')
@@ -227,8 +231,8 @@ class ChronicSyndrome(Module):
         df=self.sim.population.props # shortcut to population properties dataframe
 
         HealthValues = df['cs_specific_symptoms'].map({
-            'none':1,
-            'extreme illness':0.2
+            'none':0,
+            'extreme illness':self.qalywt_ill
         })
 
         return  HealthValues

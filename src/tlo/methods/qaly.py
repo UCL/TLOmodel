@@ -25,12 +25,8 @@ class QALY(Module):
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
-    PARAMETERS = {'Weight_Database': Property(Types.DATA_FRAME,'Weight Database')}
-
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
-    PROPERTIES = {'qa_Overall_Health_State': Property(Types.REAL, 'Summary of health state for previous year')}
+    PARAMETERS = {'Weight_Database': Property(Types.DATA_FRAME,'Weight Database')} # This is a DALY database, so complement of the valyuest must be used.
+    PROPERTIES = {'qa_QALY': Property(Types.REAL, 'Summary of health state for previous year')}
 
 
     def read_parameters(self, data_folder):
@@ -68,6 +64,17 @@ class QALY(Module):
         pass
 
 
+    def get_qaly_weight(self,sequlae_code):
+        """
+        This can be used to look up the QALY code for a particular condition
+
+        """
+        w = self.parameters['Weight_Database']
+        daly_wt = w.loc[w['TLO_Sequela_Code'] == sequlae_code, 'disability weight'].values[0]
+        qaly_wt = 1 - daly_wt
+        return qaly_wt
+
+
 class LogQALYs(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
@@ -90,28 +97,28 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
         """
         print('The QALY Logger is occuring now!@@@@',self.sim.date)
 
-        disease_specific_health_states = pd.DataFrame()
+        disease_specific_qaly_values= pd.DataFrame()
 
         # 1) Ask each disease module to log the QALYS
         disease_modules=self.sim.modules['HealthSystem'].RegisteredDiseaseModules
 
         for module in disease_modules.values():
-            out=module.report_HealthValues()
-            disease_specific_health_states = pd.concat([disease_specific_health_states , out],
+            out=module.report_QALY_Values()
+            disease_specific_qaly_values = pd.concat([disease_specific_qaly_values , out],
                                             axis=1)  # each column of this dataframe gives the reports from each module the HealthState
 
 
         # 2) Reconcile the QALY scores into a unifed score
         df=self.sim.population.props
 
-        df['qa_Overall_Health_State']=disease_specific_health_states.prod(axis=1)
+        df['qa_QALY']=disease_specific_qaly_values.prod(axis=1)
 
 
         # 4) Summarise the results and output these to the log
 
         # men: sum of healthstates, by age
-        m_healthstate_sum = df[df.is_alive & (df.sex == 'M')].groupby('age_range')['qa_Overall_Health_State'].sum()
-        f_healthstate_sum = df[df.is_alive & (df.sex == 'F')].groupby('age_range')['qa_Overall_Health_State'].sum()
+        m_healthstate_sum = df[df.is_alive & (df.sex == 'M')].groupby('age_range')['qa_QALY'].sum()
+        f_healthstate_sum = df[df.is_alive & (df.sex == 'F')].groupby('age_range')['qa_QALY'].sum()
 
         logger.info('%s|QALYS_M|%s', self.sim.date,
                     m_healthstate_sum.to_dict())
