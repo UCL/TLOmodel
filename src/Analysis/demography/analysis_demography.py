@@ -10,7 +10,6 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
-
 # Where will output go
 outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
 
