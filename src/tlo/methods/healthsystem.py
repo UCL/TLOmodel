@@ -4,10 +4,12 @@ It is used to control access to interventions
 It will be replaced by the Health Care Seeking Behaviour Module and the
 """
 import pandas as pd
-
+import logging
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 class HealthSystem(Module):
     """
@@ -190,10 +192,19 @@ class HealthSystem(Module):
         if PolicyAllows and EnoughCapacity:
             GetsService=True
 
+
+         # Log the occurance of this rqequest for service
+        logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
+                        {
+                            'person_id': person,
+                            'service': service,
+                            'policy_allows': PolicyAllows,
+                            'enough_capacity': EnoughCapacity,
+                            'gets_service': GetsService
+                        })
+
+
         return GetsService
-
-
-
 
 
 
@@ -243,8 +254,9 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if (self.sim.rng.rand() < prob_seek_care) :
-                    event=InteractionWithHealthSystem_FirstAppt(self,person_index)
+                    event=InteractionWithHealthSystem_FirstAppt(self,person_index,'HealthCareSeekingPoll')
                     self.sim.schedule_event(event, self.sim.date)
+
 
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
@@ -269,38 +281,48 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         if self.type=='this_disease_only':
             # Schedule a first appointment for each person for this disease only
             for person_index in self.indicies:
-                self.module.on_first_healthsystem_interaction(person_index)
+                self.module.on_first_healthsystem_interaction(person_index,'OutreachEvent_ThisDiseaseOnly')
 
         else:
             # Schedule a first appointment for each person for all disease
             for person_index in self.indicies:
                 RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
                 for module in RegisteredDiseaseModules.values():
-                    module.on_first_healthsystem_interaction(person_index)
+                    module.on_first_healthsystem_interaction(person_index,'OutreachEvent_AllDiseases')
+
+        # Log the occurance of the outreach event
+        logger.info('%s|outreach_event|%s', self.sim.date,
+                    {
+                        'type': self.type
+                    })
+
+class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            # This is an event call by a disease module and care
+            # The on_healthsystem_interaction function is called only for the module that called for the EmergencyCare
+
+            print('@@ EMERGENCY: I have been called by', self.module, 'to act on person', person_id)
+            self.module.on_first_healthsystem_interaction(person_id,'Emergency')
+
+            # Log the occurance of this interaction with the health system
+
+            logger.info('%s|InteractionWithHealthSystem_Followups|%s', self.sim.date,
+                        {
+                            'person_id': person_id
+                        })
 
 
 
 # --------- TRIGGERING INTERACTIONS WITH THE HEALTH SYSTEM -----
 
-class InteractionWithHealthSystem_Emergency(Event,IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, person_id):
-        # This is an event call by a disease module and care
-        # The on_healthsystem_interaction function is called only for the module that called for the EmergencyCare
-
-        print('@@ EMERGENCY: I have been called by', self.module, 'to act on person', person_id)
-        self.module.on_first_healthsystem_interaction(person_id)
-
-        pass
-
-
-
 class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id,cue_type):
         super().__init__(module, person_id=person_id)
+        self.cue_type=cue_type
 
     def apply(self, person_id):
         # This is a FIRST meeting between the person and the health system
@@ -312,7 +334,16 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
         # For each disease module, trigger the on_healthsystem() event
         RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
         for module in RegisteredDiseaseModules.values():
-            module.on_first_healthsystem_interaction(person_id)
+            module.on_first_healthsystem_interaction(person_id,self.cue_type)
+
+        # Log the occurance of this interaction with the health system
+        logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s', self.sim.date,
+                {
+                    'person_id': person_id,
+                    'cue_type': self.cue_type
+                })
+
+
 
 
 
@@ -325,7 +356,8 @@ class InteractionWithHealthSystem_Followups(Event,IndividualScopeEventMixin):
         # Use this interaction type for persons once they are in care for monitoring and follow-up for a specific disease
         print("in a follow-up appoinntment")
 
-
-
-
-        pass
+        # Log the occurance of this interaction with the health system
+        logger.info('%s|InteractionWithHealthSystem_Followups|%s', self.sim.date,
+                    {
+                        'person_id': person_id
+                    })

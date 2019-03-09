@@ -4,7 +4,7 @@ import logging
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, mockitis, chronicsyndrome
+from tlo.methods import demography, lifestyle, mockitis, chronicsyndrome, qaly
 from tlo.methods import healthsystem
 
 
@@ -45,7 +45,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
-
+sim.register(qaly.QALY(resourcefilepath=resourcefilepath)) # NB. This relies on the health system module having been registered first.
 
 
 # Run the simulation and flush the logger
