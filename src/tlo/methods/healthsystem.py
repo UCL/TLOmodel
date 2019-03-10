@@ -165,6 +165,10 @@ class HealthSystem(Module):
         if (needed.Nurse_Time.values < available_Nurse_Time) and (needed.Doctor_Time.values < available_Doctor_Time):
             EnoughCapacity=True
 
+            #... and impose the "footprint"
+            #TODO: We need to know how the footprint is defined in order to be able to impose it here.
+
+
 
         if PolicyAllows and EnoughCapacity:
             GetsService=True
