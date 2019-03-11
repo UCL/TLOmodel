@@ -1,11 +1,11 @@
 """
 A skeleton template for disease methods.
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 
 class Mockitis(Module):
