@@ -13,6 +13,15 @@ wb=wb.drop(columns='Date')
 
 wb['Facility_ID']=np.arange(len(wb))
 
+# Save output file for information about facilities
+wb.to_csv(outputfile)
+
+#--------
+
+# Make the file that maps the connections between villages and the health facilities
+# This will have one row per village...
+#                               ... and columns of (Community Health Worker,Nearest Hospital,District Hospital,Referral Hospital)
+
 
 
 
@@ -39,15 +48,41 @@ wb.loc[wb['Facility Name']=='QUEEN ELIZABETH','Facility Type'] = 'Referral Hospi
 wb.loc[wb['Facility Name']=='KAMUZU CENTRAL HOSPITAL','Facility Type'] = 'Referral Hospital'
 
 
+# 3) Label the district hopsitals
+
+wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility Type']='District Hospital'
+
+# look at number of district hospitals per distirct (check it's 1 per district)
+wb.loc[wb['Facility Type']=='District Hospital',['District','Facility Type']].groupby(by=['District']).count()
+
+
+
+
+
 
 # 3) Add in linkage to district hospitals; nearest (one) hospital only
 
+villages=wb['Village'].unique()
 hospitals=wb.loc[wb['Facility Type']=='Hospital']
 
-vill_x=wb.loc[(wb['Village']==v and wb['Facility Type']=='Community Health Worker'),'Eastings']
-vill_x=wb.loc[wb['Village']==v,'Northings']
+# dataframe that will hold these additional linkages
+df=pd.DataFrame(data={'Village':villages},columns=wb.columns)
 
-hosp_x=
+v=villages[2] # for a particular village.....
+
+# take the average location of all facility types in village
+vill_x=np.mean(wb.loc[(wb['Village']==v) & (wb['Facility Type']!='Referral Hospital'),'Eastings'])
+vill_y=np.mean(wb.loc[(wb['Village']==v) & (wb['Facility Type']!='Referral Hospital'),'Northings'])
+
+hosp_x=hospitals['Eastings']
+hosp_y=hospitals['Northings']
+
+dist_sq= np.power(hosp_x-vill_x,2) + np.power(hosp_y-vill_y,2)
+
+record=hospitals.iloc[dist_sq.idxmin()]
+record.loc[record.index, 'Village'] = v
+
+df.loc[df['Village']==v]=record.values
 
 
 
@@ -102,8 +137,6 @@ wb[pd.isnull(wb['Village'])]
 
 
 
-# Save output
-wb.to_csv(outputfile)
 
 
 
