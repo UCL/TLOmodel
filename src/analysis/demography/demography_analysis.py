@@ -11,14 +11,15 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
-# Where will output go
-outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
+# Where will output go - by default, wherever this script is run
+outputpath = ''
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/resources/Demography_WorkingFile_Complete.xlsx'
+# assume Python console is started in the top-leve TLOModel directory
+resourcefile_demography = 'resources/Demography_WorkingFile_Complete.xlsx'
 
 
 # %% Run the Simulation
