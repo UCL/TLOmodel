@@ -2,6 +2,8 @@ graft docs
 graft src
 graft tests
 
+exclude resources
+
 include .bumpversion.cfg
 include .coveragerc
 include .editorconfig
@@ -15,4 +17,7 @@ recursive-include requirements *.in
 recursive-include requirements *.txt
 recursive-include requirements Makefile
 
+recursive-exclude resources *
+
 global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/**
+
