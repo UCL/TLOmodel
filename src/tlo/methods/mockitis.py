@@ -145,7 +145,7 @@ class Mockitis(Module):
             self.sim.schedule_event(death_event, df.at[person_index,'mi_scheduled_date_death'])
 
         # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].Register_Disease_Module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Schedule the outreach event...
         event=MockitisOutreachEvent(self,'this_module_only')
@@ -164,7 +164,7 @@ class Mockitis(Module):
                                                             'Electricity':False,
                                                             'Water':False})
 
-        self.sim.modules['HealthSystem'].Register_Interventions(footprint_for_treatment)
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
 
 
@@ -247,7 +247,7 @@ class Mockitis(Module):
         print('This is mockitis, being asked what to do at a health system appointment for person', person_id,' triggered by: ',cue_type)
 
         # Querry with health system whether this individual will get a desired treatment
-        gets_treatment=self.sim.modules['HealthSystem'].Query_Access_To_Service(person_id,self.registered_string_for_treatment)
+        gets_treatment=self.sim.modules['HealthSystem'].query_access_to_service(person_id, self.registered_string_for_treatment)
 
         if gets_treatment:
             # Commission treatment for this individual
@@ -366,7 +366,7 @@ class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
             pass
 
         # schedule a short series of follow-up appointments at six monthly intervals
-        followup_appt= healthsystem.InteractionWithHealthSystem_Followups(self.module,person_id)
+        followup_appt= healthsystem.FollowupHealthSystemInteraction(self.module, person_id)
         self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=6))
         self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=12))
         self.sim.schedule_event(followup_appt, self.sim.date+DateOffset(months=18))
