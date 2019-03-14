@@ -21,25 +21,27 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 Service_Availability=None):
+                 service_availability=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        if Service_Availability is None:
-            Service_Availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
+        if service_availability is None:
+            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
 
         self.store_ServiceUse={
             'Skilled Birth Attendance': []
         }
-        self.Service_Availabilty = Service_Availability
+        self.Service_Availabilty = service_availability
 
         self.RegisteredDiseaseModules = {}
 
         self.RegisteredInterventions = pd.DataFrame()
 
+        self.HEALTH_SYSTEM_RESOURCES = dict()
+
         print('----------------------------------------------------------------------')
         print("Setting up the Health System With the Following Service Availabilty: ")
-        print(Service_Availability)
+        print(service_availability)
         print('----------------------------------------------------------------------')
 
     PARAMETERS = {
@@ -56,38 +58,33 @@ class HealthSystem(Module):
 
     def read_parameters(self, data_folder):
 
-        self.parameters['Master_Facility_List']=pd.read_csv(self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
+        self.parameters['Master_Facility_List'] = pd.read_csv(self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 
         # Establish the MasterCapacitiesList
         # (Maybe this will become imported, or maybe it will stay being generated here)
 
         hf = self.parameters['Master_Facility_List']
 
-        self.HEALTH_SYSTEM_RESOURCES = {
-            # Minutes of work time per month
-            'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
-
-            # Minutes of work time per month
-            'Doctor_Time': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
-
-            # available: yes/no
-            'Electricity': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
-
-            # available: yes/no
-            'Water': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse'])
-        }
-
         # Fill in some simple patterns for now
         # Water: False in outreach and Health post, True otherwise
+
+        # Minutes of work time per month
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'] = pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse'])
         self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse'] = 0
         self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
 
+        # Minutes of work time per month
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'] = pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
         self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse'] = 0
         self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
 
+        # available: yes/no
+        self.HEALTH_SYSTEM_RESOURCES['Electricity'] = pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
         self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse'] = False
         self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] = True
 
+        # available: yes/no
+        self.HEALTH_SYSTEM_RESOURCES['Water'] = pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse'])
         self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse'] = False
         self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] = True
 
@@ -115,9 +112,9 @@ class HealthSystem(Module):
         df = self.sim.population.props
         df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = df.at[mother_id,'Distance_To_Nearest_HealthFacility']
 
-    def Register_Disease_Module(self, *NewDiseaseModule):
+    def Register_Disease_Module(self, *new_disease_modules):
         # Register Disease Modules (in order that the health system can trigger things in each module)...
-        for module in NewDiseaseModule:
+        for module in new_disease_modules:
             assert module.name not in self.RegisteredDiseaseModules, (
                 'A module named {} has already been registered'.format(module.name))
             self.RegisteredDiseaseModules[module.name] = module
@@ -130,19 +127,19 @@ class HealthSystem(Module):
     def Query_Access_To_Service(self, person, service):
         print("Querying whether this person,", person, "will have access to this service:", service, ' ...')
 
-        GetsService = False  # Default to fault (this is the variable that is returned to the disease module that does the request)
+        gets_service = False  # Default to fault (this is the variable that is returned to the disease module that does the request)
 
         # 1) Check if policy allows the offering of this treatment
-        PolicyAllows = False  # default to False
+        policy_allows = False  # default to False
 
         try:
             # Overwrite with the boolean value in the look-up table provided by the user, if a match can be found in the table for the service that is requested
-            PolicyAllows = self.Service_Availabilty.loc[self.Service_Availabilty['Service'] == service, 'Available'].values[0]
+            policy_allows = self.Service_Availabilty.loc[self.Service_Availabilty['Service'] == service, 'Available'].values[0]
         except:
             pass
 
         # 2) Check capacitiy
-        EnoughCapacity = False  # Default to False unless it can be proved there is capacity
+        enough_capacity = False  # Default to False unless it can be proved there is capacity
 
         # Look-up resources for the requested service:
         needed = self.RegisteredInterventions.loc[self.RegisteredInterventions['Name'] == service]
@@ -154,33 +151,33 @@ class HealthSystem(Module):
         local_facilities_idx = local_facilities['Facility_ID'].values
 
         # Sum capacity across the facilities to which persons in this village have access
-        available_Nurse_Time = 0
-        available_Doctor_Time = 0
+        available_nurse_time = 0
+        available_doctor_time = 0
         for lf_id in local_facilities_idx:
-            available_Nurse_Time+=self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse'].values[0]
-            available_Doctor_Time+= self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0]
+            available_nurse_time += self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse'].values[0]
+            available_doctor_time += self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0]
 
         # See if there is enough capacity
-        if (needed.Nurse_Time.values < available_Nurse_Time) and (needed.Doctor_Time.values < available_Doctor_Time):
-            EnoughCapacity = True
+        if (needed.Nurse_Time.values < available_nurse_time) and (needed.Doctor_Time.values < available_doctor_time):
+            enough_capacity = True
 
             # ... and impose the "footprint"
             # TODO: We need to know how the footprint is defined in order to be able to impose it here.
 
-        if PolicyAllows and EnoughCapacity:
-            GetsService = True
+        if policy_allows and enough_capacity:
+            gets_service = True
 
         # Log the occurance of this request for services
         logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
                         {
                             'person_id': person,
                             'service': service,
-                            'policy_allows': PolicyAllows,
-                            'enough_capacity': EnoughCapacity,
-                            'gets_service': GetsService
+                            'policy_allows': policy_allows,
+                            'enough_capacity': enough_capacity,
+                            'gets_service': gets_service
                         })
 
-        return GetsService
+        return gets_service
 
 
 # --------- FORMS OF HEALTH-CARE SEEKING -----
@@ -199,27 +196,27 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # 1) Work out the overall unified symptom code for all the differet diseases (and taking maxmium of them)
 
-            UnifiedSymptomsCode = pd.DataFrame()
+            unified_symptoms_code = pd.DataFrame()
 
             # Ask each module to update and report-out the symptoms it is currently causing on the unified symptomology scale:
-            RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
-            for module in RegisteredDiseaseModules.values():
+            registered_disease_modules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            for module in registered_disease_modules.values():
                 out = module.query_symptoms_now()
-                UnifiedSymptomsCode = pd.concat([UnifiedSymptomsCode, out], axis=1) # each column of this dataframe gives the reports from each module of the unified symptom code
+                unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)  # each column of this dataframe gives the reports from each module of the unified symptom code
             pass
 
             # Look across the columns of the unified symptoms code reports to determine an overall symmtom level
-            OverallSymptomCode = UnifiedSymptomsCode.max(axis=1) # Maximum Value of reported Symptom is taken as overall level of symptoms
+            overall_symptom_code = unified_symptoms_code.max(axis=1)  # Maximum Value of reported Symptom is taken as overall level of symptoms
 
             # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
             df = population.props
-            indicies_of_alive_person = df[df['is_alive']==True].index
+            indicies_of_alive_person = df[df['is_alive'] == True].index
 
             for person_index in indicies_of_alive_person:
 
                 # Collect up characteristics that will inform whether this person will seek care at thie moment...
                 age = df.at[person_index,'age_years']
-                healthlevel = OverallSymptomCode.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
+                healthlevel = overall_symptom_code.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
                 education = df.at[person_index,'li_ed_lev']
 
                 # Fill-in the regression equation about health-care seeking behaviour
@@ -227,7 +224,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if self.sim.rng.rand() < prob_seek_care:
-                    event = InteractionWithHealthSystem_FirstAppt(self, person_index,'HealthCareSeekingPoll')
+                    event = InteractionWithHealthSystem_FirstAppt(self, person_index, 'HealthCareSeekingPoll')
                     self.sim.schedule_event(event, self.sim.date)
 
 
@@ -310,8 +307,8 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
             print("@@@@ We are now having an health appointment with individual", person_id)
 
             # For each disease module, trigger the on_healthsystem() event
-            RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
-            for module in RegisteredDiseaseModules.values():
+            registered_disease_modules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            for module in registered_disease_modules.values():
                 module.on_first_healthsystem_interaction(person_id, self.cue_type)
 
             # Log the occurance of this interaction with the health system

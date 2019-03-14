@@ -10,13 +10,13 @@ from tlo.methods import healthsystem
 
 
 # Where will output go
-outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
+outputpath = ''
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+resourcefilepath = './resources/'
 
 
 start_date = Date(2010, 1, 1)
@@ -49,7 +49,7 @@ service_availability.loc[1]=['ChronicSyndrome_Treatment',False]
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, Service_Availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
