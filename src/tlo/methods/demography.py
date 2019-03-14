@@ -184,17 +184,18 @@ class Demography(Module):
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
         df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
 
-
         # Assign village, district and region of residence
         popinfo=self.parameters['Village_District_Region_Data']
         prob_in_village=popinfo['Population']/popinfo['Population'].sum()
         village_indx=self.rng.choice(np.arange(len(popinfo)), size=df.is_alive.sum(), p=prob_in_village)
 
-        df['region_of_residence']=popinfo.loc[village_indx,'Region'].values
-        df['district_of_residence']=popinfo.loc[village_indx,'District'].values
-        df['village_of_residence']=popinfo.loc[village_indx,'Village'].values
+        popinfo['Region_ID'] = popinfo['Region'].map({v: k for k, v in enumerate(popinfo['Region'].unique())})
+        popinfo['District_ID'] = popinfo['District'].map({v: k for k, v in enumerate(popinfo['District'].unique())})
+        popinfo['Village_ID'] = popinfo['Village'].map({v: k for k, v in enumerate(popinfo['Village'].unique())})
 
-
+        df.loc[df.is_alive, 'region_of_residence']=popinfo.loc[village_indx,'Region_ID'].values
+        df.loc[df.is_alive, 'district_of_residence']=popinfo.loc[village_indx,'District_ID'].values
+        df.loc[df.is_alive, 'village_of_residence']=popinfo.loc[village_indx,'Village_ID'].values
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
