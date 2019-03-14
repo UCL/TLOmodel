@@ -143,7 +143,7 @@ class ChronicSyndrome(Module):
             self.sim.schedule_event(death_event, df.at[person_index,'mi_scheduled_date_death'])
 
         # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].Register_Disease_Module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
 
         # Register with the HealthSystem the treatment interventions that this module runs
@@ -158,7 +158,7 @@ class ChronicSyndrome(Module):
                                                             'Electricity':True,
                                                             'Water':True})
 
-        self.sim.modules['HealthSystem'].Register_Interventions(footprint_for_treatment)
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
         # get the QALY values that this module will use from the weight database (these codes are just random!)
         self.qalywt_ill = sim.modules['QALY'].get_qaly_weight(87)

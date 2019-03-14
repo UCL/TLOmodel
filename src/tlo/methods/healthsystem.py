@@ -112,19 +112,19 @@ class HealthSystem(Module):
         df = self.sim.population.props
         df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = df.at[mother_id, 'Distance_To_Nearest_HealthFacility']
 
-    def Register_Disease_Module(self, *new_disease_modules):
+    def register_disease_module(self, *new_disease_modules):
         # Register Disease Modules (in order that the health system can trigger things in each module)...
         for module in new_disease_modules:
             assert module.name not in self.RegisteredDiseaseModules, (
                 'A module named {} has already been registered'.format(module.name))
             self.RegisteredDiseaseModules[module.name] = module
 
-    def Register_Interventions(self, footprint_df):
+    def register_interventions(self, footprint_df):
         # Register the interventions that each disease module can offer and will ask for permission to use.
         print('Now registering a new intervention')
         self.RegisteredInterventions = self.RegisteredInterventions.append(footprint_df)
 
-    def Query_Access_To_Service(self, person, service):
+    def query_access_to_service(self, person, service):
         print("Querying whether this person,", person, "will have access to this service:", service, ' ...')
 
         gets_service = False  # Default to fault (this is the variable that is returned to the disease module that does the request)
@@ -224,7 +224,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if self.sim.rng.rand() < prob_seek_care:
-                    event = InteractionWithHealthSystem_FirstAppt(self, person_index, 'HealthCareSeekingPoll')
+                    event = FirstApptHealthSystemInteraction(self, person_index, 'HealthCareSeekingPoll')
                     self.sim.schedule_event(event, self.sim.date)
 
 
@@ -269,7 +269,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
                     })
 
 
-class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
+class EmergencyHealthSystemInteraction(Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
 
@@ -291,7 +291,7 @@ class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
 # --------- TRIGGERING INTERACTIONS WITH THE HEALTH SYSTEM -----
 
 
-class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
+class FirstApptHealthSystemInteraction(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id, cue_type):
         super().__init__(module, person_id=person_id)
@@ -320,7 +320,7 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
                         })
 
 
-class InteractionWithHealthSystem_Followups(Event, IndividualScopeEventMixin):
+class FollowupHealthSystemInteraction(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
