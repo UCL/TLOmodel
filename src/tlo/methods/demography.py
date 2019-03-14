@@ -66,7 +66,7 @@ class Demography(Module):
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.resourcefilepath= resourcefilepath
+        self.resourcefilepath = resourcefilepath
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
@@ -79,7 +79,7 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'Village_District_Region_Data':Parameter(Types.DATA_FRAME,'Census data on the number of person in residence in each district')
+        'Village_District_Region_Data': Parameter(Types.DATA_FRAME, 'Census data on the number of person in residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -107,8 +107,8 @@ class Demography(Module):
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
         'region_of_residence': Property(Types.INT, 'The region in which the person in resident'),       # TODO: We would like a string class definition here (but use INT For now and overwrite)
-        'district_of_residence': Property(Types.INT,'The district in which the person is resident'),
-        'village_of_residence': Property(Types.INT,'The village in which the person is resident')
+        'district_of_residence': Property(Types.INT, 'The district in which the person is resident'),
+        'village_of_residence': Property(Types.INT, 'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -139,7 +139,7 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['Village_District_Region_Data']=pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_PopBreakdownbyVillage.csv'))
+        self.parameters['Village_District_Region_Data'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_PopBreakdownbyVillage.csv'))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -177,7 +177,7 @@ class Demography(Module):
         pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
-        df.is_alive = True
+        df.is_alive: pd.Series = True
 
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
@@ -185,17 +185,17 @@ class Demography(Module):
         df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
 
         # Assign village, district and region of residence
-        popinfo=self.parameters['Village_District_Region_Data']
-        prob_in_village=popinfo['Population']/popinfo['Population'].sum()
-        village_indx=self.rng.choice(np.arange(len(popinfo)), size=df.is_alive.sum(), p=prob_in_village)
+        popinfo = self.parameters['Village_District_Region_Data']
+        prob_in_village = popinfo['Population']/popinfo['Population'].sum()
+        village_indx = self.rng.choice(np.arange(len(popinfo)), size=df.is_alive.sum(), p=prob_in_village)
 
         popinfo['Region_ID'] = popinfo['Region'].map({v: k for k, v in enumerate(popinfo['Region'].unique())})
         popinfo['District_ID'] = popinfo['District'].map({v: k for k, v in enumerate(popinfo['District'].unique())})
         popinfo['Village_ID'] = popinfo['Village'].map({v: k for k, v in enumerate(popinfo['Village'].unique())})
 
-        df.loc[df.is_alive, 'region_of_residence']=popinfo.loc[village_indx,'Region_ID'].values
-        df.loc[df.is_alive, 'district_of_residence']=popinfo.loc[village_indx,'District_ID'].values
-        df.loc[df.is_alive, 'village_of_residence']=popinfo.loc[village_indx,'Village_ID'].values
+        df.loc[df.is_alive, 'region_of_residence'] = popinfo.loc[village_indx, 'Region_ID'].values
+        df.loc[df.is_alive, 'district_of_residence'] = popinfo.loc[village_indx, 'District_ID'].values
+        df.loc[df.is_alive, 'village_of_residence'] = popinfo.loc[village_indx, 'Village_ID'].values
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
@@ -267,9 +267,9 @@ class Demography(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
         # Child's residence is inherited from the mother
-        df.at[child_id,'region_of_residence']=df.at[mother_id,'region_of_residence']
-        df.at[child_id,'district_of_residence']=df.at[mother_id,'district_of_residence']
-        df.at[child_id,'village_of_residence']=df.at[mother_id,'village_of_residence']
+        df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
+        df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
+        df.at[child_id, 'village_of_residence'] = df.at[mother_id, 'village_of_residence']
 
         # Log the birth:
         logger.info('%s|on_birth|%s',
