@@ -1,13 +1,12 @@
 import datetime
-import os
 import logging
+import os
+
 import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, mockitis, chronicsyndrome, qaly
-from tlo.methods import healthsystem
-
+from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
 
 # Where will output go
 outputpath = ''
@@ -65,5 +64,3 @@ fh.flush()
 
 # %% read the results
 # output = parse_log_file(logfile)
-
-
