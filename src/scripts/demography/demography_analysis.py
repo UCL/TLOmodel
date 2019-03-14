@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -10,18 +11,18 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
 
-# Where will output go
-outputpath = '/Users/tbh03/Dropbox (SPH Imperial College)/TLO Model Output/'
+# Where will output go - by default, wherever this script is run
+outputpath = ''
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-resourcefile_demography = '/Users/tbh03/PycharmProjects/TLOmodel/tests/resources/demography.xlsx'
+# assume Python console is started in the top-leve TLOModel directory
+resourcefile_demography = 'resources/Demography_WorkingFile_Complete.xlsx'
 
 
 # %% Run the Simulation
-
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2050, 1, 1)
@@ -31,7 +32,7 @@ popsize = 1000
 sim = Simulation(start_date=start_date)
 
 # this block of code is to capture the output to file
-logfile = dirpath + 'LogFile' + datestamp  +'.log'
+logfile = outputpath + 'LogFile' + datestamp + '.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -49,8 +50,10 @@ sim.simulate(end_date=end_date)
 # this will make sure that the logging file is complete
 fh.flush()
 
+
 # %% read the results
 output = parse_log_file(logfile)
+
 
 # %% Plot Population Size Over time:
 
@@ -81,8 +84,6 @@ plt.savefig(outputpath + 'PopSize' + datestamp + '.pdf')
 plt.show()
 
 
-
-
 # %% Population Pyramid in 2015
 
 # Make Dateframe of the relevant output:
@@ -92,31 +93,32 @@ pop_f_df = output['tlo.methods.demography']['age_range_f']
 pop_m_df = output['tlo.methods.demography']['age_range_m']
 
 # create mask for the 2015 and 2045 results:
-m2015 = ( (pd.to_datetime(pop_f_df['date']) >= Date(2015, 1, 1)) & (pd.to_datetime(pop_f_df['date']) < Date(2016, 1, 1)) )
-m2045 = ( (pd.to_datetime(pop_f_df['date']) >= Date(2045, 1, 1)) & (pd.to_datetime(pop_f_df['date']) < Date(2046, 1, 1)) )
-
+m2015 = ((pd.to_datetime(pop_f_df['date']) >= Date(2015, 1, 1)) &
+         (pd.to_datetime(pop_f_df['date']) < Date(2016, 1, 1)))
+m2045 = ((pd.to_datetime(pop_f_df['date']) >= Date(2045, 1, 1)) &
+         (pd.to_datetime(pop_f_df['date']) < Date(2046, 1, 1)))
 
 # Extract the results for just 2015, and trim off the first two columns
-ModelOutput_Women_2015=(np.asarray((pop_f_df.loc[m2015]).iloc[:,1:22])).flatten()
-ModelOutput_Men_2015=(np.asarray((pop_m_df.loc[m2015]).iloc[:,1:22])).flatten()
-ModelOutput_Women_2045=(np.asarray((pop_f_df.loc[m2045]).iloc[:,1:22])).flatten()
-ModelOutput_Men_2045=(np.asarray((pop_m_df.loc[m2045]).iloc[:,1:22])).flatten()
+ModelOutput_Women_2015 = (np.asarray((pop_f_df.loc[m2015]).iloc[:, 1:22])).flatten()
+ModelOutput_Men_2015 = (np.asarray((pop_m_df.loc[m2015]).iloc[:, 1:22])).flatten()
+ModelOutput_Women_2045 = (np.asarray((pop_f_df.loc[m2045]).iloc[:, 1:22])).flatten()
+ModelOutput_Men_2045 = (np.asarray((pop_m_df.loc[m2045]).iloc[:, 1:22])).flatten()
 
-# Trim off the last three columns (ages 90-94, 95-99, 100+) and replace the last column with the sum of the last four columns in the original output
-ModelOutput_Women_2015_trimmed=ModelOutput_Women_2015[0:18]
-ModelOutput_Women_2015_trimmed[17]=sum(ModelOutput_Women_2015[18:21])
+# Trim off the last three columns (ages 90-94, 95-99, 100+) and replace the last column with the
+# sum of the last four columns in the original output
+ModelOutput_Women_2015_trimmed = ModelOutput_Women_2015[0:18]
+ModelOutput_Women_2015_trimmed[17] = sum(ModelOutput_Women_2015[18:21])
 
-ModelOutput_Men_2015_trimmed=ModelOutput_Men_2015[0:18]
-ModelOutput_Men_2015_trimmed[17]=sum(ModelOutput_Men_2015[18:21])
+ModelOutput_Men_2015_trimmed = ModelOutput_Men_2015[0:18]
+ModelOutput_Men_2015_trimmed[17] = sum(ModelOutput_Men_2015[18:21])
 
-ModelOutput_Women_2045_trimmed=ModelOutput_Women_2045[0:18]
-ModelOutput_Women_2045_trimmed[17]=sum(ModelOutput_Women_2045[18:21])
+ModelOutput_Women_2045_trimmed = ModelOutput_Women_2045[0:18]
+ModelOutput_Women_2045_trimmed[17] = sum(ModelOutput_Women_2045[18:21])
 
-ModelOutput_Men_2045_trimmed=ModelOutput_Men_2045[0:18]
-ModelOutput_Men_2045_trimmed[17]=sum(ModelOutput_Men_2045[18:21])
+ModelOutput_Men_2045_trimmed = ModelOutput_Men_2045[0:18]
+ModelOutput_Men_2045_trimmed[17] = sum(ModelOutput_Men_2045[18:21])
 
-
-#TODO: the age-group labels should be picked up in the log-file making process
+# TODO: the age-group labels should be picked up in the log-file making process
 Age_Group_Labels = ["0-4",
                     "5-9",
                     "10-14",
@@ -153,19 +155,19 @@ tab = df.pivot_table(values="value", index=["gender", "agegrp"], aggfunc=np.sum)
 Data_Women_2045 = np.asarray(tab[tab.index.get_level_values('gender') == 'female']).flatten()
 Data_Men_2045 = np.asarray(tab[tab.index.get_level_values('gender') == 'male']).flatten()
 
-# Traditional Populaiton Pyramid
+# Traditional Populaiton Pyramid: Model Only
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-y = np.arange(ModelOutput_Men_2015.size)
-axes[0][0].barh(y, ModelOutput_Women_2015 / ModelOutput_Women_2015.sum(),
+y = np.arange(len(Age_Group_Labels))
+axes[0][0].barh(y, ModelOutput_Women_2015_trimmed / ModelOutput_Women_2015_trimmed.sum(),
                 align='center', color='red', zorder=10)
 axes[0][0].set(title='Women, 2015')
-axes[0][1].barh(y, ModelOutput_Men_2015/ ModelOutput_Men_2015.sum(),
+axes[0][1].barh(y, ModelOutput_Men_2015_trimmed / ModelOutput_Men_2015_trimmed.sum(),
                 align='center', color='blue', zorder=10)
 axes[0][1].set(title='Men, 2015')
-axes[1][0].barh(y, ModelOutput_Women_2045 / ModelOutput_Women_2045.sum(),
+axes[1][0].barh(y, ModelOutput_Women_2045_trimmed / ModelOutput_Women_2045_trimmed.sum(),
                 align='center', color='red', zorder=10)
 axes[1][0].set(title='Women, 2045')
-axes[1][1].barh(y, ModelOutput_Men_2045 / ModelOutput_Men_2045.sum(),
+axes[1][1].barh(y, ModelOutput_Men_2045_trimmed / ModelOutput_Men_2045_trimmed.sum(),
                 align='center', color='blue', zorder=10)
 axes[1][1].set(title='Men, 2045')
 axes[0][0].invert_xaxis()
@@ -181,22 +183,24 @@ for ax in axes.flat:
 
 fig.tight_layout()
 fig.subplots_adjust(wspace=0.09)
-plt.savefig(outputpath  + 'PopPyramidDataOnly' + datestamp + '.pdf')
+plt.savefig(outputpath + 'PopPyramidModelOnly' + datestamp + '.pdf')
 plt.show()
 
+# Model Vs Data Pop Pyramid
+
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-y = np.arange(ModelOutput_Men_2015.size)
-axes[0][0].plot(y, ModelOutput_Women_2015/ ModelOutput_Women_2015.sum())
+y = np.arange(len(Age_Group_Labels))
+axes[0][0].plot(y, ModelOutput_Women_2015_trimmed / ModelOutput_Women_2015_trimmed.sum())
 axes[0][0].plot(y, Data_Women_2015 / Data_Women_2015.sum())
 axes[0][0].set(title='Women, 2015')
 axes[0][0].legend(['Model', 'Data'])
-axes[0][1].plot(y, ModelOutput_Men_2015.flatten() / ModelOutput_Men_2015.flatten().sum())
+axes[0][1].plot(y, ModelOutput_Men_2015_trimmed / ModelOutput_Men_2015_trimmed.sum())
 axes[0][1].plot(y, Data_Men_2015.flatten() / Data_Men_2015.flatten().sum())
 axes[0][1].set(title='Men, 2015')
-axes[1][0].plot(y, ModelOutput_Women_2045.flatten() / ModelOutput_Women_2045.flatten().sum())
+axes[1][0].plot(y, ModelOutput_Women_2045_trimmed / ModelOutput_Women_2045_trimmed.sum())
 axes[1][0].plot(y, Data_Women_2045.flatten() / Data_Women_2045.flatten().sum())
 axes[1][0].set(title='Women, 2045')
-axes[1][1].plot(y, ModelOutput_Men_2045.flatten() / ModelOutput_Men_2045.flatten().sum())
+axes[1][1].plot(y, ModelOutput_Men_2045_trimmed / ModelOutput_Men_2045_trimmed.sum())
 axes[1][1].plot(y, Data_Men_2045.flatten() / Data_Men_2045.flatten().sum())
 axes[1][1].set(title='Men, 2045')
 axes[1][0].set(xticks=y, xticklabels=Age_Group_Labels)
@@ -212,7 +216,6 @@ plt.savefig(outputpath + 'PopPyramid_ModelVsData' + datestamp + '.pdf')
 plt.show()
 
 
-
 # %% Plots births ....
 
 births_df = output['tlo.methods.demography']['on_birth']
@@ -223,6 +226,7 @@ plt.ylabel('Age of Mother')
 plt.savefig(outputpath + 'Births' + datestamp + '.pdf')
 plt.show()
 
+
 # %% Plots deaths ...
 
 deaths_df = output['tlo.methods.demography']['death']
@@ -232,5 +236,3 @@ plt.xlabel('Year')
 plt.ylabel('Age at Death')
 plt.savefig(outputpath + 'Deaths' + datestamp + '.pdf')
 plt.show()
-
-
