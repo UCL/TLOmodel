@@ -234,20 +234,20 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
     # It commissions Interactions with the Health System for persons based location (and other variables)
     # in a different manner to HealthCareSeeking process
 
-    def __init__(self, module, type, indicies):
+    def __init__(self, module, outreach_type, indicies):
         super().__init__(module)
 
         print("@@@@@ Outreach event being created!!!! @@@@@@")
-        print("@@@ type: ", type, indicies)
+        print("@@@ type: ", outreach_type, indicies)
 
-        self.type = type
+        self.outreach_type = outreach_type
         self.indicies = indicies
 
     def apply(self, population):
 
         print("@@@@@ Outreach event running now @@@@@@")
 
-        if self.type == 'this_disease_only':
+        if self.outreach_type == 'this_disease_only':
             # Schedule a first appointment for each person for this disease only
             for person_index in self.indicies:
 
@@ -265,7 +265,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
         # Log the occurance of the outreach event
         logger.info('%s|outreach_event|%s', self.sim.date,
                     {
-                        'type': self.type
+                        'type': self.outreach_type
                     })
 
 
