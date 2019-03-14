@@ -28,7 +28,7 @@ class HealthSystem(Module):
         if service_availability is None:
             service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
 
-        self.store_ServiceUse={
+        self.store_ServiceUse = {
             'Skilled Birth Attendance': []
         }
         self.Service_Availabilty = service_availability
@@ -110,7 +110,7 @@ class HealthSystem(Module):
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
-        df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = df.at[mother_id,'Distance_To_Nearest_HealthFacility']
+        df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = df.at[mother_id, 'Distance_To_Nearest_HealthFacility']
 
     def Register_Disease_Module(self, *new_disease_modules):
         # Register Disease Modules (in order that the health system can trigger things in each module)...
@@ -145,16 +145,16 @@ class HealthSystem(Module):
         needed = self.RegisteredInterventions.loc[self.RegisteredInterventions['Name'] == service]
 
         # Look-up what health facilities this person has access to:
-        village = self.sim.population.props.at[person,'village_of_residence']
+        village = self.sim.population.props.at[person, 'village_of_residence']
         hf = self.parameters['Master_Facility_List']
-        local_facilities = hf.loc[hf['Village']==village]
+        local_facilities = hf.loc[hf['Village'] == village]
         local_facilities_idx = local_facilities['Facility_ID'].values
 
         # Sum capacity across the facilities to which persons in this village have access
         available_nurse_time = 0
         available_doctor_time = 0
         for lf_id in local_facilities_idx:
-            available_nurse_time += self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse'].values[0]
+            available_nurse_time += self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'CurrentUse'].values[0]
             available_doctor_time += self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0]
 
         # See if there is enough capacity
@@ -169,13 +169,13 @@ class HealthSystem(Module):
 
         # Log the occurance of this request for services
         logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
-                        {
-                            'person_id': person,
-                            'service': service,
-                            'policy_allows': policy_allows,
-                            'enough_capacity': enough_capacity,
-                            'gets_service': gets_service
-                        })
+                    {
+                        'person_id': person,
+                        'service': service,
+                        'policy_allows': policy_allows,
+                        'enough_capacity': enough_capacity,
+                        'gets_service': gets_service
+                    })
 
         return gets_service
 
@@ -210,14 +210,14 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
             df = population.props
-            indicies_of_alive_person = df[df['is_alive'] == True].index
+            indicies_of_alive_person = df[df.is_alive].index
 
             for person_index in indicies_of_alive_person:
 
                 # Collect up characteristics that will inform whether this person will seek care at thie moment...
-                age = df.at[person_index,'age_years']
+                age = df.at[person_index, 'age_years']
                 healthlevel = overall_symptom_code.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
-                education = df.at[person_index,'li_ed_lev']
+                education = df.at[person_index, 'li_ed_lev']
 
                 # Fill-in the regression equation about health-care seeking behaviour
                 prob_seek_care = min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2)
@@ -247,20 +247,20 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
         print("@@@@@ Outreach event running now @@@@@@")
 
-        if self.type=='this_disease_only':
+        if self.type == 'this_disease_only':
             # Schedule a first appointment for each person for this disease only
             for person_index in self.indicies:
 
-                if self.sim.population.props.at[person_index,'is_alive']:
-                    self.module.on_first_healthsystem_interaction(person_index,'OutreachEvent_ThisDiseaseOnly')
+                if self.sim.population.props.at[person_index, 'is_alive']:
+                    self.module.on_first_healthsystem_interaction(person_index, 'OutreachEvent_ThisDiseaseOnly')
 
         else:
             # Schedule a first appointment for each person for all disease
             for person_index in self.indicies:
                 if self.sim.population.props.at[person_index, 'is_alive']:
-                    RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
-                    for module in RegisteredDiseaseModules.values():
-                        module.on_first_healthsystem_interaction(person_index,'OutreachEvent_AllDiseases')
+                    registered_disease_modules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+                    for module in registered_disease_modules.values():
+                        module.on_first_healthsystem_interaction(person_index, 'OutreachEvent_AllDiseases')
 
         # Log the occurance of the outreach event
         logger.info('%s|outreach_event|%s', self.sim.date,
@@ -278,7 +278,7 @@ class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
             # The on_healthsystem_interaction function is called only for the module that called for the EmergencyCare
 
             print('@@ EMERGENCY: I have been called by', self.module, 'to act on person', person_id)
-            self.module.on_first_healthsystem_interaction(person_id,'Emergency')
+            self.module.on_first_healthsystem_interaction(person_id, 'Emergency')
 
             # Log the occurance of this interaction with the health system
 
@@ -303,7 +303,7 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        if df.at[person_id,'is_alive']:
+        if df.at[person_id, 'is_alive']:
             print("@@@@ We are now having an health appointment with individual", person_id)
 
             # For each disease module, trigger the on_healthsystem() event
@@ -312,11 +312,12 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
                 module.on_first_healthsystem_interaction(person_id, self.cue_type)
 
             # Log the occurance of this interaction with the health system
-            logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s', self.sim.date,
-                    {
-                        'person_id': person_id,
-                        'cue_type': self.cue_type
-                    })
+            logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s',
+                        self.sim.date,
+                        {
+                            'person_id': person_id,
+                            'cue_type': self.cue_type
+                        })
 
 
 class InteractionWithHealthSystem_Followups(Event, IndividualScopeEventMixin):
@@ -327,7 +328,7 @@ class InteractionWithHealthSystem_Followups(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        if df.at[person_id,'is_alive']:
+        if df.at[person_id, 'is_alive']:
             # Use this interaction type for persons once they are in care for monitoring and follow-up for a specific disease
             print("in a follow-up appoinntment")
 
