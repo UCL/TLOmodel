@@ -3,178 +3,174 @@ This module stands in for the "Health System" in the current implementation of t
 It is used to control access to interventions
 It will be replaced by the Health Care Seeking Behaviour Module and the
 """
-import pandas as pd
 import logging
+
+import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 class HealthSystem(Module):
     """
     Requests for access to particular services are lodged here.
     """
 
-    def __init__(self, name=None, resourcefilepath=None, Service_Availability=pd.DataFrame(data=[],columns=['Service','Available'])):
+    def __init__(self, name=None,
+                 resourcefilepath=None,
+                 Service_Availability=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        if Service_Availability is None:
+            Service_Availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
 
         self.store_ServiceUse={
             'Skilled Birth Attendance': []
         }
-        self.Service_Availabilty=Service_Availability
+        self.Service_Availabilty = Service_Availability
 
         self.RegisteredDiseaseModules = {}
 
-        self.RegisteredInterventions=pd.DataFrame()
-
+        self.RegisteredInterventions = pd.DataFrame()
 
         print('----------------------------------------------------------------------')
         print("Setting up the Health System With the Following Service Availabilty: ")
         print(Service_Availability)
         print('----------------------------------------------------------------------')
 
+    PARAMETERS = {
+        'Probability_Skilled_Birth_Attendance':
+            Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
+        'Master_Facility_List':
+            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook')
+    }
 
-    PARAMETERS = {'Probability_Skilled_Birth_Attendance': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
-                  'Master_Facility_List':Parameter(Types.DATA_FRAME,'Imported Master Facility List workbook')}
-
-    PROPERTIES = {'Distance_To_Nearest_HealthFacility': Property(Types.REAL,'The distance for each person to their nearest clinic (of an type)')}
-
+    PROPERTIES = {
+        'Distance_To_Nearest_HealthFacility':
+            Property(Types.REAL, 'The distance for each person to their nearest clinic (of an type)')
+    }
 
     def read_parameters(self, data_folder):
 
         self.parameters['Master_Facility_List']=pd.read_csv(self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
-
 
         # Establish the MasterCapacitiesList
         # (Maybe this will become imported, or maybe it will stay being generated here)
 
         hf = self.parameters['Master_Facility_List']
 
-        self.HEALTH_SYSTEM_RESOURCES = {'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']), # Minutes of work time per month
-                                    'Doctor_Time':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# Minutes of work time per month
-                                    'Electricity':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse']),# available: yes/no
-                                    'Water':pd.DataFrame(index=[hf['Facility_ID']],columns=['Capacity','CurrentUse'])}       # available: yes/no
+        self.HEALTH_SYSTEM_RESOURCES = {
+            # Minutes of work time per month
+            'Nurse_Time': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
+
+            # Minutes of work time per month
+            'Doctor_Time': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
+
+            # available: yes/no
+            'Electricity': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse']),
+
+            # available: yes/no
+            'Water': pd.DataFrame(index=[hf['Facility_ID']], columns=['Capacity', 'CurrentUse'])
+        }
 
         # Fill in some simple patterns for now
-        #Water: False in outreach and Health post, True otherwise
-        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse']=0
+        # Water: False in outreach and Health post, True otherwise
+        self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['CurrentUse'] = 0
         self.HEALTH_SYSTEM_RESOURCES['Nurse_Time']['Capacity'] = 1000
 
-        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse']=0
+        self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['CurrentUse'] = 0
         self.HEALTH_SYSTEM_RESOURCES['Doctor_Time']['Capacity'] = 500
 
-        self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse']=False
-        self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] =True
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['CurrentUse'] = False
+        self.HEALTH_SYSTEM_RESOURCES['Electricity']['Capacity'] = True
 
-        self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse']=False
-        self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] =True
-
+        self.HEALTH_SYSTEM_RESOURCES['Water']['CurrentUse'] = False
+        self.HEALTH_SYSTEM_RESOURCES['Water']['Capacity'] = True
 
     def initialise_population(self, population):
-
         df = population.props
 
         # Assign Distance_To_Nearest_HealthFacility'
         # For now, let this be a random number, but in future it will be properly informed
         # Note that this characteritic is inherited from mother to child.
-
-        df['Distance_To_Nearest_HealthFacility']=self.sim.rng.randn(len(df))
-
-        pass
+        df['Distance_To_Nearest_HealthFacility'] = self.sim.rng.randn(len(df))
 
     def initialise_simulation(self, sim):
-
-        sim.schedule_event(HealthCareSeekingPoll(self), sim.date) #Launch the healthcare seeking poll
+        # Launch the healthcare seeking poll
+        sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
 
         # Check that people can find their health facilities:
-        pop=self.sim.population.props
-        hf=self.parameters['Master_Facility_List']
+        pop = self.sim.population.props
+        hf = self.parameters['Master_Facility_List']
 
         for person_id in pop.index:
-            my_village=pop.at[person_id, 'village_of_residence']
-            my_health_facilities=hf.loc[hf['Village']==my_village]
-
-
+            my_village = pop.at[person_id, 'village_of_residence']
+            my_health_facilities = hf.loc[hf['Village'] == my_village]
 
     def on_birth(self, mother_id, child_id):
-
         df = self.sim.population.props
-        df.at[child_id,'Distance_To_Nearest_HealthFacility']=df.at[mother_id,'Distance_To_Nearest_HealthFacility']
-
-
+        df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = df.at[mother_id,'Distance_To_Nearest_HealthFacility']
 
     def Register_Disease_Module(self, *NewDiseaseModule):
-
         # Register Disease Modules (in order that the health system can trigger things in each module)...
-
         for module in NewDiseaseModule:
             assert module.name not in self.RegisteredDiseaseModules, (
                 'A module named {} has already been registered'.format(module.name))
             self.RegisteredDiseaseModules[module.name] = module
 
-
-    def Register_Interventions(self,footprint_df):
-
+    def Register_Interventions(self, footprint_df):
         # Register the interventions that each disease module can offer and will ask for permission to use.
-
         print('Now registering a new intervention')
-        self.RegisteredInterventions=self.RegisteredInterventions.append(footprint_df)
+        self.RegisteredInterventions = self.RegisteredInterventions.append(footprint_df)
 
-
-    def Query_Access_To_Service(self,person,service):
-
-
+    def Query_Access_To_Service(self, person, service):
         print("Querying whether this person,", person, "will have access to this service:", service, ' ...')
 
-        GetsService=False # Default to fault (this is the variable that is returned to the disease module that does the request)
-
-
+        GetsService = False  # Default to fault (this is the variable that is returned to the disease module that does the request)
 
         # 1) Check if policy allows the offering of this treatment
-        PolicyAllows=False # default to False
+        PolicyAllows = False  # default to False
+
         try:
             # Overwrite with the boolean value in the look-up table provided by the user, if a match can be found in the table for the service that is requested
-            PolicyAllows=self.Service_Availabilty.loc[self.Service_Availabilty['Service']==service,'Available'].values[0]
+            PolicyAllows = self.Service_Availabilty.loc[self.Service_Availabilty['Service'] == service, 'Available'].values[0]
         except:
             pass
 
-
-
         # 2) Check capacitiy
-        EnoughCapacity=False # Default to False unless it can be proved there is capacity
+        EnoughCapacity = False  # Default to False unless it can be proved there is capacity
 
         # Look-up resources for the requested service:
-        needed=self.RegisteredInterventions.loc[self.RegisteredInterventions['Name']==service]
+        needed = self.RegisteredInterventions.loc[self.RegisteredInterventions['Name'] == service]
 
         # Look-up what health facilities this person has access to:
-        village=self.sim.population.props.at[person,'village_of_residence']
+        village = self.sim.population.props.at[person,'village_of_residence']
         hf = self.parameters['Master_Facility_List']
-        local_facilities=hf.loc[hf['Village']==village]
+        local_facilities = hf.loc[hf['Village']==village]
         local_facilities_idx = local_facilities['Facility_ID'].values
 
         # Sum capacity across the facilities to which persons in this village have access
-        available_Nurse_Time=0
-        available_Doctor_Time=0
+        available_Nurse_Time = 0
+        available_Doctor_Time = 0
         for lf_id in local_facilities_idx:
             available_Nurse_Time+=self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Nurse_Time'].loc[lf_id,'CurrentUse'].values[0]
             available_Doctor_Time+= self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] - self.HEALTH_SYSTEM_RESOURCES['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0]
 
         # See if there is enough capacity
         if (needed.Nurse_Time.values < available_Nurse_Time) and (needed.Doctor_Time.values < available_Doctor_Time):
-            EnoughCapacity=True
+            EnoughCapacity = True
 
-            #... and impose the "footprint"
-            #TODO: We need to know how the footprint is defined in order to be able to impose it here.
-
-
+            # ... and impose the "footprint"
+            # TODO: We need to know how the footprint is defined in order to be able to impose it here.
 
         if PolicyAllows and EnoughCapacity:
-            GetsService=True
+            GetsService = True
 
-
-         # Log the occurance of this request for services
+        # Log the occurance of this request for services
         logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
                         {
                             'person_id': person,
@@ -184,14 +180,11 @@ class HealthSystem(Module):
                             'gets_service': GetsService
                         })
 
-
         return GetsService
 
 
-
-
-
 # --------- FORMS OF HEALTH-CARE SEEKING -----
+
 
 class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
         # This event is occuring regularly at 3-monthly intervals
@@ -206,38 +199,36 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # 1) Work out the overall unified symptom code for all the differet diseases (and taking maxmium of them)
 
-            UnifiedSymptomsCode=pd.DataFrame()
+            UnifiedSymptomsCode = pd.DataFrame()
 
             # Ask each module to update and report-out the symptoms it is currently causing on the unified symptomology scale:
-            RegisteredDiseaseModules=self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
             for module in RegisteredDiseaseModules.values():
-                out=module.query_symptoms_now()
-                UnifiedSymptomsCode=pd.concat([UnifiedSymptomsCode, out], axis=1) # each column of this dataframe gives the reports from each module of the unified symptom code
+                out = module.query_symptoms_now()
+                UnifiedSymptomsCode = pd.concat([UnifiedSymptomsCode, out], axis=1) # each column of this dataframe gives the reports from each module of the unified symptom code
             pass
 
             # Look across the columns of the unified symptoms code reports to determine an overall symmtom level
             OverallSymptomCode = UnifiedSymptomsCode.max(axis=1) # Maximum Value of reported Symptom is taken as overall level of symptoms
 
-
             # 2) For each individual, examine symptoms and other circumstances, and trigger a Health System Interaction if required
-            df=population.props
+            df = population.props
             indicies_of_alive_person = df[df['is_alive']==True].index
 
             for person_index in indicies_of_alive_person:
 
                 # Collect up characteristics that will inform whether this person will seek care at thie moment...
-                age=df.at[person_index,'age_years']
-                healthlevel=OverallSymptomCode.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
-                education=df.at[person_index,'li_ed_lev']
+                age = df.at[person_index,'age_years']
+                healthlevel = OverallSymptomCode.at[person_index]  # TODO: check that this is inheriting the correct index (pertainng to populaiton.props)
+                education = df.at[person_index,'li_ed_lev']
 
                 # Fill-in the regression equation about health-care seeking behaviour
                 prob_seek_care = min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2)
 
                 # determine if there will be health-care contact and schedule if so
-                if (self.sim.rng.rand() < prob_seek_care) :
-                    event=InteractionWithHealthSystem_FirstAppt(self,person_index,'HealthCareSeekingPoll')
+                if self.sim.rng.rand() < prob_seek_care:
+                    event = InteractionWithHealthSystem_FirstAppt(self, person_index,'HealthCareSeekingPoll')
                     self.sim.schedule_event(event, self.sim.date)
-
 
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
@@ -246,15 +237,14 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
     # It commissions Interactions with the Health System for persons based location (and other variables)
     # in a different manner to HealthCareSeeking process
 
-    def __init__(self, module,type, indicies):
+    def __init__(self, module, type, indicies):
         super().__init__(module)
 
         print("@@@@@ Outreach event being created!!!! @@@@@@")
         print("@@@ type: ", type, indicies)
 
-        self.type=type
-        self.indicies=indicies
-
+        self.type = type
+        self.indicies = indicies
 
     def apply(self, population):
 
@@ -281,6 +271,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
                         'type': self.type
                     })
 
+
 class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
@@ -300,14 +291,14 @@ class InteractionWithHealthSystem_Emergency(Event, IndividualScopeEventMixin):
                         })
 
 
-
 # --------- TRIGGERING INTERACTIONS WITH THE HEALTH SYSTEM -----
+
 
 class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
 
-    def __init__(self, module, person_id,cue_type):
+    def __init__(self, module, person_id, cue_type):
         super().__init__(module, person_id=person_id)
-        self.cue_type=cue_type
+        self.cue_type = cue_type
 
     def apply(self, person_id):
         # This is a FIRST meeting between the person and the health system
@@ -321,7 +312,7 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
             # For each disease module, trigger the on_healthsystem() event
             RegisteredDiseaseModules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
             for module in RegisteredDiseaseModules.values():
-                module.on_first_healthsystem_interaction(person_id,self.cue_type)
+                module.on_first_healthsystem_interaction(person_id, self.cue_type)
 
             # Log the occurance of this interaction with the health system
             logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s', self.sim.date,
@@ -331,10 +322,7 @@ class InteractionWithHealthSystem_FirstAppt(Event, IndividualScopeEventMixin):
                     })
 
 
-
-
-
-class InteractionWithHealthSystem_Followups(Event,IndividualScopeEventMixin):
+class InteractionWithHealthSystem_Followups(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
