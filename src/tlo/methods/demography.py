@@ -79,7 +79,9 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'Village_District_Region_Data': Parameter(Types.DATA_FRAME, 'Census data on the number of person in residence in each district')
+        'Village_District_Region_Data': Parameter(Types.DATA_FRAME,
+                                                  'Census data on the number of persons in '
+                                                  'residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -91,7 +93,8 @@ class Demography(Module):
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
+        'date_of_last_pregnancy': Property(Types.DATE,
+                                           'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
                                   categories=['not using',
@@ -106,7 +109,9 @@ class Demography(Module):
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
-        'region_of_residence': Property(Types.INT, 'The region in which the person in resident'),       # TODO: We would like a string class definition here (but use INT For now and overwrite)
+
+        # TODO: We would like a string class definition here (but use INT For now and overwrite)
+        'region_of_residence': Property(Types.INT, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.INT, 'The district in which the person is resident'),
         'village_of_residence': Property(Types.INT, 'The village in which the person is resident')
     }
@@ -119,7 +124,10 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(os.path.join(self.resourcefilepath, 'ResourceFile_DemographicData.xlsx'), sheet_name=None)
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'ResourceFile_DemographicData.xlsx'),
+                                 sheet_name=None)
+
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
@@ -139,7 +147,9 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['Village_District_Region_Data'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_PopBreakdownbyVillage.csv'))
+        self.parameters['Village_District_Region_Data'] = \
+            pd.read_csv(os.path.join(self.resourcefilepath,
+                                     'ResourceFile_PopBreakdownbyVillage.csv'))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -182,20 +192,25 @@ class Demography(Module):
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
-        df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
+
+        # we can't use np.nan because that casts the series into a float
+        df.loc[df.is_alive, 'mother_id'] = -1
 
         # Assign village, district and region of residence
-        popinfo = self.parameters['Village_District_Region_Data']
-        prob_in_village = popinfo['Population']/popinfo['Population'].sum()
-        village_indx = self.rng.choice(np.arange(len(popinfo)), size=df.is_alive.sum(), p=prob_in_village)
+        region_info = self.parameters['Village_District_Region_Data']
+        prob_in_village = region_info['Population']/region_info['Population'].sum()
+        village_indx = self.rng.choice(region_info.index, size=df.is_alive.sum(), p=prob_in_village)
 
-        popinfo['Region_ID'] = popinfo['Region'].map({v: k for k, v in enumerate(popinfo['Region'].unique())})
-        popinfo['District_ID'] = popinfo['District'].map({v: k for k, v in enumerate(popinfo['District'].unique())})
-        popinfo['Village_ID'] = popinfo['Village'].map({v: k for k, v in enumerate(popinfo['Village'].unique())})
+        def get_mapping(list_of_words: pd.Series):
+            return {v: k for k, v in enumerate(list_of_words.unique())}
 
-        df.loc[df.is_alive, 'region_of_residence'] = popinfo.loc[village_indx, 'Region_ID'].values
-        df.loc[df.is_alive, 'district_of_residence'] = popinfo.loc[village_indx, 'District_ID'].values
-        df.loc[df.is_alive, 'village_of_residence'] = popinfo.loc[village_indx, 'Village_ID'].values
+        region_info['Region_ID'] = region_info['Region'].map(get_mapping(region_info['Region']))
+        region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
+        region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
+
+        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region_ID'].values
+        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District_ID'].values
+        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village_ID'].values
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
