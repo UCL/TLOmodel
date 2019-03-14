@@ -6,6 +6,7 @@ population structure' worksheet within to initialise the age & sex distribution 
 """
 import logging
 import math
+import os
 from collections import defaultdict
 
 import numpy as np
@@ -118,7 +119,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(self.resourcefilepath+'ResourceFile_DemographicData.xlsx', sheet_name=None)
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath, 'ResourceFile_DemographicData.xlsx'), sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
@@ -138,9 +139,7 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['Village_District_Region_Data']=pd.read_csv(self.resourcefilepath+'ResourceFile_PopBreakdownbyVillage.csv')
-
-
+        self.parameters['Village_District_Region_Data']=pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_PopBreakdownbyVillage.csv'))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
