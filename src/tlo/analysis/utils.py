@@ -105,7 +105,7 @@ def parse_output(list_of_log_lines):
                     columns = ['col_%d' % x for x in range(0, len(i['object']))]
                 else:
                     # create column names from the keys of the dictionary
-                    columns = list(i['object'].key())
+                    columns = list(i['object'].keys())
                 columns.insert(0, 'date')
                 o[i['logger']][i['key']] = pd.DataFrame(columns=columns)
 
