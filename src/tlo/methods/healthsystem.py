@@ -149,12 +149,8 @@ class HealthSystem(Module):
         # 1) Check if policy allows the offering of this treatment
         policy_allows = False  # default to False
 
-        try:
-            # Overwrite with the boolean value in the look-up table provided by the user,
-            # if a match can be found in the table for the service that is requested
-            policy_allows = sa.loc[sa['Service'] == service, 'Available'].values[0]
-        except Exception:
-            pass
+        if service in sa.Service.values:
+            policy_allows = sa.at[sa['Service'] == service, 'Available']
 
         # 2) Check capacitiy
         enough_capacity = False  # Default to False unless it can be proved there is capacity
