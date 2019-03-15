@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import healthsystem
 from tlo.methods.demography import InstantaneousDeath
 

@@ -1,12 +1,12 @@
 """
 A skeleton template for disease methods.
 """
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 
 class ChronicSyndrome(Module):
@@ -350,4 +350,3 @@ class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         hascs_total = (df['cs_has_cs'] & df['is_alive']).sum()
         proportion_infected = hascs_total / df['is_alive'].sum()
-
