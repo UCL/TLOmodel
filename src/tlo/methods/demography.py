@@ -150,7 +150,7 @@ class Demography(Module):
         # get a subset of the rows from the interpolated population worksheet
         intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
 
-        # get the probability of occurrance for each sex+age range in the population
+        # get the probability of occurrence for each sex+age range in the population
         intpop['probability'] = intpop.value / intpop.value.sum()
 
         # calculate the month range interval for age ranges which are exactly 1 year

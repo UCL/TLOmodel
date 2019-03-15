@@ -69,7 +69,9 @@ class hiv(Module):
         'prob_mtct_breastfeeding':
             Parameter(Types.REAL, 'probability of mother to child transmission during breastfeeding'),
         'prob_mtct_breastfeeding_incident':
-            Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during breastfeeding')
+            Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during breastfeeding'),
+        'fsw_transition':
+            Parameter(Types.REAL, 'probability of returning from sex work to low sexual risk')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -142,6 +144,8 @@ class hiv(Module):
             self.param_list.loc['prob_mtct_breastfeeding', 'Value1']
         params['prob_mtct_breastfeeding_treated'] = \
             self.param_list.loc['prob_mtct_breastfeeding_treated', 'Value1']
+        params['fsw_transition'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
         # TODO: put beta in worksheet for default
 
         if self.beta_calib:
@@ -191,7 +195,7 @@ class hiv(Module):
 
 
     def fsw(self, population):
-        """ Assign female sex work to sample of women and change sexual risk 
+        """ Assign female sex work to sample of women and change sexual risk
         """
 
         df = population.props
@@ -245,7 +249,7 @@ class hiv(Module):
 
         df.loc[infected_idx, 'hiv_inf'] = True
 
-        # for date since infection use a reverse weibull distribution
+        # for time since infection use a reverse weibull distribution
         # hold the index of all adults with hiv
         inf_adult = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15)]
         times = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(inf_adult)) * \
@@ -255,11 +259,11 @@ class hiv(Module):
         df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
 
         # TODO: include baseline children's prevalence
-        #  they don't transmit but have long term health implications of early infection
         child_infected_idx = df.index[df.is_alive & (df.age_years < 15) &
                                       (self.rng.random_sample(size=len(df)) < params['child_hiv_prev2010'])]
 
         # children are infected at time of birth
+        # TODO: cluster this by mother's hiv status??
         df.loc[child_infected_idx, 'hiv_date_inf'] = df.loc[child_infected_idx, 'date_of_birth']
 
     def initial_pop_deaths_children(self, population):
@@ -490,6 +494,43 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(death, time_death)  # schedule the death
 
 
+class hiv_fsw_event(RegularEvent, PopulationScopeEventMixin):
+    """ apply risk of fsw to female pop and transition back to non-fsw
+    """
+    # TODO: implement fsw event
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
+        now = self.sim.date
+
+        # transition those already fsw back to low risk
+        remove = df[df.is_alive & (df.sex == 'F') & df.fsw].sample(
+            frac=params['fsw_transition']).index
+
+        df.loc[remove, 'hiv_sexual_risk_group'] = 'low'
+
+        # recruit new fsw, higher weighting for previous sex work?
+        # TODO: should propensity for sex work be clustered by wealth / education / location?
+        # check if any data to inform this
+        # new fsw recruited to replace removed fsw -> constant proportion over time
+
+        # current proportion of F 15-49 classified as fsw
+        fsw = len(df[df.is_alive & df.hiv_sexual_risk_group == 'fsw'])
+        eligible = len(df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))])
+
+        prop = fsw / eligible
+
+        if prop < params['proportion_female_sex_workers']:
+            # number new fsw needed
+            recruit = round((prop - params['proportion_female_sex_workers']) * eligible)
+            fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
+                n=recruit).index
+            df.loc[fsw_new, 'hiv_sexual_risk_group'] = 'sex_work'
+
+
 class DeathEventHIV(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
@@ -510,8 +551,6 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
         self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
         self.module.store_DeathsLog['DeathEvent_Age'].append(df.age_years[individual_id])
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
-
-
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
