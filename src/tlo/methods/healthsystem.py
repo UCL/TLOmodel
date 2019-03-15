@@ -41,7 +41,9 @@ class HealthSystem(Module):
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
-        logger.info(service_availability)
+        print_table = service_availability.to_string().splitlines()
+        for line in print_table:
+            logger.info(line)
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
