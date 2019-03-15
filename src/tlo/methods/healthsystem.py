@@ -26,7 +26,7 @@ class HealthSystem(Module):
         self.resourcefilepath = resourcefilepath
 
         if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
+            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'], dtype=['object', bool])
 
         self.store_ServiceUse = {
             'Skilled Birth Attendance': []
@@ -67,35 +67,30 @@ class HealthSystem(Module):
 
         hf = self.parameters['Master_Facility_List']
 
-        hsr = dict()
         # Fill in some simple patterns for now
+
+        # Minutes of work time per month
+        nurse_time = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
+        nurse_time.append({'CurrentUse': 0, 'Capacity': 1000}, ignore_index=True)
+
+        # Minutes of work time per month
+        doctor_time = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
+        doctor_time.append({'CurrentUse': 0, 'Capacity': 500}, ignore_index=True)
+
         # Water: False in outreach and Health post, True otherwise
-
-        # Minutes of work time per month
-        hsr['Nurse_Time'] = pd.DataFrame(index=[hf['Facility_ID']],
-                                         columns=['Capacity', 'CurrentUse'])
-        hsr['Nurse_Time']['CurrentUse'] = 0
-        hsr['Nurse_Time']['Capacity'] = 1000
-
-        # Minutes of work time per month
-        hsr['Doctor_Time'] = pd.DataFrame(index=[hf['Facility_ID']],
-                                          columns=['Capacity', 'CurrentUse']),
-        hsr['Doctor_Time']['CurrentUse'] = 0
-        hsr['Doctor_Time']['Capacity'] = 500
+        # available: yes/no
+        electricity = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
+        electricity.append({'CurrentUse': False, 'Capacity': True}, ignore_index=True)
 
         # available: yes/no
-        hsr['Electricity'] = pd.DataFrame(index=[hf['Facility_ID']],
-                                          columns=['Capacity', 'CurrentUse']),
-        hsr['Electricity']['CurrentUse'] = False
-        hsr['Electricity']['Capacity'] = True
+        water = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
+        water.append({'CurrentUse': False, 'Capacity': True}, ignore_index=True)
 
-        # available: yes/no
-        hsr['Water'] = pd.DataFrame(index=[hf['Facility_ID']],
-                                    columns=['Capacity', 'CurrentUse'])
-        hsr['Water']['CurrentUse'] = False
-        hsr['Water']['Capacity'] = True
-
-        self.health_system_resources = hsr
+        self.health_system_resources = dict()
+        self.health_system_resources['Nurse_Time'] = nurse_time
+        self.health_system_resources['Doctor_Time'] = doctor_time
+        self.health_system_resources['Electricity'] = electricity
+        self.health_system_resources['Water'] = water
 
     def initialise_population(self, population):
         df = population.props
@@ -150,7 +145,7 @@ class HealthSystem(Module):
         policy_allows = False  # default to False
 
         if service in sa.Service.values:
-            policy_allows = sa.at[sa['Service'] == service, 'Available']
+            policy_allows = sa.loc[sa['Service'] == service, 'Available'].values[0]
 
         # 2) Check capacitiy
         enough_capacity = False  # Default to False unless it can be proved there is capacity
@@ -203,7 +198,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
         # This event is occuring regularly at 3-monthly intervals
         # It asseess who has symptoms that are sufficient to bring them into care
 
-        def __init__(self, module):
+        def __init__(self, module: HealthSystem):
             super().__init__(module, frequency=DateOffset(months=3))
 
         def apply(self, population):
@@ -217,7 +212,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Ask each module to update and report-out the symptoms it is currently causing on the
             # unified symptomology scale:
-            registered_disease_modules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            registered_disease_modules = self.module.registered_disease_modules
             for module in registered_disease_modules.values():
                 out = module.query_symptoms_now()
                 # each column of this dataframe gives the reports from each module of the
@@ -233,7 +228,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
             # 2) For each individual, examine symptoms and other circumstances,
             # and trigger a Health System Interaction if required
             df = population.props
-            indicies_of_alive_person = df[df.is_alive].index
+            indicies_of_alive_person = df.index[df.is_alive]
 
             for person_index in indicies_of_alive_person:
 
@@ -250,7 +245,7 @@ class HealthCareSeekingPoll(RegularEvent, PopulationScopeEventMixin):
 
                 # determine if there will be health-care contact and schedule if so
                 if self.sim.rng.rand() < prob_seek_care:
-                    event = FirstApptHealthSystemInteraction(self, person_index,
+                    event = FirstApptHealthSystemInteraction(self.module, person_index,
                                                              'HealthCareSeekingPoll')
                     self.sim.schedule_event(event, self.sim.date)
 
@@ -286,7 +281,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
             for person_index in self.indicies:
                 if self.sim.population.props.at[person_index, 'is_alive']:
                     registered_disease_modules = (
-                        self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+                        self.sim.modules['HealthSystem'].registered_disease_modules
                     )
                     for module in registered_disease_modules.values():
                         module.on_first_healthsystem_interaction(person_index,
@@ -341,7 +336,7 @@ class FirstApptHealthSystemInteraction(Event, IndividualScopeEventMixin):
             logger.debug("Health appointment with individual %d", person_id)
 
             # For each disease module, trigger the on_healthsystem() event
-            registered_disease_modules = self.sim.modules['HealthSystem'].RegisteredDiseaseModules
+            registered_disease_modules = self.module.registered_disease_modules
             for module in registered_disease_modules.values():
                 module.on_first_healthsystem_interaction(person_id, self.cue_type)
 

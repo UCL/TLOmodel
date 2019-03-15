@@ -50,13 +50,10 @@ service_availability.loc[1] = ['ChronicSyndrome_Treatment', False]
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability))
+sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
-
-# NB.This relies on the health system module having been registered first.
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
-
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
