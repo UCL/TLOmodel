@@ -103,7 +103,7 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
         disease_modules=self.sim.modules['HealthSystem'].RegisteredDiseaseModules
 
         for module in disease_modules.values():
-            out=module.report_QALY_Values()
+            out=module.report_qaly_values()
             disease_specific_qaly_values = pd.concat([disease_specific_qaly_values , out],
                                             axis=1)  # each column of this dataframe gives the reports from each module the HealthState
 
