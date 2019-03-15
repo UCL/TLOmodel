@@ -54,7 +54,7 @@ class HealthSystem(Module):
     PROPERTIES = {
         'Distance_To_Nearest_HealthFacility':
             Property(Types.REAL,
-                     'The distance for each person to their nearest clinic (of an type)')
+                     'The distance for each person to their nearest clinic (of any type)')
     }
 
     def read_parameters(self, data_folder):
