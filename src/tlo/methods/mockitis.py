@@ -113,19 +113,19 @@ class Mockitis(Module):
         df = population.props  # a shortcut to the dataframe storing data for individiuals
 
         # Set default for properties
-        df[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
-        df[df.is_alive, 'mi_status'].values[:] = 'N'  # default: never infected
-        df[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
-        df[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
-        df[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
-        df[df.is_alive, 'mi_specific_symptoms'] = 'none'
-        df[df.is_alive, 'mi_unified_symptom_code'] = 0
+        df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
+        df.loc[df.is_alive, 'mi_status'].values[:] = 'N'  # default: never infected
+        df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'mi_specific_symptoms'] = 'none'
+        df.loc[df.is_alive, 'mi_unified_symptom_code'] = 0
 
         alive_count = df.is_alive.sum()
 
         # randomly selected some individuals as infected
         initial_infected = self.parameters['initial_prevalence']
-        df[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
+        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
         df.loc[df.mi_is_infected, 'mi_status'] = 'C'
 
         # Assign time of infections and dates of scheduled death for all those infected
@@ -175,7 +175,7 @@ class Mockitis(Module):
 
         # add the death event of infected individuals
         # schedule the mockitis death event
-        people_who_will_die = df[df.mi_is_infected].index
+        people_who_will_die = df.index[df.mi_is_infected]
         for person_id in people_who_will_die:
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
@@ -258,7 +258,7 @@ class Mockitis(Module):
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        df['mi_unified_symptom_code'] = df['mi_specific_symptoms'].map({
+        df.loc[df.is_alive, 'mi_unified_symptom_code'] = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
             'none': 0,
             'mild sneezing': 1,
             'coughing and irritable': 2,
@@ -294,7 +294,7 @@ class Mockitis(Module):
 
         p = self.parameters
 
-        health_values = df['mi_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
             'none': 0,
             'mild sneezing': p['qalywt_mild_sneezing'],
             'coughing and irritable': p['qalywt_coughing'],
@@ -410,17 +410,17 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        infected_total = df[df.is_alive, 'mi_is_infected'].sum()
+        infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
         proportion_infected = infected_total / len(df)
 
-        mask: pd.Series = (df[df.is_alive, 'mi_date_infected'] >
+        mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
                            self.sim.date - DateOffset(months=self.repeat))
         infected_in_last_month = mask.sum()
-        mask = (df[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
         cured_in_last_month = mask.sum()
 
         counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        counts.update(df[df.is_alive, 'mi_status'].value_counts().to_dict())
+        counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
 
         logger.info('%s|summary|%s', self.sim.date,
                     {

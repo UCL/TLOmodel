@@ -113,17 +113,17 @@ class ChronicSyndrome(Module):
         p = self.parameters
 
         # Set default for properties
-        df['cs_has_cs'] = False  # default: no individuals infected
-        df['cs_status'].values[:] = 'N'  # default: never infected
-        df['cs_date_acquired'] = pd.NaT  # default: not a time
-        df['cs_scheduled_date_death'] = pd.NaT  # default: not a time
-        df['cs_date_cure'] = pd.NaT  # default: not a time
-        df['cs_specific_symptoms'] = 'none'
-        df['cs_unified_symptom_code'] = 0
+        df.loc[df.is_alive, 'cs_has_cs'] = False  # default: no individuals infected
+        df.loc[df.is_alive, 'cs_status'].values[:] = 'N'  # default: never infected
+        df.loc[df.is_alive, 'cs_date_acquired'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'cs_scheduled_date_death'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'cs_date_cure'] = pd.NaT  # default: not a time
+        df.loc[df.is_alive, 'cs_specific_symptoms'] = 'none'
+        df.loc[df.is_alive, 'cs_unified_symptom_code'] = 0
 
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
-        df[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p['initial_prevalance']
+        df.loc[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p['initial_prevalence']
         df.loc[df.cs_has_cs, 'cs_status'] = 'C'
 
         # Assign time of infections and dates of scheduled death for all those infected
@@ -173,7 +173,7 @@ class ChronicSyndrome(Module):
 
         # # add the death event of individuals with ChronicSyndrome
         df = sim.population.props  # a shortcut to the dataframe storing data for individiuals
-        indicies_of_persons_who_will_die = df[df.cs_has_cs].index
+        indicies_of_persons_who_will_die = df.index[df.cs_has_cs]
         for person_index in indicies_of_persons_who_will_die:
             death_event = ChronicSyndromeDeathEvent(self, person_index)
             self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
@@ -227,7 +227,7 @@ class ChronicSyndrome(Module):
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        df[df.is_alive, 'cs_unified_symptom_code'] = df[df.is_alive, 'cs_specific_symptoms'].map(
+        df.loc[df.is_alive, 'cs_unified_symptom_code'] = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
             {
                 'none': 0,
                 'extreme illness': 4
@@ -259,7 +259,7 @@ class ChronicSyndrome(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values = df['cs_specific_symptoms'].map(
+        health_values = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
             {
                 'none': 0,
                 'extreme illness': self.parameters['qalyw_ill']
@@ -377,5 +377,5 @@ class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        hascs_total = (df['cs_has_cs'] & df['is_alive']).sum()
-        proportion_infected = hascs_total / df['is_alive'].sum()
+        hascs_total = (df.is_alive & df.cs_has_cs).sum()
+        proportion_infected = hascs_total / df.is_alive.sum()
