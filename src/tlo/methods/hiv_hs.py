@@ -123,7 +123,7 @@ class health_system(Module):
 
         df['hiv_ever_tested'] = False  # default: no individuals tested
         df['hiv_date_tested'] = pd.NaT
-        df['hiv_number_hiv_tests'] = 0
+        df['hiv_number_tests'] = 0
         df['hiv_diagnosed'] = False
         df['hiv_on_art'].values[:] = '0'
         df['hiv_date_art_start'] = pd.NaT
@@ -214,14 +214,6 @@ class health_system(Module):
         idx_f = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'F')].sample(
             frac=(1 - self.parameters['vls_f'])).index
         df.loc[idx_f, 'hiv_on_art'] = '1'  # change to non=adherent
-
-
-
-
-
-
-
-
 
 
     def initialise_simulation(self, sim):
@@ -366,13 +358,19 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         treatment_rate.loc[(df.age_years < 15) & df.is_alive] = curr_treatment_child
 
         # probability of treatment
-        treatment_index = df.index[
+        treat_idx = df.index[
             (random_draw < treatment_rate) & df.is_alive & (df.hiv_on_art == '0') & df.hiv_diagnosed]
         # print('treatment_index', treatment_index)
 
-        # TODO: proportion good / poor adherence
-        df.loc[treatment_index, 'hiv_on_art'] = '2'
-        df.loc[treatment_index, 'hiv_date_art_start'] = now
+        # assign all as good adherence then select the poor adherence proportion m/f
+        df.loc[treat_idx, 'hiv_on_art'] = '2'
+        df.loc[treat_idx, 'hiv_date_art_start'] = now
+
+        poor_adh_m = df[(df.hiv_date_art_start == now) & (df.sex == 'M')].sample(frac=(1 - params['vls_m'])).index
+        df.loc[poor_adh_m, 'hiv_on_art'] = '1'
+
+        poor_adh_f = df[(df.hiv_date_art_start == now) & (df.sex == 'F')].sample(frac=(1-params['vls_f'])).index
+        df.loc[poor_adh_f, 'hiv_on_art'] = '1'
 
 
 class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
