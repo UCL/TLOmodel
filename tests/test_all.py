@@ -4,7 +4,7 @@ import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.methods import demography, antiretroviral_therapy, hiv, hiv_hs, tb_hs_engagement, tb, \
+from tlo.methods import demography, lifestyle, hiv, hiv_hs, tb_hs_engagement, tb, \
     male_circumcision, hiv_behaviour_change
 
 
@@ -15,16 +15,16 @@ from tlo.methods import demography, antiretroviral_therapy, hiv, hiv_hs, tb_hs_e
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-# path_hiv = 'P:/Documents/TLO/Method_HIV.xlsx'
-# path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
-# path_hs = 'P:/Documents/TLO/Method_ART.xlsx'
-# path_tb = 'P:/Documents/TLO/Method_TB.xlsx'
+path_hiv = 'Z:/Thanzi la Onse/HIV/Method_HIV.xlsx'
+path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
+path_hs = 'Z:/Thanzi la Onse/HIV/Method_ART.xlsx'
+path_tb = 'Z:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # for laptop
-path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+# path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
+# path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
+# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
+# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 2, 1)
@@ -38,12 +38,12 @@ def simulation():
 
     #  call modules
     core_module = demography.Demography(workbook_path=path_dem)
+    lifestyle_module = lifestyle.Lifestyle()
     hiv_module = hiv.hiv(workbook_path=path_hiv, par_est=params[0])
     tb_module = tb.tb_baseline(workbook_path=path_tb)
 
     hs_module = hiv_hs.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
                                      par_est3=params[3], par_est4=params[4])
-    art_module = antiretroviral_therapy.art(workbook_path=path_hs)
 
     circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
     behavioural_module = hiv_behaviour_change.BehaviourChange()
@@ -51,8 +51,8 @@ def simulation():
 
     #  register modules
     sim.register(core_module)
+    sim.register(lifestyle_module)
     sim.register(hiv_module)
-    sim.register(art_module)
     sim.register(hs_module)
     sim.register(circumcision_module)
     sim.register(behavioural_module)
@@ -60,6 +60,7 @@ def simulation():
     sim.register(hs_tb_module)
 
     logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 
     return sim
 
@@ -81,9 +82,6 @@ hiv_deaths = simulation.modules['hiv'].store['HIV_scheduled_deaths']
 number_tested = simulation.modules['health_system'].store['Number_tested_adult']
 number_treated = simulation.modules['health_system'].store['Number_treated_adult']
 testing_dates = simulation.modules['health_system'].store['Time']
-
-deaths_art = simulation.modules['art'].store['Number_dead_art']
-time_deaths_art = simulation.modules['art'].store['Time']
 
 time_circum = simulation.modules['male_circumcision'].store['Time']
 prop_circum = simulation.modules['male_circumcision'].store['proportion_circumcised']
@@ -111,12 +109,12 @@ ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
 # hiv deaths
-ax = plt.subplot(322)  # numrows, numcols, fignum
-plt.plot(time, hiv_deaths)
-plt.plot(time_deaths_art, deaths_art)
-plt.legend(['AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
-ax.set_xticklabels([])
-plt.ylabel('Number of death')
+# ax = plt.subplot(322)  # numrows, numcols, fignum
+# plt.plot(time, hiv_deaths)
+# plt.plot(time_deaths_art, deaths_art)
+# plt.legend(['AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
+# ax.set_xticklabels([])
+# plt.ylabel('Number of death')
 
 # testing hiv/tb
 plt.subplot(323)

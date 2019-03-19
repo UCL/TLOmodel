@@ -132,7 +132,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 80% of smear tested active cases will be diagnosed
         # this is lower for HIV+ (higher prop of extrapulmonary tb
-        tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & ~df.has_hiv]
+        tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & ~df.hiv_inf]
         diagnosed_idx = pd.Series(np.random.choice([True, False], size=len(tested_idx),
                                                    p=[params['prop_smear_positive'],
                                                       (1 - params['prop_smear_positive'])]),
@@ -140,7 +140,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         idx = tested_idx[diagnosed_idx]
 
         tested_idx_hiv = df.index[
-            (df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & df.has_hiv]
+            (df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & df.hiv_inf]
 
         diagnosed_idx_hiv = pd.Series(np.random.choice([True, False], size=len(tested_idx_hiv),
                                                        p=[params['prop_smear_positive_hiv'],
@@ -167,10 +167,10 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         for person in undiagnosed_idx:
             refer_xpert = tbXpertTest(self.module, individual_id=person)
             # TODO: take absolute value so no negatives
-            referral_time = np.random.normal(loc=(2/12), scale=(0.5/12), size=1)  # in years
+            referral_time = abs(np.random.normal(loc=(2/12), scale=(0.5/12), size=1)) # in years
             referral_time_yrs = pd.to_timedelta(referral_time[0] * 365.25, unit='d')
             future_referral_time = now + referral_time_yrs
-            print('future_referral_time', now, referral_time_yrs, future_referral_time)
+            # print('future_referral_time', now, referral_time_yrs, future_referral_time)
             self.sim.schedule_event(refer_xpert, future_referral_time)
 
 
@@ -185,7 +185,7 @@ class tbXpertTest(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
         now = self.sim.date
-        print('xpert date now', now)
+        # print('xpert date now', now)
 
         # prob of receiving xpert test
         if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'tb_diagnosed'] and (
@@ -313,7 +313,7 @@ class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # randomly sample from >=15 yrs with HIV
-        ipt_sample = df[(df.age_years >= 15) & (~df.has_hiv)].sample(
+        ipt_sample = df[(df.age_years >= 15) & (~df.hiv_inf)].sample(
             frac=0.5, replace=False).index
 
         df.loc[ipt_sample, 'on_ipt'] = True
