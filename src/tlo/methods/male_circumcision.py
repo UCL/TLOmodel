@@ -129,9 +129,6 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """comments...
-        """
-        # run this event every year
         self.repeat = 6
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
