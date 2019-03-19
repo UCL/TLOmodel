@@ -60,15 +60,17 @@ class hiv(Module):
             Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
         'rel_infectiousness_acute':
             Parameter(Types.REAL, 'relative infectiousness during acute stage'),
-        'prob_mtct':
+        'prob_mtct_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission'),
         'prob_mtct_treated':
             Parameter(Types.REAL, 'probability of mother to child transmission, mother on ART'),
-        'prob_mtct_incident':
+        'prob_mtct_incident_preg':
             Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during pregnancy'),
-        'prob_mtct_breastfeeding':
+        'prob_mtct_incident_post':
+            Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during pregnancy'),
+        'prob_mtct_breastfeeding_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission during breastfeeding'),
-        'prob_mtct_breastfeeding_incident':
+        'prob_mtct_breastfeeding_treated':
             Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during breastfeeding'),
         'fsw_transition':
             Parameter(Types.REAL, 'probability of returning from sex work to low sexual risk')
@@ -82,7 +84,7 @@ class hiv(Module):
         'hiv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
         'hiv_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'hiv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
-                                          categories=['low', 'sex_work']),
+                                    categories=['low', 'sex_work']),
         'hiv_mother_inf': Property(Types.BOOL, 'HIV status of mother'),
         'hiv_mother_art': Property(Types.BOOL, 'ART status of mother')
     }
@@ -250,6 +252,7 @@ class hiv(Module):
         df.loc[infected_idx, 'hiv_inf'] = True
 
         # for time since infection use a reverse weibull distribution
+        # this is scaled by current age - should be scaled by age at infection!!
         # hold the index of all adults with hiv
         inf_adult = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15)]
         times = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(inf_adult)) * \
@@ -258,13 +261,34 @@ class hiv(Module):
         time_inf = pd.to_timedelta(times * 365.25, unit='d')
         df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
 
-        # TODO: include baseline children's prevalence
-        child_infected_idx = df.index[df.is_alive & (df.age_years < 15) &
-                                      (self.rng.random_sample(size=len(df)) < params['child_hiv_prev2010'])]
+        # baseline children's prevalence from spectrum outputs
+        prevalence = self.hiv_prev.loc[self.hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
 
-        # children are infected at time of birth
+        # merge all susceptible individuals with their hiv probability based on sex and age
+        df_hivprob = df.merge(prevalence, left_on=['age_years', 'sex'],
+
+                              right_on=['age_from', 'sex'],
+
+                              how='left')
+
+        # no prevalence in ages 80+ so fill missing values with 0
+        df_hivprob['prev_prop'] = df_hivprob['prev_prop'].fillna(0)
+
+        assert df_hivprob.prev_prop.isna().sum() == 0  # check there is a probability for every individual
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = self.rng.random_sample(size=len(df_hivprob))
+
+        # probability of hiv > random number, assign has_hiv = True
         # TODO: cluster this by mother's hiv status??
-        df.loc[child_infected_idx, 'hiv_date_inf'] = df.loc[child_infected_idx, 'date_of_birth']
+        # if mother hiv+ at time of birth...
+        hiv_index = df_hivprob.index[df.is_alive & (df_hivprob.prev_prop > random_draw) & df.age_years.between(0, 14)]
+
+        # print(hiv_index)
+
+        df.loc[hiv_index, 'has_hiv'] = True
+        df.loc[hiv_index, 'hiv_date_inf'] = df.loc[hiv_index, 'date_of_birth']
+
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
@@ -380,24 +404,31 @@ class hiv(Module):
         #  transmission during pregnancy / delivery
         random_draw = self.sim.rng.random_sample(size=1)
 
+        #  mother has incident infection during pregnancy, no art
+        if (random_draw < params['prob_mtct_incident_preg']) \
+            and df.at[child_id, 'is_alive'] \
+            and df.at[child_id, 'hiv_mother_inf'] \
+            and (df.at[child_id, 'hiv_mother_art'] != '2') \
+            and (((now - df.at[mother_id, 'hiv_date_inf']) / np.timedelta64(1, 'M')) < 9):
+            df.at[child_id, 'hiv_inf'] = True
+
         # mother not on ART
-        if (random_draw < params['prob_mtct']) and df.at[child_id, 'is_alive'] and df.at[
-            child_id, 'hiv_mother_inf'] and not \
-            df.at[(df.index == child_id) & (df.hiv_mother_art != '2')]:
+        if (random_draw < params['prob_mtct_untreated']) \
+            and df.at[child_id, 'is_alive'] \
+            and df.at[child_id, 'hiv_mother_inf'] \
+            and not df.at[child_id, 'hiv_inf'] \
+            and (df.at[child_id, 'hiv_mother_art'] != '2'):
             df.at[child_id, 'hiv_inf'] = True
 
         #  mother on ART
-        if (random_draw < params['prob_mtct_treated']) and df.at[child_id, 'is_alive'] and df.at[
-            child_id, 'hiv_mother_inf'] and \
-            df.at[(df.index == child_id) & (df.hiv_mother_art == '2')]:
+        if (random_draw < params['prob_mtct_treated']) \
+            and df.at[child_id, 'is_alive'] \
+            and df.at[child_id, 'hiv_mother_inf'] \
+            and not df.at[child_id, 'hiv_inf'] \
+            and (df.at[child_id, 'hiv_mother_art'] == '2'):
             df.at[child_id, 'hiv_inf'] = True
 
-        #  mother has incident infection during pregnancy, no art
-        if (random_draw < params['prob_mtct_incident']) and df.at[child_id, 'is_alive'] and df.at[
-            child_id, 'hiv_mother_inf'] and not \
-            df.at[(df.index == child_id) & (df.hiv_mother_art != '2')] and \
-            (((now - df.at[mother_id, 'hiv_date_inf']) / np.timedelta64(1, 'M')) < 9):
-            df.at[child_id, 'hiv_inf'] = True
+
 
         #  assign deaths dates and schedule death for newly infected infant
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'hiv_inf']:
