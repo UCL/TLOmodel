@@ -398,13 +398,12 @@ class hiv(Module):
             if df.at[(df.index == mother_id) & (df.hiv_on_art == '2')]:
                 df.at[child_id, 'hiv_mother_art'] = True
 
-        # TODO: include risk during breastfeeding period - scheduled event during whole period of exposure
+        ###########################  MTCT  ###########################
 
-        #  MTCT
-        #  transmission during pregnancy / delivery
+        #  TRANSMISSION DURING PREGNANCY / DELIVERY
         random_draw = self.sim.rng.random_sample(size=1)
 
-        #  mother has incident infection during pregnancy, no art
+        #  mother has incident infection during pregnancy, NO ART
         if (random_draw < params['prob_mtct_incident_preg']) \
             and df.at[child_id, 'is_alive'] \
             and df.at[child_id, 'hiv_mother_inf'] \
@@ -412,7 +411,7 @@ class hiv(Module):
             and (((now - df.at[mother_id, 'hiv_date_inf']) / np.timedelta64(1, 'M')) < 9):
             df.at[child_id, 'hiv_inf'] = True
 
-        # mother not on ART
+        # mother has existing infection, mother NOT ON ART
         if (random_draw < params['prob_mtct_untreated']) \
             and df.at[child_id, 'is_alive'] \
             and df.at[child_id, 'hiv_mother_inf'] \
@@ -420,8 +419,26 @@ class hiv(Module):
             and (df.at[child_id, 'hiv_mother_art'] != '2'):
             df.at[child_id, 'hiv_inf'] = True
 
-        #  mother on ART
+        #  mother has existing infection, mother ON ART
         if (random_draw < params['prob_mtct_treated']) \
+            and df.at[child_id, 'is_alive'] \
+            and df.at[child_id, 'hiv_mother_inf'] \
+            and not df.at[child_id, 'hiv_inf'] \
+            and (df.at[child_id, 'hiv_mother_art'] == '2'):
+            df.at[child_id, 'hiv_inf'] = True
+
+        #  TRANSMISSION DURING BREASTFEEDING
+
+        # mother NOT ON ART
+        if (random_draw < params['prob_mtct_breastfeeding_untreated']) \
+            and df.at[child_id, 'is_alive'] \
+            and df.at[child_id, 'hiv_mother_inf'] \
+            and not df.at[child_id, 'hiv_inf'] \
+            and (df.at[child_id, 'hiv_mother_art'] != '2'):
+            df.at[child_id, 'hiv_inf'] = True
+
+        # mother ON ART
+        if (random_draw < params['prob_mtct_breastfeeding_treated']) \
             and df.at[child_id, 'is_alive'] \
             and df.at[child_id, 'hiv_mother_inf'] \
             and not df.at[child_id, 'hiv_inf'] \
