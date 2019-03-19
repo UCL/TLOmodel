@@ -256,7 +256,7 @@ class hiv(Module):
         fsw = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
             frac=self.parameters['proportion_female_sex_workers']).index
 
-        df.loc[fsw, 'hiv_sexual_risk_group'] = 'sex_work'
+        df.loc[fsw, 'hiv_sexual_risk'] = 'sex_work'
 
     def baseline_prevalence(self, population):
         """
@@ -268,6 +268,8 @@ class hiv(Module):
         now = self.sim.date
         df = population.props
         params = self.parameters
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ADULT HIV ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         prevalence = params['hiv_prev_2010']
 
@@ -309,6 +311,8 @@ class hiv(Module):
         time_inf = pd.to_timedelta(times * 365.25, unit='d')
         df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ CHILD HIV ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         # baseline children's prevalence from spectrum outputs
         prevalence = self.hiv_prev.loc[self.hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
 
@@ -331,7 +335,6 @@ class hiv(Module):
         # TODO: cluster this by mother's hiv status??
         # if mother hiv+ at time of birth...
         hiv_index = df_hivprob.index[df.is_alive & (df_hivprob.prev_prop > random_draw) & df.age_years.between(0, 14)]
-
         # print(hiv_index)
 
         df.loc[hiv_index, 'hiv_inf'] = True
@@ -388,7 +391,8 @@ class hiv(Module):
         params = self.parameters
 
         # adults are all those aged >=15
-        hiv_ad = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15)]
+        # TODO: children hiv+ aged >3 have survival draws from adult weibull distr otherwise death date pre-2010
+        hiv_ad = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 3)]
 
         time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(hiv_ad)) * \
                         np.exp(self.log_scale(df.loc[hiv_ad, 'age_years']))
@@ -516,6 +520,7 @@ class hiv(Module):
                 # returns an array not a single value!!
 
             time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
+
             df.at[child_id, 'hiv_date_death'] = now + time_death
 
             # schedule the death event
@@ -541,10 +546,10 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         #  calculate relative infectivity for everyone hiv+
         # infective if: hiv_inf & hiv_on_art = none (0) or poor (1)
         infective = len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art != '2')])
-        print('infective', infective)
+        # print('infective', infective)
         total_pop = len(df[df.is_alive & (df.age_years >= 15)])
         foi = params['beta'] * infective / total_pop
-        print('foi:', foi)
+        # print('foi:', foi)
 
         #  relative risk
         eff_susc = pd.Series(0, index=df.index)
@@ -556,7 +561,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         #  sample using the FOI scaled by relative susceptibility
         newly_infected_index = df.index[(self.sim.rng.random_sample(size=len(df)) < eff_susc)]
-        print('newly_infected_index', newly_infected_index)
+        # print('newly_infected_index', newly_infected_index)
 
         df.loc[newly_infected_index, 'hiv_inf'] = True
         df.loc[newly_infected_index, 'hiv_date_inf'] = now
@@ -666,6 +671,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         date_aids_death = df.loc[df.hiv_inf & df.is_alive, 'hiv_date_death']
         year_aids_death = date_aids_death.dt.year
+        # print('year_aids_death', year_aids_death)
 
         #  this shows the deaths scheduled for this year, including those postponed due to ART
         die = sum(1 for x in year_aids_death if int(x) == now.year)
