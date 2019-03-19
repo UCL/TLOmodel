@@ -117,15 +117,15 @@ class health_system(Module):
         """
         df = population.props
 
-        df['ever_tested'] = False  # default: no individuals tested
-        df['date_tested'] = pd.NaT
-        df['number_hiv_tests'] = 0
+        df['hiv_ever_tested'] = False  # default: no individuals tested
+        df['hiv_date_tested'] = pd.NaT
+        df['hiv_number_hiv_tests'] = 0
         df['hiv_diagnosed'] = False
-        df['on_art'].values[:] = '0'
-        df['date_art_start'] = pd.NaT
-        df['viral_load_test'] = pd.NaT
-        df['on_cotrim'] = False
-        df['date_cotrim'] = pd.NaT
+        df['hiv_on_art'].values[:] = '0'
+        df['hiv_date_art_start'] = pd.NaT
+        df['hiv_viral_load_test'] = pd.NaT
+        df['hiv_on_cotrim'] = False
+        df['hiv_date_cotrim'] = pd.NaT
 
         self.baseline_tested(population)  # allocate baseline art coverage
         self.baseline_art(population)  # allocate baseline art coverage
@@ -135,9 +135,6 @@ class health_system(Module):
         """
         now = self.sim.date
         df = population.props
-
-        # add age to population.props
-        # df_age = pd.merge(df, population.age, left_index=True, right_index=True, how='left')
 
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
@@ -153,12 +150,12 @@ class health_system(Module):
                 df.age_years >= 15)]
 
         # we don't know date tested, assume date = now
-        df.loc[art_index_male | art_index_female, 'ever_tested'] = True
-        df.loc[art_index_male | art_index_female, 'date_tested'] = now
-        df.loc[art_index_male | art_index_female, 'number_hiv_tests'] = 1
+        df.loc[art_index_male | art_index_female, 'hiv_ever_tested'] = True
+        df.loc[art_index_male | art_index_female, 'hiv_date_tested'] = now
+        df.loc[art_index_male | art_index_female, 'hiv_number_tests'] = 1
 
         # outcome of test
-        diagnosed_idx = df.index[df.ever_tested & df.is_alive & df.has_hiv]
+        diagnosed_idx = df.index[df.hiv_ever_tested & df.is_alive & df.hiv_inf]
         df.loc[diagnosed_idx, 'hiv_diagnosed'] = True
 
     def baseline_art(self, population):
@@ -192,11 +189,11 @@ class health_system(Module):
 
         # probability of baseline population receiving art: requirement = hiv_diagnosed
         art_index = df_art.index[
-            (random_draw < df_art.prop_coverage) & df_art.has_hiv & df.hiv_diagnosed & df.is_alive]
+            (random_draw < df_art.prop_coverage) & df_art.hiv_inf & df.hiv_diagnosed & df.is_alive]
         # print('art_index: ', art_index)
 
-        df.loc[art_index, 'on_art'] = True
-        df.loc[art_index, 'date_art_start'] = now
+        df.loc[art_index, 'hiv_on_art'] = '2'
+        df.loc[art_index, 'hiv_date_art_start'] = now
 
     def initialise_simulation(self, sim):
         sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
@@ -213,15 +210,15 @@ class health_system(Module):
         """
         df = self.sim.population.props
 
-        df.at[child_id, 'ever_tested'] = False
-        df.at[child_id, 'date_tested'] = pd.NaT
-        df.at[child_id, 'number_hiv_tests'] = 0
+        df.at[child_id, 'hiv_ever_tested'] = False
+        df.at[child_id, 'hiv_date_tested'] = pd.NaT
+        df.at[child_id, 'hiv_number_tests'] = 0
         df.at[child_id, 'hiv_diagnosed'] = False
-        df.at[child_id, 'on_art'] = False
-        df.at[child_id, 'date_art_start'] = pd.NaT
-        df.at[child_id, 'viral_load_test'] = pd.NaT
-        df.at[child_id, 'on_cotrim'] = False
-        df.at[child_id, 'date_cotrim'] = pd.NaT
+        df.at[child_id, 'hiv_on_art'] = '0'
+        df.at[child_id, 'hiv_date_art_start'] = pd.NaT
+        df.at[child_id, 'hiv_viral_load_test'] = pd.NaT
+        df.at[child_id, 'hiv_on_cotrim'] = False
+        df.at[child_id, 'hiv_date_cotrim'] = pd.NaT
 
 
 class TestingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -255,11 +252,11 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         eff_testing.loc[(df.age_years >= 15) & df.is_alive] = current_testing_rate_adult
         eff_testing.loc[(df.age_years >= 25)] *= params['rr_testing_age25']  # for ages >= 25
         eff_testing.loc[(df.sex == 'F')] *= params['rr_testing_female']  # for females
-        eff_testing.loc[df.ever_tested & ~df.hiv_diagnosed] *= params[
+        eff_testing.loc[df.hiv_ever_tested & ~df.hiv_diagnosed] *= params[
             'rr_testing_previously_negative']  # tested, previously negative
-        eff_testing.loc[df.ever_tested & df.hiv_diagnosed] *= params[
+        eff_testing.loc[df.hiv_ever_tested & df.hiv_diagnosed] *= params[
             'rr_testing_previously_positive']  # tested, previously positive
-        eff_testing.loc[(df.sexual_risk_group == 'high') | (df.sexual_risk_group == 'sex_work')] *= params[
+        eff_testing.loc[(df.hiv_sexual_risk == 'sex_work')] *= params[
             'rr_testing_high_risk']  # for high risk
 
         eff_testing.loc[(df.age_years < 15) & df.is_alive] = current_testing_rate_child
@@ -269,11 +266,11 @@ class TestingEvent(RegularEvent, PopulationScopeEventMixin):
         testing_index = df.index[(random_draw < eff_testing) & df.is_alive]
         # print('testing index', testing_index)
 
-        df.loc[testing_index, 'ever_tested'] = True
-        df.loc[testing_index, 'date_tested'] = now
-        df.loc[testing_index, 'number_hiv_tests'] += 1
+        df.loc[testing_index, 'hiv_ever_tested'] = True
+        df.loc[testing_index, 'hiv_date_tested'] = now
+        df.loc[testing_index, 'hiv_number_tests'] += 1
 
-        diagnosed_index = df.index[(df.date_tested == now) & df.is_alive & df.has_hiv]
+        diagnosed_index = df.index[(df.hiv_date_tested == now) & df.is_alive & df.hiv_inf]
         # print('diagnosed_index: ', diagnosed_index)
 
         df.loc[diagnosed_index, 'hiv_diagnosed'] = True
@@ -301,10 +298,10 @@ class IndividualTesting(Event, IndividualScopeEventMixin):
                1 - params['testing_prob_individual']]):
 
             # probability of HIV testing
-            df.at[individual_id, 'ever_tested'] = True
-            df.at[individual_id, 'date_tested'] = self.sim.date
+            df.at[individual_id, 'hiv_ever_tested'] = True
+            df.at[individual_id, 'hiv_date_tested'] = self.sim.date
 
-            if df.at[individual_id, df.has_hiv]:
+            if df.at[individual_id, df.hiv_inf]:
                 df.at[individual_id, 'hiv_diagnosed'] = True
 
 
@@ -340,13 +337,13 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         treatment_rate.loc[(df.age_years < 15) & df.is_alive] = curr_treatment_child
 
         # probability of treatment
-        treatment_index = df.index[(random_draw < treatment_rate) & df.is_alive & ~df.on_art & df.hiv_diagnosed]
+        treatment_index = df.index[
+            (random_draw < treatment_rate) & df.is_alive & (df.hiv_on_art == '0') & df.hiv_diagnosed]
         # print('treatment_index', treatment_index)
 
-        # TODO: add in here a link to request resources
-
-        df.loc[treatment_index, 'on_art'] = True
-        df.loc[treatment_index, 'date_art_start'] = now
+        # TODO: proportion good / poor adherence
+        df.loc[treatment_index, 'hiv_on_art'] = '2'
+        df.loc[treatment_index, 'hiv_date_art_start'] = now
 
 
 class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
@@ -365,10 +362,10 @@ class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
         # print(vl_times)
 
         # subset pop on ART
-        df_art = df[df.on_art & df.is_alive]
+        df_art = df[(df.hiv_on_art == '2') & df.is_alive]
 
         # extract time on art
-        time_on_art = (now - df_art['date_art_start']) / np.timedelta64(1, 'M')
+        time_on_art = (now - df_art['hiv_date_art_start']) / np.timedelta64(1, 'M')
         time_on_art2 = time_on_art.astype(int)
 
         # request for viral load
@@ -381,7 +378,7 @@ class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
         vl_index = df_art.index[vl_needed & vl_allocated]
         # print('vl_index', vl_index)
 
-        df.loc[vl_index, 'viral_load_test'] = now
+        df.loc[vl_index, 'hiv_viral_load_test'] = now
 
 
 class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -399,8 +396,9 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1. HIV-exposed infants, from 4 weeks to 18 months
-        df_inf = df[df.is_alive & ~df.has_hiv & df.mother_hiv & ~df.on_cotrim & (df.age_exact_years > 0.083) & (
-            df.age_exact_years < 1.5)]
+        df_inf = df[
+            df.is_alive & ~df.hiv_inf & df.hiv_mother_inf & ~df.hiv_on_cotrim & (df.age_exact_years > 0.083) & (
+                df.age_exact_years < 1.5)]
 
         # request for cotrim, dependent on access to health facility / demographic characteristics?
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_inf), p=[1, 0]),
@@ -415,12 +413,12 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         if len(z):
             ct_inf_index = df_inf.index[z]
             # print('ct_inf_index', ct_inf_index)
-            df.loc[ct_inf_index, 'on_cotrim'] = True
-            df.loc[ct_inf_index, 'date_cotrim'] = now
+            df.loc[ct_inf_index, 'hiv_on_cotrim'] = True
+            df.loc[ct_inf_index, 'hiv_date_cotrim'] = now
 
         # 2. HIV+ children <15 years
         df_child = df[
-            df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_exact_years >= 1.5) & (df.age_exact_years < 15)]
+            df.is_alive & df.hiv_inf & ~df.hiv_on_cotrim & (df.age_exact_years >= 1.5) & (df.age_exact_years < 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_child), p=[1, 0]),
                                   index=df_child)
         cotrim_allocated = pd.Series(
@@ -429,11 +427,11 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
             ct_child_index = df_child.index[z]
-            df.loc[ct_child_index, 'on_cotrim'] = True
-            df.loc[ct_child_index, 'date_cotrim'] = now
+            df.loc[ct_child_index, 'hiv_on_cotrim'] = True
+            df.loc[ct_child_index, 'hiv_date_cotrim'] = now
 
         # 3. TB/HIV+ adults
-        df_coinf = df[df.is_alive & df.has_hiv & (df.has_tb == 'Active') & ~df.on_cotrim & (df.age_years >= 15)]
+        df_coinf = df[df.is_alive & df.hiv_inf & (df.has_tb == 'Active') & ~df.hiv_on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
                                   index=df_coinf)
         cotrim_allocated = pd.Series(
@@ -442,11 +440,11 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
             ct_coinf_index = df_coinf.index[z]
-            df.loc[ct_coinf_index, 'on_cotrim'] = True
-            df.loc[ct_coinf_index, 'date_cotrim'] = now
+            df.loc[ct_coinf_index, 'hiv_on_cotrim'] = True
+            df.loc[ct_coinf_index, 'hiv_date_cotrim'] = now
 
         # 4. pregnant women with HIV
-        df_preg = df[df.is_alive & df.has_hiv & df.is_pregnant & ~df.on_cotrim & (df.age_years >= 15)]
+        df_preg = df[df.is_alive & df.hiv_inf & df.is_pregnant & ~df.hiv_on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
                                   index=df_preg)
         cotrim_allocated = pd.Series(np.random.choice([True, False], size=len(df_preg), p=[1, 0]),
@@ -454,11 +452,11 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
             ct_preg_index = df_preg.index[z]
-            df.loc[ct_preg_index, 'on_cotrim'] = True
-            df.loc[ct_preg_index, 'date_cotrim'] = now
+            df.loc[ct_preg_index, 'hiv_on_cotrim'] = True
+            df.loc[ct_preg_index, 'hiv_date_cotrim'] = now
 
         # 5. all adults with HIV
-        df_adult = df[df.is_alive & df.has_hiv & ~df.on_cotrim & (df.age_years >= 15)]
+        df_adult = df[df.is_alive & df.hiv_inf & ~df.hiv_on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_adult), p=[1, 0]),
                                   index=df_adult)
         cotrim_allocated = pd.Series(
@@ -466,8 +464,8 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
         z = [a and b for a, b in zip(cotrim_needed, cotrim_allocated)]
         if len(z):
             ct_adult_index = df_adult.index[z]
-            df.loc[ct_adult_index, 'on_cotrim'] = True
-            df.loc[ct_adult_index, 'date_cotrim'] = now
+            df.loc[ct_adult_index, 'hiv_on_cotrim'] = True
+            df.loc[ct_adult_index, 'hiv_date_cotrim'] = now
 
 
 class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -482,19 +480,19 @@ class HealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        mask = (df.loc[(df.age_years >= 15), 'date_tested'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years >= 15), 'hiv_date_tested'] > self.sim.date - DateOffset(months=self.repeat))
         recently_tested_adult = mask.sum()
 
-        mask = (df.loc[(df.age_years < 15), 'date_tested'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years < 15), 'hiv_date_tested'] > self.sim.date - DateOffset(months=self.repeat))
         recently_tested_child = mask.sum()
 
-        mask = (df.loc[(df.age_years >= 15), 'date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years >= 15), 'hiv_date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
         recently_treated_adult = mask.sum()
 
-        mask = (df.loc[(df.age_years < 15), 'date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years < 15), 'hiv_date_art_start'] > self.sim.date - DateOffset(months=self.repeat))
         recently_treated_child = mask.sum()
 
-        currently_on_art = len(df[df.on_art & df.is_alive])
+        currently_on_art = len(df[(df.hiv_on_art == '2') & df.is_alive])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Number_tested_adult'].append(recently_tested_adult)

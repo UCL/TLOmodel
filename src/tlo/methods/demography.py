@@ -188,7 +188,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
-        df.loc[df.is_alive, 'age_days'] = age_in_days.astype(int)
+        # df.loc[df.is_alive, 'age_days'] = age_in_days.astype(int)
 
         # assign that half the adult population is married (will be done in lifestyle module)
         df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
@@ -273,7 +273,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
         df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
-        df.loc[df.is_alive, 'age_days'] = age_in_days.astype(int)
+        # df.loc[df.is_alive, 'age_days'] = age_in_days.astype(int)
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):

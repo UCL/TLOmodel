@@ -215,8 +215,8 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infection
         # remember event is occurring annually so scale rates accordingly
-        active_hiv_neg = len(df[(df.has_tb == 'Active') & ~df.has_hiv & df.is_alive])
-        active_hiv_pos = len(df[(df.has_tb == 'Active') & df.has_hiv & df.is_alive])
+        active_hiv_neg = len(df[(df.has_tb == 'Active') & ~df.hiv_inf & df.is_alive])
+        active_hiv_pos = len(df[(df.has_tb == 'Active') & df.hiv_inf & df.is_alive])
         uninfected_total = len(df[(df.has_tb == 'Uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
@@ -255,29 +255,29 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
         eff_prob_active_tb.loc[(df.has_tb == 'Latent')] = params['progression_to_active_rate']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
-        hiv_stage1 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) < 3.33)]
+        hiv_stage1 = df.index[df.hiv_inf & (df.has_tb == 'Latent') &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) < 3.33)]
         # print('hiv_stage1', hiv_stage1)
 
-        hiv_stage2 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 3.33) &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) < 6.67)]
+        hiv_stage2 = df.index[df.hiv_inf & (df.has_tb == 'Latent') &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) >= 3.33) &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) < 6.67)]
         # print('hiv_stage2', hiv_stage2)
 
-        hiv_stage3 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 6.67) &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) < 10)]
+        hiv_stage3 = df.index[df.hiv_inf & (df.has_tb == 'Latent') &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) >= 6.67) &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) < 10)]
         # print('hiv_stage3', hiv_stage3)
 
-        hiv_stage4 = df.index[df.has_hiv & (df.has_tb == 'Latent') &
-                              (((now - df.date_hiv_infection).dt.days / 365.25) >= 10)]
+        hiv_stage4 = df.index[df.hiv_inf & (df.has_tb == 'Latent') &
+                              (((now - df.hiv_date_inf).dt.days / 365.25) >= 10)]
         # print('hiv_stage4', hiv_stage4)
 
         eff_prob_active_tb.loc[hiv_stage1] *= params['rr_tb_with_hiv_stages'][0]
         eff_prob_active_tb.loc[hiv_stage2] *= params['rr_tb_with_hiv_stages'][1]
         eff_prob_active_tb.loc[hiv_stage3] *= params['rr_tb_with_hiv_stages'][2]
         eff_prob_active_tb.loc[hiv_stage4] *= params['rr_tb_with_hiv_stages'][3]
-        eff_prob_active_tb.loc[df.on_art] *= params['rr_tb_art']
+        eff_prob_active_tb.loc[df.hiv_on_art == '2'] *= params['rr_tb_art']
         # eff_prob_active_tb.loc[df.is_malnourished] *= params['rr_tb_malnourished']
         # eff_prob_active_tb.loc[df.has_diabetes1] *= params['rr_tb_diabetes1']
         # eff_prob_active_tb.loc[df.high_alcohol] *= params['rr_tb_alcohol']
@@ -333,8 +333,8 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         mortality_rate = pd.Series(0, index=df.index)
-        mortality_rate.loc[(df.has_tb == 'Active') & ~df.has_hiv] = params['tb_mortality_rate']
-        mortality_rate.loc[(df.has_tb == 'Active') & df.has_hiv] = params['tb_mortality_HIV']
+        mortality_rate.loc[(df.has_tb == 'Active') & ~df.hiv_inf] = params['tb_mortality_rate']
+        mortality_rate.loc[(df.has_tb == 'Active') & df.hiv_inf] = params['tb_mortality_HIV']
         # print('mort_rate: ', mortality_rate)
 
         # Generate a series of random numbers, one per individual
@@ -365,7 +365,7 @@ class tb_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         active_tb_total = len(df[(df.has_tb == 'Active') & df.is_alive])
-        coinfected_total = len(df[(df.has_tb == 'Active') & df.has_hiv & df.is_alive])
+        coinfected_total = len(df[(df.has_tb == 'Active') & df.hiv_inf & df.is_alive])
 
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Total_active_tb'].append(active_tb_total)
