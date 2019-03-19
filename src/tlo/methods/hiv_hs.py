@@ -60,7 +60,9 @@ class health_system(Module):
         'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
         'treatment_increase2016': Parameter(Types.REAL,
                                             'increase in treatment rates with eligibility guideline changes'),
-        'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start')
+        'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
+        'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males')
     }
 
     PROPERTIES = {
@@ -94,6 +96,8 @@ class health_system(Module):
         params['rr_testing_age25'] = self.param_list.loc['rr_testing_age25', 'Value1']
         params['testing_increase'] = self.param_list.loc['testing_increase', 'Value1']
         params['treatment_increase2016'] = self.param_list.loc['treatment_increase2016', 'Value1']
+        params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
+        params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -188,12 +192,37 @@ class health_system(Module):
         random_draw = self.sim.rng.random_sample(size=len(df_art))
 
         # probability of baseline population receiving art: requirement = hiv_diagnosed
-        art_index = df_art.index[
-            (random_draw < df_art.prop_coverage) & df_art.hiv_inf & df.hiv_diagnosed & df.is_alive]
+        art_idx_child = df_art.index[
+            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
+            df_art.age_years.between(0, 14)]
         # print('art_index: ', art_index)
+        df.loc[art_idx_child, 'hiv_on_art'] = '2'  # assumes all are adherent at baseline
+        df.loc[art_idx_child, 'hiv_date_art_start'] = now
 
-        df.loc[art_index, 'hiv_on_art'] = '2'
-        df.loc[art_index, 'hiv_date_art_start'] = now
+        art_idx_adult = df_art.index[
+            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
+            df_art.age_years.between(15, 64)]
+
+        df.loc[art_idx_adult, 'hiv_on_art'] = '2'  # assumes all are adherent at baseline
+        df.loc[art_idx_adult, 'hiv_date_art_start'] = now
+
+        # then allocate small proportion to non-adherent category
+        idx_m = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'M')].sample(
+            frac=(1 - self.parameters['vls_m'])).index
+        df.loc[idx_m, 'hiv_on_art'] = '1'  # change to non=adherent
+
+        idx_f = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'F')].sample(
+            frac=(1 - self.parameters['vls_f'])).index
+        df.loc[idx_f, 'hiv_on_art'] = '1'  # change to non=adherent
+
+
+
+
+
+
+
+
+
 
     def initialise_simulation(self, sim):
         sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
