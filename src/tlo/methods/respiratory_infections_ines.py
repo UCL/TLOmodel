@@ -178,7 +178,7 @@ class ChildhoodPneumonia (Module):
         'rr_recovery_severe_pneumonia_treatment_adherence': Parameter(Types.REAL, 'relative rate of recovery from '
                                                                                   'severe pneumonia if incompleted treatment'
                                                                ),
-        'init_prop_resp_infection_status': Parameter(Types.REAL, 'initial proportions in ri_respiratory_infection_status categories '
+        'init_prop_resp_infection_status': Parameter(Types.LIST, 'initial proportions in ri_respiratory_infection_status categories '
                                                                  'for children aged 2-11 months, HIV negative,'
                                                                  'no SAM, no indoor air pollution')
     }
@@ -329,6 +329,8 @@ class ChildhoodPneumonia (Module):
         # create a temporary dataframe called dfx to hold values of probabilities and random draw
         dfx = pd.concat([p_resp_infect_stat, random_draw], axis=1)
         dfx.columns = ['p_pneumonia', 'p_severe_pneumonia', 'random_draw']
+
+        dfx['none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia)
 
         # based on probabilities of being in each category, define cut-offs to determine status from
         # random draw uniform(0,1)
