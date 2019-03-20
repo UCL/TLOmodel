@@ -47,10 +47,11 @@ class HealthSystem(Module):
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
-        'Probability_Skilled_Birth_Attendance':
-            Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
         'Master_Facility_List':
-            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook')
+            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook'),
+        'Village_To_Facility_Mapping':
+            Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities')
+
     }
 
     PROPERTIES = {
@@ -64,8 +65,13 @@ class HealthSystem(Module):
         self.parameters['Master_Facility_List'] = pd.read_csv(
             self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 
+        self.parameters['Village_To_Facility_Mapping']=pd.read_csv(
+            self.resourcefilepath+'ResourceFile_Village_To_Facility_Mapping.csv'
+        )
+
+
         # Establish the MasterCapacitiesList
-        # (Maybe this will become imported, or maybe it will stay being generated here)
+        # (This is where the CHAI data will be imported
 
         hf = self.parameters['Master_Facility_List']
 
@@ -133,8 +139,8 @@ class HealthSystem(Module):
         logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
         self.registered_interventions = self.registered_interventions.append(footprint_df)
 
-    def query_access_to_service(self, person, service):
-        logger.info('Query person %d has access to service %s', person, service)
+    def query_access_to_service(self, person_id, service):
+        logger.info('Query person %d has access to service %s', person_id, service)
 
         sa = self.service_availability
         hsr = self.health_system_resources
@@ -156,9 +162,12 @@ class HealthSystem(Module):
         needed = self.registered_interventions.loc[self.registered_interventions['Name'] == service]
 
         # Look-up what health facilities this person has access to:
-        village = self.sim.population.props.at[person, 'village_of_residence']
-        hf = self.parameters['Master_Facility_List']
-        local_facilities = hf.loc[hf['Village'] == village]
+        village = self.sim.population.props.at[person_id, 'village_of_residence']
+
+        vill_to_fac_map = self.parameters['Village_To_Facility_Mapping']
+
+        local_facilities = vill_to_fac_map.loc[vill_to_fac_map['Village'] == village]
+
         local_facilities_idx = local_facilities['Facility_ID'].values
 
         # Sum capacity across the facilities to which persons in this village have access

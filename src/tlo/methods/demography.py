@@ -208,9 +208,10 @@ class Demography(Module):
         region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
         region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
 
-        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region_ID'].values
-        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District_ID'].values
-        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village_ID'].values
+
+        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region'].values
+        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
+        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
