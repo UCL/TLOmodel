@@ -221,7 +221,6 @@ class health_system(Module):
             frac=(1 - self.parameters['vls_f'])).index
         df.loc[idx_f, 'hiv_on_art'] = '1'  # change to non=adherent
 
-
     def initialise_simulation(self, sim):
         sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
@@ -372,10 +371,16 @@ class TreatmentEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[treat_idx, 'hiv_on_art'] = '2'
         df.loc[treat_idx, 'hiv_date_art_start'] = now
 
-        poor_adh_m = df[(df.hiv_date_art_start == now) & (df.sex == 'M')].sample(frac=(1 - params['vls_m'])).index
+        poor_adh_c = df[(df.hiv_date_art_start == now) & (df.age_years.between(0, 15))].sample(
+            frac=(1 - params['vls_child'])).index
+        df.loc[poor_adh_c, 'hiv_on_art'] = '1'
+
+        poor_adh_m = df[(df.hiv_date_art_start == now) & (df.sex == 'M') & (df.age_years.between(15, 64))].sample(
+            frac=(1 - params['vls_m'])).index
         df.loc[poor_adh_m, 'hiv_on_art'] = '1'
 
-        poor_adh_f = df[(df.hiv_date_art_start == now) & (df.sex == 'F')].sample(frac=(1-params['vls_f'])).index
+        poor_adh_f = df[(df.hiv_date_art_start == now) & (df.sex == 'F') & (df.age_years.between(1, 64))].sample(
+            frac=(1 - params['vls_f'])).index
         df.loc[poor_adh_f, 'hiv_on_art'] = '1'
 
 
