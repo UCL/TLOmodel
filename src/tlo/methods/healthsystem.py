@@ -245,6 +245,8 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
 
 
+
+
 class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     """
     This is a generic interaction between the person and the health system.
@@ -255,29 +257,33 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     for resources.
     """
 
-    def __init__(self, module, person_id, cue_type):
+    def __init__(self, module, person_id, cue_type=None, disease_specific=None):
         super().__init__(module, person_id=person_id)
         self.cue_type = cue_type
+        self.disease_specific=disease_specific
 
     def apply(self, person_id):
 
         df = self.sim.population.props
 
-        assert self.cue_type # TODO: Check that cue_type is the right format.
-
+        assert self.cue_type!=None # TODO: Check that cue_type is the right format.
+        assert self.disease_specific!=None #TODO: Check that disease_specific is legitimate
 
         if df.at[person_id, 'is_alive']:
 
-            # Confirm availability of health system resources for this interaction
+            # 1. Confirm availability of health system resources for this interaction
 
-            # Impose the footprint of this health system resource use
+            # 2. Impose the footprint of this health system resource use
 
-            # For each disease module, trigger the on_healthsystem_interaction() event
+            # 3. For each disease module, trigger the on_healthsystem_interaction() event
+
             registered_disease_modules = self.module.registered_disease_modules
             for module in registered_disease_modules.values():
-                module.on_first_healthsystem_interaction(person_id, cue_type=self.cue_type)
+                module.on_first_healthsystem_interaction(person_id,
+                                                         cue_type=self.cue_type,
+                                                         disease_specific=self.disease_specific)
 
-            # Log the occurrence of this interaction with the health system
+            # 4. Log the occurrence of this interaction with the health system
             logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s',
                         self.sim.date,
                         {
