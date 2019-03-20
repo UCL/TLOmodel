@@ -58,7 +58,7 @@
 56,TITI,Mkoma II,Jeremiah Mwang'amba,Kameme,Chitipa,North ,33.033951,-9.417247,WGS 84,Community Health Worker,MoH,Kameme,Functional,56
 57,NKHANGA,Sylas,Jeremiah Mwang'amba,Kameme,Chitipa,North ,32.999635,-9.382978,WGS 84,Community Health Worker,MoH,Kameme,Functional,57
 58,NKHANGA,Sylas,Jeremiah Mwang'amba,Kameme,Chitipa,North ,32.999635,-9.382978,WGS 84,Community Health Worker,MoH,Kameme,Functional,58
-59,IYANGA,Iyanga ,Jeremiah Mwang'amba,Kameme,Chitipa,North ,33.054429,-9.432683,WGS 84,Community Health Worker,MoH,Kameme,Non Functional,59
+59,IYANGA,Iyanga,Jeremiah Mwang'amba,Kameme,Chitipa,North ,33.054429,-9.432683,WGS 84,Community Health Worker,MoH,Kameme,Non Functional,59
 60,NAVITENGO,Navitengo,Navitengo I,Kameme,Chitipa,North ,33.157507,-9.503415,WGS 84,Community Health Worker,MoH,Kameme,Functional,60
 61,NAVITENGO,Navitengo,Navitengo I,Kameme,Chitipa,North ,33.157507,-9.503415,WGS 84,Community Health Worker,MoH,Kameme,Functional,61
 62,MISUKU,Mwandisi I,Mwandisi I,Mwenemisuku,Chitipa,North ,33.520792,-9.679534,WGS 84,Health Centre,MoH,Misuku,Functional,62
@@ -82,7 +82,7 @@
 80,MWAIPOPO,Mwaipopo,Mwenitulo,Mwenemisuku,Chitipa,North ,33.593171,-9.690803,WGS 84,Community Health Worker,MoH,Misuku,Functional,80
 81,SOKOLA,Mwakeyela I,Mwakayela,Mwenemisuku,Chitipa,North ,33.583947,-9.722825,WGS 84,Community Health Worker,MoH,Misuku,Functional,81
 82,KALONGO,Donadi,Mwakayela,Mwenemisuku,Chitipa,North ,33.609809,-9.738838,WGS 84,Community Health Worker,MoH,Misuku,Functional,82
-83,ADAM,Adam ,Mwakayela,Mwenemisuku,Chitipa,North ,33.622316,-9.73136,WGS 84,Community Health Worker,MoH,Misuku,Functional,83
+83,ADAM,Adam,Mwakayela,Mwenemisuku,Chitipa,North ,33.622316,-9.73136,WGS 84,Community Health Worker,MoH,Misuku,Functional,83
 84,NAKAUSHI,Edward,Mwakayela,Mwenemisuku,Chitipa,North ,33.624225,-9.757785,WGS 84,Community Health Worker,MoH,Misuku,Functional,84
 85,NACHISONDO,Kuyanda,Kawotola,Mwenemisuku,Chitipa,North ,33.546754,-9.7531,WGS 84,Community Health Worker,MoH,Misuku,Functional,85
 86,CHATU,Kawotola,Kawotola,Mwenemisuku,Chitipa,North ,33.519836,-9.726943,WGS 84,Community Health Worker,MoH,Misuku,Functional,86
@@ -154,7 +154,7 @@
 152,MATIPWA,Matipwa,Chagwambala,Nthalire,Chitipa,North ,33.65374,-10.233555,WGS 84,Community Health Worker,MoH,Nthalire,Functional,152
 153,ULEDI,Lubeni,Uledi,Nthalire,Chitipa,North ,33.748194,-10.163738,WGS 84,Community Health Worker,MoH,Nthalire,Functional,153
 154,ULEDI,Lubeni,Uledi,Nthalire,Chitipa,North ,33.748194,-10.163738,WGS 84,Community Health Worker,MoH,Nthalire,Functional,154
-155,KAMUGUZE,Kenani ,Uledi,Nthalire,Chitipa,North ,33.731558,-10.126298,WGS 84,Community Health Worker,MoH,Nthalire,Functional,155
+155,KAMUGUZE,Kenani,Uledi,Nthalire,Chitipa,North ,33.731558,-10.126298,WGS 84,Community Health Worker,MoH,Nthalire,Functional,155
 156,MKULE,Mpalashawa,Thumbo,Nthalire,Chitipa,North ,33.692122,-10.111713,WGS 84,Community Health Worker,MoH,Nthalire,Functional,156
 157,KOPAKOPA,Kopakopa,Kopakopa,Nthalire,Chitipa,North ,33.702798,-10.138347,WGS 84,Community Health Worker,MoH,Nthalire,Functional,157
 158,MAVUMBO,Mavumbo,Matulo,Nthalire,Chitipa,North ,33.669412,-10.150781,WGS 84,Community Health Worker,MoH,Nthalire,Functional,158
@@ -167,8 +167,8 @@
 165,KAMILAZOVU,Lijoni,Mwenevumo,Nthalire,Chitipa,North ,33.612726,-10.251512,WGS 84,Community Health Worker,MoH,Nthalire,Functional,165
 166,KAMILAZOVU,Lijoni,Mwenevumo,Nthalire,Chitipa,North ,33.612726,-10.251512,WGS 84,Community Health Worker,MoH,Nthalire,Functional,166
 167,KAVUKUKU,Malambo,Mwenevumo,Nthalire,Chitipa,North ,33.571761,-10.275083,WGS 84,Community Health Worker,MoH,Nthalire,Functional,167
-168,KAMPHYONGO,David ,Mataghanduwi,Nthalire,Chitipa,North ,33.569684,-10.31315,WGS 84,Community Health Worker,MoH,Nthalire,Functional,168
-169,KAMPHYONGO,David ,Mataghanduwi,Nthalire,Chitipa,North ,33.569684,-10.31315,WGS 84,Community Health Worker,MoH,Nthalire,Non Functional,169
+168,KAMPHYONGO,David,Mataghanduwi,Nthalire,Chitipa,North ,33.569684,-10.31315,WGS 84,Community Health Worker,MoH,Nthalire,Functional,168
+169,KAMPHYONGO,David,Mataghanduwi,Nthalire,Chitipa,North ,33.569684,-10.31315,WGS 84,Community Health Worker,MoH,Nthalire,Non Functional,169
 170,BENTHU,Bugulu,Mwanyanja,Nthalire,Chitipa,North ,33.614741,-10.29642,WGS 84,Community Health Worker,MoH,Nthalire,Functional,170
 171,LUWEMBE,Mweneluwembe,Mweneluwembe,Nthalire,Chitipa,North ,33.648091,-10.297983,WGS 84,Community Health Worker,MoH,Nthalire,Functional,171
 172,LUWEMBE,Mweneluwembe,Mweneluwembe,Nthalire,Chitipa,North ,33.648091,-10.297983,WGS 84,Community Health Worker,MoH,Nthalire,Functional,172
@@ -812,11 +812,11 @@
 810,KASWITI,Chalika,Zipa Chimaliro,Mtwalo,Mzimba North,North ,33.977399,-11.324804,WGS 84,Community Health Worker,MoH,Choma,Functional,810
 811,BINGAVULA,Boooza,Msafili,Mtwalo,Mzimba North,North ,34.030889,-11.299647,WGS 84,Community Health Worker,MoH,Choma,Functional,811
 812,BINGAVULA,Boooza,Msafili,Mtwalo,Mzimba North,North ,34.030889,-11.299647,WGS 84,Community Health Worker,MoH,Choma,Functional,812
-813,CHIBISA,Chibisa   ,Msafili,Mtwalo,Mzimba North,North ,33.994657,-11.288738,WGS 84,Community Health Worker,MoH,Choma,Functional,813
-814,CHIBISA,Chibisa   ,Msafili,Mtwalo,Mzimba North,North ,33.994657,-11.288738,WGS 84,Community Health Worker,MoH,Choma,Functional,814
+813,CHIBISA,Chibisa,Msafili,Mtwalo,Mzimba North,North ,33.994657,-11.288738,WGS 84,Community Health Worker,MoH,Choma,Functional,813
+814,CHIBISA,Chibisa,Msafili,Mtwalo,Mzimba North,North ,33.994657,-11.288738,WGS 84,Community Health Worker,MoH,Choma,Functional,814
 815,MZUZU,Mapale,Mapale,Mtwalo,Mzimba North,North ,34.015127,-11.461368,WGS 84,Health Centre,MoH,Mzuzu,Functional,815
 816,CARE,Katoto,Kangawa,Mtwalo,Mzimba North,North ,34.00698,-11.460319,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,816
-817,TAWONGA,Thula ,Chikundula,Kabunduli,Mzimba North,North ,34.014267,-11.473581,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,817
+817,TAWONGA,Thula,Chikundula,Kabunduli,Mzimba North,North ,34.014267,-11.473581,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,817
 818,BANJA LA MTSOGOLO,Jombo Ward,Jombo Ward,Jombo Ward,Mzimba North,North ,34.016378,-11.456103,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,818
 819,KAZANDO,Mthovu,Kamkwalala,Kampingo Sibande,Mzimba North,North ,33.966489,-11.484331,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,819
 820,NAMBO,Kanyimbo,Chione,Kampingo Sibande,Mzimba North,North ,33.981145,-11.46769,WGS 84,Community Health Worker,MoH,Mzuzu,Functional,820
@@ -1154,7 +1154,7 @@
 1152,NKHWALI,Mweza II,Mweza,Timbiri,Nkhata Bay,North ,34.167372,-11.655116,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1152
 1153,CHIZINGALUZI,Chizingaluzi,Chavukuka,Timbiri,Nkhata Bay,North ,34.203351,-11.660762,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1153
 1154,CHILUNDWE,Chitaya,Chang'aya,Timbiri,Nkhata Bay,North ,34.169105,-11.623099,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1154
-1155,LWAMBAZA,Malenga ,Dulani,Timbiri,Nkhata Bay,North ,34.199838,-11.61219,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1155
+1155,LWAMBAZA,Malenga,Dulani,Timbiri,Nkhata Bay,North ,34.199838,-11.61219,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1155
 1156,PHIRISINGE,Phirisinge,Singo,Mkumbila,Nkhata Bay,North ,34.264902,-11.625137,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1156
 1157,BWELERO,Yadinkha,Katema,Mankhambira,Nkhata Bay,North ,34.295164,-11.631992,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1157
 1158,DINDANO,Chijere,Mndora,Mankhambira,Nkhata Bay,North ,34.289692,-11.644911,WGS 84,Community Health Worker,MoH,Nkhata Bay DH,Functional,1158
@@ -1202,9 +1202,9 @@
 1200,MKUNDI,Mlonda,Msundu,Malanda,Nkhata Bay,North ,34.142458,-11.86433,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1200
 1201,MALAZA,Wachaza,Msundu,Malanda,Nkhata Bay,North ,34.154159,-11.864201,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1201
 1202,CHIKUMBA,Jaliyanthazi,Ngombo,Malanda,Nkhata Bay,North ,34.140569,-11.822967,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1202
-1203,KAMBUNI,Kaduwa ,Ngombo,Malanda,Nkhata Bay,North ,34.135552,-11.817817,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1203
+1203,KAMBUNI,Kaduwa,Ngombo,Malanda,Nkhata Bay,North ,34.135552,-11.817817,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1203
 1204,GOMO,Kaligogo,Ngombo,Malanda,Nkhata Bay,North ,34.134228,-11.805866,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1204
-1205,THULA,Thula ,Ngombo,Malanda,Nkhata Bay,North ,34.134086,-11.834906,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1205
+1205,THULA,Thula,Ngombo,Malanda,Nkhata Bay,North ,34.134086,-11.834906,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1205
 1206,LISAMBI,Chiundasi,Chenyentha,Malanda,Nkhata Bay,North ,34.194743,-11.80072,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1206
 1207,LISAMBI,Chiundasi,Chenyentha,Malanda,Nkhata Bay,North ,34.194743,-11.80072,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1207
 1208,MSOMBA,Msambwa,Chenyentha,Malanda,Nkhata Bay,North ,34.196779,-11.788936,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1208
@@ -1215,7 +1215,7 @@
 1213,CHIPAIKA,Ngombo,Ngombo,Malanda,Nkhata Bay,North ,34.169982,-11.7563,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1213
 1214,CHITHOWE,Mambo,Ngombo,Malanda,Nkhata Bay,North ,34.170434,-11.730873,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1214
 1215,YALAMBA,Lindano,Ngombo,Malanda,Nkhata Bay,North ,34.10892,-11.77347,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1215
-1216,KAMBUNI,Thula ,Ngombo,Malanda,Nkhata Bay,North ,34.101737,-11.824014,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1216
+1216,KAMBUNI,Thula,Ngombo,Malanda,Nkhata Bay,North ,34.101737,-11.824014,WGS 84,Community Health Worker,MoH,Chintheche,Functional,1216
 1217,LIUZI,Chitete,Chitete,Zilakoma,Nkhata Bay,North ,34.015806,-12.189577,WGS 84,Health Centre,MoH,Liuzi,Functional,1217
 1218,KAMPHUNGU,Machilika,Machilika,Zilakoma,Nkhata Bay,North ,34.001249,-12.186246,WGS 84,Community Health Worker,MoH,Liuzi,Functional,1218
 1219,MFUNDI,Nkhoma,Nkhoma,Zilakoma,Nkhata Bay,North ,33.988022,-12.220709,WGS 84,Community Health Worker,MoH,Liuzi,Functional,1219
@@ -1243,8 +1243,8 @@
 1241,CHITUKA,Nabayoti,Kanyanda,Malengamzoma,Nkhata Bay,North ,34.150579,-11.915628,WGS 84,Community Health Worker,MoH,Kande,Functional,1241
 1242,NDAWAMBE,Ndawambe,Kanyanda,Malengamzoma,Nkhata Bay,North ,34.158329,-11.924201,WGS 84,Community Health Worker,MoH,Kande,Functional,1242
 1243,CHAGOWO,Chagowo,Chiweyo,Malengamzoma,Nkhata Bay,North ,34.147064,-11.932091,WGS 84,Community Health Worker,MoH,Kande,Functional,1243
-1244,CHIWEYO,Wilson ,Chiweyo,Malengamzoma,Nkhata Bay,North ,34.134509,-11.935656,WGS 84,Community Health Worker,MoH,Kande,Functional,1244
-1245,WILSON,Wilson ,Chiweyo,Malengamzoma,Nkhata Bay,North ,34.134577,-11.941108,WGS 84,Community Health Worker,MoH,Kande,Functional,1245
+1244,CHIWEYO,Wilson,Chiweyo,Malengamzoma,Nkhata Bay,North ,34.134509,-11.935656,WGS 84,Community Health Worker,MoH,Kande,Functional,1244
+1245,WILSON,Wilson,Chiweyo,Malengamzoma,Nkhata Bay,North ,34.134577,-11.941108,WGS 84,Community Health Worker,MoH,Kande,Functional,1245
 1246,MAZEMBE,Mphimbi,Kauta,Fukamapiri,Nkhata Bay,North ,34.086605,-11.954433,WGS 84,Community Health Worker,MoH,Kande,Functional,1246
 1247,MAZEMBE,Mphimbi,Kauta,Fukamapiri,Nkhata Bay,North ,34.080288,-11.956334,WGS 84,Community Health Worker,MoH,Kande,Functional,1247
 1248,SONGA,Yukani,Kauta,Fukamapiri,Nkhata Bay,North ,34.080707,-11.922967,WGS 84,Community Health Worker,MoH,Kande,Functional,1248
@@ -1298,14 +1298,14 @@
 1296,MUSAKASA,Tembwe,Tembwe,Kabunduli,Nkhata Bay,North ,34.027981,-11.700972,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1296
 1297,MUTHABITHABI,Pwengamo,Thula,Kabunduli,Nkhata Bay,North ,34.02331,-11.726023,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1297
 1298,MUTHABITHABI,Pwengamo,Thula,Kabunduli,Nkhata Bay,North ,34.02331,-11.726023,WGS 84,Community Health Worker,MoH,Mzenga,Non Functional,1298
-1299,MUWUWA,Thula ,Thula,Kabunduli,Nkhata Bay,North ,34.06425,-11.76279,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1299
+1299,MUWUWA,Thula,Thula,Kabunduli,Nkhata Bay,North ,34.06425,-11.76279,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1299
 1300,KAPATA,Dungwa,Thula,Kabunduli,Nkhata Bay,North ,34.075849,-11.757176,WGS 84,Community Health Worker,MoH,Mzenga,Non Functional,1300
 1301,KANTHETE,Dungwa,Thula,Kabunduli,Nkhata Bay,North ,34.062975,-11.792132,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1301
 1302,MUSINAWANA,Musinawana,Thula,Kabunduli,Nkhata Bay,North ,34.05834,-11.732655,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1302
 1303,MULOMBOZI,Chiwawa,Thula,Kabunduli,Nkhata Bay,North ,34.110295,-11.74921,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1303
 1304,MULOMBOZI,Chiwawa,Thula,Kabunduli,Nkhata Bay,North ,34.110295,-11.74921,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1304
 1305,KANYUNYA,Katongo,Mchingalombo,Kabunduli,Nkhata Bay,North ,34.07868,-11.696954,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1305
-1306,CHITANJI,Thula ,Thula,Kabunduli,Nkhata Bay,North ,34.024457,-11.793536,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1306
+1306,CHITANJI,Thula,Thula,Kabunduli,Nkhata Bay,North ,34.024457,-11.793536,WGS 84,Community Health Worker,MoH,Mzenga,Functional,1306
 1307,KAVUZI,Mchingalombo,Mchingalombo,Kabunduli,Nkhata Bay,North ,34.081637,-11.674472,WGS 84,Health Centre,Kavuzi Tea Estate,Kavuzi,Functional,1307
 1308,CHADONGO,Mukuli,Mukuli,Kabunduli,Nkhata Bay,North ,34.063665,-11.618256,WGS 84,Community Health Worker,Kavuzi Tea Estate,Kavuzi,Functional,1308
 1309,CHADONGO,Mukuli,Mukuli,Kabunduli,Nkhata Bay,North ,34.063665,-11.618256,WGS 84,Community Health Worker,MoH,Kavuzi,Functional,1309
@@ -1958,7 +1958,7 @@
 1956,KAVISOPO,Juma Njolwa,Ndezu Njolwa,Chindi,Mzimba South,North ,33.447537,-11.327048,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1956
 1957,YAKUWATA,Chigowo Nyirenda,Chigowo Nyirenda,Chindi,Mzimba South,North ,33.429974,-11.37081,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1957
 1958,YAKUWATA,Chigowo Nyirenda,Chigowo Nyirenda,Chindi,Mzimba South,North ,33.429974,-11.37081,WGS 84,Community Health Worker,MoH,Mzambazi,Functional,1958
-1959,KAVIYOMBO,Chapolonga Ngulube ,Malaya Phiri,Chindi,Mzimba South,North ,33.462482,-11.387285,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1959
+1959,KAVIYOMBO,Chapolonga Ngulube,Malaya Phiri,Chindi,Mzimba South,North ,33.462482,-11.387285,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1959
 1960,KAHELELE,Chilongozgi Gondwe,Chilongozgi Gondwe,Chindi,Mzimba South,North ,33.474362,-11.449722,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1960
 1961,KAHELELE,Chilongozgi Gondwe,Chilongozgi Gondwe,Chindi,Mzimba South,North ,33.474362,-11.449722,WGS 84,Community Health Worker,MoH,Mzambazi,Functional,1961
 1962,NKHWETA,Nkhweta Lupunga,Nkhweta Lupunga,Chindi,Mzimba South,North ,33.420012,-11.432539,WGS 84,Community Health Worker,CHAM,Mzambazi,Functional,1962
@@ -2924,7 +2924,7 @@
 2922,KANGOZA,Mazengera,Mazengera,Kafuzila,Nkhotakota,Central,33.979948,-12.32943,WGS 84,Community Health Worker,MoH,Kasitu,Non Functional,2922
 2923,CHIWI,Nyambadwe,Kafuzila,Kafuzila,Nkhotakota,Central,34.031376,-12.284506,WGS 84,Community Health Worker,CHAM,Kasitu,Functional,2923
 2924,MPASULA,Chibalepamaso,Chibalepamaso,Kafuzila,Nkhotakota,Central,34.01152,-12.311639,WGS 84,Community Health Worker,CHAM,Kasitu,Functional,2924
-2925,NKHUNGA,Kanyenda ,Kanyenda,Kanyenda,Nkhotakota,Central,34.108557,-12.480202,WGS 84,Health Centre,MoH,Nkhunga,Functional,2925
+2925,NKHUNGA,Kanyenda,Kanyenda,Kanyenda,Nkhotakota,Central,34.108557,-12.480202,WGS 84,Health Centre,MoH,Nkhunga,Functional,2925
 2926,CHINKHUTI,Chawawa,Chawawa,Kanyenda,Nkhotakota,Central,33.988933,-12.483236,WGS 84,Community Health Worker,MoH,Nkhunga,Functional,2926
 2927,CHINKHUTI,Chawawa,Chawawa,Kanyenda,Nkhotakota,Central,33.988933,-12.483236,WGS 84,Community Health Worker,MoH,Nkhunga,Functional,2927
 2928,CHANKHALAMU,Galeta,Chikanje,Kanyenda,Nkhotakota,Central,34.028482,-12.494607,WGS 84,Community Health Worker,MoH,Nkhunga,Functional,2928
@@ -4624,11 +4624,11 @@
 4622,TIKOLIWE,Tikoliwe,Menyani,Mlonyeni,Mchinji,Central,32.793055,-13.773961,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4622
 4623,TIKOLIWE,Tikoliwe,Menyani,Mlonyeni,Mchinji,Central,32.793161,-13.773799,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4623
 4624,MCHINJI MISSION,,,Nyoka,Mchinji,Central,32.900132,-13.716117,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4624
-4625,GWEDE,Gwede ,Gwede ,Nyoka,Mchinji,Central,32.913155,-13.722867,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4625
-4626,GWEDE,Gwede ,Gwede ,Nyoka,Mchinji,Central,32.913195,-13.722819,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4626
-4627,MTONDO,Mtondo ,Milanzi,Nyoka,Mchinji,Central,32.934624,-13.760868,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4627
-4628,SANKHANI,Sankhani ,Sankhani ,Mlonyeni,Mchinji,Central,32.968707,-13.841989,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4628
-4629,SANKHANI,Sankhani ,Sankhani ,Mlonyeni,Mchinji,Central,32.968997,-13.84205,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4629
+4625,GWEDE,Gwede,Gwede ,Nyoka,Mchinji,Central,32.913155,-13.722867,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4625
+4626,GWEDE,Gwede,Gwede ,Nyoka,Mchinji,Central,32.913195,-13.722819,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4626
+4627,MTONDO,Mtondo,Milanzi,Nyoka,Mchinji,Central,32.934624,-13.760868,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4627
+4628,SANKHANI,Sankhani,Sankhani ,Mlonyeni,Mchinji,Central,32.968707,-13.841989,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4628
+4629,SANKHANI,Sankhani,Sankhani ,Mlonyeni,Mchinji,Central,32.968997,-13.84205,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4629
 4630,CHIUTE,Chiute,Chiute,Mlonyeni,Mchinji,Central,32.957474,-13.859084,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4630
 4631,TSAMPHALE,Tsamphale,Tsamphale,Mlonyeni,Mchinji,Central,32.956916,-13.869918,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4631
 4632,TSAMPHALE,Tsamphale,Tsamphale,Mlonyeni,Mchinji,Central,32.956916,-13.869918,WGS 84,Community Health Worker,MoH,Mchinji DH,Functional,4632
@@ -4763,12 +4763,12 @@
 4761,KAMNTIBINYA,Kamntibinya,Mayola,Nyoka,Mchinji,Central,32.965767,-13.68791,WGS 84,Community Health Worker,CHAM,Ludzi,Functional,4761
 4762,KANGWELE,Kangwele,Kangwele,Nyoka,Mchinji,Central,32.953016,-13.720703,WGS 84,Community Health Worker,MoH,Ludzi,Functional,4762
 4763,KANGWELE,Kangwele,Kangwele,Nyoka,Mchinji,Central,32.953019,-13.720793,WGS 84,Community Health Worker,CHAM,Ludzi,Functional,4763
-4764,CHIMUTI,Chimuti ,Kachamba,Mduwa,Mchinji,Central,33.053138,-13.73573,WGS 84,Community Health Worker,CHAM,Ludzi,Functional,4764
+4764,CHIMUTI,Chimuti,Kachamba,Mduwa,Mchinji,Central,33.053138,-13.73573,WGS 84,Community Health Worker,CHAM,Ludzi,Functional,4764
 4765,GUDUMA,Guduma,Zulu,Zulu,Mchinji,Central,32.963601,-13.802818,WGS 84,Community Health Worker,MoH,Ludzi,Functional,4765
 4766,ZULU,Zulu,Zulu,Zulu,Mchinji,Central,32.968946,-13.813018,WGS 84,Community Health Worker,MoH,Ludzi,Functional,4766
 4767,ZULU,Zulu,Zulu,Zulu,Mchinji,Central,32.968993,-13.813078,WGS 84,Community Health Worker,CHAM,Ludzi,Functional,4767
 4768,CHISANKHALE,Chisankhale,Zulu,Zulu,Mchinji,Central,33.002838,-13.824921,WGS 84,Community Health Worker,MoH,Ludzi,Functional,4768
-4769,TEMBWE,Tembwe ,Tembwe ,Mlonyeni,Mchinji,Central,33.062315,-13.901216,WGS 84,Health Centre,MoH,Tembwe,Functional,4769
+4769,TEMBWE,Tembwe,Tembwe ,Mlonyeni,Mchinji,Central,33.062315,-13.901216,WGS 84,Health Centre,MoH,Tembwe,Functional,4769
 4770,MALIWANI,Maliwani,Maliwani,Mlonyeni,Mchinji,Central,33.005243,-13.848751,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4770
 4771,MALIWANI,Maliwani,Maliwani,Mlonyeni,Mchinji,Central,33.005243,-13.848751,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4771
 4772,KAZAWE,Kazawe,Khungwa,Mlonyeni,Mchinji,Central,33.105254,-13.951217,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4772
@@ -4783,7 +4783,7 @@
 4781,MTSILIZA,Mtsiliza,Mtsiliza,Mlonyeni,Mchinji,Central,33.031221,-14.040894,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4781
 4782,LIFULEDI,Lifuledi,Kapita,Mlonyeni,Mchinji,Central,33.015249,-13.986589,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4782
 4783,LIFULEDI,Lifuledi,Kapita,Mlonyeni,Mchinji,Central,33.015249,-13.986589,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4783
-4784,KUMBUYO,Kumbuyo ,Kapita,Mlonyeni,Mchinji,Central,33.035609,-13.938678,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4784
+4784,KUMBUYO,Kumbuyo,Kapita,Mlonyeni,Mchinji,Central,33.035609,-13.938678,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4784
 4785,CHABWERA,Chabwera,Chabwera,Mlonyeni,Mchinji,Central,33.019345,-13.911396,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4785
 4786,KABANGO,Kabango,Kabango,Mlonyeni,Mchinji,Central,32.966835,-13.920937,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4786
 4787,KABANGO,Kabango,Kabango,Mlonyeni,Mchinji,Central,32.966835,-13.920937,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4787
@@ -4793,8 +4793,8 @@
 4791,MKWAWILA,Mkwawila,Mkwawila,Mlonyeni,Mchinji,Central,33.003972,-13.872373,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4791
 4792,CHIDAMBO,Chidambo,Tsamphale,Mlonyeni,Mchinji,Central,32.923015,-13.827258,WGS 84,Community Health Worker,MoH,Tembwe,Functional,4792
 4793,KOCHIRIRA,,,Zulu,Mchinji,Central,33.043144,-13.78195,WGS 84,Hospital,MoH,Kochirira,Functional,4793
-4794,MIKAELI,Mikaeli ,Mikaeli ,Zulu,Mchinji,Central,33.010592,-13.800586,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4794
-4795,KAMWENDO,Kamwendo ,Kamwendo ,Zulu,Mchinji,Central,33.039463,-13.830372,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4795
+4794,MIKAELI,Mikaeli,Mikaeli ,Zulu,Mchinji,Central,33.010592,-13.800586,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4794
+4795,KAMWENDO,Kamwendo,Kamwendo ,Zulu,Mchinji,Central,33.039463,-13.830372,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4795
 4796,KAPANIRA,Kapanira,Kamphande,Zulu,Mchinji,Central,33.054964,-13.849506,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4796
 4797,KAPANIRA,Kapanira,Kamphande,Mlonyeni,Mchinji,Central,33.054964,-13.849506,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4797
 4798,CHIMUTE,Chimute,Mgubo,Zulu,Mchinji,Central,32.952206,-13.799356,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4798
@@ -4802,15 +4802,15 @@
 4800,SAIDI,Saidi,Kalemba,Mduwa,Mchinji,Central,33.088402,-13.749366,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4800
 4801,KANYIMBO,Kanyimbo,Kanyimbo,Mduwa,Mchinji,Central,33.107409,-13.754687,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4801
 4802,KANYIMBO,Kanyimbo,Kanyimbo,Mduwa,Mchinji,Central,33.107409,-13.754687,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4802
-4803,KANDEKERA,Kandekera ,Kanyimbo,Simphasi,Mchinji,Central,33.101151,-13.782189,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4803
-4804,CHIKOLOKA,Chikoloka ,Katchuka,Simphasi,Mchinji,Central,33.086874,-13.798402,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4804
+4803,KANDEKERA,Kandekera,Kanyimbo,Simphasi,Mchinji,Central,33.101151,-13.782189,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4803
+4804,CHIKOLOKA,Chikoloka,Katchuka,Simphasi,Mchinji,Central,33.086874,-13.798402,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4804
 4805,KATHYUKA,Kathyuka,Kathyuka,Simphasi,Mchinji,Central,33.079903,-13.817724,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4805
 4806,KATHYUKA,Kathyuka,Kathyuka,Simphasi,Mchinji,Central,33.079903,-13.817724,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4806
 4807,KACHAJE,Kachaje,Kachaje,Simphasi,Mchinji,Central,33.070972,-13.779547,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4807
-4808,MKUMBA,Mkumba ,Mkumba ,Simphasi,Mchinji,Central,33.093549,-13.834579,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4808
+4808,MKUMBA,Mkumba,Mkumba ,Simphasi,Mchinji,Central,33.093549,-13.834579,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4808
 4809,MAZAWA,Mazawa,Mazawa,Simphasi,Mchinji,Central,33.110016,-13.847881,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4809
 4810,MAZAWA,Mazawa,Mazawa,Simphasi,Mchinji,Central,33.110016,-13.847881,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4810
-4811,CHALILIMA,Chalilima ,Kamwendo ,Zulu,Mchinji,Central,33.022409,-13.827086,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4811
+4811,CHALILIMA,Chalilima,Kamwendo ,Zulu,Mchinji,Central,33.022409,-13.827086,WGS 84,Community Health Worker,MoH,Kochirira,Functional,4811
 4812,CHIOSHYA,Chioshya,Chimteka,Simphasi,Mchinji,Central,33.175152,-13.795993,WGS 84,Health Centre,MoH,Chioshya,Functional,4812
 4813,CHIDEWA,Chidewa,Chikomeni,Simphasi,Mchinji,Central,33.116739,-13.801057,WGS 84,Community Health Worker,MoH,Chioshya,Functional,4813
 4814,CHIKOMENI,Chikomeni,Chikomeni,Simphasi,Mchinji,Central,33.124001,-13.769332,WGS 84,Community Health Worker,MoH,Chioshya,Functional,4814
@@ -5345,8 +5345,8 @@
 5343,KUKHOLA,Kukhola,Kadzani,Makwangwala,Ntcheu,Central,34.923047,-14.837581,WGS 84,Community Health Worker,MoH,Bilila,Functional,5343
 5344,LIVALO,Livalo,Maligwa,Makwangwala,Ntcheu,Central,34.815339,-14.829827,WGS 84,Community Health Worker,MoH,Bilila,Functional,5344
 5345,MALIGWA,Zamasiya,Maligwa,Makwangwala,Ntcheu,Central,34.808511,-14.834399,WGS 84,Community Health Worker,MoH,Bilila,Functional,5345
-5346,MKUTUMULA,Mkutumula ,Mkutumula,Mkutumula,Ntcheu,Central,34.890738,-14.846888,WGS 84,Community Health Worker,MoH,Bilila,Functional,5346
-5347,MKUTUMULA,Mkutumula ,Mkutumula,Mkutumula,Ntcheu,Central,34.890738,-14.846888,WGS 84,Community Health Worker,MoH,Bilila,Functional,5347
+5346,MKUTUMULA,Mkutumula,Mkutumula,Mkutumula,Ntcheu,Central,34.890738,-14.846888,WGS 84,Community Health Worker,MoH,Bilila,Functional,5346
+5347,MKUTUMULA,Mkutumula,Mkutumula,Mkutumula,Ntcheu,Central,34.890738,-14.846888,WGS 84,Community Health Worker,MoH,Bilila,Functional,5347
 5348,MTALIKA,Mtalika,Mkutumula,Makwangwala,Ntcheu,Central,34.908762,-14.842119,WGS 84,Community Health Worker,MoH,Bilila,Functional,5348
 5349,MTALIKA,Mtalika,Mkutumula,Makwangwala,Ntcheu,Central,34.913108,-14.841577,WGS 84,Community Health Worker,MoH,Bilila,Functional,5349
 5350,PENGAPENGA,Pengapenga,Pengapenga,Makwangwala,Ntcheu,Central,34.831085,-14.780929,WGS 84,Community Health Worker,MoH,Bilila,Functional,5350
@@ -5730,8 +5730,8 @@
 5728,KANKHUNI,Kankhuni,Gochi,Mpando,Ntcheu,Central,34.596457,-15.134393,WGS 84,Community Health Worker,CHAM,Tsangano,Functional,5728
 5729,KATSALA  II,Katsala II,Katsala II,Phambala,Ntcheu,Central,34.671857,-15.156748,WGS 84,Community Health Worker,MoH,Tsangano,Functional,5729
 5730,KATSALA II,Katsala II,Katsala II,Phambala,Ntcheu,Central,34.671857,-15.156748,WGS 84,Community Health Worker,CHAM,Tsangano,Functional,5730
-5731,MAKWANGWALA I,Makwangwala ,Makwangwala  ,Phambala,Ntcheu,Central,34.67488,-15.213941,WGS 84,Community Health Worker,MoH,Tsangano,Functional,5731
-5732,MAKWANGWALA I,Makwangwala ,Makwangwala  ,Phambala,Ntcheu,Central,34.67488,-15.213941,WGS 84,Community Health Worker,CHAM,Tsangano,Functional,5732
+5731,MAKWANGWALA I,Makwangwala,Makwangwala  ,Phambala,Ntcheu,Central,34.67488,-15.213941,WGS 84,Community Health Worker,MoH,Tsangano,Functional,5731
+5732,MAKWANGWALA I,Makwangwala,Makwangwala  ,Phambala,Ntcheu,Central,34.67488,-15.213941,WGS 84,Community Health Worker,CHAM,Tsangano,Functional,5732
 5733,MAKWANGWALA II,Makwangwala II,Makwangwala I,Phambala,Ntcheu,Central,34.658704,-15.198005,WGS 84,Community Health Worker,MoH,Tsangano,Non Functional,5733
 5734,MDZAWIRA,Mdzawira,Mdzawira,Phambala,Ntcheu,Central,34.696441,-15.170958,WGS 84,Community Health Worker,MoH,Tsangano,Non Functional,5734
 5735,SAULOSI,Saulosi,Gochi,Mpando,Ntcheu,Central,34.623422,-15.192568,WGS 84,Community Health Worker,CHAM,Tsangano,Non Functional,5735
@@ -6086,7 +6086,7 @@
 6084,MWANYAMA ,Mwanyama,Mgundaphiri,Mponda,Mangochi,South,35.265211,-14.492152,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6084
 6085,NTASI ,Ntasi,Mgundaphiri,Mponda,Mangochi,South,35.265992,-14.487425,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6085
 6086,KALONGA I,Kalonga I,Mgundaphiri,Mponda,Mangochi,South,35.258228,-14.489851,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6086
-6087,KALONGA II,Kalonga   ,Mgundaphiri,Mponda,Mangochi,South,35.249494,-14.485993,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6087
+6087,KALONGA II,Kalonga,Mgundaphiri,Mponda,Mangochi,South,35.249494,-14.485993,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6087
 6088,CHOMBA ,Chomba,Mgundaphiri,Mponda,Mangochi,South,35.250662,-14.485142,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6088
 6089,MGUNDAPHIRI I,Mgundaphiri  I,Mgundaphiri,Mponda,Mangochi,South,35.25429,-14.482224,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6089
 6090,MGUNDAPHIRI II,Mgundaphiri II,Mgundaphiri ,Mponda,Mangochi,South,35.242654,-14.479324,WGS 84,Community Health Worker,MoH,Mangochi DH,Functional,6090
@@ -6270,7 +6270,7 @@
 6268,MLAMBALA,Mlambala,Kamwepe,Jalasi,Mangochi,South,35.602566,-14.396789,WGS 84,Community Health Worker,MoH,Chiponde,Functional,6268
 6269,CHILIPA,Chilipa,Chilipa,Chilipa,Mangochi,South,34.974125,-14.702701,WGS 84,Health Centre,MoH,Chilipa,Functional,6269
 6270,MATENJE,Suzi,Leveni,Chilipa,Mangochi,South,34.950933,-14.746022,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6270
-6271,NIKISI,Nikisi  ,Nikisi,Chilipa,Mangochi,South,34.991972,-14.745053,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6271
+6271,NIKISI,Nikisi,Nikisi,Chilipa,Mangochi,South,34.991972,-14.745053,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6271
 6272,BAMUSI,Bamusi,Chilipa,Chilipa,Mangochi,South,35.018911,-14.704272,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6272
 6273,BAMUSI,Bamusi,Chilipa,Chilipa,Mangochi,South,35.018911,-14.704272,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6273
 6274,JEKETE,Jekete,Jekete,Chilipa,Mangochi,South,35.041071,-14.672739,WGS 84,Community Health Worker,MoH,Chilipa,Functional,6274
@@ -6311,7 +6311,7 @@
 6309,MKAWEYA,Mkaweya,Mkaweya,Ntonda,Mangochi,South,34.911462,-14.632503,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6309
 6310,NTONDA,Ntonda,Ntonda,Ntonda,Mangochi,South,34.940983,-14.651895,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6310
 6311,NTONDA,Ntonda,Ntonda,Ntonda,Mangochi,South,34.940983,-14.651895,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6311
-6312,MALOPA I,Malopa I ,Ntonda,Ntonda,Mangochi,South,34.937612,-14.659931,WGS 84,Community Health Worker,MoH,Phirilongwe,Non Functional,6312
+6312,MALOPA I,Malopa I,Ntonda,Ntonda,Mangochi,South,34.937612,-14.659931,WGS 84,Community Health Worker,MoH,Phirilongwe,Non Functional,6312
 6313,MLONGOTI,Mlongoti,Mlongoti,Ntonda,Mangochi,South,34.904424,-14.660554,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6313
 6314,MLONGOTI,Mlongoti,Mlongoti,Ntonda,Mangochi,South,34.904424,-14.660554,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6314
 6315,MOFFAT,Moffat,Mlongoti,Ntonda,Mangochi,South,34.873806,-14.623769,WGS 84,Community Health Worker,MoH,Phirilongwe,Functional,6315
@@ -6369,7 +6369,7 @@
 6367,AS SALAAM,Changamire I,Changamile,Chimwala,Mangochi,South,35.192232,-14.545418,WGS 84,Health Centre,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6367
 6368,MKWANDA,Mkwanda,Changamile,Chimwala,Mangochi,South,35.182207,-14.502317,WGS 84,Community Health Worker,MoH,AS Salaam,Functional,6368
 6369,CHILUNDA,Chilunda,Changamile,Chimwala,Mangochi,South,35.196515,-14.522272,WGS 84,Community Health Worker,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6369
-6370,CHIWAULA I,Chiwaula I ,Chiwaula,Chimwala,Mangochi,South,35.180971,-14.560239,WGS 84,Community Health Worker,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6370
+6370,CHIWAULA I,Chiwaula I,Chiwaula,Chimwala,Mangochi,South,35.180971,-14.560239,WGS 84,Community Health Worker,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6370
 6371,CHIWAULA II,Chiwaula II,Chiwaula,Chimwala,Mangochi,South,35.147628,-14.552882,WGS 84,Community Health Worker,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6371
 6372,MSAMU,Msamu,Chiwaula,Chimwala,Mangochi,South,35.178354,-14.579394,WGS 84,Community Health Worker,Al Baraka Charity Trust (ACT),AS Salaam,Functional,6372
 6373,KUKALANGA,Ukalanga,Ukalanga,Chimwala,Mangochi,South,35.180239,-14.637445,WGS 84,Health Centre,MoH,Kukalanga,Functional,6373
@@ -7071,18 +7071,18 @@
 7069,DOMASI,Nsangeni,Mtwiche,Malemia,Zomba,South,35.39926,-15.280864,WGS 84,Hospital,MoH,Domasi,Functional,7069
 7070,CHILAMBE,Chilambe,Mbwani,Kuntumanji,Zomba,South,35.425209,-15.288672,WGS 84,Community Health Worker,MoH,Domasi,Functional,7070
 7071,CHILAMBE,Chilambe,Mbwani,Kuntumanji,Zomba,South,35.425209,-15.288672,WGS 84,Community Health Worker,MoH,Domasi,Functional,7071
-7072,MALEMIA,Malemia ,Mtogolo,Malemia,Zomba,South,35.380187,-15.282575,WGS 84,Community Health Worker,MoH,Domasi,Functional,7072
-7073,MASAMBUKA,Masambuka ,Mtwiche,Malemia,Zomba,South,35.408634,-15.309038,WGS 84,Community Health Worker,MoH,Domasi,Functional,7073
-7074,MATUTA,Matuta ,Mtwiche,Malemia,Zomba,South,35.418447,-15.299202,WGS 84,Community Health Worker,MoH,Domasi,Functional,7074
-7075,MKAJU,Mkaju ,Machinjiri,Malemia,Zomba,South,35.442226,-15.266108,WGS 84,Community Health Worker,MoH,Domasi,Functional,7075
-7076,MKWERA,Mkwera ,Kapyepye,Malemia,Zomba,South,35.411738,-15.323025,WGS 84,Community Health Worker,MoH,Domasi,Functional,7076
+7072,MALEMIA,Malemia,Mtogolo,Malemia,Zomba,South,35.380187,-15.282575,WGS 84,Community Health Worker,MoH,Domasi,Functional,7072
+7073,MASAMBUKA,Masambuka,Mtwiche,Malemia,Zomba,South,35.408634,-15.309038,WGS 84,Community Health Worker,MoH,Domasi,Functional,7073
+7074,MATUTA,Matuta,Mtwiche,Malemia,Zomba,South,35.418447,-15.299202,WGS 84,Community Health Worker,MoH,Domasi,Functional,7074
+7075,MKAJU,Mkaju,Machinjiri,Malemia,Zomba,South,35.442226,-15.266108,WGS 84,Community Health Worker,MoH,Domasi,Functional,7075
+7076,MKWERA,Mkwera,Kapyepye,Malemia,Zomba,South,35.411738,-15.323025,WGS 84,Community Health Worker,MoH,Domasi,Functional,7076
 7077,NAMWERA,Namwera,Mbwani,Kuntumanji,Zomba,South,35.450885,-15.275335,WGS 84,Community Health Worker,MoH,Domasi,Functional,7077
 7078,NAMWERA,Namwera,Mbwani,Kuntumanji,Zomba,South,35.450885,-15.275335,WGS 84,Community Health Worker,MoH,Domasi,Functional,7078
 7079,NYAMUKA,Nyamuka,Mtogolo,Malemia,Zomba,South,35.375824,-15.26398,WGS 84,Community Health Worker,MoH,Domasi,Functional,7079
 7080,NYAMUKA,Nyamuka,Mtogolo,Malemia,Zomba,South,35.375824,-15.26398,WGS 84,Community Health Worker,MoH,Domasi,Functional,7080
 7081,NYANI,Nyani,Mtwiche,Malemia,Zomba,South,35.400223,-15.334584,WGS 84,Community Health Worker,MoH,Domasi,Functional,7081
 7082,NYANI,Nyani,Mtwiche,Malemia,Zomba,South,35.400223,-15.334584,WGS 84,Community Health Worker,MoH,Domasi,Functional,7082
-7083,SULULU,Sululu ,Minama,Malemia,Zomba,South,35.384823,-15.259387,WGS 84,Community Health Worker,MoH,Domasi,Functional,7083
+7083,SULULU,Sululu,Minama,Malemia,Zomba,South,35.384823,-15.259387,WGS 84,Community Health Worker,MoH,Domasi,Functional,7083
 7084,TIKONDWE,Makuwa,Machinjiri,Malemia,Zomba,South,35.417013,-15.272972,WGS 84,Community Health Worker,MoH,Domasi,Functional,7084
 7085,UMBWA,Umbwa,Mbwani,Kuntumanji,Zomba,South,35.425678,-15.311361,WGS 84,Community Health Worker,MoH,Domasi,Functional,7085
 7086,UMBWA,Umbwa,Mbwani,Kuntumanji,Zomba,South,35.425678,-15.311361,WGS 84,Community Health Worker,MoH,Domasi,Functional,7086
@@ -7096,7 +7096,7 @@
 7094,MDUMU,Mdumu,Mtogolo,Malemia,Zomba,South,35.382309,-15.312506,WGS 84,Community Health Worker,MoH,H. Parker Sharp,Functional,7094
 7095,MDUMU,Mdumu,Mtogolo,Malemia,Zomba,South,35.382309,-15.312506,WGS 84,Community Health Worker,MoH,H. Parker Sharp,Functional,7095
 7096,NDECHA,Ndecha,Mtogolo,Malemia,Zomba,South,35.381142,-15.304816,WGS 84,Community Health Worker,MoH,H. Parker Sharp,Functional,7096
-7097,WILLIAM,William ,Kasonga,Malemia,Zomba,South,35.32124,-15.302876,WGS 84,Community Health Worker,MoH,H. Parker Sharp,Functional,7097
+7097,WILLIAM,William,Kasonga,Malemia,Zomba,South,35.32124,-15.302876,WGS 84,Community Health Worker,MoH,H. Parker Sharp,Functional,7097
 7098,LAMBULIRA,Saiti,Lambulira,Chikowi,Zomba,South,35.337227,-15.484115,WGS 84,Health Centre,MoH,Lambulira,Functional,7098
 7099,CHAMANGA,Chilipo,Lambulira,Chikowi,Zomba,South,35.362827,-15.516483,WGS 84,Community Health Worker,MoH,Lambulira,Functional,7099
 7100,CHIMBALANGA,Chimbalanga,Chimbalanga,Chikowi,Zomba,South,35.399489,-15.48363,WGS 84,Community Health Worker,MoH,Lambulira,Functional,7100
@@ -7154,8 +7154,8 @@
 7152,MATAMANDA,Matamanda,Machinjiri,Malemia,Zomba,South,35.431656,-15.244178,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7152
 7153,MATINDIRI,Matindiri,Machinjiri,Malemia,Zomba,South,35.426171,-15.252632,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7153
 7154,MATINDIRI,Matindiri,Machinjiri,Malemia,Zomba,South,35.426171,-15.252632,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7154
-7155,MIKUNDI,Mikundi ,Machinjiri,Malemia,Zomba,South,35.400715,-15.232718,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7155
-7156,MTWICHE,Mtwiche ,Mtwiche ,Malemia,Zomba,South,35.410531,-15.260731,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7156
+7155,MIKUNDI,Mikundi,Machinjiri,Malemia,Zomba,South,35.400715,-15.232718,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7155
+7156,MTWICHE,Mtwiche,Mtwiche ,Malemia,Zomba,South,35.410531,-15.260731,WGS 84,Community Health Worker,MoH,Machinjiri,Functional,7156
 7157,MAERA,Nthita,Nthita,Mlumbe,Zomba,South,35.13148,-15.509801,WGS 84,Health Centre,MoH,Maera,Functional,7157
 7158,LIUNDI,Liundi,Kutambala,Mlumbe,Zomba,South,35.149377,-15.469358,WGS 84,Community Health Worker,MoH,Maera,Functional,7158
 7159,LIUNDI,Liundi,Kutambala,Mlumbe,Zomba,South,35.149377,-15.469358,WGS 84,Community Health Worker,MoH,Maera,Functional,7159
@@ -7183,7 +7183,7 @@
 7181,CHILUNGA,Chilunga,Chilunga,Mwambo,Zomba,South,35.474044,-15.428204,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7181
 7182,CHIMWAYI,Chimwayi,Disi,Kuntumanji,Zomba,South,35.422543,-15.330636,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7182
 7183,CHIMWAYI,Chimwayi,Disi,Kuntumanji,Zomba,South,35.422543,-15.330636,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7183
-7184,KALUPE,Kalupe ,Machilika,Kuntumanji,Zomba,South,35.422477,-15.372146,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7184
+7184,KALUPE,Kalupe,Machilika,Kuntumanji,Zomba,South,35.422477,-15.372146,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7184
 7185,KHANDA,Khanda,Khanda,Kuntumanji,Zomba,South,35.510632,-15.358072,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7185
 7186,KHANDA,Khanda,Khanda,Kuntumanji,Zomba,South,35.510632,-15.358072,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7186
 7187,LITI,Liti,Disi,Kuntumanji,Zomba,South,35.426137,-15.345806,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7187
@@ -7194,9 +7194,9 @@
 7192,MTUTUMA,Mtutuma,Mauluka,Kuntumanji,Zomba,South,35.491158,-15.394226,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7192
 7193,NAMAKOKA,Namakoka,Mindano,Mwambo,Zomba,South,35.412958,-15.410177,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7193
 7194,NAMAKOKA,Namakoka,Mindano,Mwambo,Zomba,South,35.412958,-15.410177,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7194
-7195,NSENDA,Nsenda ,Kataya,Kuntumanji,Zomba,South,35.464795,-15.356093,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7195
-7196,NYALUGWE,Nyalugwe ,Mindano,Mwambo,Zomba,South,35.467517,-15.40141,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7196
-7197,SITIMA,Sitima ,Mindano,Mwambo,Zomba,South,35.443367,-15.414266,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7197
+7195,NSENDA,Nsenda,Kataya,Kuntumanji,Zomba,South,35.464795,-15.356093,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7195
+7196,NYALUGWE,Nyalugwe,Mindano,Mwambo,Zomba,South,35.467517,-15.40141,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7196
+7197,SITIMA,Sitima,Mindano,Mwambo,Zomba,South,35.443367,-15.414266,WGS 84,Community Health Worker,MoH,Makwapala,Functional,7197
 7198,MATAWALE,Mindano,Nyanya,Mwambo,Zomba,South,35.359571,-15.390336,WGS 84,Health Centre,MoH,Matawale,Functional,7198
 7199,ARMY AIRWING,Chiwalo Konji,Makungula,Mwambo,Zomba,South,35.385064,-15.388745,WGS 84,Health Centre,MoH,Matawale,Functional,7199
 7200,CHIBISA,Chibisa,Mindano,Mwambo,Zomba,South,35.400203,-15.438976,WGS 84,Community Health Worker,MoH,Matawale,Functional,7200
@@ -7316,9 +7316,9 @@
 7314,KALINDE,Chambo,Lundu,Kuntumanji,Zomba,South,35.475198,-15.26139,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7314
 7315,KATANDA,Katanda,Lundu,Kuntumanji,Zomba,South,35.504398,-15.229274,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7315
 7316,KATANDA,Katanda,Lundu,Kuntumanji,Zomba,South,35.504398,-15.229274,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7316
-7317,KHOMOLI,Khomoli ,Lundu,Kuntumanji,Zomba,South,35.467716,-15.27546,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7317
-7318,MATEWERE,Matewere ,Ndumba,Kuntumanji,Zomba,South,35.440072,-15.241319,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7318
-7319,NAWATA,Nawata ,Liwambwe,Kuntumanji,Zomba,South,35.451954,-15.268735,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7319
+7317,KHOMOLI,Khomoli,Lundu,Kuntumanji,Zomba,South,35.467716,-15.27546,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7317
+7318,MATEWERE,Matewere,Ndumba,Kuntumanji,Zomba,South,35.440072,-15.241319,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7318
+7319,NAWATA,Nawata,Liwambwe,Kuntumanji,Zomba,South,35.451954,-15.268735,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7319
 7320,SANGA,Lundu,Lundu,Kuntumanji,Zomba,South,35.491282,-15.268647,WGS 84,Community Health Worker,MoH,Namasalima,Functional,7320
 7321,NASAWA,Nasawa,Mpawa,M'biza,Zomba,South,35.259351,-15.602379,WGS 84,Health Centre,MoH,Nasawa,Functional,7321
 7322,BISHOP MACKENZIE,Mpawa I,Mpawa,Chikowi,Zomba,South,35.247061,-15.625521,WGS 84,Community Health Worker,MoH,Nasawa,Functional,7322
@@ -7585,7 +7585,7 @@
 7583,MWACHANDE,Mwachande,Ng'ong'ola,Nkanda,Mulanje,South,35.495602,-15.735502,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7583
 7584,GOWELO,Gowelo,Ng'ong'ola,Nkanda,Mulanje,South,35.482554,-15.707912,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7584
 7585,KAMWENDO,Kamwendo,Kamwendo,Nkanda,Mulanje,South,35.476907,-15.674962,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7585
-7586,KAMWENDO,Kamwendo ,Kamwendo ,Nkanda,Mulanje,South,35.473081,-15.668858,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7586
+7586,KAMWENDO,Kamwendo,Kamwendo ,Nkanda,Mulanje,South,35.473081,-15.668858,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7586
 7587,DYANYAMA,Dyanyama,Kamwendo,Nkanda,Mulanje,South,35.43687,-15.679091,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7587
 7588,GOMBOLA,Gombola,Ndanga,Nkanda,Mulanje,South,35.389443,-15.687382,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7588
 7589,GOMBOLA,Gombola,Ndanga,Nkanda,Mulanje,South,35.389443,-15.687382,WGS 84,Community Health Worker,MoH,Mulomba,Functional,7589
@@ -8132,30 +8132,30 @@
 8130,MPHATSO,Chilobwe,Chilobwe,Kapeni,Blantyre,South,35.00969,-15.840717,WGS 84,Community Health Worker,MoH,Zingwangwa,Functional,8130
 8131,NTONDA,Daniel,Kajombo,Kapeni,Blantyre,South,34.989887,-15.846102,WGS 84,Community Health Worker,MoH,Zingwangwa,Functional,8131
 8132,CHABVALA,Chabvala,Chabvala,Kasisi,Blantyre,South,34.834342,-15.833894,WGS 84,Health Centre,MoH,Chabvala,Functional,8132
-8133,PADZUWA,Padzuwa ,Padzuwa ,Kasisi,Blantyre,South,34.839952,-15.885699,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8133
+8133,PADZUWA,Padzuwa,Padzuwa ,Kasisi,Blantyre,South,34.839952,-15.885699,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8133
 8134,KALOGA,Kaloga,Padzuwa ,Kasisi,Blantyre,South,34.826335,-15.896094,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8134
 8135,KALOGA,Kaloga,Padzuwa ,Kasisi,Blantyre,South,34.826335,-15.896094,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8135
 8136,MPHATIKA,Mphatika,Padzuwa ,Kasisi,Blantyre,South,34.861649,-15.918432,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8136
 8137,MPHATIKA,Mphatika,Padzuwa ,Kasisi,Blantyre,South,34.861649,-15.918432,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8137
-8138,MBUYAO,Mbuyao ,Chabvala,Kasisi,Blantyre,South,34.867714,-15.851204,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8138
-8139,CHAGWIRAUTA,Chagwirauta ,Imbwa,Kunthembwe,Blantyre,South,34.858251,-15.807708,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8139
+8138,MBUYAO,Mbuyao,Chabvala,Kasisi,Blantyre,South,34.867714,-15.851204,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8138
+8139,CHAGWIRAUTA,Chagwirauta,Imbwa,Kunthembwe,Blantyre,South,34.858251,-15.807708,WGS 84,Community Health Worker,MoH,Chabvala,Functional,8139
 8140,KABULUZI,Kabuluzi,Imbwa,Kunthembwe,Blantyre,South,34.834098,-15.76268,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8140
 8141,KABULUZI,Kabuluzi,Imbwa,Kunthembwe,Blantyre,South,34.834098,-15.76268,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8141
-8142,CHIMPANGO,Chimpango ,Makanjira,Kunthembwe,Blantyre,South,34.861105,-15.746321,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8142
+8142,CHIMPANGO,Chimpango,Makanjira,Kunthembwe,Blantyre,South,34.861105,-15.746321,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8142
 8143,MCHENGA,Kamoyo,Majora,Kunthembwe,Blantyre,South,34.854783,-15.706009,WGS 84,Community Health Worker,MoH,Chikowa,Non Functional,8143
 8144,MCHENGA,Kamoyo,Majora,Kunthembwe,Blantyre,South,34.854783,-15.706009,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8144
 8145,RHODA,Rhoda,Majora,Kunthembwe,Blantyre,South,34.835822,-15.697133,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8145
 8146,RHODA,Rhoda,Majora,Kunthembwe,Blantyre,South,34.835822,-15.697133,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8146
-8147,MAPONDERA,Mapondera ,Majora,Kunthembwe,Blantyre,South,34.81488,-15.746335,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8147
+8147,MAPONDERA,Mapondera,Majora,Kunthembwe,Blantyre,South,34.81488,-15.746335,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8147
 8148,MPATAMANGA,Chaswanthaka,Kunthembwe,Kunthembwe,Blantyre,South,34.74901,-15.694957,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8148
 8149,MPATAMANGA,Chaswanthaka,Kunthembwe,Kunthembwe,Blantyre,South,34.74901,-15.694957,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8149
 8150,NGOLEKA,Gwadani,Gwadani,Kunthembwe,Blantyre,South,34.835912,-15.656276,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8150
 8151,NGOLEKA,Gwadani,Gwadani,Kunthembwe,Blantyre,South,34.835912,-15.656276,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8151
-8152,GOMANI,Gomani ,Gwadani,Kunthembwe,Blantyre,South,34.864319,-15.622768,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8152
+8152,GOMANI,Gomani,Gwadani,Kunthembwe,Blantyre,South,34.864319,-15.622768,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8152
 8153,CHIKOWA,Kunthembwe,Kunthembwe,Kunthembwe,Blantyre,South,34.871017,-15.671466,WGS 84,Health Centre,MoH,Chikowa,Functional,8153
-8154,TWAYA,Twaya ,Gwadani,Kunthembwe,Blantyre,South,34.882622,-15.645128,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8154
-8155,JUMBE,Jumbe ,Stande,Kunthembwe,Blantyre,South,34.897644,-15.640474,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8155
-8156,CHAZEMBA,Chazemba ,Makanjira,Kunthembwe,Blantyre,South,34.882694,-15.721393,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8156
+8154,TWAYA,Twaya,Gwadani,Kunthembwe,Blantyre,South,34.882622,-15.645128,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8154
+8155,JUMBE,Jumbe,Stande,Kunthembwe,Blantyre,South,34.897644,-15.640474,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8155
+8156,CHAZEMBA,Chazemba,Makanjira,Kunthembwe,Blantyre,South,34.882694,-15.721393,WGS 84,Community Health Worker,MoH,Chikowa,Functional,8156
 8157,MBAYANI,Mbayani Township,Mbayani Township,Machinjiri,Blantyre,South,35.004616,-15.765569,WGS 84,Health Centre,MoH,Mbayani,Functional,8157
 8158,CHIKONDI,Gaisi,Mbayani Township,Machinjiri,Blantyre,South,35.011696,-15.763181,WGS 84,Community Health Worker,MoH,Mbayani,Functional,8158
 8159,ST MARY'S,Mbayani Township,Mbayani Township,Machinjiri,Blantyre,South,35.001719,-15.771837,WGS 84,Community Health Worker,MoH,Mbayani,Functional,8159
@@ -8314,8 +8314,8 @@
 8312,CHAMBA,Chamba,Sompho,Kuntaja,Blantyre,South,34.91555,-15.793857,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8312
 8313,JUMBE,Jumbe,Mpagaja,Somba,Blantyre,South,34.90183,-15.829888,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8313
 8314,JUMBE,Jumbe,Mpagaja,Somba,Blantyre,South,34.90183,-15.829888,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8314
-8315,TSOKA,Tsoka ,Sompho,Kuntaja,Blantyre,South,34.906612,-15.786101,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8315
-8316,WISIKEMU,Wisikemu ,Sompho,Kuntaja,Blantyre,South,34.87943,-15.81122,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8316
+8315,TSOKA,Tsoka,Sompho,Kuntaja,Blantyre,South,34.906612,-15.786101,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8315
+8316,WISIKEMU,Wisikemu,Sompho,Kuntaja,Blantyre,South,34.87943,-15.81122,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8316
 8317,KAMBUZI,Kambuzi,Mtiza,Kuntaja,Blantyre,South,34.9091,-15.729946,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8317
 8318,KHOMBWE,Mulima,Mtiza,Kuntaja,Blantyre,South,34.921245,-15.740628,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8318
 8319,MAKANJIRA,Makanjira,Makanjira,Kunthembwe,Blantyre,South,34.882903,-15.728846,WGS 84,Community Health Worker,MoH,Chimembe,Functional,8319
@@ -8325,11 +8325,11 @@
 8323,NANJIWA,Nanjiwa,Nanjiwa,Kuntaja,Blantyre,South,34.930105,-15.621505,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8323
 8324,KACHERE,Mdala,Mdala,Kuntaja,Blantyre,South,34.93631,-15.587877,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8324
 8325,KACHERE,Mdala,Mdala,Kuntaja,Blantyre,South,34.93631,-15.587877,WGS 84,Community Health Worker,CHAM,Chileka SDA,Non Functional,8325
-8326,KANTUMBIZA,Kantumbiza ,Kuntaja,Kuntaja,Blantyre,South,34.946286,-15.577021,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8326
+8326,KANTUMBIZA,Kantumbiza,Kuntaja,Kuntaja,Blantyre,South,34.946286,-15.577021,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8326
 8327,KAMMATA,Kammata,Kammata,Kuntaja,Blantyre,South,34.965922,-15.634806,WGS 84,Community Health Worker,CHAM,Chileka SDA,Functional,8327
 8328,KAMMATA,Kammata,Kammata,Kuntaja,Blantyre,South,34.965922,-15.634806,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8328
 8329,MANJERO,Manjero,Lemu,Kuntaja,Blantyre,South,34.959544,-15.608286,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8329
-8330,MPACHIKA,Mpachika ,Lemu,Kuntaja,Blantyre,South,34.968526,-15.598721,WGS 84,Community Health Worker,CHAM,Chileka SDA,Functional,8330
+8330,MPACHIKA,Mpachika,Lemu,Kuntaja,Blantyre,South,34.968526,-15.598721,WGS 84,Community Health Worker,CHAM,Chileka SDA,Functional,8330
 8331,KAMMWETSA,Kammwetsa,Chikumbu,Kunthembwe,Blantyre,South,34.902516,-15.684507,WGS 84,Community Health Worker,CHAM,Chileka SDA,Functional,8331
 8332,KAMMWETSA,Kammwetsa,Chikumbu,Kunthembwe,Blantyre,South,34.902516,-15.684507,WGS 84,Community Health Worker,MoH,Chileka SDA,Functional,8332
 8333,CHILEKA,Singano,Nkata,Kuntaja,Blantyre,South,34.970663,-15.682466,WGS 84,Health Centre,MoH,Chileka,Functional,8333
@@ -8530,8 +8530,8 @@
 8528,MPHETE,Mphete,Mofati,Kanduku,Mwanza,South,34.578941,-15.624654,WGS 84,Community Health Worker,MoH,Mwanza DH,Functional,8528
 8529,MPHETE,Mphete,Mofati,Kanduku,Mwanza,South,34.578941,-15.624654,WGS 84,Community Health Worker,MoH,Mwanza DH,Functional,8529
 8530,KUNENEKUDE,Kunenekude,Kunenekude,Kanduku,Mwanza,South,34.49141,-15.464742,WGS 84,Health Centre,MoH,Kunenekude,Functional,8530
-8531,JAMU,Jamu ,Ziyaya,Kanduku,Mwanza,South,34.490347,-15.521929,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8531
-8532,JAMU,Jamu ,Ziyaya,Kanduku,Mwanza,South,34.490347,-15.521929,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8532
+8531,JAMU,Jamu,Ziyaya,Kanduku,Mwanza,South,34.490347,-15.521929,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8531
+8532,JAMU,Jamu,Ziyaya,Kanduku,Mwanza,South,34.490347,-15.521929,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8532
 8533,DONKEN,Donken,Ziyaya,Kanduku,Mwanza,South,34.50906,-15.508595,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8533
 8534,DONKEN,Donken,Ziyaya,Kanduku,Mwanza,South,34.50906,-15.508595,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8534
 8535,ZIYAYA,Ziyaya,Ziyaya,Kanduku,Mwanza,South,34.495993,-15.503162,WGS 84,Community Health Worker,MoH,Kunenekude,Functional,8535
@@ -8591,16 +8591,16 @@
 8589,KANTHAWIRE,Kanthawire,Kanthawire,Nanseta,Thyolo,South,35.296909,-16.017714,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8589
 8590,THOWELA,Thowela,Thowela,Nanseta,Thyolo,South,35.296047,-16.032592,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8590
 8591,THOWELA ,Thowela,Thowela,Nanseta,Thyolo,South,35.303633,-16.032572,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8591
-8592,JAYENDA,Jayenda ,Jayenda ,Nanseta,Thyolo,South,35.218419,-16.024059,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8592
-8593,KWANJANA,Kwanjana ,Kwanjana ,Mchilamwela,Thyolo,South,35.191722,-16.043958,WGS 84,Community Health Worker,MoH,Mangunda,Non Functional,8593
+8592,JAYENDA,Jayenda,Jayenda ,Nanseta,Thyolo,South,35.218419,-16.024059,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8592
+8593,KWANJANA,Kwanjana,Kwanjana ,Mchilamwela,Thyolo,South,35.191722,-16.043958,WGS 84,Community Health Worker,MoH,Mangunda,Non Functional,8593
 8594,GLENA,Chaona,Kwanjana ,Mchilamwela,Thyolo,South,35.188542,-16.052401,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8594
 8595,CHAONA,Chaona,Kwanjana ,Mchilamwela,Thyolo,South,35.196026,-16.056413,WGS 84,Community Health Worker,MoH,Mangunda,Non Functional,8595
-8596,WALUMA,Waluma ,Mpando,Mchilamwela,Thyolo,South,35.212645,-16.057454,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8596
-8597,NAPHAZI,Naphazi ,Mpando,Mchilamwela,Thyolo,South,35.230279,-16.053085,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8597
+8596,WALUMA,Waluma,Mpando,Mchilamwela,Thyolo,South,35.212645,-16.057454,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8596
+8597,NAPHAZI,Naphazi,Mpando,Mchilamwela,Thyolo,South,35.230279,-16.053085,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8597
 8598,SMALL HOLDER,Nansanya,Kwanjana ,Mchilamwela,Thyolo,South,35.229061,-16.045264,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8598
 8599,MPANDO,Mpando,Mpando,Mchilamwela,Thyolo,South,35.240125,-16.062138,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8599
 8600,MPANDO,Mpando,Mpando,Mchilamwela,Thyolo,South,35.240125,-16.062138,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8600
-8601,LIKWAKWANDA,Likwakwanda ,Kwanjana ,Mchilamwela,Thyolo,South,35.250349,-16.048244,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8601
+8601,LIKWAKWANDA,Likwakwanda,Kwanjana ,Mchilamwela,Thyolo,South,35.250349,-16.048244,WGS 84,Community Health Worker,MoH,Mangunda,Functional,8601
 8602,MAFISI,Selengwe,Kapichi,Kapichi,Thyolo,South,35.251135,-16.068014,WGS 84,Health Centre,Tea Estate,Mafisi,Functional,8602
 8603,CHINTHEBE,Chinthebe II,Willson,Thomas,Thyolo,South,35.012871,-16.002226,WGS 84,Health Centre,MoH,Chinthebe,Functional,8603
 8604,NGOMANO,Ngomano,Willson,Thomas,Thyolo,South,35.000737,-16.004583,WGS 84,Community Health Worker,MoH,Chinthebe,Functional,8604
@@ -8619,7 +8619,7 @@
 8617,MPHEZU,Mphezu,Maggie,Bvumbwe,Thyolo,South,35.087065,-15.966889,WGS 84,Community Health Worker,Tea Estate,Thunga,Functional,8617
 8618,MINDALI,Tea Estate,Tea Estate,Chimaliro,Thyolo,South,35.116009,-15.997216,WGS 84,Community Health Worker,Tea Estate,Thunga,Functional,8618
 8619,KHONJENI,Kadaya,Kapichi,Kapichi,Thyolo,South,35.27129,-16.096648,WGS 84,Health Centre,MoH,Khonjeni,Functional,8619
-8620,SELENGU,Selengu ,Kapichi,Kapichi,Thyolo,South,35.244993,-16.081881,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8620
+8620,SELENGU,Selengu,Kapichi,Kapichi,Thyolo,South,35.244993,-16.081881,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8620
 8621,CHINIKO,Maida,Kapichi,Kapichi,Thyolo,South,35.263301,-16.081808,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8621
 8622,NDOMBOLE,Ndombole,Kapichi,Kapichi,Thyolo,South,35.281039,-16.06812,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8622
 8623,NDOMBOLE,Ndombole,Kapichi,Kapichi,Thyolo,South,35.281039,-16.06812,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8623
@@ -8638,18 +8638,18 @@
 8636,MIKATE SCHOOL,Mikate,Mikate,Kapichi,Thyolo,South,35.314659,-16.12136,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8636
 8637,BAYISONI,Bayisoni,Mikate,Kapichi,Thyolo,South,35.311271,-16.124937,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8637
 8638,BAYISONI,Bayisoni,Mikate,Kapichi,Thyolo,South,35.311271,-16.124937,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8638
-8639,BESTON,Beston ,Mikate,Kapichi,Thyolo,South,35.323224,-16.124232,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8639
+8639,BESTON,Beston,Mikate,Kapichi,Thyolo,South,35.323224,-16.124232,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8639
 8640,CHIDIDI,Ngamwani II,Mikate,Kapichi,Thyolo,South,35.281586,-16.125526,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8640
 8641,CHIDIDI,Ngamwani II,Mikate,Kapichi,Thyolo,South,35.281586,-16.125526,WGS 84,Community Health Worker,MoH,Khonjeni,Functional,8641
-8642,MAKAPWA,Makombe ,Makombe,Kapichi,Thyolo,South,35.279764,-16.181721,WGS 84,Health Centre,CHAM,Makapwa SDA,Functional,8642
-8643,MAKOMBE,Makombe ,Makombe ,Kapichi,Thyolo,South,35.277797,-16.180273,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8643
-8644,KHAVE,Khave ,Makombe,Kapichi,Thyolo,South,35.272159,-16.174141,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8644
+8642,MAKAPWA,Makombe,Makombe,Kapichi,Thyolo,South,35.279764,-16.181721,WGS 84,Health Centre,CHAM,Makapwa SDA,Functional,8642
+8643,MAKOMBE,Makombe,Makombe ,Kapichi,Thyolo,South,35.277797,-16.180273,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8643
+8644,KHAVE,Khave,Makombe,Kapichi,Thyolo,South,35.272159,-16.174141,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8644
 8645,SHALA,Shala,Makombe,Kapichi,Thyolo,South,35.2713,-16.155837,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8645
 8646,SHALA,Shala,Makombe,Kapichi,Thyolo,South,35.2713,-16.155837,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8646
 8647,SINGALA,Singala,Makombe,Kapichi,Thyolo,South,35.289359,-16.15665,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8647
 8648,SINGALA,Singala,Makombe,Kapichi,Thyolo,South,35.289359,-16.15665,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8648
-8649,MISOYA,Misoya ,Makombe,Kapichi,Thyolo,South,35.285958,-16.148347,WGS 84,Community Health Worker,MoH,Makapwa SDA,Non Functional,8649
-8650,KHANYERA,Khanyera ,Makombe,Kapichi,Thyolo,South,35.265802,-16.152628,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8650
+8649,MISOYA,Misoya,Makombe,Kapichi,Thyolo,South,35.285958,-16.148347,WGS 84,Community Health Worker,MoH,Makapwa SDA,Non Functional,8649
+8650,KHANYERA,Khanyera,Makombe,Kapichi,Thyolo,South,35.265802,-16.152628,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8650
 8651,SITIMA,Sitima,Makombe,Kapichi,Thyolo,South,35.261349,-16.146756,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8651
 8652,MATEWERE A,Matewere A,Makombe,Kapichi,Thyolo,South,35.261612,-16.165926,WGS 84,Community Health Worker,CHAM,Makapwa SDA,Functional,8652
 8653,MATEWERE A,Matewere A,Makombe,Kapichi,Thyolo,South,35.261612,-16.165926,WGS 84,Community Health Worker,MoH,Makapwa SDA,Functional,8653
@@ -8845,7 +8845,7 @@
 8843,CHAONE,Chidothe,Chidothe,Chimaliro,Thyolo,South,35.151761,-15.930914,WGS 84,Community Health Worker,MoH,Mikolongwe,Functional,8843
 8844,MAZINGA,Mazinga,Nguluwe,Bvumbwe,Thyolo,South,35.150992,-15.894572,WGS 84,Community Health Worker,MoH,Mikolongwe,Functional,8844
 8845,CHISOKA,Kamoto,Kamoto,Chimaliro,Thyolo,South,35.208987,-15.941732,WGS 84,Health Centre,MoH,Chisoka,Functional,8845
-8846,NAMATUNI,Katundu ,Mangadzi,Chimaliro,Thyolo,South,35.180637,-15.944426,WGS 84,Community Health Worker,MoH,Chisoka,Functional,8846
+8846,NAMATUNI,Katundu,Mangadzi,Chimaliro,Thyolo,South,35.180637,-15.944426,WGS 84,Community Health Worker,MoH,Chisoka,Functional,8846
 8847,MAPWESERA,Mapwesera,Mangadzi,Chimaliro,Thyolo,South,35.234803,-15.933518,WGS 84,Community Health Worker,MoH,Chisoka,Functional,8847
 8848,MAPWESERA,Mapwesera,Mangadzi,Chimaliro,Thyolo,South,35.234803,-15.933518,WGS 84,Community Health Worker,MoH,Chisoka,Functional,8848
 8849,MAKANDE,Mtetemera,Mwashana,Chimaliro,Thyolo,South,35.261157,-15.955743,WGS 84,Community Health Worker,MoH,Chisoka,Functional,8849
@@ -8871,7 +8871,7 @@
 8869,KHAMANYENGA,Khamanyenga,Gombe,Nsabwe,Thyolo,South,35.215438,-16.384469,WGS 84,Community Health Worker,MoH,Gombe,Functional,8869
 8870,MALOTA,Gombe II,Chisatha,Nsabwe,Thyolo,South,35.24402,-16.395406,WGS 84,Community Health Worker,MoH,Gombe,Functional,8870
 8871,MALOTA,Gombe II,Chisatha,Nsabwe,Thyolo,South,35.24402,-16.395406,WGS 84,Community Health Worker,MoH,Gombe,Functional,8871
-8872,CHISATHA I,Chisatha ,Chisatha,Nsabwe,Thyolo,South,35.251294,-16.382053,WGS 84,Community Health Worker,MoH,Gombe,Functional,8872
+8872,CHISATHA I,Chisatha,Chisatha,Nsabwe,Thyolo,South,35.251294,-16.382053,WGS 84,Community Health Worker,MoH,Gombe,Functional,8872
 8873,THUKUTA,Gombe II,Chisatha,Nsabwe,Thyolo,South,35.263278,-16.394465,WGS 84,Community Health Worker,MoH,Gombe,Functional,8873
 8874,MOLELE,Chalingana  II,Nkalozwa,Changata,Thyolo,South,35.135779,-16.217628,WGS 84,Health Centre,CHAM,Molele,Functional,8874
 8875,MWALO,Mwalo,Nkalozwa,Changata,Thyolo,South,35.160226,-16.20537,WGS 84,Community Health Worker,CHAM,Molele,Functional,8875
@@ -8964,7 +8964,7 @@
 8962,MANDINDI,Mandindi,Mandindi,Kapichi,Thyolo,South,35.223932,-16.151508,WGS 84,Community Health Worker,MoH,Mitengo,Functional,8962
 8963,FRANK,Frank,Mandindi,Kapichi,Thyolo,South,35.214699,-16.148606,WGS 84,Community Health Worker,CHAM,Mitengo,Functional,8963
 8964,FRANK,Frank,Mandindi,Kapichi,Thyolo,South,35.214699,-16.148606,WGS 84,Community Health Worker,MoH,Mitengo,Functional,8964
-8965,NAMFUKWE,Ngamwani ,Madindi,Kapichi,Thyolo,South,35.247774,-16.133009,WGS 84,Community Health Worker,MoH,Mitengo,Functional,8965
+8965,NAMFUKWE,Ngamwani,Madindi,Kapichi,Thyolo,South,35.247774,-16.133009,WGS 84,Community Health Worker,MoH,Mitengo,Functional,8965
 8966,Mchedeka,Ngamwani I,Mandindi,Kapichi,Thyolo,South,35.235588,-16.154862,WGS 84,Community Health Worker,CHAM,Mitengo,Functional,8966
 8967,Mchedeka,Ngamwani I,Mandindi,Kapichi,Thyolo,South,35.235588,-16.154862,WGS 84,Community Health Worker,MoH,Mitengo,Functional,8967
 8968,CHANGATA,Changata,Changata,Changata,Thyolo,South,35.147585,-16.232463,WGS 84,Health Centre,MoH,Changata,Functional,8968
@@ -9103,7 +9103,7 @@
 9101,KUTAMA,Kutama,Therere,Ngabu,Chikwawa,South,34.695627,-16.353717,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9101
 9102,BAPTON,Bapton,Mphungu,Ngabu,Chikwawa,South,34.798366,-16.346253,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9102
 9103,BAPTON,Bapton,Mphungu,Ngabu,Chikwawa,South,34.798366,-16.346253,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9103
-9104,GOMA,Robert ,Goma,Ngabu,Chikwawa,South,34.859866,-16.402225,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9104
+9104,GOMA,Robert,Goma,Ngabu,Chikwawa,South,34.859866,-16.402225,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9104
 9105,NYANGU,Nyangu,Kalulu,Ngabu,Chikwawa,South,34.818512,-16.447039,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9105
 9106,MAKALA,Kadulira,Chizenga,Ngabu,Chikwawa,South,34.779028,-16.443005,WGS 84,Community Health Worker,MoH,Chipwaila,Functional,9106
 9107,MAKALA,Kadulira,Chizenga,Ngabu,Chikwawa,South,34.779028,-16.443005,WGS 84,Community Health Worker,MoH,Chipwaila,Non Functional,9107
@@ -9217,7 +9217,7 @@
 9215,NTAYAMANJA,Ntayamanja,Ntayamanja,Masache,Chikwawa,South,34.960733,-16.599333,WGS 84,Community Health Worker,MoH,Dolo,Functional,9215
 9216,MASACHE,Masache,Masache,Masache,Chikwawa,South,34.946371,-16.569401,WGS 84,Community Health Worker,MoH,Dolo,Functional,9216
 9217,MASACHE,Masache,Masache,Masache,Chikwawa,South,34.946371,-16.569401,WGS 84,Community Health Worker,MoH,Dolo,Functional,9217
-9218,JACKSONI,Jacksoni ,Masache,Masache,Chikwawa,South,34.965088,-16.558466,WGS 84,Community Health Worker,MoH,Dolo,Functional,9218
+9218,JACKSONI,Jacksoni,Masache,Masache,Chikwawa,South,34.965088,-16.558466,WGS 84,Community Health Worker,MoH,Dolo,Functional,9218
 9219,NANKUMBA,Nankumba,Nankumba,Masache,Chikwawa,South,34.976115,-16.566655,WGS 84,Community Health Worker,MoH,Dolo,Functional,9219
 9220,NANKUMBA,Nankumba,Nankumba,Masache,Chikwawa,South,34.976115,-16.566655,WGS 84,Community Health Worker,MoH,Dolo,Functional,9220
 9221,THUDZU,Thudzu,Thudzu,Masache,Chikwawa,South,35.006989,-16.538372,WGS 84,Community Health Worker,MoH,Dolo,Functional,9221
@@ -9327,8 +9327,8 @@
 9325,NYANTHUMBI,Nyanthumbi,Nyanthumbi,Tengani,Nsanje,South,35.214871,-16.723663,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9325
 9326,DUMBA,Dumba,Dumba,Tengani,Nsanje,South,35.250025,-16.712249,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9326
 9327,DUMBA,Dumba,Dumba,Tengani,Nsanje,South,35.250025,-16.712249,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9327
-9328,MGONA,Mchacha ,Mgona,Tengani,Nsanje,South,35.285378,-16.756205,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9328
-9329,MGONA,Mchacha ,Mgona,Tengani,Nsanje,South,35.285378,-16.756205,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9329
+9328,MGONA,Mchacha,Mgona,Tengani,Nsanje,South,35.285378,-16.756205,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9328
+9329,MGONA,Mchacha,Mgona,Tengani,Nsanje,South,35.285378,-16.756205,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9329
 9330,CHIKHAO,Chikhao,Chikhao,Tengani,Nsanje,South,35.275353,-16.7772,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9330
 9331,CHIKHAO,Chikhao,Chikhao,Tengani,Nsanje,South,35.275353,-16.7772,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9331
 9332,NAVAYA,Navaya,Navaya,Tengani,Nsanje,South,35.232164,-16.802516,WGS 84,Community Health Worker,MoH,Tengani ,Functional,9332
@@ -9354,13 +9354,13 @@
 9352,KALUPSYA,Kalupsya,Kalupsya,Mbenje,Nsanje,South,35.148278,-16.617542,WGS 84,Community Health Worker,MoH,Phokera,Functional,9352
 9353,KALUPSYA,Kalupsya,Kalupsya,Mbenje,Nsanje,South,35.148278,-16.617542,WGS 84,Community Health Worker,MoH,Phokera,Functional,9353
 9354,MAELE II,Maele II,Kalupsya,Mbenje,Nsanje,South,35.110909,-16.632568,WGS 84,Community Health Worker,MoH,Phokera,Functional,9354
-9355,MAELE,Maele ,Kalupsya,Mbenje,Nsanje,South,35.142131,-16.61143,WGS 84,Community Health Worker,MoH,Phokera,Functional,9355
+9355,MAELE,Maele,Kalupsya,Mbenje,Nsanje,South,35.142131,-16.61143,WGS 84,Community Health Worker,MoH,Phokera,Functional,9355
 9356,LULWE,Nsiyakhuni,Nsiyakhuni,Ndamera,Nsanje,South,35.114243,-17.087508,WGS 84,Health Centre,CHAM,Lulwe,Functional,9356
 9357,UTENDA,Utenda,Utenda,Ndamera,Nsanje,South,35.090817,-17.024868,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9357
 9358,UTENDA,Utenda,Utenda,Ndamera,Nsanje,South,35.090817,-17.024868,WGS 84,Community Health Worker,MoH,Lulwe,Functional,9358
 9359,GULUMBA,Dimba,Gulumba,Ndamera,Nsanje,South,35.113047,-17.050308,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9359
-9360,ALUFANDIKA,Josaya ,Alufandika,Ndamera,Nsanje,South,35.084633,-17.070668,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9360
-9361,ALUFANDIKA,Josaya ,Alufandika,Ndamera,Nsanje,South,35.084633,-17.070668,WGS 84,Community Health Worker,MoH,Lulwe,Non Functional,9361
+9360,ALUFANDIKA,Josaya,Alufandika,Ndamera,Nsanje,South,35.084633,-17.070668,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9360
+9361,ALUFANDIKA,Josaya,Alufandika,Ndamera,Nsanje,South,35.084633,-17.070668,WGS 84,Community Health Worker,MoH,Lulwe,Non Functional,9361
 9362,MISASI,Misasi,Fatchi,Ndamera,Nsanje,South,35.092253,-17.118972,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9362
 9363,NYAUKAKA,Khonyo,Nsiyakhuni,Ndamera,Nsanje,South,35.106193,-17.105364,WGS 84,Community Health Worker,CHAM,Lulwe,Functional,9363
 9364,NYAUKAKA,Khonyo,Nsiyakhuni,Ndamera,Nsanje,South,35.106193,-17.105364,WGS 84,Community Health Worker,MoH,Lulwe,Functional,9364

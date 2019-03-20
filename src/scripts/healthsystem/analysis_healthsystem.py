@@ -5,7 +5,7 @@ import os
 import pandas as pd
 
 from tlo import Date, Simulation
-# from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
 
 # Where will output go
@@ -17,11 +17,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource files
 resourcefilepath = './resources/'
 
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
-
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -38,7 +36,6 @@ logging.getLogger().addHandler(fh)
 
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
-
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
@@ -48,8 +45,7 @@ service_availability.loc[1] = ['ChronicSyndrome_Treatment', False]
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       service_availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
@@ -63,4 +59,4 @@ fh.flush()
 
 
 # %% read the results
-# output = parse_log_file(logfile)
+output = parse_log_file(logfile)
