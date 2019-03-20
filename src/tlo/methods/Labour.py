@@ -46,9 +46,12 @@ class Labour (Module):
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her BMI is greater than 25'),
         'prob_ptl': Parameter (
             Types.REAL, 'probability of a woman entering labour at <37 weeks gestation'),
-        'rr_ptb_malaria': Parameter (
-            Types.REAL, 'relative risk of a woman with malaria experiencing pre term labour'),
-        # determine malaria definition
+        'rr_ptl_persistent_malaria': Parameter (
+            Types.REAL, 'relative risk of a woman with presistant malaria entering preterm labour '
+                        '(peripheral slide positive at booking and at 28–32 weeks)'),
+        'rr_ptl_prev_ptb': Parameter(
+            Types.REAL, 'relative risk of a woman going into pre term labour if she has had a preterm birth for any '
+                        'prior deliveries'),
         'prob_live_birth_SL': Parameter(
              Types.REAL, 'probability of live birth following spontaneous labour'),
         'prob_live_birth_IL': Parameter(
@@ -74,14 +77,12 @@ class Labour (Module):
       }
 
     PROPERTIES = {
+
         'la_is_pregnant':Property(Types.BOOL, 'currently pregnant'),
         'la_labour': Property(Types.CATEGORICAL,'not in labour, spontaneous unobstructed labour, prolonged or '
                                                 'obstructed labour, Preterm Labour',
                                 categories=['not_in_labour', 'spontaneous_unobstructed_labour',
                                             'prolonged_or_obstructed_labour','pretterm_labour']),
-
-        # Have made 4 categories, combined PL and OL into one "state" and added preterm labour
-
         'la_planned_cs': Property(Types.BOOL, 'pregnant woman undergoes an elective caesarean section'),
         'la_induced_labour': Property(Types.BOOL, 'pregnant woman has labour induced'),
         'la_abortion': Property(Types.DATE, 'the date on which a pregnant has had an abortion'),
@@ -89,10 +90,10 @@ class Labour (Module):
         'la_still_birth': Property(Types.BOOL, 'labour ends in a still birth'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_previous_cs': Property(Types.BOOL, 'has the woman ever had a previous caesarean'), # REFINE TO INTEGER
-        'la_immediate_postpartum': Property(Types.BOOL, ' postpartum period from delivery to 48 hours post')
-
+        'la_immediate_postpartum': Property(Types.BOOL, ' postpartum period from delivery to 48 hours post'),
+        'la_previous_ptb': Property(Types.BOOL, 'whether the woman has had a previous preterm delivery for any of her'
+                                                  'previous deliveries')
     }
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -116,8 +117,9 @@ class Labour (Module):
         params['rr_PL_OL_baby<1.5kg'] = 0.7
         params['rr_PL_OL_bmi<18'] = 0.8
         params['rr_PL_OL_bmi>25'] = 1.4
-        params['prob_PLT'] = 0.10
-        params['rr_PLT_malaria'] = 1.4
+        params['prob_ptl'] = 0.20
+        params['rr_ptl_persistent_malaria'] = 1.4
+        params['rr_ptl_prev_ptb'] = 2.13
         params['prob_live_birth_SL'] = 0.85
         params['prob_live_birth_IL'] = 0.8
         params['prob_live_birth_PL'] = 0.75
@@ -156,6 +158,7 @@ class Labour (Module):
         df['la_partiy'] = 0
         df['la_previous_cs'] = False
         df['la_immediate_postpartum'] = False
+        df ['la_previous_ptb'] = False
 
     # -----------------------------------ASSIGN PREGNANCY AT BASELINE (DUMMY) --------------------------------------
 
@@ -207,6 +210,23 @@ class Labour (Module):
         dfx.columns = ['baseline_cs', 'random_draw']
         idx_prev_cs = dfx.index[dfx.baseline_cs > dfx.random_draw]
         df.loc[idx_prev_cs, 'la_previous_cs'] = True
+
+        # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE (dummy)---------------------------------------
+
+        women_ptb_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 1)]
+
+        baseline_ptb = pd.Series(m.prob_ptl, index=women_ptb_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(women_ptb_idx)),
+                                index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
+                                               (df.la_parity >= 1)])
+
+        dfx = pd.concat([baseline_ptb, random_draw], axis=1)
+        dfx.columns = ['baseline_ptb', 'random_draw']
+        idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
+        df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
+
+        # Interaction between previous CS and PTB- currently you can be para1 and the delivery was both PTB and CS
 
         # TO DO consider women who enter labour through induction and planned CS on initialisation?
 
@@ -278,15 +298,14 @@ class LabourEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # Talk to Andrew r.e. adding properties to demography
+        # Weekly (review) event which decides which of the pregnant women in the simulation enter a "labour state"
+        # based on gestation and risk factors
 
-#   --------------------------------------UNOBSTRUCTED SPONTANEOUS LABOUR ---------------------------------------------
+        #   ------------------------------------- UNOBSTRUCTED SPONTANEOUS LABOUR ------------------------------------
 
-        # Currently this will just act on all pregnant women in 1 week from sim start
-        # Need to add in gestational age so women >37 weeks go into SL OR PL/OL and <37 weeks into PTL
+        # Must add impact of gestation on likelihood of women entering states of labour
 
         due_labour_idx = df.index[(df.la_is_pregnant == True) & df.is_alive]   # AND IS TERM!!!!
-
 
         eff_prob_spont_lab = pd.Series(m.prob_SL, index=due_labour_idx)
 
@@ -321,10 +340,38 @@ class LabourEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-    #   --------------------------------------PRETERM LABOUR -----------------------------------------------------------
+    #   -------------------------------------------PRETERM LABOUR ---------------------------------------------------
+
+        # will need to consider early vs late term as states?
+
+        due_preterm_idx = df.index[(df.la_is_pregnant == True) & df.is_alive]   # AND IS PRETERM!!!
+
+        p_preterm_lab = pd.Series(m.prob_PLT, index=due_preterm_idx)
+
+        p_preterm_lab.loc[(df.la_is_pregnant == True) & df.is_alive] *=m.rr_ptl_persistent_malaria
+        # To do: Identify risk factors for preterm labour
+
+        random_draw = pd.Series(rng.random_sample(size=len(p_preterm_lab)),index=df.index[(df.la_is_pregnant == True)
+                                                                                       & df.is_alive])
+        dfx = pd.concat([p_preterm_lab, random_draw], axis=1)
+        dfx.columns = ['p_preterm_lab', 'random_draw']
+        idx_ptl = dfx.index[dfx.p_preterm_lab > dfx.random_draw]
+        df.loc[idx_ptl, 'la_labour'] = 'preterm_labour'
+
+        preterm_idx= df.index[(df.la_labour == 'preterm_labour')]
 
 
+    # TO DO:
 
+# -----------------------------------------   PLANNED CS   ------------------------------------------------------------
+# ----------------------------------------- PLANNED INDUCTION ---------------------------------------------------------
+# ---------------------------------------  ABORTION (MISCARRIGE) ------------------------------------------------------
+# ----------------------------------------------BIRTH------------------------------------------------------------------
+# ------------------------------------------- POSTPARTUM PERIOD  ------------------------------------------------------
+
+    # Pass woman back to demography? Or take over completely?
+
+    # How does time work in this instance?
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
