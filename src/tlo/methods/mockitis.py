@@ -267,7 +267,7 @@ class Mockitis(Module):
 
         return df.loc[df.is_alive, 'mi_unified_symptom_code']
 
-    def on_first_healthsystem_interaction(self, person_id, cue_type):
+    def on_healthsystem_interaction(self, person_id, cue_type):
         logger.debug('This is mockitis, being asked what to do at a health system appointment for '
                      'person %d triggered by %s', person_id, cue_type)
 
@@ -281,14 +281,15 @@ class Mockitis(Module):
             event = MockitisTreatmentEvent(self, person_id)
             self.sim.schedule_event(event, self.sim.date)
 
-    def on_followup_healthsystem_interaction(self, person_id):
-        logger.debug('This is a follow-up appointment. Nothing to do')
+        if cue_type=='follow_up':
+            logger.debug('This is a follow-up appointment. Nothing to do')
+
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        logger.debug('This is mockities reporting my health values')
+        logger.debug('This is mockitis reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
