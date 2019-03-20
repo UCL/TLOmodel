@@ -34,7 +34,7 @@ wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility Type']='District Hospit
 # look at number of district hospitals per distirct (check it's 1 per district)
 wb.loc[wb['Facility Type']=='District Hospital',['District','Facility Type']].groupby(by=['District']).count()
 
-
+wb['Village']=wb['Village'].str.strip()
 
 # Save output file for information about facilities
 wb.to_csv(outputpath+'ResourceFile_MasterFacilitiesList.csv')
@@ -50,6 +50,7 @@ wb.to_csv(outputpath+'ResourceFile_MasterFacilitiesList.csv')
 
 villages=wb['Village'].unique()
 villages=villages[~pd.isnull(villages)] # take out the nans
+
 
 # **** Get the listing of CHW per village
 df_CHW=wb.loc[wb['Facility Type']=='Community Health Worker',['Village','Facility Type','Facility_ID']]
@@ -120,18 +121,15 @@ x=df_CHW.append([df_NearHospital,df_DistrictHospital,df_ReferralHospital],ignore
 # *** Merge back in the names of the faciliites and their other information
 
 fac_details=wb[['Facility_ID','Facility Name','Eastings','Northings']]
-# fac_details.Facility_ID=fac_details.Facility_ID.astype(np.int64) # coerce the typing ready for the merge
-# x.Facility_ID=x.Facility_ID.astype(np.int64)
+fac_details.Facility_ID=fac_details.Facility_ID.astype(np.int64) # coerce the typing ready for the merge
+x.Facility_ID=x.Facility_ID.astype(np.int64)
 
 y=x.merge(fac_details,how='left',on='Facility_ID')
-
 
 
 # **** Save:
 y.to_csv(outputpath + 'ResourceFile_Village_To_Facility_Mapping.csv')
 
 
-
-#TODO: Alter how the healthsystem read in the two files and uses them
 
 

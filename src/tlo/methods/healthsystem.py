@@ -16,7 +16,7 @@ logger.setLevel(logging.INFO)
 
 class HealthSystem(Module):
     """
-    Requests for access to particular services are lodged here.
+    Requests for access to particular services are handled by Disease/Intervention Modules by this Module
     """
 
     def __init__(self, name=None,
@@ -28,9 +28,6 @@ class HealthSystem(Module):
         if service_availability is None:
             service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'], dtype=['object', bool])
 
-        self.store_ServiceUse = {
-            'Skilled Birth Attendance': []
-        }
         self.service_availability = service_availability
 
         self.registered_disease_modules = {}
@@ -48,10 +45,10 @@ class HealthSystem(Module):
 
     PARAMETERS = {
         'Master_Facility_List':
-            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook'),
+            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
         'Village_To_Facility_Mapping':
-            Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities')
-
+            Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities: ' \
+                                            'one row per each link between a village and a facility')
     }
 
     PROPERTIES = {
@@ -71,40 +68,14 @@ class HealthSystem(Module):
 
 
         # Establish the MasterCapacitiesList
-        # (This is where the CHAI data will be imported
+        # (This is where the data on all health capabilities will be stored. For now, nothing happens)
 
-        hf = self.parameters['Master_Facility_List']
-
-        # Fill in some simple patterns for now
-
-        # Minutes of work time per month
-        nurse_time = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
-        nurse_time.append({'CurrentUse': 0, 'Capacity': 1000}, ignore_index=True)
-
-        # Minutes of work time per month
-        doctor_time = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
-        doctor_time.append({'CurrentUse': 0, 'Capacity': 500}, ignore_index=True)
-
-        # Water: False in outreach and Health post, True otherwise
-        # available: yes/no
-        electricity = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
-        electricity.append({'CurrentUse': False, 'Capacity': True}, ignore_index=True)
-
-        # available: yes/no
-        water = pd.DataFrame(index=[hf.Facility_ID], columns=['Capacity', 'CurrentUse'])
-        water.append({'CurrentUse': False, 'Capacity': True}, ignore_index=True)
-
-        self.health_system_resources = dict()
-        self.health_system_resources['Nurse_Time'] = nurse_time
-        self.health_system_resources['Doctor_Time'] = doctor_time
-        self.health_system_resources['Electricity'] = electricity
-        self.health_system_resources['Water'] = water
 
     def initialise_population(self, population):
         df = population.props
 
         # Assign Distance_To_Nearest_HealthFacility'
-        # For now, let this be a random number, but in future it will be properly informed
+        # For now, let this be a random number, but in future it will be properly informed based on population density distribitions.
         # Note that this characteritic is inherited from mother to child.
         df['Distance_To_Nearest_HealthFacility'] = self.sim.rng.randn(len(df))
 
@@ -112,13 +83,14 @@ class HealthSystem(Module):
         # Launch the healthcare seeking poll
         sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
 
-        # Check that people can find their health facilities:
+        # Check that each person is atttached to a village and a set of attached health facilities
         pop = self.sim.population.props
-        hf = self.parameters['Master_Facility_List']
-
-        for person_id in pop.index:
+        mapping = self.parameters['Village_To_Facility_Mapping']
+        for person_id in pop.index[pop.is_alive]:
             my_village = pop.at[person_id, 'village_of_residence']
-            my_health_facilities = hf.loc[hf['Village'] == my_village]
+            my_health_facilities = mapping.loc[mapping['Village'] == my_village]
+            assert len(my_health_facilities)>0
+
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -126,73 +98,33 @@ class HealthSystem(Module):
             df.at[mother_id, 'Distance_To_Nearest_HealthFacility']
 
     def register_disease_module(self, *new_disease_modules):
-        # Register Disease Modules (in order that the health system can trigger things
-        # in each module)...
+        # Register Disease Modules (so that the health system can broadcast triggers to all disease modules)
         for module in new_disease_modules:
             assert module.name not in self.registered_disease_modules, (
                 'A module named {} has already been registered'.format(module.name))
             self.registered_disease_modules[module.name] = module
 
+            logger.info('Registering disease module %s', module.name)
+
     def register_interventions(self, footprint_df):
-        # Register the interventions that each disease module can offer and will ask for
-        # permission to use.
+        # Register the interventions that can be requested
         logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
         self.registered_interventions = self.registered_interventions.append(footprint_df)
 
     def query_access_to_service(self, person_id, service):
-        logger.info('Query person %d has access to service %s', person_id, service)
+        logger.info('Query whether person %d has access to service %s', person_id, service)
 
-        sa = self.service_availability
-        hsr = self.health_system_resources
+        # Health system allows all requests for services
+        # (This is where the constraint will be imposed and the footprint recorded)
 
-        # Default to fault (this is the variable that is returned to
-        # the disease module that does the request)
-        gets_service = False
-
-        # 1) Check if policy allows the offering of this treatment
-        policy_allows = False  # default to False
-
-        if service in sa.Service.values:
-            policy_allows = sa.loc[sa['Service'] == service, 'Available'].values[0]
-
-        # 2) Check capacitiy
-        enough_capacity = False  # Default to False unless it can be proved there is capacity
-
-        # Look-up resources for the requested service:
-        needed = self.registered_interventions.loc[self.registered_interventions['Name'] == service]
-
-        # Look-up what health facilities this person has access to:
-        village = self.sim.population.props.at[person_id, 'village_of_residence']
-
-        vill_to_fac_map = self.parameters['Village_To_Facility_Mapping']
-
-        local_facilities = vill_to_fac_map.loc[vill_to_fac_map['Village'] == village]
-
-        local_facilities_idx = local_facilities['Facility_ID'].values
-
-        # Sum capacity across the facilities to which persons in this village have access
-        available_nurse_time = 0
-        available_doctor_time = 0
-        for lf_id in local_facilities_idx:
-            available_nurse_time += (hsr['Nurse_Time'].loc[lf_id, 'Capacity'].values[0] -
-                                     hsr['Nurse_Time'].loc[lf_id, 'CurrentUse'].values[0])
-            available_doctor_time += (hsr['Doctor_Time'].loc[lf_id, 'Capacity'].values[0] -
-                                      hsr['Doctor_Time'].loc[lf_id, 'CurrentUse'].values[0])
-
-        # See if there is enough capacity
-        if (needed.Nurse_Time.values < available_nurse_time) and (needed.Doctor_Time.values <
-                                                                  available_doctor_time):
-            enough_capacity = True
-            # ... and impose the "footprint"
-            # TODO: need to know how footprint is defined to be able to impose it here.
-
-        if policy_allows and enough_capacity:
-            gets_service = True
+        enough_capacity=True        # No constraint imposed
+        policy_allows=True          # No constraint imposed
+        gets_service = True         # No constraint imposed
 
         # Log the occurance of this request for services
         logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
                     {
-                        'person_id': person,
+                        'person_id': person_id,
                         'service': service,
                         'policy_allows': policy_allows,
                         'enough_capacity': enough_capacity,
