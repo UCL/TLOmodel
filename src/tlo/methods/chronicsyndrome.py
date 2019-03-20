@@ -219,7 +219,7 @@ class ChronicSyndrome(Module):
         # All modules refresh the symptomology of persons at this time
         # And report it on the unified symptomology scale
 
-        logger.debug("This is chronicsyndome, being asked to report unified symptomology")
+        logger.debug("This is chronic syndome, being asked to report unified symptomology")
         # print('Now being asked to update symptoms')
         # df['cs_unified_symptom_code']
         # df['cs_specific_symptoms']
@@ -235,7 +235,7 @@ class ChronicSyndrome(Module):
 
         return df.loc[df.is_alive, 'cs_unified_symptom_code']
 
-    def on_first_healthsystem_interaction(self, person_id, cue_type):
+    def on_healthsystem_interaction(self, person_id, cue_type):
         logging.debug('being asked what to do at a health system appointment for person', person_id)
 
         # Queries whether treatment is allowable under global policy
@@ -249,8 +249,7 @@ class ChronicSyndrome(Module):
             event = ChronicSyndromeTreatmentEvent(self, person_id)
             self.sim.schedule_event(event, self.sim.date)
 
-    def on_followup_healthsystem_interaction(self, person_id):
-        logging.debug('This is a follow-up appointment. Nothing to do')
+
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
