@@ -20,7 +20,7 @@ class hiv(Module):
         self.workbook_path = workbook_path
         self.beta_calib = par_est
         self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_new_infections_adult': [],
-                      'HIV_new_infections_child': []}
+                      'HIV_new_infections_child': [], 'hiv_prev_adult': [], 'hiv_prev_child': []}
         self.store_DeathsLog = {'DeathEvent_Time': [], 'DeathEvent_Age': [], 'DeathEvent_Cause': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -247,7 +247,6 @@ class hiv(Module):
         age_scale = 2.55 - 0.025 * (a0 - 30)
         return age_scale
 
-
     def fsw(self, population):
         """ Assign female sex work to sample of women and change sexual risk
         """
@@ -339,7 +338,6 @@ class hiv(Module):
 
         df.loc[hiv_index, 'hiv_inf'] = True
         df.loc[hiv_index, 'hiv_date_inf'] = df.loc[hiv_index, 'date_of_birth']
-
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
@@ -568,7 +566,6 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: if currently breastfeeding mother, further risk to infant
 
-
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ TIME OF DEATH ~~~~~~~~~~~~~~~~~~~~~~~~~~
         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
                      np.exp(self.module.log_scale(df.loc[newly_infected_index, 'age_years']))
@@ -593,6 +590,7 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 class hiv_fsw_event(RegularEvent, PopulationScopeEventMixin):
     """ apply risk of fsw to female pop and transition back to non-fsw
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
 
@@ -666,8 +664,14 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         adult_new_inf = mask.sum()
         # print(adult_new_inf)
 
+        ad_prev = len(df[df.hiv_inf & df.is_alive & (df.age_years.between(15, 65))]) / len(
+            df[df.is_alive & (df.age_years.between(15, 65))])
+
         mask = (df.loc[(df.age_years < 15), 'hiv_date_inf'] > self.sim.date - DateOffset(months=self.repeat))
         child_new_inf = mask.sum()
+
+        child_prev = len(df[df.hiv_inf & df.is_alive & (df.age_years.between(0, 14))]) / len(
+            df[df.is_alive & (df.age_years.between(0, 14))])
 
         date_aids_death = df.loc[df.hiv_inf & df.is_alive, 'hiv_date_death']
         year_aids_death = date_aids_death.dt.year
@@ -682,5 +686,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['HIV_scheduled_deaths'].append(die)
         self.module.store['HIV_new_infections_adult'].append(adult_new_inf)
         self.module.store['HIV_new_infections_child'].append(child_new_inf)
+        self.module.store['hiv_prev_adult'].append(ad_prev)
+        self.module.store['hiv_prev_child'].append(child_prev)
 
         # print('hiv outputs: ', self.sim.date, infected_total)

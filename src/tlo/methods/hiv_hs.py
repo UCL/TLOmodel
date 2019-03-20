@@ -209,9 +209,11 @@ class health_system(Module):
         df.loc[art_idx_adult, 'hiv_date_art_start'] = now
 
         # allocate proportion to non-adherent category
-        idx_c = df[df.is_alive & (df.hiv_on_art == '2') & (df.age_years.between(0, 14))].sample(
-            frac=(1 - self.parameters['vls_child'])).index
-        df.loc[idx_c, 'hiv_on_art'] = '1'  # change to non=adherent
+        # if condition added, error with small numbers of children to sample
+        if len(df[df.is_alive & (df.hiv_on_art == '2') & (df.age_years.between(0, 14))]) > 5:
+            idx_c = df[df.is_alive & (df.hiv_on_art == '2') & (df.age_years.between(0, 14))].sample(
+                frac=(1 - self.parameters['vls_child'])).index
+            df.loc[idx_c, 'hiv_on_art'] = '1'  # change to non=adherent
 
         idx_m = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'M') & (df.age_years.between(15, 64))].sample(
             frac=(1 - self.parameters['vls_m'])).index
