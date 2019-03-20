@@ -62,7 +62,8 @@ class health_system(Module):
                                             'increase in treatment rates with eligibility guideline changes'),
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
         'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males')
+        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years')
     }
 
     PROPERTIES = {
@@ -98,6 +99,7 @@ class health_system(Module):
         params['treatment_increase2016'] = self.param_list.loc['treatment_increase2016', 'Value1']
         params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
+        params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
         self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
                                                                 sheet_name='coverage')
@@ -203,15 +205,19 @@ class health_system(Module):
             (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
             df_art.age_years.between(15, 64)]
 
-        df.loc[art_idx_adult, 'hiv_on_art'] = '2'  # assumes all are adherent at baseline
+        df.loc[art_idx_adult, 'hiv_on_art'] = '2'  # assumes all are adherent, then stratify into category 1/2
         df.loc[art_idx_adult, 'hiv_date_art_start'] = now
 
-        # then allocate small proportion to non-adherent category
-        idx_m = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'M')].sample(
+        # allocate proportion to non-adherent category
+        idx_c = df[df.is_alive & (df.hiv_on_art == '2') & (df.age_years.between(0, 14))].sample(
+            frac=(1 - self.parameters['vls_child'])).index
+        df.loc[idx_c, 'hiv_on_art'] = '1'  # change to non=adherent
+
+        idx_m = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'M') & (df.age_years.between(15, 64))].sample(
             frac=(1 - self.parameters['vls_m'])).index
         df.loc[idx_m, 'hiv_on_art'] = '1'  # change to non=adherent
 
-        idx_f = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'F')].sample(
+        idx_f = df[df.is_alive & (df.hiv_on_art == '2') & (df.sex == 'F') & (df.age_years.between(15, 64))].sample(
             frac=(1 - self.parameters['vls_f'])).index
         df.loc[idx_f, 'hiv_on_art'] = '1'  # change to non=adherent
 
