@@ -41,7 +41,7 @@ class Specifiable:
     PANDAS_TYPE_MAP = {
         Types.DATE: 'datetime64[ns]',
         Types.BOOL: bool,
-        Types.INT: int,
+        Types.INT: 'int64',
         Types.REAL: float,
         Types.CATEGORICAL: 'category',
         Types.LIST: object,
