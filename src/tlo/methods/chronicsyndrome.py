@@ -17,18 +17,12 @@ logger.setLevel(logging.INFO)
 
 class ChronicSyndrome(Module):
     """This is a dummy chronic disease
+    It demonstrates the following behaviours in respect of the healthcare system module:
 
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+
     """
 
-    # Here we declare parameters for this module. Each parameter has a name, data type,
-    # and longer description.
+
     PARAMETERS = {
         'p_acquisition': Parameter(
             Types.REAL,
@@ -52,9 +46,7 @@ class ChronicSyndrome(Module):
             Types.REAL, 'QALY weighting')
     }
 
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
+
     PROPERTIES = {
         'cs_has_cs': Property(
             Types.BOOL, 'Current status of mockitis'),
