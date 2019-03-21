@@ -197,7 +197,7 @@ class health_system(Module):
         art_idx_child = df_art.index[
             (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
             df_art.age_years.between(0, 14)]
-        # print('art_index: ', art_index)
+
         df.loc[art_idx_child, 'hiv_on_art'] = '2'  # assumes all are adherent at baseline
         df.loc[art_idx_child, 'hiv_date_art_start'] = now
 

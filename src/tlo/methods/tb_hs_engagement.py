@@ -29,7 +29,7 @@ class health_system_tb(Module):
         'prob_tb_mdr_treatment': Parameter(Types.REAL, 'probability of individual starting mdr treatment'),
 
     }
-
+    # TODO: add in treatment history property - ever_treated [boolean]
     PROPERTIES = {
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
         'tb_smear_test': Property(Types.BOOL, 'ever had a tb smear test'),
@@ -132,7 +132,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 80% of smear tested active cases will be diagnosed
         # this is lower for HIV+ (higher prop of extrapulmonary tb
-        tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & ~df.hiv_inf]
+        tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.tb_inf == 'active_susc') & ~df.hiv_inf]
         diagnosed_idx = pd.Series(np.random.choice([True, False], size=len(tested_idx),
                                                    p=[params['prop_smear_positive'],
                                                       (1 - params['prop_smear_positive'])]),
@@ -140,7 +140,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         idx = tested_idx[diagnosed_idx]
 
         tested_idx_hiv = df.index[
-            (df.tb_date_smear_test == now) & df.is_alive & (df.has_tb == 'Active') & df.hiv_inf]
+            (df.tb_date_smear_test == now) & df.is_alive & (df.tb_inf == 'active_susc') & df.hiv_inf]
 
         diagnosed_idx_hiv = pd.Series(np.random.choice([True, False], size=len(tested_idx_hiv),
                                                        p=[params['prop_smear_positive_hiv'],
@@ -233,7 +233,7 @@ class tbTreatmentEvent(RegularEvent, PopulationScopeEventMixin):
             df.tb_treated & (((now - df.date_tb_treated) / np.timedelta64(1, 'M')) >= 6) & (random_draw2 < (
                 1 - params['prob_mdr']))]
         df.loc[cure_idx, 'tb_treated'] = False
-        df.loc[cure_idx, 'has_tb'] = 'Latent'
+        df.loc[cure_idx, 'tb_inf'] = 'latent_susc'
 
         # if on treatment for 6 months, 5% will not be cured and request MDR regimen
         random_draw3 = self.sim.rng.random_sample(size=len(df))
@@ -270,7 +270,7 @@ class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
         cure_idx = df.index[
             df.tb_treatedMDR & (((now - df.tb_date_treatedMDR) / np.timedelta64(1, 'M')) >= 6)]
         df.loc[cure_idx, 'tb_treated'] = False
-        df.loc[cure_idx, 'has_tb'] = 'Latent'
+        df.loc[cure_idx, 'tb_inf'] = 'latent_susc'
 
 
 
@@ -287,10 +287,10 @@ class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         #  sum number of active TB cases * 5
-        ipt_needed = len(df.index[df.has_tb & df.is_alive & ~df.tb_treated]) * 5
+        ipt_needed = len(df.index[df.tb_inf & df.is_alive & ~df.tb_treated]) * 5
 
         # randomly sample from <5 yr olds
-        ipt_sample = df[(df.age_years <= 5) & (~df.has_tb == 'Active')].sample(
+        ipt_sample = df[(df.age_years <= 5) & (~df.tb_inf == 'active_susc')].sample(
             n=ipt_needed, replace=False).index
 
         df.loc[ipt_sample, 'on_ipt'] = True
