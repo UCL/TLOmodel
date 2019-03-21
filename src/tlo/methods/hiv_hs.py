@@ -424,6 +424,8 @@ class ClinMonitoringEvent(RegularEvent, PopulationScopeEventMixin):
 class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
     """ cotrimoxazole prophylaxis for HIV-exposed infants and HIV+ people (all ages)
     prioritise if limited resources
+    only for people on art and taking it well
+    then it will be lifelong
     """
 
     # TODO: if none allocated to a group can throw errors, include more checks
