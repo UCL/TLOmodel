@@ -17,19 +17,19 @@ logger.setLevel(logging.INFO)
 
 class Mockitis(Module):
     """
-    This is a dummy infectious disease
+    This is a dummy infectious disease.
+    It demonstrates the following behaviours in respect of the healthcare system module:
 
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    - Declaration of TREATMENT_ID
+    - Registration of the disease module
+    - Registration of the interventions
+    - Internal symptom tracking, responding to query_symptoms_now
+    - Reading QALY weights and reporting qaly values related to this disease
+
+
+
     """
 
-    # Here we declare parameters for this module. Each parameter has a name, data type,
-    # and longer description.
     PARAMETERS = {
         'p_infection': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
@@ -45,12 +45,9 @@ class Mockitis(Module):
             Types.REAL, 'QALY weighting for coughing'),
         'qalywt_advanced': Parameter(
             Types.REAL, 'QALY weighting for extreme emergency')
-
     }
 
-    # Next we declare the properties of individuals that this module provides.
-    # Again each has a name, type and description. In addition, properties may be marked
-    # as optional if they can be undefined for a given individual.
+
     PROPERTIES = {
         'mi_is_infected': Property(
             Types.BOOL, 'Current status of mockitis'),
@@ -73,13 +70,11 @@ class Mockitis(Module):
             categories=[0, 1, 2, 3, 4])
     }
 
+    # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'Mockitis_Treatment'
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
 
-        For now, we are going to hard code them explicity
-        """
         p = self.parameters
 
         p['p_infection'] = 0.001
@@ -267,9 +262,9 @@ class Mockitis(Module):
 
         return df.loc[df.is_alive, 'mi_unified_symptom_code']
 
-    def on_healthsystem_interaction(self, person_id, cue_type):
+    def on_healthsystem_interaction(self, person_id, cue_type, disease_specific):
         logger.debug('This is mockitis, being asked what to do at a health system appointment for '
-                     'person %d triggered by %s', person_id, cue_type)
+                     'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
         # Querry with health system whether this individual will get a desired treatment
         gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
