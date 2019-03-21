@@ -90,6 +90,7 @@ time_behav = simulation.modules['BehaviourChange'].store['Time']
 prop_counselled = simulation.modules['BehaviourChange'].store['Proportion_hiv_counselled']
 
 active_tb = simulation.modules['tb_baseline'].store['Total_active_tb']
+active_tb_mdr = simulation.modules['tb_baseline'].store['Total_active_tb_mdr']
 coinfected = simulation.modules['tb_baseline'].store['Total_co-infected']
 tb_deaths = simulation.modules['tb_baseline'].store['TB_deaths']
 time_tb_death = simulation.modules['tb_baseline'].store['Time_death_TB']
@@ -109,13 +110,20 @@ plt.legend(['hiv prev adult', 'hiv_prev_child'], loc='upper right')
 ax.set_xticklabels([])
 plt.ylabel('Prevalence')
 
-# hiv deaths
+# # hiv deaths
 # ax = plt.subplot(322)  # numrows, numcols, fignum
 # plt.plot(time, hiv_deaths)
-# plt.plot(time_deaths_art, deaths_art)
-# plt.legend(['AIDS deaths', 'AIDS deaths on ART'], loc='upper right')
+# plt.legend(['scheduled AIDS deaths'], loc='upper right')
 # ax.set_xticklabels([])
 # plt.ylabel('Number of death')
+
+# tb cases
+ax = plt.subplot(322)
+plt.plot(time2, active_tb)
+plt.ylim(bottom=0)
+plt.legend(['TB'], loc='upper right')
+ax.set_xticklabels([])
+plt.ylabel('Number of cases')
 
 # testing hiv/tb
 plt.subplot(323)
@@ -143,12 +151,11 @@ plt.legend(['circumcised', 'counselled'], loc='upper right')
 plt.xticks(rotation=45)
 plt.ylabel('Proportion')
 
-# tb cases
+# mdr tb cases
 ax = plt.subplot(326)
-plt.plot(time2, active_tb)
-plt.plot(time_tb_death, tb_deaths)
+plt.plot(time2, active_tb_mdr)
 plt.ylim(bottom=0)
-plt.legend(['TB', 'TB deaths'], loc='upper right')
+plt.legend(['MDR-TB'], loc='upper right')
 ax.set_xticklabels([])
 plt.ylabel('Number of cases')
 
