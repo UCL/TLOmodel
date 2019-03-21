@@ -54,7 +54,6 @@ class tb_baseline(Module):
     }
 
     def read_parameters(self, data_folder):
-        # TODO: move the parameter values to methods sheet
 
         params = self.parameters
         params['param_list'] = pd.read_excel(self.workbook_path,
@@ -108,6 +107,7 @@ class tb_baseline(Module):
         active_tb_prob_year = active_tb_data.loc[
             active_tb_data.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
 
+        # TODO: condense this with a merge function and remove if statements
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ MALE ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         for i in range(0, 81):
@@ -339,7 +339,7 @@ class tb_mdr_event(RegularEvent, PopulationScopeEventMixin):
 
         active_hiv_neg = len(df[(df.tb_inf == 'active_mdr') & ~df.hiv_inf & df.is_alive])
         active_hiv_pos = len(df[(df.tb_inf == 'active_mdr') & df.hiv_inf & df.is_alive])
-        # TODO: include latent_susc as a suscpetible pop here also?
+        # TODO: include latent_susc as a susceptible pop here also?
         uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
