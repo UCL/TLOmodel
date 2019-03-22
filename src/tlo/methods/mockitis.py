@@ -18,16 +18,13 @@ logger.setLevel(logging.INFO)
 class Mockitis(Module):
     """
     This is a dummy infectious disease.
-    It demonstrates the following behaviours in respect of the healthcare system module:
+    It demonstrates the following behaviours in respect of the health-care system module:
 
     - Declaration of TREATMENT_ID
     - Registration of the disease module
     - Registration of the interventions
     - Internal symptom tracking, responding to query_symptoms_now
     - Reading QALY weights and reporting qaly values related to this disease
-
-
-
     """
 
     PARAMETERS = {
@@ -71,7 +68,7 @@ class Mockitis(Module):
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
-    TREATMENT_ID = 'Mockitis_Treatment'
+    TREATMENT_ID = 'Mockitis_Treatment'  # maybe make this a type of definition???
 
     def read_parameters(self, data_folder):
 
