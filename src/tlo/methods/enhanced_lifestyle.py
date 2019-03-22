@@ -3,7 +3,6 @@
 #todo:  urban rural will be created separately
 
 
-
 """
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
@@ -17,6 +16,9 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
+#   todo: create high_salt high_fat low_fruveg and make them determinants of over weight
+#   todo: make exercise and smoking determinants of over-weight, remove urban as a direct determinant ?
 
 class Lifestyle(Module):
     """
