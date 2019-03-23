@@ -1,6 +1,19 @@
 
+#   todo: add in li_no_clean_drinking_water, li_wood_burn_stove, li_unimproved_sanitation, li_no_access_handwashing
 
-#todo:  urban rural will be created separately
+#   todo: create high_salt high_satfat high_sugar low_fruveg and make high_satfat and high_sugar determinants of overwt
+#   todo: make exercise and smoking determinants of overwt, remove urban as a direct determinant
+#   todo: remove gender as a direct determinant or overwt ?
+
+#   todo: consider if need other one of probabilities of transition upon move from rural to urban,
+#   todo: or other moves in distal factors
+
+#   todo: need to save date last transitioned into current overwt, tob, low ex, ex_alc state
+#   todo: for possible use by other modules to account for downstream effects of this
+
+#   note:  urban rural will be created externally so will be simply used here (with a different name) rather than
+#   note:  created and used
+
 
 
 """
@@ -17,10 +30,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-#   todo: create high_salt high_fat low_fruveg and make them determinants of over weight
-#   todo: make exercise and smoking determinants of over-weight, remove urban as a direct determinant
-#   todo: remove gender as a direct determinant ?
-
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
@@ -36,23 +45,25 @@ class Lifestyle(Module):
         # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
         #                                                     'true to false upon move from rural to urban'
         'init_rp_unimproved_sanitation_rural': Parameter(Types.REAL,
-                                                  'initial relative prevalence of unimproved_sanitation if rural'),
+                                                         'initial relative prevalence of unimproved_sanitation if '
+                                                         'rural'),
         'init_p_no_clean_drinking_water': Parameter(Types.REAL,
-                                                  'initial probability of no_clean_drinking_water given urban'),
+                                                    'initial probability of no_clean_drinking_water given urban'),
         # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
         #                                                     'true to false upon move from rural to urban'
-        'init_rp_drinking_water_rural': Parameter(Types.REAL,
-                                                   'initial relative prevalence of rinking_water if rural'),
+        'init_rp_no_clean_drinking_water_rural': Parameter(Types.REAL,
+                                                           'initial relative prevalence of no clean drinking_water '
+                                                           'if rural'),
         'init_p_wood_burn_stove': Parameter(Types.REAL,
-                                                  'initial probability of wood_burn_stove given urban'),
+                                            'initial probability of wood_burn_stove given urban'),
         # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
         #                                                     'true to false upon move from rural to urban'
         'init_rp_wood_burn_stove_rural': Parameter(Types.REAL,
-                                           'initial relative prevalence of wood_burn_stove if rural'),
+                                                   'initial relative prevalence of wood_burn_stove if rural'),
         'init_p_no_access_handwashing': Parameter(Types.REAL,
                                                   'initial probability of no_access_handwashing given wealth 1'),
-        'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL,
-                                         'initial relative prevalence of no_access_handwashing per lower wealth level'),
+        'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial relative prevalence of no_'
+                                                                    'access_handwashing per lower wealth level'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -157,6 +168,8 @@ class Lifestyle(Module):
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
+        # todo:  need to save date last transitioned into current overwt, tob, low ex, ex_alc state
+        # todo: for possible use by other modules to account for downstream effects of this
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
@@ -167,9 +180,10 @@ class Lifestyle(Module):
         'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
-        'li_unimproved_sanitation': Property(Types.BOOL, 'uninproved sanitation - anything other than own or shared latrine'),
+        'li_unimproved_sanitation': Property(Types.BOOL, 'uninproved sanitation - anything other than own or '
+                                                         'shared latrine'),
         'li_no_access_handwashing': Property(Types.BOOL, 'no_access_handwashing - no water, no soap, no other '
-                                                           'cleaning agent - as in DHS'),
+                                                         'cleaning agent - as in DHS'),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
     }
@@ -208,35 +222,14 @@ class Lifestyle(Module):
         p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
         p['init_p_on_contrac'] = 0.30
         p['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
-
         p['init_p_unimproved_sanitation'] = 0.04
-        p['init_rp_unimproved_sanitation_rural'] = 0.04
-
-        """
-           'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
-                                                                  'given urban'),
-            # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
-            #                                                     'true to false upon move from rural to urban'
-            'init_rp_unimproved_sanitation_rural': Parameter(Types.REAL,
-                                                      'initial relative prevalence of unimproved_sanitation if rural'),
-            'init_p_no_clean_drinking_water': Parameter(Types.REAL,
-                                                      'initial probability of no_clean_drinking_water given urban'),
-            # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
-            #                                                     'true to false upon move from rural to urban'
-            'init_rp_no_clean_drinking_water_rural': Parameter(Types.REAL,
-                                                       'initial relative prevalence of rinking_water if rural'),
-            'init_p_wood_burn_stove': Parameter(Types.REAL,
-                                                      'initial probability of wood_burn_stove given urban'),
-            # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
-            #                                                     'true to false upon move from rural to urban'
-            'init_rp_wood_burn_stove_rural': Parameter(Types.REAL,
-                                               'initial relative prevalence of wood_burn_stove if rural'),
-            'init_p_no_access_handwashing': Parameter(Types.REAL,
-                                                      'initial probability of no_access_handwashing given wealth 1'),
-            'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL,
-                                             'initial relative prevalence of no_access_handwashing per lower wealth level'),
-            """
-
+        p['init_rp_unimproved_sanitation_rural'] = 4.5
+        p['init_p_no_clean_drinking_water'] = 0.017
+        p['init_rp_no_clean_drinking_water'] = 8.6
+        p['init_p_wood_burn_stove'] = 0.257
+        p['init_rp_wood_burn_stove'] = 3.6
+        p['init_p_no_access_handwashing'] = 0.478
+        p['init_rp_no_access_handwashing_per_lower_wealth'] = 1.06
         p['r_urban'] = 0.002
         p['r_rural'] = 0.0001
         p['r_overwt'] = 0.0025
@@ -272,6 +265,12 @@ class Lifestyle(Module):
         p['rp_ed_primary_higher_wealth'] = 1.01
         p['p_ed_secondary'] = 0.20
         p['rp_ed_secondary_higher_wealth'] = 1.45
+
+        p['r_unimproved_sanitation'] = ......
+        p['r_no_clean_drinking_water'] = ......
+        p['r_wood_burn_stove'] = ......
+        p['r_no_access_handwashing'] = ......
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.

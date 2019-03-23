@@ -4,13 +4,13 @@ import os
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle
+from tlo.methods import demography, enhanced_lifestyle
 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 4, 1)
-popsize = 10000
+popsize = 1
 
 
 @pytest.fixture(autouse=True)
@@ -25,7 +25,7 @@ def simulation():
                                        workbook_name)
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(workbook_path=demography_workbook))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle())
     sim.seed_rngs(1)
     return sim
 
