@@ -267,11 +267,10 @@ class Lifestyle(Module):
         p['rp_ed_primary_higher_wealth'] = 1.01
         p['p_ed_secondary'] = 0.20
         p['rp_ed_secondary_higher_wealth'] = 1.45
-        # todo: change below to 0.001
-        p['r_improved_sanitation'] = 0.05  # place-holder very low rate
-        p['r_clean_drinking_water'] = 0.05  # place-holder very low rate
-        p['r_non_wood_burn_stove'] = 0.05    # place-holder very low rate
-        p['r_access_handwashing'] = 0.05     # place-holder very low rate
+        p['r_improved_sanitation'] = 0.001  # place-holder very low rate
+        p['r_clean_drinking_water'] = 0.001  # place-holder very low rate
+        p['r_non_wood_burn_stove'] = 0.001   # place-holder very low rate
+        p['r_access_handwashing'] = 0.001     # place-holder very low rate
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -649,11 +648,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_overwt_idx, 'li_overwt'] = False
         df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
-        """
-        'li_date_quit_tob': Property(Types.DATE, 'li_date_quit_tob'),
-        'li_date_no_longer_ex_alc': Property(Types.DATE, 'li_date_no_longer_ex_alc'),
-        """
-
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -687,8 +681,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[adults_not_tob, 'li_tob'] = (rng.random_sample(len(adults_not_tob)) < eff_p_tob)
 
-        # stop tobacco use
-        df.loc[currently_tob, 'li_tob'] = ~(rng.random_sample(len(currently_tob)) < m.r_not_tob)
+        # transition from tobacco to no tobacco
+        tob_idx = df.index[df.li_tob & df.is_alive]
+        eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
+        random_draw = rng.random_sample(len(tob_idx))
+        newly_not_tob: pd.Series = random_draw < eff_rate_not_tob
+        newly_not_tob_idx = tob_idx[newly_not_tob]
+        df.loc[newly_not_tob_idx, 'li_tob'] = False
+        df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
@@ -699,6 +699,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[not_ex_alc_f, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_f)) < m.r_ex_alc * m.rr_ex_alc_f
         df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.r_ex_alc
         df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.r_not_ex_alc)
+
+        # transition from excess alcohol to not excess alcohol
+        ex_alc_idx = df.index[df.li_ex_alc & df.is_alive]
+        eff_rate_not_ex_alc = pd.Series(m.r_not_ex_alc, index=ex_alc_idx)
+        random_draw = rng.random_sample(len(ex_alc_idx))
+        newly_not_ex_alc: pd.Series = random_draw < eff_rate_not_ex_alc
+        newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
+        df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
+        df.loc[newly_not_ex_alc_idx, 'li_date_no_longer_ex_alc'] = self.sim.date
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
