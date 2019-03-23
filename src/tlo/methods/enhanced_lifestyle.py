@@ -1,12 +1,13 @@
 
+#   todo: enact one-off probabilities of transition in properties dependent on urban/rural upon move from rural
+#   todo: to urban - same for other changes in any property - consider possible effects on down-stream properties
+
 #   todo: create high_salt high_satfat high_sugar low_fruveg and make high_satfat
 #   todo: and high_sugar determinants of overwt
+#   todo: finalise decision with group whether to do this
 
 #   todo: make exercise and smoking determinants of overwt, remove urban and gender as direct determinants ?
 #   todo: finalise decision with group whether to do this
-
-#   todo: enact one-off probabilities of transition in properties dependent on urban/rural upon move from rural
-#   todo: to urban - same for other changes in any property - consider possible effects on down-stream properties
 
 #   note:  urban rural will be created externally so will be simply used here (with a different name) rather than
 #   note:  created and used
@@ -641,6 +642,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_overwt_idx, 'li_overwt'] = False
         df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
+#       todo :prob of moving to overwt when move to urban
+
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -659,6 +662,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
         df.loc[newly_not_low_ex_idx, 'li_date_no_longer_low_ex'] = self.sim.date
+
+#       todo :prob of moving to low ex when move to urban
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -683,6 +688,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
 
+#       todo :prob of moving to not tob when move to urban
+
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
         not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
@@ -701,6 +708,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
         df.loc[newly_not_ex_alc_idx, 'li_date_no_longer_ex_alc'] = self.sim.date
+
+#       todo: possibility of moving to low ex when move to urban
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -747,6 +756,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
+
+#       todo: possibility of channge in education parameter values when move to urban
 
         # get all individuals currently in education
         in_ed = df.index[df.is_alive & df.li_in_ed]
@@ -812,6 +823,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
         df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
 
+#       todo :prob of moving to improved sanitation when move to urban
+
         # -------------------- NO ACCESS HANDWASHING --------------------------------------------------------
 
         no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
@@ -824,6 +837,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_access_handwashing_idx = no_access_handwashing_idx[newly_access_handwashing]
         df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
         df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
+
+#       todo: possibility of change in access to handwashing when move to urban
 
         # -------------------- NO CLEAN DRINKING WATER  --------------------------------------------------------
 
@@ -838,6 +853,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
         df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
 
+#       todo: possibility of change in access to clean drinking water when move to urban
+
         # -------------------- WOOD BURN STOVE -------------------------------------------------------------
 
         wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
@@ -851,6 +868,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
         df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
 
+#       todo: possibility of channge in wood burning stove when move to urban
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
