@@ -18,7 +18,8 @@ logger.setLevel(logging.DEBUG)
 
 
 #   todo: create high_salt high_fat low_fruveg and make them determinants of over weight
-#   todo: make exercise and smoking determinants of over-weight, remove urban as a direct determinant ?
+#   todo: make exercise and smoking determinants of over-weight, remove urban as a direct determinant
+#   todo: remove gender as a direct determinant ?
 
 class Lifestyle(Module):
     """
@@ -211,7 +212,7 @@ class Lifestyle(Module):
         p['init_p_unimproved_sanitation'] = 0.04
         p['init_rp_unimproved_sanitation_rural'] = 0.04
 
-    """
+        """
            'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
                                                                   'given urban'),
             # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
@@ -234,7 +235,7 @@ class Lifestyle(Module):
                                                       'initial probability of no_access_handwashing given wealth 1'),
             'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL,
                                              'initial relative prevalence of no_access_handwashing per lower wealth level'),
-    """
+            """
 
         p['r_urban'] = 0.002
         p['r_rural'] = 0.0001
