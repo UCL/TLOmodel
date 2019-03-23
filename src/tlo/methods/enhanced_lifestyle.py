@@ -642,8 +642,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_overwt_idx, 'li_overwt'] = False
         df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
-#       todo :prob of moving to overwt when move to urban
-
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -662,8 +660,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
         df.loc[newly_not_low_ex_idx, 'li_date_no_longer_low_ex'] = self.sim.date
-
-#       todo :prob of moving to low ex when move to urban
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -688,8 +684,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
 
-#       todo :prob of moving to not tob when move to urban
-
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
         not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
@@ -708,8 +702,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
         df.loc[newly_not_ex_alc_idx, 'li_date_no_longer_ex_alc'] = self.sim.date
-
-#       todo: possibility of moving to low ex when move to urban
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -756,8 +748,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
-
-#       todo: possibility of channge in education parameter values when move to urban
 
         # get all individuals currently in education
         in_ed = df.index[df.is_alive & df.li_in_ed]
@@ -812,6 +802,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UNIMPROVED SANITATION --------------------------------------------------------
 
+        # probability of improved sanitation at all follow-up times
         unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
 
         eff_rate_improved_sanitation = pd.Series(m.r_improved_sanitation, index=unimproved_sanitaton_idx)
@@ -823,10 +814,21 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
         df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
 
-#       todo :prob of moving to improved sanitation when move to urban
+        # probability of improved sanitation upon moving to urban from rural
+        unimproved_sanitation_newly_urban_idx = df.index[df.li_unimproved_sanitation & df.is_alive &
+                                                         df.li_date_trans_to_urban == self.sim.date]
+
+        random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
+
+        eff_prev_unimproved_sanitation_urban = pd.Series(m.init_p_unimproved_sanitation,
+                                                         index=unimproved_sanitation_newly_urban_idx)
+
+        df.loc[unimproved_sanitation_newly_urban_idx, 'li_unimproved_sanitation'] \
+            = random_draw < eff_prev_unimproved_sanitation_urban
 
         # -------------------- NO ACCESS HANDWASHING --------------------------------------------------------
 
+        # probability of moving to access to handwashing at all follow-up times
         no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
 
         eff_rate_access_handwashing = pd.Series(m.r_access_handwashing, index=no_access_handwashing_idx)
@@ -838,10 +840,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
         df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
 
-#       todo: possibility of change in access to handwashing when move to urban
-
         # -------------------- NO CLEAN DRINKING WATER  --------------------------------------------------------
 
+        # probability of moving to clean drinking water at all follow-up times
         no_clean_drinking_water_idx = df.index[df.li_no_clean_drinking_water & df.is_alive]
 
         eff_rate_clean_drinking_water = pd.Series(m.r_clean_drinking_water, index=no_clean_drinking_water_idx)
@@ -853,10 +854,21 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
         df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
 
-#       todo: possibility of change in access to clean drinking water when move to urban
+        # probability of no clean drinking water upon moving to urban from rural
+        no_clean_drinking_water_newly_urban_idx = df.index[df.li_no_clean_drinking_water & df.is_alive &
+                                                         df.li_date_trans_to_urban == self.sim.date]
+
+        random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
+
+        eff_prev_no_clean_drinking_water_urban = pd.Series(m.init_p_no_clean_drinking_water,
+                                                         index=no_clean_drinking_water_newly_urban_idx)
+
+        df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] \
+            = random_draw < eff_prev_no_clean_drinking_water_urban
 
         # -------------------- WOOD BURN STOVE -------------------------------------------------------------
 
+        # probability of moving to non wood burn stove at all follow-up times
         wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
 
         eff_rate_non_wood_burn_stove = pd.Series(m.r_non_wood_burn_stove, index=wood_burn_stove_idx)
@@ -868,7 +880,18 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
         df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
 
-#       todo: possibility of channge in wood burning stove when move to urban
+        # probability of moving to wood burn stove upon moving to urban from rural
+        wood_burn_stove_newly_urban_idx = df.index[df.li_wood_burn_stove & df.is_alive &
+                                                         df.li_date_trans_to_urban == self.sim.date]
+
+        random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
+
+        eff_prev_wood_burn_stove_urban = pd.Series(m.init_p_wood_burn_stove,
+                                                         index=wood_burn_stove_newly_urban_idx)
+
+        df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] \
+            = random_draw < eff_prev_wood_burn_stove_urban
+
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
