@@ -1,6 +1,9 @@
 """
 A skeleton template for disease methods.
 """
+
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -32,9 +35,9 @@ class health_system(Module):
     determines need for ART in HIV+ pop
     """
 
-    def __init__(self, name=None, workbook_path=None, par_est1=None, par_est2=None, par_est3=None, par_est4=None):
+    def __init__(self, name=None, resourcefilepath=None, par_est1=None, par_est2=None, par_est3=None, par_est4=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
         self.testing_baseline_adult = par_est1
         self.testing_baseline_child = par_est2
         self.treatment_baseline_adult = par_est3
@@ -79,9 +82,12 @@ class health_system(Module):
     }
 
     def read_parameters(self, data_folder):
+
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'Method_ART.xlsx'), sheet_name=None)
+
         params = self.parameters
-        params['param_list'] = pd.read_excel(self.workbook_path,
-                                             sheet_name='parameters')
+        params['param_list'] = workbook['parameters']
 
         self.param_list.set_index("Parameter", inplace=True)
 
@@ -101,11 +107,9 @@ class health_system(Module):
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
         params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
-        self.parameters['initial_art_coverage'] = pd.read_excel(self.workbook_path,
-                                                                sheet_name='coverage')
+        self.parameters['initial_art_coverage'] = workbook['coverage']
 
-        self.parameters['VL_monitoring_times'] = pd.read_excel(self.workbook_path,
-                                                               sheet_name='VL_monitoring')
+        self.parameters['VL_monitoring_times'] = workbook['VL_monitoring']
 
         params['testing_baseline_adult'] = float(self.testing_baseline_adult)
         params['testing_baseline_child'] = float(self.testing_baseline_child)

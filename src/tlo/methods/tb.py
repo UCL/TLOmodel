@@ -2,6 +2,8 @@
 TB infections
 """
 
+import os
+
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -13,9 +15,9 @@ class tb_baseline(Module):
     """ Set up the baseline population with TB prevalence
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
         self.store = {'Time': [], 'Total_active_tb': [], 'Total_active_tb_mdr': [], 'Total_co-infected': [],
                       'TB_deaths': [],
                       'Time_death_TB': []}
@@ -55,9 +57,11 @@ class tb_baseline(Module):
 
     def read_parameters(self, data_folder):
 
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'Method_TB.xlsx'), sheet_name=None)
+
         params = self.parameters
-        params['param_list'] = pd.read_excel(self.workbook_path,
-                                             sheet_name='parameters')
+        params['param_list'] = workbook['parameters']
         self.param_list.set_index("parameter", inplace=True)
 
         params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
@@ -81,11 +85,8 @@ class tb_baseline(Module):
         params['prop_mdr_new'] = self.param_list.loc['prop_mdr_new', 'value1']
         params['prop_mdr_retreated'] = self.param_list.loc['prop_mdr_retreated', 'value1']
 
-        params['tb_data'] = pd.read_excel(self.workbook_path,
-                                          sheet_name=None)
-
-        params['Active_tb_prob'], params['Latent_tb_prob'] = self.tb_data['Active_TB_prob'], \
-                                                             self.tb_data['Latent_TB_prob']
+        params['Active_tb_prob'], params['Latent_tb_prob'] = workbook['Active_TB_prob'], \
+                                                             workbook['Latent_TB_prob']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
