@@ -28,7 +28,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2013, 2, 1)
 popsize = 10000
 
-params = [0.09, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
+params = [0.2, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
 
 
 @pytest.fixture(scope='module')
