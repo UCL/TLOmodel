@@ -1,6 +1,7 @@
 """
 HIV infection event
 """
+import logging
 import os
 
 import numpy as np
@@ -8,7 +9,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-from tlo.methods import demography
+from tlo.methods import demography  # , healthsystem
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class hiv(Module):
@@ -39,17 +43,10 @@ class hiv(Module):
             Parameter(Types.REAL, 'Weibull shape parameter for mortality in infants slow progressors'),
         'weibull_shape_mort_adult':
             Parameter(Types.REAL, 'Weibull shape parameter for mortality in adults'),
-        'proportion_high_sexual_risk_male':
-            Parameter(Types.REAL, 'proportion of men who have high sexual risk behaviour'),
-        'proportion_high_sexual_risk_female':
-            Parameter(Types.REAL, 'proportion of women who have high sexual risk behaviour'),
         'proportion_female_sex_workers':
             Parameter(Types.REAL, 'proportion of women who engage in transactional sex'),
-        'rr_HIV_high_sexual_risk':
-            Parameter(Types.REAL, 'relative risk of acquiring HIV with high risk sexual behaviour'),
         'rr_HIV_high_sexual_risk_fsw':
             Parameter(Types.REAL, 'relative risk of acquiring HIV with female sex work'),
-
         'beta':
             Parameter(Types.REAL, 'transmission rate'),
         'irr_hiv_f':
@@ -58,8 +55,6 @@ class hiv(Module):
             Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
         'rr_behaviour_change':
             Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
-        'rel_infectiousness_acute':
-            Parameter(Types.REAL, 'relative infectiousness during acute stage'),
         'prob_mtct_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission'),
         'prob_mtct_treated':
@@ -108,6 +103,14 @@ class hiv(Module):
             Parameter(Types.REAL, 'odds ratio education higher'),
         'hiv_prev_2010':
             Parameter(Types.REAL, 'prevalence hiv in adults'),
+        'level_of_symptoms':
+            Parameter(Types.CATEGORICAL, 'level of symptoms that the individual will have'),
+        'qalywt_acute':
+            Parameter(Types.REAL, 'QALY weighting for acute hiv infection'),
+        'qalywt_chronic':
+            Parameter(Types.REAL, 'QALY weighting for chronic hiv infection'),
+        'qalywt_aids':
+            Parameter(Types.REAL, 'QALY weighting for aids')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -120,16 +123,20 @@ class hiv(Module):
         'hiv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
                                     categories=['low', 'sex_work']),
         'hiv_mother_inf': Property(Types.BOOL, 'HIV status of mother'),
-        'hiv_mother_art': Property(Types.BOOL, 'ART status of mother')
+        'hiv_mother_art': Property(Types.BOOL, 'ART status of mother'),
+
+        # hiv specific symptoms are matched to the levels for qaly weights above - correct??
+        'hiv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
+                                          categories=['none', 'acute', 'chronic', 'aids']),
+        'hiv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
+                                             categories=[0, 1, 2, 3, 4])
     }
+
+    TREATMENT_ID = 'hiv_treatment'
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
-        Here we do nothing.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
         """
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
@@ -184,6 +191,7 @@ class hiv(Module):
         params['hiv_prev_2010'] = \
             self.param_list.loc['hiv_prev_2010', 'Value1']
 
+        # OR for risk of infection, change to RR
         params['or_rural'] = \
             self.param_list.loc['or_rural', 'Value1']
         params['or_windex_poorer'] = \
@@ -223,12 +231,19 @@ class hiv(Module):
             params['beta'] = float(self.beta_calib)
         # print('beta', params['beta'])
 
-        # print(self.param_list.head())
-        #
-        # self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
-        #                                                    sheet_name=None)
+        params['hiv_prev'] = workbook['prevalence']  # for child prevalence
 
-        params['hiv_prev'] = workbook['prevalence']
+        # symptoms
+        # do these map to the specific symptoms or the unified symptom code?
+        # probs linked to 3 mths acute, end 24 mths aids and remaining time chronic (out of 12 yr inf)
+        params['level_of_symptoms'] = pd.DataFrame(
+            data={'level': ['none', 'acute', 'chronic', 'aids'], 'probability': [0, 0.02, 0.81, 0.17]})
+
+        # QALY weights
+        # used 1-DALYS for test runs, see DALY weights in Method_HIV workbook
+        params['qalywt_acute'] = 1 - 0.012
+        params['qalywt_chronic'] = 1 - 0.274
+        params['qalywt_aids'] = 1 - 0.582
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -241,6 +256,9 @@ class hiv(Module):
         df['hiv_sexual_risk'].values[:] = 'low'
         df['hiv_mother_inf'] = False
         df['hiv_mother_art'].values[:] = '0'
+
+        df['hiv_specific_symptoms'] = 'none'
+        df['hiv_unified_symptoms_code'].values[:] = '0'
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -300,7 +318,7 @@ class hiv(Module):
         infected_idx = df.index[(self.rng.random_sample(size=len(df)) < prob_hiv)]
 
         # print('infected_idx', infected_idx)
-        test = infected_idx.isnull().sum()  # sum number of nan
+        # test = infected_idx.isnull().sum()  # sum number of nan
         # print("number of nan: ", test)
 
         df.loc[infected_idx, 'hiv_inf'] = True
@@ -322,9 +340,7 @@ class hiv(Module):
 
         # merge all susceptible individuals with their hiv probability based on sex and age
         df_hivprob = df.merge(prevalence, left_on=['age_years', 'sex'],
-
                               right_on=['age_from', 'sex'],
-
                               how='left')
 
         # fill missing values with 0 (only relevant for age 80+)
@@ -343,6 +359,14 @@ class hiv(Module):
 
         df.loc[hiv_index, 'hiv_inf'] = True
         df.loc[hiv_index, 'hiv_date_inf'] = df.loc[hiv_index, 'date_of_birth']
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ASSIGN LEVEL OF SYMPTOMS ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        # TODO: this should be related to time infected
+        curr_infected = len(df.index[df.hiv_inf & df.is_alive])
+        level_of_symptoms = self.parameters['level_of_symptoms']
+        symptoms = self.rng.choice(level_of_symptoms.level, size=curr_infected, p=level_of_symptoms.probability)
+        df.loc[curr_infected, 'hiv_specific_symptoms'] = symptoms
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
@@ -432,9 +456,29 @@ class hiv(Module):
         """Get ready for simulation start.
         """
         sim.schedule_event(hiv_event(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(hiv_fsw_event(self), sim.date + DateOffset(months=12))
 
-        # add an event to log to screen
         sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=12))
+
+        # # Register this disease module with the health system
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        #
+        # # Schedule the outreach event...
+        # event = HivOutreachEvent(self, 'this_module_only')
+        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
+        #
+        # # Register with the HealthSystem the treatment interventions that this module runs
+        # # and define the footprint that each intervention has on the common resources
+        #
+        # # Define the footprint for the intervention on the common resources
+        # footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+        #     'Name': hiv.TREATMENT_ID,
+        #     'Nurse_Time': 5,
+        #     'Doctor_Time': 10,
+        #     'Electricity': False,
+        #     'Water': False})
+        #
+        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -443,10 +487,13 @@ class hiv(Module):
         df = self.sim.population.props
         now = self.sim.date
 
+        # default settings
         df.at[child_id, 'hiv_inf'] = False
         df.at[child_id, 'hiv_date_inf'] = pd.NaT
         df.at[child_id, 'hiv_date_death'] = pd.NaT
         df.at[child_id, 'hiv_sexual_risk'] = 'low'
+        df.at[child_id, 'hiv_specific_symptoms'] = 'none'
+        df.at[child_id, 'hiv_unified_symptom_code'] = '0'
 
         if df.at[mother_id, 'hiv_inf']:
             df.at[child_id, 'hiv_mother_inf'] = True
@@ -526,10 +573,73 @@ class hiv(Module):
 
             df.at[child_id, 'hiv_date_death'] = now + time_death
 
+            # Level of symptoms
+            # TODO: should be linked to time infected
+            symptoms = self.rng.choice(self.parameters['level_of_symptoms']['level'],
+                                       p=self.parameters['level_of_symptoms']['probability'])
+
+            df.at[child_id, 'mi_specific_symptoms'] = symptoms
+            df.at[child_id, 'mi_unified_symptom_code'] = '0'
+
             # schedule the death event
             death = DeathEventHIV(self, individual_id=child_id, cause='hiv')  # make that death event
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
+
+    def query_symptoms_now(self):
+        # This is called by the health-care seeking module
+        # All modules refresh the symptomology of persons at this time
+        # And report it on the unified symptomology scale
+        logger.debug("This is hiv, being asked to report unified symptomology")
+
+        # Map the specific symptoms for this disease onto the unified coding scheme
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+            'none': 0,
+            'acute': 1,
+            'chronic': 2,
+            'aids': 3
+        })  # no extreme emergency
+
+        return df.loc[df.is_alive, 'hiv_unified_symptom_code']
+
+    def on_first_healthsystem_interaction(self, person_id, cue_type):
+        logger.debug('This is hiv, being asked what to do at a health system appointment for '
+                     'person %d triggered by %s', person_id, cue_type)
+
+        # Query with health system whether this individual will get a desired treatment
+        gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+            person_id, hiv.TREATMENT_ID
+        )
+
+        if gets_treatment:
+            # Commission treatment for this individual
+            # TODO: TreatmentEvent is a regular event in hiv_hs, change to individual event
+            event = self.sim.modules['hiv_hs'].TreatmentEvent(self, person_id)
+            self.sim.schedule_event(event, self.sim.date)
+
+    def on_followup_healthsystem_interaction(self, person_id):
+        logger.debug('This is a follow-up appointment. Nothing to do')
+
+    def report_qaly_values(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # the past year
+
+        logger.debug('This is hiv reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        params = self.parameters
+
+        health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+            'none': 0,
+            'acute': params['qalywt_acute'],
+            'chronic': params['qalywt_chronic'],
+            'aids': params['qalywt_aids']
+        })
+
+        return health_values.loc[df.is_alive]
 
 
 class hiv_event(RegularEvent, PopulationScopeEventMixin):
@@ -648,6 +758,15 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
         self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
         self.module.store_DeathsLog['DeathEvent_Age'].append(df.age_years[individual_id])
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
+
+
+# class HivOutreachEvent(Event, PopulationScopeEventMixin):
+#     def __init__(self, module, outreach_type):
+#         super().__init__(module)
+#         self.outreach_type = outreach_type
+#
+#     def apply(self, population):
+#         pass
 
 
 class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
