@@ -1,6 +1,8 @@
 """
 Male circumcision
 """
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -13,9 +15,9 @@ class male_circumcision(Module):
     male circumcision, without health system links
     """
 
-    def __init__(self, name=None, workbook_path=None, par_est5=None):
+    def __init__(self, name=None, resourcefilepath=None, par_est5=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
         self.rate_circum = par_est5
         self.store = {'Time': [], 'proportion_circumcised': [], 'recently_circumcised': []}
 
@@ -42,16 +44,14 @@ class male_circumcision(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
+
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'Method_HIV.xlsx'), sheet_name=None)
+
         params = self.parameters
-        now = self.sim.date.year
-
-        params['param_list'] = pd.read_excel(self.workbook_path,
-                                             sheet_name='circumcision')
-        # print('param_list', self.param_list.head())
-
+        params['param_list'] = workbook['circumcision']
         params['rate_circum'] = float(self.rate_circum)
-
-
+        
     def initialise_population(self, population):
         df = population.props
         now = self.sim.date.year

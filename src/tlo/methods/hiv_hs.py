@@ -473,7 +473,7 @@ class CotrimoxazoleEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[ct_child_index, 'hiv_date_cotrim'] = now
 
         # 3. TB/HIV+ adults
-        df_coinf = df[df.is_alive & df.hiv_inf & (df.has_tb == 'Active') & ~df.hiv_on_cotrim & (df.age_years >= 15)]
+        df_coinf = df[df.is_alive & df.hiv_inf & (df.tb_inf == 'Active') & ~df.hiv_on_cotrim & (df.age_years >= 15)]
         cotrim_needed = pd.Series(np.random.choice([True, False], size=len(df_coinf), p=[1, 0]),
                                   index=df_coinf)
         cotrim_allocated = pd.Series(
