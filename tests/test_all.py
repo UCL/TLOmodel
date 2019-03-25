@@ -30,11 +30,10 @@ popsize = 10000
 
 params = [0.06, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
 
+
 @pytest.fixture(scope='module')
 def simulation():
     resourceFile = os.path.join(os.path.dirname(__file__), 'resources')
-
-    print(resourceFile)
 
     sim = Simulation(start_date=start_date)
 
