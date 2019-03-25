@@ -406,7 +406,7 @@ class hiv(Module):
 
         # schedule the death event
         for person in infants:
-            death = DeathEventHIV(self, individual_id=person, cause='hiv')  # make that death event
+            death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
             time_death = death_dates[person]
             self.sim.schedule_event(death, time_death)  # schedule the death
 
@@ -448,17 +448,17 @@ class hiv(Module):
 
         # schedule the death event
         for person in hiv_ad:
-            death = DeathEventHIV(self, individual_id=person, cause='hiv')  # make that death event
+            death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
             time_death = death_dates[person]
             self.sim.schedule_event(death, time_death)  # schedule the death
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
-        sim.schedule_event(hiv_event(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(hiv_fsw_event(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
 
-        sim.schedule_event(hivLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=12))
 
         # # Register this disease module with the health system
         # self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -582,7 +582,7 @@ class hiv(Module):
             df.at[child_id, 'mi_unified_symptom_code'] = '0'
 
             # schedule the death event
-            death = DeathEventHIV(self, individual_id=child_id, cause='hiv')  # make that death event
+            death = HivDeathEvent(self, individual_id=child_id, cause='hiv')  # make that death event
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
@@ -600,7 +600,7 @@ class hiv(Module):
             'acute': 1,
             'chronic': 2,
             'aids': 3
-        })  # no extreme emergency
+        })  # no extreme emergency needed?
 
         return df.loc[df.is_alive, 'hiv_unified_symptom_code']
 
@@ -642,7 +642,7 @@ class hiv(Module):
         return health_values.loc[df.is_alive]
 
 
-class hiv_event(RegularEvent, PopulationScopeEventMixin):
+class HivEvent(RegularEvent, PopulationScopeEventMixin):
     """ hiv infection event - adults only
     """
 
@@ -678,6 +678,8 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[newly_infected_index, 'hiv_inf'] = True
         df.loc[newly_infected_index, 'hiv_date_inf'] = now
+        df.loc[newly_infected_index, 'hiv_specific_symptoms'] = 'none'  # all start at none
+        df.loc[newly_infected_index, 'hiv_unified_symptom_code'] = '0'
 
         # TODO: if currently breastfeeding mother, further risk to infant
 
@@ -695,14 +697,14 @@ class hiv_event(RegularEvent, PopulationScopeEventMixin):
         # schedule the death event
         for person in newly_infected_index:
             # print('person', person)
-            death = DeathEventHIV(self.module, individual_id=person, cause='hiv')  # make that death event
+            death = HivDeathEvent(self.module, individual_id=person, cause='hiv')  # make that death event
             time_death = death_dates[person]
             # print('time_death: ', time_death)
             # print('now: ', now)
             self.sim.schedule_event(death, time_death)  # schedule the death
 
 
-class hiv_fsw_event(RegularEvent, PopulationScopeEventMixin):
+class FswEvent(RegularEvent, PopulationScopeEventMixin):
     """ apply risk of fsw to female pop and transition back to non-fsw
     """
 
@@ -738,7 +740,7 @@ class hiv_fsw_event(RegularEvent, PopulationScopeEventMixin):
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
 
 
-class DeathEventHIV(Event, IndividualScopeEventMixin):
+class HivDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
     """
@@ -769,7 +771,7 @@ class DeathEventHIV(Event, IndividualScopeEventMixin):
 #         pass
 
 
-class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
         """
@@ -802,15 +804,14 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # print('year_aids_death', year_aids_death)
 
         #  this shows the deaths scheduled for this year, including those postponed due to ART
-        die = sum(1 for x in year_aids_death if int(x) == now.year)
-        # print('die: ', die)
+        sch_deaths = sum(1 for x in year_aids_death if int(x) == now.year)
 
-        self.module.store['Time'].append(self.sim.date)
-        self.module.store['Total_HIV'].append(infected_total)
-        self.module.store['HIV_scheduled_deaths'].append(die)
-        self.module.store['HIV_new_infections_adult'].append(adult_new_inf)
-        self.module.store['HIV_new_infections_child'].append(child_new_inf)
-        self.module.store['hiv_prev_adult'].append(ad_prev)
-        self.module.store['hiv_prev_child'].append(child_prev)
-
-        # print('hiv outputs: ', self.sim.date, infected_total)
+        logger.info('%s|summary|%s', self.sim.date,
+                    {
+                        'TotalInf': infected_total,
+                        'hiv_prev_adult': ad_prev,
+                        'hiv_prev_child': child_prev,
+                        'hiv_new_infections_adult': adult_new_inf,
+                        'hiv_new_infections_child': child_new_inf,
+                        'hiv_scheduled_deaths': sch_deaths
+                    })
