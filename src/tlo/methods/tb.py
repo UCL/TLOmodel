@@ -36,7 +36,7 @@ class tb_baseline(Module):
         'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
         'rel_infectiousness_hiv': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
         'prob_self_cure': Parameter(Types.REAL, 'probability of self-cure'),
-        'self_cure': Parameter(Types.REAL, 'annual rate of self-cure'),
+        'rate_self_cure': Parameter(Types.REAL, 'annual rate of self-cure'),
         'tb_mortality_rate': Parameter(Types.REAL, 'mortality rate with active tb'),
         'tb_mortality_HIV': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
         'prop_mdr2010': Parameter(Types.REAL, 'prevalence of mdr in TB cases 2010'),
@@ -82,7 +82,7 @@ class tb_baseline(Module):
         params['prop_mdr_retreated'] = self.param_list.loc['prop_mdr_retreated', 'value1']
 
         params['tb_data'] = pd.read_excel(self.workbook_path,
-                                                   sheet_name=None)
+                                          sheet_name=None)
 
         params['Active_tb_prob'], params['Latent_tb_prob'] = self.tb_data['Active_TB_prob'], \
                                                              self.tb_data['Latent_TB_prob']
@@ -308,7 +308,7 @@ class tb_event(RegularEvent, PopulationScopeEventMixin):
 
         # self-cure - move back from active to latent, make sure it's not the ones that just became active
         self_cure_tb = df[(df.tb_inf == 'active_susc') & df.is_alive & (df.tb_date_active < now)].sample(
-            frac=(params['prob_self_cure'] * params['self_cure'])).index
+            frac=(params['prob_self_cure'] * params['rate_self_cure'])).index
         df.loc[self_cure_tb, 'tb_inf'] = 'latent_susc'
 
 
@@ -417,9 +417,10 @@ class tb_mdr_event(RegularEvent, PopulationScopeEventMixin):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ SELF CURE ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # self-cure - move back from active to latent, make sure it's not the ones that just became active
-        self_cure_tb = df[(df.tb_inf == 'active_mdr') & df.is_alive & (df.tb_date_active < now)].sample(
-            frac=(params['prob_self_cure'] * params['self_cure'])).index
-        df.loc[self_cure_tb, 'tb_inf'] = 'latent_mdr'
+        if len(df[(df.tb_inf == 'active_mdr') & df.is_alive & (df.tb_date_active < now)]) > 10:
+            self_cure_tb = df[(df.tb_inf == 'active_mdr') & df.is_alive & (df.tb_date_active < now)].sample(
+                frac=(params['prob_self_cure'] * params['rate_self_cure'])).index
+            df.loc[self_cure_tb, 'tb_inf'] = 'latent_mdr'
 
 
 class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
@@ -456,8 +457,10 @@ class tbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         mortality_rate = pd.Series(0, index=df.index)
-        mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & ~df.hiv_inf] = params['tb_mortality_rate']
-        mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & df.hiv_inf] = params['tb_mortality_HIV']
+        mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & ~df.hiv_inf] = params[
+            'tb_mortality_rate']
+        mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & df.hiv_inf] = params[
+            'tb_mortality_hiv']
         # print('mort_rate: ', mortality_rate)
 
         # Generate a series of random numbers, one per individual

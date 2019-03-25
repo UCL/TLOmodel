@@ -1,6 +1,7 @@
 """
 HIV infection event
 """
+import os
 
 import numpy as np
 import pandas as pd
@@ -15,9 +16,9 @@ class hiv(Module):
     baseline hiv infection
     """
 
-    def __init__(self, name=None, workbook_path=None, par_est=None):
+    def __init__(self, name=None, resourcefilepath=None, par_est=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
         self.beta_calib = par_est
         self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_new_infections_adult': [],
                       'HIV_new_infections_child': [], 'hiv_prev_adult': [], 'hiv_prev_child': []}
@@ -130,9 +131,13 @@ class hiv(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
+
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'Method_HIV.xlsx'), sheet_name=None)
+
         params = self.parameters
-        params['param_list'] = pd.read_excel(self.workbook_path,
-                                             sheet_name='parameters')
+        params['param_list'] = workbook['parameters']
+
         self.param_list.set_index("Parameter", inplace=True)
 
         params['prob_infant_fast_progressor'] = self.param_list.loc['prob_infant_fast_progressor'].values
@@ -219,11 +224,11 @@ class hiv(Module):
         # print('beta', params['beta'])
 
         # print(self.param_list.head())
+        #
+        # self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
+        #                                                    sheet_name=None)
 
-        self.parameters['method_hiv_data'] = pd.read_excel(self.workbook_path,
-                                                           sheet_name=None)
-
-        params['hiv_prev'] = self.method_hiv_data['prevalence']
+        params['hiv_prev'] = workbook['prevalence']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -662,7 +667,7 @@ class hivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         mask = (df.loc[(df.age_years > 14), 'hiv_date_inf'] > self.sim.date - DateOffset(months=self.repeat))
         adult_new_inf = mask.sum()
-        # print(adult_new_inf)
+        print('adult new hiv inf', adult_new_inf)
 
         ad_prev = len(df[df.hiv_inf & df.is_alive & (df.age_years.between(15, 65))]) / len(
             df[df.is_alive & (df.age_years.between(15, 65))])

@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pytest  # this is the library for testing
 import matplotlib.pyplot as plt
@@ -12,7 +13,7 @@ from tlo.methods import demography, lifestyle, hiv, hiv_hs, tb_hs_engagement, tb
 # path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 # York
-path_hiv = 'Z:/Thanzi la Onse/HIV/Method_HIV.xlsx'
+# path_hiv = 'Z:/Thanzi la Onse/HIV/Method_HIV.xlsx'
 path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
 path_hs = 'Z:/Thanzi la Onse/HIV/Method_ART.xlsx'
 path_tb = 'Z:/Thanzi la Onse/TB/Method_TB.xlsx'
@@ -25,24 +26,28 @@ path_tb = 'Z:/Thanzi la Onse/TB/Method_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 2, 1)
-popsize = 20000
+popsize = 10000
 
 params = [0.06, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def simulation():
+    hiv_workbook = os.path.join(os.path.dirname(__file__), 'resources')
+
+    print(hiv_workbook)
+
     sim = Simulation(start_date=start_date)
 
     #  call modules
     core_module = demography.Demography(workbook_path=path_dem)
     lifestyle_module = lifestyle.Lifestyle()
-    hiv_module = hiv.hiv(workbook_path=path_hiv, par_est=params[0])
+    hiv_module = hiv.hiv(resourcefilepath=hiv_workbook, par_est=params[0])
     tb_module = tb.tb_baseline(workbook_path=path_tb)
 
     hs_module = hiv_hs.health_system(workbook_path=path_hs, par_est1=params[1], par_est2=params[2],
                                      par_est3=params[3], par_est4=params[4])
 
-    circumcision_module = male_circumcision.male_circumcision(workbook_path=path_hiv, par_est5=params[5])
+    circumcision_module = male_circumcision.male_circumcision(resourcefilepath=hiv_workbook, par_est5=params[5])
     behavioural_module = hiv_behaviour_change.BehaviourChange()
     hs_tb_module = tb_hs_engagement.health_system_tb()
 
