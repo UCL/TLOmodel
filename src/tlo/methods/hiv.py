@@ -258,7 +258,7 @@ class hiv(Module):
         df['hiv_mother_art'].values[:] = '0'
 
         df['hiv_specific_symptoms'] = 'none'
-        df['hiv_unified_symptoms_code'].values[:] = '0'
+        df['hiv_unified_symptom_code'].values[:] = 0
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -296,26 +296,31 @@ class hiv(Module):
         prevalence = params['hiv_prev_2010']
 
         # only for 15-54
-        prob_hiv = pd.Series(0, index=df.index)
-        prob_hiv.loc[df.is_alive & df.age_years.between(15, 55)] = prevalence  # applied to all adults
-        prob_hiv.loc[(df.sex == 'F')] *= params['or_sex_f']
-        prob_hiv.loc[df.age_years.between(20, 24)] *= params['or_age_gp20']
-        prob_hiv.loc[df.age_years.between(25, 29)] *= params['or_age_gp25']
-        prob_hiv.loc[df.age_years.between(30, 34)] *= params['or_age_gp30']
-        prob_hiv.loc[df.age_years.between(35, 39)] *= params['or_age_gp35']
-        prob_hiv.loc[df.age_years.between(40, 44)] *= params['or_age_gp40']
-        prob_hiv.loc[df.age_years.between(45, 50)] *= params['or_age_gp45']
-        prob_hiv.loc[(df.age_years >= 50)] *= params['or_age_gp50']
-        prob_hiv.loc[~df.li_urban] *= params['or_rural']
-        prob_hiv.loc[(df.li_wealth == '2')] *= params['or_windex_poorer']
-        prob_hiv.loc[(df.li_wealth == '3')] *= params['or_windex_middle']
-        prob_hiv.loc[(df.li_wealth == '4')] *= params['or_windex_richer']
-        prob_hiv.loc[(df.li_wealth == '5')] *= params['or_windex_richest']
-        prob_hiv.loc[(df.li_ed_lev == '2')] *= params['or_edlevel_primary']
-        prob_hiv.loc[(df.li_ed_lev == '3')] *= params['or_edlevel_secondary']  # li_ed_lev=3 secondary and higher
+        risk_hiv = pd.Series(0, index=df.index)
+        risk_hiv.loc[df.is_alive & df.age_years.between(15, 55)] = 1  # applied to all adults
+        risk_hiv.loc[(df.sex == 'F')] *= params['or_sex_f']
+        risk_hiv.loc[df.age_years.between(20, 24)] *= params['or_age_gp20']
+        risk_hiv.loc[df.age_years.between(25, 29)] *= params['or_age_gp25']
+        risk_hiv.loc[df.age_years.between(30, 34)] *= params['or_age_gp30']
+        risk_hiv.loc[df.age_years.between(35, 39)] *= params['or_age_gp35']
+        risk_hiv.loc[df.age_years.between(40, 44)] *= params['or_age_gp40']
+        risk_hiv.loc[df.age_years.between(45, 50)] *= params['or_age_gp45']
+        risk_hiv.loc[(df.age_years >= 50)] *= params['or_age_gp50']
+        risk_hiv.loc[~df.li_urban] *= params['or_rural']
+        risk_hiv.loc[(df.li_wealth == '2')] *= params['or_windex_poorer']
+        risk_hiv.loc[(df.li_wealth == '3')] *= params['or_windex_middle']
+        risk_hiv.loc[(df.li_wealth == '4')] *= params['or_windex_richer']
+        risk_hiv.loc[(df.li_wealth == '5')] *= params['or_windex_richest']
+        risk_hiv.loc[(df.li_ed_lev == '2')] *= params['or_edlevel_primary']
+        risk_hiv.loc[(df.li_ed_lev == '3')] *= params['or_edlevel_secondary']  # li_ed_lev=3 secondary and higher
 
-        #  sample scaled by relative risk
-        infected_idx = df.index[(self.rng.random_sample(size=len(df)) < prob_hiv)]
+        # sample 10% prev, but weight the likelihood of being sampled by the relative risk
+        eligible = df.index[df.is_alive & df.age_years.between(15, 55)]
+        norm_p = np.array(risk_hiv[eligible])
+        norm_p /= norm_p.sum()  # normalize
+        # print('norm_p', norm_p)
+        infected_idx = self.rng.choice(eligible, size=int(prevalence * (len(eligible))), replace=False,
+                                       p=norm_p)
 
         # print('infected_idx', infected_idx)
         # test = infected_idx.isnull().sum()  # sum number of nan
@@ -363,9 +368,9 @@ class hiv(Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ASSIGN LEVEL OF SYMPTOMS ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # TODO: this should be related to time infected
-        curr_infected = len(df.index[df.hiv_inf & df.is_alive])
+        curr_infected = df.index[df.hiv_inf & df.is_alive]
         level_of_symptoms = self.parameters['level_of_symptoms']
-        symptoms = self.rng.choice(level_of_symptoms.level, size=curr_infected, p=level_of_symptoms.probability)
+        symptoms = self.rng.choice(level_of_symptoms.level, size=len(curr_infected), p=level_of_symptoms.probability)
         df.loc[curr_infected, 'hiv_specific_symptoms'] = symptoms
 
     def initial_pop_deaths_children(self, population):
@@ -458,7 +463,7 @@ class hiv(Module):
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
 
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # # Register this disease module with the health system
         # self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -471,6 +476,7 @@ class hiv(Module):
         # # and define the footprint that each intervention has on the common resources
         #
         # # Define the footprint for the intervention on the common resources
+        ## TODO: would this be better in a global database?
         # footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
         #     'Name': hiv.TREATMENT_ID,
         #     'Nurse_Time': 5,
@@ -493,7 +499,7 @@ class hiv(Module):
         df.at[child_id, 'hiv_date_death'] = pd.NaT
         df.at[child_id, 'hiv_sexual_risk'] = 'low'
         df.at[child_id, 'hiv_specific_symptoms'] = 'none'
-        df.at[child_id, 'hiv_unified_symptom_code'] = '0'
+        df.at[child_id, 'hiv_unified_symptom_code'] = 0
 
         if df.at[mother_id, 'hiv_inf']:
             df.at[child_id, 'hiv_mother_inf'] = True
@@ -586,60 +592,60 @@ class hiv(Module):
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
-    def query_symptoms_now(self):
-        # This is called by the health-care seeking module
-        # All modules refresh the symptomology of persons at this time
-        # And report it on the unified symptomology scale
-        logger.debug("This is hiv, being asked to report unified symptomology")
+    # def query_symptoms_now(self):
+    #     # This is called by the health-care seeking module
+    #     # All modules refresh the symptomology of persons at this time
+    #     # And report it on the unified symptomology scale
+    #     logger.debug("This is hiv, being asked to report unified symptomology")
+    #
+    #     # Map the specific symptoms for this disease onto the unified coding scheme
+    #     df = self.sim.population.props  # shortcut to population properties dataframe
+    #
+    #     df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+    #         'none': 0,
+    #         'acute': 1,
+    #         'chronic': 2,
+    #         'aids': 3
+    #     })  # no extreme emergency needed?
+    #
+    #     return df.loc[df.is_alive, 'hiv_unified_symptom_code']
 
-        # Map the specific symptoms for this disease onto the unified coding scheme
-        df = self.sim.population.props  # shortcut to population properties dataframe
+    # def on_first_healthsystem_interaction(self, person_id, cue_type):
+    #     logger.debug('This is hiv, being asked what to do at a health system appointment for '
+    #                  'person %d triggered by %s', person_id, cue_type)
+    #
+    #     # Query with health system whether this individual will get a desired treatment
+    #     gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+    #         person_id, hiv.TREATMENT_ID
+    #     )
+    #
+    #     if gets_treatment:
+    #         # Commission treatment for this individual
+    #         # TODO: TreatmentEvent is a regular event in hiv_hs, change to individual event
+    #         event = self.sim.modules['hiv_hs'].TreatmentEvent(self, person_id)
+    #         self.sim.schedule_event(event, self.sim.date)
 
-        df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
-            'none': 0,
-            'acute': 1,
-            'chronic': 2,
-            'aids': 3
-        })  # no extreme emergency needed?
+    # def on_followup_healthsystem_interaction(self, person_id):
+    #     logger.debug('This is a follow-up appointment. Nothing to do')
 
-        return df.loc[df.is_alive, 'hiv_unified_symptom_code']
-
-    def on_first_healthsystem_interaction(self, person_id, cue_type):
-        logger.debug('This is hiv, being asked what to do at a health system appointment for '
-                     'person %d triggered by %s', person_id, cue_type)
-
-        # Query with health system whether this individual will get a desired treatment
-        gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-            person_id, hiv.TREATMENT_ID
-        )
-
-        if gets_treatment:
-            # Commission treatment for this individual
-            # TODO: TreatmentEvent is a regular event in hiv_hs, change to individual event
-            event = self.sim.modules['hiv_hs'].TreatmentEvent(self, person_id)
-            self.sim.schedule_event(event, self.sim.date)
-
-    def on_followup_healthsystem_interaction(self, person_id):
-        logger.debug('This is a follow-up appointment. Nothing to do')
-
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
-
-        logger.debug('This is hiv reporting my health values')
-
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        params = self.parameters
-
-        health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
-            'none': 0,
-            'acute': params['qalywt_acute'],
-            'chronic': params['qalywt_chronic'],
-            'aids': params['qalywt_aids']
-        })
-
-        return health_values.loc[df.is_alive]
+    # def report_qaly_values(self):
+    #     # This must send back a dataframe that reports on the HealthStates for all individuals over
+    #     # the past year
+    #
+    #     logger.debug('This is hiv reporting my health values')
+    #
+    #     df = self.sim.population.props  # shortcut to population properties dataframe
+    #
+    #     params = self.parameters
+    #
+    #     health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+    #         'none': 0,
+    #         'acute': params['qalywt_acute'],
+    #         'chronic': params['qalywt_chronic'],
+    #         'aids': params['qalywt_aids']
+    #     })
+    #
+    #     return health_values.loc[df.is_alive]
 
 
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
@@ -679,7 +685,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_infected_index, 'hiv_inf'] = True
         df.loc[newly_infected_index, 'hiv_date_inf'] = now
         df.loc[newly_infected_index, 'hiv_specific_symptoms'] = 'none'  # all start at none
-        df.loc[newly_infected_index, 'hiv_unified_symptom_code'] = '0'
+        df.loc[newly_infected_index, 'hiv_unified_symptom_code'] = 0
 
         # TODO: if currently breastfeeding mother, further risk to infant
 
@@ -716,7 +722,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
 
         # transition those already fsw back to low risk
-        remove = df[df.is_alive & (df.sex == 'F') & df.fsw].sample(
+        remove = df[df.is_alive & (df.sex == 'F') & (df.hiv_sexual_risk == 'sex_work')].sample(
             frac=params['fsw_transition']).index
 
         df.loc[remove, 'hiv_sexual_risk'] = 'low'
@@ -727,14 +733,14 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         # new fsw recruited to replace removed fsw -> constant proportion over time
 
         # current proportion of F 15-49 classified as fsw
-        fsw = len(df[df.is_alive & df.hiv_sexual_risk == 'fsw'])
+        fsw = len(df[df.is_alive & (df.hiv_sexual_risk == 'sex_work')])
         eligible = len(df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))])
 
         prop = fsw / eligible
 
         if prop < params['proportion_female_sex_workers']:
             # number new fsw needed
-            recruit = round((prop - params['proportion_female_sex_workers']) * eligible)
+            recruit = round((params['proportion_female_sex_workers'] - prop) * eligible)
             fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
                 n=recruit).index
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
