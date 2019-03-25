@@ -19,6 +19,12 @@ class ChronicSyndrome(Module):
     """This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthcare system module:
 
+    - Declaration of TREATMENT_ID
+    - Registration of the disease module
+    - Registration of the interventions
+    - Internal symptom tracking, responding to query_symptoms_now
+    - Reading QALY weights and reporting qaly values related to this disease
+    - Commissioning a healthsystem interaction by the 'disease' itself
 
     """
 

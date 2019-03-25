@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 class Mockitis(Module):
     """
     This is a dummy infectious disease.
-    It demonstrates the following behaviours in respect of the healthcare system module:
+    It demonstrates the following behaviours in respect of the healthsystem module:
 
     - Declaration of TREATMENT_ID
     - Registration of the disease module
