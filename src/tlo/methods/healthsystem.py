@@ -108,8 +108,20 @@ class HealthSystem(Module):
 
     def register_interventions(self, footprint_df):
         # Register the interventions that can be requested
-        logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
+
+        # Check that this footprint can be added to the registered interventions
+        assert type(footprint_df)==pd.DataFrame
+        assert all(footprint_df.Name!=self.registered_interventions)
+        assert 'Name' in footprint_df.columns
+        assert 'Nurse_Time' in footprint_df.columns
+        assert 'Doctor_Time' in footprint_df.columns
+        assert 'Electricity' in footprint_df.columns
+        assert 'Water' in footprint_df.columns
+        assert len(footprint_df.columns)==5
+
         self.registered_interventions = self.registered_interventions.append(footprint_df)
+        logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
+
 
     def query_access_to_service(self, person_id, service):
         logger.info('Query whether person %d has access to service %s', person_id, service)
@@ -161,10 +173,12 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
             out = module.query_symptoms_now()
 
             # check that the data received is in correct format
+            assert type(out) is pd.Series
             assert len(out)==self.sim.population.props.is_alive.sum()
-            assert all(out.astype(int)>=0)
-            assert all(out.astype(int)<5)
-
+            assert self.sim.population.props.index.name==out.index.name
+            assert self.sim.population.props.is_alive[out.index].all()
+            assert (~pd.isnull(out)).all()
+            assert all(out.dtype.categories==[0,1,2,3,4])
             unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
 
 
