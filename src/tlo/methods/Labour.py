@@ -12,6 +12,9 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 
 class Labour (Module):
+
+
+
     """
     This module models labour and delivery and generates the properties for "complications" of delivery """
 
@@ -73,12 +76,13 @@ class Labour (Module):
         'base_init_parity':Parameter(
             Types.REAL, 'value of parity on initialisation'),
         'base_init_prev_cs': Parameter(
-            Types.REAL, 'baseline probability of having had a previous caesarean for woman where parity =>1')
+            Types.REAL, 'baseline probability of having had a previous caesarean for woman where parity =>1'),
+        'baseline_gestation':Parameter(
+            Types.REAL, 'gestation on baseline')
       }
 
     PROPERTIES = {
 
-        'la_is_pregnant':Property(Types.BOOL, 'currently pregnant'),
         'la_labour': Property(Types.CATEGORICAL,'not in labour, spontaneous unobstructed labour, prolonged or '
                                                 'obstructed labour, Preterm Labour',
                                 categories=['not_in_labour', 'spontaneous_unobstructed_labour',
@@ -92,7 +96,10 @@ class Labour (Module):
         'la_previous_cs': Property(Types.BOOL, 'has the woman ever had a previous caesarean'), # REFINE TO INTEGER
         'la_immediate_postpartum': Property(Types.BOOL, ' postpartum period from delivery to 48 hours post'),
         'la_previous_ptb': Property(Types.BOOL, 'whether the woman has had a previous preterm delivery for any of her'
-                                                  'previous deliveries')
+                                                  'previous deliveries'),
+        'la_conception_date':Property(Types.DATE, 'date on which current pregnancy was conceived'),
+        'la_gestation': Property(Types.INT, 'number of weeks since conception ranging from 1-42')
+        # do we need date of conception to be stored to calculate a rolling gestation in months
     }
 
     def read_parameters(self, data_folder):
@@ -131,6 +138,7 @@ class Labour (Module):
         params['prob_pregnancy'] = 0.03 # DUMMY PREGNANCY GENERATOR
         params['base_init_parity'] = 0  # DUMMY
         params['base_init_prev_cs'] = 0.10 # DUMMY
+        params['baseline_gestation'] = 0 # Dummy?
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -148,7 +156,6 @@ class Labour (Module):
 
     # ----------------------------------------- DEFAULTS----------------------------------------------------------------
 
-        df['la_is_pregnant'] = False
         df['la_labour'] = 'not_in_labour'
         df['la_planned_CS'] = False
         df['la_induced_labour'] = False
@@ -158,11 +165,13 @@ class Labour (Module):
         df['la_partiy'] = 0
         df['la_previous_cs'] = False
         df['la_immediate_postpartum'] = False
-        df ['la_previous_ptb'] = False
+        df['la_previous_ptb'] = False
+        df['la_conception_date'] = pd.NaT
+        df['la_gestation'] = 0
 
     # -----------------------------------ASSIGN PREGNANCY AT BASELINE (DUMMY) --------------------------------------
 
-        # Dummy code to generate pregnancies (remove once running from demography)
+        # Dummy code to generate pregnancies from Labour.py
 
         women_idx = df.index[(df.age_years >= 15) & (df.age_years <= 49) & df.is_alive & (df.sex == 'F')]
 
@@ -175,18 +184,35 @@ class Labour (Module):
         dfx = pd.concat([eff_prob_preg, random_draw], axis=1)
         dfx.columns = ['eff_prob_pregnancy', 'random_draw']
         idx_pregnant = dfx.index[dfx.eff_prob_pregnancy > dfx.random_draw]
-        df.loc[idx_pregnant, 'la_is_pregnant'] = True
+        df.loc[idx_pregnant, 'is_pregnant'] = True
+
+
+        #Demography will need to generate a date of conception for births generated forwardsv
+
+# ---------------------------------    GESTATION AT BASELINE  ---------------------------------------------------------
+
+        # Assigns a number of weeks of gestation for all pregnant women at baseline
+
+        preg_gest = df.index[df.is_alive & (df.is_pregnant == True)]
+        base_gest_rand = pd.Series(self.rng.choice(range(1, 42), size=len(preg_gest)), index=preg_gest)
+        df.loc[preg_gest, 'la_gestation'] = base_gest_rand
+
+
+    #  gestation_time = pd.date_range(end=self.sim.start.date, periods=42, freq='W')[::-1]
+    #  gest_date_women= df.index[(df.la_gestation >= 1)]
+
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
 #      (Currently parity is assigned to all women of childbearing age as a random integer between 0-5
-#      There is presently no probability or age weighting for parity which will need to be added
+#      There is presently no probability or age weighting
+#      Will eventually pull in from the DHS
 
         women_parity_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F')]
 
         baseline_p = pd.Series(m.base_init_parity, index=women_parity_idx)
 
-        random_draw2 = pd.Series(self.rng.choice([0, 1, 2, 3, 4, 5 ], size=len(women_parity_idx)),
+        random_draw2 = pd.Series(self.rng.choice(range(0, 7), size=len(women_parity_idx)),
                                  index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F')])
 
         dfi = pd.concat([baseline_p, random_draw2], axis=1)
@@ -244,7 +270,6 @@ class Labour (Module):
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -265,34 +290,16 @@ class Labour (Module):
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs'] = 0
         df.at[child_id, 'la_immediate_postpartum'] = False
+        df.at[child_id, 'la_previous_ptb'] = False
+        df.at[child_id, 'la_conception_date'] = pd.NaT
 
 
 class LabourEvent(RegularEvent, PopulationScopeEventMixin):
-    """ Event moving pregnant women into labour
-
-    A skeleton class for an event
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
-    """
 
     def __init__(self, module):
-        """One line summary here
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        """
         super().__init__(module, frequency=DateOffset(weeks=1))
 
     def apply(self, population):
-        """Apply this event to the population.
-
-        :param population: the current population
-        """
 
         df = population.props
         m = self.module
@@ -305,12 +312,11 @@ class LabourEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Must add impact of gestation on likelihood of women entering states of labour
 
-        due_labour_idx = df.index[(df.la_is_pregnant == True) & df.is_alive]   # AND IS TERM!!!!
-
+        due_labour_idx = df.index[(df.is_pregnant == True) & df.is_alive & (df.la_gestation >= 36)]
         eff_prob_spont_lab = pd.Series(m.prob_SL, index=due_labour_idx)
 
         random_draw = pd.Series(rng.random_sample(size=len(due_labour_idx)),
-                                index=df.index[(df.la_is_pregnant == True)])
+                                index=df.index[(df.is_pregnant == True) & df.is_alive & (df.la_gestation >= 36)])
 
         dfx = pd.concat([eff_prob_spont_lab, random_draw], axis=1)
         dfx.columns = ['eff_prob_spont_lab', 'random_draw']
@@ -319,18 +325,22 @@ class LabourEvent(RegularEvent, PopulationScopeEventMixin):
 
     #   --------------------------------------PROLONGED/ OBSTRUCTED LABOUR ---------------------------------------------
 
-        due_pl_ol_idx = df.index[(df.la_is_pregnant == True) & df.is_alive]   # AND IS TERM!!!
+        due_pl_ol_idx = df.index[(df.is_pregnant == True) & df.is_alive & (df.la_gestation >= 36)]
 
         p_pl_or_ol = pd.Series(m.prob_PL_OL, index=due_pl_ol_idx)
 
         # why does this generate a person with a probability of less than 0.06?
 
-        p_pl_or_ol.loc[(df.la_is_pregnant == True) & (df.la_parity == 0) & df.is_alive] *= m.rr_PL_OL_nuliparity
-        p_pl_or_ol.loc[(df.la_is_pregnant == True) & (df.la_parity >= 3) & df.is_alive] *= m.rr_PL_OL_parity_3
-        p_pl_or_ol.loc[(df.la_is_pregnant == True) & (df.age_years < 20) & df.is_alive] *= m.rr_PL_OL_age_less20
+        p_pl_or_ol.loc[(df.is_pregnant == True) & (df.la_parity == 0) & df.is_alive & (df.la_gestation >= 36)] \
+            *= m.rr_PL_OL_nuliparity
+        p_pl_or_ol.loc[(df.is_pregnant == True) & (df.la_parity >= 3) & df.is_alive & (df.la_gestation >= 36)]\
+            *= m.rr_PL_OL_parity_3
+        p_pl_or_ol.loc[(df.is_pregnant == True) & (df.age_years < 20) & df.is_alive & (df.la_gestation >= 36)] \
+            *= m.rr_PL_OL_age_less20
 
-        random_draw = pd.Series(rng.random_sample(size=len(p_pl_or_ol)),index=df.index[(df.la_is_pregnant == True)
-                                                                                       & df.is_alive])
+        random_draw = pd.Series(rng.random_sample(size=len(p_pl_or_ol)),index=df.index[(df.is_pregnant == True)
+                                                                                        & df.is_alive &
+                                                                                        (df.la_gestation >= 36)])
         dfx = pd.concat([p_pl_or_ol, random_draw], axis=1)
         dfx.columns = ['p_pl_or_ol', 'random_draw']
         idx_pl_ol = dfx.index[dfx.p_pl_or_ol > dfx.random_draw]
@@ -338,35 +348,58 @@ class LabourEvent(RegularEvent, PopulationScopeEventMixin):
 
         # I'm not sure if this is doing what I think it is
 
-        df = population.props
-
     #   -------------------------------------------PRETERM LABOUR ---------------------------------------------------
 
         # will need to consider early vs late term as states?
 
-        due_preterm_idx = df.index[(df.la_is_pregnant == True) & df.is_alive]   # AND IS PRETERM!!!
+        due_preterm_idx = df.index[(df.is_pregnant == True) & (df.la_gestation >= 26) & (df.la_gestation <= 36)
+                                   & df.is_alive]
 
-        p_preterm_lab = pd.Series(m.prob_PLT, index=due_preterm_idx)
+        p_preterm_lab = pd.Series(m.prob_ptl, index=due_preterm_idx)
 
-        p_preterm_lab.loc[(df.la_is_pregnant == True) & df.is_alive] *=m.rr_ptl_persistent_malaria
-        # To do: Identify risk factors for preterm labour
+        p_preterm_lab.loc[(df.is_pregnant == True) & (df.la_gestation >= 26) &(df.la_gestation <= 36) & df.is_alive] \
+            *=m.rr_ptl_persistent_malaria
+        p_preterm_lab.loc[(df.is_pregnant == True)& (df.la_gestation >= 26) & (df.la_gestation <= 36) & df.is_alive]\
+            *=m.rr_ptl_prev_ptb
 
-        random_draw = pd.Series(rng.random_sample(size=len(p_preterm_lab)),index=df.index[(df.la_is_pregnant == True)
-                                                                                       & df.is_alive])
+        random_draw = pd.Series(rng.random_sample(size=len(p_preterm_lab)),index=df.index[(df.is_pregnant == True)
+                                                                                          & (df.la_gestation >= 26) &
+                                                                                          (df.la_gestation <= 36)
+                                                                                          & df.is_alive])
         dfx = pd.concat([p_preterm_lab, random_draw], axis=1)
         dfx.columns = ['p_preterm_lab', 'random_draw']
         idx_ptl = dfx.index[dfx.p_preterm_lab > dfx.random_draw]
         df.loc[idx_ptl, 'la_labour'] = 'preterm_labour'
+        df.loc[idx_ptl, 'la_abortion'] = pd.Timestamp
 
-        preterm_idx= df.index[(df.la_labour == 'preterm_labour')]
+# --------------------------------------- SPONTANEOUS ABORTION (MISCARRIGE) -------------------------------------------
+
+        due_spont_abort = df.index[df.is_alive & (df.is_pregnant == True) & (df.la_gestation <= 20)]
+
+        p_spont_abort = pd.Series(m.prob_abortion, index=due_spont_abort)
+
+        random_draw = pd.Series(rng.random_sample(size=len(due_spont_abort)), index=df.index [df.is_alive &
+                                                                                         (df.is_pregnant == True) &
+                                                                                         (df.la_gestation <= 20)])
+
+        dfx = pd.concat([p_spont_abort, random_draw], axis=1)
+        dfx.columns = ['p_spont_abort', 'random_draw']
+        idx_spont_a = dfx.index[dfx.p_spont_abort > dfx.random_draw]
+        df.loc[idx_spont_a, 'la_abortion'] =pd.Timestamp(self.sim.date)
+        df.loc[idx_spont_a, 'la_labour'] = 'not_in_labour'
+        df.loc[idx_spont_a, 'is_pregnant'] = False
+
+        # check how this interacts with other pregnancy states
+
+        due_spont_abort = df.index[df.is_alive & (df.is_pregnant == True) & (df.la_gestation <= 20)]
 
 
-    # TO DO:
 
 # -----------------------------------------   PLANNED CS   ------------------------------------------------------------
 # ----------------------------------------- PLANNED INDUCTION ---------------------------------------------------------
-# ---------------------------------------  ABORTION (MISCARRIGE) ------------------------------------------------------
 # ----------------------------------------------BIRTH------------------------------------------------------------------
+
+
 # ------------------------------------------- POSTPARTUM PERIOD  ------------------------------------------------------
 
     # Pass woman back to demography? Or take over completely?
