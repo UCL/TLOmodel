@@ -430,13 +430,14 @@ class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
         self.outreach_type = outreach_type
 
     def apply(self, population):
-        # This intervention is apply to women only
 
+        # As an example, this outreach screening intervention will only apply to women
         df = population.props
-        indicies_of_person_to_be_reached = df.index[df.is_alive & (df.sex == 'F')]
+        mask_for_person_to_be_reached = (df.sex == 'F')
+
+        target = mask_for_person_to_be_reached.loc[df.is_alive]
 
         # make and run the actual outreach event by the healthsystem
-        outreachevent = healthsystem.OutreachEvent(self.module, 'this_disease_only',
-                                                   indicies_of_person_to_be_reached)
+        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
 
         self.sim.schedule_event(outreachevent, self.sim.date)
