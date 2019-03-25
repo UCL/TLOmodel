@@ -88,7 +88,7 @@ class Mockitis(Module):
         # get the QALY values that this module will use from the weight database
         # (these codes are just random!)
         p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(52)
+        p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
 
 
