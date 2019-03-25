@@ -15,7 +15,6 @@ popsize = 1000
 def disable_logging():
     logging.disable(logging.INFO)
 
-
 @pytest.fixture(scope='module')
 def simulation():
     demography_resource_path = os.path.join(os.path.dirname(__file__), 'resources')
