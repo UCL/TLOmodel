@@ -1,6 +1,8 @@
 """
 A skeleton template for disease methods.
 """
+import os
+
 import numpy as np
 import pandas as pd
 
@@ -9,8 +11,7 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, Individua
 
 
 class health_system_tb(Module):
-    """ routinely tests proportion of the population and
-    determines availability of ART for HIV+ dependent on UNAIDS coverage estimates
+    """
     """
 
     def __init__(self, name=None):
