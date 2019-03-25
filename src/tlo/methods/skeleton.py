@@ -33,6 +33,11 @@ class Skeleton(Module):
         'property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
+
+    # Declaration of how we will refer to any treatments that are related to this disease.
+    TREATMENT_ID = ''
+
+
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
 
@@ -61,6 +66,21 @@ class Skeleton(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
+
+
+        # If this is a disease module: register this disease module with the healthsystem
+        #     self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # If this is an interveton module: regiter the footprints with the healthsystem
+        #     footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+        #         'Name': Mockitis.TREATMENT_ID,
+        #         'Nurse_Time': 5,
+        #         'Doctor_Time': 10,
+        #         'Electricity': False,
+        #         'Water': False})
+        #     self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+
+
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -73,6 +93,42 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
+
+    def query_symptoms_now(self):
+        """FILL in DESCRIPTION
+
+
+        """
+        # # This is called by the health-care seeking module
+        # # All modules refresh the symptomology of persons at this time
+        # # And report it on the unified symptomology scale
+        # logger.debug("This is mockitis, being asked to report unified symptomology")
+        #
+        # # Map the specific symptoms for this disease onto the unified coding scheme
+        # df = self.sim.population.props  # shortcut to population properties dataframe
+        #
+        # df.loc[df.is_alive, 'mi_unified_symptom_code'] = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
+        #     'none': 0,
+        #     'mild sneezing': 1,
+        #     'coughing and irritable': 2,
+        #     'extreme emergency': 4
+        # })
+
+        return df.loc[df.is_alive, 'mi_unified_symptom_code']
+
+
+    def report_qaly_values(self):
+        """FILL in DESCRIPTION
+        
+        """
+
+        raise NotImplementedError
+
+
+    # # def on_healthsystem_interaction
+    #     """FILL in DESCRIPTION
+    #
+    #     """
 
 class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event

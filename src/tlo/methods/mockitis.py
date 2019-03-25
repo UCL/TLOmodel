@@ -25,9 +25,7 @@ class Mockitis(Module):
     - Registration of the interventions
     - Internal symptom tracking, responding to query_symptoms_now
     - Reading QALY weights and reporting qaly values related to this disease
-
-
-
+    - Running an "outreach" event
     """
 
     PARAMETERS = {
@@ -46,7 +44,6 @@ class Mockitis(Module):
         'qalywt_advanced': Parameter(
             Types.REAL, 'QALY weighting for extreme emergency')
     }
-
 
     PROPERTIES = {
         'mi_is_infected': Property(
@@ -74,7 +71,6 @@ class Mockitis(Module):
     TREATMENT_ID = 'Mockitis_Treatment'
 
     def read_parameters(self, data_folder):
-
         p = self.parameters
 
         p['p_infection'] = 0.001
@@ -94,6 +90,7 @@ class Mockitis(Module):
         p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(52)
         p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -158,7 +155,7 @@ class Mockitis(Module):
         It is a good place to add initial events to the event queue.
         """
 
-        # add the basic event (we will implement below)
+        # add the basic event
         event = MockitisEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
@@ -234,7 +231,6 @@ class Mockitis(Module):
             self.sim.schedule_event(death_event, df.at[child_id, 'mi_scheduled_date_death'])
 
         else:
-
             # Assign the default for a child who is not infected
             df.at[child_id, 'mi_is_infected'] = False
             df.at[child_id, 'mi_status'] = 'N'
@@ -262,22 +258,21 @@ class Mockitis(Module):
 
         return df.loc[df.is_alive, 'mi_unified_symptom_code']
 
-    def on_healthsystem_interaction(self, person_id, cue_type, disease_specific):
-        logger.debug('This is mockitis, being asked what to do at a health system appointment for '
+    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+        logger.debug('This is mockitis, being alerted about a health system interaction '
                      'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
-        # Querry with health system whether this individual will get a desired treatment
-        gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-            person_id, Mockitis.TREATMENT_ID
-        )
 
-        if gets_treatment:
-            # Commission treatment for this individual
-            event = MockitisTreatmentEvent(self, person_id)
-            self.sim.schedule_event(event, self.sim.date)
+        if self.sim.population.props.at[person_id,'mi_status']=='C':
+            # Query with health system whether this individual will get a desired treatment
+            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.TREATMENT_ID
+            )
 
-        if cue_type=='follow_up':
-            logger.debug('This is a follow-up appointment. Nothing to do')
+            if gets_treatment:
+                # Commission treatment for this individual
+                event = MockitisTreatmentEvent(self, person_id)
+                self.sim.schedule_event(event, self.sim.date)
 
 
     def report_qaly_values(self):
@@ -296,7 +291,6 @@ class Mockitis(Module):
             'coughing and irritable': p['qalywt_coughing'],
             'extreme emergency': p['qalywt_advanced']
         })
-
         return health_values.loc[df.is_alive]
 
 
@@ -387,7 +381,8 @@ class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
             pass
 
         # schedule a short series of follow-up appointments at six monthly intervals
-        followup_appt = healthsystem.FollowupHealthSystemInteraction(self.module, person_id)
+        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name)
+
         self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=6))
         self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=12))
         self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=18))
@@ -443,4 +438,5 @@ class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
         # make and run the actual outreach event by the healthsystem
         outreachevent = healthsystem.OutreachEvent(self.module, 'this_disease_only',
                                                    indicies_of_person_to_be_reached)
+
         self.sim.schedule_event(outreachevent, self.sim.date)
