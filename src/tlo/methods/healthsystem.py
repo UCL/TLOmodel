@@ -25,8 +25,12 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+
         if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'], dtype=['object', bool])
+            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'],dtypes=['object',bool])
+
+        #TODO Insert checks here on service_availability
+
 
         self.service_availability = service_availability
 
@@ -194,8 +198,6 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
         # The Maximum Value of reported Symptom is taken as overall level of symptoms
         overall_symptom_code = unified_symptoms_code.max(axis=1)
 
-
-
         # ----------
         # 2) For each individual, examine symptoms and other circumstances,
         # and trigger a Health System Interaction if required
@@ -312,10 +314,10 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive']:
 
             # 1. Confirm availability of health system resources for this interaction
-            # Skip TODO: Insert constraint
+            # Skip TODO: Re-Insert constraint
 
             # 2. Impose the footprint of this health system resource use
-            # Skip TODO: Insert constraint
+            # Skip TODO: Re-Insert constraint
 
             # 3. For each disease module, trigger the on_healthsystem_interaction() event
 
