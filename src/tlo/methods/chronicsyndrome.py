@@ -9,7 +9,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import EmergencyHealthSystemInteraction
+from tlo.methods.healthsystem import HealthSystemInteractionEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -227,19 +227,18 @@ class ChronicSyndrome(Module):
 
         return df.loc[df.is_alive, 'cs_unified_symptom_code']
 
-    def on_healthsystem_interaction(self, person_id, cue_type):
-        logging.debug('being asked what to do at a health system appointment for person', person_id)
+    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
-        # Queries whether treatment is allowable under global policy
-        allowable = True
+        if self.sim.population.props.at[person_id,'cs_status']=='C':
+            # Query with health system whether this individual will get a desired treatment
+            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.TREATMENT_ID
+            )
 
-        # Queries whether treatment is available locally
-        available = True
-
-        if allowable and available:
-            # # Commission treatment for this individual
-            event = ChronicSyndromeTreatmentEvent(self, person_id)
-            self.sim.schedule_event(event, self.sim.date)
+            if gets_treatment:
+                # # Commission treatment for this individual
+                event = ChronicSyndromeTreatmentEvent(self, person_id)
+                self.sim.schedule_event(event, self.sim.date)
 
 
 
@@ -318,7 +317,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             seeks_emergency_care_idx = become_severe_idx[seeks_emergency_care]
 
             for person_index in seeks_emergency_care_idx:
-                event = EmergencyHealthSystemInteraction(self.module, person_index)
+                event = HealthSystemInteractionEvent(self.module, person_index,cue_type='InitialDiseaseCall',disease_specific=self.module.name)
                 self.sim.schedule_event(event, self.sim.date)
 
 
@@ -365,8 +364,4 @@ class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
-        df = population.props
-
-        hascs_total = (df.is_alive & df.cs_has_cs).sum()
-        proportion_infected = hascs_total / df.is_alive.sum()
+        pass
