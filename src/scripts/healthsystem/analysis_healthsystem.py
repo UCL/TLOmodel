@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 50
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -50,8 +50,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-# sim.register(mockitis.Mockitis())
-# sim.register(chronicsyndrome.ChronicSyndrome())
+sim.register(mockitis.Mockitis())
+sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
