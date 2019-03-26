@@ -76,25 +76,25 @@ class ChildhoodPneumonia(Module):
          'initial prevalence of severe pneumonia, among children aged 3-11 months, '
          'HIV negative, normal weight, no SAM, no indoor air pollution '
          ),
-        'rp_severe_pneumonia_agelt2mo': Parameter
+        'rp_severe_pneum_agelt2mo': Parameter
         (Types.REAL, 'relative prevalence of severe pneumonia for age <2 months'
          ),
-        'rp_severe_pneumonia_age12to23mo': Parameter
+        'rp_severe_pneum_age12to23mo': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for age 12 to 23 months'
          ),
-        'rp_severe_pneumonia_age24to59mo': Parameter
+        'rp_severe_pneum_age24to59mo': Parameter
         (Types.REAL, 'relative prevalence of severe pneumonia for age 24 to 59 months'
          ),
-        'rp_severe_pneumonia_HIV': Parameter
+        'rp_severe_pneum_HIV': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for HIV positive status'
          ),
-        'rp_severe_pneumonia_malnutrition': Parameter
+        'rp_severe_pneum_malnutrition': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for severe acute malnutrition'
          ),
-        'rp_severe_pneumonia_IAP': Parameter
+        'rp_severe_pneum_IAP': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for indoor air pollution'
          ),
@@ -277,25 +277,25 @@ class ChildhoodPneumonia(Module):
         p['rr_pneumonia_malnutrition'] = 1.25
         p['rr_pneumonia_IAP'] = 1.1
         p['base_prev_severe_pneumonia'] = 0.1
-        p['rp_severe_pneumonia_agelt2mo'] = 1.3
-        p['rp_severe_pneumonia_age12to23mo'] = 0.8
-        p['rp_severe_pneumonia_age24to59mo'] = 0.5
-        p['rp_severe_pneumonia_HIV'] = 1.3
-        p['rp_severe_pneumonia_malnutrition'] = 1.3
-        p['rp_severe_pneumonia_IAP'] = 1.1
-        p['rr_severe_pneumonia_agelt2mo'] = 1.3
-        p['rr_severe_pneumonia_age12to23mo'] = 0.8
-        p['rr_severe_pneumonia_age24to59mo'] = 0.5
-        p['rr_severe_pneumonia_HIV'] = 1.3
-        p['rr_severe_pneumonia_malnutrition'] = 1.3
-        p['rr_severe_pneumonia_IAP'] = 1.1
+        p['rp_severe_pneum_agelt2mo'] = 1.3
+        p['rp_severe_pneum_age12to23mo'] = 0.8
+        p['rp_severe_pneum_age24to59mo'] = 0.5
+        p['rp_severe_pneum_HIV'] = 1.3
+        p['rp_severe_pneum_malnutrition'] = 1.3
+        p['rp_severe_pneum_IAP'] = 1.1
+        p['rr_severe_pneum_agelt2mo'] = 1.3
+        p['rr_severe_pneum_age12to23mo'] = 0.8
+        p['rr_severe_pneum_age24to59mo'] = 0.5
+        p['rr_severe_pneum_HIV'] = 1.3
+        p['rr_severe_pneum_malnutrition'] = 1.3
+        p['rr_severe_pneum_IAP'] = 1.1
         p['r_progress_to_severe_pneumonia'] = 0.05
-        p['rr_progress_severe_pneumonia_agelt2mo'] = 1.3
-        p['rr_progress_severe_pneumonia_age12to23mo'] = 0.9
-        p['rr_progress_severe_pneumonia_age24to59mo'] = 0.6
-        p['rr_progress_severe_pneumonia_HIV'] = 1.2
-        p['rr_progress_severe_pneumonia_malnutrition'] = 1.1
-        p['rr_progress_severe_pneumonia_IAP'] = 1.08
+        p['rr_progress_severe_pneum_agelt2mo'] = 1.3
+        p['rr_progress_severe_pneum_age12to23mo'] = 0.9
+        p['rr_progress_severe_pneum_age24to59mo'] = 0.6
+        p['rr_progress_severe_pneum_HIV'] = 1.2
+        p['rr_progress_severe_pneum_malnutrition'] = 1.1
+        p['rr_progress_severe_pneum_IAP'] = 1.08
         p['r_death_pneumonia'] = 0.2
         p['rr_death_pneumonia_agelt2mo'] = 1.2
         p['rr_death_pneumonia_age12to23mo'] = 0.8
@@ -345,8 +345,8 @@ class ChildhoodPneumonia(Module):
 
         # create data-frame of the probabilities of ri_pneumonia_status for children
         # aged 2-11 months, HIV negative, no SAM, no indoor air pollution
-        p_pneumonia_status = pd.Series(0.2, index=[under5_idx])
-        p_sev_pneum_status = pd.Series(0.1, index=[under5_idx])
+        p_pneumonia_status = pd.Series(0.2, index=under5_idx)
+        p_sev_pneum_status = pd.Series(0.1, index=under5_idx)
 
         # create probabilities of pneumonia for all age under 5
         p_pneumonia_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_pneumonia_agelt2mo
@@ -379,7 +379,7 @@ class ChildhoodPneumonia(Module):
         dfx = pd.concat([p_pneumonia_status, p_sev_pneum_status, random_draw], axis=1)
         dfx.columns = ['p_pneumonia', 'p_severe_pneumonia', 'random_draw']
 
-        dfx['none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia)
+        dfx['p_none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia)
 
         # based on probabilities of being in each category, define cut-offs to determine status from
         # random draw uniform(0,1)
@@ -393,9 +393,9 @@ class ChildhoodPneumonia(Module):
                                          (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia)
                                          < dfx.random_draw]
 
-        df.loc[idx_none, 'ri_resp_infection_stat'] = 'none'
-        df.loc[idx_pneumonia, 'ri_resp_infection_stat'] = 'pneumonia'
-        df.loc[idx_severe_pneumonia, 'ri_resp_infection_stat'] = 'severe pneumonia'
+        df.loc[idx_none, 'ri_pneumonia_status'] = 'none'
+        df.loc[idx_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
+        df.loc[idx_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
     def initialise_simulation(self, sim):
         """
