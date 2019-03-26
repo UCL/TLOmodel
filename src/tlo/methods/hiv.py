@@ -141,6 +141,7 @@ class hiv(Module):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'Method_HIV.xlsx'), sheet_name=None)
+        # print('workbook', workbook)
 
         params = self.parameters
         params['param_list'] = workbook['parameters']
@@ -626,6 +627,7 @@ class hiv(Module):
     #         self.sim.schedule_event(event, self.sim.date)
 
     # def on_followup_healthsystem_interaction(self, person_id):
+        # TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
     #     logger.debug('This is a follow-up appointment. Nothing to do')
 
     # def report_qaly_values(self):
@@ -637,6 +639,7 @@ class hiv(Module):
     #     df = self.sim.population.props  # shortcut to population properties dataframe
     #
     #     params = self.parameters
+            # TODO: this should be linked to time infected
     #
     #     health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
     #         'none': 0,
