@@ -53,9 +53,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0]))
-sim.register(hiv_hs.health_system(resourcefilepath=resourcefilepath, par_est1=params[1], par_est2=params[2],
-                                  par_est3=params[3], par_est4=params[4]))
+sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0], par_est1=params[1], par_est2=params[2],
+                     par_est3=params[3], par_est4=params[4]))
 sim.register(tb.tb_baseline(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[5]))
 sim.register(hiv_behaviour_change.BehaviourChange())
