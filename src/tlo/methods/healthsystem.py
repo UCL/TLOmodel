@@ -100,7 +100,7 @@ class HealthSystem(Module):
         for person_id in pop.index[pop.is_alive]:
             my_village = pop.at[person_id, 'village_of_residence']
             my_health_facilities = mapping.loc[mapping['Village'] == my_village]
-            assert len(my_health_facilities)>0
+            # assert len(my_health_facilities)>0
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props

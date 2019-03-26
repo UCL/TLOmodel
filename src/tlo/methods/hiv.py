@@ -9,7 +9,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-from tlo.methods import demography  # , healthsystem
+from tlo.methods import demography, healthsystem
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -110,7 +110,10 @@ class hiv(Module):
         'qalywt_chronic':
             Parameter(Types.REAL, 'QALY weighting for chronic hiv infection'),
         'qalywt_aids':
-            Parameter(Types.REAL, 'QALY weighting for aids')
+            Parameter(Types.REAL, 'QALY weighting for aids'),
+        'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -129,10 +132,23 @@ class hiv(Module):
         'hiv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
                                           categories=['none', 'acute', 'chronic', 'aids']),
         'hiv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
-                                             categories=[0, 1, 2, 3, 4])
+                                             categories=[0, 1, 2, 3, 4]),
+
+        # TODO: assign these hs properties in initialise population and on_birth
+        'hiv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
+        'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
+        'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
+        'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
+        'hiv_on_art': Property(Types.CATEGORICAL, 'art status', categories=['0', '1', '2']),
+        'hiv_date_art_start': Property(Types.DATE, 'date art started'),
+        'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
+        'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
+        'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started')
+
     }
 
     TREATMENT_ID = 'hiv_treatment'
+    TEST_ID = 'hiv_test'
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -226,6 +242,10 @@ class hiv(Module):
         params['or_edlevel_higher'] = \
             self.param_list.loc['or_edlevel_higher', 'Value1']
 
+        params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
+        params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
+        params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
+
         # TODO: put beta in worksheet for default
 
         if self.beta_calib:
@@ -241,10 +261,10 @@ class hiv(Module):
             data={'level': ['none', 'acute', 'chronic', 'aids'], 'probability': [0, 0.02, 0.81, 0.17]})
 
         # QALY weights
-        # used 1-DALYS for test runs, see DALY weights in Method_HIV workbook
-        params['qalywt_acute'] = 1 - 0.012
-        params['qalywt_chronic'] = 1 - 0.274
-        params['qalywt_aids'] = 1 - 0.582
+        # TODO: update QALY weights
+        params['qalywt_acute'] = self.sim.modules['QALY'].get_qaly_weight(50)
+        params['qalywt_chronic'] = self.sim.modules['QALY'].get_qaly_weight(50)
+        params['qalywt_aids'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -466,26 +486,31 @@ class hiv(Module):
 
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
-        # # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
-        #
-        # # Schedule the outreach event...
-        # event = HivOutreachEvent(self, 'this_module_only')
-        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
-        #
-        # # Register with the HealthSystem the treatment interventions that this module runs
-        # # and define the footprint that each intervention has on the common resources
-        #
-        # # Define the footprint for the intervention on the common resources
-        ## TODO: would this be better in a global database?
-        # footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-        #     'Name': hiv.TREATMENT_ID,
-        #     'Nurse_Time': 5,
-        #     'Doctor_Time': 10,
-        #     'Electricity': False,
-        #     'Water': False})
-        #
-        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Schedule the outreach event...
+        self.sim.schedule_event(HivOutreachEvent(self), self.sim.date + DateOffset(months=1))
+
+        # Register with the HealthSystem the treatment interventions that this module runs
+        # and define the footprint that each intervention has on the common resources
+        footprint_for_test = pd.DataFrame(index=np.arange(1), data={
+            'Name': hiv.TEST_ID,
+            'Nurse_Time': 5,
+            'Doctor_Time': 10,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_test)
+
+        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+            'Name': hiv.TREATMENT_ID,
+            'Nurse_Time': 5,
+            'Doctor_Time': 10,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -593,62 +618,72 @@ class hiv(Module):
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
-    # def query_symptoms_now(self):
-    #     # This is called by the health-care seeking module
-    #     # All modules refresh the symptomology of persons at this time
-    #     # And report it on the unified symptomology scale
-    #     logger.debug("This is hiv, being asked to report unified symptomology")
-    #
-    #     # Map the specific symptoms for this disease onto the unified coding scheme
-    #     df = self.sim.population.props  # shortcut to population properties dataframe
-    #
-    #     df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
-    #         'none': 0,
-    #         'acute': 1,
-    #         'chronic': 2,
-    #         'aids': 3
-    #     })  # no extreme emergency needed?
-    #
-    #     return df.loc[df.is_alive, 'hiv_unified_symptom_code']
+    def query_symptoms_now(self):
+        # This is called by the health-care seeking module
+        # All modules refresh the symptomology of persons at this time
+        # And report it on the unified symptomology scale
+        logger.debug("This is hiv, being asked to report unified symptomology")
 
-    # def on_first_healthsystem_interaction(self, person_id, cue_type):
-    #     logger.debug('This is hiv, being asked what to do at a health system appointment for '
-    #                  'person %d triggered by %s', person_id, cue_type)
-    #
-    #     # Query with health system whether this individual will get a desired treatment
-    #     gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-    #         person_id, hiv.TREATMENT_ID
-    #     )
-    #
-    #     if gets_treatment:
-    #         # Commission treatment for this individual
-    #         # TODO: TreatmentEvent is a regular event in hiv_hs, change to individual event
-    #         event = self.sim.modules['hiv_hs'].TreatmentEvent(self, person_id)
-    #         self.sim.schedule_event(event, self.sim.date)
+        # Map the specific symptoms for this disease onto the unified coding scheme
+        df = self.sim.population.props  # shortcut to population properties dataframe
 
-    # def on_followup_healthsystem_interaction(self, person_id):
-        # TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
-    #     logger.debug('This is a follow-up appointment. Nothing to do')
+        df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+            'none': 0,
+            'acute': 1,
+            'chronic': 2,
+            'aids': 3
+        })  # no extreme emergency needed?
 
-    # def report_qaly_values(self):
-    #     # This must send back a dataframe that reports on the HealthStates for all individuals over
-    #     # the past year
-    #
-    #     logger.debug('This is hiv reporting my health values')
-    #
-    #     df = self.sim.population.props  # shortcut to population properties dataframe
-    #
-    #     params = self.parameters
-            # TODO: this should be linked to time infected
-    #
-    #     health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
-    #         'none': 0,
-    #         'acute': params['qalywt_acute'],
-    #         'chronic': params['qalywt_chronic'],
-    #         'aids': params['qalywt_aids']
-    #     })
-    #
-    #     return health_values.loc[df.is_alive]
+        return df.loc[df.is_alive, 'hiv_unified_symptom_code']
+
+    def on_healthsystem_interaction(self, person_id, cue_type, disease_specific):
+        logger.debug('This is hiv, being asked what to do at a health system appointment for '
+                     'person %d triggered by %s', person_id, cue_type)
+
+        # Query with health system whether this individual will get a desired treatment
+        # gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+        #     person_id, hiv.TREATMENT_ID
+        # )
+
+        # everyone gets a test, this will always return true
+        gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
+            person_id, self.TEST_ID
+        )
+        # TODO: add a testing event which will change property ever_tested and hiv_diagnosed
+
+        if gets_test:  # and diagnosed
+            # Commission treatment for this individual, returns a boolean
+            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.TREATMENT_ID)
+
+            # TODO: should this event be contingent on get_treatment=True?
+            event = self.sim.modules['hiv_hs'].TreatmentEvent(self, person_id)
+            self.sim.schedule_event(event, self.sim.date)
+
+
+# def on_followup_healthsystem_interaction(self, person_id):
+# TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
+#     logger.debug('This is a follow-up appointment. Nothing to do')
+
+def report_qaly_values(self):
+    # This must send back a dataframe that reports on the HealthStates for all individuals over
+    # the past year
+
+    logger.debug('This is hiv reporting my health values')
+
+    df = self.sim.population.props  # shortcut to population properties dataframe
+
+    params = self.parameters
+    # TODO: this should be linked to time infected
+
+    health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
+        'none': 0,
+        'acute': params['qalywt_acute'],
+        'chronic': params['qalywt_chronic'],
+        'aids': params['qalywt_aids']
+    })
+
+    return health_values.loc[df.is_alive]
 
 
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
@@ -771,15 +806,6 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
         self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
 
 
-# class HivOutreachEvent(Event, PopulationScopeEventMixin):
-#     def __init__(self, module, outreach_type):
-#         super().__init__(module)
-#         self.outreach_type = outreach_type
-#
-#     def apply(self, population):
-#         pass
-
-
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
@@ -824,3 +850,52 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'hiv_new_infections_child': child_new_inf,
                         'hiv_scheduled_deaths': sch_deaths
                     })
+
+
+class HivOutreachEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=3))
+
+    def apply(self, population):
+        # target adults age >15
+        df = population.props
+        mask_for_person_to_be_reached = (df.age_years >= 15)  # can put multiple conditions here
+
+        target = mask_for_person_to_be_reached.loc[df.is_alive]
+
+        # make and run the actual outreach event by the healthsystem
+        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name, target=target)
+
+        self.sim.schedule_event(outreachevent, self.sim.date)
+
+
+class HivTreatmentEvent(Event, IndividualScopeEventMixin):
+    """
+    Assigns treatment to individuals and changes hiv death / infectiousness
+    """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        params = self.module.parameters
+        df = self.sim.population.props
+
+        # assign ART
+        if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'df.hiv_diagnosed'] and df.at[
+            individual_id, df.age_years < 15]:
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
+                                                                        p=[(1 - params['vls_child']),
+                                                                           params['vls_child']])
+
+        if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'df.hiv_diagnosed'] and df.at[
+            individual_id, df.age_years >= 15] and df.at[individual_id, (df.sex == 'M')]:
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
+                                                                        p=[(1 - params['vls_m']), params['vls_m']])
+
+        if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'df.hiv_diagnosed'] and df.at[
+            individual_id, df.age_years >= 15] and df.at[individual_id, (df.sex == 'F')]:
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
+                                                                        p=[(1 - params['vls_f']), params['vls_f']])
+
+        df.at[individual_id, 'hiv_date_art_start'] = self.sim.date
