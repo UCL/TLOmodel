@@ -27,9 +27,17 @@ class HealthSystem(Module):
 
 
         if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'],dtypes=['object',bool])
+            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
+            service_availability['Service'] = service_availability.astype('object')
+            service_availability['Available'] = service_availability.astype('bool')
 
-        #TODO Insert checks here on service_availability
+        # Checks on the service_availability dateframe argument
+        assert type(service_availability) is pd.DataFrame
+        assert len(service_availability.columns)==2
+        assert 'Service' in service_availability.columns
+        assert 'Available' in service_availability.columns
+        assert (service_availability['Service']).dtype.kind is 'O'
+        assert (service_availability['Available']).dtype.kind is 'b'
 
 
         self.service_availability = service_availability
