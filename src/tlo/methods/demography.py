@@ -212,7 +212,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
         df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
 
-        # Check for no bad values in the imported dataset
+        # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
         assert (not pd.isnull(df['village_of_residence']).any())
