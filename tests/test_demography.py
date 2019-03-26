@@ -6,8 +6,6 @@ import pytest
 from tlo import Date, Simulation
 from tlo.methods import demography
 
-workbook_name = 'demography.xlsx'
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
@@ -15,12 +13,10 @@ popsize = 50
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
+    demography_workbook = os.path.join(os.path.dirname(__file__), 'resources')
 
     sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(workbook_path=demography_workbook)
+    core_module = demography.Demography(resourcefilepath=demography_workbook)
     sim.register(core_module)
     sim.seed_rngs(0)
     return sim
