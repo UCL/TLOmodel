@@ -25,14 +25,26 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+
         if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'], dtype=['object', bool])
+            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
+            service_availability['Service'] = service_availability.astype('object')
+            service_availability['Available'] = service_availability.astype('bool')
+
+        # Checks on the service_availability dateframe argument
+        assert type(service_availability) is pd.DataFrame
+        assert len(service_availability.columns)==2
+        assert 'Service' in service_availability.columns
+        assert 'Available' in service_availability.columns
+        assert (service_availability['Service']).dtype.kind is 'O'
+        assert (service_availability['Available']).dtype.kind is 'b'
+
 
         self.service_availability = service_availability
 
         self.registered_disease_modules = {}
 
-        self.registered_interventions = pd.DataFrame()
+        self.registered_interventions = pd.DataFrame(columns=['Name','Nurse_Time','Doctor_Time','Electricity','Water'])
 
         self.health_system_resources = None
 
@@ -66,7 +78,6 @@ class HealthSystem(Module):
             self.resourcefilepath+'ResourceFile_Village_To_Facility_Mapping.csv'
         )
 
-
         # Establish the MasterCapacitiesList
         # (This is where the data on all health capabilities will be stored. For now, nothing happens)
 
@@ -81,16 +92,15 @@ class HealthSystem(Module):
 
     def initialise_simulation(self, sim):
         # Launch the healthcare seeking poll
-        sim.schedule_event(HealthCareSeekingPoll(self), sim.date)
+        sim.schedule_event(HealthCareSeekingPollEvent(self), sim.date)
 
-        # Check that each person is atttached to a village and a set of attached health facilities
+        # Check that each person is attached to a village and a set of attached health facilities
         pop = self.sim.population.props
         mapping = self.parameters['Village_To_Facility_Mapping']
         for person_id in pop.index[pop.is_alive]:
             my_village = pop.at[person_id, 'village_of_residence']
             my_health_facilities = mapping.loc[mapping['Village'] == my_village]
             assert len(my_health_facilities)>0
-
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -108,11 +118,30 @@ class HealthSystem(Module):
 
     def register_interventions(self, footprint_df):
         # Register the interventions that can be requested
-        logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
+
+        # Check that this footprint can be added to the registered interventions
+        assert type(footprint_df)==pd.DataFrame
+        assert not (footprint_df.Name.values in self.registered_interventions.Name.values)
+        assert 'Name' in footprint_df.columns
+        assert 'Nurse_Time' in footprint_df.columns
+        assert 'Doctor_Time' in footprint_df.columns
+        assert 'Electricity' in footprint_df.columns
+        assert 'Water' in footprint_df.columns
+        assert len(footprint_df.columns)==5
+
         self.registered_interventions = self.registered_interventions.append(footprint_df)
+        logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
+
 
     def query_access_to_service(self, person_id, service):
         logger.info('Query whether person %d has access to service %s', person_id, service)
+
+        df=self.sim.population.props
+
+        # Check that this is a legitimate request:
+        assert df.at[person_id,'is_alive']==True            # All requests should come from alive persons
+        assert service in self.registered_interventions.Name.values
+
 
         # Health system allows all requests for services
         # (This is where the constraint will be imposed and the footprint recorded)
@@ -161,10 +190,14 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
             out = module.query_symptoms_now()
 
             # check that the data received is in correct format
+            assert type(out) is pd.Series
             assert len(out)==self.sim.population.props.is_alive.sum()
-            assert all(out.astype(int)>=0)
-            assert all(out.astype(int)<5)
+            assert self.sim.population.props.index.name==out.index.name
+            assert self.sim.population.props.is_alive[out.index].all()
+            assert (~pd.isnull(out)).all()
+            assert all(out.dtype.categories==[0,1,2,3,4])
 
+            # Add this to the dataframe
             unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
 
 
@@ -189,7 +222,7 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
             # *************************************************************************
             # The "general health care seeking equation" ***
-            prob_seek_care = min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2)  # (This is a dummy)
+            prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
             # *************************************************************************
 
             # determine if there will be health-care contact and schedule FirstAppt if so
@@ -204,49 +237,55 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
     """
-    This event can be used to simulate the occurrence of an 'outreach event'
-    It does not automatically reschedule.
-    It is limited to the person_id that are supplied to it.
-    It commissions new interactions with the Health System for those persons.
-    The type argument determines the type of interaction that is triggered (disease specific of all diseases).
+    This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
+    It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
+    which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
+    reached in the outreach intervention. It does not automatically reschedule. The disease_specific argument determines
+    the type of interaction that is triggered: if disease_specific = None, thee resulting HealthSystemInteractionEvents
+    will have disease_specific=None; if disease_specific is set to a registered disease module name, this will be passed
+    to the resulting HealthSystemInteractionEvents.
+    NB. A known issue is that if this event is scheduled into the future, then persons that are born into the population
+    after the event is defined will not benefit from the outreach intervention.
     """
+    #TODO: Would like to create event and give rules for persons to be included/exlcuded that are evaluated when the event is run.
 
-    def __init__(self, module, outreach_type, person_indicies):
+    def __init__(self, module, disease_specific=None, target=pd.Series(dtype=bool)):
         super().__init__(module)
 
-        logger.debug('Outreach event being created. Type: %s, %s', outreach_type, person_indicies)
+        logger.debug('Outreach event being created. Type: %s, %s', disease_specific)
 
-        self.outreach_type = outreach_type
-        self.indicies = person_indicies
+        # Check the arguments that have been passed:
+        assert (disease_specific==None) or (disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
+        assert type(target) is pd.Series
+        assert len(target) == self.sim.population.props.is_alive.sum()
+        assert self.sim.population.props.index.name == target.index.name
+        assert self.sim.population.props.is_alive[target.index].all()
+        assert (~pd.isnull(target)).all()
+
+        self.disease_specific = disease_specific
+        self.target = target
 
     def apply(self, population):
 
         logger.debug('Outreach event running now')
 
-        if self.outreach_type== 'this_disease_only':
-            disease_spec=self.module
-        else:
-            disease_spec=None
-
+        target_indicies=self.target.index
 
         # Schedule a first appointment for each person for this disease only
-        for person_index in self.person_indicies:
+        for person_id in target_indicies:
 
-            if self.sim.population.props.at[person_index, 'is_alive']:
+            if self.sim.population.props.at[person_id, 'is_alive']:
 
-                event = HealthSystemInteractionEvent(self.module, person_index,
+                event = HealthSystemInteractionEvent(self.module, person_id,
                                                      cue_type='OutreachEvent',
-                                                     disease_specific=disease_spec)
+                                                     disease_specific=self.disease_specific)
                 self.sim.schedule_event(event, self.sim.date)
-
 
         # Log the occurrence of the outreach event
         logger.info('%s|outreach_event|%s', self.sim.date,
                     {
-                        'type': self.outreach_type
+                        'disease_specific': self.disease_specific
                     })
-
-
 
 
 
@@ -254,9 +293,13 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     """
     This is the generic interaction between the person and the health system.
     All actual interactions between a person and the health system happen here.
-    It can be called by: HealthCareSeekingPoll, OutreachEvent or a DiseaseModule.
-    It broadcasts details of the interaction to all disease modules with
-    information about the type of interaction. It logs the interaction and imposes
+    It can be called by: HealthCareSeekingPoll, OutreachEvent or a DiseaseModule itself.
+    It broadcasts details of the interaction to all registered disease modules by calling
+    the 'on_healthsystem_interaction' in each. It passes, the information about the type of interaction
+    (cue_type and disease type) that have been received.
+    * cue_type is the type of event that has caused this interaction.
+    * disease_specific is the name of a disease module (or None) that is linked to this interaction.
+    It logs the interaction and imposes any health system constraint that may exist.
     the calls for resources.
     """
 
@@ -265,29 +308,36 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
         self.cue_type = cue_type
         self.disease_specific=disease_specific
 
+        # Check that this is correctly specificed interaction
+        assert person_id in self.sim.population.props.index
+        assert self.cue_type in ['HealthCareSeekingPoll', 'OutreachEvent', 'InitialDiseaseCall', 'FollowUp',None]
+        assert (self.disease_specific==None) or (self.disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
+
+
     def apply(self, person_id):
+        logger.debug('@@@ An interaction with the health system')
 
         df = self.sim.population.props
-
-        assert self.cue_type!=None          #TODO: Check that cue_type is the right format.
-        assert self.disease_specific!=None  #TODO: Check that disease_specific is legitimate
 
         if df.at[person_id, 'is_alive']:
 
             # 1. Confirm availability of health system resources for this interaction
+            # Skip TODO: Re-Insert constraint
 
             # 2. Impose the footprint of this health system resource use
+            # Skip TODO: Re-Insert constraint
 
             # 3. For each disease module, trigger the on_healthsystem_interaction() event
 
-            registered_disease_modules = self.module.registered_disease_modules
+            registered_disease_modules = self.sim.modules['HealthSystem'].registered_disease_modules
+
             for module in registered_disease_modules.values():
-                module.on_first_healthsystem_interaction(person_id,
+                module.on_healthsystem_interaction(person_id,
                                                          cue_type=self.cue_type,
                                                          disease_specific=self.disease_specific)
 
             # 4. Log the occurrence of this interaction with the health system
-            logger.info('%s|InteractionWithHealthSystem_FirstAppt|%s',
+            logger.info('%s|InteractionWithHealthSystem|%s',
                         self.sim.date,
                         {
                             'person_id': person_id,
