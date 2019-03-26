@@ -28,8 +28,8 @@ class HealthSystem(Module):
 
         if service_availability is None:
             service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-            service_availability['Service'] = service_availability.astype('object')
-            service_availability['Available'] = service_availability.astype('bool')
+            service_availability['Service'] = service_availability['Service'].astype('object')
+            service_availability['Available'] = service_availability['Available'].astype('bool')
 
         # Checks on the service_availability dateframe argument
         assert type(service_availability) is pd.DataFrame
@@ -181,30 +181,33 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------
         # 1) Work out the overall unified symptom code
-        unified_symptoms_code = pd.DataFrame()
+        #   Fill in value of zeros (in case that no disease modules are registerd)
+        overall_symptom_code = pd.Series(data=0,index=self.sim.population.props.index)
 
-        # Ask each module to update and report-out the symptoms it is currently causing on the
-        # unified symptomology scale:
         registered_disease_modules = self.module.registered_disease_modules
-        for module in registered_disease_modules.values():
-            out = module.query_symptoms_now()
 
-            # check that the data received is in correct format
-            assert type(out) is pd.Series
-            assert len(out)==self.sim.population.props.is_alive.sum()
-            assert self.sim.population.props.index.name==out.index.name
-            assert self.sim.population.props.is_alive[out.index].all()
-            assert (~pd.isnull(out)).all()
-            assert all(out.dtype.categories==[0,1,2,3,4])
+        if len(registered_disease_modules.values()):
+            # Ask each module to update and report-out the symptoms it is currently causing on the
+            # unified symptomology scale:
+            for module in registered_disease_modules.values():
+                out = module.query_symptoms_now()
 
-            # Add this to the dataframe
-            unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
+                # check that the data received is in correct format
+                assert type(out) is pd.Series
+                assert len(out)==self.sim.population.props.is_alive.sum()
+                assert self.sim.population.props.index.name==out.index.name
+                assert self.sim.population.props.is_alive[out.index].all()
+                assert (~pd.isnull(out)).all()
+                assert all(out.dtype.categories==[0,1,2,3,4])
+
+                # Add this to the dataframe
+                unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
 
 
-        # Look across the columns of the unified symptoms code reports to determine an overall
-        # symptom level.
-        # The Maximum Value of reported Symptom is taken as overall level of symptoms
-        overall_symptom_code = unified_symptoms_code.max(axis=1)
+            # Look across the columns of the unified symptoms code reports to determine an overall
+            # symptom level.
+            # The Maximum Value of reported Symptom is taken as overall level of symptoms
+            overall_symptom_code = unified_symptoms_code.max(axis=1)
 
         # ----------
         # 2) For each individual, examine symptoms and other circumstances,

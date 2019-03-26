@@ -42,16 +42,16 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
 service_availability.loc[0] = ['Mockitis_Treatment', True]
 service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-service_availability['Service']=service_availability.astype('object')
-service_availability['Available']=service_availability.astype('bool')
+service_availability['Service']=service_availability['Service'].astype('object')
+service_availability['Available']=service_availability['Available'].astype('bool')
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(mockitis.Mockitis())
-sim.register(chronicsyndrome.ChronicSyndrome())
+# sim.register(mockitis.Mockitis())
+# sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
