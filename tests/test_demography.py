@@ -13,10 +13,10 @@ popsize = 50
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__), 'resources')
+    resourcefilepath = os.path.join(os.path.dirname(__file__), 'resources')
 
     sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(resourcefilepath=demography_workbook)
+    core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)
     sim.seed_rngs(0)
     return sim
