@@ -3,6 +3,7 @@ This Module runs the counting of QALYS across all persons and logs it
 """
 
 import logging
+import os
 
 import pandas as pd
 
@@ -36,7 +37,8 @@ class QALY(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        p['Weight_Database'] = pd.read_csv(self.resourcefilepath + 'ResourceFile_DALY_Weights.csv')
+        p['Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath,'ResourceFile_DALY_Weights.csv'))
+
 
     def initialise_population(self, population):
         pass

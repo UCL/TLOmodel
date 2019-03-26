@@ -1,9 +1,13 @@
-# This is a scratch file by Tim Hallett
-# Purpose is to create a nice file for import that gives the population breakdown by region/district/village
-# Hopefully one data such a file will be provided to us, but for now....
-# 1) the region and distrcit breakdown is taken by the prelininar report (Dec 2018) of new census
-# 2) the list of villages (and the distict they belong to) is from the UNICEF MasterFaciliy list file
-# 3) The allocation of population to villages assumes villages of are equal sizes.
+"""
+This is a scratch file by Tim Hallett
+Purpose is to create a nice file for import that gives the population breakdown by region/district/village
+Hopefully one day such a file will be provided to us, but for now we make the following assumptions:
+* 1) The region and district breakdown is taken from the preliminary report (Dec 2018) of new census
+* 2) The complete list of villages (and the district they belong to) is from the UNICEF MasterFacility list file
+* 3) The allocation of population to villages assumes that the villages of are equal sizes.
+
+NB. There are some issues with the merge, but this will be resolved new data given population sizes by village
+"""
 
 import pandas as pd
 
@@ -28,12 +32,15 @@ district_wb.Total = district_wb.Total.astype(float)
 district_wb.Men = district_wb.Men.astype(float)
 district_wb.Women = district_wb.Women.astype(float)
 
+assert (~pd.isnull(district_wb).any()).all() # check for any null values
+
 # Trim down the sheet to the basic for the merge
 district_wb_trimmed=district_wb.drop(['Region','Men','Women'],axis=1)
 district_wb_trimmed=district_wb_trimmed.rename(columns={'Total':'District Total'})
 
 
-# Load listing of villages (From UNICEF file, includes duplictaes)
+# Load listing of villages (Which we get from the UNICEF file
+# (Note that the UNICEF file includes duplicates because it it listing all health facilities)
 villages_wb=pd.read_excel(workingfile,sheet_name='Listing of villages from MFL')
 villages_wb=villages_wb.drop('TA',axis=1)
 villages_wb.Village=villages_wb.Village.str.strip()
@@ -46,10 +53,20 @@ villages_wb.Region = villages_wb.Region.astype(str)
 # drop duplicated villages
 villages_wb.drop_duplicates(keep='first',inplace=True)
 
-# coerce distrcit list in the villages_wb to match that provided in the censsus data
+# drop villages with a name of 'nan' (as a string not as a real pandas null value):
+villages_wb.drop[villages_wb['Village']=='nan']
+
+villages_wb.dr
+
+# check for no null valuyes
+assert not pd.isnull(villages_wb['Village']).any()
+assert not pd.isnull(villages_wb['District']).any()
+assert not pd.isnull(villages_wb['Region']).any()
+
+
+# Coerce District list in the villages_wb to match that provided in the censsus data
 len(villages_wb.District.unique())
 len(district_wb_trimmed.District.unique())
-
 
 set(villages_wb.District.unique()) - set(district_wb_trimmed.District.unique())
 # join the "Mzimba South" and "Mzimba South in the Health System Dataset
@@ -98,4 +115,5 @@ PopBreakdownByVillage.to_csv(outputfile)
 # checks
 PopBreakdownByVillage['Population'].sum()
 district_wb_trimmed['District Total'].sum()
-#TODO: Some proble with the merge, but fix this later.
+
+

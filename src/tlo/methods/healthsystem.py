@@ -4,6 +4,7 @@ It is used to control access to interventions
 It will be replaced by the Health Care Seeking Behaviour Module and the
 """
 import logging
+import os
 
 import pandas as pd
 
@@ -72,10 +73,11 @@ class HealthSystem(Module):
     def read_parameters(self, data_folder):
 
         self.parameters['Master_Facility_List'] = pd.read_csv(
-            self.resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_MasterFacilitiesList.csv')
+        )
 
         self.parameters['Village_To_Facility_Mapping']=pd.read_csv(
-            self.resourcefilepath+'ResourceFile_Village_To_Facility_Mapping.csv'
+            os.path.join(self.resourcefilepath,'ResourceFile_Village_To_Facility_Mapping.csv')
         )
 
         # Establish the MasterCapacitiesList
@@ -88,7 +90,7 @@ class HealthSystem(Module):
         # Assign Distance_To_Nearest_HealthFacility'
         # For now, let this be a random number, but in future it will be properly informed based on population density distribitions.
         # Note that this characteritic is inherited from mother to child.
-        df['Distance_To_Nearest_HealthFacility'] = self.sim.rng.randn(len(df))
+        df['Distance_To_Nearest_HealthFacility'] = max(0.001,5+self.sim.rng.randn(len(df)))
 
     def initialise_simulation(self, sim):
         # Launch the healthcare seeking poll
@@ -101,6 +103,7 @@ class HealthSystem(Module):
             my_village = pop.at[person_id, 'village_of_residence']
             my_health_facilities = mapping.loc[mapping['Village'] == my_village]
             assert len(my_health_facilities)>0
+
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props

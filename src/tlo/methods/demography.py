@@ -195,6 +195,13 @@ class Demography(Module):
         # we can't use np.nan because that casts the series into a float
         df.loc[df.is_alive, 'mother_id'] = -1
 
+
+       # Debugging the mysterious case of some village=nan:
+
+        x=self.parameters['Village_District_Region_Data']
+
+
+
         # Assign village, district and region of residence
         region_info = self.parameters['Village_District_Region_Data']
         prob_in_village = region_info['Population']/region_info['Population'].sum()
@@ -207,10 +214,15 @@ class Demography(Module):
         region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
         region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
 
-
         df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region'].values
         df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
         df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
+
+        # Check for no bad values in the imported dataset
+        assert (not pd.isnull(df['region_of_residence']).any())
+        assert (not pd.isnull(df['district_of_residence']).any())
+        assert (not pd.isnull(df['village_of_residence']).any())
+
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
