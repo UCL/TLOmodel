@@ -20,13 +20,15 @@ class hiv(Module):
     baseline hiv infection
     """
 
-    def __init__(self, name=None, resourcefilepath=None, par_est=None):
+    def __init__(self, name=None, resourcefilepath=None, par_est=None, par_est1=None, par_est2=None, par_est3=None,
+                 par_est4=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.beta_calib = par_est
-        self.store = {'Time': [], 'Total_HIV': [], 'HIV_scheduled_deaths': [], 'HIV_new_infections_adult': [],
-                      'HIV_new_infections_child': [], 'hiv_prev_adult': [], 'hiv_prev_child': []}
-        self.store_DeathsLog = {'DeathEvent_Time': [], 'DeathEvent_Age': [], 'DeathEvent_Cause': []}
+        self.testing_baseline_adult = par_est1
+        self.testing_baseline_child = par_est2
+        self.treatment_baseline_adult = par_est3
+        self.treatment_baseline_child = par_est4
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -113,7 +115,24 @@ class hiv(Module):
             Parameter(Types.REAL, 'QALY weighting for aids'),
         'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
         'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years')
+        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years'),
+        'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
+        'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
+        'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
+        'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage'),
+        'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
+                                          'relative increase in testing probability if high sexual risk'),
+        'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
+        'rr_testing_previously_negative': Parameter(Types.DATA_FRAME,
+                                                    'relative change in testing if previously negative versus never tested'),
+        'rr_testing_previously_positive': Parameter(Types.DATA_FRAME,
+                                                    'relative change in testing if previously positive versus never tested'),
+        'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
+        'testing_baseline_adult': Parameter(Types.REAL, 'baseline testing rate of adults'),
+        'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
+        'treatment_increase2016': Parameter(Types.REAL,
+                                            'increase in treatment rates with eligibility guideline changes'),
+        'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -139,7 +158,7 @@ class hiv(Module):
         'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
         'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
         'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
-        'hiv_on_art': Property(Types.CATEGORICAL, 'art status', categories=['0', '1', '2']),
+        'hiv_on_art': Property(Types.CATEGORICAL, 'art status', categories=[0, 1, 2]),
         'hiv_date_art_start': Property(Types.DATE, 'date art started'),
         'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
         'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
@@ -252,6 +271,11 @@ class hiv(Module):
             params['beta'] = float(self.beta_calib)
         # print('beta', params['beta'])
 
+        params['testing_baseline_adult'] = float(self.testing_baseline_adult)
+        params['testing_baseline_child'] = float(self.testing_baseline_child)
+        params['treatment_baseline_adult'] = float(self.treatment_baseline_adult)
+        params['treatment_baseline_child'] = float(self.treatment_baseline_child)
+
         params['hiv_prev'] = workbook['prevalence']  # for child prevalence
 
         # symptoms
@@ -266,6 +290,26 @@ class hiv(Module):
         params['qalywt_chronic'] = self.sim.modules['QALY'].get_qaly_weight(50)
         params['qalywt_aids'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
+        params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
+        params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
+        params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
+        params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
+
+        params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
+        params['rr_testing_female'] = self.param_list.loc['rr_testing_female', 'Value1']
+        params['rr_testing_previously_negative'] = self.param_list.loc['rr_testing_previously_negative', 'Value1']
+        params['rr_testing_previously_positive'] = self.param_list.loc['rr_testing_previously_positive', 'Value1']
+        params['rr_testing_age25'] = self.param_list.loc['rr_testing_age25', 'Value1']
+        params['testing_increase'] = self.param_list.loc['testing_increase', 'Value1']
+        params['treatment_increase2016'] = self.param_list.loc['treatment_increase2016', 'Value1']
+        params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
+        params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
+        params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
+
+        self.parameters['initial_art_coverage'] = workbook['coverage']
+
+        self.parameters['VL_monitoring_times'] = workbook['VL_monitoring']
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
@@ -276,15 +320,27 @@ class hiv(Module):
         df['hiv_date_death'] = pd.NaT
         df['hiv_sexual_risk'].values[:] = 'low'
         df['hiv_mother_inf'] = False
-        df['hiv_mother_art'].values[:] = '0'
+        df['hiv_mother_art'].values[:] = 0
 
         df['hiv_specific_symptoms'] = 'none'
         df['hiv_unified_symptom_code'].values[:] = 0
+
+        df['hiv_ever_tested'] = False  # default: no individuals tested
+        df['hiv_date_tested'] = pd.NaT
+        df['hiv_number_tests'] = 0
+        df['hiv_diagnosed'] = False
+        df['hiv_on_art'].values[:] = 0
+        df['hiv_date_art_start'] = pd.NaT
+        df['hiv_viral_load_test'] = pd.NaT
+        df['hiv_on_cotrim'] = False
+        df['hiv_date_cotrim'] = pd.NaT
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
         self.initial_pop_deaths_children(population)  # add death dates for children
         self.initial_pop_deaths_adults(population)  # add death dates for adults
+        self.baseline_tested(population)  # allocate baseline art coverage
+        self.baseline_art(population)  # allocate baseline art coverage
 
     def log_scale(self, a0):
         """ helper function for adult mortality rates"""
@@ -478,6 +534,93 @@ class hiv(Module):
             time_death = death_dates[person]
             self.sim.schedule_event(death, time_death)  # schedule the death
 
+    def baseline_tested(self, population):
+        """ assign initial art coverage levels
+        """
+        now = self.sim.date
+        df = population.props
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.sim.rng.random_sample(size=len(df))
+
+        # probability of baseline population ever testing for HIV
+        art_index_male = df.index[
+            (random_draw < self.parameters['testing_coverage_male']) & df.is_alive & (df.sex == 'M') & (
+                df.age_years >= 15)]
+        # print('art_index: ', art_index)
+
+        art_index_female = df.index[
+            (random_draw < self.parameters['testing_coverage_female']) & df.is_alive & (df.sex == 'F') & (
+                df.age_years >= 15)]
+
+        # we don't know date tested, assume date = now
+        df.loc[art_index_male | art_index_female, 'hiv_ever_tested'] = True
+        df.loc[art_index_male | art_index_female, 'hiv_date_tested'] = now
+        df.loc[art_index_male | art_index_female, 'hiv_number_tests'] = 1
+
+        # outcome of test
+        diagnosed_idx = df.index[df.hiv_ever_tested & df.is_alive & df.hiv_inf]
+        df.loc[diagnosed_idx, 'hiv_diagnosed'] = True
+
+    def baseline_art(self, population):
+        """ assign initial art coverage levels
+        """
+        now = self.sim.date
+        df = population.props
+
+        worksheet = self.parameters['initial_art_coverage']
+
+        coverage = worksheet.loc[worksheet.year == now.year, ['year', 'single_age', 'sex', 'prop_coverage']]
+        # print('coverage: ', coverage.head(20))
+
+        # merge all susceptible individuals with their coverage probability based on sex and age
+        df_art = df.merge(coverage,
+
+                          left_on=['age_years', 'sex'],
+
+                          right_on=['single_age', 'sex'],
+
+                          how='left')
+
+        # no data for ages 100+ so fill missing values with 0
+        df_art['prop_coverage'] = df_art['prop_coverage'].fillna(0)
+        # print('df_with_age_art_prob: ', df_with_age_art_prob.head(20))
+
+        assert df_art.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
+
+        # get a list of random numbers between 0 and 1 for the whole population
+        random_draw = self.sim.rng.random_sample(size=len(df_art))
+
+        # probability of baseline population receiving art: requirement = hiv_diagnosed
+        art_idx_child = df_art.index[
+            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
+            df_art.age_years.between(0, 14)]
+
+        df.loc[art_idx_child, 'hiv_on_art'] = 2  # assumes all are adherent at baseline
+        df.loc[art_idx_child, 'hiv_date_art_start'] = now
+
+        art_idx_adult = df_art.index[
+            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
+            df_art.age_years.between(15, 64)]
+
+        df.loc[art_idx_adult, 'hiv_on_art'] = 2  # assumes all are adherent, then stratify into category 1/2
+        df.loc[art_idx_adult, 'hiv_date_art_start'] = now
+
+        # allocate proportion to non-adherent category
+        # if condition added, error with small numbers of children to sample
+        if len(df[df.is_alive & (df.hiv_on_art == 2) & (df.age_years.between(0, 14))]) > 5:
+            idx_c = df[df.is_alive & (df.hiv_on_art == 2) & (df.age_years.between(0, 14))].sample(
+                frac=(1 - self.parameters['vls_child'])).index
+            df.loc[idx_c, 'hiv_on_art'] = 1  # change to non=adherent
+
+        idx_m = df[df.is_alive & (df.hiv_on_art == 2) & (df.sex == 'M') & (df.age_years.between(15, 64))].sample(
+            frac=(1 - self.parameters['vls_m'])).index
+        df.loc[idx_m, 'hiv_on_art'] = 1  # change to non=adherent
+
+        idx_f = df[df.is_alive & (df.hiv_on_art == 2) & (df.sex == 'F') & (df.age_years.between(15, 64))].sample(
+            frac=(1 - self.parameters['vls_f'])).index
+        df.loc[idx_f, 'hiv_on_art'] = 1  # change to non=adherent
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
@@ -527,9 +670,19 @@ class hiv(Module):
         df.at[child_id, 'hiv_specific_symptoms'] = 'none'
         df.at[child_id, 'hiv_unified_symptom_code'] = 0
 
+        df.at[child_id, 'hiv_ever_tested'] = False
+        df.at[child_id, 'hiv_date_tested'] = pd.NaT
+        df.at[child_id, 'hiv_number_tests'] = 0
+        df.at[child_id, 'hiv_diagnosed'] = False
+        df.at[child_id, 'hiv_on_art'] = 0
+        df.at[child_id, 'hiv_date_art_start'] = pd.NaT
+        df.at[child_id, 'hiv_viral_load_test'] = pd.NaT
+        df.at[child_id, 'hiv_on_cotrim'] = False
+        df.at[child_id, 'hiv_date_cotrim'] = pd.NaT
+
         if df.at[mother_id, 'hiv_inf']:
             df.at[child_id, 'hiv_mother_inf'] = True
-            if df.at[mother_id, 'hiv_on_art'] == '2':
+            if df.at[mother_id, 'hiv_on_art'] == 2:
                 df.at[child_id, 'hiv_mother_art'] = True
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ MTCT ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -667,13 +820,13 @@ class hiv(Module):
             if df.at[person_id, 'hiv_inf']:
                 df.at[person_id, 'hiv_diagnosed'] = True
 
-            # Commission treatment for this individual, returns a boolean
-            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-                person_id, self.TREATMENT_ID)
+                # Commission treatment for this individual, returns True
+                gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+                    person_id, self.TREATMENT_ID)
 
-            if gets_treatment:
-                event = HivTreatmentEvent(self, person_id)
-                self.sim.schedule_event(event, self.sim.date)  # can add in delay before treatment here
+                if gets_treatment:
+                    event = HivTreatmentEvent(self, person_id)
+                    self.sim.schedule_event(event, self.sim.date)  # can add in delay before treatment here
 
     # def on_followup_healthsystem_interaction(self, person_id):
     # TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
@@ -716,7 +869,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  calculate relative infectivity for everyone hiv+
         # infective if: hiv_inf & hiv_on_art = none (0) or poor (1)
-        infective = len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art != '2')])
+        infective = len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art != 2)])
         # print('infective', infective)
         total_pop = len(df[df.is_alive & (df.age_years >= 15)])
         foi = params['beta'] * infective / total_pop
@@ -810,14 +963,9 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        if df.at[individual_id, 'is_alive'] and (df.at[individual_id, 'hiv_on_art'] != '2'):
+        if df.at[individual_id, 'is_alive'] and (df.at[individual_id, 'hiv_on_art'] != 2):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='hiv'),
                                     self.sim.date)
-
-        # Log the death
-        self.module.store_DeathsLog['DeathEvent_Time'].append(self.sim.date)
-        self.module.store_DeathsLog['DeathEvent_Age'].append(df.age_years[individual_id])
-        self.module.store_DeathsLog['DeathEvent_Cause'].append(self.cause)
 
 
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -897,21 +1045,21 @@ class HivTreatmentEvent(Event, IndividualScopeEventMixin):
 
         # assign ART
         if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'hiv_diagnosed'] and (df.at[
-            individual_id, 'age_years'] < 15):
-            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice(['1', '2'],
+                                                                                               individual_id, 'age_years'] < 15):
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                         p=[(1 - params['vls_child']),
                                                                            params['vls_child']])
 
         if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'hiv_diagnosed'] and (df.at[
-            individual_id, 'age_years'] >= 15)and (df.at[individual_id, 'sex'] == 'M'):
-            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice(['1', '2'],
+                                                                                               individual_id, 'age_years'] >= 15) and (
+            df.at[individual_id, 'sex'] == 'M'):
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                         p=[(1 - params['vls_m']), params['vls_m']])
 
         if df.at[individual_id, 'is_alive'] and df.at[individual_id, 'hiv_diagnosed'] and (df.at[
-            individual_id, 'age_years'] >= 15) and (df.at[individual_id, 'sex'] == 'F'):
-            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice(['1', '2'],
+                                                                                               individual_id, 'age_years'] >= 15) and (
+            df.at[individual_id, 'sex'] == 'F'):
+            df.at[individual_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                         p=[(1 - params['vls_f']), params['vls_f']])
 
         df.at[individual_id, 'hiv_date_art_start'] = self.sim.date
-
-
