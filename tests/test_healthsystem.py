@@ -13,8 +13,6 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
 
-resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/tests/resources'
-
 # Simply test whether the system runs under multiple configurations
 # The Mockitits and ChronicSyndrome module test all aspects of the healthsystem module.
 
@@ -70,6 +68,8 @@ def test_RunWithHealthSystem_InterventionsOn():
     service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
     service_availability.loc[0] = ['Mockitis_Treatment', True]
     service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
+    service_availability['Service'] = service_availability.astype('object')
+    service_availability['Available'] = service_availability.astype('bool')
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
