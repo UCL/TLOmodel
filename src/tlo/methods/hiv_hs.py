@@ -228,14 +228,15 @@ class health_system(Module):
         df.loc[idx_f, 'hiv_on_art'] = '1'  # change to non=adherent
 
     def initialise_simulation(self, sim):
-        sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
+        pass
+        # sim.schedule_event(TestingEvent(self), sim.date + DateOffset(months=12))
+        # sim.schedule_event(TreatmentEvent(self), sim.date + DateOffset(months=12))
 
-        sim.schedule_event(ClinMonitoringEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(CotrimoxazoleEvent(self), sim.date + DateOffset(months=12))
+        # sim.schedule_event(ClinMonitoringEvent(self), sim.date + DateOffset(months=1))
+        # sim.schedule_event(CotrimoxazoleEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
+        # sim.schedule_event(HealthSystemLoggingEvent(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
