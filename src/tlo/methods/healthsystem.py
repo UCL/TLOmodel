@@ -90,7 +90,7 @@ class HealthSystem(Module):
         # Assign Distance_To_Nearest_HealthFacility'
         # For now, let this be a random number, but in future it will be properly informed based on population density distribitions.
         # Note that this characteritic is inherited from mother to child.
-        df['Distance_To_Nearest_HealthFacility'] = max(0.001,5+self.sim.rng.randn(len(df)))
+        df['Distance_To_Nearest_HealthFacility'] = self.sim.rng.uniform(0.01,5.00,len(df))
 
     def initialise_simulation(self, sim):
         # Launch the healthcare seeking poll
@@ -184,6 +184,7 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------
         # 1) Work out the overall unified symptom code
+
         #   Fill in value of zeros (in case that no disease modules are registerd)
         overall_symptom_code = pd.Series(data=0,index=self.sim.population.props.index)
 
@@ -192,6 +193,8 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
         if len(registered_disease_modules.values()):
             # Ask each module to update and report-out the symptoms it is currently causing on the
             # unified symptomology scale:
+
+            unified_symptoms_code = pd.DataFrame()
             for module in registered_disease_modules.values():
                 out = module.query_symptoms_now()
 
@@ -206,11 +209,11 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
                 # Add this to the dataframe
                 unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
 
-
             # Look across the columns of the unified symptoms code reports to determine an overall
             # symptom level.
             # The Maximum Value of reported Symptom is taken as overall level of symptoms
             overall_symptom_code = unified_symptoms_code.max(axis=1)
+
 
         # ----------
         # 2) For each individual, examine symptoms and other circumstances,

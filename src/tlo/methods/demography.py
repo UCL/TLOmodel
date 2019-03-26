@@ -196,12 +196,6 @@ class Demography(Module):
         df.loc[df.is_alive, 'mother_id'] = -1
 
 
-       # Debugging the mysterious case of some village=nan:
-
-        x=self.parameters['Village_District_Region_Data']
-
-
-
         # Assign village, district and region of residence
         region_info = self.parameters['Village_District_Region_Data']
         prob_in_village = region_info['Population']/region_info['Population'].sum()

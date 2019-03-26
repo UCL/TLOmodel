@@ -54,9 +54,10 @@ villages_wb.Region = villages_wb.Region.astype(str)
 villages_wb.drop_duplicates(keep='first',inplace=True)
 
 # drop villages with a name of 'nan' (as a string not as a real pandas null value):
-villages_wb.drop[villages_wb['Village']=='nan']
+villages_wb.loc[villages_wb['Village']=='nan']
+villages_wb.drop(villages_wb[villages_wb['Village']=='nan'].index,axis=0,inplace=True)
 
-villages_wb.dr
+
 
 # check for no null valuyes
 assert not pd.isnull(villages_wb['Village']).any()
