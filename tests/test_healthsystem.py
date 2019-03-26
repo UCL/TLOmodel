@@ -1,4 +1,4 @@
-
+import pytest
 import datetime
 import logging
 import os
@@ -15,13 +15,15 @@ popsize = 50
 
 resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/tests/resources'
 
+# Simply test whether the system runs under multiple configurations
+# The Mockitits and ChronicSyndrome module test all aspects of the healthsystem module.
 
 @pytest.fixture(autouse=True)
 def disable_logging():
     logging.disable(logging.INFO)
 
 
-def RunWithHealthSystem_NoInterventionsDefined:
+def test_RunWithHealthSystem_NoInterventionsDefined():
 
     sim = Simulation(start_date=start_date)
 
@@ -39,7 +41,7 @@ def RunWithHealthSystem_NoInterventionsDefined:
 
 
 
-def RunWithHealthSystem_WithQALY:
+def test_RunWithHealthSystem_WithQALY():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
@@ -59,7 +61,7 @@ def RunWithHealthSystem_WithQALY:
 
 
 
-def RunWithHealthSystem_InterventionsOn:
+def test_RunWithHealthSystem_InterventionsOn():
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)

@@ -41,7 +41,9 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
 service_availability.loc[0] = ['Mockitis_Treatment', True]
-service_availability.loc[1] = ['ChronicSyndrome_Treatment', False]
+service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
+service_availability['Service']=service_availability.astype('object')
+service_availability['Available']=service_availability.astype('bool')
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
