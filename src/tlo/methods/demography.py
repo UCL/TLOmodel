@@ -110,10 +110,9 @@ class Demography(Module):
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
 
-        # TODO: We would like a string class definition here (but use INT For now and overwrite)
-        'region_of_residence': Property(Types.INT, 'The region in which the person in resident'),
-        'district_of_residence': Property(Types.INT, 'The district in which the person is resident'),
-        'village_of_residence': Property(Types.INT, 'The village in which the person is resident')
+        'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
+        'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
+        'village_of_residence': Property(Types.STRING, 'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):

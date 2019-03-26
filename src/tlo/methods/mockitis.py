@@ -351,7 +351,6 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        # TODO: CHECK ABOUT deathetime=now and not NaT for **cured person (and in chronicsyndrome)
         if df.at[person_id, 'mi_status'] == 'C':
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
