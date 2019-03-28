@@ -131,6 +131,10 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative prevalence of severe pneumonia for severe acute malnutrition'
          ),
+        'rr_severe_pneum_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for household handwashing'
+         ),
         'rr_severe_pneum_IAP': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for indoor air pollution'
@@ -263,6 +267,7 @@ class ChildhoodPneumonia(Module):
         'indoor_air_pollution': Property(Types.BOOL, 'temporary property - indoor air pollution'),
         'siblings': Property(Types.BOOL, 'temporary property - number of siblings'),
         'HHhandwashing': Property(Types.BOOL, 'temporary property - household handwashing'),
+        'ri_pneumonia_death': Property(Types.BOOL, 'death from pneumonia disease')
     }
 
     def read_parameters(self, data_folder):
@@ -293,13 +298,15 @@ class ChildhoodPneumonia(Module):
         p['rp_severe_pneum_HIV'] = 1.3
         p['rp_severe_pneum_malnutrition'] = 1.3
         p['rp_severe_pneum_IAP'] = 1.1
+        p['base_incidence_severe_pneum'] = 0.001
         p['rr_severe_pneum_agelt2mo'] = 1.3
         p['rr_severe_pneum_age12to23mo'] = 0.8
         p['rr_severe_pneum_age24to59mo'] = 0.5
         p['rr_severe_pneum_HIV'] = 1.3
         p['rr_severe_pneum_malnutrition'] = 1.3
+        p['rr_severe_pneum_HHhandwashing'] = 0.3
         p['rr_severe_pneum_IAP'] = 1.1
-        p['r_progress_to_severe_pneumonia'] = 0.05
+        p['r_progress_to_severe_pneum'] = 0.05
         p['rr_progress_severe_pneum_agelt2mo'] = 1.3
         p['rr_progress_severe_pneum_age12to23mo'] = 0.9
         p['rr_progress_severe_pneum_age24to59mo'] = 0.6
@@ -495,8 +502,6 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_pneumonia_HHhandwashing
         eff_prob_ri_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_pneumonia_HIV
         eff_prob_ri_pneumonia.loc[pn_current_none_malnutrition_idx] *= m.rr_pneumonia_malnutrition
-        eff_prob_ri_pneumonia.loc[pn_current_none_siblings_idx] *= m.rr_pneumonia_siblings
-        eff_prob_ri_pneumonia.loc[pn_current_none_wealth_idx] *= m.rr_pneumonia_wealth
 
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
                                 index=df.index[
@@ -509,7 +514,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_ri_severe_pneumonia = pd.Series(m.base_incidence_severe_pneum,
                                                  index=df.index[
-                                                     df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (
+                                                     df.is_alive & (df.ri_pneumonia_status == 'none') & (
                                                          df.age_years < 5)])
 
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_agelt2mo_idx] *= m.rr_severe_pneum_agelt2mo
@@ -518,8 +523,6 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_severe_pneum_HHhandwashing
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_severe_pneum_HIV
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_malnutrition_idx] *= m.rr_severe_pneum_malnutrition
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_siblings_idx] *= m.rr_severe_pneum_siblings
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth_idx] *= m.rr_severe_pneum_wealth
 
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
                                 index=df.index[
@@ -540,40 +543,32 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                                                         (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
         pn_current_pneumonia_age24to59mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
                                                         (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_pneumonia_HHhandwashing_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                        (df.HHhandwashing) & (df.age_years < 5)]
         pn_current_pneumonia_HIV_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
                                                 (df.has_hiv) & (df.age_years < 5)]
         pn_current_pneumonia_malnutrition_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
                                                          (df.malnutrition) & (df.age_years < 5)]
         pn_current_pneumonia_IAP_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
                                                                  (df.indoor_air_pollution) & (df.age_years < 5)]
-        pn_current_pneumonia_wealth_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                   (df.li_wealth) & (df.age_years < 5)]
 
-        eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_penumonia,
+        eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_pneum,
                                                    index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
                                                                   & (df.age_years < 5)])
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_agelt2mo_idx] *=\
-            m.rr_progress_severe_pneumonia_agelt2mo
+            m.rr_progress_severe_pneum_agelt2mo
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_age12to23mo_idx] *=\
-            m.rr_progress_severe_pneumonia_age_12to23mo
+            m.rr_progress_severe_pneum_age12to23mo
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_age24to59mo_idx] *=\
-            m.rr_progress_severe_pneumonia_age_24to59mo
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_HHhandwashing_idx] *= \
-            m.rr_progress_severe_pneumonia_HHhandwashing
+            m.rr_progress_severe_pneum_age24to59mo
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_HIV_idx] *=\
-            m.rr_progress_severe_pneumonia_HIV
+            m.rr_progress_severe_pneum_HIV
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_malnutrition_idx] *=\
-            m.rr_progress_severe_pneumonia_malnutrition
+            m.rr_progress_severe_pneum_malnutrition
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_IAP_idx] *= \
-            m.rr_progress_severe_pneumonia_indoor_air_pollution
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth_idx] *= \
-            m.rr_progress_severe_pneumonia_wealth
+            m.rr_progress_severe_pneum_IAP
 
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.resp_infection_stat == 'pneumonia')])
+                                               (df.ri_pneumonia_status == 'pneumonia')])
         dfx = pd.concat([eff_prob_ri_severe_pneumonia, random_draw], axis=1)
         dfx.columns = ['eff_prob_prog_severe_pneumonia', 'random_draw']
         idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw]
@@ -584,14 +579,9 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
 
-        stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
-        random_draw = m.rng.random_sample(size=len(stage4_idx))
-        df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
-
-        # todo - this code dealth with centrally
-        dead_oes_can_idx = df.index[df.ca_oesophageal_cancer_death]
-        df.loc[dead_oes_can_idx, 'is_alive'] = False
-
+        severe_pneumonia_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia')]
+        random_draw = m.rng.random_sample(size=len(severe_pneumonia_idx))
+        df.loc[severe_pneumonia_idx, 'ri_pneumonia_death'] = (random_draw < m.r_death_pneumonia)
 
 class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -609,39 +599,9 @@ class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # calculate incidence of oesophageal cancer diagnosis in people aged > 60+
-        # (this includes people diagnosed with dysplasia, but diagnosis rate at this stage is very low)
-
-        incident_oes_cancer_diagnosis_agege60_idx = df.index[df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-                                                             & (df.age_years >= 60)]
-        agege60_without_diagnosed_oes_cancer_idx = df.index[(df.age_years >= 60) & ~df.ca_oesophagus_diagnosed]
-
-        incidence_per_year_oes_cancer_diagnosis = (4 * 100000 * len(incident_oes_cancer_diagnosis_agege60_idx)) / \
-                                                  len(agege60_without_diagnosed_oes_cancer_idx)
-
-        incidence_per_year_oes_cancer_diagnosis = round(incidence_per_year_oes_cancer_diagnosis, 3)
-
-        #      logger.debug('%s|person_one|%s',
-        #                     self.sim.date,
-        #                     df.loc[0].to_dict())
-
-        #       logger.info('%s|ca_oesophagus|%s',
-        #                   self.sim.date,
-        #                   df[df.is_alive].groupby(['ca_oesophagus']).size().to_dict())
-
-        # note below remove is_alive
-        #       logger.info('%s|ca_oesophagus_death|%s',
-        #                   self.sim.date,
-        #                   df[df.age_years >= 20].groupby(['ca_oesophageal_cancer_death']).size().to_dict())
 
         logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
                     self.sim.date,
                     incidence_per_year_oes_cancer_diagnosis)
 
-#       logger.info('%s|ca_oesophagus_diagnosed|%s',
-#                   self.sim.date,
-#                   df[df.age_years >= 20].groupby(['ca_oesophagus', 'ca_oesophagus_diagnosed']).size().to_dict())
-
-#       logger.info('%s|ca_oesophagus|%s',
-#                   self.sim.date,
-#                   df[df.is_alive].groupby(['age_range', 'ca_oesophagus']).size().to_dict())
+#
