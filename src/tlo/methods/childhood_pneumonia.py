@@ -392,7 +392,8 @@ class ChildhoodPneumonia(Module):
         'has_hiv': Property(Types.BOOL, 'temporary property - has hiv'),
         'malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'indoor_air_pollution': Property(Types.BOOL, 'temporary property - indoor air pollution'),
-        'siblings': Property(Types.BOOL, 'temporary property - number of siblings'),
+        'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
+        'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         'HHhandwashing': Property(Types.BOOL, 'temporary property - household handwashing'),
         'ri_pneumonia_death': Property(Types.BOOL, 'death from pneumonia disease')
     }
@@ -407,61 +408,90 @@ class ChildhoodPneumonia(Module):
         p['rp_pneumonia_age12to23mo'] = 0.8
         p['rp_pneumonia_age24to59mo'] = 0.5
         p['rp_pneumonia_HIV'] = 1.4
-        p['rp_pneumonia_malnutrition'] = 1.25
+        p['rp_pneumonia_SAM'] = 1.25
+        p['rp_pneumonia_excl_breast'] = 0.5
+        p['rp_pneumonia_cont_breast'] = 0.7
         p['rp_pneumonia_HHhandwashing'] = 0.5
         p['rp_pneumonia_IAP'] = 1.1
+        p['rp_pneumonia_wealth1'] = 0.8
+        p['rp_pneumonia_wealth2'] = 0.9
+        p['rp_pneumonia_wealth4'] = 1.2
+        p['rp_pneumonia_wealth5'] = 1.3
         p['base_incidence_pneumonia'] = 0.015
         p['rr_pneumonia_agelt2mo'] = 1.2
         p['rr_pneumonia_age12to23mo'] = 0.8
         p['rr_pneumonia_age24to59mo'] = 0.5
         p['rr_pneumonia_HIV'] = 1.4
-        p['rr_pneumonia_malnutrition'] = 1.25
+        p['rr_pneumonia_SAM'] = 1.25
+        p['rr_pneumonia_excl_breast'] = 0.6
+        p['rr_pneumonia_cont_breast'] = 0.8
         p['rr_pneumonia_HHhandwashing'] = 0.5
         p['rr_pneumonia_IAP'] = 1.1
+        p['rr_pneumonia_wealth1'] = 0.8
+        p['rr_pneumonia_wealth2'] = 0.9
+        p['rr_pneumonia_wealth4'] = 1.2
+        p['rr_pneumonia_wealth5'] = 1.3
         p['base_prev_severe_pneumonia'] = 0.1
         p['rp_severe_pneum_agelt2mo'] = 1.3
         p['rp_severe_pneum_age12to23mo'] = 0.8
         p['rp_severe_pneum_age24to59mo'] = 0.5
         p['rp_severe_pneum_HIV'] = 1.3
-        p['rp_severe_pneum_malnutrition'] = 1.3
+        p['rp_severe_pneum_SAM'] = 1.3
+        p['rp_severe_pneum_excl_breast'] = 0.5
+        p['rp_severe_pneum_cont_breast'] = 0.7
+        p['rp_severe_pneum_HHhandwashing'] = 0.8
         p['rp_severe_pneum_IAP'] = 1.1
+        p['rp_severe_pneum_wealth1'] = 0.8
+        p['rp_severe_pneum_wealth2'] = 0.9
+        p['rp_severe_pneum_wealth4'] = 1.1
+        p['rp_severe_pneum_wealth5'] = 1.2
         p['base_incidence_severe_pneum'] = 0.01
         p['rr_severe_pneum_agelt2mo'] = 1.3
         p['rr_severe_pneum_age12to23mo'] = 0.8
         p['rr_severe_pneum_age24to59mo'] = 0.5
         p['rr_severe_pneum_HIV'] = 1.3
-        p['rr_severe_pneum_malnutrition'] = 1.3
+        p['rr_severe_pneum_SAM'] = 1.3
+        p['rr_severe_pneum_excl_breast'] = 0.6
+        p['rr_severe_pneum_cont_breast'] = 0.8
         p['rr_severe_pneum_HHhandwashing'] = 0.3
         p['rr_severe_pneum_IAP'] = 1.1
+        p['rr_severe_pneum_wealth1'] = 0.8
+        p['rr_severe_pneum_wealth2'] = 0.9
+        p['rr_severe_pneum_wealth4'] = 1.1
+        p['rr_severe_pneum_wealth5'] = 1.2
         p['r_progress_to_severe_pneum'] = 0.05
         p['rr_progress_severe_pneum_agelt2mo'] = 1.3
         p['rr_progress_severe_pneum_age12to23mo'] = 0.9
         p['rr_progress_severe_pneum_age24to59mo'] = 0.6
         p['rr_progress_severe_pneum_HIV'] = 1.2
-        p['rr_progress_severe_pneum_malnutrition'] = 1.1
-        p['rr_progress_severe_pneum_IAP'] = 1.08
+        p['rr_progress_severe_pneum_SAM'] = 1.1
+        p['rr_progress_severe_pneum_wealth1'] = 0.8
+        p['rr_progress_severe_pneum_wealth2'] = 0.9
+        p['rr_progress_severe_pneum_wealth4'] = 1.1
+        p['rr_progress_severe_pneum_wealth5'] = 1.3
         p['r_death_pneumonia'] = 0.2
         p['rr_death_pneumonia_agelt2mo'] = 1.2
         p['rr_death_pneumonia_age12to23mo'] = 0.8
         p['rr_death_pneumonia_age24to59mo'] = 0.04
         p['rr_death_pneumonia_HIV'] = 1.4
-        p['rr_death_pneumonia_malnutrition'] = 1.3
+        p['rr_death_pneumonia_SAM'] = 1.3
+        p['rr_death_pneumonia_wealth1'] = 0.7
+        p['rr_death_pneumonia_wealth2'] = 0.8
+        p['rr_death_pneumonia_wealth4'] = 1.2
+        p['rr_death_pneumonia_wealth5'] = 1.3
         p['r_recovery_pneumonia'] = 0.5
         p['rr_recovery_pneumonia_agelt2mo'] = 0.3
         p['rr_recovery_pneumonia_age12to23mo'] = 0.7
         p['rr_recovery_pneumonia_age24to59mo'] = 0.8
         p['rr_recovery_pneumonia_HIV'] = 0.3
-        p['rr_recovery_pneumonia_malnutrition'] = 0.4
-        p['rr_recovery_pneumonia_IAP'] = 0.4
-        p['rr_recovery_pneumonia_treatment_adherence'] = 0.6
+        p['rr_recovery_pneumonia_SAM'] = 0.4
         p['r_recovery_severe_pneumonia'] = 0.2
         p['rr_recovery_severe_pneum_agelt2mo'] = 0.6
         p['rr_recovery_severe_pneum_age12to23mo'] = 1.2
         p['rr_recovery_severe_pneum_age24to59mo'] = 1.5
         p['rr_recovery_severe_pneum_HIV'] = 0.5
-        p['rr_recovery_severe_pneum_IAP'] = 0.4
-        p['rr_recovery_severe_pneum_malnutrition'] = 0.6
-        p['init_prop_pneumonia_status'] = [0.2, 0.1]
+        p['rr_recovery_severe_pneum_SAM'] = 0.6
+        p['init_prop_pneumonia_status'] = [0.1, 0.06]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -481,7 +511,8 @@ class ChildhoodPneumonia(Module):
         df['has_HIV'] = False
         df['indoor_air_pollution'] = False
         df['HHhandwashing'] = False
-        df['siblings'] = False
+        df['exclusive_breastfeeding'] = False
+        df['continued_breastfeeding'] = False
 
         # -------------------- ASSIGN VALUES OF RESPIRATORY INFECTION STATUS AT BASELINE -----------
 
@@ -502,9 +533,23 @@ class ChildhoodPneumonia(Module):
         p_pneumonia_status.loc[
             (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_HIV
         p_pneumonia_status.loc[
-            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_malnutrition
+            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_SAM
+        p_pneumonia_status.loc[
+            (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive]\
+            *= self.rp_pneumonia_excl_breast
+        p_pneumonia_status.loc[
+            (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) & (df.age_exact_years < 2) &
+            df.is_alive] *= self.rp_pneumonia_cont_breast
         p_pneumonia_status.loc[
             (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_IAP
+        p_pneumonia_status.loc[
+            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth1
+        p_pneumonia_status.loc[
+            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth2
+        p_pneumonia_status.loc[
+            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth4
+        p_pneumonia_status.loc[
+            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth5
 
         # create probabilities of severe pneumonia for all age under 5
         p_sev_pneum_status.loc[
@@ -516,9 +561,23 @@ class ChildhoodPneumonia(Module):
         p_sev_pneum_status.loc[
             (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_HIV
         p_sev_pneum_status.loc[
-            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_malnutrition
+            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_SAM
+        p_sev_pneum_status.loc[
+            (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_severe_pneum_excl_breast
+        p_sev_pneum_status.loc[
+            (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) & (df.age_exact_years < 2) &
+            df.is_alive] *= self.rp_severe_pneum_cont_breast
         p_sev_pneum_status.loc[
             (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_IAP
+        p_sev_pneum_status.loc[
+            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth1
+        p_sev_pneum_status.loc[
+            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth2
+        p_sev_pneum_status.loc[
+            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth4
+        p_sev_pneum_status.loc[
+            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth5
 
         random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive])
