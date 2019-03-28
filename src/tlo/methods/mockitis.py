@@ -12,7 +12,7 @@ from tlo.methods import healthsystem
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class Mockitis(Module):
@@ -67,8 +67,6 @@ class Mockitis(Module):
             categories=[0, 1, 2, 3, 4])
     }
 
-    # Declaration of how we will refer to any treatments that are related to this disease.
-    TREATMENT_ID = 'Mockitis_Treatment'
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -179,18 +177,6 @@ class Mockitis(Module):
         event = MockitisOutreachEvent(self, 'this_module_only')
         self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
-        # Register with the HealthSystem the treatment interventions that this module runs
-        # and define the footprint that each intervention has on the common resources
-
-        # Define the footprint for the intervention on the common resources
-        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-            'Name': Mockitis.TREATMENT_ID,
-            'Nurse_Time': 5,
-            'Doctor_Time': 10,
-            'Electricity': False,
-            'Water': False})
-
-        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -264,15 +250,18 @@ class Mockitis(Module):
 
 
         if self.sim.population.props.at[person_id,'mi_status']=='C':
-            # Query with health system whether this individual will get a desired treatment
-            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-                person_id, self.TREATMENT_ID
+
+            # Make the treatment event that we want to deploy:
+            treatment_event = Mockitis_StartTreatment_TreatmentEvent(self, person_id)
+
+            # Ask the health system to launch the treatment event: ** THIS IS THE BIG CHANGE:
+            self.sim.modules['HealthSystem'].request_service(
+                treatment_event=treatment_event,
+                priority=1,
+                topen=self.sim.date,
+                tclose=None
             )
 
-            if gets_treatment:
-                # Commission treatment for this individual
-                event = MockitisTreatmentEvent(self, person_id)
-                self.sim.schedule_event(event, self.sim.date)
 
 
     def report_qaly_values(self):
@@ -357,12 +346,35 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(death, self.sim.date)
 
 
-class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
+
+
+class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
+    """
+    ** TREATMENT INITIATION FOR THE MOCKITIS TREATMENT **
+
+    This is a treatment event in the new design of the healthsystem module
+    This is a type of event that can be passsed to  healthsystem.request_service()
+    It must contain the resource use footprint.
+
+    # TODO: MAYBE SHOULD USE A TREATMENT TYPE TYPE MIXIN?
+    """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
+        # Define the footprint for the intervention on the common resources
+        # Declaration of how we will refer to any treatments that are related to this disease.
+        self.TREATMENT_ID = 'Mockitis_Treatment Initiation'
+
+        self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
+            'TREATMENT_ID': self.TREATMENT_ID,
+            'DiseaseModuleName': self.module.name,
+            'DiseaseModule': self.module,
+            'Nurse_Time': 5})
+
+
     def apply(self, person_id):
-        logger.debug("We are now ready to treat this person", person_id)
+        logger.debug("We are now starting to treat this person %s", person_id)
 
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -379,18 +391,85 @@ class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'mi_unified_symptom_code'] = 0
             pass
 
-        # schedule a short series of follow-up appointments at six monthly intervals
+
+        # Create a follow-up appointment
         followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name)
 
-        self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=6))
-        self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=12))
-        self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=18))
-        self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=24))
+        # Request the heathsystem to have this follow-up appointment
+        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+        self.sim.modules['HealthSystem'].request_service(
+            followup_appt, priority=2, topen=target_date_for_followup_appt, tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+
+
+
+
+class Mockitis_FollowupAppt_TreatmentEvent(Event, IndividualScopeEventMixin):
+    """
+
+    ** A FOLLOWUP APPOINTMENT FOR THE MOCKITIS EVENT **
+
+    This is a treatment event in the new design of the healthsystem module
+    This is a type of event that can be passsed to  healthsystem.request_service()
+    It must contain the resource use footprint.
+
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the footprint for the intervention on the common resources
+        # Declaration of how we will refer to any treatments that are related to this disease.
+        self.TREATMENT_ID = 'Mockitis_Treatment Followup Appt'
+        self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
+            'TREATMENT_ID': self.TREATMENT_ID,
+            'DiseaseModuleName': self.module.name,
+            'DiseaseModule': self.module,
+            'Nurse_Time': 1})
+
+    def apply(self, person_id):
+
+        # There is a follow-up appoint happening now! :-)
+
+        # Run the HealthInteractionEvent to broadcast to all other disease module that there is an appointment happening:
+
+
+        # Request the next one
+
+        # Create a follow-up appointment
+        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name, treatment_id=self.TREATMENT_ID)
+
+        # Request the heathsystem to have this follow-up appointment
+        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+        self.sim.modules['HealthSystem'].request_service(
+            followup_appt, priority=2, topen=target_date_for_followup_appt, tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+
+
+
+class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
+    def __init__(self, module, outreach_type):
+        super().__init__(module)
+        self.outreach_type = outreach_type
+
+    def apply(self, population):
+
+        # As an example, this outreach screening intervention will only apply to women
+        df = population.props
+        mask_for_person_to_be_reached = (df.sex == 'F')
+
+        target = mask_for_person_to_be_reached.loc[df.is_alive]
+
+        # make and run the actual outreach event by the healthsystem
+        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
+
+        # submit to the health system schedule to determine if/when it shall occur
+        self.sim.modules['HealthSystem'].request_service(
+            outreachevent, priority=2, topen=self.sim.date, tclose=self.sim.date+DateOffset(days=1))
+
 
 
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """comments...
+        """Produce a summmary of the numbers of people with respect to their 'mockitis status'
         """
         # run this event every month
         self.repeat = 6
@@ -421,22 +500,3 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         logger.info('%s|status_counts|%s', self.sim.date, counts)
-
-
-class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
-    def __init__(self, module, outreach_type):
-        super().__init__(module)
-        self.outreach_type = outreach_type
-
-    def apply(self, population):
-
-        # As an example, this outreach screening intervention will only apply to women
-        df = population.props
-        mask_for_person_to_be_reached = (df.sex == 'F')
-
-        target = mask_for_person_to_be_reached.loc[df.is_alive]
-
-        # make and run the actual outreach event by the healthsystem
-        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
-
-        self.sim.schedule_event(outreachevent, self.sim.date)

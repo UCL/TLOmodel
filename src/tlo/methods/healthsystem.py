@@ -12,7 +12,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class HealthSystem(Module):
@@ -48,6 +48,8 @@ class HealthSystem(Module):
         self.registered_interventions = pd.DataFrame(columns=['Name','Nurse_Time','Doctor_Time','Electricity','Water'])
 
         self.health_system_resources = None
+
+        self.HEALTH_SYSTEM_CALLS = pd.DataFrame(columns=['treatment_event','priority','topen','tclose','status'])
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
@@ -104,6 +106,8 @@ class HealthSystem(Module):
             my_health_facilities = mapping.loc[mapping['Village'] == my_village]
             assert len(my_health_facilities)>0
 
+        # Launch the healthsystem_scheduler regular event
+        sim.schedule_event(HealthSystemScheduler(self),self.sim.date)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -127,43 +131,83 @@ class HealthSystem(Module):
         assert not (footprint_df.Name.values in self.registered_interventions.Name.values)
         assert 'Name' in footprint_df.columns
         assert 'Nurse_Time' in footprint_df.columns
-        assert 'Doctor_Time' in footprint_df.columns
-        assert 'Electricity' in footprint_df.columns
-        assert 'Water' in footprint_df.columns
         assert len(footprint_df.columns)==5
 
         self.registered_interventions = self.registered_interventions.append(footprint_df)
         logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
 
 
-    def query_access_to_service(self, person_id, service):
-        logger.info('Query whether person %d has access to service %s', person_id, service)
+    def request_service(self, treatment_event,priority,topen,tclose):
 
+        logger.info('Logging a request for a treatment: %s', treatment_event.TREATMENT_ID)
+
+        # get population dataframe
         df=self.sim.population.props
 
-        # Check that this is a legitimate request:
-        assert df.at[person_id,'is_alive']==True            # All requests should come from alive persons
-        assert service in self.registered_interventions.Name.values
+        # Check that this is a legitimate request for a treatment:
+
+        # Check that this request is allowable under current policy
 
 
-        # Health system allows all requests for services
-        # (This is where the constraint will be imposed and the footprint recorded)
+        # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
+        # TODO: Q. What is ideal data object for this job?
 
-        enough_capacity=True        # No constraint imposed
-        policy_allows=True          # No constraint imposed
-        gets_service = True         # No constraint imposed
+        new_request=pd.DataFrame({
+            'treatment_event':[treatment_event],
+            'priority': [priority],
+            'topen': [topen],
+            'tclose': [tclose],
+            'status': 'Called'})
 
-        # Log the occurance of this request for services
-        logger.info('%s|Query_Access_To_Service|%s', self.sim.date,
-                    {
-                        'person_id': person_id,
-                        'service': service,
-                        'policy_allows': policy_allows,
-                        'enough_capacity': enough_capacity,
-                        'gets_service': gets_service
-                    })
+        self.HEALTH_SYSTEM_CALLS=self.HEALTH_SYSTEM_CALLS.append(new_request,ignore_index=True)
 
-        return gets_service
+
+
+# --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
+class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event occurs every day, inspects the calls on the healthsystem and commissions event to occcur that
+    are consistent with the healthsystem capabilities for the following day, given assumptions about how this
+    decision is made.
+    At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
+
+    """
+
+    #TODO: Might be good to make sure that each day, this event occurs first (at sim.schedule)
+
+    def __init__(self, module: HealthSystem):
+        super().__init__(module, frequency=DateOffset(days=1))
+
+    def apply(self, population):
+
+        logger.debug('I am the health system scheduler and I am being called')
+        hsc = self.module.HEALTH_SYSTEM_CALLS
+
+        # Flag events that are closed (i.e. the maximum date of their relevance has been exceeded)
+        hsc.loc[(self.sim.date>hsc['tclose']) & (hsc['status']!='Done'),'status']='Closed_NotDone'
+
+        # Isolate which events are due (i.e. are opened but not yet satisfied)
+        hsc.loc[self.sim.date>=hsc['topen'],'status']='Due'
+
+        due_events_idx=hsc.loc[hsc['status']=='Due'].index
+
+
+        # Look at the calls to the health system that are due and decide which will be scheduled
+        if len(due_events_idx)>0:
+
+            for e in  due_events_idx:
+
+                # schedule the event
+                self.sim.schedule_event(hsc.iloc[e].treatment_event,self.sim.date)
+
+                # update status of this heath resouce call
+                hsc.at[e,'status']='Done'
+
+                # record the use of the health system resources
+                # TODO: record this use
+        pass
+
+
 
 
 # --------- FORMS OF HEALTH-CARE SEEKING -----
@@ -217,7 +261,9 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------
         # 2) For each individual, examine symptoms and other circumstances,
-        # and trigger a Health System Interaction if required
+        # and trigger a potential Health System Interaction as apppropriate
+        # NB. That the event is passed to the HealthSystemScheduler which will determine if the interaction happens.
+
         df = population.props
         indicies_of_alive_person = df.index[df.is_alive]
 
@@ -234,12 +280,17 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
             prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
             # *************************************************************************
 
-            # determine if there will be health-care contact and schedule FirstAppt if so
+            # Determine if there will be health-care contact and schedule FirstAppt if so
             if self.sim.rng.rand() < prob_seek_care:
-                event = HealthSystemInteractionEvent(self.module, person_index,
+                seeking_care_event = HealthSystemInteractionEvent(self.module, person_index,
                                                      cue_type='HealthCareSeekingPoll',
                                                      disease_specific=None)
-                self.sim.schedule_event(event, self.sim.date)
+
+                self.sim.modules['HealthSystem'].request_service(
+                    seeking_care_event,
+                    priority=1,
+                    topen=self.sim.date,
+                    tclose=None)
 
         # ----------
 
@@ -298,12 +349,18 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
 
 
+
 class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     """
     This is the generic interaction between the person and the health system.
     All actual interactions between a person and the health system happen here.
-    It can be called by: HealthCareSeekingPoll, OutreachEvent or a DiseaseModule itself.
-    It broadcasts details of the interaction to all registered disease modules by calling
+
+    It can be created by the HealthCareSeekingPoll, OutreachEvent or a DiseaseModule itself,
+    but can only be scheduled by the HealthSystemScheduler().
+
+    #TODO: The sim.schedule() should not allow other things to schedule a healthsystem event
+
+    When fired, this event broadcasts details of the interaction to all registered disease modules by calling
     the 'on_healthsystem_interaction' in each. It passes, the information about the type of interaction
     (cue_type and disease type) that have been received.
     * cue_type is the type of event that has caused this interaction.
@@ -312,12 +369,13 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     the calls for resources.
     """
 
-    def __init__(self, module, person_id, cue_type=None, disease_specific=None):
+    def __init__(self, module, person_id, cue_type=None, disease_specific=None, treatment_id=None):
         super().__init__(module, person_id=person_id)
         self.cue_type = cue_type
         self.disease_specific=disease_specific
+        self.TREATMENT_ID=treatment_id
 
-        # Check that this is correctly specificed interaction
+        # Check that this is correctly specified interaction
         assert person_id in self.sim.population.props.index
         assert self.cue_type in ['HealthCareSeekingPoll', 'OutreachEvent', 'InitialDiseaseCall', 'FollowUp',None]
         assert (self.disease_specific==None) or (self.disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
@@ -330,13 +388,7 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
 
         if df.at[person_id, 'is_alive']:
 
-            # 1. Confirm availability of health system resources for this interaction
-            # Skip TODO: Re-Insert constraint
-
-            # 2. Impose the footprint of this health system resource use
-            # Skip TODO: Re-Insert constraint
-
-            # 3. For each disease module, trigger the on_healthsystem_interaction() event
+            # For each disease module, trigger the on_healthsystem_interaction() event
 
             registered_disease_modules = self.sim.modules['HealthSystem'].registered_disease_modules
 
