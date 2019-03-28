@@ -213,6 +213,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 # --------- FORMS OF HEALTH-CARE SEEKING -----
 
 class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
+
     """
     This event determines who has symptoms that are sufficient to bring them into care.
     It occurs regularly at 3-monthly intervals.
@@ -297,6 +298,8 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
     """
+    * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
+
     This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
     It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
     which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
@@ -339,6 +342,7 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
                 event = HealthSystemInteractionEvent(self.module, person_id,
                                                      cue_type='OutreachEvent',
                                                      disease_specific=self.disease_specific)
+
                 self.sim.schedule_event(event, self.sim.date)
 
         # Log the occurrence of the outreach event
@@ -352,6 +356,8 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
 
 class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
     """
+    * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
+
     This is the generic interaction between the person and the health system.
     All actual interactions between a person and the health system happen here.
 
