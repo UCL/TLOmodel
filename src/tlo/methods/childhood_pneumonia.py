@@ -39,6 +39,10 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative prevalence of pneumonia for severe acute malnutrition'
          ),
+        'rp_pneumonia_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative prevalence of pneumonia for household handwashing'
+         ),
         'rp_pneumonia_IAP': Parameter
         (Types.REAL, 'relative prevalence of pneumonia for indoor air pollution'
          ),
@@ -66,6 +70,10 @@ class ChildhoodPneumonia(Module):
         'rr_pneumonia_malnutrition': Parameter
         (Types.REAL,
          'relative rate of pneumonia for severe acute malnutrition'
+         ),
+        'rr_pneumonia_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative rate of pneumonia for household handwashing'
          ),
         'rr_pneumonia_IAP': Parameter
         (Types.REAL,
@@ -268,6 +276,7 @@ class ChildhoodPneumonia(Module):
         p['rp_pneumonia_age24to59mo'] = 0.5
         p['rp_pneumonia_HIV'] = 1.4
         p['rp_pneumonia_malnutrition'] = 1.25
+        p['rp_pneumonia_HHhandwashing'] = 0.5
         p['rp_pneumonia_IAP'] = 1.1
         p['base_incidence_pneumonia'] = 0.0015
         p['rr_pneumonia_agelt2mo'] = 1.2
@@ -275,6 +284,7 @@ class ChildhoodPneumonia(Module):
         p['rr_pneumonia_age24to59mo'] = 0.5
         p['rr_pneumonia_HIV'] = 1.4
         p['rr_pneumonia_malnutrition'] = 1.25
+        p['rr_pneumonia_HHhandwashing'] = 0.5
         p['rr_pneumonia_IAP'] = 1.1
         p['base_prev_severe_pneumonia'] = 0.1
         p['rp_severe_pneum_agelt2mo'] = 1.3
@@ -461,7 +471,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                                                    (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
         pn_current_none_age24to59mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
                                                    (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_none_HHhandwashing_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        pn_current_none_handwashing_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
                                                      df.HHhandwashing & (df.age_years < 5)]
         pn_current_none_HIV_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
                                            (df.has_hiv) & (df.age_years < 5)]
@@ -476,13 +486,13 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_ri_pneumonia = pd.Series(m.base_incidence_pneumonia,
                                           index=df.index[
-                                              df.is_alive & (df.ri_pneumonia_status == 'pneumonia') & (
+                                              df.is_alive & (df.ri_pneumonia_status == 'none') & (
                                                   df.age_years < 5)])
 
         eff_prob_ri_pneumonia.loc[pn_current_none_agelt2mo_idx] *= m.rr_pneumonia_agelt2mo
         eff_prob_ri_pneumonia.loc[pn_current_none_age12to23mo_idx] *= m.rr_pneumonia_age12to23mo
         eff_prob_ri_pneumonia.loc[pn_current_none_age24to59mo_idx] *= m.rr_pneumonia_age24to59mo
-        eff_prob_ri_pneumonia.loc[pn_current_none_HHhandwashing_idx] *= m.rr_pneumonia_HHhandwashing
+        eff_prob_ri_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_pneumonia_HHhandwashing
         eff_prob_ri_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_pneumonia_HIV
         eff_prob_ri_pneumonia.loc[pn_current_none_malnutrition_idx] *= m.rr_pneumonia_malnutrition
         eff_prob_ri_pneumonia.loc[pn_current_none_siblings_idx] *= m.rr_pneumonia_siblings
@@ -505,7 +515,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_agelt2mo_idx] *= m.rr_severe_pneum_agelt2mo
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_age12to23mo_idx] *= m.rr_severe_pneum_age12to23mo
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_age24to59mo_idx] *= m.rr_severe_pneum_age24to59mo
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_HHhandwashing_idx] *= m.rr_severe_pneum_HHhandwashing
+        eff_prob_ri_severe_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_severe_pneum_HHhandwashing
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_severe_pneum_HIV
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_malnutrition_idx] *= m.rr_severe_pneum_malnutrition
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_siblings_idx] *= m.rr_severe_pneum_siblings
@@ -570,7 +580,6 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
         # -------------------- UPDATING OF RI_PNEUMONIA_STATUS RECOVERY OVER TIME --------------------------------
-
 
 
         # -------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
