@@ -16,73 +16,125 @@ class ChildhoodPneumonia(Module):
     PARAMETERS = {
         'base_prev_pneumonia': Parameter
         (Types.REAL,
-         'initial prevalence of pneumonia, among children aged 2-11 months,'
-         ' HIV negative, no SAM, no indoor air pollution '
+         'initial prevalence of non-severe pneumonia, among children aged 2-11 months,'
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breatfeeding, '
+         'no household handwashing, no indoor air pollution, wealth level 3'
          ),
         'rp_pneumonia_agelt2mo': Parameter
         (Types.REAL,
-         'relative prevalence of pneumonia for age < 2 months'
+         'relative prevalence of non-severe pneumonia for age < 2 months'
          ),
         'rp_pneumonia_age12to23mo': Parameter
         (Types.REAL,
-         'relative prevalence of pneumonia for age 12 to 23 months'
+         'relative prevalence of non-severe pneumonia for age 12 to 23 months'
          ),
         'rp_pneumonia_age24to59mo': Parameter
         (Types.REAL,
-         'relative prevalence of pneumonia for age 24 to 59 months'
+         'relative prevalence of non-severe pneumonia for age 24 to 59 months'
          ),
         'rp_pneumonia_HIV': Parameter
         (Types.REAL,
          'relative prevalence of pneumonia for HIV positive'
          ),
-        'rp_pneumonia_malnutrition': Parameter
+        'rp_pneumonia_SAM': Parameter
         (Types.REAL,
-         'relative prevalence of pneumonia for severe acute malnutrition'
+         'relative prevalence of non-severe pneumonia for severe acute malnutrition'
+         ),
+        'rp_pneumonia_excl_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for exclusive breastfeeding upto 6 months'
+         ),
+        'rp_pneumonia_cont_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for continued breastfeeding upto 23 months'
          ),
         'rp_pneumonia_HHhandwashing': Parameter
         (Types.REAL,
-         'relative prevalence of pneumonia for household handwashing'
+         'relative prevalence of non-severe pneumonia for household handwashing'
          ),
         'rp_pneumonia_IAP': Parameter
-        (Types.REAL, 'relative prevalence of pneumonia for indoor air pollution'
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for indoor air pollution'
+         ),
+        'rp_pneumonia_wealth1': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for wealth level 1'
+         ),
+        'rp_pneumonia_wealth2': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for wealth level 2'
+         ),
+        'rp_pneumonia_wealth4': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for wealth level 4'
+         ),
+        'rp_pneumonia_wealth5': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for wealth level 5'
          ),
         'base_incidence_pneumonia': Parameter
         (Types.REAL,
-         'baseline incidence of pneumonia, among children aged 2-11 months, '
-         'HIV negative, no SAM, no indoor air pollution '
+         'baseline incidence of non-severe pneumonia, among children aged 2-11 months, '
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breatfeeding, '
+         'no household handwashing, no indoor air pollution, wealth level 3'
          ),
         'rr_pneumonia_agelt2mo': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for age < 2 months'
+         'relative rate of non-severe pneumonia for age < 2 months'
          ),
         'rr_pneumonia_age12to23mo': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for age 12 to 23 months'
+         'relative rate of non-severe pneumonia for age 12 to 23 months'
          ),
         'rr_pneumonia_age24to59mo': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for age 24 to 59 months'
+         'relative rate of non-severe pneumonia for age 24 to 59 months'
          ),
         'rr_pneumonia_HIV': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for HIV positive'
+         'relative rate of non-severe pneumonia for HIV positive'
          ),
-        'rr_pneumonia_malnutrition': Parameter
+        'rr_pneumonia_SAM': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for severe acute malnutrition'
+         'relative rate of non-severe pneumonia for severe acute malnutrition'
+         ),
+        'rr_pneumonia_excl_breast': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for exclusive breastfeeding upto 6 months'
+         ),
+        'rr_pneumonia_cont_breast': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for continued breastfeeding upto 23 months'
          ),
         'rr_pneumonia_HHhandwashing': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for household handwashing'
+         'relative rate of non-severe pneumonia for household handwashing'
          ),
         'rr_pneumonia_IAP': Parameter
         (Types.REAL,
-         'relative rate of pneumonia for indoor air pollution'
+         'relative rate of non-severe pneumonia for indoor air pollution'
+         ),
+        'rr_pneumonia_wealth1': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for wealth level 1'
+         ),
+        'rr_pneumonia_wealth2': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for wealth level 2'
+         ),
+        'rr_pneumonia_wealth4': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for wealth level 4'
+         ),
+        'rr_pneumonia_wealth5': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for wealth level 5'
          ),
         'base_prev_severe_pneumonia': Parameter
         (Types.REAL,
-         'initial prevalence of severe pneumonia, among children aged 3-11 months, '
-         'HIV negative, normal weight, no SAM, no indoor air pollution '
+         'initial prevalence of severe pneumonia, among children aged 2-11 months,'
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
+         'no household handwashing, no indoor air pollution, wealth level 3'
          ),
         'rp_severe_pneum_agelt2mo': Parameter
         (Types.REAL, 'relative prevalence of severe pneumonia for age <2 months'
@@ -98,18 +150,47 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative prevalence of severe pneumonia for HIV positive status'
          ),
-        'rp_severe_pneum_malnutrition': Parameter
+        'rp_severe_pneum_SAM': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for severe acute malnutrition'
+         ),
+        'rp_severe_pneum_excl_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for exclusive breastfeeding upto 6 months'
+         ),
+        'rp_severe_pneum_cont_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of non-severe pneumonia for continued breastfeeding upto 23 months'
+         ),
+        'rp_severe_pneum_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for household handwashing'
          ),
         'rp_severe_pneum_IAP': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for indoor air pollution'
          ),
+        'rp_severe_pneum_wealth1': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for wealth level 1'
+         ),
+        'rp_severe_pneum_wealth2': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for wealth level 2'
+         ),
+        'rp_severe_pneum_wealth4': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for wealth level 4'
+         ),
+        'rp_severe_pneum_wealth5': Parameter
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for wealth level 5'
+         ),
         'base_incidence_severe_pneum': Parameter
         (Types.REAL,
          'baseline incidence of severe pneumonia, among children aged 2-11 months, '
-         'HIV negative, no SAM, no indoor air pollution '
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
+         'no household handwashing, no indoor air pollution, wealth level 3'
          ),
         'rr_severe_pneum_agelt2mo': Parameter
         (Types.REAL,
@@ -127,9 +208,17 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative rate of severe pneumonia for HIV positive status'
          ),
-        'rr_severe_pneum_malnutrition': Parameter
+        'rr_severe_pneum_SAM': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for severe acute malnutrition'
+         ),
+        'rr_severe_pneum_excl_breast': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for exclusive breastfeeding upto 6 months'
+         ),
+        'rr_severe_pneum_cont_breast': Parameter
+        (Types.REAL,
+         'relative rate of non-severe pneumonia for continued breastfeeding upto 23 months'
          ),
         'rr_severe_pneum_HHhandwashing': Parameter
         (Types.REAL,
@@ -139,10 +228,26 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative prevalence of severe pneumonia for indoor air pollution'
          ),
+        'rr_severe_pneum_wealth1': Parameter
+        (Types.REAL,
+         'relative rate of severe pneumonia for wealth level 1'
+         ),
+        'rr_severe_pneum_wealth2': Parameter
+        (Types.REAL,
+         'relative rate of severe pneumonia for wealth level 2'
+         ),
+        'rr_severe_pneum_wealth4': Parameter
+        (Types.REAL,
+         'relative rate of severe pneumonia for wealth level 4'
+         ),
+        'rr_severe_pneum_wealth5': Parameter
+        (Types.REAL,
+         'relative rate of severe pneumonia for wealth level 5'
+         ),
         'r_progress_to_severe_pneum': Parameter
         (Types.REAL,
-         'probability of progressing from pneumonia to severe pneumonia among children aged 2-11 months,'
-         ' HIV negative, normal weight, no SAM, no indoor air pollution'
+         'probability of progressing from non-severe to severe pneumonia among children aged 2-11 months, '
+         'HIV negative, no SAM, wealth level 3'
          ),
         'rr_progress_severe_pneum_agelt2mo': Parameter
         (Types.REAL,
@@ -159,51 +264,71 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative risk of progression to severe pneumonia for HIV positive status'
          ),
-        'rr_progress_severe_pneum_malnutrition': Parameter
+        'rr_progress_severe_pneum_SAM': Parameter
         (Types.REAL,
          'relative rate of progression to severe pneumonia for severe acute malnutrition'
          ),
-        'rr_progress_severe_pneum_IAP': Parameter
+        'rr_progress_severe_pneum_wealth1': Parameter
         (Types.REAL,
-         'relative risk of progression to severe pneumonia for indoor air pollution'
+         'relative rate of progression to severe pneumonia for wealth level 1'
+         ),
+        'rr_progress_severe_pneum_wealth2': Parameter
+        (Types.REAL,
+         'relative rate of progression to severe pneumonia for wealth level 2'
+         ),
+        'rr_progress_severe_pneum_wealth4': Parameter
+        (Types.REAL,
+         'relative rate of progression to severe pneumonia for wealth level 4'
+         ),
+        'rr_progress_severe_pneum_wealth5': Parameter
+        (Types.REAL,
+         'relative rate of progression to severe pneumonia for wealth level 5'
          ),
         'r_death_pneumonia': Parameter
         (Types.REAL,
-         'death rate from pneumonia among children aged 2-11 months, '
-         'HIV negative, no SAM, no indoor air pollution'
+         'death rate from pneumonia disease among children aged 2-11 months, '
+         'HIV negative, no SAM, wealth level 3 '
          ),
         'rr_death_pneumonia_agelt2months': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for age < 2 months'
+         'relative rate of death from pneumonia disease for age < 2 months'
          ),
         'rr_death_pneumonia_age12to23mo': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for age 12 to 23 months'
+         'relative rate of death from pneumonia disease for age 12 to 23 months'
          ),
         'rr_death_pneumonia_age24to59mo': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for age 24 to 59 months'
+         'relative rate of death from pneumonia disease for age 24 to 59 months'
          ),
         'rr_death_pneumonia_HIV': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for HIV positive'
+         'relative rate of death from pneumonia disease for HIV positive'
          ),
-        'rr_death_pneumonia_malnutrition': Parameter
+        'rr_death_pneumonia_SAM': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for severe acute malnutrition'
+         'relative rate of death from pneumonia disease for severe acute malnutrition'
          ),
-        'rr_death_pneumonia_IAP': Parameter
+        'rr_death_pneumonia_wealth1': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for indoor air pollution'
+         'relative rate of death from pneumonia disease for wealth level 1'
          ),
-        'rr_death_pneumonia_treatment_adherence': Parameter
+        'rr_death_pneumonia_wealth2': Parameter
         (Types.REAL,
-         'relative risk of death from pneumonia for completed treatment'
+         'relative rate of death from pneumonia disease for wealth level 2'
+         ),
+        'rr_death_pneumonia_wealth4': Parameter
+        (Types.REAL,
+         'relative rate of death from pneumonia disease for wealth level 4'
+         ),
+        'rr_death_pneumonia_wealth5': Parameter
+        (Types.REAL,
+         'relative rate of death from pneumonia disease for wealth level 5'
          ),
         'r_recovery_pneumonia': Parameter
         (Types.REAL,
          'recovery rate from pneumonia among children aged 2-11 months, '
-         'HIV negative, no SAM, no indoor air pollution '
+         'HIV negative, no SAM,  '
          ),
         'rr_recovery_pneumonia_agelt2mo': Parameter
         (Types.REAL,
@@ -220,13 +345,9 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative rate of recovery from pneumonia for HIV positive status'
          ),
-        'rr_recovery_pneumonia_malnutrition': Parameter
+        'rr_recovery_pneumonia_SAM': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for acute malnutrition'
-         ),
-        'rr_recovery_pneumonia_IAP': Parameter
-        (Types.REAL,
-         'relative rate of recovery from pneumonia for indoor air pollution'
+         'relative rate of recovery from pneumonia for severe acute malnutrition'
          ),
         'r_recovery_severe_pneumonia': Parameter
         (Types.REAL,
@@ -249,18 +370,16 @@ class ChildhoodPneumonia(Module):
         (Types.REAL,
          'relative rate of recovery from severe pneumonia for HIV positive status'
          ),
-        'rr_recovery_severe_pneum_malnutrition': Parameter
+        'rr_recovery_severe_pneum_SAM': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for acute malnutrition'
-         ),
-        'rr_recovery_severe_pneum_IAP': Parameter
-        (Types.REAL,
-         'relative rate of recovery from severe pneumonia for indoor air pollution'
+         'relative rate of recovery from severe pneumonia for severe acute malnutrition'
          ),
         'init_prop_pneumonia_status': Parameter
         (Types.LIST,
          'initial proportions in ri_pneumonia_status categories '
-         'for children aged 2-11 months, HIV negative, no SAM, no indoor air pollution'
+         'for children aged 2-11 months, HIV negative, no SAM, '
+         'not exclusively breastfeeding or continued breastfeeding, '
+         'no household handwashing, no indoor air pollution, wealth level 3'
          )
     }
 
@@ -560,13 +679,13 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
         pn_current_pneumonia_HIV_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.has_hiv) & (df.age_years < 5)]
+                     df.has_hiv & (df.age_years < 5)]
         pn_current_pneumonia_malnutrition_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.malnutrition) & (df.age_years < 5)]
+                     df.malnutrition & (df.age_years < 5)]
         pn_current_pneumonia_IAP_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.indoor_air_pollution) & (df.age_years < 5)]
+                     df.indoor_air_pollution & (df.age_years < 5)]
 
         eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_pneum,
                                                    index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
@@ -634,13 +753,13 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
         pn_current_severe_pneum_HIV_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
-                     (df.has_hiv) & (df.age_years < 5)]
+                     df.has_hiv & (df.age_years < 5)]
         pn_current_severe_pneum_malnutrition_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
-                     (df.malnutrition) & (df.age_years < 5)]
+                     df.malnutrition & (df.age_years < 5)]
         pn_current_severe_pneum_IAP_idx = \
             df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
-                     (df.indoor_air_pollution) & (df.age_years < 5)]
+                     df.indoor_air_pollution & (df.age_years < 5)]
 
         eff_prob_recovery_severe_pneum = \
             pd.Series(m.r_recovery_severe_pneumonia,
@@ -667,8 +786,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw]
         df.loc[idx_recovery_pneumonia, 'ri_pneumonia_status'] = 'none'
 
-
-        # -------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
+        # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
 
         eff_prob_death_pneumonia =\
             pd.Series(m.r_death_pneumonia,
@@ -709,24 +827,7 @@ class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
-        ri_pneumonia_status_total = df.hc_current_status.sum()
-        proportion_hc = hc_total / len(df)
+        ri_pneumonia_status_total = df.ri_pneumonia_status.sum()
+        proportion_pneumonia = ri_pneumonia_status_total / len(df)
 
-        mask = (df['hc_date_case'] > self.sim.date - DateOffset(months=self.repeat))
-        positive_in_last_month = mask.sum()
-        mask = (df['hc_date_treatment'] > self.sim.date - DateOffset(months=self.repeat))
-        cured_in_last_month = mask.sum()
-
-        counts = {'N': 0, 'C': 0, 'P': 0}
-        counts.update(df['hc_historic_status'].value_counts().to_dict())
-        status = 'Status: { N: %(N)d; C: %(C)d; P: %(P)d }' % counts
-
-        print("\n", "Output for the 6 months")
-        print('%s - High cholesterol: {TotHC: %d; PropHC: %.3f; PrevMonth: {New: %d; Cured: %d}; %s }' %
-              (self.sim.date,
-               hc_total,
-               proportion_hc,
-               positive_in_last_month,
-               cured_in_last_month,
-               status), flush=True)
 
