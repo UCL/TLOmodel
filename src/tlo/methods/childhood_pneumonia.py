@@ -174,7 +174,7 @@ class ChildhoodPneumonia(Module):
          ),
         'rr_death_pneumonia_agelt2months': Parameter
         (Types.REAL,
-         'relative risk of common cold for age < 2 months'
+         'relative risk of death from pneumonia for age < 2 months'
          ),
         'rr_death_pneumonia_age12to23mo': Parameter
         (Types.REAL,
@@ -291,7 +291,7 @@ class ChildhoodPneumonia(Module):
         p['rp_pneumonia_malnutrition'] = 1.25
         p['rp_pneumonia_HHhandwashing'] = 0.5
         p['rp_pneumonia_IAP'] = 1.1
-        p['base_incidence_pneumonia'] = 0.0015
+        p['base_incidence_pneumonia'] = 0.015
         p['rr_pneumonia_agelt2mo'] = 1.2
         p['rr_pneumonia_age12to23mo'] = 0.8
         p['rr_pneumonia_age24to59mo'] = 0.5
@@ -306,7 +306,7 @@ class ChildhoodPneumonia(Module):
         p['rp_severe_pneum_HIV'] = 1.3
         p['rp_severe_pneum_malnutrition'] = 1.3
         p['rp_severe_pneum_IAP'] = 1.1
-        p['base_incidence_severe_pneum'] = 0.001
+        p['base_incidence_severe_pneum'] = 0.01
         p['rr_severe_pneum_agelt2mo'] = 1.3
         p['rr_severe_pneum_age12to23mo'] = 0.8
         p['rr_severe_pneum_age24to59mo'] = 0.5
@@ -327,8 +327,6 @@ class ChildhoodPneumonia(Module):
         p['rr_death_pneumonia_age24to59mo'] = 0.04
         p['rr_death_pneumonia_HIV'] = 1.4
         p['rr_death_pneumonia_malnutrition'] = 1.3
-        p['rr_death_pneumonia_IAP'] = 1.1
-        p['rr_death_pneumonia_treatment_adherence'] = 1.4
         p['r_recovery_pneumonia'] = 0.5
         p['rr_recovery_pneumonia_agelt2mo'] = 0.3
         p['rr_recovery_pneumonia_age12to23mo'] = 0.7
@@ -372,8 +370,8 @@ class ChildhoodPneumonia(Module):
 
         # create data-frame of the probabilities of ri_pneumonia_status for children
         # aged 2-11 months, HIV negative, no SAM, no indoor air pollution
-        p_pneumonia_status = pd.Series(0.2, index=under5_idx)
-        p_sev_pneum_status = pd.Series(0.1, index=under5_idx)
+        p_pneumonia_status = pd.Series(self.init_prop_pneumonia_status[0], index=under5_idx)
+        p_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[1], index=under5_idx)
 
         # create probabilities of pneumonia for all age under 5
         p_pneumonia_status.loc[
@@ -645,7 +643,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.indoor_air_pollution) & (df.age_years < 5)]
 
         eff_prob_recovery_severe_pneum = \
-            pd.Series(m.r_recovery_pneumonia,
+            pd.Series(m.r_recovery_severe_pneumonia,
                       index=df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_years < 5)])
 
         eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_agelt2mo_idx] *= \
@@ -672,9 +670,29 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
 
-        severe_pneumonia_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia')]
-        random_draw = m.rng.random_sample(size=len(severe_pneumonia_idx))
-        df.loc[severe_pneumonia_idx, 'ri_pneumonia_death'] = (random_draw < m.r_death_pneumonia)
+        eff_prob_death_pneumonia =\
+            pd.Series(m.r_death_pneumonia,
+                      index=df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_years < 5)])
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_agelt2mo_idx] *= \
+            m.rr_death_pneumonia_agelt2mo
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_age12to23mo_idx] *= \
+            m.rr_death_pneumonia_age12to23mo
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_age24to59mo_idx] *= \
+            m.rr_death_pneumonia_age24to59mo
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_HIV_idx] *= \
+            m.rr_death_pneumonia_HIV
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_malnutrition_idx] *= \
+            m.rr_death_pneumonia_malnutrition
+
+        random_draw = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
+                                index=df.index[(df.age_years < 5) & df.is_alive &
+                                               (df.ri_pneumonia_status == 'severe pneumonia')])
+
+        dfx = pd.concat([eff_prob_death_pneumonia, random_draw], axis=1)
+        dfx.columns = ['eff_prob_death_pneumonia', 'random_draw']
+        idx_incident_death = dfx.index[dfx.eff_prob_death_pneumonia > dfx.random_draw]
+        df.loc[idx_incident_death, 'ri_pneumonia_death'] = True
+
 
 class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -691,8 +709,24 @@ class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         # get some summary statistics
         df = population.props
+        ri_pneumonia_status_total = df.hc_current_status.sum()
+        proportion_hc = hc_total / len(df)
 
+        mask = (df['hc_date_case'] > self.sim.date - DateOffset(months=self.repeat))
+        positive_in_last_month = mask.sum()
+        mask = (df['hc_date_treatment'] > self.sim.date - DateOffset(months=self.repeat))
+        cured_in_last_month = mask.sum()
 
-        logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
-                    self.sim.date,
-                    incidence_per_year_oes_cancer_diagnosis)
+        counts = {'N': 0, 'C': 0, 'P': 0}
+        counts.update(df['hc_historic_status'].value_counts().to_dict())
+        status = 'Status: { N: %(N)d; C: %(C)d; P: %(P)d }' % counts
+
+        print("\n", "Output for the 6 months")
+        print('%s - High cholesterol: {TotHC: %d; PropHC: %.3f; PrevMonth: {New: %d; Cured: %d}; %s }' %
+              (self.sim.date,
+               hc_total,
+               proportion_hc,
+               positive_in_last_month,
+               cured_in_last_month,
+               status), flush=True)
+
