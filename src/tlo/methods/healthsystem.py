@@ -40,7 +40,6 @@ class HealthSystem(Module):
         assert (service_availability['Service']).dtype.kind is 'O'
         assert (service_availability['Available']).dtype.kind is 'b'
 
-
         self.service_availability = service_availability
 
         self.registered_disease_modules = {}
@@ -50,6 +49,7 @@ class HealthSystem(Module):
         self.health_system_resources = None
 
         self.HEALTH_SYSTEM_CALLS = pd.DataFrame(columns=['treatment_event','priority','topen','tclose','status'])
+        # TODO: Q. What is ideal data object HEALTH_SYSTEM_CALLS? (Priority queue?)
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
@@ -150,7 +150,7 @@ class HealthSystem(Module):
 
 
         # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
-        # TODO: Q. What is ideal data object for this job?
+
 
         new_request=pd.DataFrame({
             'treatment_event':[treatment_event],
@@ -166,33 +166,33 @@ class HealthSystem(Module):
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
-    This event occurs every day, inspects the calls on the healthsystem and commissions event to occcur that
-    are consistent with the healthsystem capabilities for the following day, given assumptions about how this
+    This event occurs every day, inspects the calls on the healthsystem and commissions event to occur that
+    are consistent with the healthsystem's capabilities for the following day, given assumptions about how this
     decision is made.
     At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
-
     """
 
-    #TODO: Might be good to make sure that each day, this event occurs first (at sim.schedule)
+    #TODO: Ensure that this event occurs first each day (at sim.schedule)
 
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
 
-        logger.debug('I am the health system scheduler and I am being called')
+        logger.debug('I am the health system scheduler. I will now determine what calls on resource will be met.')
         hsc = self.module.HEALTH_SYSTEM_CALLS
 
-        # Flag events that are closed (i.e. the maximum date of their relevance has been exceeded)
+        # Flag events that are closed (i.e. the latest date for which they are relevant has passed).
         hsc.loc[(self.sim.date>hsc['tclose']) & (hsc['status']!='Done'),'status']='Closed_NotDone'
 
-        # Isolate which events are due (i.e. are opened but not yet satisfied)
+        # Isolate which events are due (i.e. are opened but not have yet been run.)
         hsc.loc[self.sim.date>=hsc['topen'],'status']='Due'
 
         due_events_idx=hsc.loc[hsc['status']=='Due'].index
 
+        # Now, Look at the calls to the health system that are due and decide which will be scheduled
+        # In this simplest case, all outstanding calls are met immidiately.
 
-        # Look at the calls to the health system that are due and decide which will be scheduled
         if len(due_events_idx)>0:
 
             for e in  due_events_idx:
@@ -200,12 +200,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # schedule the event
                 self.sim.schedule_event(hsc.iloc[e].treatment_event,self.sim.date)
 
-                # update status of this heath resouce call
+                # update status of this heath resource call
                 hsc.at[e,'status']='Done'
 
                 # record the use of the health system resources
                 # TODO: record this use
-        pass
+
 
 
 
