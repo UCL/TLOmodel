@@ -366,28 +366,32 @@ class ChildhoodPneumonia(Module):
         p_sev_pneum_status = pd.Series(0.1, index=under5_idx)
 
         # create probabilities of pneumonia for all age under 5
-        p_pneumonia_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_pneumonia_agelt2mo
+        p_pneumonia_status.loc[
+            (df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_pneumonia_agelt2mo
         p_pneumonia_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_pneumonia_age12to23mo
         p_pneumonia_status.loc[
             (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_pneumonia_age24to59mo
-        p_pneumonia_status.loc[(df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_HIV
+        p_pneumonia_status.loc[
+            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_HIV
         p_pneumonia_status.loc[
             (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_malnutrition
         p_pneumonia_status.loc[
             (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_IAP
 
         # create probabilities of severe pneumonia for all age under 5
-        p_sev_pneum_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_severe_pneum_agelt2mo
+        p_sev_pneum_status.loc[
+            (df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_severe_pneum_agelt2mo
         p_sev_pneum_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_severe_pneum_age12to23mo
         p_sev_pneum_status.loc[
             (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_severe_pneum_age24to59mo
-        p_sev_pneum_status.loc[(df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_HIV
+        p_sev_pneum_status.loc[
+            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_HIV
         p_sev_pneum_status.loc[
             (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_malnutrition
-        p_sev_pneum_status.loc[(df.indoor_air_pollution == True) & (
-            df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_IAP
+        p_sev_pneum_status.loc[
+            (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_IAP
 
         random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive])
@@ -404,11 +408,9 @@ class ChildhoodPneumonia(Module):
         # assign baseline values of ri_resp_infection_stat based on probabilities and value of random draw
 
         idx_none = dfx.index[dfx.p_none > dfx.random_draw]
-        idx_pneumonia = dfx.index[(dfx.p_none < dfx.random_draw) &
-                                  ((dfx.p_none + dfx.p_pneumonia) > dfx.random_draw)]
+        idx_pneumonia = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_pneumonia) > dfx.random_draw)]
         idx_severe_pneumonia = dfx.index[((dfx.p_none + dfx.p_pneumonia) < dfx.random_draw) &
-                                         (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia)
-                                         > dfx.random_draw]
+                                         (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) > dfx.random_draw]
 
         df.loc[idx_none, 'ri_pneumonia_status'] = 'none'
         df.loc[idx_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
@@ -470,26 +472,28 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for children under 5 with current status 'none'
 
-        pn_current_none_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none')
-                                       & (df.age_years < 5)]
-        pn_current_none_agelt2mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none')
-                                                & (df.age_exact_years < 0.1667)]
-        pn_current_none_age12to23mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                   (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
-        pn_current_none_age24to59mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                   (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_none_handwashing_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                     df.HHhandwashing & (df.age_years < 5)]
-        pn_current_none_HIV_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                           (df.has_hiv) & (df.age_years < 5)]
-        pn_current_none_malnutrition_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                    df.malnutrition & (df.age_years < 5)]
-        pn_current_none_siblings_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                (df.siblings) & (df.age_years < 5)]
-        pn_current_none_IAP_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                            df.indoor_air_pollution & (df.age_years < 5)]
-        pn_current_none_wealth_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                              (df.li_wealth == '5') & (df.age_years < 5)]
+        pn_current_none_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') & (df.age_years < 5)]
+        pn_current_none_agelt2mo_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') & (df.age_exact_years < 0.1667)]
+        pn_current_none_age12to23mo_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
+        pn_current_none_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
+        pn_current_none_handwashing_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     df.HHhandwashing & (df.age_years < 5)]
+        pn_current_none_HIV_idx =\
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     (df.has_hiv) & (df.age_years < 5)]
+        pn_current_none_malnutrition_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     df.malnutrition & (df.age_years < 5)]
+        pn_current_none_IAP_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+                     df.indoor_air_pollution & (df.age_years < 5)]
 
         eff_prob_ri_pneumonia = pd.Series(m.base_incidence_pneumonia,
                                           index=df.index[
@@ -502,6 +506,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_pneumonia_HHhandwashing
         eff_prob_ri_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_pneumonia_HIV
         eff_prob_ri_pneumonia.loc[pn_current_none_malnutrition_idx] *= m.rr_pneumonia_malnutrition
+        eff_prob_ri_pneumonia.loc[pn_current_none_IAP_idx] *= m.rr_pneumonia_IAP
 
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
                                 index=df.index[
@@ -535,20 +540,25 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
 
-        pn_current_pneumonia_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
-                                            & (df.age_years < 5)]
-        pn_current_pneumonia_agelt2mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
-                                                     & (df.age_exact_years < 0.1667)]
-        pn_current_pneumonia_age12to23mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                        (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
-        pn_current_pneumonia_age24to59mo_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                        (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_pneumonia_HIV_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                (df.has_hiv) & (df.age_years < 5)]
-        pn_current_pneumonia_malnutrition_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                         (df.malnutrition) & (df.age_years < 5)]
-        pn_current_pneumonia_IAP_idx = df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                                                 (df.indoor_air_pollution) & (df.age_years < 5)]
+        pn_current_pneumonia_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') & (df.age_years < 5)]
+        pn_current_pneumonia_agelt2mo_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') & (df.age_exact_years < 0.1667)]
+        pn_current_pneumonia_age12to23mo_idx =\
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                     (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
+        pn_current_pneumonia_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                     (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
+        pn_current_pneumonia_HIV_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                     (df.has_hiv) & (df.age_years < 5)]
+        pn_current_pneumonia_malnutrition_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                     (df.malnutrition) & (df.age_years < 5)]
+        pn_current_pneumonia_IAP_idx = \
+            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                     (df.indoor_air_pollution) & (df.age_years < 5)]
 
         eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_pneum,
                                                    index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
@@ -603,5 +613,3 @@ class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
                     self.sim.date,
                     incidence_per_year_oes_cancer_diagnosis)
-
-#
