@@ -1,5 +1,5 @@
 """
-Childhood Pneumonia module
+Childhood diarrhoea module
 Documentation: 04 - Methods Repository/Method_Child_RespiratoryInfection.xlsx
 """
 import logging
@@ -12,139 +12,149 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class ChildhoodPneumonia(Module):
+class ChildhoodDiarrhoea(Module):
     PARAMETERS = {
-        'base_prev_pneumonia': Parameter
+        'base_prev_dysentery': Parameter
         (Types.REAL,
-         'initial prevalence of non-severe pneumonia, among children aged 2-11 months,'
-         'HIV negative, no SAM, not exclusively breastfeeding or continued breatfeeding, '
-         'no household handwashing, no indoor air pollution, wealth level 3'
-         ),
-        'rp_pneumonia_agelt2mo': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for age < 2 months'
-         ),
-        'rp_pneumonia_age12to23mo': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for age 12 to 23 months'
-         ),
-        'rp_pneumonia_age24to59mo': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for age 24 to 59 months'
-         ),
-        'rp_pneumonia_HIV': Parameter
-        (Types.REAL,
-         'relative prevalence of pneumonia for HIV positive'
-         ),
-        'rp_pneumonia_SAM': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for severe acute malnutrition'
-         ),
-        'rp_pneumonia_excl_breast': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for exclusive breastfeeding upto 6 months'
-         ),
-        'rp_pneumonia_cont_breast': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for continued breastfeeding upto 23 months'
-         ),
-        'rp_pneumonia_HHhandwashing': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for household handwashing'
-         ),
-        'rp_pneumonia_IAP': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for indoor air pollution'
-         ),
-        'rp_pneumonia_wealth1': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for wealth level 1'
-         ),
-        'rp_pneumonia_wealth2': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for wealth level 2'
-         ),
-        'rp_pneumonia_wealth4': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for wealth level 4'
-         ),
-        'rp_pneumonia_wealth5': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for wealth level 5'
-         ),
-        'base_incidence_pneumonia': Parameter
-        (Types.REAL,
-         'baseline incidence of non-severe pneumonia, among children aged 2-11 months, '
-         'HIV negative, no SAM, not exclusively breastfeeding or continued breatfeeding, '
-         'no household handwashing, no indoor air pollution, wealth level 3'
-         ),
-        'rr_pneumonia_agelt2mo': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for age < 2 months'
-         ),
-        'rr_pneumonia_age12to23mo': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for age 12 to 23 months'
-         ),
-        'rr_pneumonia_age24to59mo': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for age 24 to 59 months'
-         ),
-        'rr_pneumonia_HIV': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for HIV positive'
-         ),
-        'rr_pneumonia_SAM': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for severe acute malnutrition'
-         ),
-        'rr_pneumonia_excl_breast': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for exclusive breastfeeding upto 6 months'
-         ),
-        'rr_pneumonia_cont_breast': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for continued breastfeeding upto 23 months'
-         ),
-        'rr_pneumonia_HHhandwashing': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for household handwashing'
-         ),
-        'rr_pneumonia_IAP': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for indoor air pollution'
-         ),
-        'rr_pneumonia_wealth1': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for wealth level 1'
-         ),
-        'rr_pneumonia_wealth2': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for wealth level 2'
-         ),
-        'rr_pneumonia_wealth4': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for wealth level 4'
-         ),
-        'rr_pneumonia_wealth5': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for wealth level 5'
-         ),
-        'base_prev_severe_pneumonia': Parameter
-        (Types.REAL,
-         'initial prevalence of severe pneumonia, among children aged 2-11 months,'
+         'initial prevalence of dysentery, among children aged 0-11 months,'
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
-         'no household handwashing, no indoor air pollution, wealth level 3'
+         'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
+         ),
+        'rp_dysentery_agelt11mo': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for age < 11 months'
+         ),
+        'rp_dysentery_age12to23mo': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for age 12 to 23 months'
+         ),
+        'rp_dysentery_age24to59mo': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for age 24 to 59 months'
+         ),
+        'rp_dysentery_HIV': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for HIV positive'
+         ),
+        'rp_dysentery_SAM': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for severe acute malnutrition'
+         ),
+        'rp_dysentery_excl_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for exclusive breastfeeding upto 6 months'
+         ),
+        'rp_dysentery_cont_breast': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for continued breastfeeding upto 23 months'
+         ),
+        'rp_dysentery_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for household handwashing'
+         ),
+        'rp_pneumonia_clean_water': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for access to clean water'
+         ),
+        'rp_pneumonia_improved_sanitation': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for improved sanitation'
+         ),
+        'rp_dysentery_wealth1': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for wealth level 1'
+         ),
+        'rp_dysentery_wealth2': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for wealth level 2'
+         ),
+        'rp_dysentery_wealth4': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for wealth level 4'
+         ),
+        'rp_dysentery_wealth5': Parameter
+        (Types.REAL,
+         'relative prevalence of dysentery for wealth level 5'
+         ),
+        'base_incidence_acute_diarrhoea': Parameter
+        (Types.REAL,
+         'baseline incidence of acute watery diarrhoea, among children aged < 11 months, '
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
+         'no household handwashing, no clean water source, no improved sanitation, wealth level 3'
+         ),
+        'rr_acute_diarrhoea_agelt11mo': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for age < 11 months'
+         ),
+        'rr_acute_diarrhoea_age12to23mo': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for age 12 to 23 months'
+         ),
+        'rr_acute_diarrhoea_age24to59mo': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for age 24 to 59 months'
+         ),
+        'rr_acute_diarrhoea_HIV': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for HIV positive'
+         ),
+        'rr_acute_diarrhoea_SAM': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for severe acute malnutrition'
+         ),
+        'rr_acute_diarrhoea_excl_breast': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for exclusive breastfeeding upto 6 months'
+         ),
+        'rr_acute_diarrhoea_cont_breast': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for continued breastfeeding 6 months to 2 years'
+         ),
+        'rr_acute_diarrhoea_HHhandwashing': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for household handwashing'
+         ),
+        'rr_acute_diarrhoea_clean_water': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for access to clean water'
+         ),
+        'rr_acute_diarrhoea_improved_sanitation': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for improved sanitation'
+         ),
+        'rr_acute_diarrhoea_wealth1': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for wealth level 1'
+         ),
+        'rr_acute_diarrhoea_wealth2': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for wealth level 2'
+         ),
+        'rr_acute_diarrhoea_wealth4': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for wealth level 4'
+         ),
+        'rr_acute_diarrhoea_wealth5': Parameter
+        (Types.REAL,
+         'relative rate of acute watery diarrhoea for wealth level 5'
+         ),
+        'base_prev_persistent_diarrhoea': Parameter
+        (Types.REAL,
+         'initial prevalence of persistent diarrhoea, among children aged < 11 months,'
+         'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
+         'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
         'rp_severe_pneum_agelt2mo': Parameter
-        (Types.REAL, 'relative prevalence of severe pneumonia for age <2 months'
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for age <2 months'
          ),
         'rp_severe_pneum_age12to23mo': Parameter
         (Types.REAL,
          'relative prevalence of severe pneumonia for age 12 to 23 months'
          ),
         'rp_severe_pneum_age24to59mo': Parameter
-        (Types.REAL, 'relative prevalence of severe pneumonia for age 24 to 59 months'
+        (Types.REAL,
+         'relative prevalence of severe pneumonia for age 24 to 59 months'
          ),
         'rp_severe_pneum_HIV': Parameter
         (Types.REAL,
@@ -160,7 +170,7 @@ class ChildhoodPneumonia(Module):
          ),
         'rp_severe_pneum_cont_breast': Parameter
         (Types.REAL,
-         'relative prevalence of non-severe pneumonia for continued breastfeeding upto 23 months'
+         'relative prevalence of non-severe pneumonia for continued breastfeeding 6 months to 2 years'
          ),
         'rp_severe_pneum_HHhandwashing': Parameter
         (Types.REAL,
@@ -218,15 +228,15 @@ class ChildhoodPneumonia(Module):
          ),
         'rr_severe_pneum_cont_breast': Parameter
         (Types.REAL,
-         'relative rate of non-severe pneumonia for continued breastfeeding upto 23 months'
+         'relative rate of non-severe pneumonia for continued breastfeeding 6 months to 2 years'
          ),
         'rr_severe_pneum_HHhandwashing': Parameter
         (Types.REAL,
-         'relative prevalence of severe pneumonia for household handwashing'
+         'relative rate of severe pneumonia for household handwashing'
          ),
         'rr_severe_pneum_IAP': Parameter
         (Types.REAL,
-         'relative prevalence of severe pneumonia for indoor air pollution'
+         'relative rate of severe pneumonia for indoor air pollution'
          ),
         'rr_severe_pneum_wealth1': Parameter
         (Types.REAL,
@@ -258,11 +268,12 @@ class ChildhoodPneumonia(Module):
          'relative rate of progression to severe pneumonia for age 12 to 23 months'
          ),
         'rr_progress_severe_pneum_age24to59mo': Parameter
-        (Types.REAL, 'relative rate of progression to severe pneumonia for age 24 to 59 months'
+        (Types.REAL,
+         'relative rate of progression to severe pneumonia for age 24 to 59 months'
          ),
         'rr_progress_severe_pneum_HIV': Parameter
         (Types.REAL,
-         'relative risk of progression to severe pneumonia for HIV positive status'
+         'relative rate of progression to severe pneumonia for HIV positive status'
          ),
         'rr_progress_severe_pneum_SAM': Parameter
         (Types.REAL,
@@ -339,7 +350,8 @@ class ChildhoodPneumonia(Module):
          'relative rate of recovery from pneumonia for age between 12 to 23 months'
          ),
         'rr_recovery_pneumonia_age24to59mo': Parameter
-        (Types.REAL, 'relative rate of recovery from pneumonia for age between 24 to 59 months'
+        (Types.REAL,
+         'relative rate of recovery from pneumonia for age between 24 to 59 months'
          ),
         'rr_recovery_pneumonia_HIV': Parameter
         (Types.REAL,
@@ -352,7 +364,7 @@ class ChildhoodPneumonia(Module):
         'r_recovery_severe_pneumonia': Parameter
         (Types.REAL,
          'baseline recovery rate from severe pneumonia among children ages 2 to 11 months, '
-         'HIV negative, no SAM, no indoor air pollution'
+         'HIV negative, no SAM'
          ),
         'rr_recovery_severe_pneum_agelt2mo': Parameter
         (Types.REAL,
