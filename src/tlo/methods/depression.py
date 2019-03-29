@@ -393,6 +393,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
 
+        # todo: introduce starting and stopping of antiepileptics and make this work with health system module
+
         # resolution of depression
 
         depr_idx = df.index[df.de_depr & df.is_alive]
