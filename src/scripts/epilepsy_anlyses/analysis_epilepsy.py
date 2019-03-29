@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly, epilepsy
+from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly, epilepsy_hs
 
 # Where will output go
 outputpath = ''
@@ -52,7 +52,7 @@ sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
-sim.register(epilepsy.Epilepsy())
+sim.register(epilepsy_hs.Epilepsy())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
