@@ -4,6 +4,7 @@ Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the '
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
 import logging
+import math
 from collections import defaultdict
 
 import numpy as np
@@ -19,6 +20,8 @@ logger.setLevel(logging.INFO)
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
+
+MAX_AGE = 120
 
 
 def make_age_range_lookup():
@@ -99,6 +102,7 @@ class Demography(Module):
         'age_range': Property(Types.CATEGORICAL,
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
+        'age_days': Property(Types.INT, 'The age of the individual in whole days')
     }
 
     def read_parameters(self, data_folder):
@@ -113,9 +117,18 @@ class Demography(Module):
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
-        ms['sex'] = np.where(ms['gender'] == 'male', 'M', 'F')
-        self.parameters['mortality_schedule'] = ms
-
+        ms['sex'] = ms.gender.map({'male': 'M', 'female': 'F'})
+        # long-list the column to avoid the problem about these being irregular age-groups
+        ms_new = []
+        for row in ms.itertuples():
+            age_high = row.age_to
+            if age_high == 99:
+                age_high = MAX_AGE
+            for age_years in range(row.age_from, age_high+1):
+                ms_new.append(row._replace(age_from=age_years))
+        ms_new = pd.DataFrame(ms_new)
+        ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
+        self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
     def initialise_population(self, population):
@@ -170,6 +183,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
         # assign that half the adult population is married (will be done in lifestyle module)
         df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
@@ -251,6 +265,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
         df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+        df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
@@ -359,6 +374,10 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         logger.debug('Checking to see if anyone should die...')
+        df = population.props
+        over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
+        for individual_id in over_max_age:
+            self.sim.schedule_event(InstantaneousDeath(self.module, individual_id, 'OverMaxAge'))
 
         # get the mortality schedule for now...
 
@@ -366,34 +385,27 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         mort_sched = self.module.parameters['mortality_schedule']
 
         # get the subset of mortality rates for this year.
-        mort_sched = mort_sched.loc[mort_sched.year == self.sim.date.year, ['age_from', 'sex', 'value']].copy()
+        # confirms that we go to the five year period that we are in, not the exact year.
+        fallbackyear = int(math.floor(self.sim.date.year/5)*5)
+
+        mort_sched = mort_sched.loc[mort_sched.year == fallbackyear, ['age_years', 'sex', 'value']].copy()
 
         # get the population
-        df = population.props
-        alive = df.loc[df.is_alive, ['sex', 'age_years']].copy()
-
-        # --------
-        # TODO: mortality schedule worksheet should be updated to use the property date ranges
-        # add age-groups to each dataframe (this to be done by the population object later)
-        # NB... the age-groups here are -1:<0 year-olds; 0:1-4 yearolds; 1:5-9 yearolds; etc..)
-        alive['agegrp'] = -99
-        alive['agegrp'] = 1 + np.floor(alive.age_years / 5)
-        alive.loc[alive.age_years == 0, 'agegrp'] = -1  # overwriting with -1 for the <0 year-olds
-
-        mort_sched['agegrp'] = -99
-        mort_sched['agegrp'] = np.floor(mort_sched.age_from / 5)
-        mort_sched.loc[mort_sched.age_from == 0, 'agegrp'] = -1
-        # -------
+        alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
         # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
         # mortality for each person in the model
+        length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
-                                          left_on=['agegrp', 'sex'],
-                                          right_on=['agegrp', 'sex'],
+                                          left_on=['age_years', 'sex'],
+                                          right_on=['age_years', 'sex'],
                                           how='inner').set_index('person')
+        assert length_before_merge == len(alive)
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
+
+        logger.debug('Will die count: %d', will_die.sum())
 
         # the imported number is a yearly proportion. So adjust the rate according
         # to the frequency with which the event is recurring
@@ -462,7 +474,7 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
         logger.info('%s|age_range_m|%s', self.sim.date,
-                    list(m_age_counts))
+                    m_age_counts.to_dict())
 
         logger.info('%s|age_range_f|%s', self.sim.date,
-                    list(f_age_counts))
+                    f_age_counts.to_dict())
