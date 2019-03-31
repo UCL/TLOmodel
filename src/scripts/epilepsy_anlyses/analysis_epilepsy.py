@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly, epilepsy_hs
+from tlo.methods import demography, healthsystem, lifestyle, qaly, epilepsy_hs
 
 # Where will output go
 outputpath = ''
@@ -18,8 +18,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2020, 4, 1)
+popsize = 1
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -27,8 +27,10 @@ sim = Simulation(start_date=start_date)
 # Establish the logger
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
+"""
 if os.path.exists(logfile):
     os.remove(logfile)
+"""
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
@@ -40,18 +42,15 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
 service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Mockitis_Treatment', True]
-service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-service_availability['Service']=service_availability['Service'].astype('object')
-service_availability['Available']=service_availability['Available'].astype('bool')
+service_availability.loc[0] = ['Epilepsy', True]
+service_availability['Service'] = service_availability['Service'].astype('object')
+service_availability['Available'] = service_availability['Available'].astype('bool')
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(mockitis.Mockitis())
-sim.register(chronicsyndrome.ChronicSyndrome())
 sim.register(epilepsy_hs.Epilepsy())
 
 # Run the simulation and flush the logger
