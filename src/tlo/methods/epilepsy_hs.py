@@ -1,11 +1,13 @@
 
 import logging
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import demography
 import numpy as np
 import pandas as pd
 import random
 
+# todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -80,7 +82,6 @@ class Epilepsy(Module):
         'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
         'ep_unified_symptom_code': Property(Types.CATEGORICAL, '',
                                             categories=['0', '1', '2', '3'])
-
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
@@ -98,24 +99,33 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
+#       self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
+        self.parameters['init_epil_seiz_status'] = [0.01 , 0.01 , 0.49 , 0.49 ]
         self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.25
         self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.30
         self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.30
-        self.parameters['base_3m_prob_epilepsy'] = 0.00065
+#       self.parameters['base_3m_prob_epilepsy'] = 0.00065
+        self.parameters['base_3m_prob_epilepsy'] = 0.1
         self.parameters['rr_epilepsy_age_ge20'] = 0.5
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
         self.parameters['rr_effectiveness_antiepileptics'] = 5
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
-        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
-        self.parameters['base_prob_3m_antiepileptic'] = 0.02
+#       self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.5
+#       self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.00
+        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.0
+#       self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
+#       self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.0
+#       self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
+        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.5
+#       self.parameters['base_prob_3m_antiepileptic'] = 0.02
+        self.parameters['base_prob_3m_antiepileptic'] = 0.3
         self.parameters['rr_antiepileptic_seiz_infreq'] = 0.8
         self.parameters['base_prob_3m_stop_antiepileptic'] = 0.1
         self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.5
-        self.parameters['base_prob_3m_epi_death'] = 0.001
+#       self.parameters['base_prob_3m_epi_death'] = 0.001
+        self.parameters['base_prob_3m_epi_death'] = 0.2
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -171,6 +181,17 @@ class Epilepsy(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # Define the footprint for the intervention on the common resources
+        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+            'Name': Epilepsy.TREATMENT_ID,
+            'Nurse_Time': 15,
+            'Doctor_Time': 15,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -190,50 +211,46 @@ class Epilepsy(Module):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
         # And report it on the unified symptomology scale
-        logger.debug("This is mockitis, being asked to report unified symptomology")
+#       logger.debug("This is Epilepsy being asked to report unified symptomology")
 
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        df.loc[df.is_alive, 'ep_unified_symptom_code'] \
-            = df.loc[df.is_alive, 'ep_seiz_stat'].map({'0': 0, '1': 0, '2': 1, '3': 3})
+#       df.loc[df.is_alive, 'ep_unified_symptom_code'] \
+#           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
 
-        return df.loc[df.is_alive, 'ep_unified_symptom_code']
+#       return df.loc[df.is_alive, 'ep_unified_symptom_code']
+
+        return pd.Series('1', index = df.index[df.is_alive])
 
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-        logger.debug('This is mockitis, being alerted about a health system interaction '
-                     'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+#       logger.debug('This is epilepsy, being alerted about a health system interaction '
+#                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
-        if self.sim.population.props.at[person_id,'mi_status']=='C':
-            # Query with health system whether this individual will get a desired treatment
-            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-                person_id, self.TREATMENT_ID
-            )
-
-            if gets_treatment:
-                # Commission treatment for this individual
-                event = MockitisTreatmentEvent(self, person_id)
-                self.sim.schedule_event(event, self.sim.date)
+        pass
 
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        logger.debug('This is mockitis reporting my health values')
+#       logger.debug('This is epilepsy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
         p = self.parameters
 
-        health_values = df.loc[df.is_alive, 'ep_unified_symptom_code'].map({
-            '0': 0,
-            '1': 0.9,  # todo create parameter for this value - ask qaly module
-            '2': 0.3,
-            '3': 0.2
-        })
-        return health_values.loc[df.is_alive]
+#       health_values = df.loc[df.is_alive, 'ep_unified_symptom_code'].map({
+#           '0': 0,
+#           '1': 0.9,  # todo create parameter for this value - ask qaly module
+#           '2': 0.3,
+#           '3': 0.2
+#       })
+#       return health_values.loc[df.is_alive]
+
+        return pd.Series(0.5, index=df.index[df.is_alive])
+
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
@@ -269,6 +286,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = module.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq']
         self.base_prob_3m_epi_death = module.parameters['base_prob_3m_epi_death']
 
+
     def apply(self, population):
         """Apply this event to the population.
 
@@ -278,6 +296,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
+
+        # Declaration of how we will refer to any treatments that are related to this disease.
+        TREATMENT_ID = 'antiepileptic'
+
+        # set ep_epi_death back to False after death
+        df.loc[~df.is_alive, 'ep_epi_death'] = False
 
         # update ep_seiz_stat for people ep_seiz_stat = 0
 
@@ -415,10 +439,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_antiep', 'random_draw_01']
 
+        # x_ep_antiep is whether requests health system for treatment to start
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
         df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+
+        for person_id in dfx.index[dfx.x_ep_antiep]:
+            df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
 
         # update ep_antiep if ep_seiz_stat = 3
 
@@ -433,10 +461,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_antiep', 'random_draw_01']
 
+        # x_ep_antiep is whether requests health system for treatment to start
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-        df.loc[alive_seiz_stat_3_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+
+        for person_id in dfx.index[dfx.x_ep_antiep]:
+            df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
@@ -494,9 +526,10 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[alive_seiz_stat_2_or_3_idx, 'ep_epi_death'] = dfx['x_epi_death']
 
-        # todo: register the death
-        # todo: disability weights - although these will map from ep_seiz_stat
-        # todo: I think code below can be removed as we are logging above
+        death_this_period = df.index[df.ep_epi_death]
+        for individual_id in death_this_period:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'),
+                                    self.sim.date)
 
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
