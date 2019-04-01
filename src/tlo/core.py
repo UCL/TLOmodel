@@ -31,7 +31,7 @@ class Types(Enum):
     LIST = auto()
     SERIES = auto()
     DATA_FRAME = auto()
-    STRING= auto()
+    STRING = auto()
 
 
 class Specifiable:
@@ -60,7 +60,7 @@ class Specifiable:
         Types.LIST: list,
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
-        Types.STRING: object
+        Types.STRING: str
     }
 
     def __init__(self, type_, description):
