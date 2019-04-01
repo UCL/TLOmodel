@@ -23,7 +23,7 @@ def disable_logging():
     logging.disable(logging.INFO)
 
 
-def check_dtypes(simulation):
+def _check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -36,15 +36,14 @@ def test_healthsystem_no_interventions():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    check_dtypes(sim)
+    _check_dtypes(sim)
 
 
 def test_healthsystem_with_qaly():
@@ -53,8 +52,7 @@ def test_healthsystem_with_qaly():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
@@ -62,7 +60,7 @@ def test_healthsystem_with_qaly():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    check_dtypes(sim)
+    _check_dtypes(sim)
 
 
 def test_health_system_interventions_on():
@@ -71,16 +69,18 @@ def test_health_system_interventions_on():
     sim = Simulation(start_date=start_date)
 
     # Define the service availability
-    service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-    service_availability.loc[0] = ['Mockitis_Treatment', True]
-    service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-    service_availability['Service'] = service_availability['Service'].astype('object')
-    service_availability['Available'] = service_availability['Available'].astype('bool')
+    service_availability = pd.DataFrame.from_records(
+        [
+            ('Mockitis_Treatment', True),
+            ('ChronicSyndrome_Treatment', True)
+        ],
+        columns=['Service', 'Available'],
+    ).astype({'Service': object, 'Available': bool})
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability))
     sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
@@ -90,4 +90,4 @@ def test_health_system_interventions_on():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    check_dtypes(sim)
+    _check_dtypes(sim)

@@ -25,17 +25,17 @@ class HealthSystem(Module):
         self.resourcefilepath = resourcefilepath
 
         if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-            service_availability['Service'] = service_availability['Service'].astype('object')
-            service_availability['Available'] = service_availability['Available'].astype('bool')
+            service_availability = pd.DataFrame(columns=['Service', 'Available']).astype(
+                {'Service': object, 'Available': bool}
+            )
 
         # Checks on the service_availability dateframe argument
         assert type(service_availability) is pd.DataFrame
         assert len(service_availability.columns) == 2
         assert 'Service' in service_availability.columns
         assert 'Available' in service_availability.columns
-        assert service_availability['Service'].dtype == 'object'
-        assert service_availability['Available'].dtype == 'bool'
+        assert service_availability['Service'].dtype == object
+        assert service_availability['Available'].dtype == bool
 
         self.service_availability = service_availability
 

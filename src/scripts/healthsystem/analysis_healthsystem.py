@@ -39,11 +39,13 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
-service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Mockitis_Treatment', True]
-service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-service_availability['Service'] = service_availability['Service'].astype('object')
-service_availability['Available'] = service_availability['Available'].astype('bool')
+service_availability = pd.DataFrame.from_records(
+    [
+        ('Mockitis_Treatment', True),
+        ('ChronicSyndrome_Treatment', True)
+    ],
+    columns=['Service', 'Available'],
+).astype({'Service': object, 'Available': bool})
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
