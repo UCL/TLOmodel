@@ -20,9 +20,7 @@ class HealthSystem(Module):
     Requests for access to particular services are handled by Disease/Intervention Modules by this Module
     """
 
-    def __init__(self, name=None,
-                 resourcefilepath=None,
-                 service_availability=None):
+    def __init__(self, name=None, resourcefilepath=None, service_availability=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
