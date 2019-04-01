@@ -23,6 +23,13 @@ def disable_logging():
     logging.disable(logging.INFO)
 
 
+def check_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+
 def test_healthsystem_no_interventions():
 
     sim = Simulation(start_date=start_date)
@@ -37,7 +44,7 @@ def test_healthsystem_no_interventions():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True  # if got here with no errors, it's working
+    check_dtypes(sim)
 
 
 def test_healthsystem_with_qaly():
@@ -55,7 +62,7 @@ def test_healthsystem_with_qaly():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True  # if got here with no errors, it's working
+    check_dtypes(sim)
 
 
 def test_health_system_interventions_on():
@@ -83,4 +90,4 @@ def test_health_system_interventions_on():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True  # if got here with no errors, it's working
+    check_dtypes(sim)
