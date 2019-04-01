@@ -34,8 +34,8 @@ class HealthSystem(Module):
         assert len(service_availability.columns) == 2
         assert 'Service' in service_availability.columns
         assert 'Available' in service_availability.columns
-        assert (service_availability['Service']).dtype.kind is 'O'
-        assert (service_availability['Available']).dtype.kind is 'b'
+        assert service_availability['Service'].dtype == 'object'
+        assert service_availability['Available'].dtype == 'bool'
 
         self.service_availability = service_availability
 
