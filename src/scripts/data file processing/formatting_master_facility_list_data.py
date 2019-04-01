@@ -5,10 +5,10 @@
 import numpy as np
 import pandas as pd
 
-dropbox_path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/'
-workingfile = dropbox_path + '05 - Resources/Health System Resources/' + \
-              'ORIGINAL_Master List Free Service Health Facilities in Malawi_no contact details.xlsx'
-outputpath = dropbox_path + '05 - Resources/Health System Resources/'
+dropbox_root = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/'
+resources_path = dropbox_root + '05 - Resources/Health System Resources/'
+workingfile = resources_path + 'ORIGINAL_Master List Free Service Health Facilities in Malawi_no contact details.xlsx'
+output_path = resources_path
 
 wb = pd.read_excel(workingfile, sheet_name='All HF Malawi')
 
@@ -43,7 +43,7 @@ wb.loc[wb['Facility Type'] == 'District Hospital', ['District', 'Facility Type']
 wb['Village'] = wb['Village'].str.strip()
 
 # Save output file for information about facilities
-wb.to_csv(outputpath + 'ResourceFile_MasterFacilitiesList.csv')
+wb.to_csv(output_path + 'ResourceFile_MasterFacilitiesList.csv')
 
 # --------
 
@@ -133,4 +133,4 @@ x.Facility_ID = x.Facility_ID.astype(np.int64)
 y = x.merge(fac_details, how='left', on='Facility_ID')
 
 # **** Save:
-y.to_csv(outputpath + 'ResourceFile_Village_To_Facility_Mapping.csv')
+y.to_csv(output_path + 'ResourceFile_Village_To_Facility_Mapping.csv')

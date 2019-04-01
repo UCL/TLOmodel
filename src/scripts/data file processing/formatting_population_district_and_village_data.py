@@ -11,12 +11,10 @@ NB. There are some issues with the merge, but this will be resolved new data giv
 
 import pandas as pd
 
-dropbox_path = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/'
-filepath = (
-    dropbox_path + '05 - Resources/Demographic data/village-district-breakdown/'
-)
-workingfile = filepath + 'Census Data and Health System Data.xlsx'
-outputfile = filepath + 'ResourceFile_PopBreakdownByVillage.csv'
+dropbox_root = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/'
+village_data_path = dropbox_root + '05 - Resources/Demographic data/village-district-breakdown/'
+workingfile = village_data_path + 'Census Data and Health System Data.xlsx'
+outputfile = village_data_path + 'ResourceFile_PopBreakdownByVillage.csv'
 
 # Load census data on pop sizes in each distrct
 district_wb = pd.read_excel(workingfile, sheet_name='PopBreakdownByDistrict_Census')
