@@ -148,7 +148,7 @@ class Demography(Module):
 
         self.parameters['Village_District_Region_Data'] = \
             pd.read_csv(os.path.join(self.resourcefilepath,
-                                     'ResourceFile_PopBreakdownbyVillage.csv'))
+                                     'ResourceFile_PopBreakdownByVillage.csv'))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
