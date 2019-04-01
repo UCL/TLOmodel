@@ -195,7 +195,6 @@ class Demography(Module):
         # we can't use np.nan because that casts the series into a float
         df.loc[df.is_alive, 'mother_id'] = -1
 
-
         # Assign village, district and region of residence
         region_info = self.parameters['Village_District_Region_Data']
         prob_in_village = region_info['Population']/region_info['Population'].sum()
@@ -216,7 +215,6 @@ class Demography(Module):
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
         assert (not pd.isnull(df['village_of_residence']).any())
-
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False

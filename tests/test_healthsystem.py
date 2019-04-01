@@ -1,9 +1,8 @@
-import pytest
-import datetime
 import logging
 import os
 
 import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
 from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
@@ -18,12 +17,13 @@ popsize = 50
 # Simply test whether the system runs under multiple configurations
 # The Mockitits and ChronicSyndrome module test all aspects of the healthsystem module.
 
+
 @pytest.fixture(autouse=True)
 def disable_logging():
     logging.disable(logging.INFO)
 
 
-def test_RunWithHealthSystem_NoInterventionsDefined():
+def test_healthsystem_no_interventions():
 
     sim = Simulation(start_date=start_date)
 
@@ -37,11 +37,10 @@ def test_RunWithHealthSystem_NoInterventionsDefined():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True # if got here with no errors, it's working
+    assert True  # if got here with no errors, it's working
 
 
-
-def test_RunWithHealthSystem_WithQALY():
+def test_healthsystem_with_qaly():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
@@ -52,7 +51,6 @@ def test_RunWithHealthSystem_WithQALY():
     sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
-
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -60,8 +58,7 @@ def test_RunWithHealthSystem_WithQALY():
     assert True  # if got here with no errors, it's working
 
 
-
-def test_RunWithHealthSystem_InterventionsOn():
+def test_health_system_interventions_on():
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
@@ -86,12 +83,4 @@ def test_RunWithHealthSystem_InterventionsOn():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-
     assert True  # if got here with no errors, it's working
-
-
-
-
-
-
-

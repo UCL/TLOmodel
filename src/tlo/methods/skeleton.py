@@ -24,7 +24,7 @@ class Skeleton(Module):
     * `report_qaly_values(self)`
     * `on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None)`
 
-    If this module represents a form of treatment:
+    If this module represents a form of treatment
     * TREATMENT_ID: must be defined
     * It must register the treatment: self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
     """
@@ -43,10 +43,8 @@ class Skeleton(Module):
         'property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
-
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = ''
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -101,7 +99,6 @@ class Skeleton(Module):
         :param child_id: the new child
         """
         raise NotImplementedError
-
 
     def query_symptoms_now(self):
         """

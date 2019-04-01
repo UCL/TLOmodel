@@ -91,7 +91,6 @@ class Mockitis(Module):
         p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -117,7 +116,8 @@ class Mockitis(Module):
 
         # randomly selected some individuals as infected
         initial_infected = self.parameters['initial_prevalence']
-        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
+        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(
+            size=alive_count) < initial_infected
         df.loc[df.mi_is_infected, 'mi_status'] = 'C'
 
         # Assign time of infections and dates of scheduled death for all those infected
@@ -249,12 +249,11 @@ class Mockitis(Module):
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        df.loc[df.is_alive, 'mi_unified_symptom_code'] = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
-            'none': 0,
-            'mild sneezing': 1,
-            'coughing and irritable': 2,
-            'extreme emergency': 4
-        })
+        df.loc[df.is_alive, 'mi_unified_symptom_code'] = df.loc[
+            df.is_alive, 'mi_specific_symptoms'].map({'none': 0,
+                                                      'mild sneezing': 1,
+                                                      'coughing and irritable': 2,
+                                                      'extreme emergency': 4})
 
         return df.loc[df.is_alive, 'mi_unified_symptom_code']
 
@@ -262,8 +261,7 @@ class Mockitis(Module):
         logger.debug('This is mockitis, being alerted about a health system interaction '
                      'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
-
-        if self.sim.population.props.at[person_id,'mi_status']=='C':
+        if self.sim.population.props.at[person_id, 'mi_status'] == 'C':
             # Query with health system whether this individual will get a desired treatment
             gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
                 person_id, self.TREATMENT_ID
@@ -273,7 +271,6 @@ class Mockitis(Module):
                 # Commission treatment for this individual
                 event = MockitisTreatmentEvent(self, person_id)
                 self.sim.schedule_event(event, self.sim.date)
-
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
@@ -310,7 +307,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (
-                    len(currently_infected) + len(currently_uninfected))
+                len(currently_infected) + len(currently_uninfected))
         else:
             prevalence = 0
 
@@ -380,7 +377,9 @@ class MockitisTreatmentEvent(Event, IndividualScopeEventMixin):
             pass
 
         # schedule a short series of follow-up appointments at six monthly intervals
-        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name)
+        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
+                                                                  cue_type='FollowUp',
+                                                                  disease_specific=self.module.name)
 
         self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=6))
         self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=12))
@@ -406,7 +405,8 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
                            self.sim.date - DateOffset(months=self.repeat))
         infected_in_last_month = mask.sum()
-        mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
+        mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(
+            months=self.repeat))
         cured_in_last_month = mask.sum()
 
         counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
@@ -429,7 +429,6 @@ class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
         self.outreach_type = outreach_type
 
     def apply(self, population):
-
         # As an example, this outreach screening intervention will only apply to women
         df = population.props
         mask_for_person_to_be_reached = (df.sex == 'F')
@@ -437,6 +436,7 @@ class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
         target = mask_for_person_to_be_reached.loc[df.is_alive]
 
         # make and run the actual outreach event by the healthsystem
-        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
+        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,
+                                                   target=target)
 
         self.sim.schedule_event(outreachevent, self.sim.date)

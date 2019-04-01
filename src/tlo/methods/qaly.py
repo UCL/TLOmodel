@@ -25,7 +25,6 @@ class QALY(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-
     PARAMETERS = {
         'Weight_Database': Property(Types.DATA_FRAME, 'Weight Database')
         # NB. This is a DALY database (From Salomon, Lancet, 2016), so complement of the values must be used.
@@ -37,8 +36,7 @@ class QALY(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        p['Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath,'ResourceFile_DALY_Weights.csv'))
-
+        p['Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_DALY_Weights.csv'))
 
     def initialise_population(self, population):
         pass
@@ -67,7 +65,7 @@ class QALY(Module):
         qaly_wt = 1 - daly_wt
 
         # Check that the value is within bounds [0,1]
-        assert (qaly_wt>=0) & (qaly_wt<=1)
+        assert (qaly_wt >= 0) & (qaly_wt <= 1)
 
         return qaly_wt
 
@@ -99,10 +97,10 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
 
             # Perform checks on what has been returned
             assert type(out) is pd.Series
-            assert len(out)==self.sim.population.props.is_alive.sum()
+            assert len(out) == self.sim.population.props.is_alive.sum()
             assert (~pd.isnull(out)).all()
-            assert ((out>=0) & (out<=1)).all()
-            assert self.sim.population.props.index.name==out.index.name
+            assert ((out >= 0) & (out <= 1)).all()
+            assert self.sim.population.props.index.name == out.index.name
             assert self.sim.population.props.is_alive[out.index].all()
 
             # Add to dataframe

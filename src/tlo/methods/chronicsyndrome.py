@@ -27,7 +27,6 @@ class ChronicSyndrome(Module):
     - Commissioning a healthsystem interaction by the 'disease' itself
     """
 
-
     PARAMETERS = {
         'p_acquisition': Parameter(
             Types.REAL,
@@ -50,7 +49,6 @@ class ChronicSyndrome(Module):
         'qalywt_ill': Parameter(
             Types.REAL, 'QALY weighting')
     }
-
 
     PROPERTIES = {
         'cs_has_cs': Property(
@@ -120,7 +118,8 @@ class ChronicSyndrome(Module):
 
         # randomly selected some individuals as infected
         num_alive = df.is_alive.sum()
-        df.loc[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p['initial_prevalence']
+        df.loc[df.is_alive, 'cs_has_cs'] = self.rng.random_sample(size=num_alive) < p[
+            'initial_prevalence']
         df.loc[df.cs_has_cs, 'cs_status'] = 'C'
 
         # Assign time of infections and dates of scheduled death for all those infected
@@ -224,7 +223,8 @@ class ChronicSyndrome(Module):
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        df.loc[df.is_alive, 'cs_unified_symptom_code'] = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
+        df.loc[df.is_alive, 'cs_unified_symptom_code'] = df.loc[
+            df.is_alive, 'cs_specific_symptoms'].map(
             {
                 'none': 0,
                 'extreme illness': 4
@@ -234,7 +234,7 @@ class ChronicSyndrome(Module):
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
-        if self.sim.population.props.at[person_id,'cs_status']=='C':
+        if self.sim.population.props.at[person_id, 'cs_status'] == 'C':
             # Query with health system whether this individual will get a desired treatment
             gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
                 person_id, self.TREATMENT_ID
@@ -244,8 +244,6 @@ class ChronicSyndrome(Module):
                 # # Commission treatment for this individual
                 event = ChronicSyndromeTreatmentEvent(self, person_id)
                 self.sim.schedule_event(event, self.sim.date)
-
-
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
@@ -311,7 +309,8 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                                       df.is_alive &
                                       (df.cs_specific_symptoms != 'extreme illness')]
 
-        become_severe = rng.random_sample(size=len(curr_cs_not_severe)) < p['prob_dev_severe_symptoms_per_year'] / 12
+        become_severe = rng.random_sample(size=len(curr_cs_not_severe)) < p[
+            'prob_dev_severe_symptoms_per_year'] / 12
         become_severe_idx = curr_cs_not_severe[become_severe]
         df.loc[become_severe_idx, 'cs_specific_symptoms'] = 'extreme illness'
 
@@ -322,7 +321,9 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
             seeks_emergency_care_idx = become_severe_idx[seeks_emergency_care]
 
             for person_index in seeks_emergency_care_idx:
-                event = HealthSystemInteractionEvent(self.module, person_index,cue_type='InitialDiseaseCall',disease_specific=self.module.name)
+                event = HealthSystemInteractionEvent(self.module, person_index,
+                                                     cue_type='InitialDiseaseCall',
+                                                     disease_specific=self.module.name)
                 self.sim.schedule_event(event, self.sim.date)
 
 
