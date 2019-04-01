@@ -719,13 +719,13 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_pneumonia.loc[pn_current_none_wealth4_idx] *= m.rr_pneumonia_wealth4
         eff_prob_ri_pneumonia.loc[pn_current_none_wealth5_idx] *= m.rr_pneumonia_wealth5
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
+        random_draw_01 = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
                                 index=df.index[
                                     (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'none')])
 
-        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_ri_pneumonia', 'random_draw']
-        idx_incident_pneumonia = dfx.index[dfx.eff_prob_ri_pneumonia > dfx.random_draw]
+        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_ri_pneumonia', 'random_draw_01']
+        idx_incident_pneumonia = dfx.index[dfx.eff_prob_ri_pneumonia > dfx.random_draw_01]
         df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
 
         eff_prob_ri_severe_pneumonia = pd.Series(m.base_incidence_severe_pneum,
@@ -745,13 +745,13 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth4_idx] *= m.rr_pneumonia_wealth4
         eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth5_idx] *= m.rr_pneumonia_wealth5
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
+        random_draw_02 = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
                                 index=df.index[
                                     (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'none')])
 
-        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_ri_severe_pneumonia', 'random_draw']
-        idx_incident_severe_pneumonia = dfx.index[dfx.eff_prob_ri_severe_pneumonia > dfx.random_draw]
+        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw_02], axis=1)
+        dfx.columns = ['eff_prob_ri_severe_pneumonia', 'random_draw_02']
+        idx_incident_severe_pneumonia = dfx.index[dfx.eff_prob_ri_severe_pneumonia > dfx.random_draw_02]
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
         # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
@@ -807,12 +807,12 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth5_idx] *= \
             m.rr_progress_severe_pneum_wealth5
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
+        random_draw_03 = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
                                                (df.ri_pneumonia_status == 'pneumonia')])
-        dfx = pd.concat([eff_prob_ri_severe_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_prog_severe_pneumonia', 'random_draw']
-        idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw]
+        dfx = pd.concat([eff_prob_ri_severe_pneumonia, random_draw_03], axis=1)
+        dfx.columns = ['eff_prob_prog_severe_pneumonia', 'random_draw_03']
+        idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw_03]
         df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
         # -------------------- UPDATING OF RI_PNEUMONIA_STATUS RECOVERY OVER TIME --------------------------------
@@ -833,12 +833,12 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_SAM_idx] *= \
             m.rr_recovery_pneumonia_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
+        random_draw_04 = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
                                                (df.ri_pneumonia_status == 'pneumonia')])
-        dfx = pd.concat([eff_prob_recovery_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_recovery_pneumonia', 'random_draw']
-        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_pneumonia > dfx.random_draw]
+        dfx = pd.concat([eff_prob_recovery_pneumonia, random_draw_04], axis=1)
+        dfx.columns = ['eff_prob_recovery_pneumonia', 'random_draw_04']
+        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_pneumonia > dfx.random_draw_04]
         df.loc[idx_recovery_pneumonia, 'ri_pneumonia_status'] = 'none'
 
         # recovery from severe pneumonia
@@ -875,12 +875,12 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_SAM_idx] *= \
             m.rr_recovery_severe_pneum_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
+        random_draw_05 = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
                                                (df.ri_pneumonia_status == 'severe pneumonia')])
-        dfx = pd.concat([eff_prob_recovery_severe_pneum, random_draw], axis=1)
-        dfx.columns = ['eff_prob_recovery_severe_pneum', 'random_draw']
-        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw]
+        dfx = pd.concat([eff_prob_recovery_severe_pneum, random_draw_05], axis=1)
+        dfx.columns = ['eff_prob_recovery_severe_pneum', 'random_draw_05']
+        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw_05]
         df.loc[idx_recovery_pneumonia, 'ri_pneumonia_status'] = 'none'
 
         # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
@@ -899,16 +899,21 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_death_pneumonia.loc[pn_current_severe_pneum_SAM_idx] *= \
             m.rr_death_pneumonia_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
+        random_draw_06 = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
                                                (df.ri_pneumonia_status == 'severe pneumonia')])
 
-        dfx = pd.concat([eff_prob_death_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_death_pneumonia', 'random_draw']
-        idx_incident_death = dfx.index[dfx.eff_prob_death_pneumonia > dfx.random_draw]
-        df.loc[idx_incident_death, 'ri_pneumonia_death'] = True
+        dfx = pd.concat([eff_prob_death_pneumonia, random_draw_06], axis=1)
+        dfx.columns = ['eff_prob_death_pneumonia', 'random_draw_06']
 
+        dfx['pneumonia_death'] = False
+        dfx.loc[dfx.eff_prob_death_pneumonia > dfx.random_draw_06, 'pneumonia_death'] = True
+        df.loc[pn_current_severe_pneumonia_idx, 'ri_pneumonia_death'] = dfx['pneumonia_death']
 
+        death_this_period = df.index[df.ri_pneumonia_death]
+        for individual_id in death_this_period:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodPneumonia'),
+                                    self.sim.date)
 
 class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
