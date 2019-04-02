@@ -6,11 +6,11 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly, hiv, hiv_hs, \
+from tlo.methods import demography, healthsystem, lifestyle, qaly, hiv, \
     male_circumcision, tb_hs_engagement, hiv_behaviour_change, tb
 
 # Where will output go
-outputpath = ''
+outputpath = './src/scripts/output logs/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -19,7 +19,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -28,14 +28,17 @@ sim = Simulation(start_date=start_date)
 # Establish the logger
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-# if os.path.exists(logfile):
-#     os.remove(logfile)
-# fh = logging.FileHandler(logfile)
-# fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-# fh.setFormatter(fr)
-# logging.getLogger().addHandler(fh)
+if os.path.exists(logfile):
+    os.remove(logfile)
+fh = logging.FileHandler(logfile)
+fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+fh.setFormatter(fr)
+logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -60,15 +63,12 @@ sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepa
 sim.register(hiv_behaviour_change.BehaviourChange())
 sim.register(tb_hs_engagement.health_system_tb())
 
-# sim.register(mockitis.Mockitis())
-# sim.register(chronicsyndrome.ChronicSyndrome())
-
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-# fh.flush()
+fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
