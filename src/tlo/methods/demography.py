@@ -15,7 +15,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -89,6 +89,7 @@ class Demography(Module):
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
+        'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
@@ -155,6 +156,8 @@ class Demography(Module):
         :param population: the population of individuals
         """
         df = population.props
+
+        df.date_of_death = pd.NaT
 
         worksheet = self.parameters['interpolated_pop']
 
@@ -309,7 +312,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+#       df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
 
@@ -471,6 +474,9 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
         self.cause = cause
 
+    def apply(self, person_id):
+        df = self.sim.population.props
+
     def apply(self, individual_id):
         df = self.sim.population.props
 
@@ -480,6 +486,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
             # the person is now dead
+            df.at[individual_id, 'date_of_death'] = self.sim.date
 
         logger.debug("*******************************************The person %s "
                      "is now officially dead and has died of %s", individual_id, self.cause)

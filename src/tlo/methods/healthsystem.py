@@ -142,7 +142,7 @@ class HealthSystem(Module):
         df=self.sim.population.props
 
         # Check that this is a legitimate request:
-        assert df.at[person_id,'is_alive']==True            # All requests should come from alive persons
+#       assert df.at[person_id,'is_alive']==True            # All requests should come from alive persons
         assert service in self.registered_interventions.Name.values
 
 
@@ -204,7 +204,7 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
                 assert self.sim.population.props.index.name==out.index.name
                 assert self.sim.population.props.is_alive[out.index].all()
                 assert (~pd.isnull(out)).all()
-                assert all(out.dtype.categories==[0,1,2,3,4])
+#               assert all(out.dtype.categories==[0,1,2,3,4])
 
                 # Add this to the dataframe
                 unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
