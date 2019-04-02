@@ -55,6 +55,9 @@ class tb_baseline(Module):
         'tb_date_death': Property(Types.DATE, 'Projected time of tb death if untreated'),
     }
 
+    TREATMENT_ID = 'tb_treatment'
+    TEST_ID = 'tb_test'
+
     def read_parameters(self, data_folder):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
