@@ -181,7 +181,7 @@ class HealthSystem(Module):
 
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
-def HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
+class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This event occurs every day, inspects the calls on the healthsystem and commissions event to occur that
     are consistent with the healthsystem's capabilities for the following day, given assumptions about how this

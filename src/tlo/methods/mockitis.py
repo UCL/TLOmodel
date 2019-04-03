@@ -381,12 +381,12 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
         df = self.sim.population.props  # shortcut to the dataframe
 
         if df.at[person_id,'age_years']>=15:
-            event = Mockitis_StartTreatment_TreatmentEvent(person_id=person_id)
+            event = Mockitis_StartTreatment_TreatmentEvent(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date,
                                                                    tclose=None)
         else:
-            date_turns_15=self.sim.date
-            event = Mockitis_PresentsForCareWithSevereSymptoms(person_id=person_id)
+            date_turns_15=self.sim.date + DateOffset(years=np.ceil(15-df.at[person_id,'age_exact_years']))
+            event = Mockitis_PresentsForCareWithSevereSymptoms(self.module,person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=date_turns_15,
                                                                    tclose=date_turns_15+DateOffset(months=12))
 
