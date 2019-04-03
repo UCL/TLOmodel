@@ -175,6 +175,7 @@ class hiv(Module):
     TREATMENT_ID = 'hiv_treatment'
     TEST_ID = 'hiv_test'
     PREVENTION_ID = 'hiv_infant_prophylaxis'
+    FOLLOWUP_ID = 'hiv_follow-up'
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -717,9 +718,17 @@ class hiv(Module):
             'Electricity': False,
             'Water': False})
 
+        footprint_for_followup = pd.DataFrame(index=np.arange(1), data={
+            'Name': hiv.FOLLOWUP_ID,
+            'Nurse_Time': 15,
+            'Doctor_Time': 10,
+            'Electricity': False,
+            'Water': False})
+
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_test)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_infant_prevention)
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_followup)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -906,13 +915,21 @@ class hiv(Module):
                 # no need to action anything here as no further risk of hiv to infant
                 # just need footprint of resources used
                 gets_prevention = self.sim.modules['HealthSystem'].query_access_to_service(
-                    person_id, self.sim.PREVENTION_ID)
+                    person_id, self.PREVENTION_ID)
 
     def on_followup_healthsystem_interaction(self, person_id):
-        # TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
-        # note from Wingston - malaria testing routinely offered at art appointments
         #     logger.debug('This is a follow-up appointment. Nothing to do')
-        pass
+
+        # on follow-up appointment offer viral load testing, repeat prescriptions, malaria testing
+
+        # flip a coin to request follow-up appt
+        request = self.rng.choice(['True', 'False'], p=[0.5, 0.5])
+
+        if request:
+            gets_fup = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.FOLLOWUP_ID
+            )
+
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
@@ -1128,7 +1145,6 @@ class HivTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
 
-        # assign ART
         if df.at[individual_id, 'is_alive'] and \
             df.at[individual_id, 'hiv_diagnosed'] and \
             (df.at[individual_id, 'age_years'] < 15):
