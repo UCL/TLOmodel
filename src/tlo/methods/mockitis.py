@@ -256,11 +256,11 @@ class Mockitis(Module):
             treatment_event = Mockitis_StartTreatment_TreatmentEvent(self, person_id)
 
             # Ask the health system to launch the treatment event: ** THIS IS THE BIG CHANGE:
-            self.sim.modules['HealthSystem'].request_service(
-                treatment_event=treatment_event,
-                priority=1,
-                topen=self.sim.date,
-                tclose=None
+            self.sim.modules['HealthSystem'].schedule_event(
+                                                            treatment_event=treatment_event,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None
             )
 
 
@@ -392,6 +392,9 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
 
 
 
+
+
+
 class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
     """
     ** TREATMENT INITIATION FOR THE MOCKITIS TREATMENT **
@@ -440,8 +443,12 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
 
         # Request the heathsystem to have this follow-up appointment
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-        self.sim.modules['HealthSystem'].request_service(
-            followup_appt, priority=2, topen=target_date_for_followup_appt, tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+        self.sim.modules['HealthSystem'].schedule_event(
+                                                        followup_appt,
+                                                        priority=2,
+                                                        topen=target_date_for_followup_appt,
+                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2)
+        )
 
 
 
