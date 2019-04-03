@@ -111,6 +111,9 @@ class Simulation:
         :param date: when the event should happen
         """
         assert date >= self.date, 'Cannot schedule events in the past'
+
+        assert not 'footprint' in dir(event), 'Events that impose a healthsystem resource use footprint must be handed to the healthsystem scheduler'
+
         self.event_queue.schedule(event, date)
 
     def fire_single_event(self, event, date):

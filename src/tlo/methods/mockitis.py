@@ -10,6 +10,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import healthsystem
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.healthsystem import HealthSystemInteractionEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -174,8 +175,8 @@ class Mockitis(Module):
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Schedule the outreach event...
-        event = MockitisOutreachEvent(self, 'this_module_only')
-        self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
+        # event = MockitisOutreachEvent(self, 'this_module_only')
+        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
 
     def on_birth(self, mother_id, child_id):
@@ -285,7 +286,7 @@ class Mockitis(Module):
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
-    # This event is occuring regularly at one monthly intervals
+    # This event is occurring regularly at one monthly intervals
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -331,6 +332,15 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                 death_event = MockitisDeathEvent(self, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
+            # Anyone with severe symptoms seeks care
+
+            serious_symptoms=(df['is_alive']) & ( (df['mi_specific_symptoms']=='extreme emergency') | (df['mi_specific_symptoms']=='coughing and irritiable') )
+            #TODO: Insert call to the healthseeking module
+
+            for person_index in df.loc[serious_symptoms].index:
+                event = Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date, tclose=self.sim.date+ DateOffset(weeks=2))
+
 
 class MockitisDeathEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
@@ -347,6 +357,40 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
 
 
+class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+    """
+    This is the first appointment that someone has when they present to the healthcare system with the severe
+    symptoms of Mockitis.
+    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = 'Mockitis_Treatment Initiation'
+
+        self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
+            'TREATMENT_ID': self.TREATMENT_ID,
+            'DiseaseModuleName': self.module.name,
+            'DiseaseModule': self.module,
+            'Nurse_Time': 5})
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        if df.at[person_id,'age_years']>=15:
+            event = Mockitis_StartTreatment_TreatmentEvent(person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date,
+                                                                   tclose=None)
+        else:
+            date_turns_15=self.sim.date
+            event = Mockitis_PresentsForCareWithSevereSymptoms(person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=date_turns_15,
+                                                                   tclose=date_turns_15+DateOffset(months=12))
+
+
 
 class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
     """
@@ -356,14 +400,13 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
     This is a type of event that can be passsed to  healthsystem.request_service()
     It must contain the resource use footprint.
 
-    # TODO: MAYBE SHOULD USE A TREATMENT TYPE TYPE MIXIN?
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the footprint for the intervention on the common resources
-        # Declaration of how we will refer to any treatments that are related to this disease.
+        # Healthsystem Resource Label:
+
         self.TREATMENT_ID = 'Mockitis_Treatment Initiation'
 
         self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
@@ -403,67 +446,67 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
 
 
 
-class Mockitis_FollowupAppt_TreatmentEvent(Event, IndividualScopeEventMixin):
-    """
+# class Mockitis_FollowupAppt_TreatmentEvent(Event, IndividualScopeEventMixin):
+#     """
+#
+#     ** A FOLLOWUP APPOINTMENT FOR THE MOCKITIS EVENT **
+#
+#     This is a treatment event in the new design of the healthsystem module
+#     This is a type of event that can be passsed to  healthsystem.request_service()
+#     It must contain the resource use footprint.
+#
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         # Define the footprint for the intervention on the common resources
+#         # Declaration of how we will refer to any treatments that are related to this disease.
+#         self.TREATMENT_ID = 'Mockitis_Treatment Followup Appt'
+#         self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
+#             'TREATMENT_ID': self.TREATMENT_ID,
+#             'DiseaseModuleName': self.module.name,
+#             'DiseaseModule': self.module,
+#             'Nurse_Time': 1})
+#
+#     def apply(self, person_id):
+#
+#         # There is a follow-up appoint happening now! :-)
+#
+#         # Run the HealthInteractionEvent to broadcast to all other disease module that there is an appointment happening:
+#
+#
+#         # Request the next one
+#
+#         # Create a follow-up appointment
+#         followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name, treatment_id=self.TREATMENT_ID)
+#
+#         # Request the heathsystem to have this follow-up appointment
+#         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+#         self.sim.modules['HealthSystem'].request_service(
+#             followup_appt, priority=2, topen=target_date_for_followup_appt, tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
-    ** A FOLLOWUP APPOINTMENT FOR THE MOCKITIS EVENT **
-
-    This is a treatment event in the new design of the healthsystem module
-    This is a type of event that can be passsed to  healthsystem.request_service()
-    It must contain the resource use footprint.
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Define the footprint for the intervention on the common resources
-        # Declaration of how we will refer to any treatments that are related to this disease.
-        self.TREATMENT_ID = 'Mockitis_Treatment Followup Appt'
-        self.FOOTPRINT = pd.DataFrame(index=np.arange(1), data={
-            'TREATMENT_ID': self.TREATMENT_ID,
-            'DiseaseModuleName': self.module.name,
-            'DiseaseModule': self.module,
-            'Nurse_Time': 1})
-
-    def apply(self, person_id):
-
-        # There is a follow-up appoint happening now! :-)
-
-        # Run the HealthInteractionEvent to broadcast to all other disease module that there is an appointment happening:
 
 
-        # Request the next one
-
-        # Create a follow-up appointment
-        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name, treatment_id=self.TREATMENT_ID)
-
-        # Request the heathsystem to have this follow-up appointment
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-        self.sim.modules['HealthSystem'].request_service(
-            followup_appt, priority=2, topen=target_date_for_followup_appt, tclose=target_date_for_followup_appt + DateOffset(weeks=2))
-
-
-
-class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
-    def __init__(self, module, outreach_type):
-        super().__init__(module)
-        self.outreach_type = outreach_type
-
-    def apply(self, population):
-
-        # As an example, this outreach screening intervention will only apply to women
-        df = population.props
-        mask_for_person_to_be_reached = (df.sex == 'F')
-
-        target = mask_for_person_to_be_reached.loc[df.is_alive]
-
-        # make and run the actual outreach event by the healthsystem
-        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
-
-        # submit to the health system schedule to determine if/when it shall occur
-        self.sim.modules['HealthSystem'].request_service(
-            outreachevent, priority=2, topen=self.sim.date, tclose=self.sim.date+DateOffset(days=1))
+# class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
+#     def __init__(self, module, outreach_type):
+#         super().__init__(module)
+#         self.outreach_type = outreach_type
+#
+#     def apply(self, population):
+#
+#         # As an example, this outreach screening intervention will only apply to women
+#         df = population.props
+#         mask_for_person_to_be_reached = (df.sex == 'F')
+#
+#         target = mask_for_person_to_be_reached.loc[df.is_alive]
+#
+#         # make and run the actual outreach event by the healthsystem
+#         outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
+#
+#         # submit to the health system schedule to determine if/when it shall occur
+#         self.sim.modules['HealthSystem'].request_service(
+#             outreachevent, priority=2, topen=self.sim.date, tclose=self.sim.date+DateOffset(days=1))
 
 
 
