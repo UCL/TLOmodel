@@ -10,6 +10,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 from tlo.methods import demography, healthsystem
+from tlo.methods.healthsystem import HealthSystemInteractionEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -157,7 +158,6 @@ class hiv(Module):
         'hiv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
                                              categories=[0, 1, 2, 3, 4]),
 
-        # TODO: assign these hs properties in initialise population and on_birth
         'hiv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
         'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
         'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
@@ -171,11 +171,10 @@ class hiv(Module):
 
     }
 
-    # TODO: cotrimoxazole will be included in the footprint on_birth
-    # TODO: specify an on_birth package of care that varies by infant HIV status and create footprint
     # TREATMENT_ID will become a list for each treatment package available with a separate footprint
     TREATMENT_ID = 'hiv_treatment'
     TEST_ID = 'hiv_test'
+    PREVENTION_ID = 'hiv_infant_prophylaxis'
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -279,7 +278,6 @@ class hiv(Module):
         params['hiv_prev'] = workbook['prevalence']  # for child prevalence
 
         # QALY weights
-        # TODO: update QALY weights
         params['qalywt_early'] = self.sim.modules['QALY'].get_qaly_weight(22)  # Early HIV without anemia
         params['qalywt_chronic'] = self.sim.modules['QALY'].get_qaly_weight(17)  # Symptomatic HIV without anemia
         params['qalywt_aids'] = self.sim.modules['QALY'].get_qaly_weight(
@@ -496,7 +494,7 @@ class hiv(Module):
         params = self.parameters
 
         # adults are all those aged >=15
-        # TODO: children hiv+ aged >3 have survival draws from adult weibull distr otherwise death date pre-2010
+        # children hiv+ aged >3 have survival draws from adult weibull distr otherwise death date pre-2010
         hiv_ad = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 3)]
 
         time_of_death = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(hiv_ad)) * \
@@ -686,6 +684,7 @@ class hiv(Module):
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(SymptomUpdateEventAdult(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(SymptomUpdateEventInfant(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
@@ -699,12 +698,10 @@ class hiv(Module):
         # and define the footprint that each intervention has on the common resources
         footprint_for_test = pd.DataFrame(index=np.arange(1), data={
             'Name': hiv.TEST_ID,
-            'Nurse_Time': 5,
-            'Doctor_Time': 10,
+            'Nurse_Time': 10,
+            'Doctor_Time': 5,
             'Electricity': False,
             'Water': False})
-
-        self.sim.modules['HealthSystem'].register_interventions(footprint_for_test)
 
         footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
             'Name': hiv.TREATMENT_ID,
@@ -713,7 +710,16 @@ class hiv(Module):
             'Electricity': False,
             'Water': False})
 
+        footprint_for_infant_prevention = pd.DataFrame(index=np.arange(1), data={
+            'Name': hiv.PREVENTION_ID,
+            'Nurse_Time': 15,
+            'Doctor_Time': 10,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_test)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_infant_prevention)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
@@ -793,7 +799,7 @@ class hiv(Module):
             and (df.at[child_id, 'hiv_mother_art'] == '2'):
             df.at[child_id, 'hiv_inf'] = True
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ASSIGN DEATHS + FAST/SLOW PROGRESSOR~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ASSIGN DEATHS + FAST/SLOW PROGRESSOR ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'hiv_inf']:
             df.at[child_id, 'hiv_date_inf'] = self.sim.date
@@ -826,6 +832,12 @@ class hiv(Module):
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
+            # schedule the testing event 4 weeks after birth
+            if df.at[mother_id, 'hiv_inf']:
+                event = HealthSystemInteractionEvent(self.module, child_id, cue_type='InitialDiseaseCall',
+                                                     disease_specific=self.module.name)
+                self.sim.schedule_event(event, self.sim.date + pd.to_timedelta(28, unit='d'))
+
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
@@ -852,7 +864,13 @@ class hiv(Module):
 
         gets_test = False  # default value
 
-        # hiv outreach event -> test, could add probability of testing here before query
+        # this is for infants, if they don't get tested at this point, should reschedule further attempts
+        if cue_type == 'InitialDiseaseCall' and disease_specific == 'hiv':
+            gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.TEST_ID
+            )
+
+        # hiv outreach event -> test, could add probability of requesting testing here before query
         if cue_type == 'OutreachEvent' and disease_specific == 'hiv':
             # everyone gets a test, this will always return true
             gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
@@ -883,6 +901,13 @@ class hiv(Module):
                     event = HivTreatmentEvent(self, person_id)
                     self.sim.schedule_event(event, self.sim.date)  # can add in delay before treatment here
 
+            elif df.at[person_id, 'age_exact_years'] < 1.5:
+                # offer preventive package for infants, cotrim from 4-6 weeks until cessation of breastfeeding
+                # no need to action anything here as no further risk of hiv to infant
+                # just need footprint of resources used
+                gets_prevention = self.sim.modules['HealthSystem'].query_access_to_service(
+                    person_id, self.sim.PREVENTION_ID)
+
     def on_followup_healthsystem_interaction(self, person_id):
         # TODO: the scheduled follow-up appointments, VL testing, repeat prescriptions etc.
         # note from Wingston - malaria testing routinely offered at art appointments
@@ -896,9 +921,7 @@ class hiv(Module):
         logger.debug('This is hiv reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-
         params = self.parameters
-        # TODO: this should be linked to time infected
 
         health_values = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
             'none': 0,
@@ -948,8 +971,6 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_infected_index, 'hiv_date_inf'] = now
         df.loc[newly_infected_index, 'hiv_specific_symptoms'] = 'early'  # all start at early
         df.loc[newly_infected_index, 'hiv_unified_symptom_code'] = 0
-
-        # TODO: if currently breastfeeding mother, further risk to infant
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ TIME OF DEATH ~~~~~~~~~~~~~~~~~~~~~~~~~~
         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
@@ -1090,9 +1111,9 @@ class HivOutreachEvent(RegularEvent, PopulationScopeEventMixin):
         target = mask_for_person_to_be_reached.loc[df.is_alive]
 
         # make and run the actual outreach event by the health system
-        outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name, target=target)
+        outreach_event = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name, target=target)
 
-        self.sim.schedule_event(outreachevent, self.sim.date)
+        self.sim.schedule_event(outreach_event, self.sim.date)
 
 
 class HivTreatmentEvent(Event, IndividualScopeEventMixin):
@@ -1130,6 +1151,14 @@ class HivTreatmentEvent(Event, IndividualScopeEventMixin):
                                                                         p=[(1 - params['vls_f']), params['vls_f']])
 
         df.at[individual_id, 'hiv_date_art_start'] = self.sim.date
+
+        # schedule a series of follow-up appointments at scheduled intervals for 50 yrs
+        times = params['VL_monitoring_times']
+        followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, individual_id, cue_type='FollowUp',
+                                                                  disease_specific=self.module.name)
+
+        for i in range(0, len(times)):
+            self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=times.time_months[i]))
 
 
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
