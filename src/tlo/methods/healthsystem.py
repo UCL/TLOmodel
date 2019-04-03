@@ -234,7 +234,7 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 class OutreachEvent(Event, PopulationScopeEventMixin):
     """
     This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
-    It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
+    It commissions new interactions with the Health System for those persons reach. It receives an argument 'target'
     which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
     reached in the outreach intervention. It does not automatically reschedule. The disease_specific argument determines
     the type of interaction that is triggered: if disease_specific = None, thee resulting HealthSystemInteractionEvents
