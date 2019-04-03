@@ -107,7 +107,7 @@ class HealthSystem(Module):
             assert len(my_health_facilities)>0
 
         # Launch the healthsystem_scheduler regular event
-        sim.schedule_event(HealthSystemScheduler(self),self.sim.date)
+        sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
@@ -137,7 +137,7 @@ class HealthSystem(Module):
         logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
 
 
-    def request_service(self, treatment_event,priority,topen,tclose):
+    def schedule_event(self, treatment_event,priority,topen,tclose):
 
         logger.info('Logging a request for a treatment: %s', treatment_event.TREATMENT_ID)
 
@@ -151,7 +151,6 @@ class HealthSystem(Module):
 
         # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
 
-
         new_request=pd.DataFrame({
             'treatment_event':[treatment_event],
             'priority': [priority],
@@ -162,9 +161,27 @@ class HealthSystem(Module):
         self.HEALTH_SYSTEM_CALLS=self.HEALTH_SYSTEM_CALLS.append(new_request,ignore_index=True)
 
 
+    def broadcast_healthsystem_interaction(self, person_id,cue_type=None,disease_specific=None):
+
+        df = self.sim.population.props
+
+        if df.at[person_id, 'is_alive']:
+
+            # For each disease module, trigger the on_healthsystem_interaction() event
+
+            registered_disease_modules = self.sim.modules['HealthSystem'].registered_disease_modules
+
+            for module in registered_disease_modules.values():
+                module.on_healthsystem_interaction(person_id,
+                                                         cue_type=self.cue_type,
+                                                         disease_specific=self.disease_specific)
+
+
+
+
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
-class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
+def HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
     This event occurs every day, inspects the calls on the healthsystem and commissions event to occur that
     are consistent with the healthsystem's capabilities for the following day, given assumptions about how this
@@ -172,7 +189,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
     """
 
-    #TODO: Ensure that this event occurs first each day (at sim.schedule)
+    #TODO: Copy any clver priority queue stuff that is happening in the main scheduler
+
 
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
@@ -195,16 +213,22 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         if len(due_events_idx)>0:
 
-            for e in  due_events_idx:
+            for e in due_events_idx:
 
-                # schedule the event
-                self.sim.schedule_event(hsc.iloc[e].treatment_event,self.sim.date)
+                # fire the event
+                hsc.at[e,'treatment_event'].run()
+
+                # broadcast to other disease modules that this event is occuring
+                self.module.broadcast_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None)
 
                 # update status of this heath resource call
                 hsc.at[e,'status']='Done'
 
                 # record the use of the health system resources
-                # TODO: record this use
+
+
+
+
 
 
 
@@ -278,7 +302,8 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
             # *************************************************************************
             # The "general health care seeking equation" ***
-            prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
+            # prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
+            prob_seek_care = 0.0 # REMOVE THE CHANCE OF THE POLL HAPPENING
             # *************************************************************************
 
             # Determine if there will be health-care contact and schedule FirstAppt if so
@@ -294,6 +319,12 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
                     tclose=None)
 
         # ----------
+
+
+
+
+
+
 
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
@@ -350,7 +381,6 @@ class OutreachEvent(Event, PopulationScopeEventMixin):
                     {
                         'disease_specific': self.disease_specific
                     })
-
 
 
 
