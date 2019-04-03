@@ -129,6 +129,14 @@ class hiv(Module):
         'treatment_increase2016': Parameter(Types.REAL,
                                             'increase in treatment rates with eligibility guideline changes'),
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
+        'annual_rate_symptomatic_adult': Parameter(Types.REAL, 'annual hazard of adults becoming symptomatic'),
+        'annual_rate_aids_adult': Parameter(Types.REAL, 'annual hazard of adults developing aids'),
+        'monthly_rate_symptomatic_infant': Parameter(Types.REAL, 'mean time for infants becoming symptomatic'),
+        'monthly_rate_aids_infant_fast': Parameter(Types.REAL,
+                                                   'monthly rate of infants developing aids - fast progressors'),
+        'monthly_rate_aids_infant_slow': Parameter(Types.REAL,
+                                                   'monthly rate of infants developing aids - slow progressors'),
+
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -159,7 +167,7 @@ class hiv(Module):
         'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
         'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
         'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
-        'hiv_fast_progr': Property(Types.BOOL, 'infant classified as fast progressor')
+        'hiv_fast_progressor': Property(Types.BOOL, 'infant classified as fast progressor')
 
     }
 
@@ -293,6 +301,12 @@ class hiv(Module):
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
         params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
+        params['annual_rate_symptomatic_adult'] = self.param_list.loc['annual_rate_symptomatic_adult', 'Value1']
+        params['annual_rate_aids_adult'] = self.param_list.loc['annual_rate_aids_adult', 'Value1']
+        params['monthly_rate_symptomatic_infant'] = self.param_list.loc['monthly_rate_symptomatic_infant', 'Value1']
+        params['monthly_rate_aids_infant_fast'] = self.param_list.loc['monthly_rate_aids_infant_fast', 'Value1']
+        params['monthly_rate_aids_infant_slow'] = self.param_list.loc['monthly_rate_aids_infant_slow', 'Value1']
+
         self.parameters['initial_art_coverage'] = workbook['coverage']
 
         self.parameters['VL_monitoring_times'] = workbook['VL_monitoring']
@@ -321,7 +335,7 @@ class hiv(Module):
         df['hiv_viral_load_test'] = pd.NaT
         df['hiv_on_cotrim'] = False
         df['hiv_date_cotrim'] = pd.NaT
-        df['hiv_fast_progr'] = False
+        df['hiv_fast_progressor'] = False
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -429,6 +443,7 @@ class hiv(Module):
 
         df.loc[hiv_index, 'hiv_inf'] = True
         df.loc[hiv_index, 'hiv_date_inf'] = df.loc[hiv_index, 'date_of_birth']
+        df.loc[hiv_index, 'hiv_fast_progressor'] = False
 
     def initial_pop_deaths_children(self, population):
         """ assign death dates to baseline hiv-infected population - INFANTS
@@ -526,6 +541,7 @@ class hiv(Module):
 
         # baseline pop - adults
         adults = df[df.is_alive & df.hiv_inf & (df.age_years >= 15)].index
+        df.loc[adults, 'hiv_specific_symptoms'] = 'early'
 
         # if <2 years from scheduled death = aids
         time_death = (df.loc[adults, 'hiv_date_death'] - now).dt.days  # returns days
@@ -547,12 +563,13 @@ class hiv(Module):
         aids = self.rng.choice(keep, size=int(0.5 * (len(keep))), replace=False)
         df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
 
-        print(symp)
+        # print(symp)
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ CHILD SYMPTOMS ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # baseline pop - infants, all assumed slow progressors
         infants = df[df.is_alive & df.hiv_inf & (df.age_years < 15)].index
+        df.loc[infants, 'hiv_specific_symptoms'] = 'early'
 
         # if <1 years from scheduled death = aids
         time_death = (df.loc[infants, 'hiv_date_death'] - now).dt.days  # returns days
@@ -574,7 +591,7 @@ class hiv(Module):
         aids = self.rng.choice(keep, size=int(0.5 * (len(keep))), replace=False)
         df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
 
-        print(aids)
+        # print(aids)
 
     def baseline_tested(self, population):
         """ assign initial art coverage levels
@@ -668,7 +685,7 @@ class hiv(Module):
         """
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(SymptomUpdateEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(SymptomUpdateEventAdult(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
@@ -712,6 +729,7 @@ class hiv(Module):
         df.at[child_id, 'hiv_sexual_risk'] = 'low'
         df.at[child_id, 'hiv_specific_symptoms'] = 'none'
         df.at[child_id, 'hiv_unified_symptom_code'] = 0
+        df.at[child_id, 'hiv_fast_progressor'] = False
 
         df.at[child_id, 'hiv_ever_tested'] = False
         df.at[child_id, 'hiv_date_tested'] = pd.NaT
@@ -784,25 +802,24 @@ class hiv(Module):
             progr = self.rng.choice(['FAST', 'SLOW'], size=1, p=[params['prob_infant_fast_progressor'][0],
                                                                  params['prob_infant_fast_progressor'][1]])
 
-            # then draw death date and assign
+            # then draw death date and assign fast/slow progressor
             if progr == 'SLOW':
                 # draw from weibull
                 time_death = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                               size=1) * params[
                                  'weibull_scale_mort_infant_slow_progressor']
+                df.at[child_id, 'hiv_specific_symptoms'] = 'early'
+
 
             else:
                 # draw from exp, returns an array not a single value!!
                 time_death = self.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
                                                   size=1)
                 df.at[child_id, 'hiv_fast_progressor'] = True
+                df.at[child_id, 'hiv_specific_symptoms'] = 'symptomatic'
 
             time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
             df.at[child_id, 'hiv_date_death'] = now + time_death
-
-            # Level of symptoms
-            df.at[child_id, 'hiv_specific_symptoms'] = 'early'
-            df.at[child_id, 'mi_unified_symptom_code'] = 1
 
             # schedule the death event
             death = HivDeathEvent(self, individual_id=child_id, cause='hiv')  # make that death event
@@ -955,10 +972,32 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(death, time_death)  # schedule the death
 
 
-# TODO: add symptom update monthly
-# TODO: could be annual for adults
-class SymptomUpdateEvent(RegularEvent, PopulationScopeEventMixin):
-    """ update the status of symptoms for infected people
+class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
+    """ update the status of symptoms for infected adults
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
+
+        # hazard of moving from early to symptomatic
+        symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+            'annual_rate_symptomatic_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
+                            df.hiv_specific_symptoms == 'early')]
+        df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
+
+        # hazard of moving to aids (from early or symptomatic)
+        aids = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+            'annual_rate_aids_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
+                            df.hiv_specific_symptoms != 'aids')]
+        df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
+
+
+class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
+    """ update the status of symptoms for infected children
     """
 
     def __init__(self, module):
@@ -968,13 +1007,22 @@ class SymptomUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # apply prob of symptoms to infants, slow only
+        # hazard of moving from early to symptomatic,  apply to slow progressing infants only
+        symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+            'monthly_rate_symptomatic_infant']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+                            df.hiv_specific_symptoms == 'early')]
+        df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
 
         # apply prob of aids to infants, fast and slow
+        aids_fast = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+            'monthly_rate_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+                                 df.hiv_specific_symptoms != 'aids') & df.hiv_fast_progressor]
+        df.loc[aids_fast, 'hiv_specific_symptoms'] = 'aids'
 
-        # apply prob of symptoms to adults
-
-        # apply prob of aids to adults
+        aids_slow = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+            'monthly_rate_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+                                 df.hiv_specific_symptoms != 'aids') & ~df.hiv_fast_progressor]
+        df.loc[aids_slow, 'hiv_specific_symptoms'] = 'aids'
 
 
 class FswEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1007,7 +1055,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
 
         if prop < params['proportion_female_sex_workers']:
             # number new fsw needed
-            recruit = round((params['proportion_female_sex_workers'] - prop) * eligible)
+            recruit = int((params['proportion_female_sex_workers'] - prop) * eligible)
             fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
                 n=recruit).index
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
