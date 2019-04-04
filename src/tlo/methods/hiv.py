@@ -10,7 +10,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 from tlo.methods import demography, healthsystem
-from tlo.methods.healthsystem import HealthSystemInteractionEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -686,6 +685,7 @@ class hiv(Module):
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(SymptomUpdateEventAdult(self), sim.date + DateOffset(months=12))
         sim.schedule_event(SymptomUpdateEventInfant(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(HivOutreachEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
@@ -843,18 +843,21 @@ class hiv(Module):
 
             # schedule the testing event 4 weeks after birth
             if df.at[mother_id, 'hiv_inf']:
-                event = HealthSystemInteractionEvent(self.module, child_id, cue_type='InitialDiseaseCall',
-                                                     disease_specific=self.module.name)
+                event = healthsystem.HealthSystemInteractionEvent(module=self, person_id=child_id,
+                                                                  cue_type='InitialDiseaseCall',
+                                                                  disease_specific=self.name)
+
                 self.sim.schedule_event(event, self.sim.date + pd.to_timedelta(28, unit='d'))
 
     def query_symptoms_now(self):
-        # This is called by the health-care seeking module
-        # All modules refresh the symptomology of persons at this time
-        # And report it on the unified symptomology scale
+        """This is called by the health-care seeking module
+        All modules refresh the symptomology of persons at this time
+        And report it on the unified symptomology scale """
+
         logger.debug("This is hiv, being asked to report unified symptomology")
 
         # Map the specific symptoms for this disease onto the unified coding scheme
-        df = self.sim.population.props  # shortcut to population properties dataframe
+        df = self.sim.population.props
 
         df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
             'none': 0,
@@ -939,7 +942,6 @@ class hiv(Module):
             gets_fup = self.sim.modules['HealthSystem'].query_access_to_service(
                 person_id, self.FOLLOWUP_ID
             )
-
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
@@ -1119,7 +1121,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
 
 # ---------------------------------------------------------------------------
 #   Scheduling deaths
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 class HivDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -1140,7 +1142,7 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
 
 # ---------------------------------------------------------------------------
 #   Health system interactions
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 class HivOutreachEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1205,7 +1207,7 @@ class HivTreatmentEvent(Event, IndividualScopeEventMixin):
 
 # ---------------------------------------------------------------------------
 #   Logging
-#---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
 
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
