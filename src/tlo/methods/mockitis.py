@@ -384,7 +384,7 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
             'TREATMENT_ID': self.TREATMENT_ID,
             'DiseaseModuleName': self.module.name,
             'DiseaseModule': self.module,
-            'Generic_Appt': 5})
+            'Generic_Appt': 1})
 
     def apply(self, person_id):
 

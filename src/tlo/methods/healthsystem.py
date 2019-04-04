@@ -270,22 +270,30 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 the_village=df.at[the_person_id,'village_of_residence']
                 the_health_facilities = mapping.loc[mapping['Village'] == the_village]
 
-                # NB. Lines below pool all types of capability across all facilities for
+
+                # NB. Lines below look for that set of capabilities at any type of facility
                 capabilities_by_facility=Capabilities.loc[the_health_facilities['Facility_ID']]
-                capabilities_current_total=capabilities_by_facility.sum()
 
                 the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
 
+                # Test if there is a facility in the set which can meet this.
+                sufficent_capability_by_facility=capabilities_by_facility['Generic_Appt'] >= the_treatment_footprint['Generic_Appt'].values[0]
+
                 # loop through each of the appointment types
-                if capabilities_current_total['Generic_Appt'] >= the_treatment_footprint['Generic_Appt']:
+                if any(sufficent_capability_by_facility):
 
                     # THE INTERVENTION HAPPENS ***
 
+                    # Work out lowest-level at which the appointment can happen and allocate it there.
+                    # For now just stick it in whichever one comes first
+
+                    chosen_facility_id=the_health_facilities.at[the_health_facilities.index[0],'Facility_ID']
 
                     # THE FOOTPRINT IS IMPOSED ***
+                    capabilities_by_facility.at[chosen_facility_id,'Generic_Appt']=capabilities_by_facility.at[chosen_facility_id,'Generic_Appt'] -  the_treatment_footprint['Generic_Appt']
 
 
-                    pass
+
 
 
 
