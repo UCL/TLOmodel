@@ -41,7 +41,7 @@ def simulation():
     core_module = demography.Demography(workbook_path=path_dem)
     lifestyle_module = lifestyle.Lifestyle()
     hiv_module = hiv.hiv(resourcefilepath=resourceFile, par_est=params[0])
-    tb_module = tb.tb_baseline(resourcefilepath=resourceFile)
+    tb_module = tb.tb(resourcefilepath=resourceFile)
 
     hs_module = hiv_hs.health_system(resourcefilepath=resourceFile, par_est1=params[1], par_est2=params[2],
                                      par_est3=params[3], par_est4=params[4])

@@ -58,7 +58,7 @@ sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0], par_est1=params[1], par_est2=params[2],
                      par_est3=params[3], par_est4=params[4]))
-sim.register(tb.tb_baseline(resourcefilepath=resourcefilepath))
+sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[5]))
 sim.register(hiv_behaviour_change.BehaviourChange())
 sim.register(tb_hs_engagement.health_system_tb())
