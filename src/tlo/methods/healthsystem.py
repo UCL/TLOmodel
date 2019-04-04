@@ -178,7 +178,23 @@ class HealthSystem(Module):
 
     def GetCapabilities(self):
 
-        capabilities= pd.DataFrame
+        """
+        This will return a dataframe of the capabilities that the healthsystem has for today.
+        It return a dataframe with index set to the same as the MasterFacilitiesList
+        """
+
+        fac = self.parameters['Master_Facility_List']
+
+        capabilities= pd.DataFrame(index=fac.index, columns={'Generic_Appt','Special_Appt'})
+
+        # say that each facility can give 2 generic appointments per day (TO BE FILLED IN WITH CHAI DATA AND RATIO
+        capabilities['Generic_Appt'] = 2
+
+        # say that each hospitals can give 1 special appointment per day
+        capabilities['Special_Appt'] = 0
+        capabilities.loc[fac['Facility Type']=='District Hospital','Special_Appt'] =1
+        capabilities.loc[fac['Facility Type']=='Hospital','Special_Appt'] =1
+        capabilities.loc[fac['Facility Type']=='Referral Hospital','Special_Appt'] =1
 
         return(capabilities)
 
@@ -248,13 +264,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
 
+        # Call out to a function to generate the current Capabilities:
+        capabilities=self.module.GetCapabilities()
+
+        # gather other data:
         fac=self.module.parameters['Master_Facility_List']
         mapping = self.module.parameters['Village_To_Facility_Mapping']
 
 
-
-        # Call out to a function to generate the current Capabilities
-        capabilities=self.module.GetCapabilities()
 
 
         if len(due_events.index) > 0:
