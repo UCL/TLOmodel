@@ -246,22 +246,22 @@ class Mockitis(Module):
         return df.loc[df.is_alive, 'mi_unified_symptom_code']
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-        logger.debug('This is mockitis, being alerted about a health system interaction '
-                     'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+        logger.debug('This is Mockitis, being alerted about a health system interaction '
+                     'person %d triggered by cue_type: %s , disease_specific: %s', person_id, cue_type, disease_specific)
 
 
-        if self.sim.population.props.at[person_id,'mi_status']=='C':
-
-            # Make the treatment event that we want to deploy:
-            treatment_event = Mockitis_StartTreatment_TreatmentEvent(self, person_id)
-
-            # Ask the health system to launch the treatment event: ** THIS IS THE BIG CHANGE:
-            self.sim.modules['HealthSystem'].schedule_event(
-                                                            treatment_event=treatment_event,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None
-            )
+        # if self.sim.population.props.at[person_id,'mi_status']=='C':
+        #
+        #     # Make the treatment event that we want to deploy:
+        #     treatment_event = Mockitis_StartTreatment_TreatmentEvent(self, person_id)
+        #
+        #     # Ask the health system to launch the treatment event: ** THIS IS THE BIG CHANGE:
+        #     self.sim.modules['HealthSystem'].schedule_event(
+        #                                                     treatment_event=treatment_event,
+        #                                                     priority=1,
+        #                                                     topen=self.sim.date,
+        #                                                     tclose=None
+        #     )
 
 
 
@@ -269,7 +269,7 @@ class Mockitis(Module):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        logger.debug('This is mockitis reporting my health values')
+        # logger.debug('This is mockitis reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -292,6 +292,9 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
+
+        logger.debug('This is MockitisEvent, tracking the disease progression of the population.')
+
         df = population.props
 
         # 1. get (and hold) index of currently infected and uninfected individuals
@@ -337,9 +340,15 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             serious_symptoms=(df['is_alive']) & ( (df['mi_specific_symptoms']=='extreme emergency') | (df['mi_specific_symptoms']=='coughing and irritiable') )
             #TODO: Insert call to the healthseeking module
 
-            for person_index in df.loc[serious_symptoms].index:
-                event = Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date, tclose=self.sim.date+ DateOffset(weeks=2))
+            if len(df.loc[serious_symptoms].index > 0):
+                for person_index in df.loc[serious_symptoms].index :
+                    logger.debug('This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d', person_index)
+                    event = Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+                    self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date, tclose=self.sim.date+ DateOffset(weeks=2))
+            else:
+                logger.debug('This is MockitisEvent, There is  no one with new severe symptoms so no new healthcare seeking')
+        else:
+            logger.debug('This is MockitisEvent, no one is newly infected.')
 
 
 class MockitisDeathEvent(Event, IndividualScopeEventMixin):
@@ -375,16 +384,26 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
             'TREATMENT_ID': self.TREATMENT_ID,
             'DiseaseModuleName': self.module.name,
             'DiseaseModule': self.module,
-            'Nurse_Time': 5})
+            'Generic_Appt': 5})
 
     def apply(self, person_id):
+
+        logger.debug('This is Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',person_id)
+
         df = self.sim.population.props  # shortcut to the dataframe
 
         if df.at[person_id,'age_years']>=15:
+            logger.debug('...This is Mockitis_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
+                         person_id)
             event = Mockitis_StartTreatment_TreatmentEvent(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=self.sim.date,
                                                                    tclose=None)
+
+
         else:
+            logger.debug('...This is Mockitis_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
+                         person_id)
+
             date_turns_15=self.sim.date + DateOffset(years=np.ceil(15-df.at[person_id,'age_exact_years']))
             event = Mockitis_PresentsForCareWithSevereSymptoms(self.module,person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event, priority=2, topen=date_turns_15,
@@ -416,12 +435,11 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
             'TREATMENT_ID': self.TREATMENT_ID,
             'DiseaseModuleName': self.module.name,
             'DiseaseModule': self.module,
-            'Nurse_Time': 5})
+            'Generic_Appt': 1})
 
 
     def apply(self, person_id):
-        logger.debug("We are now starting to treat this person %s", person_id)
-
+        logger.debug('This is Mockitis_StartTreatment: initiating treatent for person %d',person_id)
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
@@ -439,10 +457,13 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
 
 
         # Create a follow-up appointment
+        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+
+        logger.debug('....This is Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',person_id, target_date_for_followup_appt)
+
         followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp', disease_specific=self.module.name)
 
         # Request the heathsystem to have this follow-up appointment
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
         self.sim.modules['HealthSystem'].schedule_event(
                                                         followup_appt,
                                                         priority=2,

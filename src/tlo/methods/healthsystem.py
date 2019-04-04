@@ -49,7 +49,8 @@ class HealthSystem(Module):
         self.health_system_resources = None
 
         self.HEALTH_SYSTEM_CALLS = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
-        # TODO: Q. What is ideal data object HEALTH_SYSTEM_CALLS? (Priority queue?)
+        self.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
+
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
@@ -137,12 +138,12 @@ class HealthSystem(Module):
 
     def schedule_event(self, treatment_event, priority, topen, tclose):
 
-        logger.info('Logging a request for a treatment: %s', treatment_event.TREATMENT_ID)
+        logger.info('HealthSystem.schedule_event>>Logging a request for a treatment_event: %s for person: %d', treatment_event.__class__, treatment_event.target)
 
         # get population dataframe
         df = self.sim.population.props
 
-        # Check that this is a legitimate request for a treatment:
+        # Check that this is a legitimate request for a treatment using asserts for the definitions
 
         # Check that this request is allowable under current policy
 
@@ -155,7 +156,8 @@ class HealthSystem(Module):
             'tclose': [tclose],
             'status': 'Called'})
 
-        self.HEALTH_SYSTEM_CALLS = self.HEALTH_SYSTEM_CALLS.append(new_request, ignore_index=True)
+
+        self.new_health_system_calls= self.new_health_system_calls.append(new_request, ignore_index=True)
 
 
     def broadcast_healthsystem_interaction(self,person_id,cue_type=None,disease_specific=None):
@@ -184,43 +186,134 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
     """
 
-    # TODO: Copy any clver priority queue stuff that is happening in the main scheduler
-
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
 
     def apply(self, population):
 
-        logger.debug('I am the health system scheduler. I will now determine what calls on resource will be met today: %s', self.sim.date)
+        df=self.sim.population.props
+
+        logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s', self.sim.date)
+
+        # Add the new calls to the total set of calls
+        self.module.HEALTH_SYSTEM_CALLS= self.module.HEALTH_SYSTEM_CALLS.append(self.module.new_health_system_calls, ignore_index=True)
+
+        # Empty the new calls buffer
+        self.module.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
+
 
         hsc = self.module.HEALTH_SYSTEM_CALLS
 
+        # Replace null values for tclose with a date past the end of the simulation
+        hsc.loc[pd.isnull(hsc['tclose']),'tclose']=self.sim.date+DateOffset(days=1)
+
         # Flag events that are closed (i.e. the latest date for which they are relevant has passed).
-        hsc.loc[(self.sim.date > hsc['tclose']) & (hsc['status'] != 'Done'), 'status'] = 'Closed_NotDone'
+        hsc.loc[(self.sim.date > hsc['tclose']) & (hsc['status'] != 'Done'), 'status'] = 'Closed'
 
-        # Isolate which events are due (i.e. are opened but not have yet been run.)
-        hsc.loc[self.sim.date >= hsc['topen'], 'status'] = 'Due'
+        # Flag events that are not yet due
+        hsc.loc[(self.sim.date < hsc['topen']) & (hsc['status'] != 'Done'), 'status'] = 'Not Due'
 
-        due_events_idx = hsc.loc[hsc['status'] == 'Due'].index
+        # Isolate which events are due (i.e. are opened, due and not have yet been run.)
+        hsc.loc[ (self.sim.date >= hsc['topen']) & ( (self.sim.date <= hsc['tclose']) |  (hsc['tclose']==None)) & (hsc['status']!='Done'), 'status'] = 'Due'
+
+        due_events = hsc.loc[hsc['status'] == 'Due']
+
+        logger.debug('----------------------------------------------------------------------')
+        logger.debug("This is the entire HealthSystemCalls DataFrame:")
+        print_table = hsc.to_string().splitlines()
+        for line in print_table:
+            logger.debug(line)
+        logger.debug('----------------------------------------------------------------------')
+
+
+        logger.debug('----------------------------------------------------------------------')
+        logger.debug("***These are the due events ***:")
+        print_table = due_events.to_string().splitlines()
+        for line in print_table:
+            logger.debug(line)
+        logger.debug('----------------------------------------------------------------------')
+
 
         # Now, Look at the calls to the health system that are due and decide which will be scheduled
         # In this simplest case, all outstanding calls are met immidiately.
+        EventsToRun = due_events
 
-        if len(due_events_idx) > 0:
 
-            for e in due_events_idx:
+        # Examine capabilities that are available
 
-                logger.debug('Healthsystem: Running event:')
+        print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
+
+        fac=self.module.parameters['Master_Facility_List']
+        mapping = self.module.parameters['Village_To_Facility_Mapping']
+
+
+
+        # say that each facility can give 2 generic appointments per day
+
+        Capabilities = pd.DataFrame(index=fac.index, columns={'Generic_Appt'})
+        Capabilities['Generic_Appt']=2
+
+
+        if len(due_events.index) > 0:
+
+            # sort the due_events in terms of priority and time since opened:
+            due_events['Time_Since_Opened']=self.sim.date-due_events['topen']
+            due_events.sort_values(['priority','Time_Since_Opened'])
+
+            # Loop through the events (in order of priority) and runs those which can happen
+
+            for e in due_events.index:
+
+                # This is a treatment_event:
+                the_person_id= hsc.at[e, 'treatment_event'].target
+                the_treatment_event_name= hsc.at[e, 'treatment_event'].target
+                the_village=df.at[the_person_id,'village_of_residence']
+                the_health_facilities = mapping.loc[mapping['Village'] == the_village]
+
+                # NB. Lines below pool all types of capability across all facilities for
+                capabilities_by_facility=Capabilities.loc[the_health_facilities['Facility_ID']]
+                capabilities_current_total=capabilities_by_facility.sum()
+
+                the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
+
+                # loop through each of the appointment types
+                if capabilities_current_total['Generic_Appt'] >= the_treatment_footprint['Generic_Appt']:
+
+                    # THE INTERVENTION HAPPENS ***
+
+
+                    # THE FOOTPRINT IS IMPOSED ***
+
+
+                    pass
+
+
+
+
+                logger.debug(
+                    'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
+                    self.sim.date,
+                    the_person_id,
+                    the_treatment_event_name
+                )
+
+
+
+
                 # fire the event
                 hsc.at[e, 'treatment_event'].run()
 
                 # broadcast to other disease modules that this event is occuring
-                self.module.broadcast_healthsystem_interaction(person_id=hsc.at[e, 'treatment_event'].target)
+                self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
 
                 # update status of this heath resource call
                 hsc.at[e, 'status'] = 'Done'
 
                 # record the use of the health system resources
+
+
+                # log the use of resources
+
 
 
 # --------- FORMS OF HEALTH-CARE SEEKING -----
@@ -237,132 +330,137 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug('Health Care Seeking Poll is running')
+        pass
 
-        # ----------
-        # 1) Work out the overall unified symptom code
-
-        #   Fill in value of zeros (in case that no disease modules are registerd)
-        overall_symptom_code = pd.Series(data=0, index=self.sim.population.props.index)
-
-        registered_disease_modules = self.module.registered_disease_modules
-
-        if len(registered_disease_modules.values()):
-            # Ask each module to update and report-out the symptoms it is currently causing on the
-            # unified symptomology scale:
-
-            unified_symptoms_code = pd.DataFrame()
-            for module in registered_disease_modules.values():
-                out = module.query_symptoms_now()
-
-                # check that the data received is in correct format
-                assert type(out) is pd.Series
-                assert len(out) == self.sim.population.props.is_alive.sum()
-                assert self.sim.population.props.index.name == out.index.name
-                assert self.sim.population.props.is_alive[out.index].all()
-                assert (~pd.isnull(out)).all()
-                assert all(out.dtype.categories == [0, 1, 2, 3, 4])
-
-                # Add this to the dataframe
-                unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
-
-            # Look across the columns of the unified symptoms code reports to determine an overall
-            # symptom level.
-            # The Maximum Value of reported Symptom is taken as overall level of symptoms
-            overall_symptom_code = unified_symptoms_code.max(axis=1)
-
-        # ----------
-        # 2) For each individual, examine symptoms and other circumstances,
-        # and trigger a potential Health System Interaction as apppropriate
-        # NB. That the event is passed to the HealthSystemScheduler which will determine if the interaction happens.
-
-        df = population.props
-        indicies_of_alive_person = df.index[df.is_alive]
-
-        for person_index in indicies_of_alive_person:
-
-            # Collect up characteristics that will inform whether this person will seek care
-            # at this moment...
-            age = df.at[person_index, 'age_years']
-            healthlevel = overall_symptom_code.at[person_index]
-            education = df.at[person_index, 'li_ed_lev']
-
-            # *************************************************************************
-            # The "general health care seeking equation" ***
-            # prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
-            prob_seek_care = 0.0  # REMOVE THE CHANCE OF THE POLL HAPPENING
-            # *************************************************************************
-
-            # Determine if there will be health-care contact and schedule FirstAppt if so
-            if self.sim.rng.rand() < prob_seek_care:
-                seeking_care_event = HealthSystemInteractionEvent(self.module, person_index,
-                                                                  cue_type='HealthCareSeekingPoll',
-                                                                  disease_specific=None)
-
-                self.sim.modules['HealthSystem'].request_service(
-                    seeking_care_event,
-                    priority=1,
-                    topen=self.sim.date,
-                    tclose=None)
+        # logger.debug('Health Care Seeking Poll is running')
+        #
+        # # ----------
+        # # 1) Work out the overall unified symptom code
+        #
+        # #   Fill in value of zeros (in case that no disease modules are registerd)
+        # overall_symptom_code = pd.Series(data=0, index=self.sim.population.props.index)
+        #
+        # registered_disease_modules = self.module.registered_disease_modules
+        #
+        # if len(registered_disease_modules.values()):
+        #     # Ask each module to update and report-out the symptoms it is currently causing on the
+        #     # unified symptomology scale:
+        #
+        #     unified_symptoms_code = pd.DataFrame()
+        #     for module in registered_disease_modules.values():
+        #         out = module.query_symptoms_now()
+        #
+        #         # check that the data received is in correct format
+        #         assert type(out) is pd.Series
+        #         assert len(out) == self.sim.population.props.is_alive.sum()
+        #         assert self.sim.population.props.index.name == out.index.name
+        #         assert self.sim.population.props.is_alive[out.index].all()
+        #         assert (~pd.isnull(out)).all()
+        #         assert all(out.dtype.categories == [0, 1, 2, 3, 4])
+        #
+        #         # Add this to the dataframe
+        #         unified_symptoms_code = pd.concat([unified_symptoms_code, out], axis=1)
+        #
+        #     # Look across the columns of the unified symptoms code reports to determine an overall
+        #     # symptom level.
+        #     # The Maximum Value of reported Symptom is taken as overall level of symptoms
+        #     overall_symptom_code = unified_symptoms_code.max(axis=1)
+        #
+        # # ----------
+        # # 2) For each individual, examine symptoms and other circumstances,
+        # # and trigger a potential Health System Interaction as apppropriate
+        # # NB. That the event is passed to the HealthSystemScheduler which will determine if the interaction happens.
+        #
+        # df = population.props
+        # indicies_of_alive_person = df.index[df.is_alive]
+        #
+        # for person_index in indicies_of_alive_person:
+        #
+        #     # Collect up characteristics that will inform whether this person will seek care
+        #     # at this moment...
+        #     age = df.at[person_index, 'age_years']
+        #     healthlevel = overall_symptom_code.at[person_index]
+        #     education = df.at[person_index, 'li_ed_lev']
+        #
+        #     # *************************************************************************
+        #     # The "general health care seeking equation" ***
+        #     # prob_seek_care = max(0.00,min(1.00, 0.02 + age*0.02+education*0.1 + healthlevel*0.2))  # (This is a dummy)
+        #     prob_seek_care = 0.0  # REMOVE THE CHANCE OF THE POLL HAPPENING
+        #     # *************************************************************************
+        #
+        #     # Determine if there will be health-care contact and schedule FirstAppt if so
+        #     if self.sim.rng.rand() < prob_seek_care:
+        #         seeking_care_event = HealthSystemInteractionEvent(self.module, person_index,
+        #                                                           cue_type='HealthCareSeekingPoll',
+        #                                                           disease_specific=None)
+        #
+        #         self.sim.modules['HealthSystem'].request_service(
+        #             seeking_care_event,
+        #             priority=1,
+        #             topen=self.sim.date,
+        #             tclose=None)
 
         # ----------
 
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
-    """
-    * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
 
-    This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
-    It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
-    which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
-    reached in the outreach intervention. It does not automatically reschedule. The disease_specific argument determines
-    the type of interaction that is triggered: if disease_specific = None, thee resulting HealthSystemInteractionEvents
-    will have disease_specific=None; if disease_specific is set to a registered disease module name, this will be passed
-    to the resulting HealthSystemInteractionEvents.
-    NB. A known issue is that if this event is scheduled into the future, then persons that are born into the population
-    after the event is defined will not benefit from the outreach intervention.
-    """
+    pass
 
-    # TODO: Would like to create event and give rules for persons to be included/exlcuded that are evaluated when the event is run.
-
-    def __init__(self, module, disease_specific=None, target=pd.Series(dtype=bool)):
-        super().__init__(module)
-
-        logger.debug('Outreach event being created. Type: %s, %s', disease_specific)
-
-        # Check the arguments that have been passed:
-        assert (disease_specific == None) or (
-                disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
-        assert type(target) is pd.Series
-        assert len(target) == self.sim.population.props.is_alive.sum()
-        assert self.sim.population.props.index.name == target.index.name
-        assert self.sim.population.props.is_alive[target.index].all()
-        assert (~pd.isnull(target)).all()
-
-        self.disease_specific = disease_specific
-        self.target = target
-
-    def apply(self, population):
-
-        logger.debug('Outreach event running now')
-
-        target_indicies = self.target.index
-
-        # Schedule a first appointment for each person for this disease only
-        for person_id in target_indicies:
-
-            if self.sim.population.props.at[person_id, 'is_alive']:
-                event = HealthSystemInteractionEvent(self.module, person_id,
-                                                     cue_type='OutreachEvent',
-                                                     disease_specific=self.disease_specific)
-
-                self.sim.schedule_event(event, self.sim.date)
-
-        # Log the occurrence of the outreach event
-        logger.info('%s|outreach_event|%s', self.sim.date,
-                    {
-                        'disease_specific': self.disease_specific
-                    })
+    # """
+    # * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
+    #
+    # This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
+    # It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
+    # which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
+    # reached in the outreach intervention. It does not automatically reschedule. The disease_specific argument determines
+    # the type of interaction that is triggered: if disease_specific = None, thee resulting HealthSystemInteractionEvents
+    # will have disease_specific=None; if disease_specific is set to a registered disease module name, this will be passed
+    # to the resulting HealthSystemInteractionEvents.
+    # NB. A known issue is that if this event is scheduled into the future, then persons that are born into the population
+    # after the event is defined will not benefit from the outreach intervention.
+    # """
+    #
+    # # TODO: Would like to create event and give rules for persons to be included/exlcuded that are evaluated when the event is run.
+    #
+    # def __init__(self, module, disease_specific=None, target=pd.Series(dtype=bool)):
+    #     super().__init__(module)
+    #
+    #     logger.debug('Outreach event being created. Type: %s, %s', disease_specific)
+    #
+    #     # Check the arguments that have been passed:
+    #     assert (disease_specific == None) or (
+    #             disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
+    #     assert type(target) is pd.Series
+    #     assert len(target) == self.sim.population.props.is_alive.sum()
+    #     assert self.sim.population.props.index.name == target.index.name
+    #     assert self.sim.population.props.is_alive[target.index].all()
+    #     assert (~pd.isnull(target)).all()
+    #
+    #     self.disease_specific = disease_specific
+    #     self.target = target
+    #
+    # def apply(self, population):
+    #
+    #     logger.debug('Outreach event running now')
+    #
+    #     target_indicies = self.target.index
+    #
+    #     # Schedule a first appointment for each person for this disease only
+    #     for person_id in target_indicies:
+    #
+    #         if self.sim.population.props.at[person_id, 'is_alive']:
+    #             event = HealthSystemInteractionEvent(self.module, person_id,
+    #                                                  cue_type='OutreachEvent',
+    #                                                  disease_specific=self.disease_specific)
+    #
+    #             self.sim.schedule_event(event, self.sim.date)
+    #
+    #     # Log the occurrence of the outreach event
+    #     logger.info('%s|outreach_event|%s', self.sim.date,
+    #                 {
+    #                     'disease_specific': self.disease_specific
+    #                 })
 
 
 class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
