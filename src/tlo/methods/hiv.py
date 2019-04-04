@@ -370,7 +370,7 @@ class hiv(Module):
         df = population.props
         params = self.parameters
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ADULT HIV ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- ADULT HIV -----------------------------------
 
         prevalence = params['hiv_prev_2010']
 
@@ -416,7 +416,7 @@ class hiv(Module):
         time_inf = pd.to_timedelta(times * 365.25, unit='d')
         df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ CHILD HIV ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- CHILD HIV -----------------------------------
 
         # baseline children's prevalence from spectrum outputs
         prevalence = self.hiv_prev.loc[self.hiv_prev.year == now.year, ['age_from', 'sex', 'prev_prop']]
@@ -536,7 +536,7 @@ class hiv(Module):
         now = self.sim.date
         params = self.parameters
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ADULT SYMPTOMS ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- ADULT SYMPTOMS -----------------------------------
 
         # baseline pop - adults
         adults = df[df.is_alive & df.hiv_inf & (df.age_years >= 15)].index
@@ -564,7 +564,7 @@ class hiv(Module):
 
         # print(symp)
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ CHILD SYMPTOMS ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- CHILD SYMPTOMS -----------------------------------
 
         # baseline pop - infants, all assumed slow progressors
         infants = df[df.is_alive & df.hiv_inf & (df.age_years < 15)].index
@@ -761,7 +761,7 @@ class hiv(Module):
             if df.at[mother_id, 'hiv_on_art'] == 2:
                 df.at[child_id, 'hiv_mother_art'] = True
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ MTCT ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- MTCT -----------------------------------
 
         #  TRANSMISSION DURING PREGNANCY / DELIVERY
         random_draw = self.sim.rng.random_sample(size=1)
@@ -808,7 +808,7 @@ class hiv(Module):
             and (df.at[child_id, 'hiv_mother_art'] == '2'):
             df.at[child_id, 'hiv_inf'] = True
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ASSIGN DEATHS + FAST/SLOW PROGRESSOR ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- ASSIGN DEATHS + FAST/SLOW PROGRESSOR -----------------------------------
 
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'hiv_inf']:
             df.at[child_id, 'hiv_date_inf'] = self.sim.date
@@ -873,11 +873,15 @@ class hiv(Module):
 
         gets_test = False  # default value
 
+        # ----------------------------------- INFANT TESTING -----------------------------------
+
         # this is for infants, if they don't get tested at this point, should reschedule further attempts
         if cue_type == 'InitialDiseaseCall' and disease_specific == 'hiv':
             gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
                 person_id, self.TEST_ID
             )
+
+        # ----------------------------------- OUTREACH EVENTS -----------------------------------
 
         # hiv outreach event -> test, could add probability of requesting testing here before query
         if cue_type == 'OutreachEvent' and disease_specific == 'hiv':
@@ -885,6 +889,8 @@ class hiv(Module):
             gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
                 person_id, self.TEST_ID
             )
+
+        # ----------------------------------- HEALTH CARE SEEKING POLL -----------------------------------
 
         # other health care seeking poll
         if cue_type == 'HealthCareSeekingPoll':
@@ -896,8 +902,12 @@ class hiv(Module):
                     person_id, self.TEST_ID
                 )
 
+        # ----------------------------------- OUTCOMES OF TESTING -----------------------------------
+
         if gets_test:
             df.at[person_id, 'ever_tested'] = True
+
+            # ----------------------------------- QUERY TREATMENT -----------------------------------
 
             if df.at[person_id, 'hiv_inf']:
                 df.at[person_id, 'hiv_diagnosed'] = True
@@ -950,6 +960,10 @@ class hiv(Module):
         return health_values.loc[df.is_alive]
 
 
+# ---------------------------------------------------------------------------
+#   The infection event
+# ---------------------------------------------------------------------------
+
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
     """ hiv infection event - adults only
     """
@@ -962,7 +976,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         now = self.sim.date
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ FOI ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- FOI -----------------------------------
 
         #  calculate relative infectivity for everyone hiv+
         # infective if: hiv_inf & hiv_on_art = none (0) or poor (1)
@@ -989,7 +1003,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_infected_index, 'hiv_specific_symptoms'] = 'early'  # all start at early
         df.loc[newly_infected_index, 'hiv_unified_symptom_code'] = 0
 
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~ TIME OF DEATH ~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ----------------------------------- TIME OF DEATH -----------------------------------
         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
                      np.exp(self.module.log_scale(df.loc[newly_infected_index, 'age_years']))
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
@@ -1063,6 +1077,10 @@ class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
         df.loc[aids_slow, 'hiv_specific_symptoms'] = 'aids'
 
 
+# ---------------------------------------------------------------------------
+#   Transitions to sex work
+# ---------------------------------------------------------------------------
+
 class FswEvent(RegularEvent, PopulationScopeEventMixin):
     """ apply risk of fsw to female pop and transition back to non-fsw
     """
@@ -1099,6 +1117,10 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
 
 
+# ---------------------------------------------------------------------------
+#   Scheduling deaths
+#---------------------------------------------------------------------------
+
 class HivDeathEvent(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
@@ -1115,6 +1137,10 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='hiv'),
                                     self.sim.date)
 
+
+# ---------------------------------------------------------------------------
+#   Health system interactions
+#---------------------------------------------------------------------------
 
 class HivOutreachEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -1176,6 +1202,10 @@ class HivTreatmentEvent(Event, IndividualScopeEventMixin):
         for i in range(0, len(times)):
             self.sim.schedule_event(followup_appt, self.sim.date + DateOffset(months=times.time_months[i]))
 
+
+# ---------------------------------------------------------------------------
+#   Logging
+#---------------------------------------------------------------------------
 
 class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
