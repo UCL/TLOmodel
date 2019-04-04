@@ -176,6 +176,11 @@ class HealthSystem(Module):
                                                    cue_type=cue_type,
                                                    disease_specific=disease_specific)
 
+    def GetCapabilities(self):
+
+        capabilities= pd.DataFrame
+
+        return(capabilities)
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -248,10 +253,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
 
 
-        # say that each facility can give 2 generic appointments per day
-
-        Capabilities = pd.DataFrame(index=fac.index, columns={'Generic_Appt'})
-        Capabilities['Generic_Appt']=2
+        # Call out to a function to generate the current Capabilities
+        capabilities=self.module.GetCapabilities()
 
 
         if len(due_events.index) > 0:
@@ -270,9 +273,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 the_village=df.at[the_person_id,'village_of_residence']
                 the_health_facilities = mapping.loc[mapping['Village'] == the_village]
 
-
                 # NB. Lines below look for that set of capabilities at any type of facility
-                capabilities_by_facility=Capabilities.loc[the_health_facilities['Facility_ID']]
+                capabilities_by_facility=capabilities.loc[the_health_facilities['Facility_ID']]
 
                 the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
 
@@ -293,34 +295,27 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     capabilities_by_facility.at[chosen_facility_id,'Generic_Appt']=capabilities_by_facility.at[chosen_facility_id,'Generic_Appt'] -  the_treatment_footprint['Generic_Appt']
 
 
+        # Execute the events (for now, it ignoes the above section about determining capacity)
+        for e in due_events.index:
+
+            logger.debug(
+                'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
+                self.sim.date,
+                the_person_id,
+                the_treatment_event_name
+            )
 
 
+            # fire the event
+            hsc.at[e, 'treatment_event'].run()
+
+            # broadcast to other disease modules that this event is occuring
+            self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
+
+            # update status of this heath resource call
+            hsc.at[e, 'status'] = 'Done'
 
 
-
-                logger.debug(
-                    'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
-                    self.sim.date,
-                    the_person_id,
-                    the_treatment_event_name
-                )
-
-
-
-
-                # fire the event
-                hsc.at[e, 'treatment_event'].run()
-
-                # broadcast to other disease modules that this event is occuring
-                self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
-
-                # update status of this heath resource call
-                hsc.at[e, 'status'] = 'Done'
-
-                # record the use of the health system resources
-
-
-                # log the use of resources
 
 
 
