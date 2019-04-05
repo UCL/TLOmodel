@@ -264,14 +264,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
 
-        # Call out to a function to generate the current Capabilities:
+        # Call out to a function to generate the total Capabilities for today
         capabilities=self.module.GetCapabilities()
 
         # gather other data:
         fac=self.module.parameters['Master_Facility_List']
         mapping = self.module.parameters['Village_To_Facility_Mapping']
-
-
 
 
         if len(due_events.index) > 0:
@@ -310,6 +308,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     # THE FOOTPRINT IS IMPOSED ***
                     capabilities_by_facility.at[chosen_facility_id,'Generic_Appt']=capabilities_by_facility.at[chosen_facility_id,'Generic_Appt'] -  the_treatment_footprint['Generic_Appt']
+
+
+
 
 
         # Execute the events (for now, it ignoes the above section about determining capacity)
