@@ -83,8 +83,6 @@ class Labour (Module):
                                                 'obstructed labour, Preterm Labour', categories=['not_in_labour',
                                                 'spontaneous_unobstructed_labour','prolonged_or_obstructed_labour',
                                                                                                  'pretterm_labour']),
-        'la_planned_cs': Property(Types.BOOL, 'pregnant woman undergoes an elective caesarean section'),
-        'la_induced_labour': Property(Types.BOOL, 'pregnant woman has labour induced'),
         'la_abortion': Property(Types.DATE, 'the date on which a pregnant has had an abortion'),
         'la_live_birth': Property(Types.BOOL, 'labour ends in a live birth'),
         'la_still_birth': Property(Types.BOOL, 'labour ends in a still birth'),
@@ -152,8 +150,6 @@ class Labour (Module):
     # ----------------------------------------- DEFAULTS----------------------------------------------------------------
 
         df['la_labour'] = 'not_in_labour'
-        df['la_planned_CS'] = False
-        df['la_induced_labour'] = False
         df['la_abortion'] = pd.NaT
         df['la_live_birth'] = False
         df['la_still_birth'] = False
@@ -327,8 +323,6 @@ class Labour (Module):
         df = self.sim.population.props
 
         df.at[child_id, 'la_labour'] = 'not_in_labour'
-        df.at[child_id, 'la_planned_CS'] = False
-        df.at[child_id, 'la_induced_labor'] = False
         df.at[child_id, 'la_abortion'] = pd.NaT
         df.at[child_id, 'la_live_birth'] = False
         df.at[child_id, 'la_still_birth'] = False
@@ -362,16 +356,28 @@ class LabourPollEvent(RegularEvent, PopulationScopeEventMixin):
         conception_date = pd.Series(df.date_of_last_pregnancy, index=due_labour_idx)
         dfx = pd.concat([due_date, conception_date], axis=1)
         dfx.columns = ['due_date', 'conception_date']
-        dfx['gestation'] = dfx['due_date'] - pd.to_timedelta(dfx['conception_date'], unit='w')
 
- #       if dfx['gestation'] >= 37:
- #          df.loc[due_labour_idx, df.la_labour] = 'spontaneous_labour'
+        dfx['gestation'] = dfx['due_date'] - dfx['conception_date']
+        dfx['gestation'] = dfx['gestation'] / np.timedelta64(1, 'W')
 
-        # This needs to provide a difference as int
-        # If int >37 move them into spont (add in probability of pl/ol, if <37 move them into preterm
+        spontlab_idx = dfx.index[dfx.gestation >= 37]
 
-        # include induction and planned CS
+        pretermlab_idx = dfx.index[(dfx.gestation >= 28) & (dfx.gestation <= 36)]
+        abortion_idx = dfx.index[dfx.gestation <= 27]
 
+        df.loc[spontlab_idx, 'la_labour'] = 'spontaneous_labour'
+
+# Obstuction??
+
+        df.loc[pretermlab_idx, 'la_labour'] = 'pretterm_labour'
+
+# df.loc[pretermlab_idx, 'la_prev_ptb'] = True
+
+        df.loc[abortion_idx, 'is_pregnant'] = False
+
+# do we need an 'miscarriage' property
+
+# INDUCTION AND PLANNED CS
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
