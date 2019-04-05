@@ -9,7 +9,7 @@ from tlo.methods import demography
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2045, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 1000
 
 
