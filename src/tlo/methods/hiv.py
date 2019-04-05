@@ -129,13 +129,13 @@ class hiv(Module):
         'treatment_increase2016': Parameter(Types.REAL,
                                             'increase in treatment rates with eligibility guideline changes'),
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
-        'annual_rate_symptomatic_adult': Parameter(Types.REAL, 'annual hazard of adults becoming symptomatic'),
-        'annual_rate_aids_adult': Parameter(Types.REAL, 'annual hazard of adults developing aids'),
-        'monthly_rate_symptomatic_infant': Parameter(Types.REAL, 'mean time for infants becoming symptomatic'),
-        'monthly_rate_aids_infant_fast': Parameter(Types.REAL,
-                                                   'monthly rate of infants developing aids - fast progressors'),
-        'monthly_rate_aids_infant_slow': Parameter(Types.REAL,
-                                                   'monthly rate of infants developing aids - slow progressors'),
+        'annual_prob_symptomatic_adult': Parameter(Types.REAL, 'annual probability of adults becoming symptomatic'),
+        'annual_prob_aids_adult': Parameter(Types.REAL, 'annual probability of adults developing aids'),
+        'monthly_prob_symptomatic_infant': Parameter(Types.REAL, 'monthly probability of infants becoming symptomatic'),
+        'monthly_prob_aids_infant_fast': Parameter(Types.REAL,
+                                                   'monthly probability of infants developing aids - fast progressors'),
+        'monthly_prob_aids_infant_slow': Parameter(Types.REAL,
+                                                   'monthly probability of infants developing aids - slow progressors'),
 
     }
 
