@@ -191,10 +191,11 @@ for staffmember in stafflist.index:
 
     district= stafflist.loc[staffmember].District
 
-    fac_types_set= Facility_By_Officer.loc[Facility_By_Officer['Officer']==officer,'Facility_Type'][0]
-    fac_types_list = []
+    fac_types= Facility_By_Officer.loc[Facility_By_Officer['Officer']==officer,'Facility_Type']
+    fac_types_set=fac_types.iloc[0]
 
     # convert the set of relevant facilities to a list
+    fac_types_list = []
     for x in fac_types_set:
         fac_types_list.append(x)
 
@@ -204,21 +205,32 @@ for staffmember in stafflist.index:
     # what is there are not any suitable facilities????
 
     # choose one for this staff member:
-    assert len(suitable_facilities)>0
-
-    x=np.random.choice(len(suitable_facilities))
-
-    assigned_facility=suitable_facilities.iloc[x].Facility_ID
-
-    Facility_Assignment.at[staffmember,'Facility_ID']=assigned_facility
 
 
+    if len(suitable_facilities)>0 :
+
+        # if there is a suitable facility for this office to go into
+        x=np.random.choice(len(suitable_facilities))
+
+        assigned_facility=suitable_facilities.iloc[x].Facility_ID
+
+        Facility_Assignment.at[staffmember,'Facility_ID']=assigned_facility
+
+    else:
+
+        # if there is no suitable facility for this officer: assign randomly
+
+        fac_in_any_district=fac.loc[fac['Facility Type'].isin(fac_types_list)]
+        x = np.random.choice(len(fac_in_any_district))
+
+        Facility_Assignment.at[staffmember, 'Facility_ID'] = fac_in_any_district.iloc[x].Facility_ID
 
 
+# perform checks!!!
 
+outputfile_facility_assignment='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_StaffAssignmentToFacility.csv'
 
-
-
+Facility_Assignment.to_csv(outputfile_facility_assignment)
 
 
 
