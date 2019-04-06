@@ -9,7 +9,6 @@ workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 
 
 outputfile_current_staff='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_CurrentStaff.csv'
 
-
 wb =pd.read_excel(workingfile,sheet_name='RF_CurrentStaff')
 
 
@@ -120,7 +119,11 @@ minutes_per_day = hours * 60
 
 minutes_per_year = minutes_per_day * workingdays
 
-patient_facing_hours = pd.DataFrame({'Officer': officers,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours})
+# What we will use is the average number of minutes worked per day:
+av_minutes_per_day = minutes_per_year / 365.25
+
+patient_facing_hours = pd.DataFrame({'Officer': officers,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours, 'Av_Minutes_Per_Day':av_minutes_per_day })
+
 patient_facing_hours.to_csv(outputfile_working_hours)
 
 
@@ -128,7 +131,7 @@ patient_facing_hours.to_csv(outputfile_working_hours)
 # ---- check that the column name and types of officers are aligned
 
 names_hourssheet=patient_facing_hours['Officer'].values
-names_staffsheet = pd.unique(current_staff['Officer'])
+names_staffsheet = pd.unique(stafflist['Officer'])
 
 for n in names_hourssheet:
     print(n in names_staffsheet)
@@ -233,4 +236,20 @@ outputfile_facility_assignment='/Users/tbh03/Dropbox (SPH Imperial College)/Than
 Facility_Assignment.to_csv(outputfile_facility_assignment)
 
 
+
+# --- Create final file: Facility_ID, Officer Type, Total Average Minutes Per Day
+
+outputfile_time_per_facility='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_Time_Per_Facility.csv'
+
+# merge in officer type
+X=Facility_Assignment.merge(stafflist, on='Staff_ID')
+X=X.drop(columns='District')
+
+# merge in time that each officer type can spent on appointments
+X= X.merge(patient_facing_hours,on='Officer')
+
+# Now collapse across the staff_ID in order to give a summary per facility type and officer type
+Y = pd.DataFrame(X.groupby(['Facility_ID','Officer'])[['Av_Minutes_Per_Day']].sum()).reset_index()
+
+Y.to_csv(outputfile_time_per_facility)
 
