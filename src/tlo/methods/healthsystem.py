@@ -7,6 +7,7 @@ import logging
 import os
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -62,16 +63,40 @@ class HealthSystem(Module):
     PARAMETERS = {
         'Master_Facility_List':
             Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
+
         'Village_To_Facility_Mapping':
             Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities: ' \
-                                        'one row per each link between a village and a facility')
+                                        'one row per each link between a village and a facility'),
+        'CurrentStaff':
+            Parameter(Types.DATA_FRAME, 'Imported long-list of all current staff (Imported from CHAI data): ' \
+                                        'one row per staff member'),
+
+        'CurrentStaffWorkingHours':
+            Parameter(Types.DATA_FRAME, 'Number of working days and workings hours per health worker by time (Imported from CHAI data'),
+
+        'HealthSystem_ApptTimes':
+            Parameter(Types.DATA_FRAME, 'Imported long list of the time taken by each type of appointment: (Imported from CHAI data)'),
+
+        'StaffAssignmentToFacility':
+            Parameter(Types.DATA_FRAME, 'Assignment between current staff members and a facility. (Respects district and type of facility, but otherwise random)'),
+
+        'Time_Per_Facility':
+            Parameter(Types.DATA_FRAME,
+                      'The amount of time available for appointments by facility and officer type. (Based on CHAI data)'),
+
+        'Officer_Types':
+            Parameter(Types.LIST,
+                      'The names of the types of health workers ("officers")')
     }
+
+
 
     PROPERTIES = {
         'Distance_To_Nearest_HealthFacility':
             Property(Types.REAL,
                      'The distance for each person to their nearest clinic (of any type)')
     }
+
 
     def read_parameters(self, data_folder):
 
@@ -83,8 +108,30 @@ class HealthSystem(Module):
             os.path.join(self.resourcefilepath, 'ResourceFile_Village_To_Facility_Mapping.csv')
         )
 
-        # Establish the MasterCapacitiesList
-        # (This is where the data on all health capabilities will be stored. For now, nothing happens)
+        # self.parameters['CurrentStaff'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaff.csv')
+        # )
+        #
+        # self.parameters['CurrentStaffWorkingHours'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaffWorkingHours.csv')
+        # )
+
+        self.parameters['HealthSystem_ApptTimes'] = pd.read_csv(
+            os.path.join(self.resourcefilepath, 'ResourceFile_HealthSystem_ApptTimes.csv')
+        )
+
+        # self.parameters['StaffAssignmentToFacility'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_StaffAssignmentToFacility.csv')
+        # )
+
+        self.parameters['Time_Per_Facility'] = pd.read_csv(
+            os.path.join(self.resourcefilepath, 'ResourceFile_Time_Per_Facility.csv')
+        )
+        self.parameters['Time_Per_Facility']=self.parameters['Time_Per_Facility'].drop(columns='Unnamed: 0')
+
+        self.parameters['Officer_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].Officer)
+        self.parameters['Appt_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].ApptType_Code)
+
 
     def initialise_population(self, population):
         df = population.props
@@ -183,20 +230,33 @@ class HealthSystem(Module):
         It return a dataframe with index set to the same as the MasterFacilitiesList
         """
 
-        fac = self.parameters['Master_Facility_List']
+        # Create the capabailities
 
-        capabilities= pd.DataFrame(index=fac.index, columns={'Generic_Appt','Special_Appt'})
+        # this is simply a dataframe, giving the minutes available from each type of officer and at each facility
 
-        # say that each facility can give 2 generic appointments per day (TO BE FILLED IN WITH CHAI DATA AND RATIO
-        capabilities['Generic_Appt'] = 2
+        # Function can go in here in the future that could expand the time available, simulating increasing efficiency
 
-        # say that each hospitals can give 1 special appointment per day
-        capabilities['Special_Appt'] = 0
-        capabilities.loc[fac['Facility Type']=='District Hospital','Special_Appt'] =1
-        capabilities.loc[fac['Facility Type']=='Hospital','Special_Appt'] =1
-        capabilities.loc[fac['Facility Type']=='Referral Hospital','Special_Appt'] =1
+        capabilities=self.parameters['Time_Per_Facility']
 
         return(capabilities)
+
+    def get_blank_footprint(self,calling_event):
+        """
+        This is a helper function so that disease modules can easily create their footprint.
+        It returns a dataframe containing the footprint information in the format that the HealthSystemScheduler expects.
+        """
+
+        keys=self.parameters['Appt_Types']
+        values=np.zeros(len(keys))
+        blank_footprint = dict(zip(keys, values))
+
+        blank_footprint['TREATMENT_ID']=calling_event.TREATMENT_ID
+        blank_footprint['DiseaseModuleName']=calling_event.module.name
+        blank_footprint['DiseaseModule']=calling_event.module
+
+        return(blank_footprint)
+
+
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -267,10 +327,20 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Call out to a function to generate the total Capabilities for today
         capabilities=self.module.GetCapabilities()
 
+        # Add column for Minutes Used This Day (for live-tracking the use of those resources)
+        capabilities.loc[:,'Minutes_Used_Today']=0
+        capabilities.loc[:,'Minutes_Remaining_Today']=capabilities['Av_Minutes_Per_Day']
+
+
         # gather other data:
-        fac=self.module.parameters['Master_Facility_List']
+        facilities=self.module.parameters['Master_Facility_List']
         mapping = self.module.parameters['Village_To_Facility_Mapping']
 
+        appt_types=self.module.parameters['Appt_Types']
+
+        appt_times=self.module.parameters['HealthSystem_ApptTimes']
+
+        officer_types= self.module.parameters['Officer_Types']
 
         if len(due_events.index) > 0:
 
@@ -286,12 +356,86 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 the_person_id= hsc.at[e, 'treatment_event'].target
                 the_treatment_event_name= hsc.at[e, 'treatment_event'].target
                 the_village=df.at[the_person_id,'village_of_residence']
-                the_health_facilities = mapping.loc[mapping['Village'] == the_village]
+                the_health_facilities = mapping.loc[mapping['Village'] == the_village].Facility_ID
 
                 # NB. Lines below look for that set of capabilities at any type of facility
-                capabilities_by_facility=capabilities.loc[the_health_facilities['Facility_ID']]
+                capabilities_by_facility=capabilities.loc[the_health_facilities]
 
                 the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
+
+                # Test if capabilities of health system can meet this request
+                # *** This is currently a very permissive test: the request can be met if there are sufficient minutes
+                # for the requested time of each kind of office at any of the facilities to which the person has access.
+                # The search begins at the lowest level facility and increases. The footprint is imposed at the lowest
+                # level facility possiblle. ***
+
+
+                # Loop through facilities to look for facilities (TODO: HOW TO DO ORDERING SO THAT IT GOES TO LOWEST LEVEL)
+                for fac in capabilities_by_facility.Facility_ID.values:
+
+                    facility_type=facilities.loc[facilities['Facility_ID']==fac,'Facility Type']
+
+
+                    # Test if the entire part of the footprint can be satisfied at this facility
+                    fac_can_meet_each_type_of_appt=dict.fromkeys(appt_types)
+
+                    # ***** create a mapping between the facility_type from the Master Facilities List
+                    # ***** and the facility type of the CHAI data
+                    # ***** for now, just set facility_type to something that is in the CHAI data
+                    facility_type='District_Hospital'
+
+                    for appt_type in appt_types: # For each type of appointment requested:
+
+                        if the_treatment_footprint[appt_type] > 0 :
+
+                            # Get the time needed for each officer (if the appointment occurs in this type of facility)
+                            required = appt_times.loc[ (appt_times['ApptType_Code']==appt_type) & (appt_times['Facility_Type']==facility_type) ]
+
+                            # Get the current capabilites of this facility
+                            available = capabilities_by_facility.loc[capabilities_by_facility['Facility_ID']==fac]
+
+                            # Check if each officer is available to deliver this appointment:
+                            XX=required.merge(available,on='Officer', how='left',indicator=True)
+
+                            # check to ensure that all merged correctly, AND that sufficient time
+                            fac_can_meet_each_type_of_appt[appt_type] = False
+
+                            #
+                            # for officer in officer_types: # For each type of officer which is called for this type of appointment
+                            #
+                            #     time_req_for_this_officer = required.loc[required['Officer']==officer,'Time'].values[0]
+                            #     if time_req_for_this_officer > 0 :
+                            #
+                            #         available_time_for_this_officer_at_this_facility= available.loc[available['Officer']==officer,'Minutes_Remaining_Today']
+                            #
+                            #         if len(available_time_for_this_officer_at_this_facility)>0:
+                            #             if available_time_for_this_officer_at_this_facility > time_req_for_this_officer:
+                            #                 # There is capacity for this officer type at this facility
+                            #
+                            #             else:
+                            #                 # No capacity for this officer type at this facility
+                            #         else:
+                            #             # No capacity for this officer type at this facility
+
+
+                        else:
+
+                            # there was no requirement for this type of appointment; urgo there is capacity for
+                            fac_can_meet_each_type_of_appt[appt_type]=True
+
+
+                    if fac_can_meet_each_type_of_appt.all():
+                        # If the facility can meet all the types of appointment that are requested
+                        chosen_fac = fac
+                        break
+
+
+
+                # Impose the footprint on these thigns:
+                # capabilities.loc[:, 'Minutes_Used_Today'] = 0
+                # capabilities.loc[:, 'Minutes_Remaining_Today'] = capabilities['Av_Minutes_Per_Day']
+
+
 
                 # Test if there is a facility in the set which can meet this.
                 sufficent_capability_by_facility=capabilities_by_facility['Generic_Appt'] >= the_treatment_footprint['Generic_Appt'].values[0]
