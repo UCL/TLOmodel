@@ -5,6 +5,10 @@ import numpy as np
 
 workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/Formatting for ResourceFile.xlsx'
 
+outputfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_HealthSystem_ApptTimes.csv'
+
+
+
 sheet= pd.read_excel(workingfile,sheet_name='Time_Base',header=None)
 
 # get rid of the junky rows
@@ -55,13 +59,18 @@ Table = pd.DataFrame(columns=df.columns)
 
 for l in types_of_location:
     df_for_loc = df
-    df_for_loc['FacilityType'] = l
+    df_for_loc['Facility_Type'] = l
 
     df_for_loc['Time']=ExpectTime[l]
 
     Table=Table.append(df_for_loc)
 
 
+# Merge back in the proper titles of the officers
 
+officer_name= sheet.loc[3:4,2:22].transpose()
+officer_name=officer_name.rename(columns={3: "Officer", 4:"Officer_Code"})
 
-# Feed in the data
+Table_merged=Table.merge(officer_name,how='left')
+
+Table_merged.to_csv(outputfile)
