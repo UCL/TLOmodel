@@ -7,7 +7,7 @@ import numpy as np
 workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/ORIGINAL_Master List Free Service Health Facilities in Malawi_no contact details.xlsx'
 # outputpath='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Health System Resources/'
 
-outputpath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 
 
 wb=pd.read_excel(workingfile,sheet_name='All HF Malawi')
@@ -31,6 +31,8 @@ wb=wb.drop('Facility Type',axis=1)
 # Label the referral Hospital as Referral Hospitals:
 wb.loc[wb['Facility Name']=='QUEEN ELIZABETH','Facility_Type'] = 'Referral Hospital'
 wb.loc[wb['Facility Name']=='KAMUZU CENTRAL HOSPITAL','Facility_Type'] = 'Referral Hospital'
+wb.loc[wb['Facility Name']=='MZUZU CH','Facility_Type'] = 'Referral Hospital'
+
 
 # 3) Label the district hopsitals
 wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility_Type']='District Hospital'
@@ -53,20 +55,29 @@ assert not any(pd.isnull(wb['Facility_Level']))
 wb['Village']=wb['Village'].str.strip()
 
 # Save output file for information about facilities
-wb.to_csv(outputpath+'ResourceFile_MasterFacilitiesList.csv')
+mfl=wb
+mfl.to_csv(resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
+
+
 
 #--------
 
 # Make the file that maps the connections between villages and the health facilities.
-# Each row gives a village a facilities that is attached to it.
+# Each row gives one connection betweeen a village and a facilities that is attached to it.
 # There are multiple row per village and per facility: one row per connection.
 # When used we will .loc onto this to find (CHW (Community Health Worker, Near-Hospital (Nearest Hospital),District Hospital,Referral Hospital)
+# We guarantee that each village has is attaching to at least oen facility of each level.
 
 
+# 1) Get the complete listing of villages:
 
+pop=pd.read_csv(resourcefilepath+'ResourceFile_PopBreakdownByVillage.csv')
+
+villages_pop = pop.Village
+
+# Our listing of villages
 villages=wb['Village'].unique()
 villages=villages[~pd.isnull(villages)] # take out the nans
-
 
 # **** Get the listing of CHW per village
 df_CHW=wb.loc[wb['Facility Type']=='Community Health Worker',['Village','Facility Type','Facility_ID']]
@@ -88,8 +99,6 @@ for v in villages:
     nearest_hosp_id = hospitals.loc[dist_sq.idxmin(),'Facility_ID']
 
     df_NearHospital=df_NearHospital.append(  {'Village':v, 'Facility Type':'Near Hospital','Facility_ID': nearest_hosp_id }, ignore_index=True)
-
-
 
 
 
