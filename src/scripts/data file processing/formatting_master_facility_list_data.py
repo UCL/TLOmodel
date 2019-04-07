@@ -33,14 +33,13 @@ wb.loc[wb['Facility Name']=='QUEEN ELIZABETH','Facility_Type'] = 'Referral Hospi
 wb.loc[wb['Facility Name']=='KAMUZU CENTRAL HOSPITAL','Facility_Type'] = 'Referral Hospital'
 wb.loc[wb['Facility Name']=='MZUZU CH','Facility_Type'] = 'Referral Hospital'
 
-
 # 3) Label the district hopsitals
 wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility_Type']='District Hospital'
 
 # look at number of district hospitals per distirct (check it's 1 per district)
 wb.loc[wb['Facility_Type']=='District Hospital',['District','Facility_Type']].groupby(by=['District']).count()
 
-# assign a level for each facility, based on the facility type
+# 4) assign a level for each facility, based on the facility type
 wb['Facility_Level'] = wb['Facility_Type'].map({
             'Community Health Worker':0,
             'Health Centre':1,
@@ -51,8 +50,27 @@ wb['Facility_Level'] = wb['Facility_Type'].map({
 
 assert not any(pd.isnull(wb['Facility_Level']))
 
-# Clean up the village string
-wb['Village']=wb['Village'].str.strip()
+
+# 5) Force a conformity between the district names in the UNICEF data and the agered set of districts names
+pop=pd.read_csv(resourcefilepath+'ResourceFile_DistrictPopulationData.csv')
+real_districts=pop[['District']] # These are the agreed district names
+
+unicef_districts = pd.DataFrame(data=pd.unique(wb['District']),columns={'District'})
+
+merge_check=real_districts.merge(unicef_districts,on='District',how='outer',indicator=True)
+
+wb['District']=wb['District'].replace({
+    'Mzimba North': 'Mzimba' ,
+    'Mzimba South': 'Mzimba' ,
+})
+
+#TODO: ** NEED TIM_C to tell me which villages belong to the the cities
+# Lilongwe City vs Lilongwe
+# Blantyre City vs Blantyre
+# Zomba City vs Zomba
+# And what is Mzuzu City (which of the census distrcts)
+
+
 
 # Save output file for information about facilities
 mfl=wb
@@ -63,25 +81,37 @@ mfl.to_csv(resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 #--------
 
 # Make the file that maps the connections between villages and the health facilities.
-# Each row gives one connection betweeen a village and a facilities that is attached to it.
-# There are multiple row per village and per facility: one row per connection.
+# Each row gives one connection a District and a facilities that is attached to it.
+# There are multiple row per district and per facility: one row per connection.
 # When used we will .loc onto this to find (CHW (Community Health Worker, Near-Hospital (Nearest Hospital),District Hospital,Referral Hospital)
-# We guarantee that each village has is attaching to at least oen facility of each level.
+# We guarantee that each district has is attaching to at least oen facility of each level.
+
+real_districts=pop['District']
+
+for district in real_districts.values:
+    facilities_in_district=mfl.loc[mfl['District']==district]
+
+    x = facilities_in_district.groupby(['District','Facility_Type'])[['Facility_ID']].count()
+
+
+
+
+
+
+
+
+
+
+
 
 
 # 1) Get the complete listing of villages:
 
-pop=pd.read_csv(resourcefilepath+'ResourceFile_PopBreakdownByVillage.csv')
-
-villages_pop = pop.Village
-
-# Our listing of villages
-villages=wb['Village'].unique()
-villages=villages[~pd.isnull(villages)] # take out the nans
 
 # **** Get the listing of CHW per village
-df_CHW=wb.loc[wb['Facility Type']=='Community Health Worker',['Village','Facility Type','Facility_ID']]
+df_CHW=mfl.loc[wb['Facility Type']=='Community Health Worker',['Facility_Type','Facility_ID']]
 df_CHW.groupby(by='Village').count()
+
 
 
 # **** Attach the nearest hospital to each village (can be the distrct hospital but not the referral hospital)
