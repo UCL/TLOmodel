@@ -84,9 +84,15 @@ mfl.to_csv(resourcefilepath+'ResourceFile_MasterFacilitiesList.csv')
 # Each row gives one connection a District and a facilities that is attached to it.
 # There are multiple row per district and per facility: one row per connection.
 # When used we will .loc onto this to find (CHW (Community Health Worker, Near-Hospital (Nearest Hospital),District Hospital,Referral Hospital)
-# We guarantee that each district has is attaching to at least oen facility of each level.
+# We guarantee that each district is attaching to at least one facility of each level.
 
+# get the confirmed district names
 real_districts=pop['District']
+
+# Create a new dataframe, with one row per mapping
+
+# Add in the referral hospitals, which will operate as if they are in many districts
+
 
 for district in real_districts.values:
     facilities_in_district=mfl.loc[mfl['District']==district]
