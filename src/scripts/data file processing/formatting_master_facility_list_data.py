@@ -4,8 +4,11 @@
 import pandas as pd
 import numpy as np
 
-workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Health System Resources/ORIGINAL_Master List Free Service Health Facilities in Malawi_no contact details.xlsx'
-outputpath='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Health System Resources/'
+workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/ORIGINAL_Master List Free Service Health Facilities in Malawi_no contact details.xlsx'
+# outputpath='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Health System Resources/'
+
+outputpath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+
 
 wb=pd.read_excel(workingfile,sheet_name='All HF Malawi')
 
@@ -14,26 +17,39 @@ wb=wb.drop(columns='Date')
 wb['Facility_ID']=np.arange(len(wb))
 wb['Facility_ID']=wb['Facility_ID'].astype(int)
 
-# Combine "Dispensaries" and "Health Centres"; Combine 'Health Post', 'Outreach', and 'Village Clinic' as "Community Health Worker" (= the Community Health Worker under a tree in each village)
-wb['Facility Type']=wb['Facility Type'].map({
+# Combine "Dispensaries" and "Health Centres" as "Health Centre"; Combine 'Health Post', 'Outreach', and 'Village Clinic' as "Community Health Worker" (= the Community Health Worker under a tree in each village)
+wb['Facility_Type']=wb['Facility Type'].map({
             'Dispensary':'Health Centre',
             'Health Post': 'Community Health Worker',
             'Outreach': 'Community Health Worker',
             'Village Clinic': 'Community Health Worker',
-            'Hospital': 'Hospital',
+            'Hospital': 'Non-District Hospital',
             'Health Centre': 'Health Centre'
         })
+wb=wb.drop('Facility Type',axis=1)
 
-# Label the referral Hospital as Refrral Hospitals:
-wb.loc[wb['Facility Name']=='QUEEN ELIZABETH','Facility Type'] = 'Referral Hospital'
-wb.loc[wb['Facility Name']=='KAMUZU CENTRAL HOSPITAL','Facility Type'] = 'Referral Hospital'
+# Label the referral Hospital as Referral Hospitals:
+wb.loc[wb['Facility Name']=='QUEEN ELIZABETH','Facility_Type'] = 'Referral Hospital'
+wb.loc[wb['Facility Name']=='KAMUZU CENTRAL HOSPITAL','Facility_Type'] = 'Referral Hospital'
 
 # 3) Label the district hopsitals
-wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility Type']='District Hospital'
+wb.loc[wb['Facility Name'].str.contains(' DH'),'Facility_Type']='District Hospital'
 
 # look at number of district hospitals per distirct (check it's 1 per district)
-wb.loc[wb['Facility Type']=='District Hospital',['District','Facility Type']].groupby(by=['District']).count()
+wb.loc[wb['Facility_Type']=='District Hospital',['District','Facility_Type']].groupby(by=['District']).count()
 
+# assign a level for each facility, based on the facility type
+wb['Facility_Level'] = wb['Facility_Type'].map({
+            'Community Health Worker':0,
+            'Health Centre':1,
+            'Non-District Hospital':2,
+            'District Hospital':3,
+            'Referral Hospital':4,
+    })
+
+assert not any(pd.isnull(wb['Facility_Level']))
+
+# Clean up the village string
 wb['Village']=wb['Village'].str.strip()
 
 # Save output file for information about facilities
