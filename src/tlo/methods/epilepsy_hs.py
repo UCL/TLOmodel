@@ -223,19 +223,18 @@ class Epilepsy(Module):
 
         return pd.Series('1', index = df.index[df.is_alive])
 
-
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-#       logger.debug('This is epilepsy, being alerted about a health system interaction '
-#                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+
+        #       logger.debug('This is epilepsy, being alerted about a health system interaction '
+        #                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
         pass
-
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-#       logger.debug('This is epilepsy reporting my health values')
+        #       logger.debug('This is epilepsy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -465,7 +464,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+#       df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
         for person_id in dfx.index[dfx.x_ep_antiep]:
             df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
