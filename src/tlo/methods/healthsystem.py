@@ -396,7 +396,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                             # Check if each officer is available to deliver this appointment:
                             XX=required.merge(available,on='Officer', how='left',indicator=True)
-
+                            #TODO: GOT TO HERE: DO THE cHECK WITH A MERGE BUT THE OFFICER TYPES ARE NOT THE SAME
                             # check to ensure that all merged correctly, AND that sufficient time
                             fac_can_meet_each_type_of_appt[appt_type] = False
 
