@@ -262,7 +262,6 @@ class Mockitis(Module):
         logger.debug('This is mockitis, being alerted about a health system interaction '
                      'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
-
         if self.sim.population.props.at[person_id,'mi_status']=='C':
             # Query with health system whether this individual will get a desired treatment
             gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
@@ -273,7 +272,6 @@ class Mockitis(Module):
                 # Commission treatment for this individual
                 event = MockitisTreatmentEvent(self, person_id)
                 self.sim.schedule_event(event, self.sim.date)
-
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
