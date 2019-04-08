@@ -79,7 +79,7 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'Village_District_Region_Data': Parameter(Types.DATA_FRAME,
+        'district_and_region_data': Parameter(Types.DATA_FRAME,
                                                   'Census data on the number of persons in '
                                                   'residence in each district')
     }
@@ -112,7 +112,6 @@ class Demography(Module):
 
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'village_of_residence': Property(Types.STRING, 'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -146,9 +145,9 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['Village_District_Region_Data'] = \
+        self.parameters['district_and_region_data'] = \
             pd.read_csv(os.path.join(self.resourcefilepath,
-                                     'ResourceFile_PopBreakdownbyVillage.csv'))
+                                     'ResourceFile_DistrictPopulationData.csv'))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -166,7 +165,7 @@ class Demography(Module):
         # get a subset of the rows from the interpolated population worksheet
         intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
 
-        # get the probability of occurrance for each sex+age range in the population
+        # get the probability of occurrence for each sex+age range in the population
         intpop['probability'] = intpop.value / intpop.value.sum()
 
         # calculate the month range interval for age ranges which are exactly 1 year
@@ -196,26 +195,20 @@ class Demography(Module):
         df.loc[df.is_alive, 'mother_id'] = -1
 
 
-        # Assign village, district and region of residence
-        region_info = self.parameters['Village_District_Region_Data']
-        prob_in_village = region_info['Population']/region_info['Population'].sum()
-        village_indx = self.rng.choice(region_info.index, size=df.is_alive.sum(), p=prob_in_village)
+        # Assign district and region of residence
+        district_info = self.parameters['district_and_region_data']
+        prob_in_district = district_info['District Total']/district_info['District Total'].sum()
 
-        def get_mapping(list_of_words: pd.Series):
-            return {v: k for k, v in enumerate(list_of_words.unique())}
+        assigned_district=district_info.loc[
+            self.rng.choice( np.arange(0,len(prob_in_district)),size=df.is_alive.sum(),p=prob_in_district ),
+                                            ['District','Region']].copy().reset_index(drop=True)
 
-        region_info['Region_ID'] = region_info['Region'].map(get_mapping(region_info['Region']))
-        region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
-        region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
-
-        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region'].values
-        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
-        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
+        df.loc[df.is_alive,'region_of_residence']=assigned_district['Region']
+        df.loc[df.is_alive,'district_of_residence']=assigned_district['District']
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
-        assert (not pd.isnull(df['village_of_residence']).any())
 
 
         # assign that none of the adult (woman) population is pregnant
@@ -290,7 +283,6 @@ class Demography(Module):
         # Child's residence is inherited from the mother
         df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
-        df.at[child_id, 'village_of_residence'] = df.at[mother_id, 'village_of_residence']
 
         # Log the birth:
         logger.info('%s|on_birth|%s',
