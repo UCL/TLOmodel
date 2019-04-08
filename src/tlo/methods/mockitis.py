@@ -382,6 +382,7 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
+
         the_footprint['Over5OPD']=1  # This requires one out patient
         the_footprint['NewAdult']=2  # An amount of resources similar to an HIV initiation
 
