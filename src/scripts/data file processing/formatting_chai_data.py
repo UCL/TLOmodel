@@ -74,10 +74,10 @@ staffing_table = wb_extract
 
 
 # Sort out which are district allocations and which are central hospitals
-staffing_table .loc[staffing_table['District_Or_Hospital']=='HQ or missing','District_Or_Hospital'] = 'National_Hospital'
-staffing_table .loc[staffing_table['District_Or_Hospital']=='KCH','District_Or_Hospital'] = 'Central_Referral_Hospital'
-staffing_table .loc[staffing_table['District_Or_Hospital']=='MCH','District_Or_Hospital'] = 'Northern_Referral_Hospital'
-staffing_table .loc[staffing_table['District_Or_Hospital']=='QECH','District_Or_Hospital'] = 'Southern_Referral_Hospital'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='HQ or missing','District_Or_Hospital'] = 'National Hospital'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='KCH','District_Or_Hospital'] = 'Referral Hospital_Central'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='MCH','District_Or_Hospital'] = 'Referral Hospital_Northern'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='QECH','District_Or_Hospital'] = 'Referral Hospital_Southern'
 
 # Put the ZCH (assume Zomba City Hospital) into the Zomba district level allocation
 staffing_table .loc[staffing_table ['District_Or_Hospital']=='ZCH','District_Or_Hospital'] = 'Zomba'
@@ -158,6 +158,9 @@ assert len(staff_list) == staffing_table.iloc[:,1:-1].sum().sum()
 
 staff_list['Is_DistrictLevel']= staff_list['Is_DistrictLevel'].astype(bool)
 
+# assign an arbitary staff_id
+staff_list['Staff_ID']=staff_list.index
+
 #  --------
 
 # *** Create the Master Facilities List
@@ -165,7 +168,7 @@ staff_list['Is_DistrictLevel']= staff_list['Is_DistrictLevel'].astype(bool)
 # We assume that the set of facilities of one type operate as one big facility type within the district.
 
 # declare the Facility_Type variable
-Facility_Types = ['Community Health Worker', 'Health Centre', 'Non-District Hospital', 'District Hospital', 'Referral Hospital', 'National Hospital']
+Facility_Types = ['Community Health Station', 'Health Centre', 'Non-District Hospital', 'District Hospital', 'Referral Hospital', 'National Hospital']
 
 # Create empty dataframe that will be the Master Facilities List (mfl)
 mfl = pd.DataFrame(columns= ['Facility_Type','Facility_Level','District','Region'])
@@ -231,83 +234,102 @@ Facility_By_Officer=pd.DataFrame({'Officer_Type': officer_types_table.Officer_Ty
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Medical Officer / Specialist','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Clinical Officer / Technician','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Med. Assistant','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Community Health Worker','Non-District Hospital', 'Health Centre', 'Referral Hospital','National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Midwife Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Non-District Hospital','Community Health Worker', 'Health Centre', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Community Health Station','Non-District Hospital', 'Health Centre', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Midwife Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Non-District Hospital','Community Health Station', 'Health Centre', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharmacist','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre', 'Non-District Hospital','Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharm Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre', 'Non-District Hospital','Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharm Assistant','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre','Non-District Hospital','Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Assistant','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='DCSA','Facility_Type_Can_Work_In']={'Community Health Worker'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='DCSA','Facility_Type_Can_Work_In']={'Community Health Station'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Therapist','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Assistant','Facility_Type_Can_Work_In']={'District Hospital','Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Mental Health Staff','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
 Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nutrition Staff','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiographer','Facility_Type_Can_Work_In']={'National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiography Technician','Facility_Type_Can_Work_In']={'National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Sonographer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiotherapy Technician','Facility_Type_Can_Work_In']={'National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiographer','Facility_Type_Can_Work_In']={'National Hospital', 'Referral Hospital','District Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiography Technician','Facility_Type_Can_Work_In']={'National Hospital', 'Referral Hospital','District Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Sonographer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','District Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiotherapy Technician','Facility_Type_Can_Work_In']={'National Hospital', 'Referral Hospital','District Hospital'}
 
 
-# check that have only ever used correct Facility_Type labels
+# check that have only ever used correct Facility_Type labels and check that each one has a type including at least one district level
 for i in np.arange(0, len(Facility_By_Officer)):
     x = Facility_By_Officer['Facility_Type_Can_Work_In'][i]
     assert x.issubset(set(Facility_Types))
-
+    assert len(x.intersection(set(Facility_Types[0:4])))>0
 
 # check that every Officer_Type has been covered
 assert set(Facility_By_Officer['Officer_Type_Code']) == set(officer_types_table.Officer_Type_Code)
 
 
+
 #  --------
 
 # *** Determine how staff are allocated to the facilities
-# Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
 
-facility_assignment =pd.Series(index=staff_list.index)
+# Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
+facility_assignment =pd.DataFrame(index=staff_list.index,columns=['Staff_ID','Facility_ID'])
+facility_assignment['Staff_ID']=staff_list['Staff_ID']
 
 # Loop through each staff member and allocate them to
 for staffmember in staff_list.index:
 
     officer =staff_list.loc[staffmember].Officer_Type_Code
-    district= staff_list.loc[staffmember].District
-    possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
 
-    # Get the facilities to which this staff member might be allocated
-    suitable_facilities=mfl.loc[ (mfl['Facility_Type'].isin(possible_fac_types) ) & ( mfl['District'] == district ) ]
+    if staff_list.at[staffmember,'Is_DistrictLevel']:
+        # This staff member is allocated to a district
+        district= staff_list.at[staffmember,'District_Or_Hospital']
 
-    assert len(suitable_facilities)>0
+        possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
 
-    # if there is a suitable facility for this office to go into
-    x=np.random.choice(len(suitable_facilities))
-    assigned_facility=suitable_facilities.iloc[x].Facility_ID
-    facility_assignment.at[staffmember]=assigned_facility
+        # Get the facilities to which this staff member might be allocated
+        suitable_facilities=mfl.loc[ (mfl['Facility_Type'].isin(possible_fac_types) ) & ( mfl['District'] == district ) ]
+
+        assert len(suitable_facilities)>0
+
+        # if there is a suitable facility for this office to go into
+        x=np.random.choice(len(suitable_facilities))
+        assigned_facility_id=suitable_facilities.iloc[x].Facility_ID
+
+    else:
+        # This staff member is allocated to one of the above-district types of facilities
+
+        hospital = staff_list.at[staffmember,'District_Or_Hospital']
+
+        if hospital == 'National Hospital':
+            # Find the facility_id that corresponds to this hospital
+            assigned_facility_id =mfl.loc[mfl['Facility_Name']==hospital,'Facility_ID'].values[0]
+
+        else:
+            # it's a referral hospital
+            x = hospital.split('_')
+            region=x[1]
+            assigned_facility_id =mfl.loc[
+                                        (mfl['Facility_Type']=='Referral Hospital') & (mfl['Region']==region)
+                                    ,'Facility_ID'].values[0]
 
 
 
+    # check the assigned_facility_id is a real one (i.e. not empty)
+    assert set([assigned_facility_id]).issubset(set(mfl['Facility_ID']))
 
-# ****BUT, HOW WILL STAFF GET ALLOCATED TO THE REFERRAL AND NATIONAL HOSPITALS ?
-
-# perform checks!!!
-
-outputfile_facility_assignment='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_StaffAssignmentToFacility.csv'
-
-Facility_Assignment.to_csv(outputfile_facility_assignment)
-
+    # make the assignment
+    facility_assignment.at[staffmember,'Facility_ID'] = assigned_facility_id
 
 
 
 #-----------------
 
+# *** Get Hours Worked Per Staff Member
 # Reading-in the number of working hours and days for each type of officer
 
 sheet= pd.read_excel(workingfile,sheet_name='PFT',header=None)
 officer_types_import=sheet.iloc[2,np.arange(2,23)]
 
 assert set(officer_types_import) == set( officer_types_table['Officer_Type_Code'] )
-
+assert len(officer_types_import) == len( officer_types_table['Officer_Type_Code'] )
 
 hours=sheet.iloc[38,np.arange(2,23)]
 
@@ -328,25 +350,34 @@ minutes_per_year = minutes_per_day * workingdays
 # What we will use is the average number of minutes worked per day:
 av_minutes_per_day = minutes_per_year / 365.25
 
-patient_facing_hours = pd.DataFrame({'Officer_Type': officer_types_import,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours, 'Av_Minutes_Per_Day':av_minutes_per_day })
+patient_facing_time = pd.DataFrame({'Officer_Type_Code': officer_types_import ,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours, 'Av_Minutes_Per_Day':av_minutes_per_day }).reset_index(drop=True)
 
 
+#-----------------
+#-----------------
+#-----------------
 
-# --- Create final file: Facility_ID, Officer Type, Total Average Minutes Per Day
 
-# ADD FACILITY TYPE
-
-outputfile_time_per_facility='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ResourceFile_Time_Per_Facility.csv'
+# --- Create final table of daily time available at each facilty by officer type: Facility_ID, Facility_Type, Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day
 
 # merge in officer type
-X=Facility_Assignment.merge(stafflist, on='Staff_ID')
-X=X.drop(columns='District')
+X=staff_list.merge(facility_assignment, on='Staff_ID',how='left')
+X=X.drop(columns=['District_Or_Hospital','Is_DistrictLevel'])
 
 # merge in time that each officer type can spent on appointments
-X= X.merge(patient_facing_hours,on='Officer')
+X= X.merge(patient_facing_time,on='Officer_Type_Code',how='left')
+X= X.drop(columns=['Working_Days_Per_Year','Hours_Per_Day'])
 
-# Now collapse across the staff_ID in order to give a summary per facility type and officer type
-Y = pd.DataFrame(X.groupby(['Facility_ID','Officer'])[['Av_Minutes_Per_Day']].sum()).reset_index()
+# Now collapse across the staff_ID in order to give a summary per facility type and officer type: summing av minutes per day
+Y = pd.DataFrame(X.groupby(['Facility_ID','Officer_Type_Code'])[['Av_Minutes_Per_Day']].sum()).reset_index()
+Y = Y.rename(columns={'Av_Minutes_Per_Day':'Total_Minutes_Per_Day'})
 
-Y.to_csv(outputfile_time_per_facility)
+# Merge in information about the facility:
+Y = Y.merge(mfl,on='Facility_ID',how='left')
+
+# Merge in the officer code name
+Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
+
+
+Y.to_csv(resourcefilepath+'ResourceFile_DailyCapabilities.csv')
 
