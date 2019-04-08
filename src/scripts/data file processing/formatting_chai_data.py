@@ -50,7 +50,7 @@ is_distlevel[0:27]=True
 is_distlevel[27:]=False
 
 wb_extract.loc[:,'District_Or_Hospital'] = labels
-wb_extract.loc[:,"Is_DistrictLevel"]=is_distlevel
+wb_extract.loc[:,'Is_DistrictLevel']=is_distlevel
 
 # Finished import from the CHAI excel:
 staffing_table = wb_extract
@@ -79,64 +79,61 @@ staffing_table .loc[staffing_table['District_Or_Hospital']=='KCH','District_Or_H
 staffing_table .loc[staffing_table['District_Or_Hospital']=='MCH','District_Or_Hospital'] = 'Northern_Referral_Hospital'
 staffing_table .loc[staffing_table['District_Or_Hospital']=='QECH','District_Or_Hospital'] = 'Southern_Referral_Hospital'
 
-
-*** GOT TO HERE :-)
 # Put the ZCH (assume Zomba City Hospital) into the Zomba district level allocation
 staffing_table .loc[staffing_table ['District_Or_Hospital']=='ZCH','District_Or_Hospital'] = 'Zomba'
 staffing_table=pd.DataFrame(staffing_table.groupby(by=['District_Or_Hospital']).sum()).reset_index()
 
 
-# Get blank record for inserting the missing districts:
-record = staffing_table.loc[staffing_table['District']==chai_districts[0]].copy()
-record['District']=None
-record.iloc[0,1:]=0
 
 # The following districts are not in the CHAI data because they are included within other districts.
 # For now, we will say thay the division beween these cities and the wide district (in which they are included) is equal.
 
 # Add in Likoma (part Nkhata Bay)
-record['District']='Likoma'
-super_district= 'Nkhata Bay'
-record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze())
-staffing_table =staffing_table.append(record).reset_index(drop=True)
-staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
-
 # Add in Lilongwe City (part of Lilongwe)
-record['District']='Lilongwe City'
-super_district= 'Lilongwe'
-record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
-staffing_table =staffing_table.append(record).reset_index(drop=True)
-staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
-
-# Add in Mzuzu City
-record['District']='Mzuzu City'
-super_district= 'Mzimba'
-record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
-staffing_table =staffing_table.append(record).reset_index(drop=True)
-staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
-
+# Add in Mzuzu City (part of Mziba) ASSUMED
 # Add in Zomba City (part of Zomba)
-record['District']='Zomba City'
-super_district= 'Zomba'
-record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
-staffing_table =staffing_table.append(record).reset_index(drop=True)
-staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
-
 # Add in Blantyre City (part of Blantyre)
-record['District']='Blantyre City'
-super_district= 'Blantyre'
-record.loc[0,staffing_table.columns[1:]] =(0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
-staffing_table =staffing_table.append(record).reset_index(drop=True)
-staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
+
+# create mapping: the new districts : super_district
+split_districts= (
+    ('Likoma', 'Nkhata Bay'),
+    ('Lilongwe City', 'Lilongwe'),
+    ('Mzuzu City', 'Mzimba'),
+    ('Zomba City','Zomba'),
+    ('Blantyre City', 'Blantyre')
+)
+
+for i in np.arange(0,len(split_districts)):
+    new_district = split_districts[i][0]
+    super_district = split_districts[i][1]
+
+    record = staffing_table.iloc[0].copy() # get a row of the staffing table
+
+    # make a the record for the new district
+    record['District_Or_Hospital']=new_district
+    record['Is_DistrictLevel']=True
+
+    # get total staff level from the super districts
+    cols = set(staffing_table.columns).intersection(set(officer_types_table.Officer_Type_Code))
+
+    total_staff = staffing_table.loc[staffing_table['District_Or_Hospital']==super_district, cols].values.squeeze()
+
+    record.loc[cols]= 0.5*total_staff # assign half the staff to the new district
+    staffing_table =staffing_table.append(record).reset_index(drop=True)
+
+    # take staff away from the super district
+    staffing_table.loc[staffing_table['District_Or_Hospital']==super_district,cols]= staffing_table.loc[staffing_table['District_Or_Hospital']==super_district,cols] - record.loc[cols]
 
 
-# Now re-confirm the merging will be perfect:
-assert set(pop['District'].values) == set(staffing_table['District'])
-assert len(pop['District'].values) == len(staffing_table['District'])
+# Confirm the merging will be perfect:
+pop = pd.read_csv(resourcefilepath+ 'ResourceFile_DistrictPopulationData.csv')
+
+assert set(pop['District'].values) == set(staffing_table.loc[staffing_table['Is_DistrictLevel'],'District_Or_Hospital'])
+assert len(pop['District'].values) == len(staffing_table.loc[staffing_table['Is_DistrictLevel'],'District_Or_Hospital'])
 
 # ... double check by doing the merge explicitly
 pop_districts = pd.DataFrame({'District': pd.unique(pop['District'])})
-chai_districts = pd.DataFrame({'District': staffing_table['District']})
+chai_districts = pd.DataFrame({'District': staffing_table.loc[staffing_table['Is_DistrictLevel'],'District_Or_Hospital']})
 
 merge_result=pop_districts.merge(chai_districts,how='inner',indicator=True)
 assert all(merge_result['_merge']=='both')
@@ -148,7 +145,7 @@ assert len(merge_result) == len(pop_districts)
 # Flip from wide to long format
 staffing_table.loc[:,staffing_table.columns[1:]]=staffing_table.loc[:,staffing_table.columns[1:]].round(0).astype(int) # Make values integers (after rounding)
 
-staff_list=pd.melt(staffing_table, id_vars=['District'], var_name='Officer_Type_Code', value_name='Number')
+staff_list=pd.melt(staffing_table, id_vars=['District_Or_Hospital','Is_DistrictLevel'], var_name='Officer_Type_Code', value_name='Number')
 
 # Repeat rows so that it is one row per staff member
 staff_list['Number']=staff_list['Number'].astype(int)
@@ -157,14 +154,13 @@ staff_list = staff_list.reset_index(drop=True)
 staff_list=staff_list.drop(['Number'],axis=1)
 
 # check that the number of rows in this staff_list is equal to the total number of staff from the input data
-assert len(staff_list) == staffing_table.iloc[:,1:].sum().sum()
+assert len(staff_list) == staffing_table.iloc[:,1:-1].sum().sum()
 
+staff_list['Is_DistrictLevel']= staff_list['Is_DistrictLevel'].astype(bool)
 
 #  --------
 
-#  Determine how these staff members will be allocated to a facility
-
-# Create the Master Facilities List
+# *** Create the Master Facilities List
 # This will be a listing of each facility and the district(s) to which they attach
 # We assume that the set of facilities of one type operate as one big facility type within the district.
 
@@ -267,7 +263,7 @@ assert set(Facility_By_Officer['Officer_Type_Code']) == set(officer_types_table.
 
 #  --------
 
-
+# *** Determine how staff are allocated to the facilities
 # Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
 
 facility_assignment =pd.Series(index=staff_list.index)
