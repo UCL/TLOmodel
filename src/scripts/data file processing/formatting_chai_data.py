@@ -1,25 +1,35 @@
 """
-This file outputs the current staffing
+
+This file set ups the health system resources for each district.
+
+It creates one facility of each type for each district, and allows the 'Referral Hospitals' to connect to all the
+districts in a region,  and the 'National' Hospital' to connect to all districts in the country.
+
 """
 
 import pandas as pd
 import numpy as np
 
-ResourceFile_MasterFacilitiesList = '/Users/tbh03/PycharmProjects/TLOmodel/resources/ResourceFile_MasterFacilitiesList.csv'
-
+# ResourceFile_MasterFacilitiesList = '/Users/tbh03/PycharmProjects/TLOmodel/resources/ResourceFile_MasterFacilitiesList.csv'
 
 workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
 
-output_path='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/'
+resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+
+# output_path='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/'
 
 
 # Import all of the 'CurrentStaff' sheet
 wb_import= pd.read_excel(workingfile,sheet_name='CurrentStaff',header=None)
 
+# ----------
+
 # Make dataframe summarising the officer types and the officer codes:
 officer_types_table=wb_import.loc[2:3,64:84].transpose().reset_index(drop=True).copy()
-officer_types_table.columns={'Officer_Type','Officer_Type_Code'}
-officer_types_table.to_csv(output_path + 'officer_types_table.csv')
+officer_types_table.columns=['Officer_Type','Officer_Type_Code']
+officer_types_table.to_csv(resourcefilepath + 'ResourceFile_officer_types_table.csv')
+
+# ----------
 
 # Extract just the section about "Funded TOTAl Staff'
 wb_extract = wb_import.loc[3:37,64:84]
@@ -36,26 +46,22 @@ wb_extract.loc[:,'District'] = districts
 # Finished import from the CHAI excel:
 staffing_table = wb_extract
 
-# ----------
-
-# Check that the district name will match up with what is in
+# ** Check that the district name will match up with what is in
 chai_districts = pd.unique( staffing_table ['District'] )
 
 # get the districts from the resource file:
-pop = pd.read_csv('/Users/tbh03/PycharmProjects/TLOmodel/resources/ResourceFile_PopBreakdownByVillage.csv')
-
-pop_districts = pd.unique(pop['District'])
+pop = pd.read_csv(resourcefilepath+'ResourceFile_DistrictPopulationData.csv')
+pop_districts = pop['District'].values
 
 # check that every district in the resource file is represented in the CHAI list:
 for d in pop_districts:
     print('Resource File district, ', d , ' in chai tables: ', (d in chai_districts))
-# Likoma not in the Chai data (which may be classified as Nkhata Bay)
+# The city divisions are missing
 
 # check that every district in the chai table is represented in the resoure file list:
 for d in chai_districts:
     print('Chai file district, ', d , ' in resource file: ', (d in pop_districts))
 # HQ or missing', 'KCH', 'MCH', 'QECH' not in the pop data for districts
-
 
 # Remedy the mismatches:
 staffing_table .loc[staffing_table ['District']=='KCH','District'] = 'Lilongwe'
@@ -63,42 +69,73 @@ staffing_table .loc[staffing_table ['District']=='HQ or missing','District'] = '
 staffing_table .loc[staffing_table ['District']=='MCH','District'] = 'Mzimba'
 staffing_table .loc[staffing_table ['District']=='QECH','District'] = 'Blantyre'
 staffing_table .loc[staffing_table ['District']=='ZCH','District'] = 'Zomba'
-
 # Collapse any duplicated districts together:
 staffing_table=pd.DataFrame(staffing_table.groupby(by=['District']).sum()).reset_index()
 
-# Add in Likoma (with zero health workers)
+
+# Get blank record for inserting the missing districts:
 record = staffing_table.loc[staffing_table['District']==chai_districts[0]].copy()
-record['District']='Likoma'
+record['District']=None
 record.iloc[0,1:]=0
-staffing_table =staffing_table .append(record).reset_index(drop=True)
+
+# The following districts are not in the CHAI data because they are included within other districts.
+# For now, we will say thay the division beween these cities and the wide district (in which they are included) is equal.
+
+# Add in Likoma (part Nkhata Bay)
+record['District']='Likoma'
+super_district= 'Nkhata Bay'
+record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze())
+staffing_table =staffing_table.append(record).reset_index(drop=True)
+staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
+
+# Add in Lilongwe City (part of Lilongwe)
+record['District']='Lilongwe City'
+super_district= 'Lilongwe'
+record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
+staffing_table =staffing_table.append(record).reset_index(drop=True)
+staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
+
+# Add in Mzuzu City
+record['District']='Mzuzu City'
+super_district= 'Mzimba'
+record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
+staffing_table =staffing_table.append(record).reset_index(drop=True)
+staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
+
+# Add in Zomba City (part of Zomba)
+record['District']='Zomba City'
+super_district= 'Zomba'
+record.loc[0,staffing_table.columns[1:]] = (0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
+staffing_table =staffing_table.append(record).reset_index(drop=True)
+staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
+
+# Add in Blantyre City (part of Blantyre)
+record['District']='Blantyre City'
+super_district= 'Blantyre'
+record.loc[0,staffing_table.columns[1:]] =(0.5 * (staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]).values.squeeze()).astype(int)
+staffing_table =staffing_table.append(record).reset_index(drop=True)
+staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]]= staffing_table.loc[staffing_table['District']==super_district,staffing_table.columns[1:]] - record.loc[0,staffing_table.columns[1:]]
 
 
 # Now re-confirm the merging will be perfect:
-assert set(pd.unique(pop['District'])) == set(staffing_table['District'])
+assert set(pop['District'].values) == set(staffing_table['District'])
+assert len(pop['District'].values) == len(staffing_table['District'])
 
-    # ... double check by doing the merge explicitly
-    pop_districts = pd.DataFrame({'District': pd.unique(pop['District'])})
-    chai_districts = pd.DataFrame({'District': staffing_table['District']})
+# ... double check by doing the merge explicitly
+pop_districts = pd.DataFrame({'District': pd.unique(pop['District'])})
+chai_districts = pd.DataFrame({'District': staffing_table['District']})
 
-    merge_result=pop_districts.merge(chai_districts,how='inner',indicator=True)
-    assert all(merge_result['_merge']=='both')
-    assert len(merge_result) == len(pop_districts)
-
-
-# check that every district in the resource file is represented in the CHAI list:
-for d in pop_districts.values:
-    print('Resource File district, ', d , ' in chai tables: ', (d in chai_districts.values))
-
-# check that every district in the chai table is represented in the resoure file list:
-for d in chai_districts.values:
-    print('Chai file district, ', d , ' in resource file: ', (d in pop_districts.values))
+merge_result=pop_districts.merge(chai_districts,how='inner',indicator=True)
+assert all(merge_result['_merge']=='both')
+assert len(merge_result) == len(pop_districts)
 
 
 # --------------
 
 # Flip from wide to long format
-staff_list=pd.melt(staffing_table, id_vars=['District'], var_name='Officer_Type', value_name='Number')
+staffing_table.loc[:,staffing_table.columns[1:]]=staffing_table.loc[:,staffing_table.columns[1:]].round(0).astype(int) # Make values integers (after rounding)
+
+staff_list=pd.melt(staffing_table, id_vars=['District'], var_name='Officer_Type_Code', value_name='Number')
 
 # Repeat rows so that it is one row per staff member
 staff_list['Number']=staff_list['Number'].astype(int)
@@ -111,90 +148,138 @@ assert len(staff_list) == staffing_table.iloc[:,1:].sum().sum()
 
 
 #  --------
+
 #  Determine how these staff members will be allocated to a facility
+
+# Create the Master Facilities List
+# This will be a listing of each facility and the district(s) to which they attach
+# We assume that the set of facilities of one type operate as one big facility type within the district.
+
+# declare the Facility_Type variable
+Facility_Types = ['Community Health Worker', 'Health Centre', 'Non-District Hospital', 'District Hospital', 'Referral Hospital', 'National Hospital']
+
+# Create empty dataframe that will be the Master Facilities List (mfl)
+mfl = pd.DataFrame(columns= ['Facility_Type','Facility_Level','District','Region'])
+
+pop_districts = pop['District'].values
+pop_regions = pd.unique(pop['Region'])
+
+for d in pop_districts:
+    df = pd.DataFrame({'Facility_Type': Facility_Types[0:4], 'Facility_Level' : [0, 1, 2, 3], 'District': d, 'Region': pop.loc[pop['District']==d,'Region'].values[0] })
+    mfl= mfl.append(df,ignore_index=True,sort=True)
+
+# Add in the Referral Hospitals, one for each region
+for r in pop_regions:
+    mfl=mfl.append(pd.DataFrame({
+        'Facility_Type': Facility_Types[4], 'Facility_Level' : [4], 'District': None, 'Region': r
+    }),ignore_index=True,sort=True)
+
+# Add in the National Hosital, one for whole country
+mfl=mfl.append(pd.DataFrame({
+    'Facility_Type': Facility_Types[5], 'Facility_Level' : [5], 'District': None, 'Region': None
+}),ignore_index=True,sort=True)
+
+# Create the Facility_ID
+mfl.loc[:,'Facility_ID']=mfl.index
+
+# Create a unique name for each Facility
+name=mfl['Facility_Type'] + '_' + mfl['District']
+name.loc[mfl['Facility_Type']=='Referral Hospital'] ='Referral Hospital' + '_' + mfl.loc[mfl['Facility_Type']=='Referral Hospital','Region']
+name.loc[mfl['Facility_Type']=='National Hospital'] ='National Hospital'
+
+mfl.loc[:,'Facility_Name']=name
+
+officer_types_table.to_csv(resourcefilepath + 'ResourceFile_MasterFacilitiesList.csv')
+
+#  --------
+
+# Create a simple mapping of all the facilities that persons in a district can access
+facilities_by_district=pd.DataFrame(columns=mfl.columns)
+
+for d in pop_districts:
+    the_region = pop.loc[pop['District']==d,'Region'].copy().values[0]
+    district_facs = mfl.loc[mfl['District']==d]
+
+    region_fac = mfl.loc[ pd.isnull(mfl['District']) & (mfl['Region']==the_region) ].copy().reset_index(drop=True)
+    region_fac.loc[0,'District']=d
+
+    national_fac = mfl.loc[ pd.isnull(mfl['District']) & pd.isnull(mfl['Region']) ].copy().reset_index(drop=True)
+    national_fac.loc[0,'District'] = d
+    national_fac.loc[0, 'Region'] = the_region
+
+    facilities_by_district = pd.concat([facilities_by_district , district_facs,region_fac, national_fac],ignore_index=True)
+
+assert len(facilities_by_district) == len(pop_districts) * len(Facility_Types)
+
+
+#  --------
 
 # Create a mapping of how these different officer types will go to particular facility types
 # The level is important as this determines how many other people are drawing on their time.
 
-# Load up the Master Facilities List
-mfl=pd.read_csv(ResourceFile_MasterFacilitiesList)
-
-# to ensure that the types of facilities used here conforms
-facility_types=pd.unique(mfl.Facility_Type)
-
 Facility_By_Officer=pd.DataFrame({'Officer_Type': officer_types_table.Officer_Type, 'Officer_Type_Code':officer_types_table.Officer_Type_Code ,'Facility_Type_Can_Work_In':None})
 
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Medical Officer / Specialist','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Clinical Officer / Technician','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Med. Assistant','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Nurse Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Community Health Worker', 'Health Centre','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Nurse Midwife Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Community Health Worker', 'Health Centre','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Pharmacist','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Pharm Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Pharm Assistant','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Lab Officer','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Lab Technician','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Lab Assistant','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='DCSA','Facility_Type_Can_Work_In']={'Community Health Worker'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Dental Officer','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Dental Therapist','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Dental Assistant','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Mental Health Staff','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Nutrition Staff','Facility_Type_Can_Work_In']={'District Hospital','Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Radiographer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Radiography Technician','Facility_Type_Can_Work_In']={'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Sonographer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital'}
-Facility_By_Officer.at[Facility_By_Officer['Officer']=='Radiotherapy Technician','Facility_Type_Can_Work_In']={'Referral Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Medical Officer / Specialist','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Clinical Officer / Technician','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Med. Assistant','Facility_Type_Can_Work_In']={'District Hospital','Non-District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Community Health Worker','Non-District Hospital', 'Health Centre', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nurse Midwife Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Non-District Hospital','Community Health Worker', 'Health Centre', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharmacist','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre', 'Non-District Hospital','Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharm Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre', 'Non-District Hospital','Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Pharm Assistant','Facility_Type_Can_Work_In']={'District Hospital', 'Health Centre','Non-District Hospital','Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Technician','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Lab Assistant','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','Non-District Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='DCSA','Facility_Type_Can_Work_In']={'Community Health Worker'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Officer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Therapist','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Dental Assistant','Facility_Type_Can_Work_In']={'District Hospital','Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Mental Health Staff','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Nutrition Staff','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiographer','Facility_Type_Can_Work_In']={'National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiography Technician','Facility_Type_Can_Work_In']={'National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Sonographer','Facility_Type_Can_Work_In']={'District Hospital', 'Referral Hospital','National Hospital'}
+Facility_By_Officer.at[Facility_By_Officer['Officer_Type']=='Radiotherapy Technician','Facility_Type_Can_Work_In']={'National Hospital'}
 
 
+# check that have only ever used correct Facility_Type labels
+for i in np.arange(0, len(Facility_By_Officer)):
+    x = Facility_By_Officer['Facility_Type_Can_Work_In'][i]
+    assert x.issubset(set(Facility_Types))
 
 
-# Prepare dataframe for holding the assignments between Staff_ID and Facility_ID
-Facility_Assignment =pd.DataFrame(stafflist['Staff_ID'])
-Facility_Assignment.loc[:,'Facility_ID']=None
+# check that every Officer_Type has been covered
+assert set(Facility_By_Officer['Officer_Type_Code']) == set(officer_types_table.Officer_Type_Code)
+
+
+#  --------
+
+
+# Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
+
+facility_assignment =pd.Series(index=staff_list.index)
 
 # Loop through each staff member and allocate them to
+for staffmember in staff_list.index:
 
-for staffmember in stafflist.index:
-
-    officer =stafflist.loc[staffmember].Officer
-
-    district= stafflist.loc[staffmember].District
-
-    fac_types= Facility_By_Officer.loc[Facility_By_Officer['Officer']==officer,'Facility_Type']
-    fac_types_set=fac_types.iloc[0]
-
-    # convert the set of relevant facilities to a list
-    fac_types_list = []
-    for x in fac_types_set:
-        fac_types_list.append(x)
+    officer =staff_list.loc[staffmember].Officer_Type_Code
+    district= staff_list.loc[staffmember].District
+    possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
 
     # Get the facilities to which this staff member might be allocated
-    suitable_facilities=fac.loc[ ( fac['Facility Type'].isin(fac_types_list) ) & ( fac['District'] == district ) ]
+    suitable_facilities=mfl.loc[ (mfl['Facility_Type'].isin(possible_fac_types) ) & ( mfl['District'] == district ) ]
 
-    # what is there are not any suitable facilities????
+    assert len(suitable_facilities)>0
 
-    # choose one for this staff member:
+    # if there is a suitable facility for this office to go into
+    x=np.random.choice(len(suitable_facilities))
+    assigned_facility=suitable_facilities.iloc[x].Facility_ID
+    facility_assignment.at[staffmember]=assigned_facility
 
 
-    if len(suitable_facilities)>0 :
 
-        # if there is a suitable facility for this office to go into
-        x=np.random.choice(len(suitable_facilities))
 
-        assigned_facility=suitable_facilities.iloc[x].Facility_ID
-
-        Facility_Assignment.at[staffmember,'Facility_ID']=assigned_facility
-
-    else:
-
-        # if there is no suitable facility for this officer: assign randomly
-
-        fac_in_any_district=fac.loc[fac['Facility Type'].isin(fac_types_list)]
-        x = np.random.choice(len(fac_in_any_district))
-
-        Facility_Assignment.at[staffmember, 'Facility_ID'] = fac_in_any_district.iloc[x].Facility_ID
-
+# ****BUT, HOW WILL STAFF GET ALLOCATED TO THE REFERRAL AND NATIONAL HOSPITALS ?
 
 # perform checks!!!
 
