@@ -39,6 +39,6 @@ district_wb_trimmed=district_wb_trimmed.rename(columns={'Total':'District Total'
 # This is the definitive listing for the Districts
 district_names = district_wb_trimmed['District']
 
-district_wb_trimmed.to_csv(resourcefilepath+ 'ResourceFile_DistrictPopulationData.csv')
+district_wb_trimmed.to_csv(resourcefilepath+ 'ResourceFile_District_Population_Data.csv')
 
 

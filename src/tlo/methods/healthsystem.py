@@ -64,12 +64,20 @@ class HealthSystem(Module):
     PARAMETERS = {
 
         'Officer_Types':
-            Parameter(Types.LIST,
+            Parameter(Types.DATA_FRAME,
                       'The names of the types of health workers ("officers")'),
 
         'Daily_Capabilities':
-            Parameter(Types.LIST,
-                      'The capabilities by facility and officer type available each day')
+            Parameter(Types.DATA_FRAME,
+                      'The capabilities by facility and officer type available each day'),
+
+        'Appt_Types_Table':
+            Parameter(Types.DATA_FRAME,
+                      'The names of the type of appointments with the health system'),
+
+        'ApptTimeTable':
+            Parameter(Types.DATA_FRAME,
+                      'The time taken for each appointment, according to officer and facility type.')
 
 
         # 'Master_Facility_List':
@@ -99,7 +107,6 @@ class HealthSystem(Module):
     }
 
 
-
     PROPERTIES = {
         'Distance_To_Nearest_HealthFacility':
             Property(Types.REAL,
@@ -110,12 +117,21 @@ class HealthSystem(Module):
     def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_officer_types_table.csv')
+                os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
         )
 
         self.parameters['Daily_Capabilities'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_DailyCapabilities.csv')
+                os.path.join(self.resourcefilepath, 'ResourceFile_Daily_Capabilities.csv')
         )
+
+        self.parameters['Appt_Types_Table'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
+        )
+
+        self.parameters['ApptTimeTable'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
+        )
+
 
         # self.parameters['Master_Facility_List'] = pd.read_csv(
         #     os.path.join(self.resourcefilepath, 'ResourceFile_MasterFacilitiesList.csv')
@@ -143,7 +159,7 @@ class HealthSystem(Module):
 
         # self.parameters['Time_Per_Facility'] = pd.read_csv(
         #     os.path.join(self.resourcefilepath, 'ResourceFile_Time_Per_Facility.csv')
-        )
+        # )
         # self.parameters['Time_Per_Facility']=self.parameters['Time_Per_Facility'].drop(columns='Unnamed: 0')
 
         # self.parameters['Appt_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].ApptType_Code)
@@ -161,11 +177,15 @@ class HealthSystem(Module):
         # Launch the healthcare seeking poll
         sim.schedule_event(HealthCareSeekingPollEvent(self), sim.date)
 
-        # Check that each person is attached to a village and a set of attached health facilities
+        # Check that each person is being associated with a facility of each type
         pop = self.sim.population.props
-        mapping = self.parameters['Village_To_Facility_Mapping']
+        # Need to import the mfl
+        cap = self.parameters['Daily_Capabilities']
+
         for person_id in pop.index[pop.is_alive]:
-            my_village = pop.at[person_id, 'village_of_residence']
+            my_district = pop.at[person_id, 'district_of_residence']
+            # my_health_facility_types = look at mfl
+
             my_health_facilities = mapping.loc[mapping['Village'] == my_village]
             assert len(my_health_facilities) > 0
 
