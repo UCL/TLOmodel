@@ -184,7 +184,7 @@ name.loc[mfl['Facility_Type']=='National Hospital'] ='National Hospital'
 
 mfl.loc[:,'Facility_Name']=name
 
-officer_types_table.to_csv(resourcefilepath + 'ResourceFile_MasterFacilitiesList.csv')
+mfl.to_csv(resourcefilepath + 'ResourceFile_Master_Facilities_List.csv')
 
 #  --------
 
@@ -206,6 +206,7 @@ for d in pop_districts:
 
 assert len(facilities_by_district) == len(pop_districts) * len(Facility_Types)
 
+facilities_by_district.to_csv(resourcefilepath + 'ResourceFile_Facilities_For_Each_District.csv')
 
 #  --------
 

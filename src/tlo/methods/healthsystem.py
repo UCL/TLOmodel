@@ -75,9 +75,21 @@ class HealthSystem(Module):
             Parameter(Types.DATA_FRAME,
                       'The names of the type of appointments with the health system'),
 
-        'ApptTimeTable':
+        'Appt_Time_Table':
             Parameter(Types.DATA_FRAME,
-                      'The time taken for each appointment, according to officer and facility type.')
+                      'The time taken for each appointment, according to officer and facility type.'),
+
+        'Master_Facilities_List':
+            Parameter(Types.DATA_FRAME,
+                      'Listing of all health facilities.'),
+
+        'Facilities_For_Each_District':
+            Parameter(Types.DATA_FRAME,
+                      'Mapping between a district and all of the health facilities to which its population have access.'),
+
+        'Facility_Types_And_Levels':
+            Parameter(Types.DATA_FRAME,
+                      'The types of facilities and the levels (read from the Master Facilities list).'),
 
 
         # 'Master_Facility_List':
@@ -128,41 +140,19 @@ class HealthSystem(Module):
                 os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
         )
 
-        self.parameters['ApptTimeTable'] = pd.read_csv(
+        self.parameters['Appt_Time_Table'] = pd.read_csv(
                 os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
         )
 
+        self.parameters['Master_Facilities_List'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_Master_Facilities_List.csv')
+        )
 
-        # self.parameters['Master_Facility_List'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_MasterFacilitiesList.csv')
-        # )
+        self.parameters['Facilities_For_Each_District'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
+        )
 
-        # self.parameters['Village_To_Facility_Mapping'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_Village_To_Facility_Mapping.csv')
-        # )
-
-        # self.parameters['CurrentStaff'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaff.csv')
-        # )
-        #
-        # self.parameters['CurrentStaffWorkingHours'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaffWorkingHours.csv')
-        # )
-
-        # self.parameters['HealthSystem_ApptTimes'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_HealthSystem_ApptTimes.csv')
-        # )
-
-        # self.parameters['StaffAssignmentToFacility'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_StaffAssignmentToFacility.csv')
-        # )
-
-        # self.parameters['Time_Per_Facility'] = pd.read_csv(
-        #     os.path.join(self.resourcefilepath, 'ResourceFile_Time_Per_Facility.csv')
-        # )
-        # self.parameters['Time_Per_Facility']=self.parameters['Time_Per_Facility'].drop(columns='Unnamed: 0')
-
-        # self.parameters['Appt_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].ApptType_Code)
+        self.parameters['Facility_Types_And_Levels'] = self.parameters['Master_Facilities_List'][['Facility_Type','Facility_Level']].drop_duplicates().reset_index(drop=True)
 
 
     def initialise_population(self, population):
@@ -179,17 +169,19 @@ class HealthSystem(Module):
 
         # Check that each person is being associated with a facility of each type
         pop = self.sim.population.props
-        # Need to import the mfl
-        cap = self.parameters['Daily_Capabilities']
+        fac_per_district=self.parameters['Facilities_For_Each_District']
+        mfl = self.parameters['Master_Facilities_List']
+        Facility_Types = self.parameters['Facility_Types_And_Levels']['Facility_Type'].values
 
         for person_id in pop.index[pop.is_alive]:
             my_district = pop.at[person_id, 'district_of_residence']
-            # my_health_facility_types = look at mfl
+            my_health_facilities = fac_per_district.loc[fac_per_district['District']==my_district]
+            my_health_facility_types = pd.unique(my_health_facilities.Facility_Type)
 
-            my_health_facilities = mapping.loc[mapping['Village'] == my_village]
-            assert len(my_health_facilities) > 0
+            assert len(my_health_facilities) == len(Facility_Types)
+            assert set(my_health_facility_types) == set(Facility_Types)
 
-        # Launch the healthsystem_scheduler regular event
+        # Launch the healthsystem_scheduler (a regular event occurring each day)
         sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
@@ -226,9 +218,12 @@ class HealthSystem(Module):
         # get population dataframe
         df = self.sim.population.props
 
-        # Check that this is a legitimate request for a treatment using asserts for the definitions
+        # TODO: Check that this is a legitimate request for a treatment using asserts for the definitions
+        #
 
-        # Check that this request is allowable under current policy
+        # TODO: Check that this request is allowable under current policy
+        #
+
 
         # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
 
@@ -238,7 +233,6 @@ class HealthSystem(Module):
             'topen': [topen],
             'tclose': [tclose],
             'status': 'Called'})
-
 
         self.new_health_system_calls= self.new_health_system_calls.append(new_request, ignore_index=True)
 
@@ -263,16 +257,10 @@ class HealthSystem(Module):
 
         """
         This will return a dataframe of the capabilities that the healthsystem has for today.
-        It return a dataframe with index set to the same as the MasterFacilitiesList
+        Function can go in here in the future that could expand the time available, simulating increasing efficiency.
         """
 
-        # Create the capabailities
-
-        # this is simply a dataframe, giving the minutes available from each type of officer and at each facility
-
-        # Function can go in here in the future that could expand the time available, simulating increasing efficiency
-
-        capabilities=self.parameters['Time_Per_Facility']
+        capabilities=self.parameters['Daily_Capabilities']
 
         return(capabilities)
 
@@ -282,10 +270,11 @@ class HealthSystem(Module):
         It returns a dataframe containing the footprint information in the format that the HealthSystemScheduler expects.
         """
 
-        keys=self.parameters['Appt_Types']
+        keys=self.parameters['Appt_Types_Table']['Appt_Type_Code']
         values=np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
 
+        # TODO: this to be moved to the scheduler stuff, incl min level
         blank_footprint['TREATMENT_ID']=calling_event.TREATMENT_ID
         blank_footprint['DiseaseModuleName']=calling_event.module.name
         blank_footprint['DiseaseModule']=calling_event.module
@@ -365,7 +354,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Add column for Minutes Used This Day (for live-tracking the use of those resources)
         capabilities.loc[:,'Minutes_Used_Today']=0
-        capabilities.loc[:,'Minutes_Remaining_Today']=capabilities['Av_Minutes_Per_Day']
+        capabilities.loc[:,'Minutes_Remaining_Today']=capabilities['Total_Minutes_Per_Day']
 
 
         # gather other data:
