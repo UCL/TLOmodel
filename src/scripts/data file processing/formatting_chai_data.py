@@ -43,38 +43,47 @@ wb_extract=wb_extract.drop([3])
 wb_extract=wb_extract.reset_index(drop=True)
 wb_extract.fillna(0, inplace=True) # replace all null values with zero values
 
-# Add in the colum to the dataframe for the districts:
-districts= wb_import.loc[6:37,0].reset_index(drop=True)
-wb_extract.loc[:,'District'] = districts
+# Add in the column to the dataframe for the labels districts (and key hospitals):
+labels= wb_import.loc[6:37,0].reset_index(drop=True)
+is_distlevel = labels.copy()
+is_distlevel[0:27]=True
+is_distlevel[27:]=False
+
+wb_extract.loc[:,'District_Or_Hospital'] = labels
+wb_extract.loc[:,"Is_DistrictLevel"]=is_distlevel
 
 # Finished import from the CHAI excel:
 staffing_table = wb_extract
+#
+# # ** Check that the districts name will match up with what is in
+# chai_districts = pd.unique( staffing_table ['District'] )
+#
+# # get the districts from the resource file:
+# pop = pd.read_csv(resourcefilepath+'ResourceFile_DistrictPopulationData.csv')
+# pop_districts = pop['District'].values
+#
+# # check that every district in the resource file is represented in the CHAI list:
+# for d in pop_districts:
+#     print('Resource File district, ', d , ' in chai tables: ', (d in chai_districts))
+# # The city divisions are missing
+#
+# # check that every district in the chai table is represented in the resoure file list:
+# for d in chai_districts:
+#     print('Chai file district, ', d , ' in resource file: ', (d in pop_districts))
+# # HQ or missing', 'KCH', 'MCH', 'QECH' not in the pop data for districts
 
-# ** Check that the district name will match up with what is in
-chai_districts = pd.unique( staffing_table ['District'] )
 
-# get the districts from the resource file:
-pop = pd.read_csv(resourcefilepath+'ResourceFile_DistrictPopulationData.csv')
-pop_districts = pop['District'].values
+# Sort out which are district allocations and which are central hospitals
+staffing_table .loc[staffing_table['District_Or_Hospital']=='HQ or missing','District_Or_Hospital'] = 'National_Hospital'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='KCH','District_Or_Hospital'] = 'Central_Referral_Hospital'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='MCH','District_Or_Hospital'] = 'Northern_Referral_Hospital'
+staffing_table .loc[staffing_table['District_Or_Hospital']=='QECH','District_Or_Hospital'] = 'Southern_Referral_Hospital'
 
-# check that every district in the resource file is represented in the CHAI list:
-for d in pop_districts:
-    print('Resource File district, ', d , ' in chai tables: ', (d in chai_districts))
-# The city divisions are missing
 
-# check that every district in the chai table is represented in the resoure file list:
-for d in chai_districts:
-    print('Chai file district, ', d , ' in resource file: ', (d in pop_districts))
-# HQ or missing', 'KCH', 'MCH', 'QECH' not in the pop data for districts
-
-# Remedy the mismatches:
-staffing_table .loc[staffing_table ['District']=='KCH','District'] = 'Lilongwe'
-staffing_table .loc[staffing_table ['District']=='HQ or missing','District'] = 'Lilongwe'
-staffing_table .loc[staffing_table ['District']=='MCH','District'] = 'Mzimba'
-staffing_table .loc[staffing_table ['District']=='QECH','District'] = 'Blantyre'
-staffing_table .loc[staffing_table ['District']=='ZCH','District'] = 'Zomba'
-# Collapse any duplicated districts together:
-staffing_table=pd.DataFrame(staffing_table.groupby(by=['District']).sum()).reset_index()
+*** GOT TO HERE :-)
+# Put the ZCH (assume Zomba City Hospital) into the Zomba district level allocation
+staffing_table .loc[staffing_table ['District_Or_Hospital']=='ZCH','District_Or_Hospital'] = 'Zomba'
+staffing_table=pd.DataFrame(staffing_table.groupby(by=['District_Or_Hospital']).sum()).reset_index()
 
 
 # Get blank record for inserting the missing districts:
