@@ -33,7 +33,7 @@ district_wb.Women = district_wb.Women.astype(float)
 assert (~pd.isnull(district_wb).any()).all() # check for any null values
 
 # Trim down the sheet
-district_wb_trimmed=district_wb.drop(['Region','Men','Women'],axis=1)
+district_wb_trimmed=district_wb.drop(['Men','Women'],axis=1)
 district_wb_trimmed=district_wb_trimmed.rename(columns={'Total':'District Total'})
 
 # This is the definitive listing for the Districts
