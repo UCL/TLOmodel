@@ -1,0 +1,1099 @@
+,Facility_ID,Officer_Type_Code,Total_Minutes_Per_Day,District,Facility_Level,Facility_Type,Region,Facility_Name,Officer_Type
+0,0,E01,13696.016427104812,Chitipa,0,Community Health Station,Northern,Community Health Station_Chitipa,DCSA
+1,0,N01,425.264887063655,Chitipa,0,Community Health Station,Northern,Community Health Station_Chitipa,Nurse Officer
+2,0,N02,11291.071868583153,Chitipa,0,Community Health Station,Northern,Community Health Station_Chitipa,Nurse Midwife Technician
+3,1,N01,478.4229979466119,Chitipa,1,Health Centre,Northern,Health Centre_Chitipa,Nurse Officer
+4,1,N02,10128.755646817244,Chitipa,1,Health Centre,Northern,Health Centre_Chitipa,Nurse Midwife Technician
+5,1,P02,1335.4677618069818,Chitipa,1,Health Centre,Northern,Health Centre_Chitipa,Pharm Technician
+6,2,L01,191.6845995893224,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Lab Officer
+7,2,L02,1974.9322381930187,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Lab Technician
+8,2,L03,627.3314168377824,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Lab Assistant
+9,2,M01,334.95523613963036,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Medical Officer / Specialist
+10,2,M02,6521.24517453799,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Clinical Officer / Technician
+11,2,M03,2336.407392197125,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Med. Assistant
+12,2,N01,265.7905544147844,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Nurse Officer
+13,2,N02,10792.936344969192,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Nurse Midwife Technician
+14,2,P01,190.7811088295688,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Pharmacist
+15,2,P02,1144.686652977413,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Pharm Technician
+16,2,P03,572.3433264887065,Chitipa,2,Non-District Hospital,Northern,Non-District Hospital_Chitipa,Pharm Assistant
+17,3,C01,200.39753593429157,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Mental Health Staff
+18,3,D01,200.39753593429157,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Dental Officer
+19,3,D02,2605.167967145791,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Dental Therapist
+20,3,L02,987.4661190965094,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Lab Technician
+21,3,L03,1672.8837782340865,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Lab Assistant
+22,3,M01,418.69404517453796,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Medical Officer / Specialist
+23,3,M02,7076.244763860373,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Clinical Officer / Technician
+24,3,M03,3161.021765913757,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Med. Assistant
+25,3,N01,478.4229979466119,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Nurse Officer
+26,3,N02,12121.297741273087,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Nurse Midwife Technician
+27,3,P02,953.905544147844,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Pharm Technician
+28,3,P03,1144.686652977413,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Pharm Assistant
+29,3,R01,618.4607802874743,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Radiographer
+30,3,R02,987.4661190965094,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Radiography Technician
+31,3,T01,200.39753593429157,Chitipa,3,District Hospital,Northern,District Hospital_Chitipa,Nutrition Staff
+32,4,E01,13696.016427104812,Karonga,0,Community Health Station,Northern,Community Health Station_Karonga,DCSA
+33,4,N01,318.9486652977413,Karonga,0,Community Health Station,Northern,Community Health Station_Karonga,Nurse Officer
+34,4,N02,15110.110882956851,Karonga,0,Community Health Station,Northern,Community Health Station_Karonga,Nurse Midwife Technician
+35,5,N01,372.10677618069815,Karonga,1,Health Centre,Northern,Health Centre_Karonga,Nurse Officer
+36,5,N02,13947.794661190943,Karonga,1,Health Centre,Northern,Health Centre_Karonga,Nurse Midwife Technician
+37,5,P02,2098.5921971252574,Karonga,1,Health Centre,Northern,Health Centre_Karonga,Pharm Technician
+38,5,P03,953.905544147844,Karonga,1,Health Centre,Northern,Health Centre_Karonga,Pharm Assistant
+39,6,L02,2567.4119096509244,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Lab Technician
+40,6,L03,2509.3256673511296,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Lab Assistant
+41,6,M01,502.43285420944557,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Medical Officer / Specialist
+42,6,M02,7908.744147843946,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Clinical Officer / Technician
+43,6,M03,3710.764681724845,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Med. Assistant
+44,6,N01,584.7392197125256,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Nurse Officer
+45,6,N02,16272.42710472276,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Nurse Midwife Technician
+46,6,P01,190.7811088295688,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Pharmacist
+47,6,P02,953.905544147844,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Pharm Technician
+48,6,P03,572.3433264887065,Karonga,2,Non-District Hospital,Northern,Non-District Hospital_Karonga,Pharm Assistant
+49,7,C01,200.39753593429157,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Mental Health Staff
+50,7,D01,200.39753593429157,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Dental Officer
+51,7,D02,4007.9507186858327,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Dental Therapist
+52,7,L01,191.6845995893224,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Lab Officer
+53,7,L02,1777.4390143737169,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Lab Technician
+54,7,L03,1254.6628336755648,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Lab Assistant
+55,7,M01,251.21642710472275,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Medical Officer / Specialist
+56,7,M02,7908.744147843946,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Clinical Officer / Technician
+57,7,M03,3710.764681724845,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Med. Assistant
+58,7,N01,425.264887063655,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Nurse Officer
+59,7,N02,16106.381930184773,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Nurse Midwife Technician
+60,7,P02,1717.0299794661196,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Pharm Technician
+61,7,P03,1526.2488706365507,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Pharm Assistant
+62,7,R01,618.4607802874743,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Radiographer
+63,7,R02,1777.4390143737169,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Radiography Technician
+64,7,T01,200.39753593429157,Karonga,3,District Hospital,Northern,District Hospital_Karonga,Nutrition Staff
+65,8,E01,6848.008213552362,Nkhata Bay,0,Community Health Station,Northern,Community Health Station_Nkhata Bay,DCSA
+66,8,N01,53.15811088295689,Nkhata Bay,0,Community Health Station,Northern,Community Health Station_Nkhata Bay,Nurse Officer
+67,8,N02,9298.52977412731,Nkhata Bay,0,Community Health Station,Northern,Community Health Station_Nkhata Bay,Nurse Midwife Technician
+68,9,N01,106.31622176591378,Nkhata Bay,1,Health Centre,Northern,Health Centre_Nkhata Bay,Nurse Officer
+69,9,N02,8302.258726899388,Nkhata Bay,1,Health Centre,Northern,Health Centre_Nkhata Bay,Nurse Midwife Technician
+70,9,P02,381.5622176591376,Nkhata Bay,1,Health Centre,Northern,Health Centre_Nkhata Bay,Pharm Technician
+71,9,P03,763.1244353182752,Nkhata Bay,1,Health Centre,Northern,Health Centre_Nkhata Bay,Pharm Assistant
+72,10,L02,1579.945790554415,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Lab Technician
+73,10,L03,418.2209445585216,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Lab Assistant
+74,10,M01,167.47761806981518,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Medical Officer / Specialist
+75,10,M02,3329.997535934293,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Clinical Officer / Technician
+76,10,M03,2061.535934291581,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Med. Assistant
+77,10,N01,318.9486652977413,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Nurse Officer
+78,10,N02,11125.026694045166,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Nurse Midwife Technician
+79,10,P02,1335.4677618069818,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Pharm Technician
+80,10,P03,381.5622176591376,Nkhata Bay,2,Non-District Hospital,Northern,Non-District Hospital_Nkhata Bay,Pharm Assistant
+81,11,D02,2605.167967145791,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Dental Therapist
+82,11,L01,191.6845995893224,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Lab Officer
+83,11,L02,987.4661190965094,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Lab Technician
+84,11,L03,2091.1047227926083,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Lab Assistant
+85,11,M01,167.47761806981518,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Medical Officer / Specialist
+86,11,M02,5827.495687885013,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Clinical Officer / Technician
+87,11,M03,2336.407392197125,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Med. Assistant
+88,11,N01,372.10677618069815,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Nurse Officer
+89,11,N02,9464.574948665297,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Nurse Midwife Technician
+90,11,P02,1144.686652977413,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Pharm Technician
+91,11,P03,953.905544147844,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Pharm Assistant
+92,11,R01,206.15359342915812,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Radiographer
+93,11,R02,592.4796714579056,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Radiography Technician
+94,11,T01,200.39753593429157,Nkhata Bay,3,District Hospital,Northern,District Hospital_Nkhata Bay,Nutrition Staff
+95,12,E01,13696.016427104812,Rumphi,0,Community Health Station,Northern,Community Health Station_Rumphi,DCSA
+96,12,N01,318.9486652977413,Rumphi,0,Community Health Station,Northern,Community Health Station_Rumphi,Nurse Officer
+97,12,N02,18098.924024640615,Rumphi,0,Community Health Station,Northern,Community Health Station_Rumphi,Nurse Midwife Technician
+98,13,N01,425.264887063655,Rumphi,1,Health Centre,Northern,Health Centre_Rumphi,Nurse Officer
+99,13,N02,17102.652977412694,Rumphi,1,Health Centre,Northern,Health Centre_Rumphi,Nurse Midwife Technician
+100,13,P01,190.7811088295688,Rumphi,1,Health Centre,Northern,Health Centre_Rumphi,Pharmacist
+101,13,P02,1526.2488706365507,Rumphi,1,Health Centre,Northern,Health Centre_Rumphi,Pharm Technician
+102,13,P03,1335.4677618069818,Rumphi,1,Health Centre,Northern,Health Centre_Rumphi,Pharm Assistant
+103,14,L01,191.6845995893224,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Lab Officer
+104,14,L02,2172.4254620123206,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Lab Technician
+105,14,L03,2509.3256673511296,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Lab Assistant
+106,14,M01,669.9104722792607,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Medical Officer / Specialist
+107,14,M02,8879.993429158114,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Clinical Officer / Technician
+108,14,M03,3848.200410677617,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Med. Assistant
+109,14,N01,691.0554414784393,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Nurse Officer
+110,14,N02,16604.517453798733,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Nurse Midwife Technician
+111,14,P01,190.7811088295688,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Pharmacist
+112,14,P02,2098.5921971252574,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Pharm Technician
+113,14,P03,953.905544147844,Rumphi,2,Non-District Hospital,Northern,Non-District Hospital_Rumphi,Pharm Assistant
+114,15,C01,400.79507186858314,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Mental Health Staff
+115,15,D01,200.39753593429157,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Dental Officer
+116,15,D02,4208.348254620124,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Dental Therapist
+117,15,L02,2172.4254620123206,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Lab Technician
+118,15,L03,1881.9942505133474,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Lab Assistant
+119,15,M01,251.21642710472275,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Medical Officer / Specialist
+120,15,M02,8602.493634496923,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Clinical Officer / Technician
+121,15,M03,4535.379055441479,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Med. Assistant
+122,15,N01,584.7392197125256,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Nurse Officer
+123,15,N02,16106.381930184773,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Nurse Midwife Technician
+124,15,P02,1335.4677618069818,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Pharm Technician
+125,15,P03,953.905544147844,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Pharm Assistant
+126,15,R01,618.4607802874743,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Radiographer
+127,15,R02,789.9728952772075,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Radiography Technician
+128,15,T01,1001.9876796714578,Rumphi,3,District Hospital,Northern,District Hospital_Rumphi,Nutrition Staff
+129,16,E01,6848.008213552362,Mzimba,0,Community Health Station,Northern,Community Health Station_Mzimba,DCSA
+130,16,N01,531.5811088295687,Mzimba,0,Community Health Station,Northern,Community Health Station_Mzimba,Nurse Officer
+131,16,N02,18763.104722792563,Mzimba,0,Community Health Station,Northern,Community Health Station_Mzimba,Nurse Midwife Technician
+132,17,N01,372.10677618069815,Mzimba,1,Health Centre,Northern,Health Centre_Mzimba,Nurse Officer
+133,17,N02,16438.472279260746,Mzimba,1,Health Centre,Northern,Health Centre_Mzimba,Nurse Midwife Technician
+134,17,P02,2289.3733059548263,Mzimba,1,Health Centre,Northern,Health Centre_Mzimba,Pharm Technician
+135,17,P03,953.905544147844,Mzimba,1,Health Centre,Northern,Health Centre_Mzimba,Pharm Assistant
+136,18,L02,2369.9186858316225,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Lab Technician
+137,18,L03,2300.215195071869,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Lab Assistant
+138,18,M01,334.95523613963036,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Medical Officer / Specialist
+139,18,M02,8186.243942505137,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Clinical Officer / Technician
+140,18,M03,4672.814784394252,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Med. Assistant
+141,18,N01,531.5811088295687,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Nurse Officer
+142,18,N02,18597.059548254576,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Nurse Midwife Technician
+143,18,P01,381.5622176591376,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Pharmacist
+144,18,P02,1144.686652977413,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Pharm Technician
+145,18,P03,1144.686652977413,Mzimba,2,Non-District Hospital,Northern,Non-District Hospital_Mzimba,Pharm Assistant
+146,19,C01,8817.491581108823,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Mental Health Staff
+147,19,D02,5009.938398357289,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Dental Therapist
+148,19,L02,2764.9051334702262,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Lab Technician
+149,19,L03,2509.3256673511296,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Lab Assistant
+150,19,M01,586.1716632443531,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Medical Officer / Specialist
+151,19,M02,10822.491991786452,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Clinical Officer / Technician
+152,19,M03,3435.893223819301,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Med. Assistant
+153,19,N01,265.7905544147844,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Nurse Officer
+154,19,N02,16936.607802874707,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Nurse Midwife Technician
+155,19,P02,1717.0299794661196,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Pharm Technician
+156,19,P03,1144.686652977413,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Pharm Assistant
+157,19,R01,1030.7679671457906,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Radiographer
+158,19,R02,789.9728952772075,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Radiography Technician
+159,19,T01,400.79507186858314,Mzimba,3,District Hospital,Northern,District Hospital_Mzimba,Nutrition Staff
+160,20,E01,6848.008213552362,Likoma,0,Community Health Station,Northern,Community Health Station_Likoma,DCSA
+161,20,N01,106.31622176591378,Likoma,0,Community Health Station,Northern,Community Health Station_Likoma,Nurse Officer
+162,20,N02,9298.52977412731,Likoma,0,Community Health Station,Northern,Community Health Station_Likoma,Nurse Midwife Technician
+163,21,N01,212.63244353182756,Likoma,1,Health Centre,Northern,Health Centre_Likoma,Nurse Officer
+164,21,N02,9962.710472279257,Likoma,1,Health Centre,Northern,Health Centre_Likoma,Nurse Midwife Technician
+165,21,P02,953.905544147844,Likoma,1,Health Centre,Northern,Health Centre_Likoma,Pharm Technician
+166,21,P03,763.1244353182752,Likoma,1,Health Centre,Northern,Health Centre_Likoma,Pharm Assistant
+167,22,L02,1579.945790554415,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Lab Technician
+168,22,L03,1254.6628336755648,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Lab Assistant
+169,22,M01,83.73880903490759,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Medical Officer / Specialist
+170,22,M02,4856.246406570844,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Clinical Officer / Technician
+171,22,M03,2198.971663244353,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Med. Assistant
+172,22,N01,212.63244353182756,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Nurse Officer
+173,22,N02,8468.303901437375,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Nurse Midwife Technician
+174,22,P02,763.1244353182752,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Pharm Technician
+175,22,P03,190.7811088295688,Likoma,2,Non-District Hospital,Northern,Non-District Hospital_Likoma,Pharm Assistant
+176,23,D02,2605.167967145791,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Dental Therapist
+177,23,L01,191.6845995893224,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Lab Officer
+178,23,L02,987.4661190965094,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Lab Technician
+179,23,L03,1254.6628336755648,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Lab Assistant
+180,23,M01,251.21642710472275,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Medical Officer / Specialist
+181,23,M02,4301.246817248461,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Clinical Officer / Technician
+182,23,M03,2198.971663244353,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Med. Assistant
+183,23,N01,318.9486652977413,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Nurse Officer
+184,23,N02,10460.845995893218,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Nurse Midwife Technician
+185,23,P02,1144.686652977413,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Pharm Technician
+186,23,P03,1144.686652977413,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Pharm Assistant
+187,23,R01,206.15359342915812,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Radiographer
+188,23,R02,592.4796714579056,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Radiography Technician
+189,23,T01,200.39753593429157,Likoma,3,District Hospital,Northern,District Hospital_Likoma,Nutrition Staff
+190,24,E01,6848.008213552362,Mzuzu City,0,Community Health Station,Northern,Community Health Station_Mzuzu City,DCSA
+191,24,N01,159.47433264887067,Mzuzu City,0,Community Health Station,Northern,Community Health Station_Mzuzu City,Nurse Officer
+192,24,N02,17434.743326488668,Mzuzu City,0,Community Health Station,Northern,Community Health Station_Mzuzu City,Nurse Midwife Technician
+193,25,N01,425.264887063655,Mzuzu City,1,Health Centre,Northern,Health Centre_Mzuzu City,Nurse Officer
+194,25,N02,14611.97535934289,Mzuzu City,1,Health Centre,Northern,Health Centre_Mzuzu City,Nurse Midwife Technician
+195,25,P01,190.7811088295688,Mzuzu City,1,Health Centre,Northern,Health Centre_Mzuzu City,Pharmacist
+196,25,P02,1907.8110882956885,Mzuzu City,1,Health Centre,Northern,Health Centre_Mzuzu City,Pharm Technician
+197,25,P03,2098.5921971252574,Mzuzu City,1,Health Centre,Northern,Health Centre_Mzuzu City,Pharm Assistant
+198,26,L02,2172.4254620123206,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Lab Technician
+199,26,L03,2718.4361396303902,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Lab Assistant
+200,26,M01,167.47761806981518,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Medical Officer / Specialist
+201,26,M02,10961.241889117047,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Clinical Officer / Technician
+202,26,M03,2886.150308008213,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Med. Assistant
+203,26,N01,425.264887063655,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Nurse Officer
+204,26,N02,19925.42094455847,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Nurse Midwife Technician
+205,26,P02,1907.8110882956885,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Pharm Technician
+206,26,P03,572.3433264887065,Mzuzu City,2,Non-District Hospital,Northern,Non-District Hospital_Mzuzu City,Pharm Assistant
+207,27,C01,8817.491581108823,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Mental Health Staff
+208,27,D02,5009.938398357289,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Dental Therapist
+209,27,L02,2962.398357289528,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Lab Technician
+210,27,L03,2091.1047227926083,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Lab Assistant
+211,27,M01,753.6492813141683,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Medical Officer / Specialist
+212,27,M02,8047.4940451745415,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Clinical Officer / Technician
+213,27,M03,5222.5577002053415,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Med. Assistant
+214,27,N01,691.0554414784393,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Nurse Officer
+215,27,N02,18763.104722792563,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Nurse Midwife Technician
+216,27,P01,190.7811088295688,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Pharmacist
+217,27,P02,1335.4677618069818,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Pharm Technician
+218,27,P03,572.3433264887065,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Pharm Assistant
+219,27,R01,1030.7679671457906,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Radiographer
+220,27,R02,789.9728952772075,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Radiography Technician
+221,27,T01,400.79507186858314,Mzuzu City,3,District Hospital,Northern,District Hospital_Mzuzu City,Nutrition Staff
+222,28,E01,13696.016427104812,Kasungu,0,Community Health Station,Central,Community Health Station_Kasungu,DCSA
+223,28,N01,318.9486652977413,Kasungu,0,Community Health Station,Central,Community Health Station_Kasungu,Nurse Officer
+224,28,N02,22084.0082135523,Kasungu,0,Community Health Station,Central,Community Health Station_Kasungu,Nurse Midwife Technician
+225,29,N01,372.10677618069815,Kasungu,1,Health Centre,Central,Health Centre_Kasungu,Nurse Officer
+226,29,N02,22250.053388090288,Kasungu,1,Health Centre,Central,Health Centre_Kasungu,Nurse Midwife Technician
+227,29,P02,2480.154414784395,Kasungu,1,Health Centre,Central,Health Centre_Kasungu,Pharm Technician
+228,29,P03,1526.2488706365507,Kasungu,1,Health Centre,Central,Health Centre_Kasungu,Pharm Assistant
+229,30,L01,191.6845995893224,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Lab Officer
+230,30,L02,2567.4119096509244,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Lab Technician
+231,30,L03,3345.767556468172,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Lab Assistant
+232,30,M01,251.21642710472275,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Medical Officer / Specialist
+233,30,M02,8602.493634496923,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Clinical Officer / Technician
+234,30,M03,5085.121971252569,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Med. Assistant
+235,30,N01,744.2135523613962,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Nurse Officer
+236,30,N02,21253.782340862366,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Nurse Midwife Technician
+237,30,P01,190.7811088295688,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Pharmacist
+238,30,P02,1717.0299794661196,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Pharm Technician
+239,30,P03,1717.0299794661196,Kasungu,2,Non-District Hospital,Central,Non-District Hospital_Kasungu,Pharm Assistant
+240,31,C01,400.79507186858314,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Mental Health Staff
+241,31,D01,200.39753593429157,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Dental Officer
+242,31,D02,5811.528542094454,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Dental Therapist
+243,31,L02,3554.8780287474337,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Lab Technician
+244,31,L03,2300.215195071869,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Lab Assistant
+245,31,M01,669.9104722792607,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Medical Officer / Specialist
+246,31,M02,10822.491991786452,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Clinical Officer / Technician
+247,31,M03,4535.379055441479,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Med. Assistant
+248,31,N01,318.9486652977413,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Nurse Officer
+249,31,N02,21087.73716632438,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Nurse Midwife Technician
+250,31,P02,2480.154414784395,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Pharm Technician
+251,31,P03,1335.4677618069818,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Pharm Assistant
+252,31,R01,1030.7679671457906,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Radiographer
+253,31,R02,1579.945790554415,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Radiography Technician
+254,31,T01,601.1926078028747,Kasungu,3,District Hospital,Central,District Hospital_Kasungu,Nutrition Staff
+255,32,E01,13696.016427104812,Nkhotakota,0,Community Health Station,Central,Community Health Station_Nkhotakota,DCSA
+256,32,N01,478.4229979466119,Nkhotakota,0,Community Health Station,Central,Community Health Station_Nkhotakota,Nurse Officer
+257,32,N02,16106.381930184773,Nkhotakota,0,Community Health Station,Central,Community Health Station_Nkhotakota,Nurse Midwife Technician
+258,33,N01,903.6878850102668,Nkhotakota,1,Health Centre,Central,Health Centre_Nkhotakota,Nurse Officer
+259,33,N02,16604.517453798733,Nkhotakota,1,Health Centre,Central,Health Centre_Nkhotakota,Nurse Midwife Technician
+260,33,P01,190.7811088295688,Nkhotakota,1,Health Centre,Central,Health Centre_Nkhotakota,Pharmacist
+261,33,P02,953.905544147844,Nkhotakota,1,Health Centre,Central,Health Centre_Nkhotakota,Pharm Technician
+262,33,P03,572.3433264887065,Nkhotakota,1,Health Centre,Central,Health Centre_Nkhotakota,Pharm Assistant
+263,34,L02,3357.384804928132,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Lab Technician
+264,34,L03,2091.1047227926083,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Lab Assistant
+265,34,M01,418.69404517453796,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Medical Officer / Specialist
+266,34,M02,10128.742505133474,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Clinical Officer / Technician
+267,34,M03,4123.071868583162,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Med. Assistant
+268,34,N01,212.63244353182756,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Nurse Officer
+269,34,N02,15940.336755646786,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Nurse Midwife Technician
+270,34,P02,2098.5921971252574,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Pharm Technician
+271,34,P03,953.905544147844,Nkhotakota,2,Non-District Hospital,Central,Non-District Hospital_Nkhotakota,Pharm Assistant
+272,35,C01,601.1926078028747,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Mental Health Staff
+273,35,D01,200.39753593429157,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Dental Officer
+274,35,D02,4208.348254620124,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Dental Therapist
+275,35,L01,191.6845995893224,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Lab Officer
+276,35,L02,987.4661190965094,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Lab Technician
+277,35,L03,1881.9942505133474,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Lab Assistant
+278,35,M01,669.9104722792607,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Medical Officer / Specialist
+279,35,M02,8463.743737166327,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Clinical Officer / Technician
+280,35,M03,3985.636139630389,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Med. Assistant
+281,35,N01,478.4229979466119,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Nurse Officer
+282,35,N02,17102.652977412694,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Nurse Midwife Technician
+283,35,P01,190.7811088295688,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Pharmacist
+284,35,P02,1907.8110882956885,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Pharm Technician
+285,35,P03,1335.4677618069818,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Pharm Assistant
+286,35,R01,1030.7679671457906,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Radiographer
+287,35,R02,1777.4390143737169,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Radiography Technician
+288,35,T01,601.1926078028747,Nkhotakota,3,District Hospital,Central,District Hospital_Nkhotakota,Nutrition Staff
+289,36,E01,13696.016427104812,Ntchisi,0,Community Health Station,Central,Community Health Station_Ntchisi,DCSA
+290,36,N01,318.9486652977413,Ntchisi,0,Community Health Station,Central,Community Health Station_Ntchisi,Nurse Officer
+291,36,N02,11789.207392197113,Ntchisi,0,Community Health Station,Central,Community Health Station_Ntchisi,Nurse Midwife Technician
+292,37,N01,478.4229979466119,Ntchisi,1,Health Centre,Central,Health Centre_Ntchisi,Nurse Officer
+293,37,N02,12453.38809034906,Ntchisi,1,Health Centre,Central,Health Centre_Ntchisi,Nurse Midwife Technician
+294,37,P02,3243.2788501026707,Ntchisi,1,Health Centre,Central,Health Centre_Ntchisi,Pharm Technician
+295,37,P03,763.1244353182752,Ntchisi,1,Health Centre,Central,Health Centre_Ntchisi,Pharm Assistant
+296,38,L01,191.6845995893224,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Lab Officer
+297,38,L02,1974.9322381930187,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Lab Technician
+298,38,L03,2300.215195071869,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Lab Assistant
+299,38,M01,251.21642710472275,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Medical Officer / Specialist
+300,38,M02,7492.494455852159,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Clinical Officer / Technician
+301,38,M03,2473.843121149897,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Med. Assistant
+302,38,N01,372.10677618069815,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Nurse Officer
+303,38,N02,10626.891170431205,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Nurse Midwife Technician
+304,38,P02,190.7811088295688,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Pharm Technician
+305,38,P03,381.5622176591376,Ntchisi,2,Non-District Hospital,Central,Non-District Hospital_Ntchisi,Pharm Assistant
+306,39,D01,200.39753593429157,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Dental Officer
+307,39,D02,2805.5655030800826,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Dental Therapist
+308,39,L02,1184.9593429158112,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Lab Technician
+309,39,L03,627.3314168377824,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Lab Assistant
+310,39,M01,334.95523613963036,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Medical Officer / Specialist
+311,39,M02,5688.745790554417,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Clinical Officer / Technician
+312,39,M03,3573.328952772073,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Med. Assistant
+313,39,N01,478.4229979466119,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Nurse Officer
+314,39,N02,11623.162217659126,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Nurse Midwife Technician
+315,39,P01,190.7811088295688,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Pharmacist
+316,39,P02,190.7811088295688,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Pharm Technician
+317,39,P03,953.905544147844,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Pharm Assistant
+318,39,R01,206.15359342915812,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Radiographer
+319,39,R02,789.9728952772075,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Radiography Technician
+320,39,T01,200.39753593429157,Ntchisi,3,District Hospital,Central,District Hospital_Ntchisi,Nutrition Staff
+321,40,E01,13696.016427104812,Dowa,0,Community Health Station,Central,Community Health Station_Dowa,DCSA
+322,40,N01,478.4229979466119,Dowa,0,Community Health Station,Central,Community Health Station_Dowa,Nurse Officer
+323,40,N02,19261.240246406524,Dowa,0,Community Health Station,Central,Community Health Station_Dowa,Nurse Midwife Technician
+324,41,N01,637.8973305954825,Dowa,1,Health Centre,Central,Health Centre_Dowa,Nurse Officer
+325,41,N02,16604.517453798733,Dowa,1,Health Centre,Central,Health Centre_Dowa,Nurse Midwife Technician
+326,41,P01,190.7811088295688,Dowa,1,Health Centre,Central,Health Centre_Dowa,Pharmacist
+327,41,P02,1907.8110882956885,Dowa,1,Health Centre,Central,Health Centre_Dowa,Pharm Technician
+328,41,P03,2098.5921971252574,Dowa,1,Health Centre,Central,Health Centre_Dowa,Pharm Assistant
+329,42,L01,191.6845995893224,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Lab Officer
+330,42,L02,2962.398357289528,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Lab Technician
+331,42,L03,2718.4361396303902,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Lab Assistant
+332,42,M01,502.43285420944557,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Medical Officer / Specialist
+333,42,M02,9018.74332648871,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Clinical Officer / Technician
+334,42,M03,3710.764681724845,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Med. Assistant
+335,42,N01,531.5811088295687,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Nurse Officer
+336,42,N02,19427.28542094451,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Nurse Midwife Technician
+337,42,P01,190.7811088295688,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Pharmacist
+338,42,P02,1907.8110882956885,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Pharm Technician
+339,42,P03,953.905544147844,Dowa,2,Non-District Hospital,Central,Non-District Hospital_Dowa,Pharm Assistant
+340,43,C01,601.1926078028747,Dowa,3,District Hospital,Central,District Hospital_Dowa,Mental Health Staff
+341,43,D01,200.39753593429157,Dowa,3,District Hospital,Central,District Hospital_Dowa,Dental Officer
+342,43,D02,4609.143326488706,Dowa,3,District Hospital,Central,District Hospital_Dowa,Dental Therapist
+343,43,L02,1777.4390143737169,Dowa,3,District Hospital,Central,District Hospital_Dowa,Lab Technician
+344,43,L03,1672.8837782340865,Dowa,3,District Hospital,Central,District Hospital_Dowa,Lab Assistant
+345,43,M01,586.1716632443531,Dowa,3,District Hospital,Central,District Hospital_Dowa,Medical Officer / Specialist
+346,43,M02,9573.742915811092,Dowa,3,District Hospital,Central,District Hospital_Dowa,Clinical Officer / Technician
+347,43,M03,4947.6862422997965,Dowa,3,District Hospital,Central,District Hospital_Dowa,Med. Assistant
+348,43,N01,425.264887063655,Dowa,3,District Hospital,Central,District Hospital_Dowa,Nurse Officer
+349,43,N02,16936.607802874707,Dowa,3,District Hospital,Central,District Hospital_Dowa,Nurse Midwife Technician
+350,43,P02,1526.2488706365507,Dowa,3,District Hospital,Central,District Hospital_Dowa,Pharm Technician
+351,43,P03,190.7811088295688,Dowa,3,District Hospital,Central,District Hospital_Dowa,Pharm Assistant
+352,43,R01,1030.7679671457906,Dowa,3,District Hospital,Central,District Hospital_Dowa,Radiographer
+353,43,R02,1382.4525667351131,Dowa,3,District Hospital,Central,District Hospital_Dowa,Radiography Technician
+354,43,T01,601.1926078028747,Dowa,3,District Hospital,Central,District Hospital_Dowa,Nutrition Staff
+355,44,E01,13696.016427104812,Salima,0,Community Health Station,Central,Community Health Station_Salima,DCSA
+356,44,N01,212.63244353182756,Salima,0,Community Health Station,Central,Community Health Station_Salima,Nurse Officer
+357,44,N02,12951.523613963021,Salima,0,Community Health Station,Central,Community Health Station_Salima,Nurse Midwife Technician
+358,45,N01,318.9486652977413,Salima,1,Health Centre,Central,Health Centre_Salima,Nurse Officer
+359,45,N02,11457.11704312114,Salima,1,Health Centre,Central,Health Centre_Salima,Nurse Midwife Technician
+360,45,P01,190.7811088295688,Salima,1,Health Centre,Central,Health Centre_Salima,Pharmacist
+361,45,P02,1526.2488706365507,Salima,1,Health Centre,Central,Health Centre_Salima,Pharm Technician
+362,45,P03,572.3433264887065,Salima,1,Health Centre,Central,Health Centre_Salima,Pharm Assistant
+363,46,L02,1777.4390143737169,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Lab Technician
+364,46,L03,1463.7733059548257,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Lab Assistant
+365,46,M01,418.69404517453796,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Medical Officer / Specialist
+366,46,M02,7076.244763860373,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Clinical Officer / Technician
+367,46,M03,3161.021765913757,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Med. Assistant
+368,46,N01,744.2135523613962,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Nurse Officer
+369,46,N02,13283.613963038995,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Nurse Midwife Technician
+370,46,P02,1526.2488706365507,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Pharm Technician
+371,46,P03,953.905544147844,Salima,2,Non-District Hospital,Central,Non-District Hospital_Salima,Pharm Assistant
+372,47,D01,200.39753593429157,Salima,3,District Hospital,Central,District Hospital_Salima,Dental Officer
+373,47,D02,3607.1556468172494,Salima,3,District Hospital,Central,District Hospital_Salima,Dental Therapist
+374,47,L01,191.6845995893224,Salima,3,District Hospital,Central,District Hospital_Salima,Lab Officer
+375,47,L02,2172.4254620123206,Salima,3,District Hospital,Central,District Hospital_Salima,Lab Technician
+376,47,L03,2091.1047227926083,Salima,3,District Hospital,Central,District Hospital_Salima,Lab Assistant
+377,47,M01,167.47761806981518,Salima,3,District Hospital,Central,District Hospital_Salima,Medical Officer / Specialist
+378,47,M02,7492.494455852159,Salima,3,District Hospital,Central,District Hospital_Salima,Clinical Officer / Technician
+379,47,M03,3161.021765913757,Salima,3,District Hospital,Central,District Hospital_Salima,Med. Assistant
+380,47,N01,372.10677618069815,Salima,3,District Hospital,Central,District Hospital_Salima,Nurse Officer
+381,47,N02,15608.246406570812,Salima,3,District Hospital,Central,District Hospital_Salima,Nurse Midwife Technician
+382,47,P02,1335.4677618069818,Salima,3,District Hospital,Central,District Hospital_Salima,Pharm Technician
+383,47,P03,763.1244353182752,Salima,3,District Hospital,Central,District Hospital_Salima,Pharm Assistant
+384,47,R01,206.15359342915812,Salima,3,District Hospital,Central,District Hospital_Salima,Radiographer
+385,47,R02,789.9728952772075,Salima,3,District Hospital,Central,District Hospital_Salima,Radiography Technician
+386,47,T01,200.39753593429157,Salima,3,District Hospital,Central,District Hospital_Salima,Nutrition Staff
+387,48,E01,6902.792279260781,Lilongwe,0,Community Health Station,Central,Community Health Station_Lilongwe,DCSA
+388,48,N01,478.4229979466119,Lilongwe,0,Community Health Station,Central,Community Health Station_Lilongwe,Nurse Officer
+389,48,N02,25570.956878850026,Lilongwe,0,Community Health Station,Central,Community Health Station_Lilongwe,Nurse Midwife Technician
+390,49,N01,318.9486652977413,Lilongwe,1,Health Centre,Central,Health Centre_Lilongwe,Nurse Officer
+391,49,N02,20921.691991786392,Lilongwe,1,Health Centre,Central,Health Centre_Lilongwe,Nurse Midwife Technician
+392,49,P01,190.7811088295688,Lilongwe,1,Health Centre,Central,Health Centre_Lilongwe,Pharmacist
+393,49,P02,2670.935523613964,Lilongwe,1,Health Centre,Central,Health Centre_Lilongwe,Pharm Technician
+394,49,P03,1144.686652977413,Lilongwe,1,Health Centre,Central,Health Centre_Lilongwe,Pharm Assistant
+395,50,L02,3357.384804928132,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Lab Technician
+396,50,L03,2509.3256673511296,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Lab Assistant
+397,50,M01,586.1716632443531,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Medical Officer / Specialist
+398,50,M02,9296.2431211499,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Clinical Officer / Technician
+399,50,M03,5222.5577002053415,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Med. Assistant
+400,50,N01,531.5811088295687,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Nurse Officer
+401,50,N02,22748.18891170425,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Nurse Midwife Technician
+402,50,P02,1717.0299794661196,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Pharm Technician
+403,50,P03,2098.5921971252574,Lilongwe,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe,Pharm Assistant
+404,51,C01,8015.901437371657,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Mental Health Staff
+405,51,D02,6412.721149897327,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Dental Therapist
+406,51,L02,3949.8644763860375,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Lab Technician
+407,51,L03,3554.878028747433,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Lab Assistant
+408,51,M01,837.3880903490759,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Medical Officer / Specialist
+409,51,M02,12348.740862423003,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Clinical Officer / Technician
+410,51,M03,7421.529363449701,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Med. Assistant
+411,51,N01,531.5811088295687,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Nurse Officer
+412,51,N02,21419.827515400353,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Nurse Midwife Technician
+413,51,P01,190.7811088295688,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Pharmacist
+414,51,P02,2480.154414784395,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Pharm Technician
+415,51,P03,1526.2488706365507,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Pharm Assistant
+416,51,R01,1649.2287474332647,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Radiographer
+417,51,R02,987.4661190965094,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Radiography Technician
+418,51,T01,801.5901437371663,Lilongwe,3,District Hospital,Central,District Hospital_Lilongwe,Nutrition Staff
+419,52,E01,13696.016427104812,Mchinji,0,Community Health Station,Central,Community Health Station_Mchinji,DCSA
+420,52,N01,318.9486652977413,Mchinji,0,Community Health Station,Central,Community Health Station_Mchinji,Nurse Officer
+421,52,N02,15110.110882956851,Mchinji,0,Community Health Station,Central,Community Health Station_Mchinji,Nurse Midwife Technician
+422,53,N01,425.264887063655,Mchinji,1,Health Centre,Central,Health Centre_Mchinji,Nurse Officer
+423,53,N02,18098.924024640615,Mchinji,1,Health Centre,Central,Health Centre_Mchinji,Nurse Midwife Technician
+424,53,P02,1907.8110882956885,Mchinji,1,Health Centre,Central,Health Centre_Mchinji,Pharm Technician
+425,53,P03,1144.686652977413,Mchinji,1,Health Centre,Central,Health Centre_Mchinji,Pharm Assistant
+426,54,L01,191.6845995893224,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Lab Officer
+427,54,L02,1777.4390143737169,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Lab Technician
+428,54,L03,2300.215195071869,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Lab Assistant
+429,54,M01,502.43285420944557,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Medical Officer / Specialist
+430,54,M02,9157.493223819305,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Clinical Officer / Technician
+431,54,M03,2886.150308008213,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Med. Assistant
+432,54,N01,584.7392197125256,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Nurse Officer
+433,54,N02,19593.330595482497,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Nurse Midwife Technician
+434,54,P02,1717.0299794661196,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Pharm Technician
+435,54,P03,1144.686652977413,Mchinji,2,Non-District Hospital,Central,Non-District Hospital_Mchinji,Pharm Assistant
+436,55,C01,601.1926078028747,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Mental Health Staff
+437,55,D01,200.39753593429157,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Dental Officer
+438,55,D02,4408.745790554415,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Dental Therapist
+439,55,L02,2962.398357289528,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Lab Technician
+440,55,L03,1463.7733059548257,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Lab Assistant
+441,55,M01,586.1716632443531,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Medical Officer / Specialist
+442,55,M02,8741.243531827518,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Clinical Officer / Technician
+443,55,M03,4123.071868583162,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Med. Assistant
+444,55,N01,425.264887063655,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Nurse Officer
+445,55,N02,16272.42710472276,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Nurse Midwife Technician
+446,55,P01,190.7811088295688,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Pharmacist
+447,55,P02,1526.2488706365507,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Pharm Technician
+448,55,P03,953.905544147844,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Pharm Assistant
+449,55,R01,1443.0751540041067,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Radiographer
+450,55,R02,1777.4390143737169,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Radiography Technician
+451,55,T01,200.39753593429157,Mchinji,3,District Hospital,Central,District Hospital_Mchinji,Nutrition Staff
+452,56,E01,13696.016427104812,Dedza,0,Community Health Station,Central,Community Health Station_Dedza,DCSA
+453,56,N01,531.5811088295687,Dedza,0,Community Health Station,Central,Community Health Station_Dedza,Nurse Officer
+454,56,N02,20755.646817248406,Dedza,0,Community Health Station,Central,Community Health Station_Dedza,Nurse Midwife Technician
+455,57,N01,531.5811088295687,Dedza,1,Health Centre,Central,Health Centre_Dedza,Nurse Officer
+456,57,N02,17766.83367556464,Dedza,1,Health Centre,Central,Health Centre_Dedza,Nurse Midwife Technician
+457,57,P02,2480.154414784395,Dedza,1,Health Centre,Central,Health Centre_Dedza,Pharm Technician
+458,57,P03,763.1244353182752,Dedza,1,Health Centre,Central,Health Centre_Dedza,Pharm Assistant
+459,58,L02,3159.89158110883,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Lab Technician
+460,58,L03,2927.546611909651,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Lab Assistant
+461,58,M01,586.1716632443531,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Medical Officer / Specialist
+462,58,M02,11238.741683778238,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Clinical Officer / Technician
+463,58,M03,4672.814784394252,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Med. Assistant
+464,58,N01,425.264887063655,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Nurse Officer
+465,58,N02,18597.059548254576,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Nurse Midwife Technician
+466,58,P01,190.7811088295688,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Pharmacist
+467,58,P02,1526.2488706365507,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Pharm Technician
+468,58,P03,1144.686652977413,Dedza,2,Non-District Hospital,Central,Non-District Hospital_Dedza,Pharm Assistant
+469,59,C01,601.1926078028747,Dedza,3,District Hospital,Central,District Hospital_Dedza,Mental Health Staff
+470,59,D01,200.39753593429157,Dedza,3,District Hospital,Central,District Hospital_Dedza,Dental Officer
+471,59,D02,5611.1310061601625,Dedza,3,District Hospital,Central,District Hospital_Dedza,Dental Therapist
+472,59,L01,191.6845995893224,Dedza,3,District Hospital,Central,District Hospital_Dedza,Lab Officer
+473,59,L02,2567.4119096509244,Dedza,3,District Hospital,Central,District Hospital_Dedza,Lab Technician
+474,59,L03,2300.215195071869,Dedza,3,District Hospital,Central,District Hospital_Dedza,Lab Assistant
+475,59,M01,502.43285420944557,Dedza,3,District Hospital,Central,District Hospital_Dedza,Medical Officer / Specialist
+476,59,M02,8879.993429158114,Dedza,3,District Hospital,Central,District Hospital_Dedza,Clinical Officer / Technician
+477,59,M03,3710.764681724845,Dedza,3,District Hospital,Central,District Hospital_Dedza,Med. Assistant
+478,59,N01,531.5811088295687,Dedza,3,District Hospital,Central,District Hospital_Dedza,Nurse Officer
+479,59,N02,20921.691991786392,Dedza,3,District Hospital,Central,District Hospital_Dedza,Nurse Midwife Technician
+480,59,P01,190.7811088295688,Dedza,3,District Hospital,Central,District Hospital_Dedza,Pharmacist
+481,59,P02,2289.3733059548263,Dedza,3,District Hospital,Central,District Hospital_Dedza,Pharm Technician
+482,59,P03,953.905544147844,Dedza,3,District Hospital,Central,District Hospital_Dedza,Pharm Assistant
+483,59,R01,1030.7679671457906,Dedza,3,District Hospital,Central,District Hospital_Dedza,Radiographer
+484,59,R02,987.4661190965094,Dedza,3,District Hospital,Central,District Hospital_Dedza,Radiography Technician
+485,59,T01,200.39753593429157,Dedza,3,District Hospital,Central,District Hospital_Dedza,Nutrition Staff
+486,60,E01,13696.016427104812,Ntcheu,0,Community Health Station,Central,Community Health Station_Ntcheu,DCSA
+487,60,N01,478.4229979466119,Ntcheu,0,Community Health Station,Central,Community Health Station_Ntcheu,Nurse Officer
+488,60,N02,17600.788501026655,Ntcheu,0,Community Health Station,Central,Community Health Station_Ntcheu,Nurse Midwife Technician
+489,61,N01,212.63244353182756,Ntcheu,1,Health Centre,Central,Health Centre_Ntcheu,Nurse Officer
+490,61,N02,17268.69815195068,Ntcheu,1,Health Centre,Central,Health Centre_Ntcheu,Nurse Midwife Technician
+491,61,P02,3052.497741273102,Ntcheu,1,Health Centre,Central,Health Centre_Ntcheu,Pharm Technician
+492,61,P03,381.5622176591376,Ntcheu,1,Health Centre,Central,Health Centre_Ntcheu,Pharm Assistant
+493,62,L02,3554.8780287474337,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Lab Technician
+494,62,L03,2509.3256673511296,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Lab Assistant
+495,62,M01,586.1716632443531,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Medical Officer / Specialist
+496,62,M02,8602.493634496923,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Clinical Officer / Technician
+497,62,M03,3573.328952772073,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Med. Assistant
+498,62,N01,797.371663244353,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Nurse Officer
+499,62,N02,18098.924024640615,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Nurse Midwife Technician
+500,62,P01,190.7811088295688,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Pharmacist
+501,62,P02,2289.3733059548263,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Pharm Technician
+502,62,P03,1526.2488706365507,Ntcheu,2,Non-District Hospital,Central,Non-District Hospital_Ntcheu,Pharm Assistant
+503,63,C01,400.79507186858314,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Mental Health Staff
+504,63,D01,200.39753593429157,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Dental Officer
+505,63,D02,6613.118685831619,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Dental Therapist
+506,63,L01,191.6845995893224,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Lab Officer
+507,63,L02,3357.384804928132,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Lab Technician
+508,63,L03,3973.098973305954,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Lab Assistant
+509,63,M01,334.95523613963036,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Medical Officer / Specialist
+510,63,M02,12626.240657084194,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Clinical Officer / Technician
+511,63,M03,5497.429158110886,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Med. Assistant
+512,63,N01,265.7905544147844,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Nurse Officer
+513,63,N02,18098.924024640615,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Nurse Midwife Technician
+514,63,P02,1907.8110882956885,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Pharm Technician
+515,63,P03,1526.2488706365507,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Pharm Assistant
+516,63,R01,1030.7679671457906,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Radiographer
+517,63,R02,1184.9593429158112,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Radiography Technician
+518,63,T01,200.39753593429157,Ntcheu,3,District Hospital,Central,District Hospital_Ntcheu,Nutrition Staff
+519,64,E01,6902.792279260781,Lilongwe City,0,Community Health Station,Central,Community Health Station_Lilongwe City,DCSA
+520,64,N01,318.9486652977413,Lilongwe City,0,Community Health Station,Central,Community Health Station_Lilongwe City,Nurse Officer
+521,64,N02,22416.098562628275,Lilongwe City,0,Community Health Station,Central,Community Health Station_Lilongwe City,Nurse Midwife Technician
+522,65,N01,584.7392197125256,Lilongwe City,1,Health Centre,Central,Health Centre_Lilongwe City,Nurse Officer
+523,65,N02,22914.234086242235,Lilongwe City,1,Health Centre,Central,Health Centre_Lilongwe City,Nurse Midwife Technician
+524,65,P01,190.7811088295688,Lilongwe City,1,Health Centre,Central,Health Centre_Lilongwe City,Pharmacist
+525,65,P02,2289.3733059548263,Lilongwe City,1,Health Centre,Central,Health Centre_Lilongwe City,Pharm Technician
+526,65,P03,2098.5921971252574,Lilongwe City,1,Health Centre,Central,Health Centre_Lilongwe City,Pharm Assistant
+527,66,L02,4542.344147843942,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Lab Technician
+528,66,L03,3554.878028747433,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Lab Assistant
+529,66,M01,753.6492813141683,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Medical Officer / Specialist
+530,66,M02,10128.742505133474,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Clinical Officer / Technician
+531,66,M03,5359.993429158114,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Med. Assistant
+532,66,N01,531.5811088295687,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Nurse Officer
+533,66,N02,23412.369609856196,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Nurse Midwife Technician
+534,66,P02,2289.3733059548263,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Pharm Technician
+535,66,P03,1526.2488706365507,Lilongwe City,2,Non-District Hospital,Central,Non-District Hospital_Lilongwe City,Pharm Assistant
+536,67,C01,8015.901437371657,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Mental Health Staff
+537,67,D02,6412.721149897327,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Dental Therapist
+538,67,L02,2764.9051334702262,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Lab Technician
+539,67,L03,2509.3256673511296,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Lab Assistant
+540,67,M01,669.9104722792607,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Medical Officer / Specialist
+541,67,M02,11516.24147843943,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Clinical Officer / Technician
+542,67,M03,7284.093634496929,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Med. Assistant
+543,67,N01,425.264887063655,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Nurse Officer
+544,67,N02,21917.963039014314,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Nurse Midwife Technician
+545,67,P01,190.7811088295688,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Pharmacist
+546,67,P02,2289.3733059548263,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Pharm Technician
+547,67,P03,1144.686652977413,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Pharm Assistant
+548,67,R01,1649.2287474332647,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Radiographer
+549,67,R02,987.4661190965094,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Radiography Technician
+550,67,T01,801.5901437371663,Lilongwe City,3,District Hospital,Central,District Hospital_Lilongwe City,Nutrition Staff
+551,68,E01,13696.016427104812,Mangochi,0,Community Health Station,Southern,Community Health Station_Mangochi,DCSA
+552,68,N01,531.5811088295687,Mangochi,0,Community Health Station,Southern,Community Health Station_Mangochi,Nurse Officer
+553,68,N02,25072.821355236065,Mangochi,0,Community Health Station,Southern,Community Health Station_Mangochi,Nurse Midwife Technician
+554,69,N01,478.4229979466119,Mangochi,1,Health Centre,Southern,Health Centre_Mangochi,Nurse Officer
+555,69,N02,26069.092402463986,Mangochi,1,Health Centre,Southern,Health Centre_Mangochi,Nurse Midwife Technician
+556,69,P01,190.7811088295688,Mangochi,1,Health Centre,Southern,Health Centre_Mangochi,Pharmacist
+557,69,P02,3243.2788501026707,Mangochi,1,Health Centre,Southern,Health Centre_Mangochi,Pharm Technician
+558,69,P03,1717.0299794661196,Mangochi,1,Health Centre,Southern,Health Centre_Mangochi,Pharm Assistant
+559,70,L02,4542.344147843942,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Lab Technician
+560,70,L03,4182.209445585215,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Lab Assistant
+561,70,M01,502.43285420944557,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Medical Officer / Specialist
+562,70,M02,12487.490759753598,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Clinical Officer / Technician
+563,70,M03,4810.250513347024,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Med. Assistant
+564,70,N01,372.10677618069815,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Nurse Officer
+565,70,N02,27231.408624229894,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Nurse Midwife Technician
+566,70,P02,1717.0299794661196,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Pharm Technician
+567,70,P03,1144.686652977413,Mangochi,2,Non-District Hospital,Southern,Non-District Hospital_Mangochi,Pharm Assistant
+568,71,C01,601.1926078028747,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Mental Health Staff
+569,71,D01,200.39753593429157,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Dental Officer
+570,71,D02,7815.503901437366,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Dental Therapist
+571,71,L01,191.6845995893224,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Lab Officer
+572,71,L02,3554.8780287474337,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Lab Technician
+573,71,L03,3136.6570841889115,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Lab Assistant
+574,71,M01,586.1716632443531,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Medical Officer / Specialist
+575,71,M02,11516.24147843943,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Clinical Officer / Technician
+576,71,M03,4810.250513347024,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Med. Assistant
+577,71,N01,531.5811088295687,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Nurse Officer
+578,71,N02,21585.87268993834,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Nurse Midwife Technician
+579,71,P02,3434.0599589322396,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Pharm Technician
+580,71,P03,1717.0299794661196,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Pharm Assistant
+581,71,R01,1443.0751540041067,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Radiographer
+582,71,R02,2172.4254620123206,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Radiography Technician
+583,71,T01,200.39753593429157,Mangochi,3,District Hospital,Southern,District Hospital_Mangochi,Nutrition Staff
+584,72,E01,13696.016427104812,Machinga,0,Community Health Station,Southern,Community Health Station_Machinga,DCSA
+585,72,N01,372.10677618069815,Machinga,0,Community Health Station,Southern,Community Health Station_Machinga,Nurse Officer
+586,72,N02,14113.83983572893,Machinga,0,Community Health Station,Southern,Community Health Station_Machinga,Nurse Midwife Technician
+587,73,N01,478.4229979466119,Machinga,1,Health Centre,Southern,Health Centre_Machinga,Nurse Officer
+588,73,N02,13449.659137576982,Machinga,1,Health Centre,Southern,Health Centre_Machinga,Nurse Midwife Technician
+589,73,P02,1526.2488706365507,Machinga,1,Health Centre,Southern,Health Centre_Machinga,Pharm Technician
+590,73,P03,1335.4677618069818,Machinga,1,Health Centre,Southern,Health Centre_Machinga,Pharm Assistant
+591,74,L01,191.6845995893224,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Lab Officer
+592,74,L02,2172.4254620123206,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Lab Technician
+593,74,L03,2927.546611909651,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Lab Assistant
+594,74,M01,167.47761806981518,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Medical Officer / Specialist
+595,74,M02,6659.995071868586,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Clinical Officer / Technician
+596,74,M03,2061.535934291581,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Med. Assistant
+597,74,N01,212.63244353182756,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Nurse Officer
+598,74,N02,11291.071868583153,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Nurse Midwife Technician
+599,74,P01,190.7811088295688,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Pharmacist
+600,74,P02,1526.2488706365507,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Pharm Technician
+601,74,P03,381.5622176591376,Machinga,2,Non-District Hospital,Southern,Non-District Hospital_Machinga,Pharm Assistant
+602,75,D01,200.39753593429157,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Dental Officer
+603,75,D02,3607.1556468172494,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Dental Therapist
+604,75,L02,1777.4390143737169,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Lab Technician
+605,75,L03,1045.552361396304,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Lab Assistant
+606,75,M01,418.69404517453796,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Medical Officer / Specialist
+607,75,M02,8741.243531827518,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Clinical Officer / Technician
+608,75,M03,4260.507597535934,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Med. Assistant
+609,75,N01,584.7392197125256,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Nurse Officer
+610,75,N02,15442.201232032825,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Nurse Midwife Technician
+611,75,P02,1335.4677618069818,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Pharm Technician
+612,75,P03,953.905544147844,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Pharm Assistant
+613,75,R01,206.15359342915812,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Radiographer
+614,75,R02,789.9728952772075,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Radiography Technician
+615,75,T01,1001.9876796714578,Machinga,3,District Hospital,Southern,District Hospital_Machinga,Nutrition Staff
+616,76,E01,6848.008213552362,Zomba,0,Community Health Station,Southern,Community Health Station_Zomba,DCSA
+617,76,N01,850.5297741273099,Zomba,0,Community Health Station,Southern,Community Health Station_Zomba,Nurse Officer
+618,76,N02,15774.291581108799,Zomba,0,Community Health Station,Southern,Community Health Station_Zomba,Nurse Midwife Technician
+619,77,N01,1382.1108829568786,Zomba,1,Health Centre,Southern,Health Centre_Zomba,Nurse Officer
+620,77,N02,19593.330595482497,Zomba,1,Health Centre,Southern,Health Centre_Zomba,Nurse Midwife Technician
+621,77,P02,1144.686652977413,Zomba,1,Health Centre,Southern,Health Centre_Zomba,Pharm Technician
+622,77,P03,190.7811088295688,Zomba,1,Health Centre,Southern,Health Centre_Zomba,Pharm Assistant
+623,78,L02,1777.4390143737169,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Lab Technician
+624,78,L03,1463.7733059548257,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Lab Assistant
+625,78,M01,2679.641889117043,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Medical Officer / Specialist
+626,78,M02,7631.244353182755,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Clinical Officer / Technician
+627,78,M03,3161.021765913757,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Med. Assistant
+628,78,N01,1275.794661190965,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Nurse Officer
+629,78,N02,16272.42710472276,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Nurse Midwife Technician
+630,78,P01,1144.686652977413,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Pharmacist
+631,78,P02,1907.8110882956885,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Pharm Technician
+632,78,P03,572.3433264887065,Zomba,2,Non-District Hospital,Southern,Non-District Hospital_Zomba,Pharm Assistant
+633,79,C01,601.1926078028747,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Mental Health Staff
+634,79,D01,2003.975359342916,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Dental Officer
+635,79,D02,3607.1556468172494,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Dental Therapist
+636,79,L01,383.3691991786448,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Lab Officer
+637,79,L02,2764.9051334702262,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Lab Technician
+638,79,L03,1672.8837782340865,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Lab Assistant
+639,79,M01,2595.903080082135,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Medical Officer / Specialist
+640,79,M02,7769.99425051335,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Clinical Officer / Technician
+641,79,M03,2748.714579055441,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Med. Assistant
+642,79,N01,1275.794661190965,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Nurse Officer
+643,79,N02,17932.87885010263,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Nurse Midwife Technician
+644,79,P01,190.7811088295688,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Pharmacist
+645,79,P02,1144.686652977413,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Pharm Technician
+646,79,P03,953.905544147844,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Pharm Assistant
+647,79,R01,1030.7679671457906,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Radiographer
+648,79,R02,1579.945790554415,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Radiography Technician
+649,79,T01,200.39753593429157,Zomba,3,District Hospital,Southern,District Hospital_Zomba,Nutrition Staff
+650,80,E01,13696.016427104812,Chiradzulu,0,Community Health Station,Southern,Community Health Station_Chiradzulu,DCSA
+651,80,N01,478.4229979466119,Chiradzulu,0,Community Health Station,Southern,Community Health Station_Chiradzulu,Nurse Officer
+652,80,N02,12951.523613963021,Chiradzulu,0,Community Health Station,Southern,Community Health Station_Chiradzulu,Nurse Midwife Technician
+653,81,N01,531.5811088295687,Chiradzulu,1,Health Centre,Southern,Health Centre_Chiradzulu,Nurse Officer
+654,81,N02,14113.83983572893,Chiradzulu,1,Health Centre,Southern,Health Centre_Chiradzulu,Nurse Midwife Technician
+655,81,P01,190.7811088295688,Chiradzulu,1,Health Centre,Southern,Health Centre_Chiradzulu,Pharmacist
+656,81,P02,763.1244353182752,Chiradzulu,1,Health Centre,Southern,Health Centre_Chiradzulu,Pharm Technician
+657,81,P03,572.3433264887065,Chiradzulu,1,Health Centre,Southern,Health Centre_Chiradzulu,Pharm Assistant
+658,82,L02,1974.9322381930187,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Lab Technician
+659,82,L03,2091.1047227926083,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Lab Assistant
+660,82,M01,502.43285420944557,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Medical Officer / Specialist
+661,82,M02,8324.993839835732,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Clinical Officer / Technician
+662,82,M03,3848.200410677617,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Med. Assistant
+663,82,N01,425.264887063655,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Nurse Officer
+664,82,N02,14113.83983572893,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Nurse Midwife Technician
+665,82,P01,190.7811088295688,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Pharmacist
+666,82,P02,1526.2488706365507,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Pharm Technician
+667,82,P03,763.1244353182752,Chiradzulu,2,Non-District Hospital,Southern,Non-District Hospital_Chiradzulu,Pharm Assistant
+668,83,C01,400.79507186858314,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Mental Health Staff
+669,83,D01,200.39753593429157,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Dental Officer
+670,83,D02,3406.7581108829577,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Dental Therapist
+671,83,L01,191.6845995893224,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Lab Officer
+672,83,L02,2172.4254620123206,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Lab Technician
+673,83,L03,1045.552361396304,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Lab Assistant
+674,83,M01,418.69404517453796,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Medical Officer / Specialist
+675,83,M02,7076.244763860373,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Clinical Officer / Technician
+676,83,M03,3710.764681724845,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Med. Assistant
+677,83,N01,584.7392197125256,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Nurse Officer
+678,83,N02,16438.472279260746,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Nurse Midwife Technician
+679,83,P02,1907.8110882956885,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Pharm Technician
+680,83,P03,953.905544147844,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Pharm Assistant
+681,83,R01,618.4607802874743,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Radiographer
+682,83,R02,789.9728952772075,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Radiography Technician
+683,83,T01,200.39753593429157,Chiradzulu,3,District Hospital,Southern,District Hospital_Chiradzulu,Nutrition Staff
+684,84,E01,6848.008213552362,Blantyre,0,Community Health Station,Southern,Community Health Station_Blantyre,DCSA
+685,84,N01,372.10677618069815,Blantyre,0,Community Health Station,Southern,Community Health Station_Blantyre,Nurse Officer
+686,84,N02,11125.026694045166,Blantyre,0,Community Health Station,Southern,Community Health Station_Blantyre,Nurse Midwife Technician
+687,85,N01,265.7905544147844,Blantyre,1,Health Centre,Southern,Health Centre_Blantyre,Nurse Officer
+688,85,N02,7804.123203285426,Blantyre,1,Health Centre,Southern,Health Centre_Blantyre,Nurse Midwife Technician
+689,85,P02,953.905544147844,Blantyre,1,Health Centre,Southern,Health Centre_Blantyre,Pharm Technician
+690,85,P03,953.905544147844,Blantyre,1,Health Centre,Southern,Health Centre_Blantyre,Pharm Assistant
+691,86,L02,1974.9322381930187,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Lab Technician
+692,86,L03,1045.552361396304,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Lab Assistant
+693,86,M01,167.47761806981518,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Medical Officer / Specialist
+694,86,M02,4856.246406570844,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Clinical Officer / Technician
+695,86,M03,2473.843121149897,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Med. Assistant
+696,86,N01,318.9486652977413,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Nurse Officer
+697,86,N02,10626.891170431205,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Nurse Midwife Technician
+698,86,P02,1144.686652977413,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Pharm Technician
+699,86,P03,572.3433264887065,Blantyre,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre,Pharm Assistant
+700,87,C01,200.39753593429157,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Mental Health Staff
+701,87,D02,3005.9630390143743,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Dental Therapist
+702,87,L02,1184.9593429158112,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Lab Technician
+703,87,L03,1881.9942505133474,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Lab Assistant
+704,87,M01,251.21642710472275,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Medical Officer / Specialist
+705,87,M02,5411.245995893226,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Clinical Officer / Technician
+706,87,M03,2748.714579055441,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Med. Assistant
+707,87,N01,53.15811088295689,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Nurse Officer
+708,87,N02,10128.755646817244,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Nurse Midwife Technician
+709,87,P01,190.7811088295688,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Pharmacist
+710,87,P02,953.905544147844,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Pharm Technician
+711,87,P03,953.905544147844,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Pharm Assistant
+712,87,R01,206.15359342915812,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Radiographer
+713,87,R02,394.98644763860375,Blantyre,3,District Hospital,Southern,District Hospital_Blantyre,Radiography Technician
+714,88,E01,13696.016427104812,Mwanza,0,Community Health Station,Southern,Community Health Station_Mwanza,DCSA
+715,88,N01,265.7905544147844,Mwanza,0,Community Health Station,Southern,Community Health Station_Mwanza,Nurse Officer
+716,88,N02,7804.123203285426,Mwanza,0,Community Health Station,Southern,Community Health Station_Mwanza,Nurse Midwife Technician
+717,89,N01,531.5811088295687,Mwanza,1,Health Centre,Southern,Health Centre_Mwanza,Nurse Officer
+718,89,N02,6973.897330595487,Mwanza,1,Health Centre,Southern,Health Centre_Mwanza,Nurse Midwife Technician
+719,89,P02,763.1244353182752,Mwanza,1,Health Centre,Southern,Health Centre_Mwanza,Pharm Technician
+720,90,L01,191.6845995893224,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Lab Officer
+721,90,L02,394.98644763860375,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Lab Technician
+722,90,L03,418.2209445585216,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Lab Assistant
+723,90,M01,167.47761806981518,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Medical Officer / Specialist
+724,90,M02,4994.996303901439,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Clinical Officer / Technician
+725,90,M03,2061.535934291581,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Med. Assistant
+726,90,N01,372.10677618069815,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Nurse Officer
+727,90,N02,6143.671457905548,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Nurse Midwife Technician
+728,90,P01,190.7811088295688,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Pharmacist
+729,90,P02,381.5622176591376,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Pharm Technician
+730,90,P03,190.7811088295688,Mwanza,2,Non-District Hospital,Southern,Non-District Hospital_Mwanza,Pharm Assistant
+731,91,D01,200.39753593429157,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Dental Officer
+732,91,D02,1202.3852156057494,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Dental Therapist
+733,91,L02,1184.9593429158112,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Lab Technician
+734,91,L03,627.3314168377824,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Lab Assistant
+735,91,M01,418.69404517453796,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Medical Officer / Specialist
+736,91,M02,5549.995893223821,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Clinical Officer / Technician
+737,91,M03,2336.407392197125,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Med. Assistant
+738,91,N01,478.4229979466119,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Nurse Officer
+739,91,N02,7139.942505133475,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Nurse Midwife Technician
+740,91,P02,953.905544147844,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Pharm Technician
+741,91,P03,763.1244353182752,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Pharm Assistant
+742,91,R01,206.15359342915812,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Radiographer
+743,91,R02,789.9728952772075,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Radiography Technician
+744,91,T01,200.39753593429157,Mwanza,3,District Hospital,Southern,District Hospital_Mwanza,Nutrition Staff
+745,92,E01,13696.016427104812,Thyolo,0,Community Health Station,Southern,Community Health Station_Thyolo,DCSA
+746,92,N01,584.7392197125256,Thyolo,0,Community Health Station,Southern,Community Health Station_Thyolo,Nurse Officer
+747,92,N02,16604.517453798733,Thyolo,0,Community Health Station,Southern,Community Health Station_Thyolo,Nurse Midwife Technician
+748,93,N01,425.264887063655,Thyolo,1,Health Centre,Southern,Health Centre_Thyolo,Nurse Officer
+749,93,N02,17434.743326488668,Thyolo,1,Health Centre,Southern,Health Centre_Thyolo,Nurse Midwife Technician
+750,93,P02,1717.0299794661196,Thyolo,1,Health Centre,Southern,Health Centre_Thyolo,Pharm Technician
+751,93,P03,763.1244353182752,Thyolo,1,Health Centre,Southern,Health Centre_Thyolo,Pharm Assistant
+752,94,L02,3159.89158110883,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Lab Technician
+753,94,L03,2509.3256673511296,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Lab Assistant
+754,94,M01,669.9104722792607,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Medical Officer / Specialist
+755,94,M02,10128.742505133474,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Clinical Officer / Technician
+756,94,M03,3985.636139630389,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Med. Assistant
+757,94,N01,637.8973305954825,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Nurse Officer
+758,94,N02,17268.69815195068,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Nurse Midwife Technician
+759,94,P01,190.7811088295688,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Pharmacist
+760,94,P02,2670.935523613964,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Pharm Technician
+761,94,P03,763.1244353182752,Thyolo,2,Non-District Hospital,Southern,Non-District Hospital_Thyolo,Pharm Assistant
+762,95,C01,601.1926078028747,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Mental Health Staff
+763,95,D01,200.39753593429157,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Dental Officer
+764,95,D02,4809.540862422998,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Dental Therapist
+765,95,L01,191.6845995893224,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Lab Officer
+766,95,L02,1974.9322381930187,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Lab Technician
+767,95,L03,2091.1047227926083,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Lab Assistant
+768,95,M01,418.69404517453796,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Medical Officer / Specialist
+769,95,M02,8879.993429158114,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Clinical Officer / Technician
+770,95,M03,4123.071868583162,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Med. Assistant
+771,95,N01,425.264887063655,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Nurse Officer
+772,95,N02,20257.511293634445,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Nurse Midwife Technician
+773,95,P01,190.7811088295688,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Pharmacist
+774,95,P02,1144.686652977413,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Pharm Technician
+775,95,P03,1335.4677618069818,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Pharm Assistant
+776,95,R01,1030.7679671457906,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Radiographer
+777,95,R02,987.4661190965094,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Radiography Technician
+778,95,T01,601.1926078028747,Thyolo,3,District Hospital,Southern,District Hospital_Thyolo,Nutrition Staff
+779,96,E01,13696.016427104812,Mulanje,0,Community Health Station,Southern,Community Health Station_Mulanje,DCSA
+780,96,N01,265.7905544147844,Mulanje,0,Community Health Station,Southern,Community Health Station_Mulanje,Nurse Officer
+781,96,N02,20755.646817248406,Mulanje,0,Community Health Station,Southern,Community Health Station_Mulanje,Nurse Midwife Technician
+782,97,N01,584.7392197125256,Mulanje,1,Health Centre,Southern,Health Centre_Mulanje,Nurse Officer
+783,97,N02,16770.56262833672,Mulanje,1,Health Centre,Southern,Health Centre_Mulanje,Nurse Midwife Technician
+784,97,P01,381.5622176591376,Mulanje,1,Health Centre,Southern,Health Centre_Mulanje,Pharmacist
+785,97,P02,2861.716632443533,Mulanje,1,Health Centre,Southern,Health Centre_Mulanje,Pharm Technician
+786,97,P03,763.1244353182752,Mulanje,1,Health Centre,Southern,Health Centre_Mulanje,Pharm Assistant
+787,98,L02,2369.9186858316225,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Lab Technician
+788,98,L03,2091.1047227926083,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Lab Assistant
+789,98,M01,334.95523613963036,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Medical Officer / Specialist
+790,98,M02,9989.992607802878,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Clinical Officer / Technician
+791,98,M03,4535.379055441479,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Med. Assistant
+792,98,N01,531.5811088295687,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Nurse Officer
+793,98,N02,20921.691991786392,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Nurse Midwife Technician
+794,98,P02,953.905544147844,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Pharm Technician
+795,98,P03,763.1244353182752,Mulanje,2,Non-District Hospital,Southern,Non-District Hospital_Mulanje,Pharm Assistant
+796,99,C01,400.79507186858314,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Mental Health Staff
+797,99,D01,200.39753593429157,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Dental Officer
+798,99,D02,5009.938398357289,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Dental Therapist
+799,99,L01,191.6845995893224,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Lab Officer
+800,99,L02,3357.384804928132,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Lab Technician
+801,99,L03,2509.3256673511296,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Lab Assistant
+802,99,M01,586.1716632443531,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Medical Officer / Specialist
+803,99,M02,7908.744147843946,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Clinical Officer / Technician
+804,99,M03,4672.814784394252,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Med. Assistant
+805,99,N01,478.4229979466119,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Nurse Officer
+806,99,N02,18264.969199178602,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Nurse Midwife Technician
+807,99,P02,1907.8110882956885,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Pharm Technician
+808,99,P03,1717.0299794661196,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Pharm Assistant
+809,99,R01,618.4607802874743,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Radiographer
+810,99,R02,789.9728952772075,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Radiography Technician
+811,99,T01,200.39753593429157,Mulanje,3,District Hospital,Southern,District Hospital_Mulanje,Nutrition Staff
+812,100,E01,13696.016427104812,Phalombe,0,Community Health Station,Southern,Community Health Station_Phalombe,DCSA
+813,100,N01,797.371663244353,Phalombe,0,Community Health Station,Southern,Community Health Station_Phalombe,Nurse Officer
+814,100,N02,11955.2525667351,Phalombe,0,Community Health Station,Southern,Community Health Station_Phalombe,Nurse Midwife Technician
+815,101,N01,531.5811088295687,Phalombe,1,Health Centre,Southern,Health Centre_Phalombe,Nurse Officer
+816,101,N02,13449.659137576982,Phalombe,1,Health Centre,Southern,Health Centre_Phalombe,Nurse Midwife Technician
+817,101,P02,1144.686652977413,Phalombe,1,Health Centre,Southern,Health Centre_Phalombe,Pharm Technician
+818,101,P03,572.3433264887065,Phalombe,1,Health Centre,Southern,Health Centre_Phalombe,Pharm Assistant
+819,102,L01,191.6845995893224,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Lab Officer
+820,102,L02,2764.9051334702262,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Lab Technician
+821,102,L03,2091.1047227926083,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Lab Assistant
+822,102,M01,669.9104722792607,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Medical Officer / Specialist
+823,102,M02,7631.244353182755,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Clinical Officer / Technician
+824,102,M03,2611.278850102669,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Med. Assistant
+825,102,N01,372.10677618069815,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Nurse Officer
+826,102,N02,14445.930184804904,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Nurse Midwife Technician
+827,102,P01,190.7811088295688,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Pharmacist
+828,102,P02,1526.2488706365507,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Pharm Technician
+829,102,P03,572.3433264887065,Phalombe,2,Non-District Hospital,Southern,Non-District Hospital_Phalombe,Pharm Assistant
+830,103,C01,400.79507186858314,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Mental Health Staff
+831,103,D01,200.39753593429157,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Dental Officer
+832,103,D02,3406.7581108829577,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Dental Therapist
+833,103,L02,1382.4525667351131,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Lab Technician
+834,103,L03,1045.552361396304,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Lab Assistant
+835,103,M01,251.21642710472275,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Medical Officer / Specialist
+836,103,M02,8047.4940451745415,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Clinical Officer / Technician
+837,103,M03,4397.943326488707,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Med. Assistant
+838,103,N01,318.9486652977413,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Nurse Officer
+839,103,N02,14611.97535934289,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Nurse Midwife Technician
+840,103,P01,190.7811088295688,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Pharmacist
+841,103,P02,1144.686652977413,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Pharm Technician
+842,103,P03,763.1244353182752,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Pharm Assistant
+843,103,R01,618.4607802874743,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Radiographer
+844,103,R02,789.9728952772075,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Radiography Technician
+845,103,T01,200.39753593429157,Phalombe,3,District Hospital,Southern,District Hospital_Phalombe,Nutrition Staff
+846,104,E01,13696.016427104812,Chikwawa,0,Community Health Station,Southern,Community Health Station_Chikwawa,DCSA
+847,104,N01,425.264887063655,Chikwawa,0,Community Health Station,Southern,Community Health Station_Chikwawa,Nurse Officer
+848,104,N02,15940.336755646786,Chikwawa,0,Community Health Station,Southern,Community Health Station_Chikwawa,Nurse Midwife Technician
+849,105,N01,744.2135523613962,Chikwawa,1,Health Centre,Southern,Health Centre_Chikwawa,Nurse Officer
+850,105,N02,15608.246406570812,Chikwawa,1,Health Centre,Southern,Health Centre_Chikwawa,Nurse Midwife Technician
+851,105,P01,190.7811088295688,Chikwawa,1,Health Centre,Southern,Health Centre_Chikwawa,Pharmacist
+852,105,P02,1144.686652977413,Chikwawa,1,Health Centre,Southern,Health Centre_Chikwawa,Pharm Technician
+853,105,P03,1144.686652977413,Chikwawa,1,Health Centre,Southern,Health Centre_Chikwawa,Pharm Assistant
+854,106,L01,191.6845995893224,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Lab Officer
+855,106,L02,1382.4525667351131,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Lab Technician
+856,106,L03,1463.7733059548257,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Lab Assistant
+857,106,M01,334.95523613963036,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Medical Officer / Specialist
+858,106,M02,8186.243942505137,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Clinical Officer / Technician
+859,106,M03,5085.121971252569,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Med. Assistant
+860,106,N01,531.5811088295687,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Nurse Officer
+861,106,N02,16770.56262833672,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Nurse Midwife Technician
+862,106,P01,190.7811088295688,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Pharmacist
+863,106,P02,2098.5921971252574,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Pharm Technician
+864,106,P03,381.5622176591376,Chikwawa,2,Non-District Hospital,Southern,Non-District Hospital_Chikwawa,Pharm Assistant
+865,107,C01,400.79507186858314,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Mental Health Staff
+866,107,D01,200.39753593429157,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Dental Officer
+867,107,D02,4007.9507186858327,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Dental Therapist
+868,107,L02,2764.9051334702262,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Lab Technician
+869,107,L03,2509.3256673511296,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Lab Assistant
+870,107,M01,586.1716632443531,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Medical Officer / Specialist
+871,107,M02,8602.493634496923,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Clinical Officer / Technician
+872,107,M03,3298.457494866529,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Med. Assistant
+873,107,N01,318.9486652977413,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Nurse Officer
+874,107,N02,17102.652977412694,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Nurse Midwife Technician
+875,107,P02,1526.2488706365507,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Pharm Technician
+876,107,P03,1526.2488706365507,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Pharm Assistant
+877,107,R01,618.4607802874743,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Radiographer
+878,107,R02,1184.9593429158112,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Radiography Technician
+879,107,T01,601.1926078028747,Chikwawa,3,District Hospital,Southern,District Hospital_Chikwawa,Nutrition Staff
+880,108,E01,13696.016427104812,Nsanje,0,Community Health Station,Southern,Community Health Station_Nsanje,DCSA
+881,108,N01,850.5297741273099,Nsanje,0,Community Health Station,Southern,Community Health Station_Nsanje,Nurse Officer
+882,108,N02,17932.87885010263,Nsanje,0,Community Health Station,Southern,Community Health Station_Nsanje,Nurse Midwife Technician
+883,109,N01,478.4229979466119,Nsanje,1,Health Centre,Southern,Health Centre_Nsanje,Nurse Officer
+884,109,N02,14778.020533880877,Nsanje,1,Health Centre,Southern,Health Centre_Nsanje,Nurse Midwife Technician
+885,109,P01,190.7811088295688,Nsanje,1,Health Centre,Southern,Health Centre_Nsanje,Pharmacist
+886,109,P02,1144.686652977413,Nsanje,1,Health Centre,Southern,Health Centre_Nsanje,Pharm Technician
+887,109,P03,572.3433264887065,Nsanje,1,Health Centre,Southern,Health Centre_Nsanje,Pharm Assistant
+888,110,L02,1579.945790554415,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Lab Technician
+889,110,L03,627.3314168377824,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Lab Assistant
+890,110,M01,586.1716632443531,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Medical Officer / Specialist
+891,110,M02,7214.994661190968,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Clinical Officer / Technician
+892,110,M03,3710.764681724845,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Med. Assistant
+893,110,N01,425.264887063655,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Nurse Officer
+894,110,N02,16272.42710472276,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Nurse Midwife Technician
+895,110,P02,2098.5921971252574,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Pharm Technician
+896,110,P03,763.1244353182752,Nsanje,2,Non-District Hospital,Southern,Non-District Hospital_Nsanje,Pharm Assistant
+897,111,C01,601.1926078028747,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Mental Health Staff
+898,111,D01,200.39753593429157,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Dental Officer
+899,111,D02,4007.9507186858327,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Dental Therapist
+900,111,L01,191.6845995893224,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Lab Officer
+901,111,L02,3159.89158110883,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Lab Technician
+902,111,L03,2718.4361396303902,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Lab Assistant
+903,111,M01,502.43285420944557,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Medical Officer / Specialist
+904,111,M02,10267.49240246407,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Clinical Officer / Technician
+905,111,M03,4123.071868583162,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Med. Assistant
+906,111,N01,318.9486652977413,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Nurse Officer
+907,111,N02,14944.065708418864,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Nurse Midwife Technician
+908,111,P01,190.7811088295688,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Pharmacist
+909,111,P02,1526.2488706365507,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Pharm Technician
+910,111,P03,1335.4677618069818,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Pharm Assistant
+911,111,R01,1030.7679671457906,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Radiographer
+912,111,R02,987.4661190965094,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Radiography Technician
+913,111,T01,200.39753593429157,Nsanje,3,District Hospital,Southern,District Hospital_Nsanje,Nutrition Staff
+914,112,E01,13696.016427104812,Balaka,0,Community Health Station,Southern,Community Health Station_Balaka,DCSA
+915,112,N01,531.5811088295687,Balaka,0,Community Health Station,Southern,Community Health Station_Balaka,Nurse Officer
+916,112,N02,11457.11704312114,Balaka,0,Community Health Station,Southern,Community Health Station_Balaka,Nurse Midwife Technician
+917,113,N01,372.10677618069815,Balaka,1,Health Centre,Southern,Health Centre_Balaka,Nurse Officer
+918,113,N02,13117.568788501008,Balaka,1,Health Centre,Southern,Health Centre_Balaka,Nurse Midwife Technician
+919,113,P01,190.7811088295688,Balaka,1,Health Centre,Southern,Health Centre_Balaka,Pharmacist
+920,113,P02,2480.154414784395,Balaka,1,Health Centre,Southern,Health Centre_Balaka,Pharm Technician
+921,113,P03,572.3433264887065,Balaka,1,Health Centre,Southern,Health Centre_Balaka,Pharm Assistant
+922,114,L02,1974.9322381930187,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Lab Technician
+923,114,L03,1881.9942505133474,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Lab Assistant
+924,114,M01,418.69404517453796,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Medical Officer / Specialist
+925,114,M02,6798.7449691991815,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Clinical Officer / Technician
+926,114,M03,2611.278850102669,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Med. Assistant
+927,114,N01,425.264887063655,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Nurse Officer
+928,114,N02,13449.659137576982,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Nurse Midwife Technician
+929,114,P02,953.905544147844,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Pharm Technician
+930,114,P03,1335.4677618069818,Balaka,2,Non-District Hospital,Southern,Non-District Hospital_Balaka,Pharm Assistant
+931,115,D01,200.39753593429157,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Dental Officer
+932,115,D02,3406.7581108829577,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Dental Therapist
+933,115,L01,191.6845995893224,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Lab Officer
+934,115,L02,1777.4390143737169,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Lab Technician
+935,115,L03,1672.8837782340865,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Lab Assistant
+936,115,M01,167.47761806981518,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Medical Officer / Specialist
+937,115,M02,7492.494455852159,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Clinical Officer / Technician
+938,115,M03,3435.893223819301,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Med. Assistant
+939,115,N01,318.9486652977413,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Nurse Officer
+940,115,N02,12619.433264887048,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Nurse Midwife Technician
+941,115,P02,763.1244353182752,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Pharm Technician
+942,115,P03,190.7811088295688,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Pharm Assistant
+943,115,R01,206.15359342915812,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Radiographer
+944,115,R02,789.9728952772075,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Radiography Technician
+945,115,T01,200.39753593429157,Balaka,3,District Hospital,Southern,District Hospital_Balaka,Nutrition Staff
+946,116,E01,13696.016427104812,Neno,0,Community Health Station,Southern,Community Health Station_Neno,DCSA
+947,116,N01,265.7905544147844,Neno,0,Community Health Station,Southern,Community Health Station_Neno,Nurse Officer
+948,116,N02,10460.845995893218,Neno,0,Community Health Station,Southern,Community Health Station_Neno,Nurse Midwife Technician
+949,117,N01,797.371663244353,Neno,1,Health Centre,Southern,Health Centre_Neno,Nurse Officer
+950,117,N02,10626.891170431205,Neno,1,Health Centre,Southern,Health Centre_Neno,Nurse Midwife Technician
+951,117,P02,953.905544147844,Neno,1,Health Centre,Southern,Health Centre_Neno,Pharm Technician
+952,117,P03,190.7811088295688,Neno,1,Health Centre,Southern,Health Centre_Neno,Pharm Assistant
+953,118,L02,987.4661190965094,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Lab Technician
+954,118,L03,1045.552361396304,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Lab Assistant
+955,118,M01,83.73880903490759,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Medical Officer / Specialist
+956,118,M02,6243.745379876799,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Clinical Officer / Technician
+957,118,M03,2061.535934291581,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Med. Assistant
+958,118,N01,265.7905544147844,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Nurse Officer
+959,118,N02,10460.845995893218,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Nurse Midwife Technician
+960,118,P02,1335.4677618069818,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Pharm Technician
+961,118,P03,953.905544147844,Neno,2,Non-District Hospital,Southern,Non-District Hospital_Neno,Pharm Assistant
+962,119,D01,200.39753593429157,Neno,3,District Hospital,Southern,District Hospital_Neno,Dental Officer
+963,119,D02,2605.167967145791,Neno,3,District Hospital,Southern,District Hospital_Neno,Dental Therapist
+964,119,L01,191.6845995893224,Neno,3,District Hospital,Southern,District Hospital_Neno,Lab Officer
+965,119,L02,1974.9322381930187,Neno,3,District Hospital,Southern,District Hospital_Neno,Lab Technician
+966,119,L03,1463.7733059548257,Neno,3,District Hospital,Southern,District Hospital_Neno,Lab Assistant
+967,119,M01,502.43285420944557,Neno,3,District Hospital,Southern,District Hospital_Neno,Medical Officer / Specialist
+968,119,M02,6798.7449691991815,Neno,3,District Hospital,Southern,District Hospital_Neno,Clinical Officer / Technician
+969,119,M03,3161.021765913757,Neno,3,District Hospital,Southern,District Hospital_Neno,Med. Assistant
+970,119,N01,318.9486652977413,Neno,3,District Hospital,Southern,District Hospital_Neno,Nurse Officer
+971,119,N02,9132.484599589323,Neno,3,District Hospital,Southern,District Hospital_Neno,Nurse Midwife Technician
+972,119,P01,190.7811088295688,Neno,3,District Hospital,Southern,District Hospital_Neno,Pharmacist
+973,119,P02,763.1244353182752,Neno,3,District Hospital,Southern,District Hospital_Neno,Pharm Technician
+974,119,P03,381.5622176591376,Neno,3,District Hospital,Southern,District Hospital_Neno,Pharm Assistant
+975,119,R01,206.15359342915812,Neno,3,District Hospital,Southern,District Hospital_Neno,Radiographer
+976,119,R02,1184.9593429158112,Neno,3,District Hospital,Southern,District Hospital_Neno,Radiography Technician
+977,119,T01,200.39753593429157,Neno,3,District Hospital,Southern,District Hospital_Neno,Nutrition Staff
+978,120,E01,6848.008213552362,Zomba City,0,Community Health Station,Southern,Community Health Station_Zomba City,DCSA
+979,120,N01,1222.636550308008,Zomba City,0,Community Health Station,Southern,Community Health Station_Zomba City,Nurse Officer
+980,120,N02,17268.69815195068,Zomba City,0,Community Health Station,Southern,Community Health Station_Zomba City,Nurse Midwife Technician
+981,121,N01,956.8459958932236,Zomba City,1,Health Centre,Southern,Health Centre_Zomba City,Nurse Officer
+982,121,N02,17434.743326488668,Zomba City,1,Health Centre,Southern,Health Centre_Zomba City,Nurse Midwife Technician
+983,121,P01,572.3433264887065,Zomba City,1,Health Centre,Southern,Health Centre_Zomba City,Pharmacist
+984,121,P02,1144.686652977413,Zomba City,1,Health Centre,Southern,Health Centre_Zomba City,Pharm Technician
+985,121,P03,572.3433264887065,Zomba City,1,Health Centre,Southern,Health Centre_Zomba City,Pharm Assistant
+986,122,L01,191.6845995893224,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Lab Officer
+987,122,L02,2369.9186858316225,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Lab Technician
+988,122,L03,1463.7733059548257,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Lab Assistant
+989,122,M01,2595.903080082135,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Medical Officer / Specialist
+990,122,M02,5827.495687885013,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Clinical Officer / Technician
+991,122,M03,2473.843121149897,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Med. Assistant
+992,122,N01,1488.4271047227924,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Nurse Officer
+993,122,N02,19759.375770020484,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Nurse Midwife Technician
+994,122,P01,381.5622176591376,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Pharmacist
+995,122,P02,1144.686652977413,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Pharm Technician
+996,122,P03,572.3433264887065,Zomba City,2,Non-District Hospital,Southern,Non-District Hospital_Zomba City,Pharm Assistant
+997,123,C01,601.1926078028747,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Mental Health Staff
+998,123,D01,2003.975359342916,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Dental Officer
+999,123,D02,3607.1556468172494,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Dental Therapist
+1000,123,L01,191.6845995893224,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Lab Officer
+1001,123,L02,2172.4254620123206,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Lab Technician
+1002,123,L03,1672.8837782340865,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Lab Assistant
+1003,123,M01,2679.641889117043,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Medical Officer / Specialist
+1004,123,M02,9573.742915811092,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Clinical Officer / Technician
+1005,123,M03,3435.893223819301,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Med. Assistant
+1006,123,N01,1116.3203285420943,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Nurse Officer
+1007,123,N02,15110.110882956851,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Nurse Midwife Technician
+1008,123,P01,381.5622176591376,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Pharmacist
+1009,123,P02,1907.8110882956885,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Pharm Technician
+1010,123,P03,572.3433264887065,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Pharm Assistant
+1011,123,R01,1030.7679671457906,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Radiographer
+1012,123,R02,1579.945790554415,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Radiography Technician
+1013,123,T01,200.39753593429157,Zomba City,3,District Hospital,Southern,District Hospital_Zomba City,Nutrition Staff
+1014,124,E01,6848.008213552362,Blantyre City,0,Community Health Station,Southern,Community Health Station_Blantyre City,DCSA
+1015,124,N01,425.264887063655,Blantyre City,0,Community Health Station,Southern,Community Health Station_Blantyre City,Nurse Officer
+1016,124,N02,9796.66529774127,Blantyre City,0,Community Health Station,Southern,Community Health Station_Blantyre City,Nurse Midwife Technician
+1017,125,N01,318.9486652977413,Blantyre City,1,Health Centre,Southern,Health Centre_Blantyre City,Nurse Officer
+1018,125,N02,7804.123203285426,Blantyre City,1,Health Centre,Southern,Health Centre_Blantyre City,Nurse Midwife Technician
+1019,125,P01,190.7811088295688,Blantyre City,1,Health Centre,Southern,Health Centre_Blantyre City,Pharmacist
+1020,125,P02,1335.4677618069818,Blantyre City,1,Health Centre,Southern,Health Centre_Blantyre City,Pharm Technician
+1021,125,P03,1144.686652977413,Blantyre City,1,Health Centre,Southern,Health Centre_Blantyre City,Pharm Assistant
+1022,126,L02,1382.4525667351131,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Lab Technician
+1023,126,L03,1672.8837782340865,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Lab Assistant
+1024,126,M01,251.21642710472275,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Medical Officer / Specialist
+1025,126,M02,5411.245995893226,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Clinical Officer / Technician
+1026,126,M03,2336.407392197125,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Med. Assistant
+1027,126,N01,159.47433264887067,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Nurse Officer
+1028,126,N02,12453.38809034906,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Nurse Midwife Technician
+1029,126,P02,1335.4677618069818,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Pharm Technician
+1030,126,P03,572.3433264887065,Blantyre City,2,Non-District Hospital,Southern,Non-District Hospital_Blantyre City,Pharm Assistant
+1031,127,C01,200.39753593429157,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Mental Health Staff
+1032,127,D02,3005.9630390143743,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Dental Therapist
+1033,127,L02,1777.4390143737169,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Lab Technician
+1034,127,L03,1254.6628336755648,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Lab Assistant
+1035,127,M01,167.47761806981518,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Medical Officer / Specialist
+1036,127,M02,4856.246406570844,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Clinical Officer / Technician
+1037,127,M03,2886.150308008213,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Med. Assistant
+1038,127,N01,106.31622176591378,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Nurse Officer
+1039,127,N02,9630.620123203284,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Nurse Midwife Technician
+1040,127,P02,381.5622176591376,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Pharm Technician
+1041,127,P03,763.1244353182752,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Pharm Assistant
+1042,127,R01,206.15359342915812,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Radiographer
+1043,127,R02,394.98644763860375,Blantyre City,3,District Hospital,Southern,District Hospital_Blantyre City,Radiography Technician
+1044,128,D01,3807.553182751541,,4,Referral Hospital,Northern,Referral Hospital_Northern,Dental Officer
+1045,128,D02,1001.9876796714578,,4,Referral Hospital,Northern,Referral Hospital_Northern,Dental Therapist
+1046,128,L01,575.0537987679672,,4,Referral Hospital,Northern,Referral Hospital_Northern,Lab Officer
+1047,128,L02,1777.4390143737169,,4,Referral Hospital,Northern,Referral Hospital_Northern,Lab Technician
+1048,128,M01,9295.00780287474,,4,Referral Hospital,Northern,Referral Hospital_Northern,Medical Officer / Specialist
+1049,128,M02,7769.99425051335,,4,Referral Hospital,Northern,Referral Hospital_Northern,Clinical Officer / Technician
+1050,128,M03,549.7429158110883,,4,Referral Hospital,Northern,Referral Hospital_Northern,Med. Assistant
+1051,128,N01,7123.18685831622,,4,Referral Hospital,Northern,Referral Hospital_Northern,Nurse Officer
+1052,128,N02,45330.33264887074,,4,Referral Hospital,Northern,Referral Hospital_Northern,Nurse Midwife Technician
+1053,128,P01,2289.3733059548263,,4,Referral Hospital,Northern,Referral Hospital_Northern,Pharmacist
+1054,128,P02,1526.2488706365507,,4,Referral Hospital,Northern,Referral Hospital_Northern,Pharm Technician
+1055,128,R01,1030.7679671457906,,4,Referral Hospital,Northern,Referral Hospital_Northern,Radiographer
+1056,128,R02,1974.9322381930187,,4,Referral Hospital,Northern,Referral Hospital_Northern,Radiography Technician
+1057,128,T01,200.39753593429157,,4,Referral Hospital,Northern,Referral Hospital_Northern,Nutrition Staff
+1058,129,D01,3807.553182751541,,4,Referral Hospital,Central,Referral Hospital_Central,Dental Officer
+1059,129,D02,1001.9876796714578,,4,Referral Hospital,Central,Referral Hospital_Central,Dental Therapist
+1060,129,L01,575.0537987679672,,4,Referral Hospital,Central,Referral Hospital_Central,Lab Officer
+1061,129,L02,1777.4390143737169,,4,Referral Hospital,Central,Referral Hospital_Central,Lab Technician
+1062,129,M01,9462.485420944553,,4,Referral Hospital,Central,Referral Hospital_Central,Medical Officer / Specialist
+1063,129,M02,7769.99425051335,,4,Referral Hospital,Central,Referral Hospital_Central,Clinical Officer / Technician
+1064,129,M03,549.7429158110883,,4,Referral Hospital,Central,Referral Hospital_Central,Med. Assistant
+1065,129,N01,5634.759753593428,,4,Referral Hospital,Central,Referral Hospital_Central,Nurse Officer
+1066,129,N02,49979.597535934474,,4,Referral Hospital,Central,Referral Hospital_Central,Nurse Midwife Technician
+1067,129,P01,2289.3733059548263,,4,Referral Hospital,Central,Referral Hospital_Central,Pharmacist
+1068,129,P02,1526.2488706365507,,4,Referral Hospital,Central,Referral Hospital_Central,Pharm Technician
+1069,129,R01,1236.9215605749487,,4,Referral Hospital,Central,Referral Hospital_Central,Radiographer
+1070,129,R02,1974.9322381930187,,4,Referral Hospital,Central,Referral Hospital_Central,Radiography Technician
+1071,129,T01,200.39753593429157,,4,Referral Hospital,Central,Referral Hospital_Central,Nutrition Staff
+1072,130,D01,3807.553182751541,,4,Referral Hospital,Southern,Referral Hospital_Southern,Dental Officer
+1073,130,D02,1001.9876796714578,,4,Referral Hospital,Southern,Referral Hospital_Southern,Dental Therapist
+1074,130,L01,575.0537987679672,,4,Referral Hospital,Southern,Referral Hospital_Southern,Lab Officer
+1075,130,L02,1777.4390143737169,,4,Referral Hospital,Southern,Referral Hospital_Southern,Lab Technician
+1076,130,M01,10048.6570841889,,4,Referral Hospital,Southern,Referral Hospital_Southern,Medical Officer / Specialist
+1077,130,M02,10406.242299794665,,4,Referral Hospital,Southern,Referral Hospital_Southern,Clinical Officer / Technician
+1078,130,M03,549.7429158110883,,4,Referral Hospital,Southern,Referral Hospital_Southern,Med. Assistant
+1079,130,N01,5581.601642710471,,4,Referral Hospital,Southern,Referral Hospital_Southern,Nurse Officer
+1080,130,N02,50145.642710472464,,4,Referral Hospital,Southern,Referral Hospital_Southern,Nurse Midwife Technician
+1081,130,P01,2289.3733059548263,,4,Referral Hospital,Southern,Referral Hospital_Southern,Pharmacist
+1082,130,P02,1526.2488706365507,,4,Referral Hospital,Southern,Referral Hospital_Southern,Pharm Technician
+1083,130,R01,1236.9215605749487,,4,Referral Hospital,Southern,Referral Hospital_Southern,Radiographer
+1084,130,R02,1974.9322381930187,,4,Referral Hospital,Southern,Referral Hospital_Southern,Radiography Technician
+1085,130,T01,200.39753593429157,,4,Referral Hospital,Southern,Referral Hospital_Southern,Nutrition Staff
+1086,131,C01,6011.926078028745,,5,National Hospital,,National Hospital,Mental Health Staff
+1087,131,D01,200.39753593429157,,5,National Hospital,,National Hospital,Dental Officer
+1088,131,E01,183307.4838603764,,5,National Hospital,,National Hospital,DCSA
+1089,131,L01,8242.437782340869,,5,National Hospital,,National Hospital,Lab Officer
+1090,131,L02,11257.11375770019,,5,National Hospital,,National Hospital,Lab Technician
+1091,131,L03,209.1104722792608,,5,National Hospital,,National Hospital,Lab Assistant
+1092,131,M01,921.1268993839835,,5,National Hospital,,National Hospital,Medical Officer / Specialist
+1093,131,M02,971.2492813141687,,5,National Hospital,,National Hospital,Clinical Officer / Technician
+1094,131,N01,159.47433264887067,,5,National Hospital,,National Hospital,Nurse Officer
+1095,131,P01,763.1244353182752,,5,National Hospital,,National Hospital,Pharmacist
+1096,131,P02,1335.4677618069818,,5,National Hospital,,National Hospital,Pharm Technician
+1097,131,P03,572.3433264887065,,5,National Hospital,,National Hospital,Pharm Assistant

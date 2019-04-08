@@ -31,7 +31,7 @@ wb_import= pd.read_excel(workingfile,sheet_name='CurrentStaff',header=None)
 # Make dataframe summarising the officer types and the officer codes:
 officer_types_table=wb_import.loc[2:3,64:84].transpose().reset_index(drop=True).copy()
 officer_types_table.columns=['Officer_Type','Officer_Type_Code']
-officer_types_table.to_csv(resourcefilepath + 'ResourceFile_officer_types_table.csv')
+officer_types_table.to_csv(resourcefilepath + 'ResourceFile_Officer_Types_Table.csv')
 
 # ----------
 
@@ -54,24 +54,6 @@ wb_extract.loc[:,'Is_DistrictLevel']=is_distlevel
 
 # Finished import from the CHAI excel:
 staffing_table = wb_extract
-#
-# # ** Check that the districts name will match up with what is in
-# chai_districts = pd.unique( staffing_table ['District'] )
-#
-# # get the districts from the resource file:
-# pop = pd.read_csv(resourcefilepath+'ResourceFile_DistrictPopulationData.csv')
-# pop_districts = pop['District'].values
-#
-# # check that every district in the resource file is represented in the CHAI list:
-# for d in pop_districts:
-#     print('Resource File district, ', d , ' in chai tables: ', (d in chai_districts))
-# # The city divisions are missing
-#
-# # check that every district in the chai table is represented in the resoure file list:
-# for d in chai_districts:
-#     print('Chai file district, ', d , ' in resource file: ', (d in pop_districts))
-# # HQ or missing', 'KCH', 'MCH', 'QECH' not in the pop data for districts
-
 
 # Sort out which are district allocations and which are central hospitals
 staffing_table .loc[staffing_table['District_Or_Hospital']=='HQ or missing','District_Or_Hospital'] = 'National Hospital'
@@ -82,7 +64,6 @@ staffing_table .loc[staffing_table['District_Or_Hospital']=='QECH','District_Or_
 # Put the ZCH (assume Zomba City Hospital) into the Zomba district level allocation
 staffing_table .loc[staffing_table ['District_Or_Hospital']=='ZCH','District_Or_Hospital'] = 'Zomba'
 staffing_table=pd.DataFrame(staffing_table.groupby(by=['District_Or_Hospital']).sum()).reset_index()
-
 
 
 # The following districts are not in the CHAI data because they are included within other districts.
@@ -126,7 +107,7 @@ for i in np.arange(0,len(split_districts)):
 
 
 # Confirm the merging will be perfect:
-pop = pd.read_csv(resourcefilepath+ 'ResourceFile_DistrictPopulationData.csv')
+pop = pd.read_csv(resourcefilepath+ 'ResourceFile_District_Population_Data.csv')
 
 assert set(pop['District'].values) == set(staffing_table.loc[staffing_table['Is_DistrictLevel'],'District_Or_Hospital'])
 assert len(pop['District'].values) == len(staffing_table.loc[staffing_table['Is_DistrictLevel'],'District_Or_Hospital'])
@@ -380,7 +361,7 @@ Y = Y.merge(mfl,on='Facility_ID',how='left')
 # Merge in the officer code name
 Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
 
-Y.to_csv(resourcefilepath+'ResourceFile_DailyCapabilities.csv')
+Y.to_csv(resourcefilepath+'ResourceFile_Daily_Capabilities.csv')
 
 
 
@@ -478,5 +459,5 @@ ApptTimeTable=ApptTimeTable.merge(officer_types_table,on='Officer_Type_Code')
 ApptTimeTable.loc[:,'Facility_Level']=ApptTimeTable['Facility_Type'].map(Facility_Types_Levels)
 
 # Save
-ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_ApptTimeTable.csv')
+ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
 
