@@ -7,17 +7,21 @@ districts in a region,  and the 'National' Hospital' to connect to all districts
 
 """
 
+# CHAI DATA SET:
+workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
+
+# OUTPUT RESOURCE_FILES TO:
+resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
+
+
+# ----------
+# ----------
+# ----------
+
 import pandas as pd
 import numpy as np
 
-# ResourceFile_MasterFacilitiesList = '/Users/tbh03/PycharmProjects/TLOmodel/resources/ResourceFile_MasterFacilitiesList.csv'
-
-workingfile='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
-
-resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/resources/'
-
-# output_path='/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/'
-
+# ----------
 
 # Import all of the 'CurrentStaff' sheet
 wb_import= pd.read_excel(workingfile,sheet_name='CurrentStaff',header=None)
@@ -323,9 +327,7 @@ patient_facing_hours = pd.DataFrame({'Officer_Type': officer_types_import,'Worki
 
 
 
-
 # --- Create final file: Facility_ID, Officer Type, Total Average Minutes Per Day
-
 
 # ADD FACILITY TYPE
 
