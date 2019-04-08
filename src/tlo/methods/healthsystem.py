@@ -128,7 +128,7 @@ class HealthSystem(Module):
 
     def read_parameters(self, data_folder):
 
-        self.parameters['Officer_Types'] = pd.read_csv(
+        self.parameters['Officer_Types_Table'] = pd.read_csv(
                 os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
         )
 
@@ -307,7 +307,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Empty the new calls buffer
         self.module.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
 
-
+        # Create handle to the HEALTH_SYSTEMS_CALL dataframe
         hsc = self.module.HEALTH_SYSTEM_CALLS
 
         # Replace null values for tclose with a date past the end of the simulation
@@ -356,16 +356,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         capabilities.loc[:,'Minutes_Used_Today']=0
         capabilities.loc[:,'Minutes_Remaining_Today']=capabilities['Total_Minutes_Per_Day']
 
-
-        # gather other data:
-        facilities=self.module.parameters['Master_Facility_List']
-        mapping = self.module.parameters['Village_To_Facility_Mapping']
-
-        appt_types=self.module.parameters['Appt_Types']
-
-        appt_times=self.module.parameters['HealthSystem_ApptTimes']
-
-        officer_types= self.module.parameters['Officer_Types']
+        # Gather the data that will be used:
+        mfl=self.module.parameters['Master_Facilities_List']
+        fac_per_district = self.module.parameters['Facilities_For_Each_District']
+        appt_types=self.module.parameters['Appt_Types_Table']['Appt_Type_Code'].values
+        appt_times=self.module.parameters['Appt_Time_Table']
+        officer_types= self.module.parameters['Officer_Types_Table']['Officer_Type_Code']
 
         if len(due_events.index) > 0:
 
@@ -374,116 +370,65 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             due_events.sort_values(['priority','Time_Since_Opened'])
 
             # Loop through the events (in order of priority) and runs those which can happen
-
             for e in due_events.index:
 
                 # This is a treatment_event:
                 the_person_id= hsc.at[e, 'treatment_event'].target
                 the_treatment_event_name= hsc.at[e, 'treatment_event'].target
-                the_village=df.at[the_person_id,'village_of_residence']
-                the_health_facilities = mapping.loc[mapping['Village'] == the_village].Facility_ID
+                the_district=df.at[the_person_id,'district_of_residence']
 
-                # NB. Lines below look for that set of capabilities at any type of facility
-                capabilities_by_facility=capabilities.loc[the_health_facilities]
+                # sort the health_facilities on Facility_Level
+                the_health_facilities = fac_per_district.loc[fac_per_district['District'] == the_district]
+                the_health_facilities = the_health_facilities.sort_values(['Facility_Level'])
+
+                capabilities_of_the_health_facilities=capabilities.loc[capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
 
                 the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
 
+
                 # Test if capabilities of health system can meet this request
-                # *** This is currently a very permissive test: the request can be met if there are sufficient minutes
-                # for the requested time of each kind of office at any of the facilities to which the person has access.
-                # The search begins at the lowest level facility and increases. The footprint is imposed at the lowest
-                # level facility possiblle. ***
+                # This requires there to be one facility that can fulfill the entire request (each type of appointment)
 
 
-                # Loop through facilities to look for facilities (TODO: HOW TO DO ORDERING SO THAT IT GOES TO LOWEST LEVEL)
-                for fac in capabilities_by_facility.Facility_ID.values:
+                # Loop through facilities to look for facilities
+                # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
+                #  at the lowest levels and work upwards successively).
+                for try_fac_id in the_health_facilities.Facility_ID.values:
 
-                    facility_type=facilities.loc[facilities['Facility_ID']==fac,'Facility Type']
+                    this_facility_type= mfl.loc[mfl['Facility_ID']==try_fac_id,'Facility_Type'].values[0]
 
-
-                    # Test if the entire part of the footprint can be satisfied at this facility
-                    fac_can_meet_each_type_of_appt=dict.fromkeys(appt_types)
-
-                    # ***** create a mapping between the facility_type from the Master Facilities List
-                    # ***** and the facility type of the CHAI data
-                    # ***** for now, just set facility_type to something that is in the CHAI data
-                    facility_type='District_Hospital'
-
-                    for appt_type in appt_types: # For each type of appointment requested:
-
-                        if the_treatment_footprint[appt_type] > 0 :
-
-                            # Get the time needed for each officer (if the appointment occurs in this type of facility)
-                            required = appt_times.loc[ (appt_times['ApptType_Code']==appt_type) & (appt_times['Facility_Type']==facility_type) ]
-
-                            # Get the current capabilites of this facility
-                            available = capabilities_by_facility.loc[capabilities_by_facility['Facility_ID']==fac]
-
-                            # Check if each officer is available to deliver this appointment:
-                            XX=required.merge(available,on='Officer', how='left',indicator=True)
-                            #TODO: GOT TO HERE: DO THE cHECK WITH A MERGE BUT THE OFFICER TYPES ARE NOT THE SAME
-                            # check to ensure that all merged correctly, AND that sufficient time
-                            fac_can_meet_each_type_of_appt[appt_type] = False
-
-                            #
-                            # for officer in officer_types: # For each type of officer which is called for this type of appointment
-                            #
-                            #     time_req_for_this_officer = required.loc[required['Officer']==officer,'Time'].values[0]
-                            #     if time_req_for_this_officer > 0 :
-                            #
-                            #         available_time_for_this_officer_at_this_facility= available.loc[available['Officer']==officer,'Minutes_Remaining_Today']
-                            #
-                            #         if len(available_time_for_this_officer_at_this_facility)>0:
-                            #             if available_time_for_this_officer_at_this_facility > time_req_for_this_officer:
-                            #                 # There is capacity for this officer type at this facility
-                            #
-                            #             else:
-                            #                 # No capacity for this officer type at this facility
-                            #         else:
-                            #             # No capacity for this officer type at this facility
+                    # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
+                    time_requested=pd.DataFrame(columns=['Officer_Type_Code','Time_Taken'])
+                    for this_appt in appt_types:
+                        if the_treatment_footprint[this_appt] > 0:
+                            time_req_for_this_appt = appt_times.loc[ ( appt_times['Appt_Type_Code']==this_appt ) &
+                                            ( appt_times['Facility_Type']==this_facility_type ) ,
+                                            ['Officer_Type_Code','Time_Taken']].copy().reset_index(drop=True)
+                            time_requested=pd.concat([time_requested,time_req_for_this_appt])
 
 
-                        else:
+                    # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
+                    time_requested=pd.DataFrame(time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
 
-                            # there was no requirement for this type of appointment; urgo there is capacity for
-                            fac_can_meet_each_type_of_appt[appt_type]=True
+                    # merge the Minutes_Available at this facility with the minutes required in the footprint
+                    time_available=capabilities_of_the_health_facilities.loc[capabilities_of_the_health_facilities['Facility_ID']==try_fac_id,['Officer_Type_Code','Minutes_Remaining_Today']]
 
+                    comparison = time_available.merge(time_requested,on='Officer_Type_Code',how='outer',indicator=True)
 
-                    if fac_can_meet_each_type_of_appt.all():
-                        # If the facility can meet all the types of appointment that are requested
-                        chosen_fac = fac
-                        break
+                    enough_time_at_this_fac = all( comparison['Minutes_Remaing_Today'] > comparison['Time_Taken'] )
 
+                    if enough_time_at_this_fac:
+                        # flag the event to run
+                        hsc.at[e, 'status']='Run_Today'
 
-
-                # Impose the footprint on these thigns:
-                # capabilities.loc[:, 'Minutes_Used_Today'] = 0
-                # capabilities.loc[:, 'Minutes_Remaining_Today'] = capabilities['Av_Minutes_Per_Day']
-
-
-
-                # Test if there is a facility in the set which can meet this.
-                sufficent_capability_by_facility=capabilities_by_facility['Generic_Appt'] >= the_treatment_footprint['Generic_Appt'].values[0]
-
-                # loop through each of the appointment types
-                if any(sufficent_capability_by_facility):
-
-                    # THE INTERVENTION HAPPENS ***
-
-                    # Work out lowest-level at which the appointment can happen and allocate it there.
-                    # For now just stick it in whichever one comes first
-
-                    chosen_facility_id=the_health_facilities.at[the_health_facilities.index[0],'Facility_ID']
-
-                    # THE FOOTPRINT IS IMPOSED ***
-                    capabilities_by_facility.at[chosen_facility_id,'Generic_Appt']=capabilities_by_facility.at[chosen_facility_id,'Generic_Appt'] -  the_treatment_footprint['Generic_Appt']
+                        # impose the footprint
 
 
 
 
 
-        # Execute the events (for now, it ignoes the above section about determining capacity)
-        for e in due_events.index:
+        # Execute the events that have been flagged for running today
+        for e in hsc.loc[hsc['status']=='Run_Today'].index:
 
             logger.debug(
                 'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
@@ -491,7 +436,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 the_person_id,
                 the_treatment_event_name
             )
-
 
             # fire the event
             hsc.at[e, 'treatment_event'].run()
@@ -501,6 +445,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # update status of this heath resource call
             hsc.at[e, 'status'] = 'Done'
+
 
 
 
