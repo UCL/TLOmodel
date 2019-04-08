@@ -169,6 +169,8 @@ staff_list['Staff_ID']=staff_list.index
 
 # declare the Facility_Type variable
 Facility_Types = ['Community Health Station', 'Health Centre', 'Non-District Hospital', 'District Hospital', 'Referral Hospital', 'National Hospital']
+Facility_Levels = [0,1,2,3,4,5]
+Facility_Types_Levels = dict(zip(Facility_Types,Facility_Levels))
 
 # Create empty dataframe that will be the Master Facilities List (mfl)
 mfl = pd.DataFrame(columns= ['Facility_Type','Facility_Level','District','Region'])
@@ -378,6 +380,103 @@ Y = Y.merge(mfl,on='Facility_ID',how='left')
 # Merge in the officer code name
 Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
 
-
 Y.to_csv(resourcefilepath+'ResourceFile_DailyCapabilities.csv')
+
+
+
+#-----------------
+#-----------------
+#-----------------
+
+
+# *** Now look at the types of appointments and the draw on officer's time associated with each
+
+sheet= pd.read_excel(workingfile,sheet_name='Time_Base',header=None)
+
+
+# ----------
+
+# Make dataframe summarising the types of appointments
+appt_types_table=sheet.loc[(1,2,6),2:].transpose().reset_index(drop=True).copy()
+appt_types_table=appt_types_table.rename(columns={1:'Appt_Cat',2:'Appt_Type',6:'Appt_Type_Code'})
+appt_types_table['Appt_Cat']=pd.Series(appt_types_table['Appt_Cat']).fillna(method='ffill')
+appt_types_table['Appt_Type']=pd.Series(appt_types_table['Appt_Type']).fillna(method='ffill')
+appt_types_table['Appt_Type_Code']=pd.Series(appt_types_table['Appt_Type_Code']).fillna(method='ffill')
+
+appt_types_table=appt_types_table.drop_duplicates().reset_index(drop=True)
+appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
+
+# ----------
+
+# get rid of the junky rows
+trimmed=sheet.loc[[7,8,9,11,12,14,15,17,18,20,21,23,24,26,27],]
+
+# break apart composite to give the appt_type and the officer_type
+# This give the positional information to read the data below...
+chai_composite_code=trimmed.loc[7,2:]
+chai_code=chai_composite_code.str.split(pat='_',expand=True).reset_index(drop=True)
+chai_code=chai_code.rename(columns={0:'Officer_Type_Code',1:'Appt_Type_Code'})
+
+# The sheet gives the % of appointments that require a particular type of officer and the time taken if it does
+# So, turn that into an Expectation of the time taken for each type of officer (multiplying together)
+Central_Hospital_ExpecTime = trimmed.loc[8,2:].values.astype(float) * trimmed.loc[9,2:].values.astype(float)
+District_Hospital_ExpecTime = trimmed.loc[11,2:].values.astype(float) * trimmed.loc[12,2:].values.astype(float)
+Community_Hospital_ExpecTime = trimmed.loc[14,2:].values.astype(float) * trimmed.loc[15,2:].values.astype(float)
+Urban_HealthCentre_ExpecTime = trimmed.loc[17,2:].values.astype(float) * trimmed.loc[18,2:].values.astype(float)
+Rural_HealthCentre_ExpecTime = trimmed.loc[20,2:].values.astype(float) * trimmed.loc[21,2:].values.astype(float)
+HealthPost_ExpecTime = trimmed.loc[23,2:].values.astype(float) * trimmed.loc[24,2:].values.astype(float)
+Dispensary_ExpecTime = trimmed.loc[26,2:].values.astype(float) * trimmed.loc[27,2:].values.astype(float)
+
+
+# This sheet distinguished between different types of facility. We will map these to the facility types that have been defined.
+# In doing this, we ignore the distinction made here between urban and rural health centres, and just use the rural.
+
+# CHAI: Central_Hospital ---> our "Referral Hospital" and "National Hospital"
+# CHAI: District_Hospital ---> our "District Hospital"
+# CHAI: Community_Hospital ---> our "Non-District Hospital"
+# CHAI: Urban_HealthCentre ---> (ignored)
+# CHAI: Rural_HealthCentre ---> our "Health Centre"
+# CHAI: HealthPost ---> our "Community Health Station"
+# CHAI: Dispensary ---> (ignored)
+
+# Compile into a dictionary, according to our Facility_Types
+
+ExpectTime = dict({
+    'National Hospital' : Central_Hospital_ExpecTime,
+    'Referral Hospital' : Central_Hospital_ExpecTime,
+    'District Hospital' : District_Hospital_ExpecTime,
+    'Non-District Hospital': Community_Hospital_ExpecTime,
+    'Health Centre' : Rural_HealthCentre_ExpecTime,
+    'Community Health Station' : HealthPost_ExpecTime
+})
+
+assert set(ExpectTime.keys()) == set(Facility_Types)
+
+
+# Make table that gives, for each appt_type at each facility type, the time of each type of officer
+
+ApptTimeTable= pd.DataFrame()
+
+for a in appt_types_table['Appt_Type_Code'].values:
+    for f in Facility_Types:
+
+        expect_time_for_this_facility = ExpectTime[f]
+
+        loc_for_the_officer_types_per_patient_type=chai_code.loc[chai_code['Appt_Type_Code']==a].copy()
+
+        idx=loc_for_the_officer_types_per_patient_type.index
+        block = loc_for_the_officer_types_per_patient_type.reset_index(drop=True)
+
+        block.loc[:,'Facility_Type']=f
+        block.loc[:,'Time_Taken']=expect_time_for_this_facility[idx]
+
+        ApptTimeTable=pd.concat([ApptTimeTable,block],ignore_index=True)
+
+
+# Merge in Officer_Type and Facility_Level
+ApptTimeTable=ApptTimeTable.merge(officer_types_table,on='Officer_Type_Code')
+ApptTimeTable.loc[:,'Facility_Level']=ApptTimeTable['Facility_Type'].map(Facility_Types_Levels)
+
+# Save
+ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_ApptTimeTable.csv')
 

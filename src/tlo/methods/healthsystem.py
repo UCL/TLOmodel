@@ -50,6 +50,7 @@ class HealthSystem(Module):
         self.health_system_resources = None
 
         self.HEALTH_SYSTEM_CALLS = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
+
         self.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
 
 
@@ -61,32 +62,40 @@ class HealthSystem(Module):
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
-        'Master_Facility_List':
-            Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
-
-        'Village_To_Facility_Mapping':
-            Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities: ' \
-                                        'one row per each link between a village and a facility'),
-        'CurrentStaff':
-            Parameter(Types.DATA_FRAME, 'Imported long-list of all current staff (Imported from CHAI data): ' \
-                                        'one row per staff member'),
-
-        'CurrentStaffWorkingHours':
-            Parameter(Types.DATA_FRAME, 'Number of working days and workings hours per health worker by time (Imported from CHAI data'),
-
-        'HealthSystem_ApptTimes':
-            Parameter(Types.DATA_FRAME, 'Imported long list of the time taken by each type of appointment: (Imported from CHAI data)'),
-
-        'StaffAssignmentToFacility':
-            Parameter(Types.DATA_FRAME, 'Assignment between current staff members and a facility. (Respects district and type of facility, but otherwise random)'),
-
-        'Time_Per_Facility':
-            Parameter(Types.DATA_FRAME,
-                      'The amount of time available for appointments by facility and officer type. (Based on CHAI data)'),
 
         'Officer_Types':
             Parameter(Types.LIST,
-                      'The names of the types of health workers ("officers")')
+                      'The names of the types of health workers ("officers")'),
+
+        'Daily_Capabilities':
+            Parameter(Types.LIST,
+                      'The capabilities by facility and officer type available each day')
+
+
+        # 'Master_Facility_List':
+        #     Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
+        #
+        # 'Village_To_Facility_Mapping':
+        #     Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities: ' \
+        #                                 'one row per each link between a village and a facility'),
+        # 'CurrentStaff':
+        #     Parameter(Types.DATA_FRAME, 'Imported long-list of all current staff (Imported from CHAI data): ' \
+        #                                 'one row per staff member'),
+        #
+        # 'CurrentStaffWorkingHours':
+        #     Parameter(Types.DATA_FRAME, 'Number of working days and workings hours per health worker by time (Imported from CHAI data'),
+        #
+        # 'HealthSystem_ApptTimes':
+        #     Parameter(Types.DATA_FRAME, 'Imported long list of the time taken by each type of appointment: (Imported from CHAI data)'),
+        #
+        # 'StaffAssignmentToFacility':
+        #     Parameter(Types.DATA_FRAME, 'Assignment between current staff members and a facility. (Respects district and type of facility, but otherwise random)'),
+        #
+        # 'Time_Per_Facility':
+        #     Parameter(Types.DATA_FRAME,
+        #               'The amount of time available for appointments by facility and officer type. (Based on CHAI data)'),
+        #
+
     }
 
 
@@ -100,13 +109,21 @@ class HealthSystem(Module):
 
     def read_parameters(self, data_folder):
 
-        self.parameters['Master_Facility_List'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_MasterFacilitiesList.csv')
+        self.parameters['Officer_Types'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_officer_types_table.csv')
         )
 
-        self.parameters['Village_To_Facility_Mapping'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Village_To_Facility_Mapping.csv')
+        self.parameters['Daily_Capabilities'] = pd.read_csv(
+                os.path.join(self.resourcefilepath, 'ResourceFile_DailyCapabilities.csv')
         )
+
+        # self.parameters['Master_Facility_List'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_MasterFacilitiesList.csv')
+        # )
+
+        # self.parameters['Village_To_Facility_Mapping'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_Village_To_Facility_Mapping.csv')
+        # )
 
         # self.parameters['CurrentStaff'] = pd.read_csv(
         #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaff.csv')
@@ -116,21 +133,20 @@ class HealthSystem(Module):
         #     os.path.join(self.resourcefilepath, 'ResourceFile_CurrentStaffWorkingHours.csv')
         # )
 
-        self.parameters['HealthSystem_ApptTimes'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_HealthSystem_ApptTimes.csv')
-        )
+        # self.parameters['HealthSystem_ApptTimes'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_HealthSystem_ApptTimes.csv')
+        # )
 
         # self.parameters['StaffAssignmentToFacility'] = pd.read_csv(
         #     os.path.join(self.resourcefilepath, 'ResourceFile_StaffAssignmentToFacility.csv')
         # )
 
-        self.parameters['Time_Per_Facility'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Time_Per_Facility.csv')
+        # self.parameters['Time_Per_Facility'] = pd.read_csv(
+        #     os.path.join(self.resourcefilepath, 'ResourceFile_Time_Per_Facility.csv')
         )
-        self.parameters['Time_Per_Facility']=self.parameters['Time_Per_Facility'].drop(columns='Unnamed: 0')
+        # self.parameters['Time_Per_Facility']=self.parameters['Time_Per_Facility'].drop(columns='Unnamed: 0')
 
-        self.parameters['Officer_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].Officer)
-        self.parameters['Appt_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].ApptType_Code)
+        # self.parameters['Appt_Types']=pd.unique(self.parameters['HealthSystem_ApptTimes'].ApptType_Code)
 
 
     def initialise_population(self, population):
