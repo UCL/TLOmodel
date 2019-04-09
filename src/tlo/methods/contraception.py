@@ -97,12 +97,12 @@ class Contraception(Module):
                                               'female_sterilization', 'other_modern', 'periodic_abstinence',
                                               'withdrawal', 'other_traditional']]
 
-        #df.loc[:,'her_contracp']=None
+        # 3. apply probabilities of each contraception type to sim population
         for woman in probabilities.index:
             her_p=np.asarray(probabilities.loc[woman,:])
             her_op=np.asarray(probabilities.columns)
 
-            her_method=self.rng.choice(her_op,p=her_p/her_p.sum())
+            her_method=self.rng.choice(her_op,p=her_p/her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
 
             df.loc[woman,'contraception']=her_method
 
@@ -114,16 +114,7 @@ class Contraception(Module):
         random_choice = self.rng.choice(categories, size=len(probabilities), p=probabilities)
         df.loc[females1549, 'contraception'].values[:] = random_choice
 
-    #
 
-
-
-        # df_new.loc[females1549, 'contraception'] = self.rng.choice(['not using', 'pill', 'IUD', 'injection', 'implant',
-        #                                                             'male condom', 'female sterilization',
-        #        # Tim                                                    'other modern', 'periodic abstinence',
-        #                                                            'withdrawal', 'other traditional'],
-        #                                                           size=len(contraception_probs),
-        #                                                           replace=True, p=contraception_probs.values)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
