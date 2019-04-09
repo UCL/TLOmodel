@@ -218,11 +218,26 @@ class HealthSystem(Module):
         # get population dataframe
         df = self.sim.population.props
 
-        # TODO: Check that this is a legitimate request for a treatment using asserts for the definitions
-        #
+
+        # Check that this is a legitimate request for a treatment
+
+        # Correctly formatted footprint
+
+        try:
+            print(treatment_event.FOOTPRINT.keys())
+        except:
+            print('problem')
+
+        assert set(treatment_event.FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+
+        # All sensible numbers for the number of appointments requested
+        assert all( np.asarray([(treatment_event.FOOTPRINT[k]) for k in treatment_event.FOOTPRINT.keys()]) >=0)
+
 
         # TODO: Check that this request is allowable under current policy
         #
+
+
 
 
         # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
@@ -274,10 +289,10 @@ class HealthSystem(Module):
         values=np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
 
-        # TODO: this to be moved to the scheduler stuff, incl min level
-        blank_footprint['TREATMENT_ID']=calling_event.TREATMENT_ID
-        blank_footprint['DiseaseModuleName']=calling_event.module.name
-        blank_footprint['DiseaseModule']=calling_event.module
+        # # TODO: this to be moved to the scheduler stuff,
+        # blank_footprint['TREATMENT_ID']=calling_event.TREATMENT_ID
+        # blank_footprint['DiseaseModuleName']=calling_event.module.name
+        # blank_footprint['DiseaseModule']=calling_event.module
 
         return(blank_footprint)
 
@@ -629,6 +644,12 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
         self.cue_type = cue_type
         self.disease_specific = disease_specific
         self.TREATMENT_ID = treatment_id
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
+        the_footprint['Over5OPD']=1  # This requires one out patient
+        self.FOOTPRINT = the_footprint
+
 
         # Check that this is correctly specified interaction
         assert person_id in self.sim.population.props.index
