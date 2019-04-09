@@ -89,11 +89,9 @@ class Demography(Module):
         'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                  categories=['not using',
-                                              'injections',
-                                              'condom',
-                                              'periodic abstinence',
-                                              'norplant']),
+                                  categories=['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                              'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                              'withdrawal', 'other_traditional']), #have changed this to match Contraception
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
