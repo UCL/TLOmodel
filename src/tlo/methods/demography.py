@@ -12,6 +12,7 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import Labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -320,10 +321,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
         df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
-        conception = pd.Series(df.date_of_last_pregnancy, index=df.index[df.date_of_last_pregnancy == self.sim.date])
+        newly_pregnant_ids=(df.index[df.date_of_last_pregnancy == self.sim.date])
 
+        conception = pd.Series(df.date_of_last_pregnancy, index=df.index[df.date_of_last_pregnancy == self.sim.date])
         new_pregnancy_count = conception.count()
-        norm = np.random.normal(loc=37.2, scale=2.5, size=new_pregnancy_count)
+
+        norm = self.sim.rng.normal(loc=37.2, scale=2.5, size=new_pregnancy_count)
         norms = pd.Series(norm, index=newly_pregnant_ids)
 
         # Assigning estimated due date based on gestational age at birth distribution
@@ -331,6 +334,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([conception, norms], axis=1)
         dfx.columns = (['conception', 'new_preg_gest'])
         dfx['temp_due_date'] = dfx['conception'] + pd.to_timedelta(dfx['new_preg_gest'], unit='w')
+
         df.loc[newly_pregnant_ids, 'due_date'] = dfx.temp_due_date
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
@@ -340,6 +344,13 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
+
+        # Shedule labour event here!
+
+            scheduled_date = df.at[female_id, 'due_date']
+            self.sim.schedule_event(Labour.LabourEvent(self, female_id, cause='labour'), scheduled_date) #self.module?
+
+            logger.debug('birth booked for: %s', df.due_date)
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * self.module.rng.random_sample())

@@ -8,9 +8,11 @@ import pandas as pd
 
 import numpy as np
 
-
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+
+from tlo.methods import demography
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -298,6 +300,8 @@ class Labour (Module):
 
 
     def initialise_simulation(self, sim):
+
+
         """Get ready for simulation start.
 
         This method is called just before the main simulation loop begins, and after all
@@ -305,8 +309,8 @@ class Labour (Module):
         It is a good place to add initial events to the event queue.
         """
 
-        event = LabourPollEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=1))
+    #    event = LabourEvent(self, person_id=individual_id, cause='labour') #helppppp
+ #       sim.schedule_event(event, sim.date + DateOffset(days=1))
 
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -335,49 +339,37 @@ class Labour (Module):
         df.at[child_id, 'la_gestational_age']= pd.NaT
 
 
-class LabourPollEvent(RegularEvent, PopulationScopeEventMixin):
+class LabourEvent(Event, IndividualScopeEventMixin):
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=1))
+    "Starts the scheduled labour"
 
-    # Need to consider frequency
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id) #do i need this?
+        self.cause = cause
 
-    def apply(self, population):
+    def apply(self, individual_id):
+        df = self.sim.population.props
 
-        df = population.props
-        m = self.module
-        rng = m.rng
+        # need to rewrite this as a scheduled event
+        # LOOP?
 
-        # Poll for women who are due to go into labour on the date
+        gestation_date = df.at[individual_id, 'due_date'] -(df.at[individual_id, 'date_of_last_pregnancy'])
+        gestation_weeks= gestation_date / np.timedelta64(1, 'W')
 
-        due_labour_idx = df.index[(df.is_pregnant == True) & df.is_alive & (df.due_date == self.sim.date)]
+        if gestation_weeks > 37:
+            df.at[individual_id, 'la_labour'] = "spontaneous_labour"
 
-        due_date = pd.Series(df.due_date, index=due_labour_idx)
-        conception_date = pd.Series(df.date_of_last_pregnancy, index=due_labour_idx)
-        dfx = pd.concat([due_date, conception_date], axis=1)
-        dfx.columns = ['due_date', 'conception_date']
+        elif gestation_weeks < 37 and gestation_weeks >28:
+            df.at[individual_id, 'la_labour'] = "preterm_labour"
 
-        dfx['gestation'] = dfx['due_date'] - dfx['conception_date']
-        dfx['gestation'] = dfx['gestation'] / np.timedelta64(1, 'W')
+        else:
+            df.at[individual_id,'la_labour'] = "not_in_labour"
+            df.at[individual_id, 'is_pregnant'] = False
+            df.at[individual_id, 'la_abortion'] = self.sim.date
 
-        spontlab_idx = dfx.index[dfx.gestation >= 37]
+        # Obstuction?
 
-        pretermlab_idx = dfx.index[(dfx.gestation >= 28) & (dfx.gestation <= 36)]
-        abortion_idx = dfx.index[dfx.gestation <= 27]
-
-        df.loc[spontlab_idx, 'la_labour'] = 'spontaneous_labour'
-
-# Obstuction??
-
-        df.loc[pretermlab_idx, 'la_labour'] = 'pretterm_labour'
-
-# df.loc[pretermlab_idx, 'la_prev_ptb'] = True
-
-        df.loc[abortion_idx, 'is_pregnant'] = False
-
-# do we need an 'miscarriage' property
-
-# INDUCTION AND PLANNED CS
+        # INDUCTION AND PLANNED CS
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
