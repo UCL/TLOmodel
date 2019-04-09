@@ -353,12 +353,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             logger.debug('birth booked for: %s', df.due_date)
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * self.module.rng.random_sample())
+            # date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * self.module.rng.random_sample())
 
-            # Schedule the Birth
-            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), date_of_birth)
+            # Schedule the Birth on due date (edited JC)
+            # (Should there be a date offset (2 days) for the woman to be in labour
+            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_date)
 
-            logger.debug('birth booked for: %s', date_of_birth) # EDIT
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     """A one-off event in which a pregnant mother gives birth.

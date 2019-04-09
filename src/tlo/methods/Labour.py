@@ -310,7 +310,7 @@ class Labour (Module):
         """
 
     #    event = LabourEvent(self, person_id=individual_id, cause='labour') #helppppp
- #       sim.schedule_event(event, sim.date + DateOffset(days=1))
+    #    sim.schedule_event(event, sim.date + DateOffset(days=1))
 
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -350,27 +350,25 @@ class LabourEvent(Event, IndividualScopeEventMixin):
     def apply(self, individual_id):
         df = self.sim.population.props
 
-        # need to rewrite this as a scheduled event
-        # LOOP?
-
         gestation_date = df.at[individual_id, 'due_date'] -(df.at[individual_id, 'date_of_last_pregnancy'])
         gestation_weeks= gestation_date / np.timedelta64(1, 'W')
 
         if gestation_weeks > 37:
             df.at[individual_id, 'la_labour'] = "spontaneous_labour"
 
+            # Here would should apply a probability of the labour being prolonged/obstructed
+
         elif gestation_weeks < 37 and gestation_weeks >28:
             df.at[individual_id, 'la_labour'] = "preterm_labour"
+            df.at[individual_id, 'la_previous_ptb'] = True #or should this be following live birth?
 
         else:
             df.at[individual_id,'la_labour'] = "not_in_labour"
             df.at[individual_id, 'is_pregnant'] = False
             df.at[individual_id, 'la_abortion'] = self.sim.date
 
-        # Obstuction?
-
-        # INDUCTION AND PLANNED CS
-
+            # need to consider the benifits of a "previous spont miscarriage" property
+            # also need to incorperate induction and planned CS
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
