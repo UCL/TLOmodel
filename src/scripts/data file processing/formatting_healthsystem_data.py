@@ -384,7 +384,7 @@ data_import=pd.DataFrame(data=trimmed.iloc[1:,2:].values,columns=trimmed.iloc[0,
 data_import=data_import.dropna(axis='columns',how='all') # get rid of the 'spacer' columns
 data_import=data_import.fillna(0)
 
-# get rid of appointment types for which there is not call on time of any type of officer
+# get rid of records for which there is no call on time of any type of officer
 data_import=data_import.drop(columns=data_import.columns[data_import.sum()==0])
 
 # We note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
@@ -423,7 +423,6 @@ assert set(chai_code['Officer_Type_Code']).issubset(set(officer_types_table['Off
 
 # ----------
 # Make dataframe summarising the types of appointments
-# TODO: change this to later as a new appointment is created
 
 retained_appt_type_code = pd.unique(chai_code['Appt_Type_Code'])
 
@@ -450,20 +449,11 @@ assert not pd.isnull(appt_types_table).any().any()
 appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
 # ----------
 
-
-
+# Now, Make the ApptTimeTable
+# (Table that gives for each appointtment, when occuring in each appt_type at each facility type, the time of each type of officer required
 
 # The sheet gives the % of appointments that require a particular type of officer and the time taken if it does
 # So, turn that into an Expectation of the time taken for each type of officer (multiplying together)
-
-Central_Hospital_ExpecTime = data_import.loc['CenHos'] * data_import.loc['CenHos_Per']
-District_Hospital_ExpecTime = data_import.loc['DisHos'] * data_import.loc['DisHos_Per']
-Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComHos_Per']
-Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
-HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
-
-
-
 
 # This sheet distinguished between different types of facility. We will map these to the facility types that have been defined.
 # In doing this, we ignore the distinction made here between urban and rural health centres, and just use the rural.
@@ -476,53 +466,37 @@ HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 # CHAI: HealthPost ---> our "Community Health Station"
 # CHAI: Dispensary ---> (ignored)
 
-# Compile into a dictionary, according to our Facility_Types
 
-ExpectTime = dict({
-    'National Hospital' : Central_Hospital_ExpecTime,
-    'Referral Hospital' : Central_Hospital_ExpecTime,
-    'District Hospital' : District_Hospital_ExpecTime,
-    'Non-District Hospital': Community_Hospital_ExpecTime,
-    'Health Centre' : Rural_HealthCentre_ExpecTime,
-    'Community Health Station' : HealthPost_ExpecTime
-})
+Central_Hospital_ExpecTime = data_import.loc['CenHos'] * data_import.loc['CenHos_Per']
+District_Hospital_ExpecTime = data_import.loc['DisHos'] * data_import.loc['DisHos_Per']
+Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComHos_Per']
+Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
+HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 
-assert set(ExpectTime.keys()) == set(Facility_Types)
+X=pd.DataFrame({
+            'National Hospital': Central_Hospital_ExpecTime,
+            'Referral Hospital': Central_Hospital_ExpecTime,
+            'District Hospital': District_Hospital_ExpecTime,
+            'Non-District Hospital': Community_Hospital_ExpecTime,
+            'Health Centre': Rural_HealthCentre_ExpecTime,
+            'Community Health Station' : HealthPost_ExpecTime
+              })
 
-
-for k in ExpectTime.keys():
-    # Check these rows haven't accidentially filled with zeros
-    assert (ExpectTime[k].sum())>0
-
-
-
-# Make table that gives, when occuring in each appt_type at each facility type, the time of each type of officer required
-
-ApptTimeTable= pd.DataFrame()
-
-for a in appt_types_table['Appt_Type_Code'].values:
-    for f in Facility_Types:
-
-        expect_time_for_this_facility = ExpectTime[f]
-
-        loc_for_the_officer_types_per_patient_type=chai_code.loc[chai_code['Appt_Type_Code']==a].copy()
-
-        idx=loc_for_the_officer_types_per_patient_type.index
-        block = loc_for_the_officer_types_per_patient_type.reset_index(drop=True)
-
-        block.loc[:,'Facility_Type']=f
-        block.loc[:,'Time_Taken']=expect_time_for_this_facility[idx]
-
-        ApptTimeTable=pd.concat([ApptTimeTable,block],ignore_index=True)
-
-# check that there is row for every combination of appt-type, facility-type and officer-type
-assert len(ApptTimeTable) == len(appt_types_table['Appt_Type_Code'].values) * len(Facility_Types) * len(officer_types_table['Officer_Type_Code'].values)
-
-
+# split out the index into appointment type and officer type
+labels=pd.Series(X.index,index=X.index).str.split(pat='_',expand=True)
+labels=labels.rename(columns={0:'Officer_Type_Code', 1:'Appt_Type_Code'})
+Y=pd.concat([X,labels],axis=1)
+ApptTimeTable=pd.melt(Y,id_vars=['Officer_Type_Code','Appt_Type_Code'],value_vars=Facility_Types,var_name='Facility_Type',value_name='Time_Taken')
 
 # Merge in Officer_Type and Facility_Level
 ApptTimeTable=ApptTimeTable.merge(officer_types_table,on='Officer_Type_Code')
 ApptTimeTable.loc[:,'Facility_Level']=ApptTimeTable['Facility_Type'].map(Facility_Types_Levels)
+
+# confirm that we have the same number of entries as we were expecting
+assert len(ApptTimeTable) == len(Facility_Types)*len(data_import.columns)
+
+# drop the rows that contain no call on resources
+ApptTimeTable=ApptTimeTable.drop(ApptTimeTable[ApptTimeTable['Time_Taken']==0].index)
 
 # Save
 ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
