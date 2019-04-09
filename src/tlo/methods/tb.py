@@ -558,7 +558,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 # TODO: tb_mdr should also be a risk for people with latent_susc status
 # when they move back to latent after treatment / self-cure, they stay as latent_mdr
 
-
+# TODO: change to infection, progression and self-cure
 class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb infection events
     """
