@@ -17,6 +17,7 @@ from tlo.methods.demography import Demography
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Contraception(Module):
     """
     Contraception module covering baseline contraception methods use, failure (pregnancy),
@@ -24,17 +25,20 @@ class Contraception(Module):
     please see Dropbox/Thanzi la Onse/05 - Resources/Programming Notes/Contraception-Pregnancy.pdf
     for conceptual diagram (lucid chart)
     """
+
     def __init__(self, name=None, workbook_path=None):
         super().__init__(name)
         self.workbook_path = workbook_path
+
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
-        #TODO: fertlity schedule (baseline fertlity) is currently in demography should it only be here in contraception?
+        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
+        # TODO: fertlity schedule (baseline fertlity) is currently in demography should it only be here in contraception?
         'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1'),
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2'),
-        'contraception_discontinuation_failure_switching': Parameter(Types.DATA_FRAME, 'contraception_failure_discontin')
+        'contraception_discontinuation_failure_switching': Parameter(Types.DATA_FRAME,
+                                                                     'contraception_failure_discontin')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -42,15 +46,15 @@ class Contraception(Module):
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                  categories=['not using', 'pill', 'IUD', 'injection', 'implant', 'male condom',
-                                              'female sterilization', 'other modern', 'periodic abstinence',
-                                              'withdrawal',
-                                              'other traditional'])
+                                  categories=['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                              'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                              'withdrawal', 'other_traditional'])
         # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
         # discontinuation, failure and switching rates
         # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
         # 'other traditional' includes lactational amenohroea (LAM), standard days method (SDM), 'other traditional method'
-        # TODO: replace Age-spec fertility sheet in demography.xlsx with the one in contraception.xlsx (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
+        # Have replaced Age-spec fertility sheet in demography.xlsx (in this branch) with the one in contraception.xlsx
+        # (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
     }
 
     def read_parameters(self, data_folder):
@@ -68,7 +72,6 @@ class Contraception(Module):
         self.parameters['contraception_discontinuation_failure_switching'] = workbook['contraception_failure_discontin']
         # this Excel sheet is contraception_failure_discontinuation_switching_by_age.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -84,24 +87,43 @@ class Contraception(Module):
         possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
         females1549 = df.index[possibly_using]
         # 2. Get probabilities of using each method of contraception by age
-        #contraception_probs = df.loc[fertility, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
+        # contraception_probs = df.loc[fertility, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
         #                                         'female_sterilization', 'other_modern', 'periodic_abstinence',
         #                                         'withdrawal', 'other_traditional']].age
         # 2. merge the probabilities into each row in sim population
         df_new = df.merge(fertility, left_on=['age_years'], right_on=['age'], how='left')
 
-        contraception_probs = df_new.loc[females1549, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                     'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                    'withdrawal', 'other_traditional']]
+        probabilities = df_new.loc[females1549, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                              'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                              'withdrawal', 'other_traditional']]
+
+        #df.loc[:,'her_contracp']=None
+        for woman in probabilities.index:
+            her_p=np.asarray(probabilities.loc[woman,:])
+            her_op=np.asarray(probabilities.columns)
+
+            her_method=self.rng.choice(her_op,p=her_p/her_p.sum())
+
+            df.loc[woman,'contraception']=her_method
+
+
 
         # 3. apply probabilities of each contraception type to sim population
-        df_new.loc[females1549, 'contraception'] = self.rng.choice(['not using', 'pill', 'IUD', 'injection', 'implant',
-                                                                    'male condom', 'female sterilization',
-                                                                    'other modern', 'periodic abstinence',
-                                                                    'withdrawal', 'other traditional'],
-                                                                   size=len(contraception_probs),
-                                                                   replace=True, p=contraception_probs.values)
+        categories = ['not using', 'pill', 'IUD', 'injection', 'implant', 'male condom', 'female sterilization',
+                      'other modern', 'periodic abstinence', 'withdrawal', 'other traditional']
+        random_choice = self.rng.choice(categories, size=len(probabilities), p=probabilities)
+        df.loc[females1549, 'contraception'].values[:] = random_choice
 
+    #
+
+
+
+        # df_new.loc[females1549, 'contraception'] = self.rng.choice(['not using', 'pill', 'IUD', 'injection', 'implant',
+        #                                                             'male condom', 'female sterilization',
+        #        # Tim                                                    'other modern', 'periodic abstinence',
+        #                                                            'withdrawal', 'other traditional'],
+        #                                                           size=len(contraception_probs),
+        #                                                           replace=True, p=contraception_probs.values)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
