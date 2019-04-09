@@ -167,7 +167,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
 
         # TODO: Lifestyle module should look after contraception property
-        df.loc[df.is_alive, 'contraception'] = 'not using'  # this will be ascribed by the lifestype module
+        df.loc[df.is_alive, 'contraception'] = 'not_using'  # this will be ascribed by the lifestype module
 
         age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
