@@ -67,8 +67,8 @@ staffing_table.loc[staffing_table['Is_DistrictLevel'],'E01'] =  \
 # The imported staffing table suggest that there is 1 Dental officer (D01) in each district,
 # but the TimeBase data (below) suggest that no appointment occuring at a district-level Facility can incurr
 # the time such an officer. Therefor reallocate the D01 officers to the Referral Hospitals
-extra_D01=staffing_table.loc[staffing_table['Is_DistrictLevel'],staffing_table.columns[staffing_table.columns=='D01']].sum().values[0]
-staffing_table.loc[staffing_table['Is_DistrictLevel'],staffing_table.columns[staffing_table.columns=='D01']]=0
+extra_D01=staffing_table.loc[~staffing_table['District_Or_Hospital'].isin(['KCH','MCH','QECH']),staffing_table.columns[staffing_table.columns=='D01']].sum().values[0]
+staffing_table.loc[~staffing_table['District_Or_Hospital'].isin(['KCH','MCH','QECH']),staffing_table.columns[staffing_table.columns=='D01']]=0
 extra_D01_per_referralhosp = extra_D01/3
 staffing_table.loc[staffing_table['District_Or_Hospital'].isin(['KCH','MCH','QECH']),'D01'] = \
         staffing_table.loc[staffing_table['District_Or_Hospital'].isin(['KCH','MCH','QECH']),'D01'] + \
@@ -506,7 +506,55 @@ for staffmember in staff_list.index:
     facility_assignment.at[staffmember,'Facility_ID'] = assigned_facility_id
 
 
-# TODO: **** GOT TO HERE !! :-)
+#-----------------
+#-----------------
+#-----------------
+
+# Check that every appointment that can be raised is going to be possible to be met by at least one facility type
+# (if staff numbers (if >0) were not a limiting factor: ie. just checking the distribution of the officer types between the facilities)
+
+
+for d in pop_districts:
+
+    for a in appt_types_table['Appt_Type_Code'].values:
+
+        # we require that every appt type is possible in at least one facility
+
+        facilities_in_this_district = list(
+            facilities_by_district.loc[facilities_by_district['District'] == d, 'Facility_ID'])
+
+        set_of_facility_types_in_this_district= set(facilities_by_district.loc[facilities_by_district['District'] == d, 'Facility_Type'])
+
+        assert len(facilities_in_this_district) == len(Facility_Types)
+        assert set(set_of_facility_types_in_this_district) == set(Facility_Types)
+
+
+        appt_ok_per_fac = dict(zip(facilities_in_this_district,
+                                    np.zeros(len(facilities_in_this_district))>0)) # generate an array of False
+
+        for f in facilities_in_this_district:
+
+            f_type=mfl.loc[mfl['Facility_ID']==f,'Facility_Type'].values[0]
+
+            req_officer=set(ApptTimeTable.loc[
+                                (ApptTimeTable['Appt_Type_Code'] == a) &
+                                (ApptTimeTable['Facility_Type'] == f_type),
+                                'Officer_Type_Code'])
+
+            # is there at least one of every type of officer in req_officer at this facility
+            staff_ids=facility_assignment.loc[facility_assignment['Facility_ID']==f,'Staff_ID'].values
+            staff_types=staff_list.loc[staff_list['Staff_ID'].isin(staff_ids),'Officer_Type_Code']
+            unique_staff_types = set(pd.unique(staff_types))
+
+            appt_ok_in_this_fac= (unique_staff_types == req_officer)
+
+            appt_ok_per_fac[f]= appt_ok_in_this_fac
+
+        assert np.asarray(list(appt_ok_per_fac.values())).any()
+
+
+
+
 #-----------------
 #-----------------
 #-----------------
