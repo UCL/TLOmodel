@@ -365,11 +365,9 @@ Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
 Y.to_csv(resourcefilepath+'ResourceFile_Daily_Capabilities.csv')
 
 
-
 #-----------------
 #-----------------
 #-----------------
-
 
 # *** Now look at the types of appointments and the draw on officer's time associated with each
 
