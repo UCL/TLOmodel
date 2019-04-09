@@ -418,8 +418,8 @@ for a in appt_types_table['Appt_Type_Code'].values:
                                                                  },ignore_index=True)
 
 # Turn this into the the set of staff that are required for each type of appointment
-X= pd.DataFrame(columns = Facility_Types,index =officer_types_table['Officer_Type_Code'].values )
-X=X.fillna(False)
+Fac_By_Officer= pd.DataFrame(columns = Facility_Types,index =officer_types_table['Officer_Type_Code'].values )
+Fac_By_Officer=X.fillna(False)
 
 for o in officer_types_table['Officer_Type_Code'].values:
 
@@ -430,24 +430,24 @@ for o in officer_types_table['Officer_Type_Code'].values:
         if officer_types != False:
 
             if (o in officer_types):
-                X.loc[
-                    ( X.index==o ),
+                Fac_By_Officer.loc[
+                    ( Fac_By_Officer.index==o ),
                 fac]=True
 
 
 # We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are apparently not called by any appointment type
 
 # Assign that the Nutrition Staff will go to the District, Referral and National Hospitals
-X.loc['T01',['District Hospital','Referral Hospital','National Hospital']]=True
+Fac_By_Officer.loc['T01',['District Hospital','Referral Hospital','National Hospital']]=True
 
 # Assign that the Sonographer will go to the District, Referral and National Hospitals
-X.loc['R03',['District Hospital','Referral Hospital','National Hospital']]=True
+Fac_By_Officer.loc['R03',['District Hospital','Referral Hospital','National Hospital']]=True
 
 # Assign that the Radiotherapist will go to the National Hospital
-X.loc['R04','National Hospital']=True
+Fac_By_Officer.loc['R04','National Hospital']=True
 
 # Check that all types of officer are allocated to at least one type of facility
-assert (X.sum(axis=1)>0).all()
+assert (Fac_By_Officer.sum(axis=1)>0).all()
 
 #-----------------
 #-----------------
@@ -470,6 +470,7 @@ for staffmember in staff_list.index:
         # This staff member is allocated to a district
         district= staff_list.at[staffmember,'District_Or_Hospital']
 
+        # TODO: get this from Fac_By_Officer BUT MAKE SURE TO EXCLUDE REFERRAL AND NATIONAL
         possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
 
         # Get the facilities to which this staff member might be allocated
@@ -484,6 +485,8 @@ for staffmember in staff_list.index:
     else:
         # This staff member is allocated to one of the above-district types of facilities
 
+        # TODO: confirm that this accord with Fac_By_Officer; LIMIT TO REFERRAL AND NATIONAL (I.E. NO E01)
+
         hospital = staff_list.at[staffmember,'District_Or_Hospital']
 
         if hospital == 'National Hospital':
@@ -491,7 +494,7 @@ for staffmember in staff_list.index:
             assigned_facility_id =mfl.loc[mfl['Facility_Name']==hospital,'Facility_ID'].values[0]
 
         else:
-            # it's a referral hospital
+            # It's a referral hospital
             x = hospital.split('_')
             region=x[1]
             assigned_facility_id =mfl.loc[
