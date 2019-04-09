@@ -376,36 +376,93 @@ sheet= pd.read_excel(workingfile,sheet_name='Time_Base',header=None)
 
 # ----------
 
-# Make dataframe summarising the types of appointments
-appt_types_table=sheet.loc[(1,2,6),2:].transpose().reset_index(drop=True).copy()
-appt_types_table=appt_types_table.rename(columns={1:'Appt_Cat',2:'Appt_Type',6:'Appt_Type_Code'})
-appt_types_table['Appt_Cat']=pd.Series(appt_types_table['Appt_Cat']).fillna(method='ffill')
-appt_types_table['Appt_Type']=pd.Series(appt_types_table['Appt_Type']).fillna(method='ffill')
-appt_types_table['Appt_Type_Code']=pd.Series(appt_types_table['Appt_Type_Code']).fillna(method='ffill')
-
-appt_types_table=appt_types_table.drop_duplicates().reset_index(drop=True)
-appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
-
-# ----------
 
 # get rid of the junky rows
 trimmed=sheet.loc[[7,8,9,11,12,14,15,17,18,20,21,23,24,26,27],]
+data_import=pd.DataFrame(data=trimmed.iloc[1:,2:].values,columns=trimmed.iloc[0,2:],index=trimmed.iloc[1:,1])
+
+data_import=data_import.dropna(axis='columns',how='all') # get rid of the 'spacer' columns
+data_import=data_import.fillna(0)
+
+# get rid of appointment types for which there is not call on time of any type of officer
+data_import=data_import.drop(columns=data_import.columns[data_import.sum()==0])
+
+# We note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
+# We remedy this by inserting a new type of appoitment, which only the DCSA can service, and the time taken is 10 minutes.
+new_appt_for_CHW=pd.Series(index=data_import.index,
+                           name='E01_ConWithDCSA',  # New appointment type is a consultation with the DCSA (community health worker)
+                           data=[
+                                    0,                          # Central Hosp - Time
+                                    0,                          # Central Hosp - Percent
+                                    0,                          # District Hosp - Time
+                                    0,                          # District Hosp - Percent
+                                    0,                          # Comm Hosp - Time
+                                    0,                          # Comm Hosp - Percent
+                                    0,                          # Urban Health Centre - Time
+                                    0,                          # Urban Health Centre - Percent
+                                    0,                          # Rural Health Centre - Time
+                                    0,                          # Rural Health Centre - Percent
+                                    10.0,                       # Health Post - Time
+                                    1.0,                        # Health Post - Percent
+                                    0,                          # Dispensary - Time
+                                    0,                          # Dispensary - Percent
+])
+
+data_import=pd.concat([data_import,new_appt_for_CHW],axis=1)
+
 
 # break apart composite to give the appt_type and the officer_type
-# This give the positional information to read the data below...
-chai_composite_code=trimmed.loc[7,2:]
+# This is used to know which column to read below...
+chai_composite_code=pd.Series(data_import.columns)
 chai_code=chai_composite_code.str.split(pat='_',expand=True).reset_index(drop=True)
 chai_code=chai_code.rename(columns={0:'Officer_Type_Code',1:'Appt_Type_Code'})
 
+# check that officer codes line up with the officer codes already imported
+assert set(chai_code['Officer_Type_Code']).issubset(set(officer_types_table['Officer_Type_Code']))
+
+
+# ----------
+# Make dataframe summarising the types of appointments
+# TODO: change this to later as a new appointment is created
+
+retained_appt_type_code = pd.unique(chai_code['Appt_Type_Code'])
+
+appt_types_table_import=sheet.loc[(1,2,6),2:].transpose().reset_index(drop=True).copy()
+appt_types_table_import=appt_types_table_import.rename(columns={1:'Appt_Cat',2:'Appt_Type',6:'Appt_Type_Code'})
+appt_types_table_import['Appt_Cat']=pd.Series(appt_types_table_import['Appt_Cat']).fillna(method='ffill')
+appt_types_table_import['Appt_Type']=pd.Series(appt_types_table_import['Appt_Type']).fillna(method='ffill')
+appt_types_table_import['Appt_Type_Code']=pd.Series(appt_types_table_import['Appt_Type_Code']).fillna(method='ffill')
+appt_types_table_import=appt_types_table_import.drop_duplicates().reset_index(drop=True)
+
+# starting with the retained appt codes, merge in these descriptions
+appt_types_table= pd.DataFrame(data={'Appt_Type_Code':retained_appt_type_code}).merge(appt_types_table_import,on='Appt_Type_Code',how='left',indicator=True)
+
+# Fill in the missing information about the appointment type that was added above
+appt_types_table.loc[appt_types_table['Appt_Type_Code']==new_appt_for_CHW.name.split('_')[1],'Appt_Cat']=new_appt_for_CHW.name.split('_')[1]
+appt_types_table.loc[appt_types_table['Appt_Type_Code']==new_appt_for_CHW.name.split('_')[1],'Appt_Type']=new_appt_for_CHW.name.split('_')[1]
+
+# drop the merge check column
+appt_types_table.drop(columns='_merge',inplace=True)
+
+# Check no holes
+assert not pd.isnull(appt_types_table).any().any()
+
+appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
+# ----------
+
+
+
+
 # The sheet gives the % of appointments that require a particular type of officer and the time taken if it does
 # So, turn that into an Expectation of the time taken for each type of officer (multiplying together)
-Central_Hospital_ExpecTime = trimmed.loc[8,2:].values.astype(float) * trimmed.loc[9,2:].values.astype(float)
-District_Hospital_ExpecTime = trimmed.loc[11,2:].values.astype(float) * trimmed.loc[12,2:].values.astype(float)
-Community_Hospital_ExpecTime = trimmed.loc[14,2:].values.astype(float) * trimmed.loc[15,2:].values.astype(float)
-Urban_HealthCentre_ExpecTime = trimmed.loc[17,2:].values.astype(float) * trimmed.loc[18,2:].values.astype(float)
-Rural_HealthCentre_ExpecTime = trimmed.loc[20,2:].values.astype(float) * trimmed.loc[21,2:].values.astype(float)
-HealthPost_ExpecTime = trimmed.loc[23,2:].values.astype(float) * trimmed.loc[24,2:].values.astype(float)
-Dispensary_ExpecTime = trimmed.loc[26,2:].values.astype(float) * trimmed.loc[27,2:].values.astype(float)
+
+Central_Hospital_ExpecTime = data_import.loc['CenHos'] * data_import.loc['CenHos_Per']
+District_Hospital_ExpecTime = data_import.loc['DisHos'] * data_import.loc['DisHos_Per']
+Community_Hospital_ExpecTime = data_import.loc['ComHos'] * data_import.loc['ComHos_Per']
+Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
+HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
+
+
 
 
 # This sheet distinguished between different types of facility. We will map these to the facility types that have been defined.
@@ -433,7 +490,13 @@ ExpectTime = dict({
 assert set(ExpectTime.keys()) == set(Facility_Types)
 
 
-# Make table that gives, for each appt_type at each facility type, the time of each type of officer
+for k in ExpectTime.keys():
+    # Check these rows haven't accidentially filled with zeros
+    assert (ExpectTime[k].sum())>0
+
+
+
+# Make table that gives, when occuring in each appt_type at each facility type, the time of each type of officer required
 
 ApptTimeTable= pd.DataFrame()
 
@@ -452,6 +515,10 @@ for a in appt_types_table['Appt_Type_Code'].values:
 
         ApptTimeTable=pd.concat([ApptTimeTable,block],ignore_index=True)
 
+# check that there is row for every combination of appt-type, facility-type and officer-type
+assert len(ApptTimeTable) == len(appt_types_table['Appt_Type_Code'].values) * len(Facility_Types) * len(officer_types_table['Officer_Type_Code'].values)
+
+
 
 # Merge in Officer_Type and Facility_Level
 ApptTimeTable=ApptTimeTable.merge(officer_types_table,on='Officer_Type_Code')
@@ -460,3 +527,32 @@ ApptTimeTable.loc[:,'Facility_Level']=ApptTimeTable['Facility_Type'].map(Facilit
 # Save
 ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
 
+
+# -------
+# -------
+# -------
+
+# Look at which types of appointment are potentially possible at the types of facility
+# Need to confirm that each type of appointment is possible somewhere, if there were a member of staff available
+
+Officers_Need_For_Appt=pd.DataFrame(columns=['Facility_Type','Appt_Type','Officer_Type_Codes'])
+
+for a in appt_types_table['Appt_Type_Code'].values:
+    for f in Facility_Types:
+
+
+        # get the staff types required for this appt
+
+        block=ApptTimeTable.loc[ (ApptTimeTable['Appt_Type_Code']==a) & (ApptTimeTable['Facility_Type']==f)]
+        block=block.drop(block.loc[block['Time_Taken']==0].index)
+
+        need_officer_types=list(block['Officer_Type_Code'])
+
+        # perform check because every type of appt should require at least one officer
+        assert len(need_officer_types) > 0
+
+        Officers_Need_For_Appt.loc[
+            (Officers_Need_For_Appt['Appt_Type_Code'] == a) &
+            (Officers_Need_For_Appt['Facility_Type']==f),
+            'Officer_Type_Codes'
+        ] = need_officer_types
