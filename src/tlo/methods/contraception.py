@@ -35,7 +35,8 @@ class Contraception(Module):
     PARAMETERS = {
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
         # TODO: fertlity schedule (baseline fertlity) is currently in demography should it only be here in contraception?
-        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1'),
+        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'), # 'irate_1_' sheet created manually as a work around to address to do point below
+        # TODO: irate1 is specified incorrectly as expos is too low for each method - should be total exposure time and the same for each method i.e. exposure should be those exposed to 'not_using'. The irate1 sheet also needs to be transposed to have one row for monthly, quarterly, year rate and columns for each method as in the Age_spec fertility rate, and column names spelt exactly the same as the contraception categories in the module
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2'),
         'contraception_discontinuation_failure_switching': Parameter(Types.DATA_FRAME,
                                                                      'contraception_failure_discontin')
@@ -65,7 +66,7 @@ class Contraception(Module):
         """
         workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
-        self.parameters['contraception_initiation1'] = workbook['irate1']
+        self.parameters['contraception_initiation1'] = workbook['irate1_']  # 'irate_1_' sheet created manually as a work around to address to do point on line 39
         # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_initiation2'] = workbook['irate2']
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
@@ -87,12 +88,8 @@ class Contraception(Module):
         possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
         females1549 = df.index[possibly_using]
         # 2. Get probabilities of using each method of contraception by age
-        # contraception_probs = df.loc[fertility, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-        #                                         'female_sterilization', 'other_modern', 'periodic_abstinence',
-        #                                         'withdrawal', 'other_traditional']].age
-        # 2. merge the probabilities into each row in sim population
+        #       and merge the probabilities into each row in sim population
         df_new = df.merge(fertility, left_on=['age_years'], right_on=['age'], how='left')
-
         probabilities = df_new.loc[females1549, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
                                               'female_sterilization', 'other_modern', 'periodic_abstinence',
                                               'withdrawal', 'other_traditional']]
@@ -107,13 +104,12 @@ class Contraception(Module):
             df.loc[woman,'contraception']=her_method
 
 
-
-        # 3. apply probabilities of each contraception type to sim population
-        categories = ['not using', 'pill', 'IUD', 'injection', 'implant', 'male condom', 'female sterilization',
-                      'other modern', 'periodic abstinence', 'withdrawal', 'other traditional']
-        random_choice = self.rng.choice(categories, size=len(probabilities), p=probabilities)
-        df.loc[females1549, 'contraception'].values[:] = random_choice
-
+        # TODO: need to do it without above for loop:
+        # probabilities['p_list'] = probabilities.apply(lambda row: row[:].tolist(), axis=1)  # doesn't work as p_list is dtype['O'] (object) rather than float64
+        #categories = ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
+        #              'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional']
+        #random_choice = self.rng.choice(categories, size=len(df), p=probabilities['p_list'])
+        #df.loc[females1549, 'contraception'].values[:] = random_choice
 
 
     def initialise_simulation(self, sim):
@@ -123,7 +119,8 @@ class Contraception(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        raise NotImplementedError
+        # check all population to determine if contraception starts i.e. category should change from 'not_using' (repeats every month)
+        sim.schedule_event(Init1(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -134,6 +131,48 @@ class Contraception(Module):
         :param child_id: the new child
         """
         raise NotImplementedError
+
+
+class Init1(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event looks across all women who are 'not_using' contraception to determine if they start using each
+    method according to initiation_rate1 (irate_1)
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+        logger.debug('Checking to see if anyone should start using contraception')
+
+        df = population.props  # get the population dataframe
+
+        # get the subset of women from the population dataframe and relevant characteristics
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
+        females = df.loc[subset, ['contraception', 'age_years']]
+
+        # load the contraception initiation 1 rates (imported datasheet from excel workbook)
+        contraception_initiation1 = self.module.parameters['contraception_initiation1']
+
+        # and merge the monthly initiation 1 rates into the population dataframe
+        df_init1 = df.append(contraception_initiation1)
+
+        # randomly assign probabilities of initiation of each method from not_using according to monthly rates from irate1
+        probs = contraception_initiation1
+        #probs = df_init1.loc[females, ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+        #                                         'female_sterilization', 'other_modern', 'periodic_abstinence',
+        #                                         'withdrawal', 'other_traditional']]
+        # 3. apply probabilities of each contraception type to sim population
+        for woman in probs.index:
+            her_p=np.asarray(probs.loc[woman,:])
+            her_op=np.asarray(probs.columns)
+
+            her_method=self.module.rng.choice(her_op,p=her_p/her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
+
+            df.loc[woman,'contraception']=her_method
+            hello
 
 
 class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):

@@ -110,7 +110,7 @@ class Demography(Module):
         """
         workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
-        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
+        self.parameters['fertility_schedule'] = workbook['Age_spec fertility'] #TODO: this needs to have cmeth variable with each of the 11 contraception categories the same as contraception, for each age group
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
@@ -290,8 +290,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
         len_before_merge = len(females)
         females = females.reset_index().merge(fertility_schedule,
-                                              left_on=['age_years', 'contraception'],
-                                              right_on=['age', 'cmeth'],
+                                              left_on=['age_years'], #TimC: got rid of 'contraception' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
+                                              right_on=['age'], #TimC: got rid of 'cmeth' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
                                               how='inner').set_index('person')
         assert len(females) == len_before_merge
 
