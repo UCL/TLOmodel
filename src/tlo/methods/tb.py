@@ -31,7 +31,7 @@ class tb(Module):
         'prop_fast_progressor': Parameter(Types.REAL,
                                           'Proportion of infections that progress directly to active stage'),
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, estimated by Juan'),
-        'progression_to_active_rate': Parameter(Types.REAL,
+        'monthly_prob_progr_active': Parameter(Types.REAL,
                                                 'Combined rate of progression/reinfection/relapse from Juan'),
         'rr_tb_hiv_stages': Parameter(Types.REAL, 'relative risk of tb in hiv+ compared with hiv- by cd4 stage'),
         'rr_tb_art': Parameter(Types.REAL, 'relative risk of tb in hiv+ on art'),
@@ -42,14 +42,14 @@ class tb(Module):
         'rr_tb_smoking': Parameter(Types.REAL, 'relative risk of tb with smoking'),
         'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
         'rel_infectiousness_hiv': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
-        'prop_self_cure': Parameter(Types.REAL, 'proportion of population that self-cure without treatment'),
-        'ann_prob_self_cure': Parameter(Types.REAL, 'annual probability of self-cure'),
+        'monthly_prob_self_cure': Parameter(Types.REAL, 'annual probability of self-cure'),
         'ann_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
         'ann_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
-        'ann_prob_relapse_tx_complete': Parameter(Types.REAL, 'annual probability of relapse once treatment complete'),
-        'ann_prob_relapse_tx_incomplete': Parameter(Types.REAL,
+        'monthly_prob_relapse_tx_complete': Parameter(Types.REAL,
+                                                      'annual probability of relapse once treatment complete'),
+        'monthly_prob_relapse_tx_incomplete': Parameter(Types.REAL,
                                                     'annual probability of relapse if treatment incomplete'),
-        'ann_prob_relapse_2yrs': Parameter(Types.REAL,
+        'monthly_prob_relapse_2yrs': Parameter(Types.REAL,
                                            'annual probability of relapse 2 years after treatment complete'),
 
         'prop_mdr2010': Parameter(Types.REAL, 'prevalence of mdr in TB cases 2010'),
@@ -114,7 +114,7 @@ class tb(Module):
 
         params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
         params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value1']
-        params['progression_to_active_rate'] = self.param_list.loc['progression_to_active_rate', 'value1']
+        params['monthly_prob_progr_active'] = self.param_list.loc['progression_to_active_rate', 'value1']
 
         params['rr_tb_with_hiv_stages'] = self.param_list.loc['transmission_rate'].values
         params['rr_tb_art'] = self.param_list.loc['rr_tb_art', 'value1']
@@ -125,13 +125,15 @@ class tb(Module):
         params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value1']
         params['rr_tb_pollution'] = self.param_list.loc['rr_tb_pollution', 'value1']
         params['rel_infectiousness_hiv'] = self.param_list.loc['rel_infectiousness_hiv', 'value1']
-        params['prob_self_cure'] = self.param_list.loc['prob_self_cure', 'value1']
-        params['rate_self_cure'] = self.param_list.loc['rate_self_cure', 'value1']
-        params['tb_mortality_rate'] = self.param_list.loc['tb_mortality_rate', 'value1']
-        params['tb_mortality_hiv'] = self.param_list.loc['tb_mortality_hiv', 'value1']
+        params['monthly_prob_self_cure'] = self.param_list.loc['rate_self_cure', 'value1']
+        params['ann_prob_tb_mortality'] = self.param_list.loc['tb_mortality_rate', 'value1']
+        params['ann_prob_tb_mortality_hiv'] = self.param_list.loc['tb_mortality_hiv', 'value1']
         params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value1']
         params['prop_mdr_new'] = self.param_list.loc['prop_mdr_new', 'value1']
         params['prop_mdr_retreated'] = self.param_list.loc['prop_mdr_retreated', 'value1']
+        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['ann_prob_relapse_tx_complete', 'value1']
+        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc['ann_prob_relapse_tx_incomplete', 'value1']
+        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['ann_prob_relapse_2yrs', 'value1']
 
         params['Active_tb_prob'], params['Latent_tb_prob'] = workbook['Active_TB_prob'], \
                                                              workbook['Latent_TB_prob']
@@ -266,6 +268,9 @@ class tb(Module):
 
     def initialise_simulation(self, sim):
         sim.schedule_event(TbEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=12))
+
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(
@@ -388,14 +393,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
-        # make sure any rates are annual if frequency of event is annual
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-
         params = self.module.parameters
         now = self.sim.date
         rng = self.module.rng
@@ -410,7 +410,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         active_hiv_neg = len(df[(df.tb_inf == 'active_susc') & ~df.hiv_inf & df.is_alive])
         active_hiv_pos = len(df[(df.tb_inf == 'active_susc') & df.hiv_inf & df.is_alive])
 
-        # population at-risk = susceptible (new infection), latent_susc (reinfection), latent_mdr (new infection)
+        # population at-risk = susceptible (new infection), latent_mdr (new infection)
 
         uninfected_total = len(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr')) & df.is_alive])
         total_population = len(df[df.is_alive])
@@ -421,8 +421,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
-        # pop at risk = susceptible and latent_mdr
-        at_risk = df.index(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr')) & df.is_alive])
+        # pop at risk = susceptible and latent_mdr, latent_susc will be reinfections
+        at_risk = df.index(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr') | (
+            df.tb_inf == 'latent_susc')) & df.is_alive])
 
         #  no age/sex effect on risk of latent infection
         prob_tb_new = pd.Series(force_of_infection, index=at_risk)
@@ -433,10 +434,20 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_case, 'tb_inf'] = 'latent_susc'
         df.loc[new_case, 'tb_date_latent'] = now
 
-        # ----------------------------------- RE-INFECTIONS -----------------------------------
 
-        # pop at risk latent_susc, have they already been active?
+class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
+    """ tb progression from latent to active infection
+    """
 
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
+
+        df = population.props
         # ----------------------------------- FAST PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
         # if any newly infected latent cases, 14% become active directly
@@ -454,24 +465,36 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.sim.rng.random_sample(size=1)
 
         # relapse after treatment completion, tb_date_treated + six months
-        risk_relapse = df[(df.tb_inf == 'latent_susc') & df.is_alive & (self.sim.date - df.tb_date_treated > 182.5) & (
-            random_draw < params['rate_relapse_tx_complete'])].index
+        relapse_tx_complete = df[
+            (df.tb_inf == 'latent_susc') & df.is_alive & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & ~df.tb_treatment_failure & (
+                random_draw < params['monthly_prob_relapse_tx_complete'])].index
 
         # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
+        relapse_tx_incomplete = df[
+            (df.tb_inf == 'latent_susc') & df.is_alive & df.tb_treatment_failure & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & (
+                random_draw < params['monthly_prob_relapse_tx_incomplete'])].index
 
         # relapse after >2 years following completion of treatment (or default)
         # use tb_date_treated + 2 years + 6 months of treatment
+        relapse_tx_2yrs = df[
+            (df.tb_inf == 'latent_susc') & df.is_alive & (
+                self.sim.date - df.tb_date_treated >= 732.5) & (
+                random_draw < params['monthly_prob_relapse_2yrs'])].index
 
-        df.loc[relapse, 'tb_inf'] = 'active_susc'
-        df.loc[relapse, 'tb_date_active'] = now
-        df.loc[relapse, 'tb_ever_tb'] = True
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'] = 'active_susc'
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
 
         # ----------------------------------- SLOW PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(0, index=df.index)
-        eff_prob_active_tb.loc[(df.tb_inf == 'latent_susc')] = params['progression_to_active_rate']
+        eff_prob_active_tb.loc[(df.tb_inf == 'latent_susc')] = params['monthly_prob_prog_active']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
         hiv_stage1 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc') &
@@ -511,7 +534,20 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_active_case, 'tb_date_active'] = now
         df.loc[new_active_case, 'tb_ever_tb'] = True
 
-        # ----------------------------------- SELF CURE -----------------------------------
+
+class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
+    """ tb self-cure events
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
+
+        df = population.props
 
         # self-cure - move back from active to latent, make sure it's not the ones that just became active
         self_cure_tb = df[(df.tb_inf == 'active_susc') & df.is_alive & (df.tb_date_active < now)].sample(
