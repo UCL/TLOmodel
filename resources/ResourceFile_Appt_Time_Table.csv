@@ -152,7 +152,7 @@
 150,M01,PMTCT,Community Health Station,0.0,Medical Officer / Specialist,0
 151,M01,PMTCT,Health Centre,0.0,Medical Officer / Specialist,1
 152,M01,PMTCT,Non-District Hospital,0.0,Medical Officer / Specialist,2
-153,M01,PMTCT,District Hospital,,Medical Officer / Specialist,3
+153,M01,PMTCT,District Hospital,0.0,Medical Officer / Specialist,3
 154,M01,PMTCT,Referral Hospital,3.0,Medical Officer / Specialist,4
 155,M01,PMTCT,National Hospital,3.0,Medical Officer / Specialist,5
 156,M01,Peds,Community Health Station,0.0,Medical Officer / Specialist,0
@@ -1347,8 +1347,8 @@
 1345,M03,EstNonCom,Health Centre,1.0,Med. Assistant,1
 1346,M03,EstNonCom,Non-District Hospital,2.5,Med. Assistant,2
 1347,M03,EstNonCom,District Hospital,2.5,Med. Assistant,3
-1348,M03,EstNonCom,Referral Hospital,,Med. Assistant,4
-1349,M03,EstNonCom,National Hospital,,Med. Assistant,5
+1348,M03,EstNonCom,Referral Hospital,0.0,Med. Assistant,4
+1349,M03,EstNonCom,National Hospital,0.0,Med. Assistant,5
 1350,M03,PMTCT,Community Health Station,0.0,Med. Assistant,0
 1351,M03,PMTCT,Health Centre,3.0,Med. Assistant,1
 1352,M03,PMTCT,Non-District Hospital,3.0,Med. Assistant,2
