@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+# TODO: remove store
 class tb(Module):
     """ Set up the baseline population with TB prevalence
     """
@@ -69,20 +70,24 @@ class tb(Module):
             Parameter(Types.REAL, 'QALY weighting for latent tb'),
         'qalywt_active':
             Parameter(Types.REAL, 'QALY weighting for active tb'),
-        'qalywt_aids':
-            Parameter(Types.REAL, 'QALY weighting for aids'),
     }
 
     PROPERTIES = {
         'tb_inf': Property(Types.CATEGORICAL,
-                           categories=['uninfected', 'latent_susc', 'active_susc', 'latent_mdr', 'active_mdr'],
+                           categories=['uninfected', 'latent_susc_primary', 'active_susc_primary', 'latent_mdr_primary',
+                                       'active_mdr_primary',
+                                       'latent_susc_secondary', 'latent_mdr_secondary', 'active_susc_secondary',
+                                       'active_mdr_secondary'],
                            description='tb status'),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
         'tb_date_latent': Property(Types.DATE, 'Date acquired tb infection (latent stage)'),
         'tb_date_death': Property(Types.DATE, 'Projected time of tb death if untreated'),
         'tb_ever_tb': Property(Types.BOOL, 'if ever had active drug-susceptible tb'),
         'tb_ever_tb_mdr': Property(Types.BOOL, 'if ever had active multi-drug resistant tb'),
-
+        'tb_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for tb',
+                                         categories=['none', 'latent', 'active']),
+        'tb_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
+                                            categories=[0, 1, 2, 3, 4]),
         'tb_ever_tested': Property(Types.BOOL, 'ever had a tb test'),
         'tb_smear_test': Property(Types.BOOL, 'ever had a tb smear test'),
         'tb_result_smear_test': Property(Types.BOOL, 'result from tb smear test'),
@@ -100,7 +105,8 @@ class tb(Module):
     }
 
     TREATMENT_ID = 'tb_treatment'
-    TEST_ID = 'tb_test'
+    SPUTUM_TEST_ID = 'tb_sputum_test'
+    XPERT_TEST_ID = 'tb_xpert_test'
     FOLLOWUP_ID = 'tb_followup'
 
     def read_parameters(self, data_folder):
@@ -202,15 +208,15 @@ class tb(Module):
                 fraction_latent_tb = latent_tb_data.loc[
                     (latent_tb_data.sex == 'M') & (latent_tb_data.age == i), 'prob_latent_tb']
                 male_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
-                df.loc[male_latent_tb, 'tb_inf'] = 'latent_susc'
+                df.loc[male_latent_tb, 'tb_inf'] = 'latent_susc_primary'
                 df.loc[male_latent_tb, 'tb_date_latent'] = now
 
                 # allocate some latent infections as mdr-tb
-                if len(df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'latent_susc')]) > 10:
-                    idx_c = df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'latent_susc')].sample(
+                if len(df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'latent_susc_primary')]) > 10:
+                    idx_c = df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'latent_susc_primary')].sample(
                         frac=self.parameters['prop_mdr2010']).index
 
-                    df.loc[idx_c, 'tb_inf'] = 'latent_mdr'  # change to mdr-tb
+                    df.loc[idx_c, 'tb_inf'] = 'latent_mdr_primary'  # change to mdr-tb
 
             idx_uninfected = (df.age_years == i) & (df.sex == 'M') & (df.tb_inf == 'uninfected') & df.is_alive
 
@@ -219,15 +225,15 @@ class tb(Module):
                 fraction_active_tb = active_tb_prob_year.loc[
                     (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == i), 'incidence_per_capita']
                 male_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
-                df.loc[male_active_tb, 'tb_inf'] = 'active_susc'
+                df.loc[male_active_tb, 'tb_inf'] = 'active_susc_primary'
                 df.loc[male_active_tb, 'tb_date_active'] = now
 
                 # allocate some active infections as mdr-tb
-                if len(df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'active_susc')]) > 10:
-                    idx_c = df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'active_susc')].sample(
+                if len(df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'active_susc_primary')]) > 10:
+                    idx_c = df[df.is_alive & (df.sex == 'M') & (df.tb_inf == 'active_susc_primary')].sample(
                         frac=self.parameters['prop_mdr2010']).index
 
-                    df.loc[idx_c, 'tb_inf'] = 'active_mdr'  # change to mdr-tb
+                    df.loc[idx_c, 'tb_inf'] = 'active_mdr_primary'
 
             # ~~~~~~~~~~~~~~~~~~~~~~~~~~ FEMALE ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -239,15 +245,15 @@ class tb(Module):
                 fraction_latent_tb = latent_tb_data.loc[
                     (latent_tb_data.sex == 'F') & (latent_tb_data.age == i), 'prob_latent_tb']
                 female_latent_tb = df[idx].sample(frac=fraction_latent_tb).index
-                df.loc[female_latent_tb, 'tb_inf'] = 'latent_susc'
+                df.loc[female_latent_tb, 'tb_inf'] = 'latent_susc_primary'
                 df.loc[female_latent_tb, 'tb_date_latent'] = now
 
             # allocate some latent infections as mdr-tb
-            if len(df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'latent_susc')]) > 10:
-                idx_c = df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'latent_susc')].sample(
+            if len(df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'latent_susc_primary')]) > 10:
+                idx_c = df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'latent_susc_primary')].sample(
                     frac=self.parameters['prop_mdr2010']).index
 
-                df.loc[idx_c, 'tb_inf'] = 'latent_mdr'  # change to mdr-tb
+                df.loc[idx_c, 'tb_inf'] = 'latent_mdr_primary'  # change to mdr-tb
 
             idx_uninfected = (df.age_years == i) & (df.sex == 'F') & (df.tb_inf == 'uninfected') & df.is_alive
 
@@ -256,25 +262,27 @@ class tb(Module):
                 fraction_active_tb = active_tb_prob_year.loc[
                     (active_tb_prob_year.Sex == 'F') & (active_tb_prob_year.ages == i), 'incidence_per_capita']
                 female_active_tb = df[idx_uninfected].sample(frac=fraction_active_tb).index
-                df.loc[female_active_tb, 'tb_inf'] = 'active_susc'
+                df.loc[female_active_tb, 'tb_inf'] = 'active_susc_primary'
                 df.loc[female_active_tb, 'tb_date_active'] = now
 
             # allocate some active infections as mdr-tb
-            if len(df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'active_susc')]) > 10:
-                idx_c = df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'active_susc')].sample(
+            if len(df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'active_susc_primary')]) > 10:
+                idx_c = df[df.is_alive & (df.sex == 'F') & (df.tb_inf == 'active_susc_primary')].sample(
                     frac=self.parameters['prop_mdr2010']).index
 
-                df.loc[idx_c, 'tb_inf'] = 'active_mdr'  # change to mdr-tb
+                df.loc[idx_c, 'tb_inf'] = 'active_mdr_primary'  # change to mdr-tb
 
+    # TODO: add two test footprints
     def initialise_simulation(self, sim):
         sim.schedule_event(TbEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbActiveEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbMdrActiveEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=12))
 
-        sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(
-            months=12))
+        sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -309,6 +317,7 @@ class tb(Module):
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_followup)
 
+    # TODO: check all properties match list above
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         """
@@ -344,35 +353,61 @@ class tb(Module):
         logger.debug("This is tb, being asked to report unified symptomology")
 
         # Map the specific symptoms for this disease onto the unified coding scheme
+        # this is a measure of the propensity to seek care
         df = self.sim.population.props
 
         df.loc[df.is_alive, 'tb_unified_symptom_code'] = df.loc[df.is_alive, 'tb_inf'].map({
             'uninfected': 0,
-            'latent_susc': 1,
-            'latent_mdr': 1,
-            'active_susc': 2,
-            'active_mdr': 2
+            'latent_susc_primary': 1,
+            'latent_mdr_primary': 1,
+            'active_susc_primary': 2,
+            'active_mdr_primary': 2,
+            'latent_susc_secondary': 1,
+            'latent_mdr_secondary': 1,
+            'active_susc_secondary': 2,
+            'active_mdr_secondary': 2,
         })
 
         return df.loc[df.is_alive, 'tb_unified_symptom_code']
 
+    # TODO: complete this
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
         logger.debug('This is tb, being alerted about a health system interaction '
                      'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
 
         df = self.sim.population.props
 
-        if (df.at[person_id, 'tb_inf'] == 'active_susc') or (df.at[person_id, 'tb_inf'] == 'active_mdr'):
-            # Query with health system whether this individual will get a desired treatment
-            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-                person_id, self.TREATMENT_ID
-            )
+        gets_test = False  # default value
 
-            if gets_treatment:
-                # Commission treatment for this individual
-                event = TbTreatmentEvent(self, person_id)
-                self.sim.schedule_event(event, self.sim.date)
+        # ----------------------------------- TB TESTING -----------------------------------
 
+        if cue_type == 'InitialDiseaseCall' and disease_specific == 'tb':
+
+            # add algorithm here for smear sputum / Xpert
+
+            # uninfected or primary infection & hiv- : smear sputum
+            if ((df.at[person_id, 'tb_inf'] == 'uninfected') or (
+                df.at[person_id, 'tb_inf'] == 'latent_susc_primary') or (
+                    df.at[person_id, 'tb_inf'] == 'latent_mdr_primary') or (
+                    df.at[person_id, 'tb_inf'] == 'active_susc_primary') or (
+                    df.at[person_id, 'tb_inf'] == 'active_mdr_primary')) and not df.at[person_id, 'hiv_inf'] and df.at[
+                person_id, 'is_alive']:
+                gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
+                    person_id, self.SPUTUM_TEST_ID)
+
+            # secondary case: xpert
+            if ((df.at[person_id, 'tb_inf'] == 'latent_susc_secondary') or (
+                df.at[person_id, 'tb_inf'] == 'latent_mdr_secondary') or (
+                    df.at[person_id, 'tb_inf'] == 'active_susc_secondary') or (
+                    df.at[person_id, 'tb_inf'] == 'active_mdr_secondary')) and not df.at[person_id, 'hiv_inf'] and \
+                df.at[person_id, 'is_alive']:
+                gets_test = self.sim.modules['HealthSystem'].query_access_to_service(person_id, self.XPERT_TEST_ID)
+
+            # treatment failure
+
+            # hiv+
+
+    # TODO: complete this
     def on_followup_healthsystem_interaction(self, person_id):
         #     logger.debug('This is a follow-up appointment. Nothing to do')
 
@@ -387,6 +422,27 @@ class tb(Module):
                 person_id, self.FOLLOWUP_ID
             )
 
+    def report_qaly_values(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # the past year
+
+        logger.debug('This is tb reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        params = self.parameters
+
+        health_values = df.loc[df.is_alive, 'tb_specific_symptoms'].map({
+            'none': 0,
+            'latent': params['qalywt_latent'],
+            'active': params['qalywt_active']
+        })
+
+        return health_values.loc[df.is_alive]
+
+
+# ---------------------------------------------------------------------------
+#   TB infection event
+# ---------------------------------------------------------------------------
 
 class TbEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb infection events
@@ -407,12 +463,15 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
         # remember event is occurring annually so scale rates accordingly
-        active_hiv_neg = len(df[(df.tb_inf == 'active_susc') & ~df.hiv_inf & df.is_alive])
-        active_hiv_pos = len(df[(df.tb_inf == 'active_susc') & df.hiv_inf & df.is_alive])
+        active_hiv_neg = len(df[((df.tb_inf == 'active_susc_primary') | (
+                df.tb_inf == 'active_susc_secondary')) & ~df.hiv_inf & df.is_alive])
+        active_hiv_pos = len(df[((df.tb_inf == 'active_susc_primary') | (
+                df.tb_inf == 'active_susc_secondary')) & df.hiv_inf & df.is_alive])
 
         # population at-risk = susceptible (new infection), latent_mdr (new infection)
 
-        uninfected_total = len(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr')) & df.is_alive])
+        uninfected_total = len(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr_primary ') | (
+                df.tb_inf == 'latent_mdr_secondary')) & df.is_alive])
         total_population = len(df[df.is_alive])
 
         force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
@@ -421,9 +480,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
-        # pop at risk = susceptible and latent_mdr, latent_susc will be reinfections
-        at_risk = df.index(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr') | (
-            df.tb_inf == 'latent_susc')) & df.is_alive])
+        # pop at risk = susceptible and latent_mdr, latent_susc_primary only
+        at_risk = df.index(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_mdr_primary') | (
+            df.tb_inf == 'latent_mdr_secondary') | (df.tb_inf == 'latent_susc_primary')) & df.is_alive])
 
         #  no age/sex effect on risk of latent infection
         prob_tb_new = pd.Series(force_of_infection, index=at_risk)
@@ -431,7 +490,22 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
-        df.loc[new_case, 'tb_inf'] = 'latent_susc'
+        df.loc[new_case, 'tb_inf'] = 'latent_susc_primary'
+        df.loc[new_case, 'tb_date_latent'] = now
+
+        # ----------------------------------- RE-INFECTIONS -----------------------------------
+
+        # pop at risk = latent_susc_secondary
+        at_risk = df.index(df[(df.tb_inf == 'latent_susc_secondary') & df.is_alive])
+
+        #  no age/sex effect on risk of latent infection
+        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
+        # print('prob_tb_new: ', prob_tb_new)
+
+        is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
+        new_case = is_newly_infected[is_newly_infected].index
+        df.loc[
+            new_case, 'tb_inf'] = 'latent_susc_secondary'  # unchanged status, high risk of relapse again as if just recovered
         df.loc[new_case, 'tb_date_latent'] = now
 
 
@@ -450,68 +524,41 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         # ----------------------------------- FAST PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
-        # if any newly infected latent cases, 14% become active directly
-        new_latent = df[(df.tb_inf == 'latent_susc') & (df.tb_date_latent == now) & df.is_alive].sum()
+        # if any newly infected latent cases, 14% become active directly, only for primary infection
+        new_latent = df[(df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sum()
         # print(new_latent)
 
         if new_latent.any():
-            fast_progression = df[(df.tb_inf == 'latent_susc') & (df.tb_date_latent == now) & df.is_alive].sample(
+            fast_progression = df[
+                (df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
                 frac=params['prop_fast_progressor']).index
-            df.loc[fast_progression, 'tb_inf'] = 'active_susc'
+            df.loc[fast_progression, 'tb_inf'] = 'active_susc_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
-
-        # ----------------------------------- RELAPSE -----------------------------------
-        random_draw = self.sim.rng.random_sample(size=1)
-
-        # relapse after treatment completion, tb_date_treated + six months
-        relapse_tx_complete = df[
-            (df.tb_inf == 'latent_susc') & df.is_alive & (
-                self.sim.date - df.tb_date_treated > 182.5) & (
-                self.sim.date - df.tb_date_treated < 732.5) & ~df.tb_treatment_failure & (
-                random_draw < params['monthly_prob_relapse_tx_complete'])].index
-
-        # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
-        relapse_tx_incomplete = df[
-            (df.tb_inf == 'latent_susc') & df.is_alive & df.tb_treatment_failure & (
-                self.sim.date - df.tb_date_treated > 182.5) & (
-                self.sim.date - df.tb_date_treated < 732.5) & (
-                random_draw < params['monthly_prob_relapse_tx_incomplete'])].index
-
-        # relapse after >2 years following completion of treatment (or default)
-        # use tb_date_treated + 2 years + 6 months of treatment
-        relapse_tx_2yrs = df[
-            (df.tb_inf == 'latent_susc') & df.is_alive & (
-                self.sim.date - df.tb_date_treated >= 732.5) & (
-                random_draw < params['monthly_prob_relapse_2yrs'])].index
-
-        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'] = 'active_susc'
-        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
-        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
 
         # ----------------------------------- SLOW PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(0, index=df.index)
-        eff_prob_active_tb.loc[(df.tb_inf == 'latent_susc')] = params['monthly_prob_prog_active']
+        eff_prob_active_tb.loc[(df.tb_inf == 'latent_susc_primary')] = params['monthly_prob_prog_active']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
-        hiv_stage1 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc') &
+        hiv_stage1 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 3.33)]
         # print('hiv_stage1', hiv_stage1)
 
-        hiv_stage2 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc') &
+        hiv_stage2 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 3.33) &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 6.67)]
         # print('hiv_stage2', hiv_stage2)
 
-        hiv_stage3 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc') &
+        hiv_stage3 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 6.67) &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 10)]
         # print('hiv_stage3', hiv_stage3)
 
-        hiv_stage4 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc') &
+        hiv_stage4 = df.index[df.hiv_inf & (df.tb_inf == 'latent_susc_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 10)]
         # print('hiv_stage4', hiv_stage4)
 
@@ -530,9 +577,37 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # print('prog_to_active: ', prog_to_active )
         new_active_case = prog_to_active[prog_to_active].index
         # print('new_active_case: ', new_active_case)
-        df.loc[new_active_case, 'tb_inf'] = 'active_susc'
+        df.loc[new_active_case, 'tb_inf'] = 'active_susc_primary'
         df.loc[new_active_case, 'tb_date_active'] = now
         df.loc[new_active_case, 'tb_ever_tb'] = True
+
+        # ----------------------------------- RELAPSE -----------------------------------
+        random_draw = self.sim.rng.random_sample(size=len(df))
+
+        # relapse after treatment completion, tb_date_treated + six months
+        relapse_tx_complete = df[
+            (df.tb_inf == 'latent_susc_secondary') & df.is_alive & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & ~df.tb_treatment_failure & (
+                random_draw < params['monthly_prob_relapse_tx_complete'])].index
+
+        # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
+        relapse_tx_incomplete = df[
+            (df.tb_inf == 'latent_susc_secondary') & df.is_alive & df.tb_treatment_failure & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & (
+                random_draw < params['monthly_prob_relapse_tx_incomplete'])].index
+
+        # relapse after >2 years following completion of treatment (or default)
+        # use tb_date_treated + 2 years + 6 months of treatment
+        relapse_tx_2yrs = df[
+            (df.tb_inf == 'latent_susc_secondary') & df.is_alive & (
+                self.sim.date - df.tb_date_treated >= 732.5) & (
+                random_draw < params['monthly_prob_relapse_2yrs'])].index
+
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'] = 'active_susc_secondary'
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
 
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
@@ -549,29 +624,26 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
 
-        # self-cure - move back from active to latent, make sure it's not the ones that just became active
-        self_cure_tb = df[(df.tb_inf == 'active_susc') & df.is_alive & (df.tb_date_active < now)].sample(
+        # self-cure - move from active to latent_secondary, make sure it's not the ones that just became active
+        self_cure_tb = df[
+            ((df.tb_inf == 'active_susc_primary') | (df.tb_inf == 'active_susc_secondary')) & df.is_alive & (
+                df.tb_date_active < now)].sample(
             frac=(params['prob_self_cure'] * params['rate_self_cure'])).index
-        df.loc[self_cure_tb, 'tb_inf'] = 'latent_susc'
+        df.loc[self_cure_tb, 'tb_inf'] = 'latent_susc_secondary'
 
 
-# TODO: tb_mdr should also be a risk for people with latent_susc status
-# when they move back to latent after treatment / self-cure, they stay as latent_mdr
+# ---------------------------------------------------------------------------
+#   TB MDR infection event
+# ---------------------------------------------------------------------------
 
-# TODO: change to infection, progression and self-cure
 class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
-    """ tb infection events
+    """ tb-mdr infection events
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
-        # make sure any rates are annual if frequency of event is annual
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
 
     def apply(self, population):
-        """Apply this event to the population.
-        :param population: the current population
-        """
-
         params = self.module.parameters
         now = self.sim.date
         rng = self.module.rng
@@ -580,10 +652,17 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- FORCE OF INFECTION -----------------------------------
 
-        active_hiv_neg = len(df[(df.tb_inf == 'active_mdr') & ~df.hiv_inf & df.is_alive])
-        active_hiv_pos = len(df[(df.tb_inf == 'active_mdr') & df.hiv_inf & df.is_alive])
-        # TODO: include latent_susc as a susceptible pop here also?
-        uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
+        # apply a force of infection to produce new latent cases
+        # no age distribution for FOI but the relative risks would affect distribution of active infections
+        active_hiv_neg = len(df[((df.tb_inf == 'active_mdr_primary') | (
+            df.tb_inf == 'active_mdr_secondary')) & ~df.hiv_inf & df.is_alive])
+        active_hiv_pos = len(df[((df.tb_inf == 'active_mdr_primary') | (
+            df.tb_inf == 'active_mdr_secondary')) & df.hiv_inf & df.is_alive])
+
+        # population at-risk = susceptible (new infection), latent_susc (new infection)
+
+        uninfected_total = len(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_susc_primary ') | (
+            df.tb_inf == 'latent_susc_secondary')) & df.is_alive])
         total_population = len(df[df.is_alive])
 
         force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
@@ -592,50 +671,85 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
-        #  everyone at same risk of latent infection
-        prob_tb_new = pd.Series(force_of_infection, index=df[(df.tb_inf == 'uninfected') & df.is_alive].index)
+        # pop at risk = susceptible and latent_susc, latent_mdr_primary only
+        at_risk = df.index(df[((df.tb_inf == 'uninfected') | (df.tb_inf == 'latent_susc_primary') | (
+            df.tb_inf == 'latent_susc_secondary') | (df.tb_inf == 'latent_mdr_primary')) & df.is_alive])
+
+        #  no age/sex effect on risk of latent infection
+        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
         # print('prob_tb_new: ', prob_tb_new)
+
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
-        df.loc[new_case, 'tb_inf'] = 'latent_mdr'
+        df.loc[new_case, 'tb_inf'] = 'latent_mdr_primary'
         df.loc[new_case, 'tb_date_latent'] = now
 
+        # ----------------------------------- RE-INFECTIONS -----------------------------------
+
+        # pop at risk = latent_mdr_secondary
+        at_risk = df.index(df[(df.tb_inf == 'latent_mdr_secondary') & df.is_alive])
+
+        #  no age/sex effect on risk of latent infection
+        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
+        # print('prob_tb_new: ', prob_tb_new)
+
+        is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
+        new_case = is_newly_infected[is_newly_infected].index
+        df.loc[
+            new_case, 'tb_inf'] = 'latent_mdr_secondary'  # unchanged status, high risk of relapse again as if just recovered
+        df.loc[new_case, 'tb_date_latent'] = now
+
+
+class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
+    """ tb-mdr progression from latent to active infection
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
+
+    def apply(self, population):
+        params = self.module.parameters
+        now = self.sim.date
+        rng = self.module.rng
+
+        df = population.props
         # ----------------------------------- FAST PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
-        # if any newly infected latent cases, 14% become active directly
-        new_latent = df[(df.tb_inf == 'latent_mdr') & (df.tb_date_latent == now) & df.is_alive].sum()
+        # if any newly infected latent cases, 14% become active directly, only for primary infection
+        new_latent = df[(df.tb_inf == 'latent_mdr_primary') & (df.tb_date_latent == now) & df.is_alive].sum()
         # print(new_latent)
 
         if new_latent.any():
-            fast_progression = df[(df.tb_inf == 'latent_mdr') & (df.tb_date_latent == now) & df.is_alive].sample(
+            fast_progression = df[
+                (df.tb_inf == 'latent_mdr_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
                 frac=params['prop_fast_progressor']).index
-            df.loc[fast_progression, 'tb_inf'] = 'active_mdr'
+            df.loc[fast_progression, 'tb_inf'] = 'active_mdr_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
+            df.loc[fast_progression, 'tb_ever_tb'] = True
 
         # ----------------------------------- SLOW PROGRESSORS TO ACTIVE DISEASE -----------------------------------
-        # this could also be a relapse event
 
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
         eff_prob_active_tb = pd.Series(0, index=df.index)
-        eff_prob_active_tb.loc[(df.tb_inf == 'latent_mdr')] = params['progression_to_active_rate']
+        eff_prob_active_tb.loc[(df.tb_inf == 'latent_mdr_primary')] = params['monthly_prob_prog_active']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)
 
-        hiv_stage1 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr') &
+        hiv_stage1 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 3.33)]
         # print('hiv_stage1', hiv_stage1)
 
-        hiv_stage2 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr') &
+        hiv_stage2 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 3.33) &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 6.67)]
         # print('hiv_stage2', hiv_stage2)
 
-        hiv_stage3 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr') &
+        hiv_stage3 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 6.67) &
                               (((now - df.hiv_date_inf).dt.days / 365.25) < 10)]
         # print('hiv_stage3', hiv_stage3)
 
-        hiv_stage4 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr') &
+        hiv_stage4 = df.index[df.hiv_inf & (df.tb_inf == 'latent_mdr_primary') &
                               (((now - df.hiv_date_inf).dt.days / 365.25) >= 10)]
         # print('hiv_stage4', hiv_stage4)
 
@@ -654,32 +768,117 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         # print('prog_to_active: ', prog_to_active )
         new_active_case = prog_to_active[prog_to_active].index
         # print('new_active_case: ', new_active_case)
-        df.loc[new_active_case, 'tb_inf'] = 'active_mdr'
+        df.loc[new_active_case, 'tb_inf'] = 'active_mdr_primary'
         df.loc[new_active_case, 'tb_date_active'] = now
+        df.loc[new_active_case, 'tb_ever_tb'] = True
 
-        # ----------------------------------- SELF CURE -----------------------------------
+        # ----------------------------------- RELAPSE -----------------------------------
+        random_draw = self.sim.rng.random_sample(size=len(df))
 
-        # self-cure - move back from active to latent, make sure it's not the ones that just became active
-        if len(df[(df.tb_inf == 'active_mdr') & df.is_alive & (df.tb_date_active < now)]) > 10:
-            self_cure_tb = df[(df.tb_inf == 'active_mdr') & df.is_alive & (df.tb_date_active < now)].sample(
-                frac=(params['prob_self_cure'] * params['rate_self_cure'])).index
-            df.loc[self_cure_tb, 'tb_inf'] = 'latent_mdr'
+        # relapse after treatment completion, tb_date_treated + six months
+        relapse_tx_complete = df[
+            (df.tb_inf == 'latent_mdr_secondary') & df.is_alive & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & ~df.tb_treatment_failure & (
+                random_draw < params['monthly_prob_relapse_tx_complete'])].index
+
+        # relapse after treatment default, tb_treatment_failure=True, but make sure not tb-mdr
+        relapse_tx_incomplete = df[
+            (df.tb_inf == 'latent_mdr_secondary') & df.is_alive & df.tb_treatment_failure & (
+                self.sim.date - df.tb_date_treated > 182.5) & (
+                self.sim.date - df.tb_date_treated < 732.5) & (
+                random_draw < params['monthly_prob_relapse_tx_incomplete'])].index
+
+        # relapse after >2 years following completion of treatment (or default)
+        # use tb_date_treated + 2 years + 6 months of treatment
+        relapse_tx_2yrs = df[
+            (df.tb_inf == 'latent_mdr_secondary') & df.is_alive & (
+                self.sim.date - df.tb_date_treated >= 732.5) & (
+                random_draw < params['monthly_prob_relapse_2yrs'])].index
+
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_inf'] = 'active_mdr_secondary'
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_date_active'] = now
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
 
 
-# TODO: make this individual event
-# TODO: testing of HIV+ straight to Xpert, also relapse/retreatment cases
-class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
-    """ Testing for TB
+class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
+    """ tb-mdr self-cure events
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
-        # make sure any rates are annual if frequency of event is annual
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
 
     def apply(self, population):
         params = self.module.parameters
         now = self.sim.date
+        rng = self.module.rng
+
         df = population.props
+
+        # self-cure - move from active to latent_secondary, make sure it's not the ones that just became active
+        self_cure_tb = df[
+            ((df.tb_inf == 'active_mdr_primary') | (df.tb_inf == 'active_mdr_secondary')) & df.is_alive & (
+                df.tb_date_active < now)].sample(
+            frac=(params['prob_self_cure'] * params['rate_self_cure'])).index
+        df.loc[self_cure_tb, 'tb_inf'] = 'latent_mdr_secondary'
+
+
+# ---------------------------------------------------------------------------
+#   Testing
+# ---------------------------------------------------------------------------
+
+class TbTestingEvent(Event, IndividualScopeEventMixin):
+    """
+    Testing algorithm
+    """
+
+    def __init__(self, module, individual_id):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        params = self.module.parameters
+        df = self.sim.population.props
+        now = self.sim.date
+
+        # TODO: outcomes of testing
+        # e.g. 80% of smear will be negative - extrapulmonary
+        # return negative if uninfected
+        # check outcomes of Xpert testing
+        # add in referrals for secondary testing if needed (smear negative but still suspected)
+
+        # ----------------------------------- PRIMARY CASE -----------------------------------
+
+        # if primary case or uninfected - give smear sputum
+        # 80% of smear tested active cases will be diagnosed
+
+        # remaining 20% of active cases referred for xpert testing with some delay
+        # also some true negatives may have follow-up testing
+        # schedule xpert testing at future date
+        # random draw approx 2 months?
+        undiagnosed_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & ~df.tb_diagnosed]
+
+        for person in undiagnosed_idx:
+            refer_xpert = TbXpertTest(self.module, individual_id=person)
+            # TODO: take absolute value so no negatives
+            referral_time = abs(np.random.normal(loc=(2 / 12), scale=(0.5 / 12), size=1))  # in years
+            referral_time_yrs = pd.to_timedelta(referral_time[0] * 365.25, unit='d')
+            future_referral_time = now + referral_time_yrs
+            # print('future_referral_time', now, referral_time_yrs, future_referral_time)
+            self.sim.schedule_event(refer_xpert, future_referral_time)
+
+        # ----------------------------------- SECONDARY CASE -----------------------------------
+
+        # if secondary case (relapse / retreatment) - give Xpert
+
+        # ----------------------------------- TREATMENT FAILURE -----------------------------------
+
+        # if treatment failure case - give Xpert
+
+        # ----------------------------------- HIV+ -----------------------------------
+
+        # if hiv+ give Xpert, for any tb status
+
+        ###########################################################################################
 
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df))
@@ -693,7 +892,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[testing_index, 'tb_date_smear_test'] = now
 
         # 80% of smear tested active cases will be diagnosed
-        # this is lower for HIV+ (higher prop of extrapulmonary tb
+        # this is lower for HIV+ (higher prop of extrapulmonary tb)
         tested_idx = df.index[(df.tb_date_smear_test == now) & df.is_alive & (df.tb_inf == 'active_susc') & ~df.hiv_inf]
         diagnosed_idx = pd.Series(np.random.choice([True, False], size=len(tested_idx),
                                                    p=[params['prop_smear_positive'],
@@ -770,6 +969,10 @@ class TbXpertTest(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'tb_diagnosed'] = True
 
 
+# ---------------------------------------------------------------------------
+#   Treatment
+# ---------------------------------------------------------------------------
+# TODO: complete this
 class TbTreatmentEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -822,6 +1025,10 @@ class TbTreatmentEvent(Event, IndividualScopeEventMixin):
         # ##############################################################################################
 
 
+# ---------------------------------------------------------------------------
+#   Cure
+# ---------------------------------------------------------------------------
+# TODO: complete this
 class TbCureEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -830,8 +1037,6 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug("We are now ready to treat this person", person_id)
 
-        params = self.module.parameters
-        now = self.sim.date
         df = self.sim.population.props
 
         # after six months of treatment, stop
@@ -853,6 +1058,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
     # on follow-up offer either smear or Xpert test, then treatment for mdr
 
 
+# TODO: complete this
 # TODO: make this individual event
 class TbTreatmentMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
@@ -883,6 +1089,10 @@ class TbTreatmentMdrEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[cure_idx, 'tb_inf'] = 'latent_susc'
 
 
+# ---------------------------------------------------------------------------
+#   IPT
+# ---------------------------------------------------------------------------
+# TODO: complete this
 # TODO: make this individual event
 class TbIptEvent(RegularEvent, PopulationScopeEventMixin):
     """ IPT to all paediatric contacts of a TB case - randomly select 5 children <5 yrs old
@@ -909,6 +1119,7 @@ class TbIptEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: ending ipt
 
 
+# TODO: complete this
 # TODO: make this individual event
 class TbExpandedIptEvent(RegularEvent, PopulationScopeEventMixin):
     """ IPT to all adults and adolescents with HIV
@@ -932,6 +1143,10 @@ class TbExpandedIptEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: ending ipt
 
 
+# ---------------------------------------------------------------------------
+#   Deaths
+# ---------------------------------------------------------------------------
+# TODO: complete this
 class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually kills people.
 
@@ -988,6 +1203,10 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
                 df.at[person, 'tb_date_death'] = now
 
 
+# ---------------------------------------------------------------------------
+#   Logging
+# ---------------------------------------------------------------------------
+# TODO: complete this
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check

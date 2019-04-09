@@ -908,7 +908,7 @@ class hiv(Module):
         # ----------------------------------- OUTCOMES OF TESTING -----------------------------------
 
         if gets_test:
-            df.at[person_id, 'ever_tested'] = True
+            df.at[person_id, 'hiv_ever_tested'] = True
 
             # ----------------------------------- QUERY TREATMENT -----------------------------------
 
@@ -963,7 +963,7 @@ class hiv(Module):
 
 
 # ---------------------------------------------------------------------------
-#   The infection event
+#   hiv infection event
 # ---------------------------------------------------------------------------
 
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
