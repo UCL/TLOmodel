@@ -361,7 +361,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         fac_per_district = self.module.parameters['Facilities_For_Each_District']
         appt_types=self.module.parameters['Appt_Types_Table']['Appt_Type_Code'].values
         appt_times=self.module.parameters['Appt_Time_Table']
-        officer_types= self.module.parameters['Officer_Types_Table']['Officer_Type_Code']
+        officer_type_codes= self.module.parameters['Officer_Types_Table']['Officer_Type_Code'].values
 
         if len(due_events.index) > 0:
 
@@ -397,6 +397,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     this_facility_type= mfl.loc[mfl['Facility_ID']==try_fac_id,'Facility_Type'].values[0]
 
+                    # Establish how much time is available at this facility
+                    time_available=capabilities_of_the_health_facilities.loc[capabilities_of_the_health_facilities['Facility_ID']==try_fac_id,['Officer_Type_Code','Minutes_Remaining_Today']]
+
                     # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
                     time_requested=pd.DataFrame(columns=['Officer_Type_Code','Time_Taken'])
                     for this_appt in appt_types:
@@ -406,25 +409,27 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                             ['Officer_Type_Code','Time_Taken']].copy().reset_index(drop=True)
                             time_requested=pd.concat([time_requested,time_req_for_this_appt])
 
-
                     # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
                     time_requested=pd.DataFrame(time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
+                    time_requested=time_requested.drop(time_requested[time_requested['Time_Taken']==0].index)
 
                     # merge the Minutes_Available at this facility with the minutes required in the footprint
-                    time_available=capabilities_of_the_health_facilities.loc[capabilities_of_the_health_facilities['Facility_ID']==try_fac_id,['Officer_Type_Code','Minutes_Remaining_Today']]
+                    comparison = time_requested.merge(time_available,on='Officer_Type_Code',how='left',indicator=True)
 
-                    comparison = time_available.merge(time_requested,on='Officer_Type_Code',how='outer',indicator=True)
+                    # check if all the needs are met by this facility
+                    if all(comparison['_merge']=='both') & all( comparison['Minutes_Remaining_Today'] > comparison['Time_Taken'] ):
 
-                    enough_time_at_this_fac = all( comparison['Minutes_Remaing_Today'] > comparison['Time_Taken'] )
-
-                    if enough_time_at_this_fac:
                         # flag the event to run
                         hsc.at[e, 'status']='Run_Today'
 
-                        # impose the footprint
+                        # impose the footprint:
+                        for this_officer_type in officer_type_codes:
+                            capabilities.loc[ (capabilities['Facility_ID']==try_fac_id) & (capabilities['Officer_Type_Code'] ==this_officer_type), 'Minutes_Remaining_Today'] = \
+                                capabilities.loc[ (capabilities['Facility_ID'] == try_fac_id) &
+                                                 (capabilities['Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
+                                - time_requested.loc[time_requested['Officer_Type_Code']==this_officer_type,'Time_Taken']
 
-
-
+                        break # cease looking at other facility_types if the need has been met
 
 
         # Execute the events that have been flagged for running today
