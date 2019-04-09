@@ -251,123 +251,6 @@ assert set(Facility_By_Officer['Officer_Type_Code']) == set(officer_types_table.
 
 #  --------
 
-# *** Determine how staff are allocated to the facilities
-
-# Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
-facility_assignment =pd.DataFrame(index=staff_list.index,columns=['Staff_ID','Facility_ID'])
-facility_assignment['Staff_ID']=staff_list['Staff_ID']
-
-# Loop through each staff member and allocate them to
-for staffmember in staff_list.index:
-
-    officer =staff_list.loc[staffmember].Officer_Type_Code
-
-    if staff_list.at[staffmember,'Is_DistrictLevel']:
-        # This staff member is allocated to a district
-        district= staff_list.at[staffmember,'District_Or_Hospital']
-
-        possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
-
-        # Get the facilities to which this staff member might be allocated
-        suitable_facilities=mfl.loc[ (mfl['Facility_Type'].isin(possible_fac_types) ) & ( mfl['District'] == district ) ]
-
-        assert len(suitable_facilities)>0
-
-        # if there is a suitable facility for this office to go into
-        x=np.random.choice(len(suitable_facilities))
-        assigned_facility_id=suitable_facilities.iloc[x].Facility_ID
-
-    else:
-        # This staff member is allocated to one of the above-district types of facilities
-
-        hospital = staff_list.at[staffmember,'District_Or_Hospital']
-
-        if hospital == 'National Hospital':
-            # Find the facility_id that corresponds to this hospital
-            assigned_facility_id =mfl.loc[mfl['Facility_Name']==hospital,'Facility_ID'].values[0]
-
-        else:
-            # it's a referral hospital
-            x = hospital.split('_')
-            region=x[1]
-            assigned_facility_id =mfl.loc[
-                                        (mfl['Facility_Type']=='Referral Hospital') & (mfl['Region']==region)
-                                    ,'Facility_ID'].values[0]
-
-
-
-    # check the assigned_facility_id is a real one (i.e. not empty)
-    assert set([assigned_facility_id]).issubset(set(mfl['Facility_ID']))
-
-    # make the assignment
-    facility_assignment.at[staffmember,'Facility_ID'] = assigned_facility_id
-
-
-
-#-----------------
-
-# *** Get Hours Worked Per Staff Member
-# Reading-in the number of working hours and days for each type of officer
-
-sheet= pd.read_excel(workingfile,sheet_name='PFT',header=None)
-officer_types_import=sheet.iloc[2,np.arange(2,23)]
-
-assert set(officer_types_import) == set( officer_types_table['Officer_Type_Code'] )
-assert len(officer_types_import) == len( officer_types_table['Officer_Type_Code'] )
-
-hours=sheet.iloc[38,np.arange(2,23)]
-
-days_per_year_men=sheet.iloc[15,np.arange(2,23)]
-days_per_year_women=sheet.iloc[16,np.arange(2,23)]
-days_per_year_pregwomen=sheet.iloc[17,np.arange(2,23)]
-
-fr_men=sheet.iloc[53,np.arange(2,23)]
-fr_women=sheet.iloc[55,np.arange(2,23)] - sheet.iloc[57,np.arange(2,23)] # taking off pregnant women: this is for non-pregnant women
-fr_pregwomen= sheet.iloc[57,np.arange(2,23)]
-
-workingdays= ( fr_men*days_per_year_men ) + ( fr_women*days_per_year_women ) + ( fr_pregwomen*days_per_year_pregwomen )
-
-minutes_per_day = hours * 60
-
-minutes_per_year = minutes_per_day * workingdays
-
-# What we will use is the average number of minutes worked per day:
-av_minutes_per_day = minutes_per_year / 365.25
-
-patient_facing_time = pd.DataFrame({'Officer_Type_Code': officer_types_import ,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours, 'Av_Minutes_Per_Day':av_minutes_per_day }).reset_index(drop=True)
-
-
-#-----------------
-#-----------------
-#-----------------
-
-
-# --- Create final table of daily time available at each facilty by officer type: Facility_ID, Facility_Type, Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day
-
-# merge in officer type
-X=staff_list.merge(facility_assignment, on='Staff_ID',how='left')
-X=X.drop(columns=['District_Or_Hospital','Is_DistrictLevel'])
-
-# merge in time that each officer type can spent on appointments
-X= X.merge(patient_facing_time,on='Officer_Type_Code',how='left')
-X= X.drop(columns=['Working_Days_Per_Year','Hours_Per_Day'])
-
-# Now collapse across the staff_ID in order to give a summary per facility type and officer type: summing av minutes per day
-Y = pd.DataFrame(X.groupby(['Facility_ID','Officer_Type_Code'])[['Av_Minutes_Per_Day']].sum()).reset_index()
-Y = Y.rename(columns={'Av_Minutes_Per_Day':'Total_Minutes_Per_Day'})
-
-# Merge in information about the facility:
-Y = Y.merge(mfl,on='Facility_ID',how='left')
-
-# Merge in the officer code name
-Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
-
-Y.to_csv(resourcefilepath+'ResourceFile_Daily_Capabilities.csv')
-
-
-#-----------------
-#-----------------
-#-----------------
 
 # *** Now look at the types of appointments and the draw on officer's time associated with each
 
@@ -506,27 +389,188 @@ ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
 # -------
 # -------
 
-# Look at which types of appointment are potentially possible at the types of facility
-# Need to confirm that each type of appointment is possible somewhere, if there were a member of staff available
+# Look to see where different types of staff member need to be located:
+# This is just a reverse reading of where there are non-zero requests for time of particular officer-types
 
-Officers_Need_For_Appt=pd.DataFrame(columns=['Facility_Type','Appt_Type','Officer_Type_Codes'])
+Officers_Need_For_Appt=pd.DataFrame(columns=['Facility_Type','Appt_Type_Code','Officer_Type_Codes'])
 
 for a in appt_types_table['Appt_Type_Code'].values:
     for f in Facility_Types:
 
-
         # get the staff types required for this appt
 
         block=ApptTimeTable.loc[ (ApptTimeTable['Appt_Type_Code']==a) & (ApptTimeTable['Facility_Type']==f)]
-        block=block.drop(block.loc[block['Time_Taken']==0].index)
 
-        need_officer_types=list(block['Officer_Type_Code'])
+        if len(block)==0:
+            # no requirement expressed => The appt is not possible at this location
+            Officers_Need_For_Appt=Officers_Need_For_Appt.append(
+                                                                {'Facility_Type': f,
+                                                                 'Appt_Type_Code': a,
+                                                                 'Officer_Type_Codes': False
+                                                                 },ignore_index=True)
 
-        # perform check because every type of appt should require at least one officer
-        assert len(need_officer_types) > 0
+        else:
+            need_officer_types=list(block['Officer_Type_Code'])
+            Officers_Need_For_Appt=Officers_Need_For_Appt.append(
+                                                                {'Facility_Type': f,
+                                                                 'Appt_Type_Code': a,
+                                                                 'Officer_Type_Codes': need_officer_types
+                                                                 },ignore_index=True)
 
-        Officers_Need_For_Appt.loc[
-            (Officers_Need_For_Appt['Appt_Type_Code'] == a) &
-            (Officers_Need_For_Appt['Facility_Type']==f),
-            'Officer_Type_Codes'
-        ] = need_officer_types
+# Turn this into the the set of staff that are required for each type of appointment
+X= pd.DataFrame(columns = Facility_Types,index =officer_types_table['Officer_Type_Code'].values )
+X=X.fillna(False)
+
+for o in officer_types_table['Officer_Type_Code'].values:
+
+    for i in Officers_Need_For_Appt.index:
+        fac= Officers_Need_For_Appt.loc[i].Facility_Type
+        officer_types = Officers_Need_For_Appt.loc[i].Officer_Type_Codes
+
+        if officer_types != False:
+
+            if (o in officer_types):
+                X.loc[
+                    ( X.index==o ),
+                fac]=True
+
+
+# We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are apparently not called by any appointment type
+
+# Assign that the Nutrition Staff will go to the District, Referral and National Hospitals
+X.loc['T01',['District Hospital','Referral Hospital','National Hospital']]=True
+
+# Assign that the Sonographer will go to the District, Referral and National Hospitals
+X.loc['R03',['District Hospital','Referral Hospital','National Hospital']]=True
+
+# Assign that the Radiotherapist will go to the National Hospital
+X.loc['R04','National Hospital']=True
+
+# Check that all types of officer are allocated to at least one type of facility
+assert (X.sum(axis=1)>0).all()
+
+#-----------------
+#-----------------
+#-----------------
+
+
+
+# *** Determine how staff are allocated to the facilities
+
+# Create pd.Series for holding the assignments between staff member (in staff_list) and facility (in mfl)
+facility_assignment =pd.DataFrame(index=staff_list.index,columns=['Staff_ID','Facility_ID'])
+facility_assignment['Staff_ID']=staff_list['Staff_ID']
+
+# Loop through each staff member and allocate them to
+for staffmember in staff_list.index:
+
+    officer =staff_list.loc[staffmember].Officer_Type_Code
+
+    if staff_list.at[staffmember,'Is_DistrictLevel']:
+        # This staff member is allocated to a district
+        district= staff_list.at[staffmember,'District_Or_Hospital']
+
+        possible_fac_types= list((Facility_By_Officer.loc[Facility_By_Officer['Officer_Type_Code']==officer,'Facility_Type_Can_Work_In']).iloc[0])
+
+        # Get the facilities to which this staff member might be allocated
+        suitable_facilities=mfl.loc[ (mfl['Facility_Type'].isin(possible_fac_types) ) & ( mfl['District'] == district ) ]
+
+        assert len(suitable_facilities)>0
+
+        # if there is a suitable facility for this office to go into
+        x=np.random.choice(len(suitable_facilities))
+        assigned_facility_id=suitable_facilities.iloc[x].Facility_ID
+
+    else:
+        # This staff member is allocated to one of the above-district types of facilities
+
+        hospital = staff_list.at[staffmember,'District_Or_Hospital']
+
+        if hospital == 'National Hospital':
+            # Find the facility_id that corresponds to this hospital
+            assigned_facility_id =mfl.loc[mfl['Facility_Name']==hospital,'Facility_ID'].values[0]
+
+        else:
+            # it's a referral hospital
+            x = hospital.split('_')
+            region=x[1]
+            assigned_facility_id =mfl.loc[
+                                        (mfl['Facility_Type']=='Referral Hospital') & (mfl['Region']==region)
+                                    ,'Facility_ID'].values[0]
+
+
+
+    # check the assigned_facility_id is a real one (i.e. not empty)
+    assert set([assigned_facility_id]).issubset(set(mfl['Facility_ID']))
+
+    # make the assignment
+    facility_assignment.at[staffmember,'Facility_ID'] = assigned_facility_id
+
+
+
+#-----------------
+#-----------------
+#-----------------
+
+# *** Get Hours Worked Per Staff Member
+# Reading-in the number of working hours and days for each type of officer
+
+sheet= pd.read_excel(workingfile,sheet_name='PFT',header=None)
+officer_types_import=sheet.iloc[2,np.arange(2,23)]
+
+assert set(officer_types_import) == set( officer_types_table['Officer_Type_Code'] )
+assert len(officer_types_import) == len( officer_types_table['Officer_Type_Code'] )
+
+hours=sheet.iloc[38,np.arange(2,23)]
+
+days_per_year_men=sheet.iloc[15,np.arange(2,23)]
+days_per_year_women=sheet.iloc[16,np.arange(2,23)]
+days_per_year_pregwomen=sheet.iloc[17,np.arange(2,23)]
+
+fr_men=sheet.iloc[53,np.arange(2,23)]
+fr_women=sheet.iloc[55,np.arange(2,23)] - sheet.iloc[57,np.arange(2,23)] # taking off pregnant women: this is for non-pregnant women
+fr_pregwomen= sheet.iloc[57,np.arange(2,23)]
+
+workingdays= ( fr_men*days_per_year_men ) + ( fr_women*days_per_year_women ) + ( fr_pregwomen*days_per_year_pregwomen )
+
+minutes_per_day = hours * 60
+
+minutes_per_year = minutes_per_day * workingdays
+
+# What we will use is the average number of minutes worked per day:
+av_minutes_per_day = minutes_per_year / 365.25
+
+patient_facing_time = pd.DataFrame({'Officer_Type_Code': officer_types_import ,'Working_Days_Per_Year':workingdays,'Hours_Per_Day':hours, 'Av_Minutes_Per_Day':av_minutes_per_day }).reset_index(drop=True)
+
+
+#-----------------
+#-----------------
+#-----------------
+
+
+# --- Create final table of daily time available at each facilty by officer type: Facility_ID, Facility_Type, Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day
+
+# merge in officer type
+X=staff_list.merge(facility_assignment, on='Staff_ID',how='left')
+X=X.drop(columns=['District_Or_Hospital','Is_DistrictLevel'])
+
+# merge in time that each officer type can spent on appointments
+X= X.merge(patient_facing_time,on='Officer_Type_Code',how='left')
+X= X.drop(columns=['Working_Days_Per_Year','Hours_Per_Day'])
+
+# Now collapse across the staff_ID in order to give a summary per facility type and officer type: summing av minutes per day
+Y = pd.DataFrame(X.groupby(['Facility_ID','Officer_Type_Code'])[['Av_Minutes_Per_Day']].sum()).reset_index()
+Y = Y.rename(columns={'Av_Minutes_Per_Day':'Total_Minutes_Per_Day'})
+
+# Merge in information about the facility:
+Y = Y.merge(mfl,on='Facility_ID',how='left')
+
+# Merge in the officer code name
+Y = Y.merge(officer_types_table,on='Officer_Type_Code',how='left')
+
+Y.to_csv(resourcefilepath+'ResourceFile_Daily_Capabilities.csv')
+
+
+#-----------------
+#-----------------
+#-----------------
