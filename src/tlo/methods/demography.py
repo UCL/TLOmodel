@@ -345,19 +345,20 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
-        # Shedule labour event here!
+            # Here the start of a woman's labour is scheduled via her due date
 
-            scheduled_date = df.at[female_id, 'due_date']
-            self.sim.schedule_event(Labour.LabourEvent(self, female_id, cause='labour'), scheduled_date) #self.module?
+            scheduled_labour_date = df.at[female_id, 'due_date']
+            self.sim.schedule_event(Labour.LabourEvent(self, female_id, cause='labour'), scheduled_labour_date) #self.module?
 
             logger.debug('birth booked for: %s', df.due_date)
 
-            # schedule the birth event for this woman (9 months plus/minus 2 wks)
             # date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * self.module.rng.random_sample())
 
-            # Schedule the Birth on due date (edited JC)
-            # (Should there be a date offset (2 days) for the woman to be in labour
-            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_date)
+            # Here the woman's birth is scheduled after 2 days of labour
+
+            scheduled_birth_date= df.at[female_id, 'due_date'] + DateOffset(days=2)
+
+            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -387,6 +388,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         # If the mother is alive and still pregnant
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
+        #   df.at[mother_id, 'la_labour'] = "not_in_labour"
+
+        # commented out so I can continue to see women moving into correct state of labour
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):

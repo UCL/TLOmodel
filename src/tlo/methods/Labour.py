@@ -29,7 +29,7 @@ class Labour (Module):
             Types.REAL, 'probability of a woman entering spontaneous unobstructed labour'),
         'prob_abortion': Parameter(
             Types.REAL, 'probability of a woman experiencing an abortion before 28 weeks gestation'),
-        'prob_PL_OL': Parameter(
+        'v': Parameter(
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
@@ -82,21 +82,16 @@ class Labour (Module):
     PROPERTIES = {
 
         'la_labour': Property(Types.CATEGORICAL,'not in labour, spontaneous unobstructed labour, prolonged or '
-                                                'obstructed labour, Preterm Labour', categories=['not_in_labour',
-                                                'spontaneous_unobstructed_labour','prolonged_or_obstructed_labour',
-                                                                                                 'pretterm_labour']),
+                                                'obstructed labour, Preterm Labour, Immediate Postpartum'
+                                                '', categories=['not_in_labour', 'spontaneous_unobstructed_labour',
+                                                                'prolonged_or_obstructed_labour', 'pretterm_labour',
+                                                                'immediate_postpartum']),
         'la_abortion': Property(Types.DATE, 'the date on which a pregnant has had an abortion'),
-        'la_live_birth': Property(Types.BOOL, 'labour ends in a live birth'),
         'la_still_birth': Property(Types.BOOL, 'labour ends in a still birth'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_previous_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
-        'la_immediate_postpartum': Property(Types.BOOL, ' postpartum period from delivery to 48 hours post'),
         'la_previous_ptb': Property(Types.BOOL, 'whether the woman has had a previous preterm delivery for any of her'
-                                                'previous deliveries'),
-        'la_conception_date': Property(Types.DATE, 'date on which current pregnancy was conceived'),
-        'la_due_date': Property(Types.DATE, 'date on which the woman would be due to give birth if she carries her '
-                                            'pregnancy to term'),
-        'la_gestational_age': Property(Types.DATE, 'number of weeks since conception, measured in weeks')
+                                                'previous deliveries')
     }
 
     def read_parameters(self, data_folder):
@@ -153,16 +148,12 @@ class Labour (Module):
 
         df['la_labour'] = 'not_in_labour'
         df['la_abortion'] = pd.NaT
-        df['la_live_birth'] = False
         df['la_still_birth'] = False
         df['la_partiy'] = 0
         df['la_previous_cs'] = 0
-        df['la_immediate_postpartum'] = False
         df['la_previous_ptb'] = False
-        df['la_conception_date'] = pd.NaT
         df['la_gestation'] = 0
         df['la_due_date'] = pd.NaT
-        df['la_gestational_age'] = pd.NaT
 
     # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) ----------------------------
 
@@ -182,7 +173,8 @@ class Labour (Module):
         df.loc[idx_pregnant, 'is_pregnant'] = True
 
 # ---------------------------------    GESTATION AT BASELINE  ---------------------------------------------------------
-        # Assigns a date of conception for women who are pregnant at baseline
+
+        # Assigns a date of last pregnancy and due date for women who are pregnant at baseline
 
         pregnant_idx = df.index[df.is_pregnant & df.is_alive]
 
@@ -192,22 +184,13 @@ class Labour (Module):
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
-        df.loc[pregnant_idx, 'la_gestational_age'] = (42 - 42 * dfx.random_draw)
-
-        pregnant_idx = df.index[df.is_pregnant & df.is_alive]
-
-        simdate = pd.Series(self.sim.date, index=pregnant_idx)
-        gest_weeks = pd.Series(df.la_gestational_age, index=pregnant_idx)
-        dfx = pd.concat([simdate, gest_weeks], axis=1)
-        dfx.columns = ['simdate', 'gest_weeks']
-        dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gest_weeks'], unit='w')
-        dfx['due_date_mth'] = 40 - dfx['gest_weeks']
-
-        # Dummy to set women who are pregnant at birth a due_date (cannot be preterm)
-
+        dfx['gestational_age'] = (42 - 42 * dfx.random_draw)
+        dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age'], unit='w')
+        dfx['due_date_mth'] = 40 - dfx['gestational_age']
         dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
-        df.loc[pregnant_idx, 'la_conception_date'] = dfx.la_conception_date
-        df.loc[pregnant_idx,'due_date'] =dfx.due_date
+
+        df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
+        df.loc[pregnant_idx, 'due_date'] = dfx.due_date
 
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
@@ -298,9 +281,22 @@ class Labour (Module):
         idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
         df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
 
+    def baseline_labour_scheduler(self, population): # This still wont work
+        """Schedules labour for women who are pregnant at baseline"""
+
+        # THIS IS NOT SCHEDULING LABOUR
+        df = population.props
+
+        pregnant_baseline = df.index[(df.is_pregnant == True) & df.is_alive]
+
+        for person in pregnant_baseline:
+
+            scheduled_labour_date = df.at[person, 'due_date']
+            labour = LabourEvent(self, individual_id=person, cause='labour')
+            self.sim.schedule_event(labour, scheduled_labour_date)
+
 
     def initialise_simulation(self, sim):
-
 
         """Get ready for simulation start.
 
@@ -309,11 +305,10 @@ class Labour (Module):
         It is a good place to add initial events to the event queue.
         """
 
-    #    event = LabourEvent(self, person_id=individual_id, cause='labour') #helppppp
-    #    sim.schedule_event(event, sim.date + DateOffset(days=1))
-
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
+
+        self.baseline_labour_scheduler(sim.population)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -328,20 +323,15 @@ class Labour (Module):
 
         df.at[child_id, 'la_labour'] = 'not_in_labour'
         df.at[child_id, 'la_abortion'] = pd.NaT
-        df.at[child_id, 'la_live_birth'] = False
         df.at[child_id, 'la_still_birth'] = False
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs'] = 0
-        df.at[child_id, 'la_immediate_postpartum'] = False
         df.at[child_id, 'la_previous_ptb'] = False
-        df.at[child_id, 'la_conception_date'] = pd.NaT
-        df.at[child_id, 'la_due_date'] = pd.NaT
-        df.at[child_id, 'la_gestational_age']= pd.NaT
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
 
-    "Starts the scheduled labour"
+    """Moves a pregnant woman into labour/spontaneous abortion based on gestation distribution """
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id) #do i need this?
@@ -349,26 +339,54 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, individual_id):
         df = self.sim.population.props
+#       params = self.module.parameters
+        m=self
 
-        gestation_date = df.at[individual_id, 'due_date'] -(df.at[individual_id, 'date_of_last_pregnancy'])
-        gestation_weeks= gestation_date / np.timedelta64(1, 'W')
+        gestation_date = df.at[individual_id, 'due_date'] - (df.at[individual_id, 'date_of_last_pregnancy'])
+        gestation_weeks = gestation_date / np.timedelta64(1, 'W')
+
+        random_draw= pd.Series(self.sim.rng.random_sample(size=1))
 
         if gestation_weeks > 37:
-            df.at[individual_id, 'la_labour'] = "spontaneous_labour"
+
+            prob_pl_ol= pd.Series(0.5) #DUMMY
+            dfp = pd.concat([prob_pl_ol,random_draw],axis=1)
+            dfp.columns = ['prob_pl_ol', 'random_draw']
+            if dfp.index[dfp.prob_pl_ol > dfp.random_draw] == True:
+                df.at[individual_id, 'la_labour'] = "prolonged_or_obstructed_labour"
+            else:
+                df.at[individual_id, 'la_labour'] = 'spontaneous_labour'
 
             # Here would should apply a probability of the labour being prolonged/obstructed
+            # Will also need to apply risk factors
+            # and of having a planned CS or Induction
 
         elif gestation_weeks < 37 and gestation_weeks >28:
             df.at[individual_id, 'la_labour'] = "preterm_labour"
-            df.at[individual_id, 'la_previous_ptb'] = True #or should this be following live birth?
+            df.at[individual_id, 'la_previous_ptb'] = True  # or should this be following live birth?
 
         else:
             df.at[individual_id,'la_labour'] = "not_in_labour"
             df.at[individual_id, 'is_pregnant'] = False
             df.at[individual_id, 'la_abortion'] = self.sim.date
 
-            # need to consider the benifits of a "previous spont miscarriage" property
-            # also need to incorperate induction and planned CS
+            # need to consider the benefits of a "previous spont miscarriage" property
+            # also need to incorporate induction and planned CS
+
+
+class LabourDeathEvent(Event, IndividualScopeEventMixin):
+    """Shedules potential death based on natural history of delivery"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+        self.cause = cause
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+
+# class LabourStillBirthEvent
+
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
