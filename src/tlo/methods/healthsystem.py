@@ -51,8 +51,8 @@ class HealthSystem(Module):
 
         self.HEALTH_SYSTEM_CALLS = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
 
-        self.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
-
+        self.new_health_system_calls = pd.DataFrame(
+            columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
@@ -91,7 +91,6 @@ class HealthSystem(Module):
             Parameter(Types.DATA_FRAME,
                       'The types of facilities and the levels (read from the Master Facilities list).'),
 
-
         # 'Master_Facility_List':
         #     Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
         #
@@ -118,42 +117,40 @@ class HealthSystem(Module):
 
     }
 
-
     PROPERTIES = {
         'Distance_To_Nearest_HealthFacility':
             Property(Types.REAL,
                      'The distance for each person to their nearest clinic (of any type)')
     }
 
-
     def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
         )
 
         self.parameters['Daily_Capabilities'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Daily_Capabilities.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Daily_Capabilities.csv')
         )
 
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
         )
 
         self.parameters['Appt_Time_Table'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
         )
 
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Master_Facilities_List.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Master_Facilities_List.csv')
         )
 
         self.parameters['Facilities_For_Each_District'] = pd.read_csv(
-                os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
+            os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
         )
 
-        self.parameters['Facility_Types_And_Levels'] = self.parameters['Master_Facilities_List'][['Facility_Type','Facility_Level']].drop_duplicates().reset_index(drop=True)
-
+        self.parameters['Facility_Types_And_Levels'] = self.parameters['Master_Facilities_List'][
+            ['Facility_Type', 'Facility_Level']].drop_duplicates().reset_index(drop=True)
 
     def initialise_population(self, population):
         df = population.props
@@ -169,13 +166,13 @@ class HealthSystem(Module):
 
         # Check that each person is being associated with a facility of each type
         pop = self.sim.population.props
-        fac_per_district=self.parameters['Facilities_For_Each_District']
+        fac_per_district = self.parameters['Facilities_For_Each_District']
         mfl = self.parameters['Master_Facilities_List']
         Facility_Types = self.parameters['Facility_Types_And_Levels']['Facility_Type'].values
 
         for person_id in pop.index[pop.is_alive]:
             my_district = pop.at[person_id, 'district_of_residence']
-            my_health_facilities = fac_per_district.loc[fac_per_district['District']==my_district]
+            my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
             my_health_facility_types = pd.unique(my_health_facilities.Facility_Type)
 
             assert len(my_health_facilities) == len(Facility_Types)
@@ -213,11 +210,11 @@ class HealthSystem(Module):
 
     def schedule_event(self, treatment_event, priority, topen, tclose):
 
-        logger.info('HealthSystem.schedule_event>>Logging a request for a treatment_event: %s for person: %d', treatment_event.__class__, treatment_event.target)
+        logger.info('HealthSystem.schedule_event>>Logging a request for a treatment_event: %s for person: %d',
+                    treatment_event.__class__, treatment_event.target)
 
         # get population dataframe
         df = self.sim.population.props
-
 
         # Check that this is a legitimate request for a treatment
 
@@ -231,14 +228,10 @@ class HealthSystem(Module):
         assert set(treatment_event.FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
         # All sensible numbers for the number of appointments requested
-        assert all( np.asarray([(treatment_event.FOOTPRINT[k]) for k in treatment_event.FOOTPRINT.keys()]) >=0)
-
+        assert all(np.asarray([(treatment_event.FOOTPRINT[k]) for k in treatment_event.FOOTPRINT.keys()]) >= 0)
 
         # TODO: Check that this request is allowable under current policy
         #
-
-
-
 
         # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
 
@@ -249,10 +242,9 @@ class HealthSystem(Module):
             'tclose': [tclose],
             'status': 'Called'})
 
-        self.new_health_system_calls= self.new_health_system_calls.append(new_request, ignore_index=True)
+        self.new_health_system_calls = self.new_health_system_calls.append(new_request, ignore_index=True)
 
-
-    def broadcast_healthsystem_interaction(self,person_id,cue_type=None,disease_specific=None):
+    def broadcast_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
         # person_id, cue_type = None, disease_specific = None
         df = self.sim.population.props
@@ -275,18 +267,18 @@ class HealthSystem(Module):
         Function can go in here in the future that could expand the time available, simulating increasing efficiency.
         """
 
-        capabilities=self.parameters['Daily_Capabilities']
+        capabilities = self.parameters['Daily_Capabilities']
 
-        return(capabilities)
+        return (capabilities)
 
-    def get_blank_footprint(self,calling_event):
+    def get_blank_footprint(self, calling_event):
         """
         This is a helper function so that disease modules can easily create their footprint.
         It returns a dataframe containing the footprint information in the format that the HealthSystemScheduler expects.
         """
 
-        keys=self.parameters['Appt_Types_Table']['Appt_Type_Code']
-        values=np.zeros(len(keys))
+        keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
+        values = np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
 
         # # TODO: this to be moved to the scheduler stuff,
@@ -294,8 +286,7 @@ class HealthSystem(Module):
         # blank_footprint['DiseaseModuleName']=calling_event.module.name
         # blank_footprint['DiseaseModule']=calling_event.module
 
-        return(blank_footprint)
-
+        return (blank_footprint)
 
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
@@ -312,21 +303,24 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        df=self.sim.population.props
+        df = self.sim.population.props
 
-        logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s', self.sim.date)
+        logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s',
+                     self.sim.date)
 
         # Add the new calls to the total set of calls
-        self.module.HEALTH_SYSTEM_CALLS= self.module.HEALTH_SYSTEM_CALLS.append(self.module.new_health_system_calls, ignore_index=True)
+        self.module.HEALTH_SYSTEM_CALLS = self.module.HEALTH_SYSTEM_CALLS.append(self.module.new_health_system_calls,
+                                                                                 ignore_index=True)
 
         # Empty the new calls buffer
-        self.module.new_health_system_calls = pd.DataFrame(columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
+        self.module.new_health_system_calls = pd.DataFrame(
+            columns=['treatment_event', 'priority', 'topen', 'tclose', 'status'])
 
         # Create handle to the HEALTH_SYSTEMS_CALL dataframe
         hsc = self.module.HEALTH_SYSTEM_CALLS
 
         # Replace null values for tclose with a date past the end of the simulation
-        hsc.loc[pd.isnull(hsc['tclose']),'tclose']=self.sim.date+DateOffset(days=1)
+        hsc.loc[pd.isnull(hsc['tclose']), 'tclose'] = self.sim.date + DateOffset(days=1)
 
         # Flag events that are closed (i.e. the latest date for which they are relevant has passed).
         hsc.loc[(self.sim.date > hsc['tclose']) & (hsc['status'] != 'Done'), 'status'] = 'Closed'
@@ -335,7 +329,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         hsc.loc[(self.sim.date < hsc['topen']) & (hsc['status'] != 'Done'), 'status'] = 'Not Due'
 
         # Isolate which events are due (i.e. are opened, due and not have yet been run.)
-        hsc.loc[ (self.sim.date >= hsc['topen']) & ( (self.sim.date <= hsc['tclose']) |  (hsc['tclose']==None)) & (hsc['status']!='Done'), 'status'] = 'Due'
+        hsc.loc[(self.sim.date >= hsc['topen']) & ((self.sim.date <= hsc['tclose']) | (hsc['tclose'] == None)) & (
+                hsc['status'] != 'Done'), 'status'] = 'Due'
 
         due_events = hsc.loc[hsc['status'] == 'Due']
 
@@ -346,7 +341,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             logger.debug(line)
         logger.debug('----------------------------------------------------------------------')
 
-
         logger.debug('----------------------------------------------------------------------')
         logger.debug("***These are the due events ***:")
         print_table = due_events.to_string().splitlines()
@@ -354,102 +348,106 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             logger.debug(line)
         logger.debug('----------------------------------------------------------------------')
 
-
         # Now, Look at the calls to the health system that are due and decide which will be scheduled
         # In this simplest case, all outstanding calls are met immidiately.
         EventsToRun = due_events
-
 
         # Examine capabilities that are available
 
         print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
 
         # Call out to a function to generate the total Capabilities for today
-        capabilities=self.module.GetCapabilities()
+        capabilities = self.module.GetCapabilities()
 
         # Add column for Minutes Used This Day (for live-tracking the use of those resources)
-        capabilities.loc[:,'Minutes_Used_Today']=0
-        capabilities.loc[:,'Minutes_Remaining_Today']=capabilities['Total_Minutes_Per_Day']
+        capabilities.loc[:, 'Minutes_Used_Today'] = 0
+        capabilities.loc[:, 'Minutes_Remaining_Today'] = capabilities['Total_Minutes_Per_Day']
 
         # Gather the data that will be used:
-        mfl=self.module.parameters['Master_Facilities_List']
+        mfl = self.module.parameters['Master_Facilities_List']
         fac_per_district = self.module.parameters['Facilities_For_Each_District']
-        appt_types=self.module.parameters['Appt_Types_Table']['Appt_Type_Code'].values
-        appt_times=self.module.parameters['Appt_Time_Table']
-        officer_type_codes= self.module.parameters['Officer_Types_Table']['Officer_Type_Code'].values
+        appt_types = self.module.parameters['Appt_Types_Table']['Appt_Type_Code'].values
+        appt_times = self.module.parameters['Appt_Time_Table']
+        officer_type_codes = self.module.parameters['Officer_Types_Table']['Officer_Type_Code'].values
 
         if len(due_events.index) > 0:
 
             # sort the due_events in terms of priority and time since opened:
-            due_events['Time_Since_Opened']=self.sim.date-due_events['topen']
-            due_events.sort_values(['priority','Time_Since_Opened'])
+            due_events['Time_Since_Opened'] = self.sim.date - due_events['topen']
+            due_events.sort_values(['priority', 'Time_Since_Opened'])
 
             # Loop through the events (in order of priority) and runs those which can happen
             for e in due_events.index:
 
                 # This is a treatment_event:
-                the_person_id= hsc.at[e, 'treatment_event'].target
-                the_treatment_event_name= hsc.at[e, 'treatment_event'].target
-                the_district=df.at[the_person_id,'district_of_residence']
+                the_person_id = hsc.at[e, 'treatment_event'].target
+                the_treatment_event_name = hsc.at[e, 'treatment_event'].target
+                the_district = df.at[the_person_id, 'district_of_residence']
 
                 # sort the health_facilities on Facility_Level
                 the_health_facilities = fac_per_district.loc[fac_per_district['District'] == the_district]
                 the_health_facilities = the_health_facilities.sort_values(['Facility_Level'])
 
-                capabilities_of_the_health_facilities=capabilities.loc[capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
+                capabilities_of_the_health_facilities = capabilities.loc[
+                    capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
 
-                the_treatment_footprint=hsc.at[e,'treatment_event'].FOOTPRINT
-
+                the_treatment_footprint = hsc.at[e, 'treatment_event'].FOOTPRINT
 
                 # Test if capabilities of health system can meet this request
                 # This requires there to be one facility that can fulfill the entire request (each type of appointment)
-
 
                 # Loop through facilities to look for facilities
                 # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
                 #  at the lowest levels and work upwards successively).
                 for try_fac_id in the_health_facilities.Facility_ID.values:
 
-                    this_facility_type= mfl.loc[mfl['Facility_ID']==try_fac_id,'Facility_Type'].values[0]
+                    this_facility_type = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Type'].values[0]
 
                     # Establish how much time is available at this facility
-                    time_available=capabilities_of_the_health_facilities.loc[capabilities_of_the_health_facilities['Facility_ID']==try_fac_id,['Officer_Type_Code','Minutes_Remaining_Today']]
+                    time_available = capabilities_of_the_health_facilities.loc[
+                        capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
+                                                                                             'Minutes_Remaining_Today']]
 
                     # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
-                    time_requested=pd.DataFrame(columns=['Officer_Type_Code','Time_Taken'])
+                    time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
                     for this_appt in appt_types:
                         if the_treatment_footprint[this_appt] > 0:
-                            time_req_for_this_appt = appt_times.loc[ ( appt_times['Appt_Type_Code']==this_appt ) &
-                                            ( appt_times['Facility_Type']==this_facility_type ) ,
-                                            ['Officer_Type_Code','Time_Taken']].copy().reset_index(drop=True)
-                            time_requested=pd.concat([time_requested,time_req_for_this_appt])
+                            time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
+                                                                    (appt_times['Facility_Type'] == this_facility_type),
+                                                                    ['Officer_Type_Code',
+                                                                     'Time_Taken']].copy().reset_index(drop=True)
+                            time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
                     # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
-                    time_requested=pd.DataFrame(time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
-                    time_requested=time_requested.drop(time_requested[time_requested['Time_Taken']==0].index)
+                    time_requested = pd.DataFrame(
+                        time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
+                    time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
 
                     # merge the Minutes_Available at this facility with the minutes required in the footprint
-                    comparison = time_requested.merge(time_available,on='Officer_Type_Code',how='left',indicator=True)
+                    comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
+                                                      indicator=True)
 
                     # check if all the needs are met by this facility
-                    if all(comparison['_merge']=='both') & all( comparison['Minutes_Remaining_Today'] > comparison['Time_Taken'] ):
+                    if all(comparison['_merge'] == 'both') & all(
+                        comparison['Minutes_Remaining_Today'] > comparison['Time_Taken']):
 
                         # flag the event to run
-                        hsc.at[e, 'status']='Run_Today'
+                        hsc.at[e, 'status'] = 'Run_Today'
 
                         # impose the footprint:
                         for this_officer_type in officer_type_codes:
-                            capabilities.loc[ (capabilities['Facility_ID']==try_fac_id) & (capabilities['Officer_Type_Code'] ==this_officer_type), 'Minutes_Remaining_Today'] = \
-                                capabilities.loc[ (capabilities['Facility_ID'] == try_fac_id) &
-                                                 (capabilities['Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
-                                - time_requested.loc[time_requested['Officer_Type_Code']==this_officer_type,'Time_Taken']
+                            capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) & (capabilities[
+                                                                                                'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) &
+                                                 (capabilities[
+                                                      'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
+                                - time_requested.loc[
+                                    time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken']
 
-                        break # cease looking at other facility_types if the need has been met
-
+                        break  # cease looking at other facility_types if the need has been met
 
         # Execute the events that have been flagged for running today
-        for e in hsc.loc[hsc['status']=='Run_Today'].index:
-
+        for e in hsc.loc[hsc['status'] == 'Run_Today'].index:
             logger.debug(
                 'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
                 self.sim.date,
@@ -467,10 +465,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hsc.at[e, 'status'] = 'Done'
 
 
-
-
-
-
 # --------- FORMS OF HEALTH-CARE SEEKING -----
 
 class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
@@ -484,7 +478,6 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
-
         pass
 
         # logger.debug('Health Care Seeking Poll is running')
@@ -559,7 +552,6 @@ class HealthCareSeekingPollEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class OutreachEvent(Event, PopulationScopeEventMixin):
-
     pass
 
     # """
@@ -647,15 +639,14 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
-        the_footprint['Over5OPD']=1  # This requires one out patient
+        the_footprint['Over5OPD'] = 1  # This requires one out patient
         self.FOOTPRINT = the_footprint
-
 
         # Check that this is correctly specified interaction
         assert person_id in self.sim.population.props.index
         assert self.cue_type in ['HealthCareSeekingPoll', 'OutreachEvent', 'InitialDiseaseCall', 'FollowUp', None]
         assert (self.disease_specific == None) or (
-                self.disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
+            self.disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
 
     def apply(self, person_id):
         logger.debug('@@@ An interaction with the health system')
