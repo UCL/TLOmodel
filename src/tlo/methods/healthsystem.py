@@ -85,36 +85,7 @@ class HealthSystem(Module):
 
         'Facilities_For_Each_District':
             Parameter(Types.DATA_FRAME,
-                      'Mapping between a district and all of the health facilities to which its population have access.'),
-
-        'Facility_Types_And_Levels':
-            Parameter(Types.DATA_FRAME,
-                      'The types of facilities and the levels (read from the Master Facilities list).'),
-
-        # 'Master_Facility_List':
-        #     Parameter(Types.DATA_FRAME, 'Imported Master Facility List workbook: one row per each facility'),
-        #
-        # 'Village_To_Facility_Mapping':
-        #     Parameter(Types.DATA_FRAME, 'Imported long-list of links between villages and health facilities: ' \
-        #                                 'one row per each link between a village and a facility'),
-        # 'CurrentStaff':
-        #     Parameter(Types.DATA_FRAME, 'Imported long-list of all current staff (Imported from CHAI data): ' \
-        #                                 'one row per staff member'),
-        #
-        # 'CurrentStaffWorkingHours':
-        #     Parameter(Types.DATA_FRAME, 'Number of working days and workings hours per health worker by time (Imported from CHAI data'),
-        #
-        # 'HealthSystem_ApptTimes':
-        #     Parameter(Types.DATA_FRAME, 'Imported long list of the time taken by each type of appointment: (Imported from CHAI data)'),
-        #
-        # 'StaffAssignmentToFacility':
-        #     Parameter(Types.DATA_FRAME, 'Assignment between current staff members and a facility. (Respects district and type of facility, but otherwise random)'),
-        #
-        # 'Time_Per_Facility':
-        #     Parameter(Types.DATA_FRAME,
-        #               'The amount of time available for appointments by facility and officer type. (Based on CHAI data)'),
-        #
-
+                      'Mapping between a district and all of the health facilities to which its population have access.')
     }
 
     PROPERTIES = {
@@ -149,8 +120,6 @@ class HealthSystem(Module):
             os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
         )
 
-        self.parameters['Facility_Types_And_Levels'] = self.parameters['Master_Facilities_List'][
-            ['Facility_Type', 'Facility_Level']].drop_duplicates().reset_index(drop=True)
 
     def initialise_population(self, population):
         df = population.props
@@ -168,15 +137,15 @@ class HealthSystem(Module):
         pop = self.sim.population.props
         fac_per_district = self.parameters['Facilities_For_Each_District']
         mfl = self.parameters['Master_Facilities_List']
-        Facility_Types = self.parameters['Facility_Types_And_Levels']['Facility_Type'].values
+        self.Facility_Levels = pd.unique(mfl['Facility_Level'])
 
         for person_id in pop.index[pop.is_alive]:
             my_district = pop.at[person_id, 'district_of_residence']
             my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
-            my_health_facility_types = pd.unique(my_health_facilities.Facility_Type)
+            my_health_facility_level = pd.unique(my_health_facilities.Facility_Level)
 
-            assert len(my_health_facilities) == len(Facility_Types)
-            assert set(my_health_facility_types) == set(Facility_Types)
+            assert len(my_health_facilities) == len(self.Facility_Levels)
+            assert set(my_health_facility_level) == set(self.Facility_Levels)
 
         # Launch the healthsystem_scheduler (a regular event occurring each day)
         sim.schedule_event(HealthSystemScheduler(self), sim.date)
@@ -401,7 +370,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 #  at the lowest levels and work upwards successively).
                 for try_fac_id in the_health_facilities.Facility_ID.values:
 
-                    this_facility_type = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Type'].values[0]
+                    this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
 
                     # Establish how much time is available at this facility
                     time_available = capabilities_of_the_health_facilities.loc[
@@ -413,7 +382,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     for this_appt in appt_types:
                         if the_treatment_footprint[this_appt] > 0:
                             time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
-                                                                    (appt_times['Facility_Type'] == this_facility_type),
+                                                                    (appt_times['Facility_Level'] == this_facility_level),
                                                                     ['Officer_Type_Code',
                                                                      'Time_Taken']].copy().reset_index(drop=True)
                             time_requested = pd.concat([time_requested, time_req_for_this_appt])
