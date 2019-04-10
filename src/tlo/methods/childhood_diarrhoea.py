@@ -262,7 +262,7 @@ class ChildhoodDiarrhoea(Module):
         (Types.REAL,
          'relative rate of acute watery diarrhoea for wealth level 5'
          ),
-        'initial_prev_persistent_diarrhoea': Parameter
+        'base_prev_persistent_diarrhoea': Parameter
         (Types.REAL,
          'initial prevalence of persistent diarrhoea, among children aged < 11 months,'
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
@@ -571,7 +571,8 @@ class ChildhoodDiarrhoea(Module):
         'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         'HHhandwashing': Property(Types.BOOL, 'temporary property - household handwashing'),
-        'ri_pneumonia_death': Property(Types.BOOL, 'death from pneumonia disease')
+        'clean_water': Property(Types.BOOL, 'temporary property - access to clean water sources'),
+        'improved_sanitation': Property(Types.BOOL, 'temporary property - improved sanitation')
     }
 
     def read_parameters(self, data_folder):
@@ -579,95 +580,97 @@ class ChildhoodDiarrhoea(Module):
         """
         p = self.parameters
 
-        p['base_prev_pneumonia'] = 0.2
-        p['rp_pneumonia_agelt2mo'] = 1.2
-        p['rp_pneumonia_age12to23mo'] = 0.8
-        p['rp_pneumonia_age24to59mo'] = 0.5
-        p['rp_pneumonia_HIV'] = 1.4
-        p['rp_pneumonia_SAM'] = 1.25
-        p['rp_pneumonia_excl_breast'] = 0.5
-        p['rp_pneumonia_cont_breast'] = 0.7
-        p['rp_pneumonia_HHhandwashing'] = 0.5
-        p['rp_pneumonia_IAP'] = 1.1
-        p['rp_pneumonia_wealth1'] = 0.8
-        p['rp_pneumonia_wealth2'] = 0.9
-        p['rp_pneumonia_wealth4'] = 1.2
-        p['rp_pneumonia_wealth5'] = 1.3
-        p['base_incidence_pneumonia'] = 0.015
-        p['rr_pneumonia_agelt2mo'] = 1.2
-        p['rr_pneumonia_age12to23mo'] = 0.8
-        p['rr_pneumonia_age24to59mo'] = 0.5
-        p['rr_pneumonia_HIV'] = 1.4
-        p['rr_pneumonia_SAM'] = 1.25
-        p['rr_pneumonia_excl_breast'] = 0.6
-        p['rr_pneumonia_cont_breast'] = 0.8
-        p['rr_pneumonia_HHhandwashing'] = 0.5
-        p['rr_pneumonia_IAP'] = 1.1
-        p['rr_pneumonia_wealth1'] = 0.8
-        p['rr_pneumonia_wealth2'] = 0.9
-        p['rr_pneumonia_wealth4'] = 1.2
-        p['rr_pneumonia_wealth5'] = 1.3
-        p['base_prev_severe_pneumonia'] = 0.1
-        p['rp_severe_pneum_agelt2mo'] = 1.3
-        p['rp_severe_pneum_age12to23mo'] = 0.8
-        p['rp_severe_pneum_age24to59mo'] = 0.5
-        p['rp_severe_pneum_HIV'] = 1.3
-        p['rp_severe_pneum_SAM'] = 1.3
-        p['rp_severe_pneum_excl_breast'] = 0.5
-        p['rp_severe_pneum_cont_breast'] = 0.7
-        p['rp_severe_pneum_HHhandwashing'] = 0.8
-        p['rp_severe_pneum_IAP'] = 1.1
-        p['rp_severe_pneum_wealth1'] = 0.8
-        p['rp_severe_pneum_wealth2'] = 0.9
-        p['rp_severe_pneum_wealth4'] = 1.1
-        p['rp_severe_pneum_wealth5'] = 1.2
-        p['base_incidence_severe_pneum'] = 0.01
-        p['rr_severe_pneum_agelt2mo'] = 1.3
-        p['rr_severe_pneum_age12to23mo'] = 0.8
-        p['rr_severe_pneum_age24to59mo'] = 0.5
-        p['rr_severe_pneum_HIV'] = 1.3
-        p['rr_severe_pneum_SAM'] = 1.3
-        p['rr_severe_pneum_excl_breast'] = 0.6
-        p['rr_severe_pneum_cont_breast'] = 0.8
-        p['rr_severe_pneum_HHhandwashing'] = 0.3
-        p['rr_severe_pneum_IAP'] = 1.1
-        p['rr_severe_pneum_wealth1'] = 0.8
-        p['rr_severe_pneum_wealth2'] = 0.9
-        p['rr_severe_pneum_wealth4'] = 1.1
-        p['rr_severe_pneum_wealth5'] = 1.2
-        p['r_progress_to_severe_pneum'] = 0.05
-        p['rr_progress_severe_pneum_agelt2mo'] = 1.3
-        p['rr_progress_severe_pneum_age12to23mo'] = 0.9
-        p['rr_progress_severe_pneum_age24to59mo'] = 0.6
-        p['rr_progress_severe_pneum_HIV'] = 1.2
-        p['rr_progress_severe_pneum_SAM'] = 1.1
-        p['rr_progress_severe_pneum_wealth1'] = 0.8
-        p['rr_progress_severe_pneum_wealth2'] = 0.9
-        p['rr_progress_severe_pneum_wealth4'] = 1.1
-        p['rr_progress_severe_pneum_wealth5'] = 1.3
-        p['r_death_pneumonia'] = 0.2
-        p['rr_death_pneumonia_agelt2mo'] = 1.2
-        p['rr_death_pneumonia_age12to23mo'] = 0.8
-        p['rr_death_pneumonia_age24to59mo'] = 0.04
-        p['rr_death_pneumonia_HIV'] = 1.4
-        p['rr_death_pneumonia_SAM'] = 1.3
-        p['rr_death_pneumonia_wealth1'] = 0.7
-        p['rr_death_pneumonia_wealth2'] = 0.8
-        p['rr_death_pneumonia_wealth4'] = 1.2
-        p['rr_death_pneumonia_wealth5'] = 1.3
-        p['r_recovery_pneumonia'] = 0.5
-        p['rr_recovery_pneumonia_agelt2mo'] = 0.3
-        p['rr_recovery_pneumonia_age12to23mo'] = 0.7
-        p['rr_recovery_pneumonia_age24to59mo'] = 0.8
-        p['rr_recovery_pneumonia_HIV'] = 0.3
-        p['rr_recovery_pneumonia_SAM'] = 0.4
-        p['r_recovery_severe_pneumonia'] = 0.2
-        p['rr_recovery_severe_pneum_agelt2mo'] = 0.6
-        p['rr_recovery_severe_pneum_age12to23mo'] = 1.2
-        p['rr_recovery_severe_pneum_age24to59mo'] = 1.5
-        p['rr_recovery_severe_pneum_HIV'] = 0.5
-        p['rr_recovery_severe_pneum_SAM'] = 0.6
-        p['init_prop_pneumonia_status'] = [0.2, 0.1]
+        p['base_prev_dysentery'] = 0.2
+        p['rp_dysentery_agelt11mo'] = 1.2
+        p['rp_dysentery_age12to23mo'] = 0.8
+        p['rp_dysentery_age24to59mo'] = 0.5
+        p['rp_dysentery_HIV'] = 1.4
+        p['rp_dysentery_SAM'] = 1.25
+        p['rp_dysentery_excl_breast'] = 0.5
+        p['rp_dysentery_cont_breast'] = 0.7
+        p['rp_dysentery_HHhandwashing'] = 0.5
+        p['rp_dysentery_clean_water'] = 0.6
+        p['rp_dysentery_improved_sanitation'] = 1.1
+        p['rp_dysentery_wealth1'] = 0.8
+        p['rp_dysentery_wealth2'] = 0.9
+        p['rp_dysentery_wealth4'] = 1.2
+        p['rp_dysentery_wealth5'] = 1.3
+        p['base_incidence_dysentery'] = 0.015
+        p['rr_dysentery_agelt11mo'] = 1.2
+        p['rr_dysentery_age12to23mo'] = 0.8
+        p['rr_dysentery_age24to59mo'] = 0.5
+        p['rr_dysentery_HIV'] = 1.4
+        p['rr_dysentery_SAM'] = 1.25
+        p['rr_dysentery_excl_breast'] = 0.5
+        p['rr_dysentery_cont_breast'] = 0.7
+        p['rr_dysentery_HHhandwashing'] = 0.5
+        p['rr_dysentery_clean_water'] = 0.6
+        p['rr_dysentery_improved_sanitation'] = 1.1
+        p['rr_dysentery_wealth1'] = 0.8
+        p['rr_dysentery_wealth2'] = 0.9
+        p['rr_dysentery_wealth4'] = 1.2
+        p['rr_dysentery_wealth5'] = 1.3
+        p['base_prev_acute_diarrhoea'] = 0.1
+        p['rp_acute_diarrhoea_agelt11mo'] = 1.3
+        p['rp_acute_diarrhoea_age12to23mo'] = 0.8
+        p['rp_acute_diarrhoea_age24to59mo'] = 0.5
+        p['rp_acute_diarrhoea_HIV'] = 1.3
+        p['rp_acute_diarrhoea_SAM'] = 1.3
+        p['rp_acute_diarrhoea_excl_breast'] = 0.5
+        p['rp_acute_diarrhoea_cont_breast'] = 0.7
+        p['rp_acute_diarrhoea_HHhandwashing'] = 0.8
+        p['rp_acute_diarrhoea_clean_water'] = 0.6
+        p['rp_acute_diarrhoea_improved_sanitation'] = 1.1
+        p['rp_acute_diarrhoea_wealth1'] = 0.8
+        p['rp_acute_diarrhoea_wealth2'] = 0.9
+        p['rp_acute_diarrhoea_wealth4'] = 1.2
+        p['rp_acute_diarrhoea_wealth5'] = 1.3
+        p['base_incidence_acute_diarrhoea'] = 0.5
+        p['rr_acute_diarrhoea_agelt11mo'] = 1.3
+        p['rr_acute_diarrhoea_age12to23mo'] = 0.8
+        p['rr_acute_diarrhoea_age24to59mo'] = 0.5
+        p['rr_acute_diarrhoea_HIV'] = 1.3
+        p['rr_acute_diarrhoea_SAM'] = 1.3
+        p['rr_acute_diarrhoea_excl_breast'] = 0.5
+        p['rr_acute_diarrhoea_cont_breast'] = 0.7
+        p['rr_acute_diarrhoea_HHhandwashing'] = 0.8
+        p['rr_acute_diarrhoea_clean_water'] = 0.6
+        p['rr_acute_diarrhoea_improved_sanitation'] = 1.1
+        p['rr_acute_diarrhoea_wealth1'] = 0.8
+        p['rr_acute_diarrhoea_wealth2'] = 0.9
+        p['rr_acute_diarrhoea_wealth4'] = 1.2
+        p['rr_acute_diarrhoea_wealth5'] = 1.3
+        p['base_prev_persistent_diarrhoea'] = 0.01
+        p['rp_persistent_diarrhoea_agelt11mo'] = 1.3
+        p['rp_persistent_diarrhoea_age12to23mo'] = 0.8
+        p['rp_persistent_diarrhoea_age24to59mo'] = 0.5
+        p['rp_persistent_diarrhoea_HIV'] = 1.3
+        p['rp_persistent_diarrhoea_SAM'] = 1.3
+        p['rp_persistent_diarrhoea_excl_breast'] = 0.5
+        p['rp_persistent_diarrhoea_cont_breast'] = 0.7
+        p['rp_persistent_diarrhoea_HHhandwashing'] = 0.8
+        p['rp_persistent_diarrhoea_clean_water'] = 0.6
+        p['rp_persistent_diarrhoea_improved_sanitation'] = 1.1
+        p['rp_persistent_diarrhoea_wealth1'] = 0.8
+        p['rp_persistent_diarrhoea_wealth2'] = 0.9
+        p['rp_persistent_diarrhoea_wealth4'] = 1.2
+        p['rp_persistent_diarrhoea_wealth5'] = 1.3
+        p['base_incidence_persistent_diarrhoea'] = 0.05
+        p['rr_persistent_diarrhoea_agelt11mo'] = 1.3
+        p['rr_persistent_diarrhoea_age12to23mo'] = 0.8
+        p['rr_persistent_diarrhoea_age24to59mo'] = 0.5
+        p['rr_persistent_diarrhoea_HIV'] = 1.3
+        p['rr_persistent_diarrhoea_SAM'] = 1.3
+        p['rr_persistent_diarrhoea_excl_breast'] = 0.5
+        p['rr_persistent_diarrhoea_cont_breast'] = 0.7
+        p['rr_persistent_diarrhoea_HHhandwashing'] = 0.8
+        p['rr_persistent_diarrhoea_clean_water'] = 0.6
+        p['rr_persistent_diarrhoea_improved_sanitation'] = 1.1
+        p['rr_persistent_diarrhoea_wealth1'] = 0.8
+        p['rr_persistent_diarrhoea_wealth2'] = 0.9
+        p['rr_persistent_diarrhoea_wealth4'] = 1.2
+        p['rr_persistent_diarrhoea_wealth5'] = 1.3
+        p['init_prop_diarrhoea_status'] = [0.2, 0.2, 0.2]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -682,87 +685,126 @@ class ChildhoodDiarrhoea(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['ri_pneumonia_status'] = 'none'
+        df['ei_diarrhoea_status'] = 'none'
         df['malnutrition'] = False
         df['has_HIV'] = False
-        df['indoor_air_pollution'] = False
         df['HHhandwashing'] = False
         df['exclusive_breastfeeding'] = False
         df['continued_breastfeeding'] = False
+        df['clean_water'] = False
+        df['improved_sanitation'] = False
 
-        # -------------------- ASSIGN VALUES OF RESPIRATORY INFECTION STATUS AT BASELINE -----------
+        # -------------------- ASSIGN VALUES OF ENTERIC INFECTION STATUS AT BASELINE -----------
 
         under5_idx = df.index[(df.age_years < 5) & df.is_alive]
 
-        # create data-frame of the probabilities of ri_pneumonia_status for children
-        # aged 2-11 months, HIV negative, no SAM, no indoor air pollution
-        p_pneumonia_status = pd.Series(self.init_prop_pneumonia_status[0], index=under5_idx)
-        p_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[1], index=under5_idx)
+        # create data-frame of the probabilities of ei_diarrhoea_status for children
+        # aged 2-11 months, HIV negative, no SAM,
+        p_dysentery_status = pd.Series(self.init_prop_diarrhoea_status[0], index=under5_idx)
+        p_acute_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[1], index=under5_idx)
+        p_persistent_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[2], index=under5_idx)
 
-        # create probabilities of pneumonia for all age under 5
-        p_pneumonia_status.loc[
-            (df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_pneumonia_agelt2mo
-        p_pneumonia_status.loc[
-            (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_pneumonia_age12to23mo
-        p_pneumonia_status.loc[
-            (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_pneumonia_age24to59mo
-        p_pneumonia_status.loc[
-            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_HIV
-        p_pneumonia_status.loc[
-            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_SAM
-        p_pneumonia_status.loc[
+        # create probabilities of dysentery  for all age under 5
+        p_dysentery_status.loc[
+            (df.age_exact_years < 1) & df.is_alive] *= self.rp_dysentery_agelt11mo
+        p_dysentery_status.loc[
+            (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_dysentery_age12to23mo
+        p_dysentery_status.loc[
+            (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_dysentery_age24to59mo
+        p_dysentery_status.loc[
+            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_HIV
+        p_dysentery_status.loc[
+            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_SAM
+        p_dysentery_status.loc[
             (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_pneumonia_excl_breast
-        p_pneumonia_status.loc[
+            *= self.rp_dysentery_excl_breast
+        p_dysentery_status.loc[
             (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) & (df.age_exact_years < 2) &
-            df.is_alive] *= self.rp_pneumonia_cont_breast
-        p_pneumonia_status.loc[
-            (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_IAP
-        p_pneumonia_status.loc[
-            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth1
-        p_pneumonia_status.loc[
-            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth2
-        p_pneumonia_status.loc[
-            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth4
-        p_pneumonia_status.loc[
-            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_pneumonia_wealth5
+            df.is_alive] *= self.rp_dysentery_cont_breast
+        p_dysentery_status.loc[
+            (df.clean_water == True) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_clean_water
+        p_dysentery_status.loc[
+            (df.improved_sanitation == True) & (df.age_years < 5) &
+            df.is_alive] *= self.rp_dysentery_improved_sanitation
+        p_dysentery_status.loc[
+            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_wealth1
+        p_dysentery_status.loc[
+            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_wealth2
+        p_dysentery_status.loc[
+            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_wealth4
+        p_dysentery_status.loc[
+            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_dysentery_wealth5
 
-        # create probabilities of severe pneumonia for all age under 5
-        p_sev_pneum_status.loc[
-            (df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_severe_pneum_agelt2mo
-        p_sev_pneum_status.loc[
-            (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_severe_pneum_age12to23mo
-        p_sev_pneum_status.loc[
-            (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_severe_pneum_age24to59mo
-        p_sev_pneum_status.loc[
-            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_HIV
-        p_sev_pneum_status.loc[
-            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_SAM
-        p_sev_pneum_status.loc[
+        # create probabilities of acute watery diarrhoea for all age under 5
+        p_acute_diarrhoea_status.loc[
+            (df.age_exact_years < 1) & df.is_alive] *= self.rp_acute_diarrhoea_agelt11mo
+        p_acute_diarrhoea_status.loc[
+            (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_acute_diarrhoea_age12to23mo
+        p_acute_diarrhoea_status.loc[
+            (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_age24to59mo
+        p_acute_diarrhoea_status.loc[
+            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_HIV
+        p_acute_diarrhoea_status.loc[
+            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_SAM
+        p_acute_diarrhoea_status.loc[
             (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_severe_pneum_excl_breast
-        p_sev_pneum_status.loc[
+            *= self.rp_acute_diarrhoea_excl_breast
+        p_acute_diarrhoea_status.loc[
             (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) & (df.age_exact_years < 2) &
-            df.is_alive] *= self.rp_severe_pneum_cont_breast
-        p_sev_pneum_status.loc[
-            (df.indoor_air_pollution == True) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_IAP
-        p_sev_pneum_status.loc[
-            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth1
-        p_sev_pneum_status.loc[
-            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth2
-        p_sev_pneum_status.loc[
-            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth4
-        p_sev_pneum_status.loc[
-            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_severe_pneum_wealth5
+            df.is_alive] *= self.rp_acute_diarrhoea_cont_breast
+        p_acute_diarrhoea_status.loc[
+            (df.clean_water == True) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_clean_water
+        p_acute_diarrhoea_status.loc[
+            (df.improved_sanitation == True) & (df.age_years < 5) &
+            df.is_alive] *= self.rp_acute_diarrhoea_improved_sanitation
+        p_acute_diarrhoea_status.loc[
+            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_wealth1
+        p_acute_diarrhoea_status.loc[
+            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_wealth2
+        p_acute_diarrhoea_status.loc[
+            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_wealth4
+        p_acute_diarrhoea_status.loc[
+            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_wealth5
+
+        # create probabilities of persistent diarrhoea for all age under 5
+        p_persistent_diarrhoea_status.loc[
+            (df.age_exact_years < 1) & df.is_alive] *= self.rp_persistent_diarrhoea_agelt11mo
+        p_persistent_diarrhoea_status.loc[
+            (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_persistent_diarrhoea_age12to23mo
+        p_persistent_diarrhoea_status.loc[
+            (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_age24to59mo
+        p_persistent_diarrhoea_status.loc[
+            (df.has_hiv == True) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_HIV
+        p_persistent_diarrhoea_status.loc[
+            (df.malnutrition == True) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_SAM
+        p_persistent_diarrhoea_status.loc[
+            (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_persistent_diarrhoea_excl_breast
+        p_persistent_diarrhoea_status.loc[
+            (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) & (df.age_exact_years < 2) &
+            df.is_alive] *= self.rp_persistent_diarrhoea_cont_breast
+        p_persistent_diarrhoea_status.loc[
+            (df.clean_water == True) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_clean_water
+        p_persistent_diarrhoea_status.loc[
+            (df.improved_sanitation == True) & (df.age_years < 5) &
+            df.is_alive] *= self.rp_persistent_diarrhoea_improved_sanitation
+        p_persistent_diarrhoea_status.loc[
+            (df.li_wealth == 1) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_wealth1
+        p_persistent_diarrhoea_status.loc[
+            (df.li_wealth == 2) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_wealth2
+        p_persistent_diarrhoea_status.loc[
+            (df.li_wealth == 4) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_wealth4
+        p_persistent_diarrhoea_status.loc[
+            (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_persistent_diarrhoea_wealth5
 
         random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive])
 
         # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([p_pneumonia_status, p_sev_pneum_status, random_draw], axis=1)
-        dfx.columns = ['p_pneumonia', 'p_severe_pneumonia', 'random_draw']
+        dfx = pd.concat([p_dysentery_status, p_acute_diarrhoea_status, p_persistent_diarrhoea_status, random_draw], axis=1)
+        dfx.columns = ['p_dysentery', 'p_acute_diarrhoea', 'p_persistent_diarrhoea', 'random_draw']
 
-        dfx['p_none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia)
+        dfx['p_none'] = 1 - (dfx.p_dysentery + dfx.p_acute_diarrhoea + dfx.p_persistent_diarrhoea)
 
         # based on probabilities of being in each category, define cut-offs to determine status from
         # random draw uniform(0,1)
@@ -770,13 +812,17 @@ class ChildhoodDiarrhoea(Module):
         # assign baseline values of ri_resp_infection_stat based on probabilities and value of random draw
 
         idx_none = dfx.index[dfx.p_none > dfx.random_draw]
-        idx_pneumonia = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_pneumonia) > dfx.random_draw)]
-        idx_severe_pneumonia = dfx.index[((dfx.p_none + dfx.p_pneumonia) < dfx.random_draw) &
-                                         (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) > dfx.random_draw]
+        idx_dysentery = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_dysentery) > dfx.random_draw)]
+        idx_acute_diarrhoea = dfx.index[((dfx.p_none + dfx.p_dysentery) < dfx.random_draw) &
+                                         (dfx.p_none + dfx.p_dysentery + dfx.p_acute_diarrhoea) > dfx.random_draw]
+        idx_persistent_diarrhoea = dfx.index[((dfx.p_none + dfx.p_dysentery + dfx.p_acute_diarrhoea) < dfx.random_draw) &
+                                         (dfx.p_none + dfx.p_dysentery + dfx.p_acute_diarrhoea +
+                                          dfx.p_persistent_diarrhoea) > dfx.random_draw]
 
-        df.loc[idx_none, 'ri_pneumonia_status'] = 'none'
-        df.loc[idx_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
-        df.loc[idx_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
+        df.loc[idx_none, 'ei_diarrhoea_status'] = 'none'
+        df.loc[idx_dysentery, 'ei_diarrhoea_status'] = 'dysentery'
+        df.loc[idx_acute_diarrhoea, 'ei_diarrhoea_status'] = 'acute watery diarrhoea'
+        df.loc[idx_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'persistent diarrhoea'
 
     def initialise_simulation(self, sim):
         """
@@ -787,11 +833,11 @@ class ChildhoodDiarrhoea(Module):
         """
 
         # add the basic event
-        event = RespInfectionEvent(self)
+        event = EntericInfectionEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(weeks=1))
 
         # add an event to log to screen
-        sim.schedule_event(RespInfectionLoggingEvent(self), sim.date + DateOffset(weeks=1))
+        sim.schedule_event(EntericInfectionLoggingEvent(self), sim.date + DateOffset(weeks=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -802,10 +848,10 @@ class ChildhoodDiarrhoea(Module):
 
         df = self.sim.population.props
 
-        df.at[child_id, 'ri_pneumonia_status'] = 'none'
+        df.at[child_id, 'ei_diarrhoea_status'] = 'none'
 
 
-class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
+class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all Respiratory Infection properties for population
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -835,100 +881,137 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for children under 5 with current status 'none'
 
-        pn_current_none_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') & (df.age_years < 5)]
-        pn_current_none_agelt2mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') & (df.age_exact_years < 0.1667)]
-        pn_current_none_age12to23mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') & (df.age_years < 5)]
+        di_current_none_agelt11mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') & (df.age_exact_years < 1)]
+        di_current_none_age12to23mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
-        pn_current_none_age24to59mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_none_handwashing_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_handwashing_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      df.HHhandwashing & (df.age_years < 5)]
-        pn_current_none_HIV_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_HIV_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.has_hiv) & (df.age_years < 5)]
-        pn_current_none_SAM_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_SAM_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      df.malnutrition & (df.age_years < 5)]
-        pn_current_none_excl_breast_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_excl_breast_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      df.exclusive_breastfeeding & (df.age_exact_years <= 0.5)]
-        pn_current_none_cont_breast_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_cont_breast_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      df.continued_breastfeeding & (df.age_exact_years > 0.5) & (df.age_exact_years < 2)]
-        pn_current_none_IAP_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                     df.indoor_air_pollution & (df.age_years < 5)]
-        pn_current_none_wealth1_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_clean_water_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
+                     df.clean_water & (df.age_years < 5)]
+        di_current_none_improved_sanitation_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') & df.improved_sanitation & (df.age_years < 5)]
+        di_current_none_wealth1_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.li_wealth == 1) & (df.age_years < 5)]
-        pn_current_none_wealth2_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_wealth2_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.li_wealth == 2) & (df.age_years < 5)]
-        pn_current_none_wealth4_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_wealth4_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.li_wealth == 4) & (df.age_years < 5)]
-        pn_current_none_wealth5_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
+        di_current_none_wealth5_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.li_wealth == 5) & (df.age_years < 5)]
 
-        eff_prob_ri_pneumonia = pd.Series(m.base_incidence_pneumonia,
+        eff_prob_ei_dysentery = pd.Series(m.base_incidence_dysentery,
                                           index=df.index[
-                                              df.is_alive & (df.ri_pneumonia_status == 'none') & (
+                                              df.is_alive & (df.ei_diarrhoea_status == 'none') & (
                                                   df.age_years < 5)])
 
-        eff_prob_ri_pneumonia.loc[pn_current_none_agelt2mo_idx] *= m.rr_pneumonia_agelt2mo
-        eff_prob_ri_pneumonia.loc[pn_current_none_age12to23mo_idx] *= m.rr_pneumonia_age12to23mo
-        eff_prob_ri_pneumonia.loc[pn_current_none_age24to59mo_idx] *= m.rr_pneumonia_age24to59mo
-        eff_prob_ri_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_pneumonia_HHhandwashing
-        eff_prob_ri_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_pneumonia_HIV
-        eff_prob_ri_pneumonia.loc[pn_current_none_SAM_idx] *= m.rr_pneumonia_SAM
-        eff_prob_ri_pneumonia.loc[pn_current_none_excl_breast_idx] *= m.rr_pneumonia_excl_breast
-        eff_prob_ri_pneumonia.loc[pn_current_none_cont_breast_idx] *= m.rr_pneumonia_cont_breast
-        eff_prob_ri_pneumonia.loc[pn_current_none_IAP_idx] *= m.rr_pneumonia_IAP
-        eff_prob_ri_pneumonia.loc[pn_current_none_wealth1_idx] *= m.rr_pneumonia_wealth1
-        eff_prob_ri_pneumonia.loc[pn_current_none_wealth2_idx] *= m.rr_pneumonia_wealth2
-        eff_prob_ri_pneumonia.loc[pn_current_none_wealth4_idx] *= m.rr_pneumonia_wealth4
-        eff_prob_ri_pneumonia.loc[pn_current_none_wealth5_idx] *= m.rr_pneumonia_wealth5
+        eff_prob_ei_dysentery.loc[di_current_none_agelt11mo_idx] *= m.rr_dysentery_agelt11mo
+        eff_prob_ei_dysentery.loc[di_current_none_age12to23mo_idx] *= m.rr_dysentery_age12to23mo
+        eff_prob_ei_dysentery.loc[di_current_none_age24to59mo_idx] *= m.rr_dysentery_age24to59mo
+        eff_prob_ei_dysentery.loc[di_current_none_handwashing_idx] *= m.rr_dysentery_HHhandwashing
+        eff_prob_ei_dysentery.loc[di_current_none_HIV_idx] *= m.rr_dysentery_HIV
+        eff_prob_ei_dysentery.loc[di_current_none_SAM_idx] *= m.rr_dysentery_SAM
+        eff_prob_ei_dysentery.loc[di_current_none_excl_breast_idx] *= m.rr_dysentery_excl_breast
+        eff_prob_ei_dysentery.loc[di_current_none_cont_breast_idx] *= m.rr_dysentery_cont_breast
+        eff_prob_ei_dysentery.loc[di_current_none_clean_water_idx] *= m.rr_dysentery_clean_water
+        eff_prob_ei_dysentery.loc[di_current_none_improved_sanitation_idx] *= m.rr_dysentery_improved_sanitation
+        eff_prob_ei_dysentery.loc[di_current_none_wealth1_idx] *= m.rr_dysentery_wealth1
+        eff_prob_ei_dysentery.loc[di_current_none_wealth2_idx] *= m.rr_dysentery_wealth2
+        eff_prob_ei_dysentery.loc[di_current_none_wealth4_idx] *= m.rr_dysentery_wealth4
+        eff_prob_ei_dysentery.loc[di_current_none_wealth5_idx] *= m.rr_dysentery_wealth5
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
-                                index=df.index[
-                                    (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'none')])
+        eff_prob_ei_acute_diarrhoea = pd.Series(m.base_incidence_acute_diarrhoea,
+                                          index=df.index[
+                                              df.is_alive & (df.ei_diarrhoea_status == 'none') & (
+                                                  df.age_years < 5)])
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_agelt11mo_idx] *= m.rr_acute_diarrhoea_agelt11mo
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_age12to23mo_idx] *= m.rr_acute_diarrhoea_age12to23mo
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_age24to59mo_idx] *= m.rr_acute_diarrhoea_age24to59mo
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_handwashing_idx] *= m.rr_acute_diarrhoea_HHhandwashing
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_HIV_idx] *= m.rr_acute_diarrhoea_HIV
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_SAM_idx] *= m.rr_acute_diarrhoea_SAM
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_excl_breast_idx] *= m.rr_acute_diarrhoea_excl_breast
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_cont_breast_idx] *= m.rr_acute_diarrhoea_cont_breast
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_clean_water_idx] *= m.rr_acute_diarrhoea_clean_water
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_improved_sanitation_idx] *= m.rr_acute_diarrhoea_improved_sanitation
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_wealth1_idx] *= m.rr_acute_diarrhoea_wealth1
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_wealth2_idx] *= m.rr_acute_diarrhoea_wealth2
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_wealth4_idx] *= m.rr_acute_diarrhoea_wealth4
+        eff_prob_ei_acute_diarrhoea.loc[di_current_none_wealth5_idx] *= m.rr_acute_diarrhoea_wealth5
 
-        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_ri_pneumonia', 'random_draw']
-        idx_incident_pneumonia = dfx.index[dfx.eff_prob_ri_pneumonia > dfx.random_draw]
-        df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
+        eff_prob_ei_persistent_diarrhoea = pd.Series(m.base_incidence_persistent_diarrhoea,
+                                                index=df.index[
+                                                    df.is_alive & (df.ei_diarrhoea_status == 'none') & (
+                                                        df.age_years < 5)])
 
-        eff_prob_ri_severe_pneumonia = pd.Series(m.base_incidence_severe_pneum,
-                                                 index=df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                                                (df.age_years < 5)])
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_agelt2mo_idx] *= m.rr_severe_pneum_agelt2mo
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_age12to23mo_idx] *= m.rr_severe_pneum_age12to23mo
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_age24to59mo_idx] *= m.rr_severe_pneum_age24to59mo
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_handwashing_idx] *= m.rr_severe_pneum_HHhandwashing
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_HIV_idx] *= m.rr_severe_pneum_HIV
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_SAM_idx] *= m.rr_severe_pneum_SAM
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_excl_breast_idx] *= m.rr_severe_pneum_excl_breast
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_cont_breast_idx] *= m.rr_severe_pneum_cont_breast
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_IAP_idx] *= m.rr_severe_pneum_IAP
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth1_idx] *= m.rr_pneumonia_wealth1
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth2_idx] *= m.rr_pneumonia_wealth2
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth4_idx] *= m.rr_pneumonia_wealth4
-        eff_prob_ri_severe_pneumonia.loc[pn_current_none_wealth5_idx] *= m.rr_pneumonia_wealth5
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_agelt11mo_idx] *= m.rr_persistent_diarrhoea_agelt11mo
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_age12to23mo_idx] *= m.rr_persistent_diarrhoea_age12to23mo
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_age24to59mo_idx] *= m.rr_persistent_diarrhoea_age24to59mo
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_handwashing_idx] *= m.rr_persistent_diarrhoea_HHhandwashing
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_HIV_idx] *= m.rr_persistent_diarrhoea_HIV
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_SAM_idx] *= m.rr_persistent_diarrhoea_SAM
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_excl_breast_idx] *= m.rr_persistent_diarrhoea_excl_breast
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_cont_breast_idx] *= m.rr_persistent_diarrhoea_cont_breast
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_clean_water_idx] *= m.rr_persistent_diarrhoea_clean_water
+        eff_prob_ei_persistent_diarrhoea.loc[
+            di_current_none_improved_sanitation_idx] *= m.rr_persistent_diarrhoea_improved_sanitation
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_wealth1_idx] *= m.rr_persistent_diarrhoea_wealth1
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_wealth2_idx] *= m.rr_persistent_diarrhoea_wealth2
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_wealth4_idx] *= m.rr_persistent_diarrhoea_wealth4
+        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_wealth5_idx] *= m.rr_persistent_diarrhoea_wealth5
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_none_idx)),
-                                index=df.index[
-                                    (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'none')])
+        random_draw_01 = pd.Series(rng.random_sample(size=len(di_current_none_idx)),
+                                   index=df.index[
+                                       (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'none')])
 
-        dfx = pd.concat([eff_prob_ri_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_ri_severe_pneumonia', 'random_draw']
-        idx_incident_severe_pneumonia = dfx.index[dfx.eff_prob_ri_severe_pneumonia > dfx.random_draw]
-        df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
+        dfx = pd.concat([eff_prob_ei_dysentery, eff_prob_ei_acute_diarrhoea, eff_prob_ei_persistent_diarrhoea,
+                         random_draw_01], axis=1)
+        dfx.columns = ['eff_prob_ei_dysentery', 'eff_prob_ei_acute_diarrhoea', 'eff_prob_ei_persistent_diarrhoea',
+                       'random_draw_01']
+
+        dfx['di_none'] = 1 - (dfx.eff_prob_ei_dysentery + dfx.eff_prob_ei_acute_diarrhoea +
+                              dfx.eff_prob_ei_persistent_diarrhoea)
+
+        idx_incident_di_none = dfx.index[dfx.di_none > dfx.random_draw_01]
+        idx_incident_dysentery = dfx.index[
+            (dfx.di_none < dfx.random_draw_01) & ((dfx.di_none + dfx.eff_prob_ei_dysentery) > dfx.random_draw_01)]
+        idx_incident_acute_diarrhoea = dfx.index[((dfx.di_none + dfx.eff_prob_ei_dysentery) < dfx.random_draw_01) &
+                                                  (dfx.di_none + dfx.eff_prob_ei_dysentery +
+                                                   dfx.eff_prob_ei_acute_diarrhoea) > dfx.random_draw_01]
+        idx_incident_persistent_diarrhoea = dfx.index[((dfx.di_none + dfx.eff_prob_ei_dysentery +
+                                                   dfx.eff_prob_ei_acute_diarrhoea) < dfx.random_draw_01) &
+                                                      (dfx.di_none + dfx.eff_prob_ei_dysentery +
+                                                       dfx.eff_prob_ei_acute_diarrhoea + dfx.eff_prob_ei_persistent_diarrhoea)
+                                                      > dfx.random_draw_01]
+
+        df.loc[idx_incident_di_none, 'ei_diarrhoea_status'] = 'none'
+        df.loc[idx_incident_dysentery, 'ei_diarrhoea_status'] = 'dysentery'
+        df.loc[idx_incident_acute_diarrhoea, 'ei_diarrhoea_status'] = 'acute watery diarrhoea'
+        df.loc[idx_incident_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'persistent diarrhoea'
 
         # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
 
@@ -1086,7 +1169,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 
-class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class EntericInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
     def __init__(self, module):
