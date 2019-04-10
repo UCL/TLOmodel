@@ -221,7 +221,7 @@ class Demography(Module):
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
 
         df.at[child_id, 'is_married'] = False
-        df.at[child_id, 'contraception'] = 'not using'  # TODO: contraception should be governed by lifestyle module
+        df.at[child_id, 'contraception'] = 'not_using'  # TODO: contraception should be governed by lifestyle module
 
         df.at[child_id, 'age_exact_years'] = 0.0
         df.at[child_id, 'age_years'] = 0
