@@ -130,7 +130,17 @@ class Contraception(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-        raise NotImplementedError
+        df = self.sim.population.props
+
+         # Log the birth:
+        logger.info('%s|on_birth|%s',
+                    self.sim.date,
+                    {
+                        'mother': mother_id,
+                        'child': child_id,
+                        'mother_age': df.at[mother_id, 'age_years'],
+                        'xxx': 0
+                    })
 
 
 class Init1(RegularEvent, PopulationScopeEventMixin):
@@ -151,20 +161,29 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
-        females = df.loc[subset, ['contraception', 'age_years']]
+        #females = df.loc[subset, ['contraception', 'age_years']]
 
         # load the contraception initiation 1 rates (imported datasheet from excel workbook)
         contraception_initiation1 = self.module.parameters['contraception_initiation1']
 
         # and merge the monthly initiation 1 rates into the population dataframe
-        df_init1 = df.append(contraception_initiation1)
+        #probs = contraception_initiation1
+        #df['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+        #   'periodic_abstinence','withdrawal', 'other_traditional'] = contraception_initiation1
+        df = pd.concat([df, contraception_initiation1], axis=1)
+        df.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                 'periodic_abstinence','withdrawal', 'other_traditional']] = df.loc[0, ['pill', 'IUD', 'injections',
+                                                                                        'implant', 'male_condom',
+                                                                                        'female_sterilization',
+                                                                                        'other_modern',
+                                                                                        'periodic_abstinence',
+                                                                                        'withdrawal',
+                                                                                        'other_traditional']].tolist()
 
-        # randomly assign probabilities of initiation of each method from not_using according to monthly rates from irate1
-        probs = contraception_initiation1
-        #probs = df_init1.loc[females, ['pill', 'IUD', 'injections', 'implant', 'male_condom',
-        #                                         'female_sterilization', 'other_modern', 'periodic_abstinence',
-        #                                         'withdrawal', 'other_traditional']]
-        # 3. apply probabilities of each contraception type to sim population
+        probs = df.loc[subset, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                   'periodic_abstinence','withdrawal', 'other_traditional']]
+
+        # 3. randomly assign probabilities of initiation of each method from not_using according to monthly rates from irate1
         for woman in probs.index:
             her_p=np.asarray(probs.loc[woman,:])
             her_op=np.asarray(probs.columns)
@@ -172,8 +191,14 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
             her_method=self.module.rng.choice(her_op,p=her_p/her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
 
             df.loc[woman,'contraception']=her_method
-            hello
 
+            # Log the contraception use:
+            logger.info('%s|on_birth|%s',
+                        self.sim.date,
+                        {
+                        'woman_age': df.at[woman, 'age_years'],
+                        'contraception': df.at[woman, 'contraception'],
+                        })
 
 class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
