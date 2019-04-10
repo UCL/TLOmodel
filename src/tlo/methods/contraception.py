@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
 from tlo.methods.demography import Demography
 
 logger = logging.getLogger(__name__)
@@ -160,20 +160,18 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
-        #females = df.loc[subset, ['contraception', 'age_years']]
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (df.contraception == 'not_using')
+        females = df.loc[subset, ['contraception', 'age_years']]
 
         # load the contraception initiation 1 rates (imported datasheet from excel workbook)
         contraception_initiation1 = self.module.parameters['contraception_initiation1']
 
-        # and merge the monthly initiation 1 rates into the population dataframe
-        #probs = contraception_initiation1
-        #df['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-        #   'periodic_abstinence','withdrawal', 'other_traditional'] = contraception_initiation1
-        df = pd.concat([df, contraception_initiation1], axis=1)
+        # and merge the monthly initiation 1 rates into the subset of females that are subject to them
+        df = pd.concat([females, contraception_initiation1], axis=1)
         df.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                 'periodic_abstinence','withdrawal', 'other_traditional']] = df.loc[0, ['pill', 'IUD', 'injections',
-                                                                                        'implant', 'male_condom',
+                 'periodic_abstinence','withdrawal', 'other_traditional']] = df.loc[0, ['pill', 'IUD',
+                                                                                        'injections','implant',
+                                                                                        'male_condom',
                                                                                         'female_sterilization',
                                                                                         'other_modern',
                                                                                         'periodic_abstinence',
@@ -188,7 +186,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
             her_p=np.asarray(probs.loc[woman,:])
             her_op=np.asarray(probs.columns)
 
-            her_method=self.module.rng.choice(her_op,p=her_p/her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
+            her_method=self.module.rng.choice(her_op,p=her_p)  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
 
             df.loc[woman,'contraception']=her_method
 
@@ -200,7 +198,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
                         'contraception': df.at[woman, 'contraception'],
                         })
 
-class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):
+class ContraceptionEvent(RegularEvent, IndividualScopeEventMixin):
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
