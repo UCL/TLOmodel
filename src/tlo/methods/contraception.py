@@ -158,47 +158,42 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
         logger.debug('Checking to see if anyone should start using contraception')
 
         df = population.props  # get the population dataframe
+        m = self.module
+        rng = self.module.rng
 
-        # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (df.contraception == 'not_using')
-        females = df.loc[subset, ['contraception', 'age_years']]
+        # get the indices of the women from the population with the relevant characterisitcs
+        not_using_idx = df.index[(df.sex == 'F') &
+                                 df.is_alive &
+                                 df.age_years.between(self.age_low, self.age_high) &
+                                 ~df.is_pregnant &
+                                 (df.contraception == 'not_using')]
 
-        # load the contraception initiation 1 rates (imported datasheet from excel workbook)
-        contraception_initiation1 = self.module.parameters['contraception_initiation1']
+        # prepare the probabilities
+        c_worksheet = m.parameters['contraception_initiation1']
+        c_probs = c_worksheet.loc[0].values.tolist()
+        c_names = c_worksheet.columns.tolist()
 
-        # and merge the monthly initiation 1 rates into the subset of females that are subject to them
-        df = pd.concat([females, contraception_initiation1], axis=1)
-        df.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                 'periodic_abstinence','withdrawal', 'other_traditional']] = df.loc[0, ['pill', 'IUD',
-                                                                                        'injections','implant',
-                                                                                        'male_condom',
-                                                                                        'female_sterilization',
-                                                                                        'other_modern',
-                                                                                        'periodic_abstinence',
-                                                                                        'withdrawal',
-                                                                                        'other_traditional']].tolist()
+        # sample contraceptive method for everyone not using
+        # and put in a series which has index of all currently not using
+        sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(not_using_idx), replace=True),
+                                   index=not_using_idx)
 
-        probs = df.loc[subset, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                   'periodic_abstinence','withdrawal', 'other_traditional']]
+        # only update those starting on contraception
+        now_using_idx = not_using_idx[sampled_method != 'not_using']
+        df.loc[now_using_idx, 'contraception'] = sampled_method[now_using_idx]
 
-        # 3. randomly assign probabilities of initiation of each method from not_using according to monthly rates from irate1
-        for woman in probs.index:
-            her_p=np.asarray(probs.loc[woman,:])
-            her_op=np.asarray(probs.columns)
+        # output some logging if any start contraception
+        if len(now_using_idx):
+            for woman_id in now_using_idx:
+                logger.info('%s|start_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_age': df.at[woman_id, 'age_years'],
+                                'contraception': df.at[woman_id, 'contraception']
+                            })
 
-            her_method=self.module.rng.choice(her_op,p=her_p)  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
 
-            df.loc[woman,'contraception']=her_method
-
-            # Log the contraception use:
-            logger.info('%s|on_birth|%s',
-                        self.sim.date,
-                        {
-                        'woman_age': df.at[woman, 'age_years'],
-                        'contraception': df.at[woman, 'contraception'],
-                        })
-
-class ContraceptionEvent(RegularEvent, IndividualScopeEventMixin):
+class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
