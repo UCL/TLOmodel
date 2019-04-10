@@ -1,133 +1,69 @@
-,District,Facility_Level,Facility_Type,Region,Facility_ID,Facility_Name
-0,Chitipa,0,Community Health Station,Northern,0,Community Health Station_Chitipa
-1,Chitipa,1,Health Centre,Northern,1,Health Centre_Chitipa
-2,Chitipa,2,Non-District Hospital,Northern,2,Non-District Hospital_Chitipa
-3,Chitipa,3,District Hospital,Northern,3,District Hospital_Chitipa
-4,Karonga,0,Community Health Station,Northern,4,Community Health Station_Karonga
-5,Karonga,1,Health Centre,Northern,5,Health Centre_Karonga
-6,Karonga,2,Non-District Hospital,Northern,6,Non-District Hospital_Karonga
-7,Karonga,3,District Hospital,Northern,7,District Hospital_Karonga
-8,Nkhata Bay,0,Community Health Station,Northern,8,Community Health Station_Nkhata Bay
-9,Nkhata Bay,1,Health Centre,Northern,9,Health Centre_Nkhata Bay
-10,Nkhata Bay,2,Non-District Hospital,Northern,10,Non-District Hospital_Nkhata Bay
-11,Nkhata Bay,3,District Hospital,Northern,11,District Hospital_Nkhata Bay
-12,Rumphi,0,Community Health Station,Northern,12,Community Health Station_Rumphi
-13,Rumphi,1,Health Centre,Northern,13,Health Centre_Rumphi
-14,Rumphi,2,Non-District Hospital,Northern,14,Non-District Hospital_Rumphi
-15,Rumphi,3,District Hospital,Northern,15,District Hospital_Rumphi
-16,Mzimba,0,Community Health Station,Northern,16,Community Health Station_Mzimba
-17,Mzimba,1,Health Centre,Northern,17,Health Centre_Mzimba
-18,Mzimba,2,Non-District Hospital,Northern,18,Non-District Hospital_Mzimba
-19,Mzimba,3,District Hospital,Northern,19,District Hospital_Mzimba
-20,Likoma,0,Community Health Station,Northern,20,Community Health Station_Likoma
-21,Likoma,1,Health Centre,Northern,21,Health Centre_Likoma
-22,Likoma,2,Non-District Hospital,Northern,22,Non-District Hospital_Likoma
-23,Likoma,3,District Hospital,Northern,23,District Hospital_Likoma
-24,Mzuzu City,0,Community Health Station,Northern,24,Community Health Station_Mzuzu City
-25,Mzuzu City,1,Health Centre,Northern,25,Health Centre_Mzuzu City
-26,Mzuzu City,2,Non-District Hospital,Northern,26,Non-District Hospital_Mzuzu City
-27,Mzuzu City,3,District Hospital,Northern,27,District Hospital_Mzuzu City
-28,Kasungu,0,Community Health Station,Central,28,Community Health Station_Kasungu
-29,Kasungu,1,Health Centre,Central,29,Health Centre_Kasungu
-30,Kasungu,2,Non-District Hospital,Central,30,Non-District Hospital_Kasungu
-31,Kasungu,3,District Hospital,Central,31,District Hospital_Kasungu
-32,Nkhotakota,0,Community Health Station,Central,32,Community Health Station_Nkhotakota
-33,Nkhotakota,1,Health Centre,Central,33,Health Centre_Nkhotakota
-34,Nkhotakota,2,Non-District Hospital,Central,34,Non-District Hospital_Nkhotakota
-35,Nkhotakota,3,District Hospital,Central,35,District Hospital_Nkhotakota
-36,Ntchisi,0,Community Health Station,Central,36,Community Health Station_Ntchisi
-37,Ntchisi,1,Health Centre,Central,37,Health Centre_Ntchisi
-38,Ntchisi,2,Non-District Hospital,Central,38,Non-District Hospital_Ntchisi
-39,Ntchisi,3,District Hospital,Central,39,District Hospital_Ntchisi
-40,Dowa,0,Community Health Station,Central,40,Community Health Station_Dowa
-41,Dowa,1,Health Centre,Central,41,Health Centre_Dowa
-42,Dowa,2,Non-District Hospital,Central,42,Non-District Hospital_Dowa
-43,Dowa,3,District Hospital,Central,43,District Hospital_Dowa
-44,Salima,0,Community Health Station,Central,44,Community Health Station_Salima
-45,Salima,1,Health Centre,Central,45,Health Centre_Salima
-46,Salima,2,Non-District Hospital,Central,46,Non-District Hospital_Salima
-47,Salima,3,District Hospital,Central,47,District Hospital_Salima
-48,Lilongwe,0,Community Health Station,Central,48,Community Health Station_Lilongwe
-49,Lilongwe,1,Health Centre,Central,49,Health Centre_Lilongwe
-50,Lilongwe,2,Non-District Hospital,Central,50,Non-District Hospital_Lilongwe
-51,Lilongwe,3,District Hospital,Central,51,District Hospital_Lilongwe
-52,Mchinji,0,Community Health Station,Central,52,Community Health Station_Mchinji
-53,Mchinji,1,Health Centre,Central,53,Health Centre_Mchinji
-54,Mchinji,2,Non-District Hospital,Central,54,Non-District Hospital_Mchinji
-55,Mchinji,3,District Hospital,Central,55,District Hospital_Mchinji
-56,Dedza,0,Community Health Station,Central,56,Community Health Station_Dedza
-57,Dedza,1,Health Centre,Central,57,Health Centre_Dedza
-58,Dedza,2,Non-District Hospital,Central,58,Non-District Hospital_Dedza
-59,Dedza,3,District Hospital,Central,59,District Hospital_Dedza
-60,Ntcheu,0,Community Health Station,Central,60,Community Health Station_Ntcheu
-61,Ntcheu,1,Health Centre,Central,61,Health Centre_Ntcheu
-62,Ntcheu,2,Non-District Hospital,Central,62,Non-District Hospital_Ntcheu
-63,Ntcheu,3,District Hospital,Central,63,District Hospital_Ntcheu
-64,Lilongwe City,0,Community Health Station,Central,64,Community Health Station_Lilongwe City
-65,Lilongwe City,1,Health Centre,Central,65,Health Centre_Lilongwe City
-66,Lilongwe City,2,Non-District Hospital,Central,66,Non-District Hospital_Lilongwe City
-67,Lilongwe City,3,District Hospital,Central,67,District Hospital_Lilongwe City
-68,Mangochi,0,Community Health Station,Southern,68,Community Health Station_Mangochi
-69,Mangochi,1,Health Centre,Southern,69,Health Centre_Mangochi
-70,Mangochi,2,Non-District Hospital,Southern,70,Non-District Hospital_Mangochi
-71,Mangochi,3,District Hospital,Southern,71,District Hospital_Mangochi
-72,Machinga,0,Community Health Station,Southern,72,Community Health Station_Machinga
-73,Machinga,1,Health Centre,Southern,73,Health Centre_Machinga
-74,Machinga,2,Non-District Hospital,Southern,74,Non-District Hospital_Machinga
-75,Machinga,3,District Hospital,Southern,75,District Hospital_Machinga
-76,Zomba,0,Community Health Station,Southern,76,Community Health Station_Zomba
-77,Zomba,1,Health Centre,Southern,77,Health Centre_Zomba
-78,Zomba,2,Non-District Hospital,Southern,78,Non-District Hospital_Zomba
-79,Zomba,3,District Hospital,Southern,79,District Hospital_Zomba
-80,Chiradzulu,0,Community Health Station,Southern,80,Community Health Station_Chiradzulu
-81,Chiradzulu,1,Health Centre,Southern,81,Health Centre_Chiradzulu
-82,Chiradzulu,2,Non-District Hospital,Southern,82,Non-District Hospital_Chiradzulu
-83,Chiradzulu,3,District Hospital,Southern,83,District Hospital_Chiradzulu
-84,Blantyre,0,Community Health Station,Southern,84,Community Health Station_Blantyre
-85,Blantyre,1,Health Centre,Southern,85,Health Centre_Blantyre
-86,Blantyre,2,Non-District Hospital,Southern,86,Non-District Hospital_Blantyre
-87,Blantyre,3,District Hospital,Southern,87,District Hospital_Blantyre
-88,Mwanza,0,Community Health Station,Southern,88,Community Health Station_Mwanza
-89,Mwanza,1,Health Centre,Southern,89,Health Centre_Mwanza
-90,Mwanza,2,Non-District Hospital,Southern,90,Non-District Hospital_Mwanza
-91,Mwanza,3,District Hospital,Southern,91,District Hospital_Mwanza
-92,Thyolo,0,Community Health Station,Southern,92,Community Health Station_Thyolo
-93,Thyolo,1,Health Centre,Southern,93,Health Centre_Thyolo
-94,Thyolo,2,Non-District Hospital,Southern,94,Non-District Hospital_Thyolo
-95,Thyolo,3,District Hospital,Southern,95,District Hospital_Thyolo
-96,Mulanje,0,Community Health Station,Southern,96,Community Health Station_Mulanje
-97,Mulanje,1,Health Centre,Southern,97,Health Centre_Mulanje
-98,Mulanje,2,Non-District Hospital,Southern,98,Non-District Hospital_Mulanje
-99,Mulanje,3,District Hospital,Southern,99,District Hospital_Mulanje
-100,Phalombe,0,Community Health Station,Southern,100,Community Health Station_Phalombe
-101,Phalombe,1,Health Centre,Southern,101,Health Centre_Phalombe
-102,Phalombe,2,Non-District Hospital,Southern,102,Non-District Hospital_Phalombe
-103,Phalombe,3,District Hospital,Southern,103,District Hospital_Phalombe
-104,Chikwawa,0,Community Health Station,Southern,104,Community Health Station_Chikwawa
-105,Chikwawa,1,Health Centre,Southern,105,Health Centre_Chikwawa
-106,Chikwawa,2,Non-District Hospital,Southern,106,Non-District Hospital_Chikwawa
-107,Chikwawa,3,District Hospital,Southern,107,District Hospital_Chikwawa
-108,Nsanje,0,Community Health Station,Southern,108,Community Health Station_Nsanje
-109,Nsanje,1,Health Centre,Southern,109,Health Centre_Nsanje
-110,Nsanje,2,Non-District Hospital,Southern,110,Non-District Hospital_Nsanje
-111,Nsanje,3,District Hospital,Southern,111,District Hospital_Nsanje
-112,Balaka,0,Community Health Station,Southern,112,Community Health Station_Balaka
-113,Balaka,1,Health Centre,Southern,113,Health Centre_Balaka
-114,Balaka,2,Non-District Hospital,Southern,114,Non-District Hospital_Balaka
-115,Balaka,3,District Hospital,Southern,115,District Hospital_Balaka
-116,Neno,0,Community Health Station,Southern,116,Community Health Station_Neno
-117,Neno,1,Health Centre,Southern,117,Health Centre_Neno
-118,Neno,2,Non-District Hospital,Southern,118,Non-District Hospital_Neno
-119,Neno,3,District Hospital,Southern,119,District Hospital_Neno
-120,Zomba City,0,Community Health Station,Southern,120,Community Health Station_Zomba City
-121,Zomba City,1,Health Centre,Southern,121,Health Centre_Zomba City
-122,Zomba City,2,Non-District Hospital,Southern,122,Non-District Hospital_Zomba City
-123,Zomba City,3,District Hospital,Southern,123,District Hospital_Zomba City
-124,Blantyre City,0,Community Health Station,Southern,124,Community Health Station_Blantyre City
-125,Blantyre City,1,Health Centre,Southern,125,Health Centre_Blantyre City
-126,Blantyre City,2,Non-District Hospital,Southern,126,Non-District Hospital_Blantyre City
-127,Blantyre City,3,District Hospital,Southern,127,District Hospital_Blantyre City
-128,,4,Referral Hospital,Northern,128,Referral Hospital_Northern
-129,,4,Referral Hospital,Central,129,Referral Hospital_Central
-130,,4,Referral Hospital,Southern,130,Referral Hospital_Southern
-131,,5,National Hospital,,131,National Hospital
+,District,Facility_Level,Region,Facility_ID,Facility_Name
+0,Chitipa,0,Northern,0,Facility_Level_0_Chitipa
+1,Chitipa,1,Northern,1,Facility_Level_1_Chitipa
+2,Karonga,0,Northern,2,Facility_Level_0_Karonga
+3,Karonga,1,Northern,3,Facility_Level_1_Karonga
+4,Nkhata Bay,0,Northern,4,Facility_Level_0_Nkhata Bay
+5,Nkhata Bay,1,Northern,5,Facility_Level_1_Nkhata Bay
+6,Rumphi,0,Northern,6,Facility_Level_0_Rumphi
+7,Rumphi,1,Northern,7,Facility_Level_1_Rumphi
+8,Mzimba,0,Northern,8,Facility_Level_0_Mzimba
+9,Mzimba,1,Northern,9,Facility_Level_1_Mzimba
+10,Likoma,0,Northern,10,Facility_Level_0_Likoma
+11,Likoma,1,Northern,11,Facility_Level_1_Likoma
+12,Mzuzu City,0,Northern,12,Facility_Level_0_Mzuzu City
+13,Mzuzu City,1,Northern,13,Facility_Level_1_Mzuzu City
+14,Kasungu,0,Central,14,Facility_Level_0_Kasungu
+15,Kasungu,1,Central,15,Facility_Level_1_Kasungu
+16,Nkhotakota,0,Central,16,Facility_Level_0_Nkhotakota
+17,Nkhotakota,1,Central,17,Facility_Level_1_Nkhotakota
+18,Ntchisi,0,Central,18,Facility_Level_0_Ntchisi
+19,Ntchisi,1,Central,19,Facility_Level_1_Ntchisi
+20,Dowa,0,Central,20,Facility_Level_0_Dowa
+21,Dowa,1,Central,21,Facility_Level_1_Dowa
+22,Salima,0,Central,22,Facility_Level_0_Salima
+23,Salima,1,Central,23,Facility_Level_1_Salima
+24,Lilongwe,0,Central,24,Facility_Level_0_Lilongwe
+25,Lilongwe,1,Central,25,Facility_Level_1_Lilongwe
+26,Mchinji,0,Central,26,Facility_Level_0_Mchinji
+27,Mchinji,1,Central,27,Facility_Level_1_Mchinji
+28,Dedza,0,Central,28,Facility_Level_0_Dedza
+29,Dedza,1,Central,29,Facility_Level_1_Dedza
+30,Ntcheu,0,Central,30,Facility_Level_0_Ntcheu
+31,Ntcheu,1,Central,31,Facility_Level_1_Ntcheu
+32,Lilongwe City,0,Central,32,Facility_Level_0_Lilongwe City
+33,Lilongwe City,1,Central,33,Facility_Level_1_Lilongwe City
+34,Mangochi,0,Southern,34,Facility_Level_0_Mangochi
+35,Mangochi,1,Southern,35,Facility_Level_1_Mangochi
+36,Machinga,0,Southern,36,Facility_Level_0_Machinga
+37,Machinga,1,Southern,37,Facility_Level_1_Machinga
+38,Zomba,0,Southern,38,Facility_Level_0_Zomba
+39,Zomba,1,Southern,39,Facility_Level_1_Zomba
+40,Chiradzulu,0,Southern,40,Facility_Level_0_Chiradzulu
+41,Chiradzulu,1,Southern,41,Facility_Level_1_Chiradzulu
+42,Blantyre,0,Southern,42,Facility_Level_0_Blantyre
+43,Blantyre,1,Southern,43,Facility_Level_1_Blantyre
+44,Mwanza,0,Southern,44,Facility_Level_0_Mwanza
+45,Mwanza,1,Southern,45,Facility_Level_1_Mwanza
+46,Thyolo,0,Southern,46,Facility_Level_0_Thyolo
+47,Thyolo,1,Southern,47,Facility_Level_1_Thyolo
+48,Mulanje,0,Southern,48,Facility_Level_0_Mulanje
+49,Mulanje,1,Southern,49,Facility_Level_1_Mulanje
+50,Phalombe,0,Southern,50,Facility_Level_0_Phalombe
+51,Phalombe,1,Southern,51,Facility_Level_1_Phalombe
+52,Chikwawa,0,Southern,52,Facility_Level_0_Chikwawa
+53,Chikwawa,1,Southern,53,Facility_Level_1_Chikwawa
+54,Nsanje,0,Southern,54,Facility_Level_0_Nsanje
+55,Nsanje,1,Southern,55,Facility_Level_1_Nsanje
+56,Balaka,0,Southern,56,Facility_Level_0_Balaka
+57,Balaka,1,Southern,57,Facility_Level_1_Balaka
+58,Neno,0,Southern,58,Facility_Level_0_Neno
+59,Neno,1,Southern,59,Facility_Level_1_Neno
+60,Zomba City,0,Southern,60,Facility_Level_0_Zomba City
+61,Zomba City,1,Southern,61,Facility_Level_1_Zomba City
+62,Blantyre City,0,Southern,62,Facility_Level_0_Blantyre City
+63,Blantyre City,1,Southern,63,Facility_Level_1_Blantyre City
+64,,2,Northern,64,Referral Hospital_Northern
+65,,2,Central,65,Referral Hospital_Central
+66,,2,Southern,66,Referral Hospital_Southern
+67,,3,,67,National Hospital

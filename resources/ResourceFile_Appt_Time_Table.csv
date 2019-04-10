@@ -1,692 +1,510 @@
-,Officer_Type_Code,Appt_Type_Code,Facility_Type,Time_Taken,Officer_Type,Facility_Level
-57,M01,InpatientDays,District Hospital,1.25,Medical Officer / Specialist,3
-61,M01,CompDelivery,District Hospital,3.0,Medical Officer / Specialist,3
-62,M01,Csection,District Hospital,9.0,Medical Officer / Specialist,3
-64,M01,ANCSubsequent,District Hospital,0.25,Medical Officer / Specialist,3
-65,M01,U5Malnutr,District Hospital,1.0,Medical Officer / Specialist,3
-66,M01,AccidentsandEmerg,District Hospital,6.0,Medical Officer / Specialist,3
-67,M01,MajorSurg,District Hospital,172.0,Medical Officer / Specialist,3
-68,M01,MinorSurg,District Hospital,60.0,Medical Officer / Specialist,3
-76,M01,InpatientDays,Referral Hospital,5.0,Medical Officer / Specialist,4
-77,M01,IPAdmission,Referral Hospital,7.5,Medical Officer / Specialist,4
-78,M01,Under5OPD,Referral Hospital,5.0,Medical Officer / Specialist,4
-79,M01,Over5OPD,Referral Hospital,3.5,Medical Officer / Specialist,4
-80,M01,CompDelivery,Referral Hospital,10.5,Medical Officer / Specialist,4
-81,M01,Csection,Referral Hospital,22.5,Medical Officer / Specialist,4
-82,M01,AntenatalFirst,Referral Hospital,1.5,Medical Officer / Specialist,4
-83,M01,ANCSubsequent,Referral Hospital,0.5,Medical Officer / Specialist,4
-84,M01,U5Malnutr,Referral Hospital,1.0,Medical Officer / Specialist,4
-85,M01,AccidentsandEmerg,Referral Hospital,12.0,Medical Officer / Specialist,4
-86,M01,MajorSurg,Referral Hospital,172.0,Medical Officer / Specialist,4
-87,M01,MinorSurg,Referral Hospital,60.0,Medical Officer / Specialist,4
-88,M01,TBNew,Referral Hospital,4.5,Medical Officer / Specialist,4
-89,M01,TBFollowUp,Referral Hospital,2.5,Medical Officer / Specialist,4
-90,M01,MaleCirc,Referral Hospital,10.0,Medical Officer / Specialist,4
-91,M01,NewAdult,Referral Hospital,6.0,Medical Officer / Specialist,4
-92,M01,EstMedCom,Referral Hospital,4.5,Medical Officer / Specialist,4
-93,M01,PMTCT,Referral Hospital,3.0,Medical Officer / Specialist,4
-94,M01,Peds,Referral Hospital,3.0,Medical Officer / Specialist,4
-95,M01,InpatientDays,National Hospital,5.0,Medical Officer / Specialist,5
-96,M01,IPAdmission,National Hospital,7.5,Medical Officer / Specialist,5
-97,M01,Under5OPD,National Hospital,5.0,Medical Officer / Specialist,5
-98,M01,Over5OPD,National Hospital,3.5,Medical Officer / Specialist,5
-99,M01,CompDelivery,National Hospital,10.5,Medical Officer / Specialist,5
-100,M01,Csection,National Hospital,22.5,Medical Officer / Specialist,5
-101,M01,AntenatalFirst,National Hospital,1.5,Medical Officer / Specialist,5
-102,M01,ANCSubsequent,National Hospital,0.5,Medical Officer / Specialist,5
-103,M01,U5Malnutr,National Hospital,1.0,Medical Officer / Specialist,5
-104,M01,AccidentsandEmerg,National Hospital,12.0,Medical Officer / Specialist,5
-105,M01,MajorSurg,National Hospital,172.0,Medical Officer / Specialist,5
-106,M01,MinorSurg,National Hospital,60.0,Medical Officer / Specialist,5
-107,M01,TBNew,National Hospital,4.5,Medical Officer / Specialist,5
-108,M01,TBFollowUp,National Hospital,2.5,Medical Officer / Specialist,5
-109,M01,MaleCirc,National Hospital,10.0,Medical Officer / Specialist,5
-110,M01,NewAdult,National Hospital,6.0,Medical Officer / Specialist,5
-111,M01,EstMedCom,National Hospital,4.5,Medical Officer / Specialist,5
-112,M01,PMTCT,National Hospital,3.0,Medical Officer / Specialist,5
-113,M01,Peds,National Hospital,3.0,Medical Officer / Specialist,5
-158,M02,InpatientDays,Non-District Hospital,7.0,Clinical Officer / Technician,2
-159,M02,IPAdmission,Non-District Hospital,10.0,Clinical Officer / Technician,2
-160,M02,Under5OPD,Non-District Hospital,6.0,Clinical Officer / Technician,2
-161,M02,Over5OPD,Non-District Hospital,6.0,Clinical Officer / Technician,2
-162,M02,CompDelivery,Non-District Hospital,30.0,Clinical Officer / Technician,2
-163,M02,Csection,Non-District Hospital,45.0,Clinical Officer / Technician,2
-164,M02,AntenatalFirst,Non-District Hospital,1.5,Clinical Officer / Technician,2
-165,M02,ANCSubsequent,Non-District Hospital,0.5,Clinical Officer / Technician,2
-166,M02,STI,Non-District Hospital,2.0,Clinical Officer / Technician,2
-167,M02,GrowthMon,Non-District Hospital,1.0,Clinical Officer / Technician,2
-168,M02,U5Malnutr,Non-District Hospital,1.6,Clinical Officer / Technician,2
-169,M02,AccidentsandEmerg,Non-District Hospital,6.0,Clinical Officer / Technician,2
-170,M02,MajorSurg,Non-District Hospital,400.0,Clinical Officer / Technician,2
-171,M02,MinorSurg,Non-District Hospital,200.0,Clinical Officer / Technician,2
-172,M02,TBNew,Non-District Hospital,7.5,Clinical Officer / Technician,2
-173,M02,TBFollowUp,Non-District Hospital,2.5,Clinical Officer / Technician,2
-174,M02,MaleCirc,Non-District Hospital,20.0,Clinical Officer / Technician,2
-175,M02,NewAdult,Non-District Hospital,6.0,Clinical Officer / Technician,2
-176,M02,EstMedCom,Non-District Hospital,4.5,Clinical Officer / Technician,2
-177,M02,EstNonCom,Non-District Hospital,2.5,Clinical Officer / Technician,2
-178,M02,PMTCT,Non-District Hospital,3.0,Clinical Officer / Technician,2
-179,M02,Peds,Non-District Hospital,5.25,Clinical Officer / Technician,2
-180,M02,InpatientDays,District Hospital,7.0,Clinical Officer / Technician,3
-181,M02,IPAdmission,District Hospital,10.0,Clinical Officer / Technician,3
-182,M02,Under5OPD,District Hospital,6.0,Clinical Officer / Technician,3
-183,M02,Over5OPD,District Hospital,6.0,Clinical Officer / Technician,3
-184,M02,CompDelivery,District Hospital,21.0,Clinical Officer / Technician,3
-185,M02,Csection,District Hospital,36.0,Clinical Officer / Technician,3
-186,M02,AntenatalFirst,District Hospital,3.0,Clinical Officer / Technician,3
-187,M02,ANCSubsequent,District Hospital,0.75,Clinical Officer / Technician,3
-188,M02,STI,District Hospital,2.0,Clinical Officer / Technician,3
-189,M02,GrowthMon,District Hospital,1.0,Clinical Officer / Technician,3
-190,M02,U5Malnutr,District Hospital,1.6,Clinical Officer / Technician,3
-191,M02,AccidentsandEmerg,District Hospital,24.0,Clinical Officer / Technician,3
-192,M02,MajorSurg,District Hospital,190.0,Clinical Officer / Technician,3
-193,M02,MinorSurg,District Hospital,80.0,Clinical Officer / Technician,3
-194,M02,TBNew,District Hospital,7.5,Clinical Officer / Technician,3
-195,M02,TBFollowUp,District Hospital,2.5,Clinical Officer / Technician,3
-196,M02,MaleCirc,District Hospital,20.0,Clinical Officer / Technician,3
-197,M02,NewAdult,District Hospital,6.0,Clinical Officer / Technician,3
-198,M02,EstMedCom,District Hospital,4.5,Clinical Officer / Technician,3
-199,M02,EstNonCom,District Hospital,2.5,Clinical Officer / Technician,3
-200,M02,PMTCT,District Hospital,3.0,Clinical Officer / Technician,3
-201,M02,Peds,District Hospital,12.0,Clinical Officer / Technician,3
-202,M02,InpatientDays,Referral Hospital,7.0,Clinical Officer / Technician,4
-203,M02,IPAdmission,Referral Hospital,10.0,Clinical Officer / Technician,4
-204,M02,Under5OPD,Referral Hospital,6.0,Clinical Officer / Technician,4
-205,M02,Over5OPD,Referral Hospital,6.0,Clinical Officer / Technician,4
-206,M02,CompDelivery,Referral Hospital,19.5,Clinical Officer / Technician,4
-207,M02,Csection,Referral Hospital,22.5,Clinical Officer / Technician,4
-208,M02,AntenatalFirst,Referral Hospital,1.5,Clinical Officer / Technician,4
-209,M02,ANCSubsequent,Referral Hospital,0.5,Clinical Officer / Technician,4
-210,M02,STI,Referral Hospital,5.0,Clinical Officer / Technician,4
-212,M02,U5Malnutr,Referral Hospital,1.6,Clinical Officer / Technician,4
-213,M02,AccidentsandEmerg,Referral Hospital,24.0,Clinical Officer / Technician,4
-214,M02,MajorSurg,Referral Hospital,190.0,Clinical Officer / Technician,4
-215,M02,MinorSurg,Referral Hospital,80.0,Clinical Officer / Technician,4
-216,M02,TBNew,Referral Hospital,4.5,Clinical Officer / Technician,4
-217,M02,TBFollowUp,Referral Hospital,2.5,Clinical Officer / Technician,4
-218,M02,MaleCirc,Referral Hospital,10.0,Clinical Officer / Technician,4
-219,M02,NewAdult,Referral Hospital,6.0,Clinical Officer / Technician,4
-220,M02,EstMedCom,Referral Hospital,7.5,Clinical Officer / Technician,4
-221,M02,EstNonCom,Referral Hospital,7.0,Clinical Officer / Technician,4
-222,M02,PMTCT,Referral Hospital,3.0,Clinical Officer / Technician,4
-223,M02,Peds,Referral Hospital,12.0,Clinical Officer / Technician,4
-224,M02,InpatientDays,National Hospital,7.0,Clinical Officer / Technician,5
-225,M02,IPAdmission,National Hospital,10.0,Clinical Officer / Technician,5
-226,M02,Under5OPD,National Hospital,6.0,Clinical Officer / Technician,5
-227,M02,Over5OPD,National Hospital,6.0,Clinical Officer / Technician,5
-228,M02,CompDelivery,National Hospital,19.5,Clinical Officer / Technician,5
-229,M02,Csection,National Hospital,22.5,Clinical Officer / Technician,5
-230,M02,AntenatalFirst,National Hospital,1.5,Clinical Officer / Technician,5
-231,M02,ANCSubsequent,National Hospital,0.5,Clinical Officer / Technician,5
-232,M02,STI,National Hospital,5.0,Clinical Officer / Technician,5
-234,M02,U5Malnutr,National Hospital,1.6,Clinical Officer / Technician,5
-235,M02,AccidentsandEmerg,National Hospital,24.0,Clinical Officer / Technician,5
-236,M02,MajorSurg,National Hospital,190.0,Clinical Officer / Technician,5
-237,M02,MinorSurg,National Hospital,80.0,Clinical Officer / Technician,5
-238,M02,TBNew,National Hospital,4.5,Clinical Officer / Technician,5
-239,M02,TBFollowUp,National Hospital,2.5,Clinical Officer / Technician,5
-240,M02,MaleCirc,National Hospital,10.0,Clinical Officer / Technician,5
-241,M02,NewAdult,National Hospital,6.0,Clinical Officer / Technician,5
-242,M02,EstMedCom,National Hospital,7.5,Clinical Officer / Technician,5
-243,M02,EstNonCom,National Hospital,7.0,Clinical Officer / Technician,5
-244,M02,PMTCT,National Hospital,3.0,Clinical Officer / Technician,5
-245,M02,Peds,National Hospital,12.0,Clinical Officer / Technician,5
-281,N01,TBNew,Health Centre,5.0,Nurse Officer,1
-301,N01,MinorSurg,Non-District Hospital,100.0,Nurse Officer,2
-302,N01,TBNew,Non-District Hospital,10.0,Nurse Officer,2
-303,N01,TBFollowUp,Non-District Hospital,0.9,Nurse Officer,2
-309,N01,InpatientDays,District Hospital,9.0,Nurse Officer,3
-310,N01,IPAdmission,District Hospital,6.0,Nurse Officer,3
-311,N01,Under5OPD,District Hospital,3.5,Nurse Officer,3
-312,N01,Over5OPD,District Hospital,1.0,Nurse Officer,3
-313,N01,NormalDelivery,District Hospital,53.1,Nurse Officer,3
-314,N01,CompDelivery,District Hospital,30.0,Nurse Officer,3
-315,N01,Csection,District Hospital,50.0,Nurse Officer,3
-316,N01,FamPlan,District Hospital,10.0,Nurse Officer,3
-317,N01,AntenatalFirst,District Hospital,30.0,Nurse Officer,3
-318,N01,STI,District Hospital,5.0,Nurse Officer,3
-319,N01,U5Malnutr,District Hospital,4.5,Nurse Officer,3
-320,N01,AccidentsandEmerg,District Hospital,12.5,Nurse Officer,3
-321,N01,MajorSurg,District Hospital,86.0,Nurse Officer,3
-322,N01,MinorSurg,District Hospital,18.0,Nurse Officer,3
-323,N01,TBNew,District Hospital,10.0,Nurse Officer,3
-324,N01,TBFollowUp,District Hospital,12.0,Nurse Officer,3
-325,N01,NewAdult,District Hospital,5.0,Nurse Officer,3
-329,N01,Peds,District Hospital,6.0,Nurse Officer,3
-330,N01,InpatientDays,Referral Hospital,12.0,Nurse Officer,4
-331,N01,IPAdmission,Referral Hospital,6.0,Nurse Officer,4
-332,N01,Under5OPD,Referral Hospital,3.5,Nurse Officer,4
-333,N01,Over5OPD,Referral Hospital,1.0,Nurse Officer,4
-334,N01,NormalDelivery,Referral Hospital,53.1,Nurse Officer,4
-335,N01,CompDelivery,Referral Hospital,30.0,Nurse Officer,4
-336,N01,Csection,Referral Hospital,50.0,Nurse Officer,4
-337,N01,FamPlan,Referral Hospital,10.0,Nurse Officer,4
-338,N01,AntenatalFirst,Referral Hospital,30.0,Nurse Officer,4
-339,N01,STI,Referral Hospital,5.0,Nurse Officer,4
-340,N01,U5Malnutr,Referral Hospital,4.5,Nurse Officer,4
-341,N01,AccidentsandEmerg,Referral Hospital,12.5,Nurse Officer,4
-342,N01,MajorSurg,Referral Hospital,137.6,Nurse Officer,4
-343,N01,MinorSurg,Referral Hospital,18.0,Nurse Officer,4
-344,N01,TBNew,Referral Hospital,8.0,Nurse Officer,4
-345,N01,TBFollowUp,Referral Hospital,11.25,Nurse Officer,4
-346,N01,NewAdult,Referral Hospital,4.0,Nurse Officer,4
-349,N01,PMTCT,Referral Hospital,10.0,Nurse Officer,4
-350,N01,Peds,Referral Hospital,4.5,Nurse Officer,4
-351,N01,InpatientDays,National Hospital,12.0,Nurse Officer,5
-352,N01,IPAdmission,National Hospital,6.0,Nurse Officer,5
-353,N01,Under5OPD,National Hospital,3.5,Nurse Officer,5
-354,N01,Over5OPD,National Hospital,1.0,Nurse Officer,5
-355,N01,NormalDelivery,National Hospital,53.1,Nurse Officer,5
-356,N01,CompDelivery,National Hospital,30.0,Nurse Officer,5
-357,N01,Csection,National Hospital,50.0,Nurse Officer,5
-358,N01,FamPlan,National Hospital,10.0,Nurse Officer,5
-359,N01,AntenatalFirst,National Hospital,30.0,Nurse Officer,5
-360,N01,STI,National Hospital,5.0,Nurse Officer,5
-361,N01,U5Malnutr,National Hospital,4.5,Nurse Officer,5
-362,N01,AccidentsandEmerg,National Hospital,12.5,Nurse Officer,5
-363,N01,MajorSurg,National Hospital,137.6,Nurse Officer,5
-364,N01,MinorSurg,National Hospital,18.0,Nurse Officer,5
-365,N01,TBNew,National Hospital,8.0,Nurse Officer,5
-366,N01,TBFollowUp,National Hospital,11.25,Nurse Officer,5
-367,N01,NewAdult,National Hospital,4.0,Nurse Officer,5
-370,N01,PMTCT,National Hospital,10.0,Nurse Officer,5
-371,N01,Peds,National Hospital,4.5,Nurse Officer,5
-399,N02,InpatientDays,Health Centre,20.0,Nurse Midwife Technician,1
-400,N02,IPAdmission,Health Centre,20.0,Nurse Midwife Technician,1
-401,N02,Under5OPD,Health Centre,7.0,Nurse Midwife Technician,1
-402,N02,Over5OPD,Health Centre,5.0,Nurse Midwife Technician,1
-403,N02,NormalDelivery,Health Centre,118.0,Nurse Midwife Technician,1
-404,N02,CompDelivery,Health Centre,30.0,Nurse Midwife Technician,1
-406,N02,FamPlan,Health Centre,16.0,Nurse Midwife Technician,1
-407,N02,AntenatalFirst,Health Centre,30.0,Nurse Midwife Technician,1
-408,N02,ANCSubsequent,Health Centre,15.0,Nurse Midwife Technician,1
-409,N02,EPI,Health Centre,0.5,Nurse Midwife Technician,1
-410,N02,STI,Health Centre,10.0,Nurse Midwife Technician,1
-411,N02,GrowthMon,Health Centre,2.5,Nurse Midwife Technician,1
-412,N02,U5Malnutr,Health Centre,9.0,Nurse Midwife Technician,1
-413,N02,AccidentsandEmerg,Health Centre,25.0,Nurse Midwife Technician,1
-416,N02,TBNew,Health Centre,5.0,Nurse Midwife Technician,1
-418,N02,VCTNegative,Health Centre,16.0,Nurse Midwife Technician,1
-419,N02,VCTPositive,Health Centre,31.5,Nurse Midwife Technician,1
-421,N02,NewAdult,Health Centre,12.0,Nurse Midwife Technician,1
-422,N02,EstMedCom,Health Centre,6.3,Nurse Midwife Technician,1
-423,N02,EstNonCom,Health Centre,9.0,Nurse Midwife Technician,1
-424,N02,PMTCT,Health Centre,10.0,Nurse Midwife Technician,1
-425,N02,Peds,Health Centre,6.0,Nurse Midwife Technician,1
-426,N02,InpatientDays,Non-District Hospital,30.0,Nurse Midwife Technician,2
-427,N02,IPAdmission,Non-District Hospital,20.0,Nurse Midwife Technician,2
-428,N02,Under5OPD,Non-District Hospital,7.0,Nurse Midwife Technician,2
-429,N02,Over5OPD,Non-District Hospital,5.0,Nurse Midwife Technician,2
-430,N02,NormalDelivery,Non-District Hospital,118.0,Nurse Midwife Technician,2
-431,N02,CompDelivery,Non-District Hospital,30.0,Nurse Midwife Technician,2
-432,N02,Csection,Non-District Hospital,100.0,Nurse Midwife Technician,2
-433,N02,FamPlan,Non-District Hospital,16.0,Nurse Midwife Technician,2
-434,N02,AntenatalFirst,Non-District Hospital,30.0,Nurse Midwife Technician,2
-435,N02,ANCSubsequent,Non-District Hospital,15.0,Nurse Midwife Technician,2
-436,N02,EPI,Non-District Hospital,1.0,Nurse Midwife Technician,2
-437,N02,STI,Non-District Hospital,10.0,Nurse Midwife Technician,2
-438,N02,GrowthMon,Non-District Hospital,2.5,Nurse Midwife Technician,2
-439,N02,U5Malnutr,Non-District Hospital,9.0,Nurse Midwife Technician,2
-440,N02,AccidentsandEmerg,Non-District Hospital,25.0,Nurse Midwife Technician,2
-441,N02,MajorSurg,Non-District Hospital,172.0,Nurse Midwife Technician,2
-443,N02,TBNew,Non-District Hospital,5.0,Nurse Midwife Technician,2
-445,N02,VCTNegative,Non-District Hospital,18.0,Nurse Midwife Technician,2
-446,N02,VCTPositive,Non-District Hospital,31.5,Nurse Midwife Technician,2
-447,N02,MaleCirc,Non-District Hospital,20.0,Nurse Midwife Technician,2
-448,N02,NewAdult,Non-District Hospital,8.0,Nurse Midwife Technician,2
-449,N02,EstMedCom,Non-District Hospital,5.6000000000000005,Nurse Midwife Technician,2
-450,N02,EstNonCom,Non-District Hospital,5.0,Nurse Midwife Technician,2
-451,N02,PMTCT,Non-District Hospital,20.0,Nurse Midwife Technician,2
-452,N02,Peds,Non-District Hospital,6.0,Nurse Midwife Technician,2
-453,N02,InpatientDays,District Hospital,21.0,Nurse Midwife Technician,3
-454,N02,IPAdmission,District Hospital,14.0,Nurse Midwife Technician,3
-455,N02,Under5OPD,District Hospital,7.0,Nurse Midwife Technician,3
-456,N02,Over5OPD,District Hospital,4.0,Nurse Midwife Technician,3
-457,N02,NormalDelivery,District Hospital,82.6,Nurse Midwife Technician,3
-458,N02,CompDelivery,District Hospital,30.0,Nurse Midwife Technician,3
-459,N02,Csection,District Hospital,50.0,Nurse Midwife Technician,3
-460,N02,FamPlan,District Hospital,10.0,Nurse Midwife Technician,3
-461,N02,AntenatalFirst,District Hospital,30.0,Nurse Midwife Technician,3
-462,N02,ANCSubsequent,District Hospital,15.0,Nurse Midwife Technician,3
-463,N02,EPI,District Hospital,1.0,Nurse Midwife Technician,3
-464,N02,STI,District Hospital,5.0,Nurse Midwife Technician,3
-466,N02,U5Malnutr,District Hospital,4.5,Nurse Midwife Technician,3
-467,N02,AccidentsandEmerg,District Hospital,12.5,Nurse Midwife Technician,3
-468,N02,MajorSurg,District Hospital,86.0,Nurse Midwife Technician,3
-469,N02,MinorSurg,District Hospital,42.0,Nurse Midwife Technician,3
-470,N02,TBNew,District Hospital,5.0,Nurse Midwife Technician,3
-472,N02,VCTNegative,District Hospital,18.0,Nurse Midwife Technician,3
-473,N02,VCTPositive,District Hospital,31.5,Nurse Midwife Technician,3
-474,N02,MaleCirc,District Hospital,20.0,Nurse Midwife Technician,3
-475,N02,NewAdult,District Hospital,5.0,Nurse Midwife Technician,3
-476,N02,EstMedCom,District Hospital,6.0,Nurse Midwife Technician,3
-477,N02,EstNonCom,District Hospital,5.0,Nurse Midwife Technician,3
-478,N02,PMTCT,District Hospital,20.0,Nurse Midwife Technician,3
-480,N02,InpatientDays,Referral Hospital,28.0,Nurse Midwife Technician,4
-481,N02,IPAdmission,Referral Hospital,14.0,Nurse Midwife Technician,4
-482,N02,Under5OPD,Referral Hospital,3.5,Nurse Midwife Technician,4
-483,N02,Over5OPD,Referral Hospital,4.0,Nurse Midwife Technician,4
-484,N02,NormalDelivery,Referral Hospital,82.6,Nurse Midwife Technician,4
-485,N02,CompDelivery,Referral Hospital,30.0,Nurse Midwife Technician,4
-486,N02,Csection,Referral Hospital,50.0,Nurse Midwife Technician,4
-487,N02,FamPlan,Referral Hospital,10.0,Nurse Midwife Technician,4
-488,N02,AntenatalFirst,Referral Hospital,30.0,Nurse Midwife Technician,4
-489,N02,ANCSubsequent,Referral Hospital,15.0,Nurse Midwife Technician,4
-490,N02,EPI,Referral Hospital,1.0,Nurse Midwife Technician,4
-491,N02,STI,Referral Hospital,5.0,Nurse Midwife Technician,4
-493,N02,U5Malnutr,Referral Hospital,4.5,Nurse Midwife Technician,4
-494,N02,AccidentsandEmerg,Referral Hospital,12.5,Nurse Midwife Technician,4
-495,N02,MajorSurg,Referral Hospital,34.4,Nurse Midwife Technician,4
-496,N02,MinorSurg,Referral Hospital,42.0,Nurse Midwife Technician,4
-497,N02,TBNew,Referral Hospital,5.0,Nurse Midwife Technician,4
-498,N02,TBFollowUp,Referral Hospital,5.25,Nurse Midwife Technician,4
-499,N02,VCTNegative,Referral Hospital,20.0,Nurse Midwife Technician,4
-500,N02,VCTPositive,Referral Hospital,35.0,Nurse Midwife Technician,4
-501,N02,MaleCirc,Referral Hospital,20.0,Nurse Midwife Technician,4
-502,N02,NewAdult,Referral Hospital,4.0,Nurse Midwife Technician,4
-503,N02,EstMedCom,Referral Hospital,6.0,Nurse Midwife Technician,4
-504,N02,EstNonCom,Referral Hospital,3.0,Nurse Midwife Technician,4
-505,N02,PMTCT,Referral Hospital,10.0,Nurse Midwife Technician,4
-507,N02,InpatientDays,National Hospital,28.0,Nurse Midwife Technician,5
-508,N02,IPAdmission,National Hospital,14.0,Nurse Midwife Technician,5
-509,N02,Under5OPD,National Hospital,3.5,Nurse Midwife Technician,5
-510,N02,Over5OPD,National Hospital,4.0,Nurse Midwife Technician,5
-511,N02,NormalDelivery,National Hospital,82.6,Nurse Midwife Technician,5
-512,N02,CompDelivery,National Hospital,30.0,Nurse Midwife Technician,5
-513,N02,Csection,National Hospital,50.0,Nurse Midwife Technician,5
-514,N02,FamPlan,National Hospital,10.0,Nurse Midwife Technician,5
-515,N02,AntenatalFirst,National Hospital,30.0,Nurse Midwife Technician,5
-516,N02,ANCSubsequent,National Hospital,15.0,Nurse Midwife Technician,5
-517,N02,EPI,National Hospital,1.0,Nurse Midwife Technician,5
-518,N02,STI,National Hospital,5.0,Nurse Midwife Technician,5
-520,N02,U5Malnutr,National Hospital,4.5,Nurse Midwife Technician,5
-521,N02,AccidentsandEmerg,National Hospital,12.5,Nurse Midwife Technician,5
-522,N02,MajorSurg,National Hospital,34.4,Nurse Midwife Technician,5
-523,N02,MinorSurg,National Hospital,42.0,Nurse Midwife Technician,5
-524,N02,TBNew,National Hospital,5.0,Nurse Midwife Technician,5
-525,N02,TBFollowUp,National Hospital,5.25,Nurse Midwife Technician,5
-526,N02,VCTNegative,National Hospital,20.0,Nurse Midwife Technician,5
-527,N02,VCTPositive,National Hospital,35.0,Nurse Midwife Technician,5
-528,N02,MaleCirc,National Hospital,20.0,Nurse Midwife Technician,5
-529,N02,NewAdult,National Hospital,4.0,Nurse Midwife Technician,5
-530,N02,EstMedCom,National Hospital,6.0,Nurse Midwife Technician,5
-531,N02,EstNonCom,National Hospital,3.0,Nurse Midwife Technician,5
-532,N02,PMTCT,National Hospital,10.0,Nurse Midwife Technician,5
-544,P01,STI,Health Centre,0.2,Pharmacist,1
-550,P01,InpatientDays,Non-District Hospital,2.0,Pharmacist,2
-552,P01,STI,Non-District Hospital,0.2,Pharmacist,2
-558,P01,InpatientDays,District Hospital,2.0,Pharmacist,3
-560,P01,STI,District Hospital,0.2,Pharmacist,3
-563,P01,TBFollowUp,District Hospital,1.5,Pharmacist,3
-566,P01,InpatientDays,Referral Hospital,2.0,Pharmacist,4
-567,P01,Csection,Referral Hospital,5.0,Pharmacist,4
-568,P01,STI,Referral Hospital,0.2,Pharmacist,4
-569,P01,MajorSurg,Referral Hospital,5.0,Pharmacist,4
-570,P01,MinorSurg,Referral Hospital,2.5,Pharmacist,4
-571,P01,TBFollowUp,Referral Hospital,1.5,Pharmacist,4
-572,P01,NewAdult,Referral Hospital,0.44999999999999996,Pharmacist,4
-573,P01,PMTCT,Referral Hospital,0.44999999999999996,Pharmacist,4
-574,P01,InpatientDays,National Hospital,2.0,Pharmacist,5
-575,P01,Csection,National Hospital,5.0,Pharmacist,5
-576,P01,STI,National Hospital,0.2,Pharmacist,5
-577,P01,MajorSurg,National Hospital,5.0,Pharmacist,5
-578,P01,MinorSurg,National Hospital,2.5,Pharmacist,5
-579,P01,TBFollowUp,National Hospital,1.5,Pharmacist,5
-580,P01,NewAdult,National Hospital,0.44999999999999996,Pharmacist,5
-581,P01,PMTCT,National Hospital,0.44999999999999996,Pharmacist,5
-598,P02,InpatientDays,Health Centre,1.0,Pharm Technician,1
-599,P02,Under5OPD,Health Centre,0.8,Pharm Technician,1
-600,P02,Over5OPD,Health Centre,0.8,Pharm Technician,1
-601,P02,NormalDelivery,Health Centre,1.0,Pharm Technician,1
-602,P02,CompDelivery,Health Centre,1.0,Pharm Technician,1
-608,P02,TBFollowUp,Health Centre,3.0,Pharm Technician,1
-615,P02,Under5OPD,Non-District Hospital,0.8,Pharm Technician,2
-616,P02,Over5OPD,Non-District Hospital,0.8,Pharm Technician,2
-617,P02,NormalDelivery,Non-District Hospital,1.0,Pharm Technician,2
-618,P02,CompDelivery,Non-District Hospital,1.0,Pharm Technician,2
-619,P02,Csection,Non-District Hospital,10.0,Pharm Technician,2
-621,P02,MajorSurg,Non-District Hospital,10.0,Pharm Technician,2
-622,P02,MinorSurg,Non-District Hospital,5.0,Pharm Technician,2
-624,P02,TBFollowUp,Non-District Hospital,3.0,Pharm Technician,2
-625,P02,NewAdult,Non-District Hospital,1.0,Pharm Technician,2
-626,P02,EstMedCom,Non-District Hospital,0.75,Pharm Technician,2
-627,P02,EstNonCom,Non-District Hospital,0.75,Pharm Technician,2
-628,P02,PMTCT,Non-District Hospital,1.0,Pharm Technician,2
-629,P02,Peds,Non-District Hospital,1.0,Pharm Technician,2
-631,P02,Under5OPD,District Hospital,0.8,Pharm Technician,3
-632,P02,Over5OPD,District Hospital,0.8,Pharm Technician,3
-633,P02,NormalDelivery,District Hospital,1.0,Pharm Technician,3
-634,P02,CompDelivery,District Hospital,1.0,Pharm Technician,3
-635,P02,Csection,District Hospital,10.0,Pharm Technician,3
-636,P02,STI,District Hospital,1.5,Pharm Technician,3
-637,P02,MajorSurg,District Hospital,10.0,Pharm Technician,3
-638,P02,MinorSurg,District Hospital,5.0,Pharm Technician,3
-639,P02,TBNew,District Hospital,3.5,Pharm Technician,3
-640,P02,TBFollowUp,District Hospital,1.5,Pharm Technician,3
-641,P02,NewAdult,District Hospital,1.0,Pharm Technician,3
-642,P02,EstMedCom,District Hospital,0.75,Pharm Technician,3
-643,P02,EstNonCom,District Hospital,0.75,Pharm Technician,3
-644,P02,PMTCT,District Hospital,1.0,Pharm Technician,3
-645,P02,Peds,District Hospital,1.0,Pharm Technician,3
-647,P02,Under5OPD,Referral Hospital,0.8,Pharm Technician,4
-649,P02,NormalDelivery,Referral Hospital,2.0,Pharm Technician,4
-650,P02,CompDelivery,Referral Hospital,2.0,Pharm Technician,4
-651,P02,Csection,Referral Hospital,5.0,Pharm Technician,4
-652,P02,STI,Referral Hospital,1.5,Pharm Technician,4
-653,P02,MajorSurg,Referral Hospital,5.0,Pharm Technician,4
-654,P02,MinorSurg,Referral Hospital,2.5,Pharm Technician,4
-655,P02,TBNew,Referral Hospital,3.5,Pharm Technician,4
-656,P02,TBFollowUp,Referral Hospital,1.5,Pharm Technician,4
-657,P02,NewAdult,Referral Hospital,1.0,Pharm Technician,4
-658,P02,EstMedCom,Referral Hospital,0.75,Pharm Technician,4
-659,P02,EstNonCom,Referral Hospital,0.75,Pharm Technician,4
-660,P02,PMTCT,Referral Hospital,1.0,Pharm Technician,4
-661,P02,Peds,Referral Hospital,1.0,Pharm Technician,4
-663,P02,Under5OPD,National Hospital,0.8,Pharm Technician,5
-665,P02,NormalDelivery,National Hospital,2.0,Pharm Technician,5
-666,P02,CompDelivery,National Hospital,2.0,Pharm Technician,5
-667,P02,Csection,National Hospital,5.0,Pharm Technician,5
-668,P02,STI,National Hospital,1.5,Pharm Technician,5
-669,P02,MajorSurg,National Hospital,5.0,Pharm Technician,5
-670,P02,MinorSurg,National Hospital,2.5,Pharm Technician,5
-671,P02,TBNew,National Hospital,3.5,Pharm Technician,5
-672,P02,TBFollowUp,National Hospital,1.5,Pharm Technician,5
-673,P02,NewAdult,National Hospital,1.0,Pharm Technician,5
-674,P02,EstMedCom,National Hospital,0.75,Pharm Technician,5
-675,P02,EstNonCom,National Hospital,0.75,Pharm Technician,5
-676,P02,PMTCT,National Hospital,1.0,Pharm Technician,5
-677,P02,Peds,National Hospital,1.0,Pharm Technician,5
-692,P03,InpatientDays,Health Centre,1.0,Pharm Assistant,1
-693,P03,IPAdmission,Health Centre,1.0,Pharm Assistant,1
-694,P03,Under5OPD,Health Centre,0.8,Pharm Assistant,1
-695,P03,Over5OPD,Health Centre,0.8,Pharm Assistant,1
-696,P03,NormalDelivery,Health Centre,1.0,Pharm Assistant,1
-697,P03,CompDelivery,Health Centre,1.0,Pharm Assistant,1
-698,P03,EPI,Health Centre,1.0,Pharm Assistant,1
-699,P03,STI,Health Centre,1.5,Pharm Assistant,1
-700,P03,TBNew,Health Centre,7.0,Pharm Assistant,1
-701,P03,NewAdult,Health Centre,2.0,Pharm Assistant,1
-702,P03,EstMedCom,Health Centre,1.5,Pharm Assistant,1
-703,P03,EstNonCom,Health Centre,1.5,Pharm Assistant,1
-704,P03,PMTCT,Health Centre,2.0,Pharm Assistant,1
-705,P03,Peds,Health Centre,2.0,Pharm Assistant,1
-707,P03,IPAdmission,Non-District Hospital,2.0,Pharm Assistant,2
-708,P03,Under5OPD,Non-District Hospital,0.8,Pharm Assistant,2
-709,P03,Over5OPD,Non-District Hospital,0.8,Pharm Assistant,2
-710,P03,NormalDelivery,Non-District Hospital,1.0,Pharm Assistant,2
-711,P03,CompDelivery,Non-District Hospital,1.0,Pharm Assistant,2
-712,P03,EPI,Non-District Hospital,1.0,Pharm Assistant,2
-713,P03,STI,Non-District Hospital,1.5,Pharm Assistant,2
-714,P03,TBNew,Non-District Hospital,7.0,Pharm Assistant,2
-715,P03,NewAdult,Non-District Hospital,1.0,Pharm Assistant,2
-716,P03,EstMedCom,Non-District Hospital,0.75,Pharm Assistant,2
-717,P03,EstNonCom,Non-District Hospital,0.75,Pharm Assistant,2
-718,P03,PMTCT,Non-District Hospital,1.0,Pharm Assistant,2
-719,P03,Peds,Non-District Hospital,1.0,Pharm Assistant,2
-721,P03,IPAdmission,District Hospital,2.0,Pharm Assistant,3
-722,P03,Under5OPD,District Hospital,0.8,Pharm Assistant,3
-723,P03,Over5OPD,District Hospital,0.8,Pharm Assistant,3
-724,P03,NormalDelivery,District Hospital,1.0,Pharm Assistant,3
-725,P03,CompDelivery,District Hospital,1.0,Pharm Assistant,3
-726,P03,EPI,District Hospital,1.0,Pharm Assistant,3
-727,P03,STI,District Hospital,1.5,Pharm Assistant,3
-728,P03,TBNew,District Hospital,3.5,Pharm Assistant,3
-729,P03,NewAdult,District Hospital,1.0,Pharm Assistant,3
-730,P03,EstMedCom,District Hospital,0.75,Pharm Assistant,3
-731,P03,EstNonCom,District Hospital,0.75,Pharm Assistant,3
-732,P03,PMTCT,District Hospital,1.0,Pharm Assistant,3
-733,P03,Peds,District Hospital,1.0,Pharm Assistant,3
-735,P03,IPAdmission,Referral Hospital,2.0,Pharm Assistant,4
-736,P03,Under5OPD,Referral Hospital,0.8,Pharm Assistant,4
-740,P03,EPI,Referral Hospital,1.0,Pharm Assistant,4
-741,P03,STI,Referral Hospital,1.5,Pharm Assistant,4
-742,P03,TBNew,Referral Hospital,3.5,Pharm Assistant,4
-743,P03,NewAdult,Referral Hospital,1.0,Pharm Assistant,4
-744,P03,EstMedCom,Referral Hospital,0.75,Pharm Assistant,4
-745,P03,EstNonCom,Referral Hospital,0.75,Pharm Assistant,4
-746,P03,PMTCT,Referral Hospital,1.0,Pharm Assistant,4
-747,P03,Peds,Referral Hospital,1.0,Pharm Assistant,4
-749,P03,IPAdmission,National Hospital,2.0,Pharm Assistant,5
-750,P03,Under5OPD,National Hospital,0.8,Pharm Assistant,5
-754,P03,EPI,National Hospital,1.0,Pharm Assistant,5
-755,P03,STI,National Hospital,1.5,Pharm Assistant,5
-756,P03,TBNew,National Hospital,3.5,Pharm Assistant,5
-757,P03,NewAdult,National Hospital,1.0,Pharm Assistant,5
-758,P03,EstMedCom,National Hospital,0.75,Pharm Assistant,5
-759,P03,EstNonCom,National Hospital,0.75,Pharm Assistant,5
-760,P03,PMTCT,National Hospital,1.0,Pharm Assistant,5
-761,P03,Peds,National Hospital,1.0,Pharm Assistant,5
-783,M03,IPAdmission,Health Centre,4.5,Med. Assistant,1
-784,M03,Under5OPD,Health Centre,5.0,Med. Assistant,1
-785,M03,Over5OPD,Health Centre,3.5,Med. Assistant,1
-786,M03,NormalDelivery,Health Centre,13.5,Med. Assistant,1
-787,M03,CompDelivery,Health Centre,2.5,Med. Assistant,1
-789,M03,AntenatalFirst,Health Centre,3.0,Med. Assistant,1
-790,M03,ANCSubsequent,Health Centre,1.0,Med. Assistant,1
-791,M03,STI,Health Centre,5.0,Med. Assistant,1
-792,M03,GrowthMon,Health Centre,1.0,Med. Assistant,1
-793,M03,U5Malnutr,Health Centre,3.0,Med. Assistant,1
-794,M03,AccidentsandEmerg,Health Centre,15.0,Med. Assistant,1
-795,M03,TBNew,Health Centre,7.5,Med. Assistant,1
-796,M03,TBFollowUp,Health Centre,5.0,Med. Assistant,1
-799,M03,NewAdult,Health Centre,7.0,Med. Assistant,1
-800,M03,EstMedCom,Health Centre,7.5,Med. Assistant,1
-801,M03,EstNonCom,Health Centre,1.0,Med. Assistant,1
-802,M03,PMTCT,Health Centre,3.0,Med. Assistant,1
-803,M03,Peds,Health Centre,9.0,Med. Assistant,1
-804,M03,IPAdmission,Non-District Hospital,7.5,Med. Assistant,2
-805,M03,Under5OPD,Non-District Hospital,5.0,Med. Assistant,2
-806,M03,Over5OPD,Non-District Hospital,3.5,Med. Assistant,2
-810,M03,AntenatalFirst,Non-District Hospital,1.5,Med. Assistant,2
-811,M03,ANCSubsequent,Non-District Hospital,0.5,Med. Assistant,2
-812,M03,STI,Non-District Hospital,3.0,Med. Assistant,2
-813,M03,GrowthMon,Non-District Hospital,1.0,Med. Assistant,2
-814,M03,U5Malnutr,Non-District Hospital,3.0,Med. Assistant,2
-815,M03,AccidentsandEmerg,Non-District Hospital,9.0,Med. Assistant,2
-816,M03,TBNew,Non-District Hospital,3.75,Med. Assistant,2
-817,M03,TBFollowUp,Non-District Hospital,2.5,Med. Assistant,2
-820,M03,NewAdult,Non-District Hospital,6.0,Med. Assistant,2
-821,M03,EstMedCom,Non-District Hospital,7.5,Med. Assistant,2
-822,M03,EstNonCom,Non-District Hospital,2.5,Med. Assistant,2
-823,M03,PMTCT,Non-District Hospital,3.0,Med. Assistant,2
-824,M03,Peds,Non-District Hospital,5.25,Med. Assistant,2
-825,M03,IPAdmission,District Hospital,7.5,Med. Assistant,3
-826,M03,Under5OPD,District Hospital,5.0,Med. Assistant,3
-827,M03,Over5OPD,District Hospital,3.5,Med. Assistant,3
-833,M03,STI,District Hospital,3.0,Med. Assistant,3
-834,M03,GrowthMon,District Hospital,1.0,Med. Assistant,3
-836,M03,AccidentsandEmerg,District Hospital,20.0,Med. Assistant,3
-837,M03,TBNew,District Hospital,3.75,Med. Assistant,3
-838,M03,TBFollowUp,District Hospital,2.5,Med. Assistant,3
-841,M03,NewAdult,District Hospital,3.75,Med. Assistant,3
-842,M03,EstMedCom,District Hospital,7.5,Med. Assistant,3
-843,M03,EstNonCom,District Hospital,2.5,Med. Assistant,3
-844,M03,PMTCT,District Hospital,3.0,Med. Assistant,3
-845,M03,Peds,District Hospital,3.0,Med. Assistant,3
-857,M03,AccidentsandEmerg,Referral Hospital,20.0,Med. Assistant,4
-878,M03,AccidentsandEmerg,National Hospital,20.0,Med. Assistant,5
-918,L01,LabHaem,District Hospital,2.5,Lab Officer,3
-919,L01,LabParasit,District Hospital,3.75,Lab Officer,3
-920,L01,LabBiochem,District Hospital,2.5,Lab Officer,3
-921,L01,LabMicrobio,District Hospital,3.75,Lab Officer,3
-923,L01,LabTBMicro,District Hospital,5.0,Lab Officer,3
-924,L01,LabSero,District Hospital,2.5,Lab Officer,3
-927,L01,LabTrans,District Hospital,3.75,Lab Officer,3
-928,L01,LabHaem,Referral Hospital,2.5,Lab Officer,4
-929,L01,LabParasit,Referral Hospital,3.75,Lab Officer,4
-930,L01,LabBiochem,Referral Hospital,2.5,Lab Officer,4
-931,L01,LabMicrobio,Referral Hospital,3.75,Lab Officer,4
-932,L01,LabMolec,Referral Hospital,10.0,Lab Officer,4
-933,L01,LabTBMicro,Referral Hospital,5.0,Lab Officer,4
-934,L01,LabSero,Referral Hospital,2.5,Lab Officer,4
-935,L01,LabCyto,Referral Hospital,10.0,Lab Officer,4
-936,L01,LabHisto,Referral Hospital,30.0,Lab Officer,4
-937,L01,LabTrans,Referral Hospital,3.75,Lab Officer,4
-938,L01,LabHaem,National Hospital,2.5,Lab Officer,5
-939,L01,LabParasit,National Hospital,3.75,Lab Officer,5
-940,L01,LabBiochem,National Hospital,2.5,Lab Officer,5
-941,L01,LabMicrobio,National Hospital,3.75,Lab Officer,5
-942,L01,LabMolec,National Hospital,10.0,Lab Officer,5
-943,L01,LabTBMicro,National Hospital,5.0,Lab Officer,5
-944,L01,LabSero,National Hospital,2.5,Lab Officer,5
-945,L01,LabCyto,National Hospital,10.0,Lab Officer,5
-946,L01,LabHisto,National Hospital,30.0,Lab Officer,5
-947,L01,LabTrans,National Hospital,3.75,Lab Officer,5
-960,L02,LabPOC,Health Centre,5.0,Lab Technician,1
-965,L02,LabTBMicro,Health Centre,6.0,Lab Technician,1
-966,L02,LabSero,Health Centre,4.0,Lab Technician,1
-970,L02,LabHaem,Non-District Hospital,4.0,Lab Technician,2
-971,L02,LabPOC,Non-District Hospital,5.0,Lab Technician,2
-972,L02,LabParasit,Non-District Hospital,6.0,Lab Technician,2
-973,L02,LabBiochem,Non-District Hospital,4.0,Lab Technician,2
-976,L02,LabTBMicro,Non-District Hospital,6.0,Lab Technician,2
-977,L02,LabSero,Non-District Hospital,4.0,Lab Technician,2
-980,L02,LabTrans,Non-District Hospital,6.0,Lab Technician,2
-981,L02,LabHaem,District Hospital,4.5,Lab Technician,3
-982,L02,LabPOC,District Hospital,5.0,Lab Technician,3
-983,L02,LabParasit,District Hospital,6.75,Lab Technician,3
-984,L02,LabBiochem,District Hospital,4.5,Lab Technician,3
-985,L02,LabMicrobio,District Hospital,6.75,Lab Technician,3
-987,L02,LabTBMicro,District Hospital,7.0,Lab Technician,3
-988,L02,LabSero,District Hospital,5.0,Lab Technician,3
-991,L02,LabTrans,District Hospital,6.75,Lab Technician,3
-992,L02,LabHaem,Referral Hospital,4.5,Lab Technician,4
-993,L02,LabPOC,Referral Hospital,5.0,Lab Technician,4
-994,L02,LabParasit,Referral Hospital,6.75,Lab Technician,4
-995,L02,LabBiochem,Referral Hospital,4.5,Lab Technician,4
-996,L02,LabMicrobio,Referral Hospital,6.75,Lab Technician,4
-997,L02,LabMolec,Referral Hospital,5.0,Lab Technician,4
-998,L02,LabTBMicro,Referral Hospital,9.0,Lab Technician,4
-999,L02,LabSero,Referral Hospital,4.5,Lab Technician,4
-1000,L02,LabCyto,Referral Hospital,12.0,Lab Technician,4
-1001,L02,LabHisto,Referral Hospital,10.0,Lab Technician,4
-1002,L02,LabTrans,Referral Hospital,6.75,Lab Technician,4
-1003,L02,LabHaem,National Hospital,4.5,Lab Technician,5
-1004,L02,LabPOC,National Hospital,5.0,Lab Technician,5
-1005,L02,LabParasit,National Hospital,6.75,Lab Technician,5
-1006,L02,LabBiochem,National Hospital,4.5,Lab Technician,5
-1007,L02,LabMicrobio,National Hospital,6.75,Lab Technician,5
-1008,L02,LabMolec,National Hospital,5.0,Lab Technician,5
-1009,L02,LabTBMicro,National Hospital,9.0,Lab Technician,5
-1010,L02,LabSero,National Hospital,4.5,Lab Technician,5
-1011,L02,LabCyto,National Hospital,12.0,Lab Technician,5
-1012,L02,LabHisto,National Hospital,10.0,Lab Technician,5
-1013,L02,LabTrans,National Hospital,6.75,Lab Technician,5
-1026,L03,LabPOC,Health Centre,5.0,Lab Assistant,1
-1031,L03,LabTBMicro,Health Centre,14.0,Lab Assistant,1
-1032,L03,LabSero,Health Centre,6.0,Lab Assistant,1
-1036,L03,LabHaem,Non-District Hospital,6.0,Lab Assistant,2
-1037,L03,LabPOC,Non-District Hospital,5.0,Lab Assistant,2
-1038,L03,LabParasit,Non-District Hospital,9.0,Lab Assistant,2
-1039,L03,LabBiochem,Non-District Hospital,6.0,Lab Assistant,2
-1042,L03,LabTBMicro,Non-District Hospital,14.0,Lab Assistant,2
-1043,L03,LabSero,Non-District Hospital,6.0,Lab Assistant,2
-1046,L03,LabTrans,Non-District Hospital,9.0,Lab Assistant,2
-1047,L03,LabHaem,District Hospital,4.5,Lab Assistant,3
-1048,L03,LabPOC,District Hospital,5.0,Lab Assistant,3
-1049,L03,LabParasit,District Hospital,6.75,Lab Assistant,3
-1050,L03,LabBiochem,District Hospital,4.5,Lab Assistant,3
-1051,L03,LabMicrobio,District Hospital,6.75,Lab Assistant,3
-1053,L03,LabTBMicro,District Hospital,12.0,Lab Assistant,3
-1054,L03,LabSero,District Hospital,5.0,Lab Assistant,3
-1057,L03,LabTrans,District Hospital,6.75,Lab Assistant,3
-1058,L03,LabHaem,Referral Hospital,4.5,Lab Assistant,4
-1059,L03,LabPOC,Referral Hospital,5.0,Lab Assistant,4
-1060,L03,LabParasit,Referral Hospital,6.75,Lab Assistant,4
-1061,L03,LabBiochem,Referral Hospital,4.5,Lab Assistant,4
-1062,L03,LabMicrobio,Referral Hospital,6.75,Lab Assistant,4
-1063,L03,LabMolec,Referral Hospital,7.0,Lab Assistant,4
-1064,L03,LabTBMicro,Referral Hospital,10.0,Lab Assistant,4
-1065,L03,LabSero,Referral Hospital,4.5,Lab Assistant,4
-1066,L03,LabCyto,Referral Hospital,6.0,Lab Assistant,4
-1067,L03,LabHisto,Referral Hospital,5.0,Lab Assistant,4
-1068,L03,LabTrans,Referral Hospital,6.75,Lab Assistant,4
-1069,L03,LabHaem,National Hospital,4.5,Lab Assistant,5
-1070,L03,LabPOC,National Hospital,5.0,Lab Assistant,5
-1071,L03,LabParasit,National Hospital,6.75,Lab Assistant,5
-1072,L03,LabBiochem,National Hospital,4.5,Lab Assistant,5
-1073,L03,LabMicrobio,National Hospital,6.75,Lab Assistant,5
-1074,L03,LabMolec,National Hospital,7.0,Lab Assistant,5
-1075,L03,LabTBMicro,National Hospital,10.0,Lab Assistant,5
-1076,L03,LabSero,National Hospital,4.5,Lab Assistant,5
-1077,L03,LabCyto,National Hospital,6.0,Lab Assistant,5
-1078,L03,LabHisto,National Hospital,5.0,Lab Assistant,5
-1079,L03,LabTrans,National Hospital,6.75,Lab Assistant,5
-1092,R02,Ultrasound,Non-District Hospital,25.0,Radiography Technician,2
-1095,R02,Tomography,Non-District Hospital,43.0,Radiography Technician,2
-1097,R02,DiagRadio,Non-District Hospital,18.0,Radiography Technician,2
-1098,R02,Ultrasound,District Hospital,25.0,Radiography Technician,3
-1100,R02,MRI,District Hospital,20.0,Radiography Technician,3
-1101,R02,Tomography,District Hospital,21.5,Radiography Technician,3
-1103,R02,DiagRadio,District Hospital,9.0,Radiography Technician,3
-1104,R02,Ultrasound,Referral Hospital,25.0,Radiography Technician,4
-1105,R02,Mammography,Referral Hospital,30.0,Radiography Technician,4
-1106,R02,MRI,Referral Hospital,20.0,Radiography Technician,4
-1107,R02,Tomography,Referral Hospital,21.5,Radiography Technician,4
-1108,R02,Radiotherapy,Referral Hospital,30.0,Radiography Technician,4
-1109,R02,DiagRadio,Referral Hospital,9.0,Radiography Technician,4
-1110,R02,Ultrasound,National Hospital,25.0,Radiography Technician,5
-1111,R02,Mammography,National Hospital,30.0,Radiography Technician,5
-1112,R02,MRI,National Hospital,20.0,Radiography Technician,5
-1113,R02,Tomography,National Hospital,21.5,Radiography Technician,5
-1114,R02,Radiotherapy,National Hospital,30.0,Radiography Technician,5
-1115,R02,DiagRadio,National Hospital,9.0,Radiography Technician,5
-1129,R01,MRI,District Hospital,20.0,Radiographer,3
-1130,R01,Tomography,District Hospital,21.5,Radiographer,3
-1131,R01,DiagRadio,District Hospital,9.0,Radiographer,3
-1132,R01,Mammography,Referral Hospital,30.0,Radiographer,4
-1133,R01,MRI,Referral Hospital,20.0,Radiographer,4
-1134,R01,Tomography,Referral Hospital,21.5,Radiographer,4
-1135,R01,DiagRadio,Referral Hospital,9.0,Radiographer,4
-1136,R01,Mammography,National Hospital,30.0,Radiographer,5
-1137,R01,MRI,National Hospital,20.0,Radiographer,5
-1138,R01,Tomography,National Hospital,21.5,Radiographer,5
-1139,R01,DiagRadio,National Hospital,9.0,Radiographer,5
-1156,D01,DentAccidEmerg,Referral Hospital,60.0,Dental Officer,4
-1157,D01,DentSurg,Referral Hospital,90.0,Dental Officer,4
-1158,D01,DentalU5,Referral Hospital,40.0,Dental Officer,4
-1159,D01,DentalO5,Referral Hospital,30.0,Dental Officer,4
-1160,D01,DentAccidEmerg,National Hospital,60.0,Dental Officer,5
-1161,D01,DentSurg,National Hospital,90.0,Dental Officer,5
-1162,D01,DentalU5,National Hospital,40.0,Dental Officer,5
-1163,D01,DentalO5,National Hospital,30.0,Dental Officer,5
-1168,D02,DentalU5,Health Centre,12.0,Dental Therapist,1
-1169,D02,DentalO5,Health Centre,9.0,Dental Therapist,1
-1171,D02,DentalU5,Non-District Hospital,12.0,Dental Therapist,2
-1172,D02,DentalO5,Non-District Hospital,9.0,Dental Therapist,2
-1173,D02,DentAccidEmerg,District Hospital,50.0,Dental Therapist,3
-1174,D02,DentalU5,District Hospital,15.0,Dental Therapist,3
-1175,D02,DentalO5,District Hospital,15.0,Dental Therapist,3
-1176,D02,DentAccidEmerg,Referral Hospital,30.0,Dental Therapist,4
-1177,D02,DentalU5,Referral Hospital,30.0,Dental Therapist,4
-1178,D02,DentalO5,Referral Hospital,30.0,Dental Therapist,4
-1179,D02,DentAccidEmerg,National Hospital,30.0,Dental Therapist,5
-1180,D02,DentalU5,National Hospital,30.0,Dental Therapist,5
-1181,D02,DentalO5,National Hospital,30.0,Dental Therapist,5
-1186,D03,DentAccidEmerg,Health Centre,30.0,Dental Assistant,1
-1188,D03,DentalU5,Health Centre,40.0,Dental Assistant,1
-1189,D03,DentalO5,Health Centre,30.0,Dental Assistant,1
-1190,D03,DentAccidEmerg,Non-District Hospital,30.0,Dental Assistant,2
-1192,D03,DentalU5,Non-District Hospital,40.0,Dental Assistant,2
-1193,D03,DentalO5,Non-District Hospital,30.0,Dental Assistant,2
-1194,D03,DentAccidEmerg,District Hospital,15.0,Dental Assistant,3
-1195,D03,DentSurg,District Hospital,100.0,Dental Assistant,3
-1196,D03,DentalU5,District Hospital,10.0,Dental Assistant,3
-1197,D03,DentalO5,District Hospital,15.0,Dental Assistant,3
-1198,D03,DentAccidEmerg,Referral Hospital,15.0,Dental Assistant,4
-1199,D03,DentSurg,Referral Hospital,100.0,Dental Assistant,4
-1200,D03,DentalU5,Referral Hospital,10.0,Dental Assistant,4
-1201,D03,DentalO5,Referral Hospital,15.0,Dental Assistant,4
-1202,D03,DentAccidEmerg,National Hospital,15.0,Dental Assistant,5
-1203,D03,DentSurg,National Hospital,100.0,Dental Assistant,5
-1204,D03,DentalU5,National Hospital,10.0,Dental Assistant,5
-1205,D03,DentalO5,National Hospital,15.0,Dental Assistant,5
-1210,C01,MentOPD,Non-District Hospital,15.0,Mental Health Staff,2
-1211,C01,MentClinic,Non-District Hospital,25.0,Mental Health Staff,2
-1212,C01,MentOPD,District Hospital,15.0,Mental Health Staff,3
-1213,C01,MentClinic,District Hospital,25.0,Mental Health Staff,3
-1214,C01,MentOPD,Referral Hospital,15.0,Mental Health Staff,4
-1215,C01,MentClinic,Referral Hospital,25.0,Mental Health Staff,4
-1216,C01,MentOPD,National Hospital,15.0,Mental Health Staff,5
-1217,C01,MentClinic,National Hospital,25.0,Mental Health Staff,5
-1218,E01,ConWithDCSA,Community Health Station,10.0,DCSA,0
+,Officer_Type_Code,Appt_Type_Code,Facility_Level,Time_Taken,Officer_Type
+0,M01,InpatientDays,3,5.0,Medical Officer / Specialist
+1,M01,IPAdmission,3,7.5,Medical Officer / Specialist
+2,M01,Under5OPD,3,5.0,Medical Officer / Specialist
+3,M01,Over5OPD,3,3.5,Medical Officer / Specialist
+4,M01,CompDelivery,3,10.5,Medical Officer / Specialist
+5,M01,Csection,3,22.5,Medical Officer / Specialist
+6,M01,AntenatalFirst,3,1.5,Medical Officer / Specialist
+7,M01,ANCSubsequent,3,0.5,Medical Officer / Specialist
+8,M01,U5Malnutr,3,1.0,Medical Officer / Specialist
+9,M01,AccidentsandEmerg,3,12.0,Medical Officer / Specialist
+10,M01,MajorSurg,3,172.0,Medical Officer / Specialist
+11,M01,MinorSurg,3,60.0,Medical Officer / Specialist
+12,M01,TBNew,3,4.5,Medical Officer / Specialist
+13,M01,TBFollowUp,3,2.5,Medical Officer / Specialist
+14,M01,MaleCirc,3,10.0,Medical Officer / Specialist
+15,M01,NewAdult,3,6.0,Medical Officer / Specialist
+16,M01,EstMedCom,3,4.5,Medical Officer / Specialist
+17,M01,PMTCT,3,3.0,Medical Officer / Specialist
+18,M01,Peds,3,3.0,Medical Officer / Specialist
+19,M01,InpatientDays,2,5.0,Medical Officer / Specialist
+20,M01,IPAdmission,2,7.5,Medical Officer / Specialist
+21,M01,Under5OPD,2,5.0,Medical Officer / Specialist
+22,M01,Over5OPD,2,3.5,Medical Officer / Specialist
+23,M01,CompDelivery,2,10.5,Medical Officer / Specialist
+24,M01,Csection,2,22.5,Medical Officer / Specialist
+25,M01,AntenatalFirst,2,1.5,Medical Officer / Specialist
+26,M01,ANCSubsequent,2,0.5,Medical Officer / Specialist
+27,M01,U5Malnutr,2,1.0,Medical Officer / Specialist
+28,M01,AccidentsandEmerg,2,12.0,Medical Officer / Specialist
+29,M01,MajorSurg,2,172.0,Medical Officer / Specialist
+30,M01,MinorSurg,2,60.0,Medical Officer / Specialist
+31,M01,TBNew,2,4.5,Medical Officer / Specialist
+32,M01,TBFollowUp,2,2.5,Medical Officer / Specialist
+33,M01,MaleCirc,2,10.0,Medical Officer / Specialist
+34,M01,NewAdult,2,6.0,Medical Officer / Specialist
+35,M01,EstMedCom,2,4.5,Medical Officer / Specialist
+36,M01,PMTCT,2,3.0,Medical Officer / Specialist
+37,M01,Peds,2,3.0,Medical Officer / Specialist
+38,M01,InpatientDays,1,0.3125,Medical Officer / Specialist
+42,M01,CompDelivery,1,0.75,Medical Officer / Specialist
+43,M01,Csection,1,2.25,Medical Officer / Specialist
+45,M01,ANCSubsequent,1,0.0625,Medical Officer / Specialist
+46,M01,U5Malnutr,1,0.25,Medical Officer / Specialist
+47,M01,AccidentsandEmerg,1,1.5,Medical Officer / Specialist
+48,M01,MajorSurg,1,43.0,Medical Officer / Specialist
+49,M01,MinorSurg,1,15.0,Medical Officer / Specialist
+76,M02,InpatientDays,3,7.0,Clinical Officer / Technician
+77,M02,IPAdmission,3,10.0,Clinical Officer / Technician
+78,M02,Under5OPD,3,6.0,Clinical Officer / Technician
+79,M02,Over5OPD,3,6.0,Clinical Officer / Technician
+80,M02,CompDelivery,3,19.5,Clinical Officer / Technician
+81,M02,Csection,3,22.5,Clinical Officer / Technician
+82,M02,AntenatalFirst,3,1.5,Clinical Officer / Technician
+83,M02,ANCSubsequent,3,0.5,Clinical Officer / Technician
+84,M02,STI,3,5.0,Clinical Officer / Technician
+86,M02,U5Malnutr,3,1.6,Clinical Officer / Technician
+87,M02,AccidentsandEmerg,3,24.0,Clinical Officer / Technician
+88,M02,MajorSurg,3,190.0,Clinical Officer / Technician
+89,M02,MinorSurg,3,80.0,Clinical Officer / Technician
+90,M02,TBNew,3,4.5,Clinical Officer / Technician
+91,M02,TBFollowUp,3,2.5,Clinical Officer / Technician
+92,M02,MaleCirc,3,10.0,Clinical Officer / Technician
+93,M02,NewAdult,3,6.0,Clinical Officer / Technician
+94,M02,EstMedCom,3,7.5,Clinical Officer / Technician
+95,M02,EstNonCom,3,7.0,Clinical Officer / Technician
+96,M02,PMTCT,3,3.0,Clinical Officer / Technician
+97,M02,Peds,3,12.0,Clinical Officer / Technician
+98,M02,InpatientDays,2,7.0,Clinical Officer / Technician
+99,M02,IPAdmission,2,10.0,Clinical Officer / Technician
+100,M02,Under5OPD,2,6.0,Clinical Officer / Technician
+101,M02,Over5OPD,2,6.0,Clinical Officer / Technician
+102,M02,CompDelivery,2,19.5,Clinical Officer / Technician
+103,M02,Csection,2,22.5,Clinical Officer / Technician
+104,M02,AntenatalFirst,2,1.5,Clinical Officer / Technician
+105,M02,ANCSubsequent,2,0.5,Clinical Officer / Technician
+106,M02,STI,2,5.0,Clinical Officer / Technician
+108,M02,U5Malnutr,2,1.6,Clinical Officer / Technician
+109,M02,AccidentsandEmerg,2,24.0,Clinical Officer / Technician
+110,M02,MajorSurg,2,190.0,Clinical Officer / Technician
+111,M02,MinorSurg,2,80.0,Clinical Officer / Technician
+112,M02,TBNew,2,4.5,Clinical Officer / Technician
+113,M02,TBFollowUp,2,2.5,Clinical Officer / Technician
+114,M02,MaleCirc,2,10.0,Clinical Officer / Technician
+115,M02,NewAdult,2,6.0,Clinical Officer / Technician
+116,M02,EstMedCom,2,7.5,Clinical Officer / Technician
+117,M02,EstNonCom,2,7.0,Clinical Officer / Technician
+118,M02,PMTCT,2,3.0,Clinical Officer / Technician
+119,M02,Peds,2,12.0,Clinical Officer / Technician
+120,M02,InpatientDays,1,5.25,Clinical Officer / Technician
+121,M02,IPAdmission,1,7.0,Clinical Officer / Technician
+122,M02,Under5OPD,1,4.5,Clinical Officer / Technician
+123,M02,Over5OPD,1,4.5,Clinical Officer / Technician
+124,M02,CompDelivery,1,20.25,Clinical Officer / Technician
+125,M02,Csection,1,31.5,Clinical Officer / Technician
+126,M02,AntenatalFirst,1,1.5,Clinical Officer / Technician
+127,M02,ANCSubsequent,1,0.4375,Clinical Officer / Technician
+128,M02,STI,1,1.5,Clinical Officer / Technician
+129,M02,GrowthMon,1,0.5,Clinical Officer / Technician
+130,M02,U5Malnutr,1,1.2000000000000002,Clinical Officer / Technician
+131,M02,AccidentsandEmerg,1,9.0,Clinical Officer / Technician
+132,M02,MajorSurg,1,147.5,Clinical Officer / Technician
+133,M02,MinorSurg,1,70.0,Clinical Officer / Technician
+134,M02,TBNew,1,5.625,Clinical Officer / Technician
+135,M02,TBFollowUp,1,1.875,Clinical Officer / Technician
+136,M02,MaleCirc,1,15.0,Clinical Officer / Technician
+137,M02,NewAdult,1,4.0,Clinical Officer / Technician
+138,M02,EstMedCom,1,3.0,Clinical Officer / Technician
+139,M02,EstNonCom,1,1.375,Clinical Officer / Technician
+140,M02,PMTCT,1,2.25,Clinical Officer / Technician
+141,M02,Peds,1,5.4375,Clinical Officer / Technician
+164,N01,InpatientDays,3,12.0,Nurse Officer
+165,N01,IPAdmission,3,6.0,Nurse Officer
+166,N01,Under5OPD,3,3.5,Nurse Officer
+167,N01,Over5OPD,3,1.0,Nurse Officer
+168,N01,NormalDelivery,3,53.1,Nurse Officer
+169,N01,CompDelivery,3,30.0,Nurse Officer
+170,N01,Csection,3,50.0,Nurse Officer
+171,N01,FamPlan,3,10.0,Nurse Officer
+172,N01,AntenatalFirst,3,30.0,Nurse Officer
+173,N01,STI,3,5.0,Nurse Officer
+174,N01,U5Malnutr,3,4.5,Nurse Officer
+175,N01,AccidentsandEmerg,3,12.5,Nurse Officer
+176,N01,MajorSurg,3,137.6,Nurse Officer
+177,N01,MinorSurg,3,18.0,Nurse Officer
+178,N01,TBNew,3,8.0,Nurse Officer
+179,N01,TBFollowUp,3,11.25,Nurse Officer
+180,N01,NewAdult,3,4.0,Nurse Officer
+183,N01,PMTCT,3,10.0,Nurse Officer
+184,N01,Peds,3,4.5,Nurse Officer
+185,N01,InpatientDays,2,12.0,Nurse Officer
+186,N01,IPAdmission,2,6.0,Nurse Officer
+187,N01,Under5OPD,2,3.5,Nurse Officer
+188,N01,Over5OPD,2,1.0,Nurse Officer
+189,N01,NormalDelivery,2,53.1,Nurse Officer
+190,N01,CompDelivery,2,30.0,Nurse Officer
+191,N01,Csection,2,50.0,Nurse Officer
+192,N01,FamPlan,2,10.0,Nurse Officer
+193,N01,AntenatalFirst,2,30.0,Nurse Officer
+194,N01,STI,2,5.0,Nurse Officer
+195,N01,U5Malnutr,2,4.5,Nurse Officer
+196,N01,AccidentsandEmerg,2,12.5,Nurse Officer
+197,N01,MajorSurg,2,137.6,Nurse Officer
+198,N01,MinorSurg,2,18.0,Nurse Officer
+199,N01,TBNew,2,8.0,Nurse Officer
+200,N01,TBFollowUp,2,11.25,Nurse Officer
+201,N01,NewAdult,2,4.0,Nurse Officer
+204,N01,PMTCT,2,10.0,Nurse Officer
+205,N01,Peds,2,4.5,Nurse Officer
+206,N01,InpatientDays,1,2.25,Nurse Officer
+207,N01,IPAdmission,1,1.5,Nurse Officer
+208,N01,Under5OPD,1,0.875,Nurse Officer
+209,N01,Over5OPD,1,0.25,Nurse Officer
+210,N01,NormalDelivery,1,13.275,Nurse Officer
+211,N01,CompDelivery,1,7.5,Nurse Officer
+212,N01,Csection,1,12.5,Nurse Officer
+213,N01,FamPlan,1,2.5,Nurse Officer
+214,N01,AntenatalFirst,1,7.5,Nurse Officer
+215,N01,STI,1,1.25,Nurse Officer
+216,N01,U5Malnutr,1,1.125,Nurse Officer
+217,N01,AccidentsandEmerg,1,3.125,Nurse Officer
+218,N01,MajorSurg,1,21.5,Nurse Officer
+219,N01,MinorSurg,1,29.5,Nurse Officer
+220,N01,TBNew,1,8.75,Nurse Officer
+221,N01,TBFollowUp,1,3.225,Nurse Officer
+222,N01,NewAdult,1,1.25,Nurse Officer
+226,N01,Peds,1,1.5,Nurse Officer
+248,N02,InpatientDays,3,28.0,Nurse Midwife Technician
+249,N02,IPAdmission,3,14.0,Nurse Midwife Technician
+250,N02,Under5OPD,3,3.5,Nurse Midwife Technician
+251,N02,Over5OPD,3,4.0,Nurse Midwife Technician
+252,N02,NormalDelivery,3,82.6,Nurse Midwife Technician
+253,N02,CompDelivery,3,30.0,Nurse Midwife Technician
+254,N02,Csection,3,50.0,Nurse Midwife Technician
+255,N02,FamPlan,3,10.0,Nurse Midwife Technician
+256,N02,AntenatalFirst,3,30.0,Nurse Midwife Technician
+257,N02,ANCSubsequent,3,15.0,Nurse Midwife Technician
+258,N02,EPI,3,1.0,Nurse Midwife Technician
+259,N02,STI,3,5.0,Nurse Midwife Technician
+261,N02,U5Malnutr,3,4.5,Nurse Midwife Technician
+262,N02,AccidentsandEmerg,3,12.5,Nurse Midwife Technician
+263,N02,MajorSurg,3,34.4,Nurse Midwife Technician
+264,N02,MinorSurg,3,42.0,Nurse Midwife Technician
+265,N02,TBNew,3,5.0,Nurse Midwife Technician
+266,N02,TBFollowUp,3,5.25,Nurse Midwife Technician
+267,N02,VCTNegative,3,20.0,Nurse Midwife Technician
+268,N02,VCTPositive,3,35.0,Nurse Midwife Technician
+269,N02,MaleCirc,3,20.0,Nurse Midwife Technician
+270,N02,NewAdult,3,4.0,Nurse Midwife Technician
+271,N02,EstMedCom,3,6.0,Nurse Midwife Technician
+272,N02,EstNonCom,3,3.0,Nurse Midwife Technician
+273,N02,PMTCT,3,10.0,Nurse Midwife Technician
+275,N02,InpatientDays,2,28.0,Nurse Midwife Technician
+276,N02,IPAdmission,2,14.0,Nurse Midwife Technician
+277,N02,Under5OPD,2,3.5,Nurse Midwife Technician
+278,N02,Over5OPD,2,4.0,Nurse Midwife Technician
+279,N02,NormalDelivery,2,82.6,Nurse Midwife Technician
+280,N02,CompDelivery,2,30.0,Nurse Midwife Technician
+281,N02,Csection,2,50.0,Nurse Midwife Technician
+282,N02,FamPlan,2,10.0,Nurse Midwife Technician
+283,N02,AntenatalFirst,2,30.0,Nurse Midwife Technician
+284,N02,ANCSubsequent,2,15.0,Nurse Midwife Technician
+285,N02,EPI,2,1.0,Nurse Midwife Technician
+286,N02,STI,2,5.0,Nurse Midwife Technician
+288,N02,U5Malnutr,2,4.5,Nurse Midwife Technician
+289,N02,AccidentsandEmerg,2,12.5,Nurse Midwife Technician
+290,N02,MajorSurg,2,34.4,Nurse Midwife Technician
+291,N02,MinorSurg,2,42.0,Nurse Midwife Technician
+292,N02,TBNew,2,5.0,Nurse Midwife Technician
+293,N02,TBFollowUp,2,5.25,Nurse Midwife Technician
+294,N02,VCTNegative,2,20.0,Nurse Midwife Technician
+295,N02,VCTPositive,2,35.0,Nurse Midwife Technician
+296,N02,MaleCirc,2,20.0,Nurse Midwife Technician
+297,N02,NewAdult,2,4.0,Nurse Midwife Technician
+298,N02,EstMedCom,2,6.0,Nurse Midwife Technician
+299,N02,EstNonCom,2,3.0,Nurse Midwife Technician
+300,N02,PMTCT,2,10.0,Nurse Midwife Technician
+302,N02,InpatientDays,1,22.75,Nurse Midwife Technician
+303,N02,IPAdmission,1,18.5,Nurse Midwife Technician
+304,N02,Under5OPD,1,7.0,Nurse Midwife Technician
+305,N02,Over5OPD,1,4.75,Nurse Midwife Technician
+306,N02,NormalDelivery,1,109.15,Nurse Midwife Technician
+307,N02,CompDelivery,1,30.0,Nurse Midwife Technician
+308,N02,Csection,1,62.5,Nurse Midwife Technician
+309,N02,FamPlan,1,14.5,Nurse Midwife Technician
+310,N02,AntenatalFirst,1,30.0,Nurse Midwife Technician
+311,N02,ANCSubsequent,1,15.0,Nurse Midwife Technician
+312,N02,EPI,1,0.75,Nurse Midwife Technician
+313,N02,STI,1,8.75,Nurse Midwife Technician
+314,N02,GrowthMon,1,2.5,Nurse Midwife Technician
+315,N02,U5Malnutr,1,7.875,Nurse Midwife Technician
+316,N02,AccidentsandEmerg,1,21.875,Nurse Midwife Technician
+317,N02,MajorSurg,1,64.5,Nurse Midwife Technician
+318,N02,MinorSurg,1,10.5,Nurse Midwife Technician
+319,N02,TBNew,1,5.0,Nurse Midwife Technician
+321,N02,VCTNegative,1,17.5,Nurse Midwife Technician
+322,N02,VCTPositive,1,31.5,Nurse Midwife Technician
+323,N02,MaleCirc,1,15.0,Nurse Midwife Technician
+324,N02,NewAdult,1,8.25,Nurse Midwife Technician
+325,N02,EstMedCom,1,5.875000000000001,Nurse Midwife Technician
+326,N02,EstNonCom,1,7.0,Nurse Midwife Technician
+327,N02,PMTCT,1,15.0,Nurse Midwife Technician
+328,N02,Peds,1,4.5,Nurse Midwife Technician
+356,P01,InpatientDays,3,2.0,Pharmacist
+357,P01,Csection,3,5.0,Pharmacist
+358,P01,STI,3,0.2,Pharmacist
+359,P01,MajorSurg,3,5.0,Pharmacist
+360,P01,MinorSurg,3,2.5,Pharmacist
+361,P01,TBFollowUp,3,1.5,Pharmacist
+362,P01,NewAdult,3,0.44999999999999996,Pharmacist
+363,P01,PMTCT,3,0.44999999999999996,Pharmacist
+364,P01,InpatientDays,2,2.0,Pharmacist
+365,P01,Csection,2,5.0,Pharmacist
+366,P01,STI,2,0.2,Pharmacist
+367,P01,MajorSurg,2,5.0,Pharmacist
+368,P01,MinorSurg,2,2.5,Pharmacist
+369,P01,TBFollowUp,2,1.5,Pharmacist
+370,P01,NewAdult,2,0.44999999999999996,Pharmacist
+371,P01,PMTCT,2,0.44999999999999996,Pharmacist
+372,P01,InpatientDays,1,1.0,Pharmacist
+374,P01,STI,1,0.2,Pharmacist
+377,P01,TBFollowUp,1,0.375,Pharmacist
+389,P02,Under5OPD,3,0.8,Pharm Technician
+391,P02,NormalDelivery,3,2.0,Pharm Technician
+392,P02,CompDelivery,3,2.0,Pharm Technician
+393,P02,Csection,3,5.0,Pharm Technician
+394,P02,STI,3,1.5,Pharm Technician
+395,P02,MajorSurg,3,5.0,Pharm Technician
+396,P02,MinorSurg,3,2.5,Pharm Technician
+397,P02,TBNew,3,3.5,Pharm Technician
+398,P02,TBFollowUp,3,1.5,Pharm Technician
+399,P02,NewAdult,3,1.0,Pharm Technician
+400,P02,EstMedCom,3,0.75,Pharm Technician
+401,P02,EstNonCom,3,0.75,Pharm Technician
+402,P02,PMTCT,3,1.0,Pharm Technician
+403,P02,Peds,3,1.0,Pharm Technician
+405,P02,Under5OPD,2,0.8,Pharm Technician
+407,P02,NormalDelivery,2,2.0,Pharm Technician
+408,P02,CompDelivery,2,2.0,Pharm Technician
+409,P02,Csection,2,5.0,Pharm Technician
+410,P02,STI,2,1.5,Pharm Technician
+411,P02,MajorSurg,2,5.0,Pharm Technician
+412,P02,MinorSurg,2,2.5,Pharm Technician
+413,P02,TBNew,2,3.5,Pharm Technician
+414,P02,TBFollowUp,2,1.5,Pharm Technician
+415,P02,NewAdult,2,1.0,Pharm Technician
+416,P02,EstMedCom,2,0.75,Pharm Technician
+417,P02,EstNonCom,2,0.75,Pharm Technician
+418,P02,PMTCT,2,1.0,Pharm Technician
+419,P02,Peds,2,1.0,Pharm Technician
+420,P02,InpatientDays,1,0.5,Pharm Technician
+421,P02,Under5OPD,1,0.8,Pharm Technician
+422,P02,Over5OPD,1,0.8,Pharm Technician
+423,P02,NormalDelivery,1,1.0,Pharm Technician
+424,P02,CompDelivery,1,1.0,Pharm Technician
+425,P02,Csection,1,7.5,Pharm Technician
+426,P02,STI,1,0.375,Pharm Technician
+427,P02,MajorSurg,1,5.0,Pharm Technician
+428,P02,MinorSurg,1,2.5,Pharm Technician
+429,P02,TBNew,1,0.875,Pharm Technician
+430,P02,TBFollowUp,1,2.625,Pharm Technician
+431,P02,NewAdult,1,0.75,Pharm Technician
+432,P02,EstMedCom,1,0.5625,Pharm Technician
+433,P02,EstNonCom,1,0.5625,Pharm Technician
+434,P02,PMTCT,1,0.75,Pharm Technician
+435,P02,Peds,1,0.75,Pharm Technician
+453,P03,IPAdmission,3,2.0,Pharm Assistant
+454,P03,Under5OPD,3,0.8,Pharm Assistant
+458,P03,EPI,3,1.0,Pharm Assistant
+459,P03,STI,3,1.5,Pharm Assistant
+460,P03,TBNew,3,3.5,Pharm Assistant
+461,P03,NewAdult,3,1.0,Pharm Assistant
+462,P03,EstMedCom,3,0.75,Pharm Assistant
+463,P03,EstNonCom,3,0.75,Pharm Assistant
+464,P03,PMTCT,3,1.0,Pharm Assistant
+465,P03,Peds,3,1.0,Pharm Assistant
+467,P03,IPAdmission,2,2.0,Pharm Assistant
+468,P03,Under5OPD,2,0.8,Pharm Assistant
+472,P03,EPI,2,1.0,Pharm Assistant
+473,P03,STI,2,1.5,Pharm Assistant
+474,P03,TBNew,2,3.5,Pharm Assistant
+475,P03,NewAdult,2,1.0,Pharm Assistant
+476,P03,EstMedCom,2,0.75,Pharm Assistant
+477,P03,EstNonCom,2,0.75,Pharm Assistant
+478,P03,PMTCT,2,1.0,Pharm Assistant
+479,P03,Peds,2,1.0,Pharm Assistant
+480,P03,InpatientDays,1,0.5,Pharm Assistant
+481,P03,IPAdmission,1,1.75,Pharm Assistant
+482,P03,Under5OPD,1,0.8,Pharm Assistant
+483,P03,Over5OPD,1,0.8,Pharm Assistant
+484,P03,NormalDelivery,1,1.0,Pharm Assistant
+485,P03,CompDelivery,1,1.0,Pharm Assistant
+486,P03,EPI,1,1.0,Pharm Assistant
+487,P03,STI,1,1.5,Pharm Assistant
+488,P03,TBNew,1,6.125,Pharm Assistant
+489,P03,NewAdult,1,1.25,Pharm Assistant
+490,P03,EstMedCom,1,0.9375,Pharm Assistant
+491,P03,EstNonCom,1,0.9375,Pharm Assistant
+492,P03,PMTCT,1,1.25,Pharm Assistant
+493,P03,Peds,1,1.25,Pharm Assistant
+519,M03,AccidentsandEmerg,3,20.0,Med. Assistant
+540,M03,AccidentsandEmerg,2,20.0,Med. Assistant
+550,M03,IPAdmission,1,6.375,Med. Assistant
+551,M03,Under5OPD,1,5.0,Med. Assistant
+552,M03,Over5OPD,1,3.5,Med. Assistant
+553,M03,NormalDelivery,1,3.375,Med. Assistant
+554,M03,CompDelivery,1,1.25,Med. Assistant
+556,M03,AntenatalFirst,1,1.5,Med. Assistant
+557,M03,ANCSubsequent,1,0.5,Med. Assistant
+558,M03,STI,1,3.5,Med. Assistant
+559,M03,GrowthMon,1,0.75,Med. Assistant
+560,M03,U5Malnutr,1,1.75,Med. Assistant
+561,M03,AccidentsandEmerg,1,13.25,Med. Assistant
+562,M03,TBNew,1,4.6875,Med. Assistant
+563,M03,TBFollowUp,1,3.125,Med. Assistant
+566,M03,NewAdult,1,5.6875,Med. Assistant
+567,M03,EstMedCom,1,6.875,Med. Assistant
+568,M03,EstNonCom,1,1.625,Med. Assistant
+569,M03,PMTCT,1,3.0,Med. Assistant
+570,M03,Peds,1,5.4375,Med. Assistant
+592,L01,LabHaem,3,2.5,Lab Officer
+593,L01,LabParasit,3,3.75,Lab Officer
+594,L01,LabBiochem,3,2.5,Lab Officer
+595,L01,LabMicrobio,3,3.75,Lab Officer
+596,L01,LabMolec,3,10.0,Lab Officer
+597,L01,LabTBMicro,3,5.0,Lab Officer
+598,L01,LabSero,3,2.5,Lab Officer
+599,L01,LabCyto,3,10.0,Lab Officer
+600,L01,LabHisto,3,30.0,Lab Officer
+601,L01,LabTrans,3,3.75,Lab Officer
+602,L01,LabHaem,2,2.5,Lab Officer
+603,L01,LabParasit,2,3.75,Lab Officer
+604,L01,LabBiochem,2,2.5,Lab Officer
+605,L01,LabMicrobio,2,3.75,Lab Officer
+606,L01,LabMolec,2,10.0,Lab Officer
+607,L01,LabTBMicro,2,5.0,Lab Officer
+608,L01,LabSero,2,2.5,Lab Officer
+609,L01,LabCyto,2,10.0,Lab Officer
+610,L01,LabHisto,2,30.0,Lab Officer
+611,L01,LabTrans,2,3.75,Lab Officer
+612,L01,LabHaem,1,0.625,Lab Officer
+613,L01,LabParasit,1,0.9375,Lab Officer
+614,L01,LabBiochem,1,0.625,Lab Officer
+615,L01,LabMicrobio,1,0.9375,Lab Officer
+617,L01,LabTBMicro,1,1.25,Lab Officer
+618,L01,LabSero,1,0.625,Lab Officer
+621,L01,LabTrans,1,0.9375,Lab Officer
+632,L02,LabHaem,3,4.5,Lab Technician
+633,L02,LabPOC,3,5.0,Lab Technician
+634,L02,LabParasit,3,6.75,Lab Technician
+635,L02,LabBiochem,3,4.5,Lab Technician
+636,L02,LabMicrobio,3,6.75,Lab Technician
+637,L02,LabMolec,3,5.0,Lab Technician
+638,L02,LabTBMicro,3,9.0,Lab Technician
+639,L02,LabSero,3,4.5,Lab Technician
+640,L02,LabCyto,3,12.0,Lab Technician
+641,L02,LabHisto,3,10.0,Lab Technician
+642,L02,LabTrans,3,6.75,Lab Technician
+643,L02,LabHaem,2,4.5,Lab Technician
+644,L02,LabPOC,2,5.0,Lab Technician
+645,L02,LabParasit,2,6.75,Lab Technician
+646,L02,LabBiochem,2,4.5,Lab Technician
+647,L02,LabMicrobio,2,6.75,Lab Technician
+648,L02,LabMolec,2,5.0,Lab Technician
+649,L02,LabTBMicro,2,9.0,Lab Technician
+650,L02,LabSero,2,4.5,Lab Technician
+651,L02,LabCyto,2,12.0,Lab Technician
+652,L02,LabHisto,2,10.0,Lab Technician
+653,L02,LabTrans,2,6.75,Lab Technician
+654,L02,LabHaem,1,2.125,Lab Technician
+655,L02,LabPOC,1,5.0,Lab Technician
+656,L02,LabParasit,1,3.1875,Lab Technician
+657,L02,LabBiochem,1,2.125,Lab Technician
+658,L02,LabMicrobio,1,1.6875,Lab Technician
+660,L02,LabTBMicro,1,6.25,Lab Technician
+661,L02,LabSero,1,4.25,Lab Technician
+664,L02,LabTrans,1,3.1875,Lab Technician
+676,L03,LabHaem,3,4.5,Lab Assistant
+677,L03,LabPOC,3,5.0,Lab Assistant
+678,L03,LabParasit,3,6.75,Lab Assistant
+679,L03,LabBiochem,3,4.5,Lab Assistant
+680,L03,LabMicrobio,3,6.75,Lab Assistant
+681,L03,LabMolec,3,7.0,Lab Assistant
+682,L03,LabTBMicro,3,10.0,Lab Assistant
+683,L03,LabSero,3,4.5,Lab Assistant
+684,L03,LabCyto,3,6.0,Lab Assistant
+685,L03,LabHisto,3,5.0,Lab Assistant
+686,L03,LabTrans,3,6.75,Lab Assistant
+687,L03,LabHaem,2,4.5,Lab Assistant
+688,L03,LabPOC,2,5.0,Lab Assistant
+689,L03,LabParasit,2,6.75,Lab Assistant
+690,L03,LabBiochem,2,4.5,Lab Assistant
+691,L03,LabMicrobio,2,6.75,Lab Assistant
+692,L03,LabMolec,2,7.0,Lab Assistant
+693,L03,LabTBMicro,2,10.0,Lab Assistant
+694,L03,LabSero,2,4.5,Lab Assistant
+695,L03,LabCyto,2,6.0,Lab Assistant
+696,L03,LabHisto,2,5.0,Lab Assistant
+697,L03,LabTrans,2,6.75,Lab Assistant
+698,L03,LabHaem,1,2.625,Lab Assistant
+699,L03,LabPOC,1,5.0,Lab Assistant
+700,L03,LabParasit,1,3.9375,Lab Assistant
+701,L03,LabBiochem,1,2.625,Lab Assistant
+702,L03,LabMicrobio,1,1.6875,Lab Assistant
+704,L03,LabTBMicro,1,13.5,Lab Assistant
+705,L03,LabSero,1,5.75,Lab Assistant
+708,L03,LabTrans,1,3.9375,Lab Assistant
+720,R02,Ultrasound,3,25.0,Radiography Technician
+721,R02,Mammography,3,30.0,Radiography Technician
+722,R02,MRI,3,20.0,Radiography Technician
+723,R02,Tomography,3,21.5,Radiography Technician
+724,R02,Radiotherapy,3,30.0,Radiography Technician
+725,R02,DiagRadio,3,9.0,Radiography Technician
+726,R02,Ultrasound,2,25.0,Radiography Technician
+727,R02,Mammography,2,30.0,Radiography Technician
+728,R02,MRI,2,20.0,Radiography Technician
+729,R02,Tomography,2,21.5,Radiography Technician
+730,R02,Radiotherapy,2,30.0,Radiography Technician
+731,R02,DiagRadio,2,9.0,Radiography Technician
+732,R02,Ultrasound,1,12.5,Radiography Technician
+734,R02,MRI,1,5.0,Radiography Technician
+735,R02,Tomography,1,16.125,Radiography Technician
+737,R02,DiagRadio,1,6.75,Radiography Technician
+744,R01,Mammography,3,30.0,Radiographer
+745,R01,MRI,3,20.0,Radiographer
+746,R01,Tomography,3,21.5,Radiographer
+747,R01,DiagRadio,3,9.0,Radiographer
+748,R01,Mammography,2,30.0,Radiographer
+749,R01,MRI,2,20.0,Radiographer
+750,R01,Tomography,2,21.5,Radiographer
+751,R01,DiagRadio,2,9.0,Radiographer
+753,R01,MRI,1,5.0,Radiographer
+754,R01,Tomography,1,5.375,Radiographer
+755,R01,DiagRadio,1,2.25,Radiographer
+760,D01,DentAccidEmerg,3,60.0,Dental Officer
+761,D01,DentSurg,3,90.0,Dental Officer
+762,D01,DentalU5,3,40.0,Dental Officer
+763,D01,DentalO5,3,30.0,Dental Officer
+764,D01,DentAccidEmerg,2,60.0,Dental Officer
+765,D01,DentSurg,2,90.0,Dental Officer
+766,D01,DentalU5,2,40.0,Dental Officer
+767,D01,DentalO5,2,30.0,Dental Officer
+776,D02,DentAccidEmerg,3,30.0,Dental Therapist
+777,D02,DentalU5,3,30.0,Dental Therapist
+778,D02,DentalO5,3,30.0,Dental Therapist
+779,D02,DentAccidEmerg,2,30.0,Dental Therapist
+780,D02,DentalU5,2,30.0,Dental Therapist
+781,D02,DentalO5,2,30.0,Dental Therapist
+782,D02,DentAccidEmerg,1,25.0,Dental Therapist
+783,D02,DentalU5,1,13.5,Dental Therapist
+784,D02,DentalO5,1,12.0,Dental Therapist
+788,D03,DentAccidEmerg,3,15.0,Dental Assistant
+789,D03,DentSurg,3,100.0,Dental Assistant
+790,D03,DentalU5,3,10.0,Dental Assistant
+791,D03,DentalO5,3,15.0,Dental Assistant
+792,D03,DentAccidEmerg,2,15.0,Dental Assistant
+793,D03,DentSurg,2,100.0,Dental Assistant
+794,D03,DentalU5,2,10.0,Dental Assistant
+795,D03,DentalO5,2,15.0,Dental Assistant
+796,D03,DentAccidEmerg,1,22.5,Dental Assistant
+797,D03,DentSurg,1,25.0,Dental Assistant
+798,D03,DentalU5,1,30.0,Dental Assistant
+799,D03,DentalO5,1,23.75,Dental Assistant
+804,C01,MentOPD,3,15.0,Mental Health Staff
+805,C01,MentClinic,3,25.0,Mental Health Staff
+806,C01,MentOPD,2,15.0,Mental Health Staff
+807,C01,MentClinic,2,25.0,Mental Health Staff
+808,C01,MentOPD,1,7.5,Mental Health Staff
+809,C01,MentClinic,1,12.5,Mental Health Staff
+815,E01,ConWithDCSA,0,10.0,DCSA
