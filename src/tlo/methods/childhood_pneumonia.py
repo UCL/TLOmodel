@@ -953,6 +953,10 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodPneumonia'),
                                     self.sim.date)
 
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
+
 class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
@@ -967,5 +971,3 @@ class RespInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         # get some summary statistics
-        df = population.props
-        ri_pneumonia_status_total = df.ri_pneumonia_status.sum()
