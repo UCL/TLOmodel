@@ -498,56 +498,80 @@ class ChildhoodDiarrhoea(Module):
         (Types.REAL,
          'relative rate of death from dysentery for wealth level 5'
          ),
-        
-        'r_recovery_pneumonia': Parameter
+        'r_recovery_dysentery': Parameter
         (Types.REAL,
-         'recovery rate from pneumonia among children aged 2-11 months, '
+         'recovery rate from dysentery among children aged 2-11 months, '
          'HIV negative, no SAM,  '
          ),
-        'rr_recovery_pneumonia_agelt2mo': Parameter
+        'rr_recovery_dysentery_agelt11mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for age < 2 months'
+         'relative rate of recovery from dysentery for age < 11 months'
          ),
         'rr_recovery_pneumonia_age12to23mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for age between 12 to 23 months'
+         'relative rate of recovery from dysentery for age between 12 to 23 months'
          ),
-        'rr_recovery_pneumonia_age24to59mo': Parameter
+        'rr_recovery_dysentery_age24to59mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for age between 24 to 59 months'
+         'relative rate of recovery from dysentery for age between 24 to 59 months'
          ),
-        'rr_recovery_pneumonia_HIV': Parameter
+        'rr_recovery_dysentery_HIV': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for HIV positive status'
+         'relative rate of recovery from dysentery for HIV positive status'
          ),
-        'rr_recovery_pneumonia_SAM': Parameter
+        'rr_recovery_dysentery_SAM': Parameter
         (Types.REAL,
-         'relative rate of recovery from pneumonia for severe acute malnutrition'
+         'relative rate of recovery from dysentery for severe acute malnutrition'
          ),
-        'r_recovery_severe_pneumonia': Parameter
+        'r_recovery_acute_diarrhoea': Parameter
         (Types.REAL,
-         'baseline recovery rate from severe pneumonia among children ages 2 to 11 months, '
+         'baseline recovery rate from acute watery diarrhoea among children ages 2 to 11 months, '
          'HIV negative, no SAM'
          ),
-        'rr_recovery_severe_pneum_agelt2mo': Parameter
+        'rr_recovery_acute_diarrhoea_agelt11mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for age <2 months'
+         'relative rate of recovery from acute watery diarrhoea for age <11 months'
          ),
-        'rr_recovery_severe_pneum_age12to23mo': Parameter
+        'rr_recovery_acute_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for age between 12 to 23 months'
+         'relative rate of recovery from acute watery diarrhoea for age between 12 to 23 months'
          ),
-        'rr_recovery_severe_pneum_age24to59mo': Parameter
+        'rr_recovery_acute_diarrhoea_age24to59mo': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for age between 24 to 59 months'
+         'relative rate of recovery from acute watery diarrhoea for age between 24 to 59 months'
          ),
-        'rr_recovery_severe_pneum_HIV': Parameter
+        'rr_recovery_acute_diarrhoea_HIV': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for HIV positive status'
+         'relative rate of recovery from acute watery diarrhoea for HIV positive status'
          ),
-        'rr_recovery_severe_pneum_SAM': Parameter
+        'rr_recovery_acute_diarrhoea_SAM': Parameter
         (Types.REAL,
-         'relative rate of recovery from severe pneumonia for severe acute malnutrition'
+         'relative rate of recovery from acute watery diarrhoea for severe acute malnutrition'
+         ),
+        'r_recovery_persistent_diarrhoea': Parameter
+        (Types.REAL,
+         'baseline recovery rate from persistent diarrhoea among children ages 2 to 11 months, '
+         'HIV negative, no SAM'
+         ),
+        'rr_recovery_persistent_diarrhoea_agelt11mo': Parameter
+        (Types.REAL,
+         'relative rate of recovery from acute watery diarrhoea for age <11 months'
+         ),
+        'rr_recovery_persistent_diarrhoea_age12to23mo': Parameter
+        (Types.REAL,
+         'relative rate of recovery from acute watery diarrhoea for age between 12 to 23 months'
+         ),
+        'rr_recovery_persistent_diarrhoea_age24to59mo': Parameter
+        (Types.REAL,
+         'relative rate of recovery from acute watery diarrhoea for age between 24 to 59 months'
+         ),
+        'rr_recovery_persistent_diarrhoea_HIV': Parameter
+        (Types.REAL,
+         'relative rate of recovery from acute watery diarrhoea for HIV positive status'
+         ),
+        'rr_recovery_persistent_diarrhoea_SAM': Parameter
+        (Types.REAL,
+         'relative rate of recovery from acute watery diarrhoea for severe acute malnutrition'
          ),
         'init_prop_pneumonia_status': Parameter
         (Types.LIST,
@@ -580,7 +604,7 @@ class ChildhoodDiarrhoea(Module):
         """
         p = self.parameters
 
-        p['base_prev_dysentery'] = 0.2
+        p['base_prev_dysentery'] = 0.4
         p['rp_dysentery_agelt11mo'] = 1.2
         p['rp_dysentery_age12to23mo'] = 0.8
         p['rp_dysentery_age24to59mo'] = 0.5
@@ -595,7 +619,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_dysentery_wealth2'] = 0.9
         p['rp_dysentery_wealth4'] = 1.2
         p['rp_dysentery_wealth5'] = 1.3
-        p['base_incidence_dysentery'] = 0.015
+        p['base_incidence_dysentery'] = 0.5
         p['rr_dysentery_agelt11mo'] = 1.2
         p['rr_dysentery_age12to23mo'] = 0.8
         p['rr_dysentery_age24to59mo'] = 0.5
@@ -610,7 +634,7 @@ class ChildhoodDiarrhoea(Module):
         p['rr_dysentery_wealth2'] = 0.9
         p['rr_dysentery_wealth4'] = 1.2
         p['rr_dysentery_wealth5'] = 1.3
-        p['base_prev_acute_diarrhoea'] = 0.1
+        p['base_prev_acute_diarrhoea'] = 0.4
         p['rp_acute_diarrhoea_agelt11mo'] = 1.3
         p['rp_acute_diarrhoea_age12to23mo'] = 0.8
         p['rp_acute_diarrhoea_age24to59mo'] = 0.5
@@ -640,7 +664,7 @@ class ChildhoodDiarrhoea(Module):
         p['rr_acute_diarrhoea_wealth2'] = 0.9
         p['rr_acute_diarrhoea_wealth4'] = 1.2
         p['rr_acute_diarrhoea_wealth5'] = 1.3
-        p['base_prev_persistent_diarrhoea'] = 0.01
+        p['base_prev_persistent_diarrhoea'] = 0.5
         p['rp_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rp_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rp_persistent_diarrhoea_age24to59mo'] = 0.5
@@ -655,7 +679,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_persistent_diarrhoea_wealth2'] = 0.9
         p['rp_persistent_diarrhoea_wealth4'] = 1.2
         p['rp_persistent_diarrhoea_wealth5'] = 1.3
-        p['base_incidence_persistent_diarrhoea'] = 0.05
+        p['base_incidence_persistent_diarrhoea'] = 0.5
         p['rr_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rr_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rr_persistent_diarrhoea_age24to59mo'] = 0.5
@@ -671,6 +695,24 @@ class ChildhoodDiarrhoea(Module):
         p['rr_persistent_diarrhoea_wealth4'] = 1.2
         p['rr_persistent_diarrhoea_wealth5'] = 1.3
         p['init_prop_diarrhoea_status'] = [0.2, 0.2, 0.2]
+        p['r_recovery_dysentery'] = 0.6
+        p['rr_recovery_dysentery_agelt11mo'] = 0.7
+        p['rr_recovery_dysentery_age12to23mo'] = 0.9
+        p['rr_recovery_dysentery_age24to59mo'] = 1.1
+        p['rr_recovery_dysentery_HIV'] = 0.5
+        p['rr_recovery_dysentery_SAM'] = 0.5
+        p['r_recovery_acute_diarrhoea'] = 0.6
+        p['rr_recovery_acute_diarrhoea_agelt11mo'] = 0.7
+        p['rr_recovery_acute_diarrhoea_age12to23mo'] = 0.9
+        p['rr_recovery_acute_diarrhoea_age24to59mo'] = 1.2
+        p['rr_recovery_acute_diarrhoea_HIV'] = 0.6
+        p['rr_recovery_acute_diarrhoea_SAM'] = 0.3
+        p['r_recovery_persistent_diarrhoea'] = 0.8
+        p['rr_recovery_persistent_diarrhoea_agelt11mo'] = 0.8
+        p['rr_recovery_persistent_diarrhoea_age12to23mo'] = 1.2
+        p['rr_recovery_persistent_diarrhoea_age24to59mo'] = 1.3
+        p['rr_recovery_persistent_diarrhoea_HIV'] = 0.6
+        p['rr_recovery_persistent_diarrhoea_SAM'] = 0.5
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -1013,134 +1055,89 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_acute_diarrhoea, 'ei_diarrhoea_status'] = 'acute watery diarrhoea'
         df.loc[idx_incident_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'persistent diarrhoea'
 
-        # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
+        # -------------------- UPDATING OF EI_DIARRHOEA_STATUS RECOVERY OVER TIME --------------------------------
+        # recovery from dysentery
 
-        pn_current_pneumonia_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') & (df.age_years < 5)]
-        pn_current_pneumonia_agelt2mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') & (df.age_exact_years < 0.1667)]
-        pn_current_pneumonia_age12to23mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+        di_current_dysentery_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_exact_years < 5]
+        di_current_dysentery_agelt11mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_exact_years < 1]
+        di_current_dysentery_age12to23mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
-        pn_current_pneumonia_age24to59mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+        di_current_dysentery_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_pneumonia_HIV_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     df.has_hiv & (df.age_years < 5)]
-        pn_current_pneumonia_SAM_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+        di_current_dysentery_HIV_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
+                     (df.has_hiv) & (df.age_years < 5)]
+        di_current_dysentery_SAM_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
                      df.malnutrition & (df.age_years < 5)]
-        pn_current_pneumonia_wealth1_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.li_wealth == 1) & (df.age_years < 5)]
-        pn_current_pneumonia_wealth2_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.li_wealth == 2) & (df.age_years < 5)]
-        pn_current_pneumonia_wealth4_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.li_wealth == 4) & (df.age_years < 5)]
-        pn_current_pneumonia_wealth5_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                     (df.li_wealth == 5) & (df.age_years < 5)]
 
-        eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_pneum,
-                                                   index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
-                                                                  & (df.age_years < 5)])
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_agelt2mo_idx] *= \
-            m.rr_progress_severe_pneum_agelt2mo
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_age12to23mo_idx] *= \
-            m.rr_progress_severe_pneum_age12to23mo
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_age24to59mo_idx] *= \
-            m.rr_progress_severe_pneum_age24to59mo
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_HIV_idx] *= \
-            m.rr_progress_severe_pneum_HIV
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_SAM_idx] *= \
-            m.rr_progress_severe_pneum_SAM
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth1_idx] *= \
-            m.rr_progress_severe_pneum_wealth1
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth2_idx] *= \
-            m.rr_progress_severe_pneum_wealth2
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth4_idx] *= \
-            m.rr_progress_severe_pneum_wealth4
-        eff_prob_prog_severe_pneumonia.loc[pn_current_pneumonia_wealth5_idx] *= \
-            m.rr_progress_severe_pneum_wealth5
-
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ri_pneumonia_status == 'pneumonia')])
-        dfx = pd.concat([eff_prob_ri_severe_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_prog_severe_pneumonia', 'random_draw']
-        idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw]
-        df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
-
-        # -------------------- UPDATING OF RI_PNEUMONIA_STATUS RECOVERY OVER TIME --------------------------------
-        # recovery from non-severe pneumonia
-
-        eff_prob_recovery_pneumonia = pd.Series(m.r_recovery_pneumonia,
-                                                index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
+        eff_prob_recovery_dysentery = pd.Series(m.r_recovery_dysentery,
+                                                index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery')
                                                                & (df.age_years < 5)])
+        eff_prob_recovery_dysentery.loc[di_current_dysentery_agelt11mo_idx] *= \
+            m.rr_recovery_dysentery_agelt11mo
+        eff_prob_recovery_dysentery.loc[di_current_dysentery_age12to23mo_idx] *= \
+            m.rr_recovery_dysentery_age12to23mo
+        eff_prob_recovery_dysentery.loc[di_current_dysentery_age24to59mo_idx] *= \
+            m.rr_recovery_dysentery_age24to59mo
+        eff_prob_recovery_dysentery.loc[di_current_dysentery_HIV_idx] *= \
+            m.rr_recovery_dysentery_HIV
+        eff_prob_recovery_dysentery.loc[di_current_dysentery_SAM_idx] *= \
+            m.rr_recovery_dysentery_SAM
 
-        eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_agelt2mo_idx] *= \
-            m.rr_recovery_pneumonia_agelt2mo
-        eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_age12to23mo_idx] *= \
-            m.rr_recovery_pneumonia_age12to23mo
-        eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_age24to59mo_idx] *= \
-            m.rr_recovery_pneumonia_age24to59mo
-        eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_HIV_idx] *= \
-            m.rr_recovery_pneumonia_HIV
-        eff_prob_recovery_pneumonia.loc[pn_current_pneumonia_SAM_idx] *= \
-            m.rr_recovery_pneumonia_SAM
-
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
+        random_draw = pd.Series(rng.random_sample(size=len(di_current_dysentery_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ri_pneumonia_status == 'pneumonia')])
-        dfx = pd.concat([eff_prob_recovery_pneumonia, random_draw], axis=1)
-        dfx.columns = ['eff_prob_recovery_pneumonia', 'random_draw']
-        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_pneumonia > dfx.random_draw]
-        df.loc[idx_recovery_pneumonia, 'ri_pneumonia_status'] = 'none'
+                                               (df.ei_diarrhoea_status == 'dysentery')])
+        dfx = pd.concat([eff_prob_recovery_dysentery, random_draw], axis=1)
+        dfx.columns = ['eff_prob_recovery_dysentery', 'random_draw']
+        idx_recovery_dysentery = dfx.index[dfx.eff_prob_recovery_dysentery > dfx.random_draw]
+        df.loc[idx_recovery_dysentery, 'ei_diarrhoea_status'] = 'none'
 
-        # recovery from severe pneumonia
+        # recovery from acute watery diarrhoea
 
-        pn_current_severe_pneumonia_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_years < 5)]
-        pn_current_severe_pneum_agelt2mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_exact_years < 0.1667)]
-        pn_current_severe_pneum_age12to23mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
+        di_current_acute_diarrhoea_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & df.age_exact_years < 5]
+        di_current_acute_diarrhoea_agelt11mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & df.age_exact_years < 1]
+        di_current_acute_diarrhoea_age12to23mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
-        pn_current_severe_pneum_age24to59mo_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
+        di_current_acute_diarrhoea_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
-        pn_current_severe_pneum_HIV_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
-                     df.has_hiv & (df.age_years < 5)]
-        pn_current_severe_pneum_SAM_idx = \
-            df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') &
+        di_current_acute_diarrhoea_HIV_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
+                     (df.has_hiv) & (df.age_years < 5)]
+        di_current_acute_diarrhoea_SAM_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
                      df.malnutrition & (df.age_years < 5)]
 
-        eff_prob_recovery_severe_pneum = \
-            pd.Series(m.r_recovery_severe_pneumonia,
-                      index=df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_years < 5)])
+        eff_prob_recovery_acute_diarrhoea = \
+            pd.Series(m.r_recovery_acute_diarrhoea,
+                      index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & (df.age_years < 5)])
 
-        eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_agelt2mo_idx] *= \
-            m.rr_recovery_severe_pneum_agelt2mo
-        eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_age12to23mo_idx] *= \
-            m.rr_recovery_severe_pneum_age12to23mo
-        eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_age24to59mo_idx] *= \
-            m.rr_recovery_severe_pneum_age24to59mo
-        eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_HIV_idx] *= \
-            m.rr_recovery_severe_pneum_HIV
-        eff_prob_recovery_severe_pneum.loc[pn_current_severe_pneum_SAM_idx] *= \
-            m.rr_recovery_severe_pneum_SAM
+        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_agelt11mo_idx] *= \
+            m.rr_recovery_acute_diarrhoea_agelt11mo
+        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age12to23mo_idx] *= \
+            m.rr_recovery_acute_diarrhoea_age12to23mo
+        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age24to59mo_idx] *= \
+            m.rr_recovery_acute_diarrhoea_age24to59mo
+        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_HIV_idx] *= \
+            m.rr_recovery_acute_diarrhoea_HIV
+        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_SAM_idx] *= \
+            m.rr_recovery_acute_diarrhoea_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
+        random_draw = pd.Series(rng.random_sample(size=len(di_current_acute_diarrhoea_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ri_pneumonia_status == 'severe pneumonia')])
-        dfx = pd.concat([eff_prob_recovery_severe_pneum, random_draw], axis=1)
-        dfx.columns = ['eff_prob_recovery_severe_pneum', 'random_draw']
-        idx_recovery_pneumonia = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw]
-        df.loc[idx_recovery_pneumonia, 'ri_pneumonia_status'] = 'none'
+                                               (df.ei_diarrhoea_status == 'severe pneumonia')])
+        dfx = pd.concat([eff_prob_recovery_acute_diarrhoea, random_draw], axis=1)
+        dfx.columns = ['eff_prob_recovery_acute_diarrhoea', 'random_draw']
+        idx_recovery_acute_diarrhoea = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw]
+        df.loc[idx_recovery_acute_diarrhoea, 'ei_diarrhoea_status'] = 'none'
 
         # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
 
