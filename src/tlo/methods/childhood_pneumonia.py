@@ -748,7 +748,7 @@ class RespInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         dfx['ri_none'] = 1 - (dfx.eff_prob_ri_pneumonia + dfx.eff_prob_ri_severe_pneumonia)
 
-        idx_incident_none = dfx.index[dfx.eff_prob_ri_pneumonia > dfx.random_draw_01]
+        idx_incident_none = dfx.index[dfx.ri_none > dfx.random_draw_01]
         idx_incident_pneumonia = dfx.index[
             (dfx.ri_none < dfx.random_draw_01) & ((dfx.ri_none + dfx.eff_prob_ri_pneumonia) > dfx.random_draw_01)]
         idx_incident_severe_pneumonia = dfx.index[((dfx.ri_none + dfx.eff_prob_ri_pneumonia) < dfx.random_draw_01) &
