@@ -25,21 +25,21 @@ popsize = 10000
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
-# # Establish the logger
-# logfile = outputpath + 'LogFile' + datestamp + '.log'
-#
-# if os.path.exists(logfile):
-#     os.remove(logfile)
-# fh = logging.FileHandler(logfile)
-# fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-# fh.setFormatter(fr)
-# logging.getLogger().addHandler(fh)
+# Establish the logger
+logfile = outputpath + 'LogFile' + datestamp + '.log'
+
+if os.path.exists(logfile):
+    os.remove(logfile)
+fh = logging.FileHandler(logfile)
+fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+fh.setFormatter(fr)
+logging.getLogger().addHandler(fh)
 
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-# logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -67,7 +67,8 @@ sim.register(hiv_behaviour_change.BehaviourChange())
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-# fh.flush()
+fh.flush()
+fh.close()
 
 
 # %% read the results
