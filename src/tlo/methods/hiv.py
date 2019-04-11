@@ -1039,13 +1039,13 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
 
         # hazard of moving from early to symptomatic
         symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'annual_rate_symptomatic_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
+            'annual_prob_symptomatic_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
                             df.hiv_specific_symptoms == 'early')]
         df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
 
         # hazard of moving to aids (from early or symptomatic)
         aids = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'annual_rate_aids_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
+            'annual_prob_aids_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
                             df.hiv_specific_symptoms != 'aids')]
         df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
 
@@ -1063,18 +1063,18 @@ class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
 
         # hazard of moving from early to symptomatic,  apply to slow progressing infants only
         symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_rate_symptomatic_infant']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+            'monthly_prob_symptomatic_infant']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
                             df.hiv_specific_symptoms == 'early')]
         df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
 
         # apply prob of aids to infants, fast and slow
         aids_fast = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_rate_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+            'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
                                  df.hiv_specific_symptoms != 'aids') & df.hiv_fast_progressor]
         df.loc[aids_fast, 'hiv_specific_symptoms'] = 'aids'
 
         aids_slow = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_rate_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
+            'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
                                  df.hiv_specific_symptoms != 'aids') & ~df.hiv_fast_progressor]
         df.loc[aids_slow, 'hiv_specific_symptoms'] = 'aids'
 
