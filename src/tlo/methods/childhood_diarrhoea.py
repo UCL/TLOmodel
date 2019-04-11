@@ -909,7 +909,7 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         so that random number generators can be scoped per-module.
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(days=7))
+        super().__init__(module, frequency=DateOffset(days=14))
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1089,12 +1089,12 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_dysentery.loc[di_current_dysentery_SAM_idx] *= \
             m.rr_recovery_dysentery_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(di_current_dysentery_idx)),
+        random_draw_02 = pd.Series(rng.random_sample(size=len(di_current_dysentery_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
                                                (df.ei_diarrhoea_status == 'dysentery')])
-        dfx = pd.concat([eff_prob_recovery_dysentery, random_draw], axis=1)
-        dfx.columns = ['eff_prob_recovery_dysentery', 'random_draw']
-        idx_recovery_dysentery = dfx.index[dfx.eff_prob_recovery_dysentery > dfx.random_draw]
+        dfx = pd.concat([eff_prob_recovery_dysentery, random_draw_02], axis=1)
+        dfx.columns = ['eff_prob_recovery_dysentery', 'random_draw_02']
+        idx_recovery_dysentery = dfx.index[dfx.eff_prob_recovery_dysentery > dfx.random_draw_02]
         df.loc[idx_recovery_dysentery, 'ei_diarrhoea_status'] = 'none'
 
         # recovery from acute watery diarrhoea
@@ -1118,7 +1118,8 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_recovery_acute_diarrhoea = \
             pd.Series(m.r_recovery_acute_diarrhoea,
-                      index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & (df.age_years < 5)])
+                      index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
+                                     (df.age_years < 5)])
 
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_agelt11mo_idx] *= \
             m.rr_recovery_acute_diarrhoea_agelt11mo
@@ -1131,12 +1132,12 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_SAM_idx] *= \
             m.rr_recovery_acute_diarrhoea_SAM
 
-        random_draw = pd.Series(rng.random_sample(size=len(di_current_acute_diarrhoea_idx)),
+        random_draw_03 = pd.Series(rng.random_sample(size=len(di_current_acute_diarrhoea_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ei_diarrhoea_status == 'severe pneumonia')])
-        dfx = pd.concat([eff_prob_recovery_acute_diarrhoea, random_draw], axis=1)
+                                               (df.ei_diarrhoea_status == 'acute watery diarrhoea')])
+        dfx = pd.concat([eff_prob_recovery_acute_diarrhoea, random_draw_03], axis=1)
         dfx.columns = ['eff_prob_recovery_acute_diarrhoea', 'random_draw']
-        idx_recovery_acute_diarrhoea = dfx.index[dfx.eff_prob_recovery_severe_pneum > dfx.random_draw]
+        idx_recovery_acute_diarrhoea = dfx.index[dfx.eff_prob_recovery_acute_diarrhoea > dfx.random_draw_03]
         df.loc[idx_recovery_acute_diarrhoea, 'ei_diarrhoea_status'] = 'none'
 
         # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
