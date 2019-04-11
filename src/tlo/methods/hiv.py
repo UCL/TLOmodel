@@ -299,11 +299,11 @@ class hiv(Module):
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
         params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
-        params['annual_rate_symptomatic_adult'] = self.param_list.loc['annual_rate_symptomatic_adult', 'Value1']
-        params['annual_rate_aids_adult'] = self.param_list.loc['annual_rate_aids_adult', 'Value1']
-        params['monthly_rate_symptomatic_infant'] = self.param_list.loc['monthly_rate_symptomatic_infant', 'Value1']
-        params['monthly_rate_aids_infant_fast'] = self.param_list.loc['monthly_rate_aids_infant_fast', 'Value1']
-        params['monthly_rate_aids_infant_slow'] = self.param_list.loc['monthly_rate_aids_infant_slow', 'Value1']
+        params['annual_prob_symptomatic_adult'] = self.param_list.loc['annual_prob_symptomatic_adult', 'Value1']
+        params['annual_prob_aids_adult'] = self.param_list.loc['annual_prob_aids_adult', 'Value1']
+        params['monthly_prob_symptomatic_infant'] = self.param_list.loc['monthly_prob_symptomatic_infant', 'Value1']
+        params['monthly_prob_aids_infant_fast'] = self.param_list.loc['monthly_prob_aids_infant_fast', 'Value1']
+        params['monthly_prob_aids_infant_slow'] = self.param_list.loc['monthly_prob_aids_infant_slow', 'Value1']
 
         self.parameters['initial_art_coverage'] = workbook['coverage']
 

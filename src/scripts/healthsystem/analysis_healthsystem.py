@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, qaly, hiv, \
-    male_circumcision, tb_hs_engagement, hiv_behaviour_change, tb
+    male_circumcision, hiv_behaviour_change, tb
 
 # Where will output go
 outputpath = './src/scripts/output logs/'
@@ -39,6 +39,7 @@ logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
+# logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -61,7 +62,6 @@ sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0], par_e
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[5]))
 sim.register(hiv_behaviour_change.BehaviourChange())
-sim.register(tb_hs_engagement.health_system_tb())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
