@@ -454,7 +454,7 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
-        'rr_death_dysentery_agelt11months': Parameter
+        'rr_death_dysentery_agelt11mo': Parameter
         (Types.REAL,
          'relative rate of death from dysentery for age < 11 months'
          ),
@@ -604,7 +604,7 @@ class ChildhoodDiarrhoea(Module):
         """
         p = self.parameters
 
-        p['base_prev_dysentery'] = 0.4
+        p['base_prev_dysentery'] = 0.2
         p['rp_dysentery_agelt11mo'] = 1.2
         p['rp_dysentery_age12to23mo'] = 0.8
         p['rp_dysentery_age24to59mo'] = 0.5
@@ -619,7 +619,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_dysentery_wealth2'] = 0.9
         p['rp_dysentery_wealth4'] = 1.2
         p['rp_dysentery_wealth5'] = 1.3
-        p['base_incidence_dysentery'] = 0.5
+        p['base_incidence_dysentery'] = 0.2
         p['rr_dysentery_agelt11mo'] = 1.2
         p['rr_dysentery_age12to23mo'] = 0.8
         p['rr_dysentery_age24to59mo'] = 0.5
@@ -664,7 +664,7 @@ class ChildhoodDiarrhoea(Module):
         p['rr_acute_diarrhoea_wealth2'] = 0.9
         p['rr_acute_diarrhoea_wealth4'] = 1.2
         p['rr_acute_diarrhoea_wealth5'] = 1.3
-        p['base_prev_persistent_diarrhoea'] = 0.5
+        p['base_prev_persistent_diarrhoea'] = 0.2
         p['rp_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rp_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rp_persistent_diarrhoea_age24to59mo'] = 0.5
@@ -679,7 +679,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_persistent_diarrhoea_wealth2'] = 0.9
         p['rp_persistent_diarrhoea_wealth4'] = 1.2
         p['rp_persistent_diarrhoea_wealth5'] = 1.3
-        p['base_incidence_persistent_diarrhoea'] = 0.5
+        p['base_incidence_persistent_diarrhoea'] = 0.2
         p['rr_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rr_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rr_persistent_diarrhoea_age24to59mo'] = 0.5
@@ -695,7 +695,7 @@ class ChildhoodDiarrhoea(Module):
         p['rr_persistent_diarrhoea_wealth4'] = 1.2
         p['rr_persistent_diarrhoea_wealth5'] = 1.3
         p['init_prop_diarrhoea_status'] = [0.2, 0.2, 0.2]
-        p['r_recovery_dysentery'] = 0.6
+        p['r_recovery_dysentery'] = 0.9
         p['rr_recovery_dysentery_agelt11mo'] = 0.7
         p['rr_recovery_dysentery_age12to23mo'] = 0.9
         p['rr_recovery_dysentery_age24to59mo'] = 1.1
@@ -1059,7 +1059,7 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         # recovery from dysentery
 
         di_current_dysentery_idx = \
-            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_exact_years < 5]
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_years < 5]
         di_current_dysentery_agelt11mo_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_exact_years < 1]
         di_current_dysentery_age12to23mo_idx = \
@@ -1070,16 +1070,16 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
         di_current_dysentery_HIV_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
-                     (df.has_hiv) & (df.age_years < 5)]
+                     (df.has_hiv) & (df.age_exact_years < 5)]
         di_current_dysentery_SAM_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
-                     df.malnutrition & (df.age_years < 5)]
+                     df.malnutrition & (df.age_exact_years < 5)]
 
         eff_prob_recovery_dysentery = pd.Series(m.r_recovery_dysentery,
                                                 index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery')
-                                                               & (df.age_years < 5)])
-        eff_prob_recovery_dysentery.loc[di_current_dysentery_agelt11mo_idx] *= \
-            m.rr_recovery_dysentery_agelt11mo
+                                                               & (df.age_exact_years < 5)])
+     #   eff_prob_recovery_dysentery.loc[di_current_dysentery_agelt11mo_idx] *= \
+     #       m.rr_recovery_dysentery_agelt11mo
         eff_prob_recovery_dysentery.loc[di_current_dysentery_age12to23mo_idx] *= \
             m.rr_recovery_dysentery_age12to23mo
         eff_prob_recovery_dysentery.loc[di_current_dysentery_age24to59mo_idx] *= \
@@ -1087,11 +1087,12 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_dysentery.loc[di_current_dysentery_HIV_idx] *= \
             m.rr_recovery_dysentery_HIV
         eff_prob_recovery_dysentery.loc[di_current_dysentery_SAM_idx] *= \
-            m.rr_recovery_dysentery_SAM
+            m.rr_recovery_dysentery_SAM#
 
         random_draw_02 = pd.Series(rng.random_sample(size=len(di_current_dysentery_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ei_diarrhoea_status == 'dysentery')])
+                                   index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
+                                                                 df.age_years < 5])
+
         dfx = pd.concat([eff_prob_recovery_dysentery, random_draw_02], axis=1)
         dfx.columns = ['eff_prob_recovery_dysentery', 'random_draw_02']
         idx_recovery_dysentery = dfx.index[dfx.eff_prob_recovery_dysentery > dfx.random_draw_02]
@@ -1111,18 +1112,18 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
         di_current_acute_diarrhoea_HIV_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
-                     (df.has_hiv) & (df.age_years < 5)]
+                     (df.has_hiv) & (df.age_exact_years < 5)]
         di_current_acute_diarrhoea_SAM_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
-                     df.malnutrition & (df.age_years < 5)]
+                     df.malnutrition & (df.age_exact_years < 5)]
 
         eff_prob_recovery_acute_diarrhoea = \
             pd.Series(m.r_recovery_acute_diarrhoea,
                       index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
-                                     (df.age_years < 5)])
+                                     (df.age_exact_years < 5)])
 
-        eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_agelt11mo_idx] *= \
-            m.rr_recovery_acute_diarrhoea_agelt11mo
+     #   eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_agelt11mo_idx] *= \
+     #       m.rr_recovery_acute_diarrhoea_agelt11mo
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age12to23mo_idx] *= \
             m.rr_recovery_acute_diarrhoea_age12to23mo
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age24to59mo_idx] *= \
@@ -1133,10 +1134,11 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
             m.rr_recovery_acute_diarrhoea_SAM
 
         random_draw_03 = pd.Series(rng.random_sample(size=len(di_current_acute_diarrhoea_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive &
-                                               (df.ei_diarrhoea_status == 'acute watery diarrhoea')])
+                                   index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea')
+                                                  & df.age_exact_years < 5])
+
         dfx = pd.concat([eff_prob_recovery_acute_diarrhoea, random_draw_03], axis=1)
-        dfx.columns = ['eff_prob_recovery_acute_diarrhoea', 'random_draw']
+        dfx.columns = ['eff_prob_recovery_acute_diarrhoea', 'random_draw_03']
         idx_recovery_acute_diarrhoea = dfx.index[dfx.eff_prob_recovery_acute_diarrhoea > dfx.random_draw_03]
         df.loc[idx_recovery_acute_diarrhoea, 'ei_diarrhoea_status'] = 'none'
 
