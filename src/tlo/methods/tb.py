@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-from tlo.methods import healthsystem
+from tlo.methods import healthsystem, demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -46,8 +46,8 @@ class tb(Module):
         'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
         'rel_infectiousness_hiv': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
         'monthly_prob_self_cure': Parameter(Types.REAL, 'annual probability of self-cure'),
-        'ann_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
-        'ann_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
+        'monthly_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
+        'monthly_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
         'monthly_prob_relapse_tx_complete': Parameter(Types.REAL,
                                                       'annual probability of relapse once treatment complete'),
         'monthly_prob_relapse_tx_incomplete': Parameter(Types.REAL,
@@ -102,12 +102,13 @@ class tb(Module):
         'tb_treated': Property(Types.BOOL, 'on tb treatment regimen'),
         'tb_date_treated': Property(Types.DATE, 'date tb treatment started'),
         'tb_treatment_failure': Property(Types.BOOL, 'failed first line tb treatment'),
-        'tb_treatedMDR': Property(Types.BOOL, 'on tb treatment MDR regimen'),
-        'tb_date_treatedMDR': Property(Types.DATE, 'date tb MDR treatment started'),
+        'tb_treated_mdr': Property(Types.BOOL, 'on tb treatment MDR regimen'),
+        'tb_date_treated_mdr': Property(Types.DATE, 'date tb MDR treatment started'),
         'request_mdr_regimen': Property(Types.BOOL, 'request for mdr treatment'),
     }
 
     TREATMENT_ID = 'tb_treatment'
+    MDR_TREATMENT_ID = 'tb_mdr_treatment'
     SPUTUM_TEST_ID = 'tb_sputum_test'
     XPERT_TEST_ID = 'tb_xpert_test'
     FOLLOWUP_ID = 'tb_followup'
@@ -135,8 +136,8 @@ class tb(Module):
         params['rr_tb_pollution'] = self.param_list.loc['rr_tb_pollution', 'value1']
         params['rel_infectiousness_hiv'] = self.param_list.loc['rel_infectiousness_hiv', 'value1']
         params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value1']
-        params['ann_prob_tb_mortality'] = self.param_list.loc['ann_prob_tb_mortality', 'value1']
-        params['ann_prob_tb_mortality_hiv'] = self.param_list.loc['ann_prob_tb_mortality_hiv', 'value1']
+        params['monthly_prob_tb_mortality'] = self.param_list.loc['ann_prob_tb_mortality', 'value1']
+        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['ann_prob_tb_mortality_hiv', 'value1']
         params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value1']
         params['prop_mdr_new'] = self.param_list.loc['prop_mdr_new', 'value1']
         params['prop_mdr_retreated'] = self.param_list.loc['prop_mdr_retreated', 'value1']
@@ -279,7 +280,7 @@ class tb(Module):
         sim.schedule_event(TbMdrActiveEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=12))
 
-        # sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -310,6 +311,13 @@ class tb(Module):
             'Electricity': False,
             'Water': False})
 
+        footprint_for_treatment_mdr = pd.DataFrame(index=np.arange(1), data={
+            'Name': tb.MDR_TREATMENT_ID,
+            'Nurse_Time': 5,
+            'Doctor_Time': 10,
+            'Electricity': False,
+            'Water': False})
+
         footprint_for_followup = pd.DataFrame(index=np.arange(1), data={
             'Name': tb.FOLLOWUP_ID,
             'Nurse_Time': 15,
@@ -320,6 +328,7 @@ class tb(Module):
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_smear_test)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_xpert_test)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment_mdr)
         self.sim.modules['HealthSystem'].register_interventions(footprint_for_followup)
 
     # TODO: check all properties match list above
@@ -450,6 +459,15 @@ class tb(Module):
                 if gets_test:
                     event = TbXpertTest(self, person_id)
                     self.sim.schedule_event(event, self.sim.date)
+
+        # ----------------------------------- TB TREATMENT -----------------------------------
+        # cue type initial disease call
+
+        # cue type healthcare seeking poll
+
+        # cue type outreach
+
+
 
     # TODO: complete this
     def on_followup_healthsystem_interaction(self, person_id):
@@ -939,6 +957,17 @@ class TbTestingEvent(Event, IndividualScopeEventMixin):
                                                                     disease_specific=self.module.name)
             self.sim.schedule_event(repeat_test, future_test_time)
 
+        # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
+        if df.at[person_id, 'tb_diagnosed']:
+            # request treatment
+            treatment = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
+                                                                  cue_type='InitialDiseaseCall',
+                                                                  disease_specific=self.module.name)
+            self.sim.schedule_event(treatment, now)
+
+
+
+
 
 class TbXpertTest(Event, IndividualScopeEventMixin):
     """ Xpert test for people with negative smear result
@@ -978,6 +1007,14 @@ class TbXpertTest(Event, IndividualScopeEventMixin):
                                                                         cue_type='InitialDiseaseCall',
                                                                         disease_specific=self.module.name)
                 self.sim.schedule_event(repeat_test, future_test_time)
+
+        # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
+        if df.at[person_id, 'tb_diagnosed']:
+            # request treatment
+            treatment = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
+                                                                  cue_type='InitialDiseaseCall',
+                                                                  disease_specific=self.module.name)
+            self.sim.schedule_event(treatment, now)
 
 
 # ---------------------------------------------------------------------------
@@ -1153,83 +1190,52 @@ class TbXpertTest(Event, IndividualScopeEventMixin):
 #         # TODO: ending ipt
 #
 #
-# # ---------------------------------------------------------------------------
-# #   Deaths
-# # ---------------------------------------------------------------------------
-# # TODO: complete this
-# class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
-#     """The regular event that actually kills people.
-#
-#     Regular events automatically reschedule themselves at a fixed frequency,
-#     and thus implement discrete timestep type behaviour. The frequency is
-#     specified when calling the base class constructor in our __init__ method.
-#     """
-#
-#     def __init__(self, module):
-#         """Create a new random death event.
-#
-#         We need to pass the frequency at which we want to occur to the base class
-#         constructor using super(). We also pass the module that created this event,
-#         so that random number generators can be scoped per-module.
-#
-#         :param module: the module that created this event
-#         :param death_probability: the per-person probability of death each month
-#         """
-#         super().__init__(module, frequency=DateOffset(months=12))
-#
-#     def apply(self, population):
-#         """Apply this event to the population.
-#
-#         For efficiency, we use pandas operations to scan the entire population
-#         and kill individuals at random.
-#
-#         :param population: the current population
-#         """
-#         params = self.module.parameters
-#         df = population.props
-#         now = self.sim.date
-#         rng = self.module.rng
-#
-#         mortality_rate = pd.Series(0, index=df.index)
-#         mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & ~df.hiv_inf] = params[
-#             'tb_mortality_rate']
-#         mortality_rate.loc[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & df.hiv_inf] = params[
-#             'tb_mortality_hiv']
-#         # print('mort_rate: ', mortality_rate)
-#
-#         # Generate a series of random numbers, one per individual
-#         probs = rng.rand(len(df))
-#         deaths = df.is_alive & (probs < mortality_rate)
-#         # print('deaths: ', deaths)
-#         will_die = (df[deaths]).index
-#         # print('will_die: ', will_die)
-#
-#         # TODO: add in treatment status as conditions for death
-#
-#         for person in will_die:
-#             if df.at[person, 'is_alive']:
-#                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id=person, cause='tb'),
-#                                         now)
-#                 df.at[person, 'tb_date_death'] = now
-#
-#
-# # ---------------------------------------------------------------------------
-# #   Logging
-# # ---------------------------------------------------------------------------
-# # TODO: complete this
+# ---------------------------------------------------------------------------
+#   Deaths
+# ---------------------------------------------------------------------------
+class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that kills people.
+    """
 
-#         active_tb_susc = len(df[(df.tb_inf == 'active_susc') & df.is_alive])
-#         active_tb_mdr = len(df[(df.tb_inf == 'active_mdr') & df.is_alive])
-#
-#         coinfected_total = len(
-#             df[((df.tb_inf == 'active_susc') | (df.tb_inf == 'active_mdr')) & df.hiv_inf & df.is_alive])
-#
-#         self.module.store['Time'].append(self.sim.date)
-#         self.module.store['Total_active_tb'].append(active_tb_susc)
-#         self.module.store['Total_active_tb_mdr'].append(active_tb_mdr)
-#         self.module.store['Total_co-infected'].append(coinfected_total)
-#
-#         # print('tb outputs: ', self.sim.date, active_tb_total, coinfected_total)
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=12))
+
+    def apply(self, population):
+        params = self.module.parameters
+        df = population.props
+        now = self.sim.date
+        rng = self.module.rng
+
+        # only active infections result in death, no deaths on treatment
+        mortality_rate = pd.Series(0, index=df.index)
+        mortality_rate.loc[((df.tb_inf == 'active_susc_primary') | (df.tb_inf == 'active_mdr_primary') | (
+            df.tb_inf == 'active_susc_secondary') | (df.tb_inf == 'active_mdr_secondary')) & ~df.hiv_inf & (
+                               ~df.tb_treated | ~df.tb_treated_mdr)] = params[
+            'monthly_prob_tb_mortality']
+        mortality_rate.loc[((df.tb_inf == 'active_susc_primary') | (df.tb_inf == 'active_mdr_primary') | (
+            df.tb_inf == 'active_susc_secondary') | (df.tb_inf == 'active_mdr_secondary')) & df.hiv_inf & (
+                               ~df.tb_treated | ~df.tb_treated_mdr)] = params[
+            'monthly_prob_tb_mortality_hiv']
+        # print('mort_rate: ', mortality_rate)
+
+        # Generate a series of random numbers, one per individual
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < mortality_rate)
+        # print('deaths: ', deaths)
+        will_die = (df[deaths]).index
+        # print('will_die: ', will_die)
+
+        for person in will_die:
+            if df.at[person, 'is_alive']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'),
+                                        now)
+                df.at[person, 'tb_date_death'] = now
+
+
+# ---------------------------------------------------------------------------
+#   Logging
+# ---------------------------------------------------------------------------
+
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """ produce some outputs to check
