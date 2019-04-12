@@ -25,11 +25,9 @@ class Labour (Module):
 
     PARAMETERS = {
 
-        'prob_SL': Parameter(
-            Types.REAL, 'probability of a woman entering spontaneous unobstructed labour'),
-        'prob_abortion': Parameter(
-            Types.REAL, 'probability of a woman experiencing an abortion before 28 weeks gestation'),
-        'v': Parameter(
+        'prob_pregnancy': Parameter(
+            Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMTER
+        'prob_pl_ol': Parameter(
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
@@ -53,29 +51,76 @@ class Labour (Module):
         'rr_ptl_persistent_malaria': Parameter (
             Types.REAL, 'relative risk of a woman with presistant malaria entering preterm labour '
                         '(peripheral slide positive at booking and at 28–32 weeks)'),
-        'rr_ptl_prev_ptb': Parameter(
+        'prob_an_eclampsia_ptb': Parameter(
+            Types.REAL, 'probability of eclampsia during preterm labour'),
+        'prob_an_aph_ptb': Parameter(
+            Types.REAL, 'probability of an antepartum haemorrhage in preterm labour'),
+        'prob_an_sepsis_ptb': Parameter(
+            Types.REAL, 'probability of sepsis in preterm labour'),
+        'prob_an_eclampsia_sl': Parameter(
+            Types.REAL, 'probability of eclampsia in spontaneous unobstructed labours'),
+        'prob_an_sepsis_sl': Parameter(
+            Types.REAL, 'probability of sepsis in spontaneous unobstructed labour'),
+        'prob_an_aph_sl': Parameter(
+            Types.REAL, 'probability of antepartum haemorrhage in spontaneous unobstructed labour'),
+        'prob_an_eclampsia_pl_ol': Parameter(
+            Types.REAL, 'probability of eclampsia in prolonged or obstructed labour'),
+        'prob_an_sepsis_pl_ol': Parameter(
+            Types.REAL, 'probability of sepsis in prolonged or obstructed labour'),
+        'prob_an_aph_pl_ol': Parameter(
+            Types.REAL, 'probability of antepartum haemorrhage in prolonged or obstructed labour'),
+        'prob_an_ur_pl_ol': Parameter(
+            Types.REAL, 'probability of uterine rupture in prolonged or obstructed labour'),
+        'cfr_aph': Parameter(
+            Types.REAL, 'case fatality rate for antepartum haemorrhage during labour'),
+        'cfr_eclampsia': Parameter(
+            Types.REAL, 'case fatality rate for eclampsia during labours'),
+        'cfr_sepsis': Parameter(
+            Types.REAL, 'case fatality rate for sepsis during labour'),
+        'cfr_uterine_rupture': Parameter(
+            Types.REAL, 'case fatality rate for uterine rupture in labour'),
+        'prob_still_birth_aph': Parameter(
+            Types.REAL, 'probability of a still birth following antepartum haemorrhage'),
+        'prob_still_birth_sepsis': Parameter(
+            Types.REAL, 'probability of a still birth following sepsis in labour'),
+        'prob_still_birth_ur': Parameter(
+            Types.REAL, 'probability of a still birth following uterine rupture in labour'),
+        'prob_still_birth_eclampsia': Parameter(
+            Types.REAL, 'probability of still birth following eclampsia in labour'),
+        'prob_pn_eclampsia_ptb': Parameter(
+            Types.REAL, 'probability of eclampsia following delivery for women who were in spotaneous unobstructed '
+                        'labour'),
+        'prob_pn_pph_ptb': Parameter(
+            Types.REAL, 'probability of an postpartum haemorrhage for women who were in preterm labour'),
+        'prob_pn_sepsis_ptb': Parameter(
+            Types.REAL, 'probability of sepsis following delivery for women in preterm labour'),
+        'prob_pn_eclampsia_sl': Parameter(
+            Types.REAL, 'probability of eclampsia following delivery for women who were in spotaneous unobstructed '
+                        'labour'),
+        'prob_pn_sepsis_sl': Parameter(
+            Types.REAL, 'probability of sepsis following delivery for women who were in spontaneous unobstructed labour'),
+        'prob_pn_pph_sl': Parameter(
+            Types.REAL, 'probability of postpartum haemorrhage for women who were in spontaneous unobstructed labour'),
+        'prob_pn_eclampsia_pl_ol': Parameter(
+            Types.REAL, 'probability of eclampsia following delivery for women who were in prolonged or obstructed'
+                        ' labour'),
+        'prob_pn_sepsis_pl_ol': Parameter(
+            Types.REAL, 'probability of sepsis following delivery for women who were  in prolonged or obstructed '
+                        'labours'),
+        'prob_pn_pph_pl_ol': Parameter(
             Types.REAL, 'relative risk of a woman going into pre term labour if she has had a preterm birth for any '
                         'prior deliveries'),
-        'prob_live_birth_SL': Parameter(
-             Types.REAL, 'probability of live birth following spontaneous labour'),
-        'prob_live_birth_IL': Parameter(
-            Types.REAL, 'probability of live birth following induced labour'),
-        'prob_live_birth_planned_CS': Parameter(
-            Types.REAL, 'probability of live birth following a planned caesarean section'),
-        'prob_live_birth_PL/OL': Parameter(
-            Types.REAL, 'probability of live birth following prolonged/obstructed labour'),
-        'prob_still_birth_SL': Parameter (
-            Types.REAL, 'probability of still birth following spontaneous labour'),
-        'prob_still_birth_IL': Parameter(
-            Types.REAL, 'probability of still birth following induced labour'),
-        'prob_still_birth_PL/OL': Parameter(
-            Types.REAL, 'probability of still birth following prolonged labour'),
-        'prob_still_birth_abortion': Parameter(
-            Types.REAL, 'probability of still birth an abortion'),
-        'prob_pregnancy' :Parameter(
-            Types.REAL, 'baseline probability of pregnancy'), #DUMMY PARAMTER
-        'base_init_parity':Parameter(
-            Types.REAL, 'value of parity on initialisation')
+        'prob_sa_pph': Parameter(
+            Types.REAL, 'probability of a postpartum haemorrhage following a spontaneous abortion before 28 weeks'
+                        ' gestation'),
+        'prob_sa_sepsis': Parameter(
+            Types.REAL, 'probability of a sepsis  following a spontaneous abortion before 28 weeks gestation'),
+        'cfr_pn_pph': Parameter(
+            Types.REAL, 'case fatality rate for postpartum haemorrhages'),
+        'cfr_pn_eclampsia': Parameter(
+            Types.REAL, 'case fatality rate for eclampsia following delivery'),
+        'cfr_pn_sepsis': Parameter(
+            Types.REAL, 'case fatality rate for sepsis following delivery s')
 
       }
 
@@ -104,6 +149,7 @@ class Labour (Module):
         """
         params = self.parameters
 
+        params['prob_pregnancy'] = 0.03  # DUMMY PREGNANCY GENERATOR
         params['prob_SL'] = 0.80
         params['prob_induction'] = 0.10
         params['prob_planned_CS'] = 0.03
@@ -116,19 +162,40 @@ class Labour (Module):
         params['rr_PL_OL_baby<1.5kg'] = 0.7
         params['rr_PL_OL_bmi<18'] = 0.8
         params['rr_PL_OL_bmi>25'] = 1.4
-        params['prob_ptl'] = 0.20
-        params['rr_ptl_persistent_malaria'] = 1.4
-        params['rr_ptl_prev_ptb'] = 2.13
-        params['prob_live_birth_SL'] = 0.85
-        params['prob_live_birth_IL'] = 0.8
-        params['prob_live_birth_PL'] = 0.75
-        params['prob_live_birth_OL'] = 0.7
-        params['prob_still_birth_SL'] = 0.15
-        params['prob_still_birth_IL'] = 0.2
-        params['prob_still_birth_PL'] = 0.25
-        params['prob_still_birth_OL'] = 0.3
-        params['prob_pregnancy'] = 0.03  # DUMMY PREGNANCY GENERATOR
-        params['base_init_parity'] = 0  # DUMMY
+        params['prob_ptl'] = 0.2
+        params['prob_an_eclampsia_ptb'] = 0.15
+        params['prob_an_aph_ptb'] = 0.15
+        params['prob_an_sepsis_ptb'] = 0.15
+        params['prob_an_eclampsia_sl'] = 0.15
+        params['prob_an_sepsis_sl'] = 0.15
+        params['prob_an_aph_sl'] = 0.15
+        params['prob_an_eclampsia_pl_ol'] = 0.15
+        params['prob_an_sepsis_pl_ol'] = 0.15
+        params['prob_an_aph_pl_ol'] = 0.15
+        params['prob_an_ur_pl_ol'] = 0.15
+        params['cfr_aph'] = 0.15
+        params['cfr_eclampsia'] = 0.15
+        params['cfr_sepsis'] = 0.15
+        params['cfr_uterine_rupture'] = 0.15
+        params['prob_still_birth_aph'] = 0.15
+        params['prob_still_birth_sepsis'] = 0.15
+        params['prob_still_birth_ur'] = 0.15
+        params['prob_still_birth_eclampsia'] = 0.15
+        params['prob_pn_eclampsia_ptb'] = 0.15
+        params['prob_pn_pph_ptb'] = 0.15
+        params['prob_pn_sepsis_ptb'] = 0.15
+        params['prob_pn_eclampsia_sl'] = 0.15
+        params['prob_pn_sepsis_sl'] = 0.15
+        params['prob_pn_pph_sl'] = 0.15
+        params['prob_pn_eclampsia_pl_ol'] = 0.15
+        params['prob_pn_sepsis_pl_ol'] = 0.15
+        params['prob_pn_pph_pl_ol'] = 0.15
+        params['prob_sa_pph'] = 0.15
+        params['prob_sa_pph'] = 0.15
+        params['cfr_pn_pph'] = 0.15
+        params['cfr_pn_eclampsia'] = 0.15
+        params['cfr_pn_sepsis'] = 0.15
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -184,14 +251,15 @@ class Labour (Module):
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
-        dfx['gestational_age'] = (42 - 42 * dfx.random_draw)
+        dfx['gestational_age'] = (39 - 39 * dfx.random_draw)
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age'], unit='w')
-        dfx['due_date_mth'] = 40 - dfx['gestational_age']
+        dfx['due_date_mth'] = 39 - dfx['gestational_age']
         dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
 
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'due_date'] = dfx.due_date
 
+        #  No one at baseline can be "over due"
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -201,7 +269,7 @@ class Labour (Module):
         women_parity_1524_idx = df.index[(df.age_years >= 15) & (df.age_years <= 24) & (df.is_alive == True)
                                     & (df.sex == 'F')]
 
-        baseline_p = pd.Series(m.base_init_parity, index=women_parity_1524_idx)
+        baseline_p = pd.Series(0, index=women_parity_1524_idx)
 
         random_draw2 = pd.Series(self.rng.choice(range(0, 4), p=[0.40, 0.35, 0.15, 0.10],
                                                  size=len(women_parity_1524_idx)),
@@ -216,7 +284,7 @@ class Labour (Module):
         women_parity_2540_idx = df.index[(df.age_years >= 25) & (df.age_years <= 40) & (df.is_alive == True)
                                          & (df.sex == 'F')]
 
-        baseline_p = pd.Series(m.base_init_parity, index=women_parity_2540_idx)
+        baseline_p = pd.Series(0, index=women_parity_2540_idx)
 
         random_draw = pd.Series(self.rng.choice(range(0, 6), p=[0.05, 0.15, 0.30, 0.20, 0.2, 0.1],
                                                 size=len(women_parity_2540_idx)), index=df.index[(df.age_years >= 25) &
@@ -232,7 +300,7 @@ class Labour (Module):
         women_parity_4149_idx = df.index[(df.age_years >= 41) & (df.age_years <= 49) & (df.is_alive == True)
                                          & (df.sex == 'F')]
 
-        baseline_p = pd.Series(m.base_init_parity, index=women_parity_4149_idx)
+        baseline_p = pd.Series(0, index=women_parity_4149_idx)
 
         random_draw = pd.Series(self.rng.choice(range(0, 7), p=[0.05, 0.10, 0.25, 0.30, 0.25, 0.03, 0.02],
                                                 size=len(women_parity_4149_idx)), index=df.index[(df.age_years >= 41)
@@ -281,20 +349,16 @@ class Labour (Module):
         idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
         df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
 
-    def baseline_labour_scheduler(self, population): # This still wont work
+    def baseline_labour_scheduler(self, population):
         """Schedules labour for women who are pregnant at baseline"""
 
-        # THIS IS NOT SCHEDULING LABOUR
         df = population.props
 
         pregnant_baseline = df.index[(df.is_pregnant == True) & df.is_alive]
-
         for person in pregnant_baseline:
-
             scheduled_labour_date = df.at[person, 'due_date']
             labour = LabourEvent(self, individual_id=person, cause='labour')
             self.sim.schedule_event(labour, scheduled_labour_date)
-
 
     def initialise_simulation(self, sim):
 
@@ -334,31 +398,27 @@ class LabourEvent(Event, IndividualScopeEventMixin):
     """Moves a pregnant woman into labour/spontaneous abortion based on gestation distribution """
 
     def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id) #do i need this?
+        super().__init__(module, person_id=individual_id ) #do i need this?
         self.cause = cause
 
     def apply(self, individual_id):
         df = self.sim.population.props
-#       params = self.module.parameters
-        m=self
+        params = self.module.parameters
+        m = self
+
+# ------------------------------------LABOUR STATE---------------------------------------------------------------------
 
         gestation_date = df.at[individual_id, 'due_date'] - (df.at[individual_id, 'date_of_last_pregnancy'])
         gestation_weeks = gestation_date / np.timedelta64(1, 'W')
 
-        random_draw= pd.Series(self.sim.rng.random_sample(size=1))
-
         if gestation_weeks > 37:
-
-            prob_pl_ol= pd.Series(0.5) #DUMMY
-            dfp = pd.concat([prob_pl_ol,random_draw],axis=1)
-            dfp.columns = ['prob_pl_ol', 'random_draw']
-            if dfp.index[dfp.prob_pl_ol > dfp.random_draw] == True:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['prob_pl_ol']:
                 df.at[individual_id, 'la_labour'] = "prolonged_or_obstructed_labour"
             else:
                 df.at[individual_id, 'la_labour'] = 'spontaneous_labour'
 
-            # Here would should apply a probability of the labour being prolonged/obstructed
-            # Will also need to apply risk factors
+            # To Do: Apply the effect of risk factors
             # and of having a planned CS or Induction
 
         elif gestation_weeks < 37 and gestation_weeks >28:
@@ -373,27 +433,49 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             # need to consider the benefits of a "previous spont miscarriage" property
             # also need to incorporate induction and planned CS
 
-
-class LabourDeathEvent(Event, IndividualScopeEventMixin):
-    """Shedules potential death based on natural history of delivery"""
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-        self.cause = cause
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
+    #  Complications During Delivery:
 
 
-# class LabourStillBirthEvent
+#  ----------------------------Uterine Rupture--------------------------------------------------------------------
 
+    # Maternal
+
+        if df.at[individual_id,'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample()  > \
+            params['prob_an_ur_pl_ol']:   # To Do: need to think about how to capture UR (fertility)
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_uterine_rupture']: # Women dies based on CFR of UR
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='uterine rupture'),
+                                            self.sim.date)
+                else:  # here deal with women who survive but still have UR
+                    if self.sim.rng.random_sample() < params['prob_still_birth_ur']:
+                        self.sim.schedule_event(demography.InstantaneousDeath(self.module,child, cause= 'Still birth'
+                                                                                                           'following'
+                                                                                                           'uterine'
+                                                                                                           'rupture'))
+
+                        # I feel like the below is dealt with in demography
+#                        df.at[individual_id,'la_labour'] = "not in labour"
+#                        df.at[individual_id,'is_pregnant'] = False
+
+                        # Need to consider that baby should still be generated just not alive
+
+#  ----------------------------Antepartum Haemorrhage Rupture-----------------------------------------------------
+#  ----------------------------Eclampsia--------------------------------------------------------------------------
+#  ----------------------------Sepsis--------------------------------------------------------------------------
+
+    # Postpartum complications
+
+#  ----------------------------Postpartum Haemorrhage Rupture-----------------------------------------------------
+#  ----------------------------Eclampsia--------------------------------------------------------------------------
+#  ----------------------------Sepsis--------------------------------------------------------------------------
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
-        self.repeat = 1
+        self.repeat = 3
         super().__init__(module, frequency=DateOffset(days=self.repeat))
 
     def apply(self, population):
