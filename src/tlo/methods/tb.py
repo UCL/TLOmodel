@@ -487,18 +487,29 @@ class tb(Module):
 
         # cue type outreach
 
-
-
-    # TODO: complete this
     def on_followup_healthsystem_interaction(self, person_id):
         #     logger.debug('This is a follow-up appointment')
+        df = self.sim.population.props
 
-        gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
-            person_id, self.XPERT_TEST_ID)
+        # for treatment failures on first-line drugs, drug-susceptibility testing
+        if df.at[person_id, 'tb_diagnosed']:
 
-        if gets_test:
-            event = TbXpertTest(self, person_id)
-            self.sim.schedule_event(event, self.sim.date)
+            gets_test = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.XPERT_TEST_ID)
+
+            if gets_test:
+                event = TbXpertTest(self, person_id)
+                self.sim.schedule_event(event, self.sim.date)
+
+        # for treatment failures on mdr-regimens, allocate further treatment
+        if df.at[person_id, 'tb_mdr_diagnosed']:
+
+            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
+                person_id, self.MDR_TREATMENT_ID_ID)
+
+            if gets_treatment:
+                event = TbTreatmentMdrEvent(self, person_id)
+                self.sim.schedule_event(event, self.sim.date)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
@@ -1039,7 +1050,7 @@ class TbTreatmentEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("We are now ready to treat this person", person_id)
+        logger.debug("We are now ready to treat this tb case", person_id)
 
         params = self.module.parameters
         now = self.sim.date
@@ -1054,39 +1065,25 @@ class TbTreatmentEvent(Event, IndividualScopeEventMixin):
         self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
 
-#
-#
-# # TODO: complete this
-# # TODO: make this individual event
-# class TbTreatmentMdrEvent(RegularEvent, PopulationScopeEventMixin):
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=1))
-#
-#     def apply(self, population):
-#         params = self.module.parameters
-#         now = self.sim.date
-#         df = population.props
-#
-#         # get a list of random numbers between 0 and 1 for the whole population
-#         random_draw = self.sim.rng.random_sample(size=len(df))
-#
-#         # probability of mdr treatment
-#         mdr_treated_idx = df.index[
-#             (random_draw < params['prob_tb_mdr_treatment']) & ~df.request_mdr_regimen & df.is_alive]
-#
-#         df.loc[mdr_treated_idx, 'request_mdr_regimen'] = False  # switch off this flag
-#         df.loc[mdr_treated_idx, 'tb_treatedMDR'] = True
-#         df.loc[mdr_treated_idx, 'tb_date_treatedMDR'] = now
-#
-#         # if on treatment for 6 months, take off and change to cured (100%)
-#         random_draw = self.sim.rng.random_sample(size=len(df))
-#         cure_idx = df.index[
-#             df.tb_treatedMDR & (((now - df.tb_date_treatedMDR) / np.timedelta64(1, 'M')) >= 6)]
-#         df.loc[cure_idx, 'tb_treated'] = False
-#         df.loc[cure_idx, 'tb_inf'] = 'latent_susc'
-#
-#
+class TbTreatmentMdrEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("We are now ready to treat this tb-mdr case", person_id)
+
+        now = self.sim.date
+        df = self.sim.population.props
+
+        # treatment allocated
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'tb_mdr_diagnosed']:
+            df.at[person_id, 'tb_treated_mdr'] = True
+            df.at[person_id, 'date_tb_treated_mdr'] = now
+
+        # schedule a 6-month event where people are cured, symptoms return to latent or not cured
+        self.sim.schedule_event(TbCureMdrEvent(self, person_id), self.sim.date + DateOffset(months=6))
+
 
 # ---------------------------------------------------------------------------
 #   Cure
@@ -1117,6 +1114,35 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             else:
                 # request a repeat / Xpert test - follow-up
                 # this will include drug-susceptible treatment failures and mdr-tb cases
+                followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp',
+                                                                          disease_specific=self.module.name)
+                self.sim.schedule_event(followup_appt, self.sim.date)  # TODO: include a delay here
+
+
+class TbCureMdrEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Stopping tb-mdr treatment and curing person", person_id)
+
+        df = self.sim.population.props
+
+        # after six months of treatment, stop
+        df.at[person_id, 'tb_treated_mdr'] = False
+
+        # if drug-susceptible then probability of successful treatment
+        if df.at[person_id, 'tb_inf'] == 'active_mdr':
+
+            cured = self.sim.random_sample(size=1) < self.module.parameters['prob_treatment_success']
+
+            if cured:
+                df.at[person_id, 'tb_inf'] = 'latent_mdr'
+                df.at[person_id, 'tb_mdr_diagnosed'] = False
+
+            else:
+                # request further treatment
                 followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp',
                                                                           disease_specific=self.module.name)
                 self.sim.schedule_event(followup_appt, self.sim.date)  # TODO: include a delay here
