@@ -679,7 +679,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_persistent_diarrhoea_wealth2'] = 0.9
         p['rp_persistent_diarrhoea_wealth4'] = 1.2
         p['rp_persistent_diarrhoea_wealth5'] = 1.3
-        p['base_incidence_persistent_diarrhoea'] = 0.2
+        p['base_incidence_persistent_diarrhoea'] = 0.5
         p['rr_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rr_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rr_persistent_diarrhoea_age24to59mo'] = 0.5
@@ -1141,6 +1141,51 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_recovery_acute_diarrhoea', 'random_draw_03']
         idx_recovery_acute_diarrhoea = dfx.index[dfx.eff_prob_recovery_acute_diarrhoea > dfx.random_draw_03]
         df.loc[idx_recovery_acute_diarrhoea, 'ei_diarrhoea_status'] = 'none'
+
+        # recovery from persistent diarrhoea
+
+        di_current_persistent_diarrhoea_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') & df.age_years < 5]
+        di_current_persistent_diarrhoea_agelt11mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') & df.age_exact_years < 1]
+        di_current_persistent_diarrhoea_age12to23mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
+                     (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
+        di_current_persistent_diarrhoea_age24to59mo_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
+                     (df.age_exact_years >= 2) & (df.age_exact_years < 5)]
+        di_current_persistent_diarrhoea_HIV_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
+                     (df.has_hiv) & (df.age_exact_years < 5)]
+        di_current_persistent_diarrhoea_SAM_idx = \
+            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
+                     df.malnutrition & (df.age_exact_years < 5)]
+
+        eff_prob_recovery_persistent_diarrhoea = \
+            pd.Series(m.r_recovery_persistent_diarrhoea,
+                      index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
+                                     (df.age_exact_years < 5)])
+
+     #   eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_agelt11mo_idx] *= \
+    #      m.rr_recovery_persistent_diarrhoea_agelt11mo
+        eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_age12to23mo_idx] *= \
+            m.rr_recovery_persistent_diarrhoea_age12to23mo
+        eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_age24to59mo_idx] *= \
+            m.rr_recovery_persistent_diarrhoea_age24to59mo
+        eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_HIV_idx] *= \
+            m.rr_recovery_persistent_diarrhoea_HIV
+        eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_SAM_idx] *= \
+            m.rr_recovery_persistent_diarrhoea_SAM
+
+        random_draw_04 = pd.Series(rng.random_sample(size=len(di_current_persistent_diarrhoea_idx)),
+                                   index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea')
+                                                  & df.age_years < 5])
+
+        dfx = pd.concat([eff_prob_recovery_persistent_diarrhoea, random_draw_04], axis=1)
+        dfx.columns = ['eff_prob_recovery_persistent_diarrhoea', 'random_draw_04']
+        idx_recovery_persistent_diarrhoea = dfx.index[dfx.eff_prob_recovery_persistent_diarrhoea > dfx.random_draw_04]
+        df.loc[idx_recovery_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'none'
+
 
         # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
 
