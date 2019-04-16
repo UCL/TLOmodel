@@ -252,6 +252,10 @@ class Demography(Module):
                         'xxx': 0
                     })
 
+        if df.at[mother_id, 'la.still_birth_at_this_delivery']:
+            death = InstantaneousDeath(self, child_id, cause='Late Stillbirth')
+            self.sim.schedule_event(death, self.sim.date)
+
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -274,8 +278,8 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
     """
-    This event looks across each woman in the population to determine who will become pregnant
-    """
+     This event looks across each woman in the population to determine who will become pregnant
+     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -290,6 +294,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             logger.debug('Now after 2035')
 
         df = population.props  # get the population dataframe
+        # params = self.module.parameters
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
@@ -348,7 +353,9 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             # Here the start of a woman's labour is scheduled via her due date
 
             scheduled_labour_date = df.at[female_id, 'due_date']
-            self.sim.schedule_event(Labour.LabourEvent(self, female_id, cause='labour'), scheduled_labour_date) #self.module?
+
+            Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour')
+            self.sim.schedule_event(Labour.LabourEvent, scheduled_labour_date)
 
             logger.debug('birth booked for: %s', df.due_date)
 
@@ -389,7 +396,6 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
         #   df.at[mother_id, 'la_labour'] = "not_in_labour"
-
         # commented out so I can continue to see women moving into correct state of labour
 
 
