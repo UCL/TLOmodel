@@ -10,8 +10,8 @@ workbook_name = 'contraception.xlsx'
 workbook2_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 50
+end_date = Date(2012, 1, 1)
+popsize = 200
 
 
 @pytest.fixture(scope='module')

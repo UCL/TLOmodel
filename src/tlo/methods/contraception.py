@@ -218,8 +218,6 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
 
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_discontinuation']
-        c_probs = c_worksheet.loc[0].values.tolist()
-        c_names = c_worksheet.columns.tolist()
 
         # add the probabilities and copy to each row of the sim population (population dataframe)
         df_new = pd.concat([df, c_worksheet], axis=1)
@@ -234,35 +232,28 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
         probabilities = df_new.loc[using_idx, ['contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
-        probs = probabilities.query(probabilities.columns=='contraception')
+        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
+        probabilities['1-prob'] = 1-probabilities['prob']
+        probabilities['not_using'] = 'not_using'
+
         # apply the probabilities of discontinuation for each contraception method
         # to series which has index of all currently using
         # need to use a for loop to loop through each method
         for woman in using_idx:
-            her_p=np.asarray(df_new.at[woman, df_new.contraception].value, 1-df_new.at[woman, df_new.contraception].value)
-            her_op=np.asarray('not_using', c_names.loc[woman,'contraception'])
+            her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
+            her_op = np.asarray(probabilities.loc[woman,['not_using', 'contraception']])
 
-            her_method=self.rng.choice(her_op,p=her_p)
+            her_method = rng.choice(her_op,p=her_p)
 
             df.loc[woman,'contraception']=her_method
-
-        #stop_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(using_idx), replace=True),
-        #                           index=using_idx)
-
-        # only update those stopping contraception
-        #now_not_using_idx = using_idx[stop_method]
-        #df.loc[now_not_using_idx, 'contraception'] = stop_method[using_idx]
-
-        # output some logging if any start contraception
-        if len(using_idx):
-            for woman_id in using_idx:
+            # output some logging if any stop contraception
+            if her_method == 'not_using':
                 logger.info('%s|stop_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_age': df.at[woman_id, 'age_years'],
-                                'contraception': df.at[woman_id, 'contraception']
-                            })
-        hello
+                                self.sim.date,
+                                {
+                                    'woman_age': df.at[woman, 'age_years'],
+                                    'contraception': df.at[woman, 'contraception']
+                                })
 
 
 class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):
