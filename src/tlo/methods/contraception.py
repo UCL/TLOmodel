@@ -133,8 +133,7 @@ class Contraception(Module):
 
         # check all women after birth to determine subsequent contraception method (including not_using)
         # This should only be called after birth, though should be repeated every month i.e. following new births every month
-        # so needs to start 10 months after simulation so some births have happened (so relevant df subset birth_idx is not empty)
-        sim.schedule_event(Init2(self), sim.date + DateOffset(months=20))
+        sim.schedule_event(Init2(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -357,32 +356,30 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = self.module.rng
 
-        # get the indices of the women from the population with the relevant characterisitcs
-        # those who have just given birth within the last month
-        # TODO: birth_idx starts off empty and needs to have some entries for this to work
-        birth_idx = df.index[(df.date_of_childbirth > Date(2010, 1, 1))]
-
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_initiation2']
         c_probs = c_worksheet.loc[0].values.tolist()
         c_names = c_worksheet.columns.tolist()
 
-        # sample contraceptive method for everyone just given birth
-        # and put in a series which has index of all currently not using
-        sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(birth_idx), replace=True),
+        # get the indices of the women from the population with the relevant characterisitcs
+        # those who have just given birth within the last month
+        # the if statement below is to keep it running if there are no births within the last month
+        if df[((df.date_of_childbirth < self.sim.date) & (df.date_of_childbirth > self.sim.date - DateOffset(months=1)))].empty == True:
+            pass
+        else:
+            birth_idx = df.index[((df.date_of_childbirth < self.sim.date) & (df.date_of_childbirth > self.sim.date - DateOffset(months=1)))]
+            # sample contraceptive method for everyone just given birth
+            sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(birth_idx), replace=True),
                                    index=birth_idx)
-
-        # update contraception method for all women who have just given birth
-        #now_contraception_idx = birth_idx[sampled_method]
-        df.loc[birth_idx, 'contraception'] = sampled_method[birth_idx]
-
-        # output some logging if any start contraception
-        if len(birth_idx):
-            for woman_id in birth_idx:
-                logger.info('%s|post-birth_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman_id,
-                                'contraception': df.at[woman_id, 'contraception']
-                            })
+            # update contraception method for all women who have just given birth
+            df.loc[birth_idx, 'contraception'] = sampled_method[birth_idx]
+            # output some logging if any post-birth contraception
+            if len(birth_idx):
+                for woman_id in birth_idx:
+                    logger.info('%s|post-birth_contraception|%s',
+                                self.sim.date,
+                                {
+                                    'woman_index': woman_id,
+                                    'contraception': df.at[woman_id, 'contraception']
+                                })
 
