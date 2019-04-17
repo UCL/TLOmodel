@@ -38,7 +38,8 @@ class Contraception(Module):
         'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'), # 'irate_1_' sheet created manually as a work around to address to do point below
         # TODO: irate1 is specified incorrectly as expos is too low for each method - should be total exposure time and the same for each method i.e. exposure should be those exposed to 'not_using'. The irate1 sheet also needs to be transposed to have one row for monthly, quarterly, year rate and columns for each method as in the Age_spec fertility rate, and column names spelt exactly the same as the contraception categories in the module
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2'),
-        'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation')
+        'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
+        'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -70,6 +71,8 @@ class Contraception(Module):
         self.parameters['contraception_initiation2'] = workbook['irate2']
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_discontinuation'] = workbook['Discontinuation']
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
+        self.parameters['contraception_failure'] = workbook['Failure']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
 
     def initialise_population(self, population):
@@ -123,6 +126,9 @@ class Contraception(Module):
 
         # check all population to determine if contraception discontinues i.e. category should change to 'not_using' (repeats every month)
         sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=1))
+
+        # check all population to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (repeats every month)
+        sim.schedule_event(Fail(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -253,6 +259,77 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
                                 {
                                     'woman_age': df.at[woman, 'age_years'],
                                     'contraception': df.at[woman, 'contraception']
+                                })
+
+
+class Fail(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event looks across all women who are using a contraception method to determine if they become pregnant
+    i.e. the method fails according to failure_rate
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+        logger.debug('Checking to see if anyone becomes pregnant whilst on contraception')
+
+        df = population.props  # get the population dataframe
+        m = self.module
+        rng = self.module.rng
+
+        # get the indices of the women from the population with the relevant characterisitcs
+        using_idx = df.index[(df.contraception != 'not_using')]
+
+        # prepare the probabilities
+        c_worksheet = m.parameters['contraception_failure']
+
+        # add the probabilities and copy to each row of the sim population (population dataframe)
+        df_new = pd.concat([df, c_worksheet], axis=1)
+        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                   'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[0, ['pill', 'IUD', 'injections',
+                                                                                           'implant', 'male_condom',
+                                                                                           'female_sterilization',
+                                                                                           'other_modern',
+                                                                                           'periodic_abstinence',
+                                                                                           'withdrawal',
+                                                                                           'other_traditional']].tolist()
+        probabilities = df_new.loc[using_idx, ['is_pregnant','contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                                 'withdrawal', 'other_traditional']]
+        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
+        probabilities['1-prob'] = 1-probabilities['prob']
+        probabilities['preg'] = 'preg'
+
+        # apply the probabilities of failure for each contraception method
+        # to series which has index of all currently using
+        # need to use a for loop to loop through each method
+        for woman in using_idx:
+            her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
+            her_op = np.asarray(probabilities.loc[woman,['preg', 'contraception']])
+
+            her_method = rng.choice(her_op,p=her_p)
+            if her_method == 'preg':
+                df.loc[woman,'is_pregnant']=True
+                df.loc[woman, 'date_of_last_pregnancy'] = self.sim.date
+                df.loc[woman, 'preg'] = 'newly_preg'
+                # schedule the birth event for each newly pregnant woman (9 months plus/minus 2 wks)
+                date_of_birth = self.sim.date + DateOffset(months=9,
+                                                           weeks=-2 + 4 * rng.random_sample())
+                # Schedule the Birth
+                # TODO: not working: despite importing Demography I get the error: AttributeError: type object 'Demography' has no attribute 'DelayedBirthEvent'
+                # self.sim.schedule_event(Demography.DelayedBirthEvent(self.sim.modules['Demography'], woman),
+                #                    date_of_birth)
+
+                # output some logging if any pregnancy (contraception failure)
+                logger.info('%s|fail_contraception|%s',
+                                self.sim.date,
+                                {
+                                    'woman_index': woman,
+                                    'Preg': df.at[woman, 'is_pregnant'],
+                                    'birth booked for': date_of_birth,
                                 })
 
 
