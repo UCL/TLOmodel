@@ -38,8 +38,7 @@ class Contraception(Module):
         'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'), # 'irate_1_' sheet created manually as a work around to address to do point below
         # TODO: irate1 is specified incorrectly as expos is too low for each method - should be total exposure time and the same for each method i.e. exposure should be those exposed to 'not_using'. The irate1 sheet also needs to be transposed to have one row for monthly, quarterly, year rate and columns for each method as in the Age_spec fertility rate, and column names spelt exactly the same as the contraception categories in the module
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2'),
-        'contraception_discontinuation_failure_switching': Parameter(Types.DATA_FRAME,
-                                                                     'contraception_failure_discontin')
+        'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -70,8 +69,8 @@ class Contraception(Module):
         # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_initiation2'] = workbook['irate2']
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
-        self.parameters['contraception_discontinuation_failure_switching'] = workbook['contraception_failure_discontin']
-        # this Excel sheet is contraception_failure_discontinuation_switching_by_age.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
+        self.parameters['contraception_discontinuation'] = workbook['Discontinuation']
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -121,6 +120,9 @@ class Contraception(Module):
         """
         # check all population to determine if contraception starts i.e. category should change from 'not_using' (repeats every month)
         sim.schedule_event(Init1(self), sim.date + DateOffset(months=1))
+
+        # check all population to determine if contraception discontinues i.e. category should change to 'not_using' (repeats every month)
+        sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -191,6 +193,76 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
                                 'woman_age': df.at[woman_id, 'age_years'],
                                 'contraception': df.at[woman_id, 'contraception']
                             })
+
+
+class Discontinue(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event looks across all women who are using a contraception method to determine if they stop using it
+    according to discontinuation_rate
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+        logger.debug('Checking to see if anyone should stop using contraception')
+
+        df = population.props  # get the population dataframe
+        m = self.module
+        rng = self.module.rng
+
+        # get the indices of the women from the population with the relevant characterisitcs
+        using_idx = df.index[(df.contraception != 'not_using')]
+
+        # prepare the probabilities
+        c_worksheet = m.parameters['contraception_discontinuation']
+        c_probs = c_worksheet.loc[0].values.tolist()
+        c_names = c_worksheet.columns.tolist()
+
+        # add the probabilities and copy to each row of the sim population (population dataframe)
+        df_new = pd.concat([df, c_worksheet], axis=1)
+        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                   'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[0, ['pill', 'IUD', 'injections',
+                                                                                           'implant', 'male_condom',
+                                                                                           'female_sterilization',
+                                                                                           'other_modern',
+                                                                                           'periodic_abstinence',
+                                                                                           'withdrawal',
+                                                                                           'other_traditional']].tolist()
+        probabilities = df_new.loc[using_idx, ['contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                                 'withdrawal', 'other_traditional']]
+        probs = probabilities.query(probabilities.columns=='contraception')
+        # apply the probabilities of discontinuation for each contraception method
+        # to series which has index of all currently using
+        # need to use a for loop to loop through each method
+        for woman in using_idx:
+            her_p=np.asarray(df_new.at[woman, df_new.contraception].value, 1-df_new.at[woman, df_new.contraception].value)
+            her_op=np.asarray('not_using', c_names.loc[woman,'contraception'])
+
+            her_method=self.rng.choice(her_op,p=her_p)
+
+            df.loc[woman,'contraception']=her_method
+
+        #stop_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(using_idx), replace=True),
+        #                           index=using_idx)
+
+        # only update those stopping contraception
+        #now_not_using_idx = using_idx[stop_method]
+        #df.loc[now_not_using_idx, 'contraception'] = stop_method[using_idx]
+
+        # output some logging if any start contraception
+        if len(using_idx):
+            for woman_id in using_idx:
+                logger.info('%s|stop_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_age': df.at[woman_id, 'age_years'],
+                                'contraception': df.at[woman_id, 'contraception']
+                            })
+        hello
 
 
 class ContraceptionEvent(RegularEvent, PopulationScopeEventMixin):
