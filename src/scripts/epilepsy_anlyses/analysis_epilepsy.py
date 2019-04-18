@@ -31,6 +31,7 @@ logfile = outputpath + 'LogFile' + datestamp + '.log'
 if os.path.exists(logfile):
     os.remove(logfile)
 """
+
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
