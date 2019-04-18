@@ -177,11 +177,11 @@ class Depression(Module):
         self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
         self.parameters['rr_resol_depr_cc'] = 0.5
         self.parameters['rr_resol_depr_on_antidepr'] = 1.5
-        self.parameters['rate_init_antidep'] = 0.03
+#       self.parameters['rate_init_antidep'] = 0.03
+        self.parameters['rate_init_antidep'] = 0.5
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
- #      self.parameters['prob_3m_suicide_depr_m'] = 0.001
-        self.parameters['prob_3m_suicide_depr_m'] = 0.5
+        self.parameters['prob_3m_suicide_depr_m'] = 0.001
         self.parameters['rr_suicide_depr_f'] = 0.5
         self.parameters['prob_3m_selfharm_depr'] = 0.002
 
@@ -286,6 +286,19 @@ class Depression(Module):
 
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=3))
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
+        # Define the footprint for the intervention on the common resources
+        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+            'Name': Depression.TREATMENT_ID,
+            'Nurse_Time': 15,
+            'Doctor_Time': 15,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
