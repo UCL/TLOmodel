@@ -3,6 +3,7 @@ import logging
 from collections import defaultdict
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods import demography
 import numpy as np
 import pandas as pd
 import random
@@ -163,7 +164,8 @@ class Depression(Module):
         self.parameters['init_pr_antidepr_curr_depr'] = 0.15
         self.parameters['init_rp_never_depr'] = 0
         self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
-        self.parameters['base_3m_prob_depr'] = 0.0007
+#       self.parameters['base_3m_prob_depr'] = 0.0007
+        self.parameters['base_3m_prob_depr'] = 0.5
         self.parameters['rr_depr_wealth45'] = 3
         self.parameters['rr_depr_cc'] = 1.25
         self.parameters['rr_depr_pregnancy'] = 3
@@ -178,7 +180,8 @@ class Depression(Module):
         self.parameters['rate_init_antidep'] = 0.03
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
-        self.parameters['prob_3m_suicide_depr_m'] = 0.001
+ #      self.parameters['prob_3m_suicide_depr_m'] = 0.001
+        self.parameters['prob_3m_suicide_depr_m'] = 0.5
         self.parameters['rr_suicide_depr_f'] = 0.5
         self.parameters['prob_3m_selfharm_depr'] = 0.002
 
@@ -444,7 +447,81 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
 
-        # todo: introduce starting and stopping of antiepileptics and make this work with health system module
+        # initiation of antidepressants
+
+        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+
+        eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
+                                             index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
+                                index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
+        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
+
+        dfx['x_antidepr'] = False
+        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+
+        # todo: need / should have this line below ?
+        df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
+
+        # x_antidepr is whether requests health system for treatment to start
+        for person_id in dfx.index[dfx.x_antidepr]:
+            df.de_on_antidepr = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
+
+        # defaulting from antidepressant use
+
+        """
+        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+
+        eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
+                                             index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
+                                index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
+        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
+
+        dfx['x_antidepr'] = False
+        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+
+        # todo: need / should have this line below ?
+        df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
+
+        # x_antidepr is whether requests health system for treatment to start
+        for person_id in dfx.index[dfx.x_antidepr]:
+            df.de_on_antidepr = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
+
+        """
+
+        # stopping of antidepressants when no longer depressed
+
+        """
+        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+
+        eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
+                                             index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
+                                index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+
+        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
+        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
+
+        dfx['x_antidepr'] = False
+        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+
+        # todo: need / should have this line below ?
+        df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
+
+        # x_antidepr is whether requests health system for treatment to start
+        for person_id in dfx.index[dfx.x_antidepr]:
+            df.de_on_antidepr = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
+
+        """
+
 
         # resolution of depression
 
@@ -481,6 +558,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_self_harm = pd.Series(self.prob_3m_selfharm_depr, index=df.index[(df.age_years >= 15)
                                                                                   & df.de_depr & df.is_alive])
 
+        # self harm and suicide
+
         random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
         df.loc[curr_depr_idx, 'de_non_fatal_self_harm_event'] = (eff_prob_self_harm > random_draw)
 
@@ -494,10 +573,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[curr_depr_idx, 'de_suicide'] = (eff_prob_suicide > random_draw)
 
         suicide_idx = df.index[df.de_suicide]
-        df.loc[suicide_idx, 'is_alive'] = False
 
-# todo: schedule the death event for the suicide
-#       self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),self.sim.date)
+        death_this_period = df.index[df.de_suicide]
+        for individual_id in death_this_period:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Suicide'),
+                                    self.sim.date)
 
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -522,7 +602,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_depr_m = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_depr_f = (df.de_depr & df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
-        prop_depr = n_depr / alive
+#       prop_depr = n_depr / alive
 
         """
         logger.info('%s|de_depr|%s',

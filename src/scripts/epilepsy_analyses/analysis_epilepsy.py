@@ -55,7 +55,7 @@ sim.register(lifestyle.Lifestyle())
 sim.register(epilepsy_hs.Epilepsy())
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
+# sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
