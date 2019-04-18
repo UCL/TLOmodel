@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 
+
 class Depression(Module):
 
     # Module parameters
@@ -134,6 +135,9 @@ class Depression(Module):
         'de_cc': Property(
               Types.BOOL, 'whether has chronic condition')
     }
+
+    # Declaration of how we will refer to any treatments that are related to this disease.
+    TREATMENT_ID = 'antidepressant'
 
     def __init__(self):
         super().__init__()
@@ -301,6 +305,50 @@ class Depression(Module):
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
 
 
+    def query_symptoms_now(self):
+        # This is called by the health-care seeking module
+        # All modules refresh the symptomology of persons at this time
+        # And report it on the unified symptomology scale
+#       logger.debug("This is Epilepsy being asked to report unified symptomology")
+
+        # Map the specific symptoms for this disease onto the unified coding scheme
+         df = self.sim.population.props  # shortcut to population properties dataframe
+
+#        df.loc[df.is_alive, 'ep_unified_symptom_code'] \
+#           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
+
+#        return df.loc[df.is_alive, 'ep_unified_symptom_code']
+
+         return pd.Series('1', index = df.index[df.is_alive])
+
+    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+
+        #       logger.debug('This is epilepsy, being alerted about a health system interaction '
+        #                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+
+        pass
+
+    def report_qaly_values(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # the past year
+
+        #       logger.debug('This is epilepsy reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        p = self.parameters
+
+#       health_values = df.loc[df.is_alive, 'ep_unified_symptom_code'].map({
+#           '0': 0,
+#           '1': 0.9,  # todo create parameter for this value - ask qaly module
+#           '2': 0.3,
+#           '3': 0.2
+#       })
+#       return health_values.loc[df.is_alive]
+
+        return pd.Series(0.5, index=df.index[df.is_alive])
+
+
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' depr status.
 
@@ -347,6 +395,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
+        # Declaration of how we will refer to any treatments that are related to this disease.
+        TREATMENT_ID = 'antidepressant'
+
         df = population.props
 
         df['de_non_fatal_self_harm_event'] = False
@@ -392,6 +443,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
+
+        # todo: introduce starting and stopping of antiepileptics and make this work with health system module
 
         # resolution of depression
 
@@ -477,19 +530,20 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df[df.is_alive].groupby('de_depr').size().to_dict())
         """
 
-        logger.info('%s|p_depr|%s',
-                    self.sim.date,
-                    prop_depr)
+#       logger.info('%s|p_depr|%s',
+#                   self.sim.date,
+#                   prop_depr)
 
         """
         logger.info('%s|de_ever_depr|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
-        
+        """
+
         logger.debug('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-        """
+
 
 
 
