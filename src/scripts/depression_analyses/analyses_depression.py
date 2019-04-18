@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2020, 4, 1)
-popsize = 1
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -31,6 +31,7 @@ logfile = outputpath + 'LogFile' + datestamp + '.log'
 if os.path.exists(logfile):
     os.remove(logfile)
 """
+
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
@@ -61,7 +62,7 @@ fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
 
 
 # %% Plot Population Size Over time:
