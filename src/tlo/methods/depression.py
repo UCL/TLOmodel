@@ -472,56 +472,39 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # defaulting from antidepressant use
 
-        """
-        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+        on_antidepr_currently_depr_idx = df.index[df.is_alive & df.de_depr & df.de_on_antidepr]
 
-        eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
-                                             index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+        eff_prob_default_antidepr = pd.Series(self.rate_default_antidepr,
+                                             index=df.index[df.is_alive & df.de_depr & df.de_on_antidepr])
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
-                                index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(on_antidepr_currently_depr_idx)),
+                                index=df.index[df.is_alive & df.de_depr & df.de_on_antidepr])
 
-        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
-        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
+        dfx = pd.concat([eff_prob_default_antidepr, random_draw], axis=1)
+        dfx.columns = ['eff_prob_default_antidepr', 'random_draw']
 
-        dfx['x_antidepr'] = False
-        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+        dfx['x_antidepr'] = True
+        dfx.loc[dfx['eff_prob_default_antidepr'] > random_draw, 'x_antidepr'] = False
 
-        # todo: need / should have this line below ?
-        df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
-
-        # x_antidepr is whether requests health system for treatment to start
-        for person_id in dfx.index[dfx.x_antidepr]:
-            df.de_on_antidepr = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
-
-        """
+        df.loc[on_antidepr_currently_depr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
 
         # stopping of antidepressants when no longer depressed
 
-        """
-        depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+        on_antidepr_not_depr_idx = df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr]
 
-        eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
-                                             index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+        eff_prob_stop_antidepr = pd.Series(self.rate_stop_antidepr,
+                                             index=df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr])
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
-                                index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(on_antidepr_not_depr_idx)),
+                                index=df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr])
 
-        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
-        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
+        dfx = pd.concat([eff_prob_stop_antidepr, random_draw], axis=1)
+        dfx.columns = ['eff_prob_stop_antidepr', 'random_draw']
 
-        dfx['x_antidepr'] = False
-        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+        dfx['x_antidepr'] = True
+        dfx.loc[dfx['eff_prob_stop_antidepr'] > random_draw, 'x_antidepr'] = False
 
-        # todo: need / should have this line below ?
-        df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
-
-        # x_antidepr is whether requests health system for treatment to start
-        for person_id in dfx.index[dfx.x_antidepr]:
-            df.de_on_antidepr = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
-
-        """
-
+        df.loc[on_antidepr_not_depr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
 
         # resolution of depression
 
