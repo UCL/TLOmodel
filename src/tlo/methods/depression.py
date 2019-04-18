@@ -169,13 +169,16 @@ class Depression(Module):
         self.parameters['rr_depr_cc'] = 1.25
         self.parameters['rr_depr_pregnancy'] = 3
         self.parameters['rr_depr_female'] = 1.5
-        self.parameters['rr_depr_prev_epis'] = 50
-        self.parameters['rr_depr_on_antidepr'] = 30
+#       self.parameters['rr_depr_prev_epis'] = 50
+        self.parameters['rr_depr_prev_epis'] = 10
+#       self.parameters['rr_depr_on_antidepr'] = 30
+        self.parameters['rr_depr_on_antidepr'] = 3
         self.parameters['rr_depr_age1519'] = 1
         self.parameters['rr_depr_agege60'] = 3
         self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
         self.parameters['rr_resol_depr_cc'] = 0.5
         self.parameters['rr_resol_depr_on_antidepr'] = 1.5
+        self.parameters['rate_init_antidep'] = 0.00
         self.parameters['rate_init_antidep'] = 0.03
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
@@ -592,12 +595,14 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
 
         n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
+        n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_not_depr = (~df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_antidepr = (df.is_alive & df.de_on_antidepr & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_not_depr = (df.is_alive & df.de_on_antidepr & ~df.de_depr & (df.age_years >= 15)).sum()
 
         prop_depr = n_depr / n_ge15
+        prop_ever_depr = n_ever_depr / n_ge15
         prop_antidepr_depr = n_antidepr_depr / n_depr
         prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
         prop_antidepr = n_antidepr / n_ge15
@@ -608,9 +613,9 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df[df.is_alive].groupby('de_depr').size().to_dict())
         """
 
-        logger.info('%s|p_depr|%s',
+        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr|%s',
                     self.sim.date,
-                    prop_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr)
+                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr)
 
         """
         logger.info('%s|de_ever_depr|%s',
