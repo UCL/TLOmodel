@@ -54,7 +54,7 @@ sim.register(lifestyle.Lifestyle())
 sim.register(depression.Depression())
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
+# sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
@@ -67,7 +67,7 @@ output = parse_log_file(logfile)
 # %% Plot Population Size Over time:
 
 # Load Model Results
-pop_df = output['tlo.methods.depression']['population']
+# pop_df = output['tlo.methods.depression']['population']
 
 """
 Model_Years = pd.to_datetime(pop_df.date)

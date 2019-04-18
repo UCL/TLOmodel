@@ -442,6 +442,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
+        # todo: need / should have this line below ?
         df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
         for person_id in dfx.index[dfx.x_ep_antiep]:
