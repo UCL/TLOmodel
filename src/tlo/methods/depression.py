@@ -152,7 +152,7 @@ class Depression(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.1
+        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.06  # todo: value changed
         self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
         self.parameters['init_rp_depr_f_rec_preg'] = 3
         self.parameters['init_rp_depr_age2059'] = 1
@@ -161,8 +161,7 @@ class Depression(Module):
         self.parameters['init_rp_depr_wealth45'] = 1
         self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.007
         self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.009
-#       self.parameters['init_pr_antidepr_curr_depr'] = 0.15
-        self.parameters['init_pr_antidepr_curr_depr'] = 0
+        self.parameters['init_pr_antidepr_curr_depr'] = 0.05    # todo: value changed
         self.parameters['init_rp_never_depr'] = 0
         self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
         self.parameters['base_3m_prob_depr'] = 0.0007
@@ -274,23 +273,26 @@ class Depression(Module):
         # so that logging is done at time 0 as well as over time
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
-
         n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_not_depr = (~df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_antidepr = (df.is_alive & df.de_on_antidepr & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_not_depr = (df.is_alive & df.de_on_antidepr & ~df.de_depr & (df.age_years >= 15)).sum()
+        n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
 
         prop_depr = n_depr / n_ge15
         prop_ever_depr = n_ever_depr / n_ge15
         prop_antidepr_depr = n_antidepr_depr / n_depr
         prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
         prop_antidepr = n_antidepr / n_ge15
+        prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
 
-        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr|%s',
+        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr'
+                    '|%s|prop_antidepr_not_depr|%s|prop_antidepr_ever_depr|%s',
                     self.sim.date,
-                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr)
+                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
+                    prop_antidepr_ever_depr)
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -625,19 +627,20 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
-
         n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_not_depr = (~df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
         n_antidepr = (df.is_alive & df.de_on_antidepr & (df.age_years >= 15)).sum()
         n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
         n_antidepr_not_depr = (df.is_alive & df.de_on_antidepr & ~df.de_depr & (df.age_years >= 15)).sum()
+        n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
 
         prop_depr = n_depr / n_ge15
         prop_ever_depr = n_ever_depr / n_ge15
         prop_antidepr_depr = n_antidepr_depr / n_depr
         prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
         prop_antidepr = n_antidepr / n_ge15
+        prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
 
         """
         logger.info('%s|de_depr|%s',
@@ -645,9 +648,11 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df[df.is_alive].groupby('de_depr').size().to_dict())
         """
 
-        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr|%s',
+        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr'
+                    '|%s|prop_antidepr_not_depr|%s|prop_antidepr_ever_depr|%s',
                     self.sim.date,
-                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr)
+                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
+                    prop_antidepr_ever_depr)
 
         """
         logger.info('%s|de_ever_depr|%s',
