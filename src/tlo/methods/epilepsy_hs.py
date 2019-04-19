@@ -467,6 +467,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
 #       df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
+        # check if this code being only applied to indices intended - may need t adopt same code as in depression
+        # program
+
         for person_id in dfx.index[dfx.x_ep_antiep]:
             df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
 
