@@ -18,7 +18,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2019, 7, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -62,7 +62,7 @@ fh.flush()
 
 
 # %% read the results
-# output = parse_log_file(logfile)
+output = parse_log_file(logfile)
 
 
 # %% Plot Population Size Over time:
