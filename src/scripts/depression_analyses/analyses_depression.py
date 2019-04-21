@@ -9,7 +9,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, qaly, depression
 
 # Where will output go
-outputpath = ''
+outputpath = './src/scripts/depression_analyses/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2019, 7, 1)
-popsize = 10000
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -27,17 +27,15 @@ sim = Simulation(start_date=start_date)
 # Establish the logger
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-"""
+
 if os.path.exists(logfile):
     os.remove(logfile)
-"""
-
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
@@ -67,8 +65,12 @@ output = parse_log_file(logfile)
 
 # %% Plot Population Size Over time:
 
-# Load Model Results
-# pop_df = output['tlo.methods.depression']['population']
+# Load Model Results for n_suidides
+# df_outp = pd.read_csv(logfile)
+# df_outp.columns = ['date', 'n_suicides', 'u']
+# n_suicides = df_outp.n_suicides.sum()
+
+
 
 """
 Model_Years = pd.to_datetime(pop_df.date)
