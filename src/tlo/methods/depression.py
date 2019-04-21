@@ -152,19 +152,19 @@ class Depression(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.06  # todo: value changed
+        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.06
         self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
         self.parameters['init_rp_depr_f_rec_preg'] = 3
         self.parameters['init_rp_depr_age2059'] = 1
         self.parameters['init_rp_depr_agege60'] = 3
         self.parameters['init_rp_depr_cc'] = 1
         self.parameters['init_rp_depr_wealth45'] = 1
-        self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.007
-        self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.009
-        self.parameters['init_pr_antidepr_curr_depr'] = 0.05    # todo: value changed
+        self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.006
+        self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.008
+        self.parameters['init_pr_antidepr_curr_depr'] = 0.11
         self.parameters['init_rp_never_depr'] = 0
-        self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 1.5
-        self.parameters['base_3m_prob_depr'] = 0.0009   # todo: value changed
+        self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 0.5
+        self.parameters['base_3m_prob_depr'] = 0.0009
         self.parameters['rr_depr_wealth45'] = 3
         self.parameters['rr_depr_cc'] = 1.25
         self.parameters['rr_depr_pregnancy'] = 3
@@ -176,12 +176,12 @@ class Depression(Module):
         self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
         self.parameters['rr_resol_depr_cc'] = 0.5
         self.parameters['rr_resol_depr_on_antidepr'] = 1.5
-        self.parameters['rate_init_antidep'] = 0.05   # todo: value changed
+        self.parameters['rate_init_antidep'] = 0.05
         self.parameters['rate_stop_antidepr'] = 0.70
         self.parameters['rate_default_antidepr'] = 0.20
-        self.parameters['prob_3m_suicide_depr_m'] = 0.001
-        self.parameters['rr_suicide_depr_f'] = 0.5
-        self.parameters['prob_3m_selfharm_depr'] = 0.002
+        self.parameters['prob_3m_suicide_depr_m'] = 0.0005
+        self.parameters['rr_suicide_depr_f'] = 0.333
+        self.parameters['prob_3m_selfharm_depr'] = 0.0005  
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -273,10 +273,12 @@ class Depression(Module):
         # so that logging is done at time 0 as well as over time
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
+        n_ge45 = (df.is_alive & (df.age_years >= 45)).sum()
         n_ge15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
         n_age_50 = (df.is_alive & (df.age_years >= 49) & (df.age_years < 52)).sum()
         n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
+        n_depr_ge45 = (df.de_depr & df.is_alive & (df.age_years >= 45)).sum()
         n_ge15_m_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M') & df.de_depr).sum()
         n_ge15_f_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F') & df.de_depr).sum()
 
@@ -294,6 +296,7 @@ class Depression(Module):
         prop_depr = n_depr / n_ge15
         prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
         prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
+        prop_depr_ge45 = n_depr_ge45 / n_ge45
         prop_ever_depr = n_ever_depr / n_ge15
         prop_antidepr_depr = n_antidepr_depr / n_depr
         prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
@@ -301,13 +304,24 @@ class Depression(Module):
         prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
         prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
 
+        """
+        logger.info('%s|de_depr|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby('de_depr').size().to_dict())
+        """
+
+        #       logger.info('%s,%s,', self.sim.date, suicides_this_3m)
+
         logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|prop_ge15_f_depr|%s|prop_age_50_ever_depr'
+                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
+                    'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
                     '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
                     self.sim.date,
                     prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
-                    prop_antidepr_ever_depr, prop_ge15_m_depr, prop_ge15_f_depr,prop_age_50_ever_depr,
+                    prop_antidepr_ever_depr, prop_ge15_m_depr, prop_ge15_f_depr, prop_age_50_ever_depr,
+                    prop_depr_ge45,
                     suicides_this_3m, self_harm_events_this_3m)
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -641,10 +655,12 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
+        n_ge45 = (df.is_alive & (df.age_years >= 45)).sum()
         n_ge15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
         n_age_50 = (df.is_alive & (df.age_years >= 49) & (df.age_years < 52)).sum()
         n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
+        n_depr_ge45 = (df.de_depr & df.is_alive & (df.age_years >= 45)).sum()
         n_ge15_m_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M') & df.de_depr).sum()
         n_ge15_f_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F') & df.de_depr).sum()
 
@@ -662,6 +678,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_depr = n_depr / n_ge15
         prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
         prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
+        prop_depr_ge45 = n_depr_ge45 / n_ge45
         prop_ever_depr = n_ever_depr / n_ge15
         prop_antidepr_depr = n_antidepr_depr / n_depr
         prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
@@ -675,12 +692,16 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     df[df.is_alive].groupby('de_depr').size().to_dict())
         """
 
+#       logger.info('%s,%s,', self.sim.date, suicides_this_3m)
+
         logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|prop_ge15_f_depr|%s|prop_age_50_ever_depr'
+                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
+                    'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
                     '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
                     self.sim.date,
                     prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
                     prop_antidepr_ever_depr, prop_ge15_m_depr, prop_ge15_f_depr,prop_age_50_ever_depr,
+                    prop_depr_ge45,
                     suicides_this_3m, self_harm_events_this_3m)
 
         """
