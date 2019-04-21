@@ -128,6 +128,8 @@ class Depression(Module):
               Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depression': Property(
               Types.REAL, 'probability per 3 months of resolution of depresssion'),
+        'de_disability': Property(
+            Types.REAL, 'disability weight for current 3 month period'),
 
 # todo - this to be removed when defined in other modules
 
@@ -181,7 +183,7 @@ class Depression(Module):
         self.parameters['rate_default_antidepr'] = 0.20
         self.parameters['prob_3m_suicide_depr_m'] = 0.0005
         self.parameters['rr_suicide_depr_f'] = 0.333
-        self.parameters['prob_3m_selfharm_depr'] = 0.0005  
+        self.parameters['prob_3m_selfharm_depr'] = 0.0005
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -194,6 +196,7 @@ class Depression(Module):
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['de_depr'] = False
+        df['de_disability'] = 0
         df['de_date_init_most_rec_depr'] = pd.NaT
         df['de_date_depr_resolved'] = pd.NaT
         df['de_non_fatal_self_harm_event'] = False
@@ -268,6 +271,12 @@ class Depression(Module):
 
         df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2])
+
+        # disability
+
+        depr_idx = df.index[df.is_alive & df.de_depr]
+
+        df.loc[depr_idx, 'de_disability'] = 0.49
 
         # logging - this should be as logging below,
         # so that logging is done at time 0 as well as over time
@@ -404,17 +413,9 @@ class Depression(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        p = self.parameters
+        disability_series = df.de_disability
 
-#       health_values = df.loc[df.is_alive, 'ep_unified_symptom_code'].map({
-#           '0': 0,
-#           '1': 0.9,  # todo create parameter for this value - ask qaly module
-#           '2': 0.3,
-#           '3': 0.2
-#       })
-#       return health_values.loc[df.is_alive]
-
-        return pd.Series(0.5, index=df.index[df.is_alive])
+        return disability_series
 
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
@@ -470,6 +471,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         df['de_non_fatal_self_harm_event'] = False
         df['de_suicide'] = False
+        df['de_disability'] = 0
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
@@ -617,6 +619,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_self_harm = pd.Series(self.prob_3m_selfharm_depr, index=df.index[(df.age_years >= 15)
                                                                                   & df.de_depr & df.is_alive])
+
+        # disability
+
+        depr_idx = df.index[df.is_alive & df.de_depr]
+        df.loc[depr_idx, 'de_disability'] = 0.49
 
         # self harm and suicide
 
