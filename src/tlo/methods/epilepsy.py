@@ -105,27 +105,28 @@ class Epilepsy(Module):
         dfd.set_index('parameter_name', inplace=True)
 
         self.parameters['init_epil_seiz_status'] = \
-            dfd.loc['init_epil_seiz_status', 'value']
-
-#       self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
-
-        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.25
-        self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.30
-        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.30
-        self.parameters['base_3m_prob_epilepsy'] = 0.00065
-        self.parameters['rr_epilepsy_age_ge20'] = 0.5
-        self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
-        self.parameters['rr_effectiveness_antiepileptics'] = 5
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
-        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
-        self.parameters['base_prob_3m_antiepileptic'] = 0.02
-        self.parameters['rr_antiepileptic_seiz_infreq'] = 0.8
-        self.parameters['base_prob_3m_stop_antiepileptic'] = 0.1
-        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.5
-        self.parameters['base_prob_3m_epi_death'] = 0.001
+            [dfd.loc['init_epil_seiz_status', 'value'], dfd.loc['init_epil_seiz_status', 'value2'],
+             dfd.loc['init_epil_seiz_status', 'value3'], dfd.loc['init_epil_seiz_status', 'value4']]
+        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = \
+            dfd.loc['init_prop_antiepileptic_seiz_stat_1', 'value']
+        self.parameters['init_prop_antiepileptic_seiz_stat_2'] = \
+            dfd.loc['init_prop_antiepileptic_seiz_stat_2', 'value']
+        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = \
+            dfd.loc['init_prop_antiepileptic_seiz_stat_3', 'value']
+        self.parameters['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value']
+        self.parameters['rr_epilepsy_age_ge20'] = dfd.loc['rr_epilepsy_age_ge20', 'value']
+        self.parameters['prop_inc_epilepsy_seiz_freq'] = dfd.loc['prop_inc_epilepsy_seiz_freq', 'value']
+        self.parameters['rr_effectiveness_antiepileptics'] = dfd.loc['rr_effectiveness_antiepileptics', 'value']
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = dfd.loc['base_prob_3m_seiz_stat_freq_infreq', 'value']
+        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = dfd.loc['base_prob_3m_seiz_stat_infreq_freq', 'value']
+        self.parameters['base_prob_3m_seiz_stat_none_freq'] = dfd.loc['base_prob_3m_seiz_stat_none_freq', 'value']
+        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = dfd.loc['base_prob_3m_seiz_stat_none_infreq', 'value']
+        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = dfd.loc['base_prob_3m_seiz_stat_infreq_none', 'value']
+        self.parameters['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']
+        self.parameters['rr_antiepileptic_seiz_infreq'] = dfd.loc['rr_antiepileptic_seiz_infreq', 'value']
+        self.parameters['base_prob_3m_stop_antiepileptic'] = dfd.loc['base_prob_3m_stop_antiepileptic', 'value']
+        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
+        self.parameters['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
 
 
     def initialise_population(self, population):
