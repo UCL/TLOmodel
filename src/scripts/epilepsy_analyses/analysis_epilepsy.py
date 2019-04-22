@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, qaly, epilepsy_hs
+from tlo.methods import demography, healthsystem, lifestyle, qaly, epilepsy
 
 # Where will output go
 outputpath = ''
@@ -18,8 +18,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 4, 1)
-popsize = 1
+end_date = Date(2011, 1, 1)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -27,11 +27,8 @@ sim = Simulation(start_date=start_date)
 # Establish the logger
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-"""
 if os.path.exists(logfile):
     os.remove(logfile)
-"""
-
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
@@ -52,7 +49,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(epilepsy_hs.Epilepsy())
+sim.register(epilepsy.Epilepsy())
 
 # Run the simulation and flush the logger
 # sim.seed_rngs(0)
@@ -63,3 +60,9 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
+
+
+# Load Model Results for n_suidides
+# df_outp = pd.read_csv(logfile)
+# df_outp.columns = ['date', 'n_suicides', 'u']
+# n_suicides = df_outp.n_suicides.sum()
