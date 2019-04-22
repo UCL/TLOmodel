@@ -15,6 +15,10 @@ logger.setLevel(logging.DEBUG)
 
 class Epilepsy(Module):
 
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
     # Module parameters
     PARAMETERS = {
         'init_epil_seiz_status': Parameter(
@@ -87,9 +91,6 @@ class Epilepsy(Module):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antiepileptic'
 
-    def __init__(self):
-        super().__init__()
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
 
@@ -99,33 +100,33 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
+        dfd = pd.read_excel('./resources/Method_Epilepsy.xlsx',
+                            sheet_name='parameter_values')
+        dfd.set_index('parameter_name', inplace=True)
+
+        self.parameters['init_epil_seiz_status'] = \
+            dfd.loc['init_epil_seiz_status', 'value']
+
 #       self.parameters['init_epil_seiz_status'] = [0.975, 0.009, 0.015, 0.001]
-        self.parameters['init_epil_seiz_status'] = [0.01 , 0.01 , 0.49 , 0.49 ]
+
         self.parameters['init_prop_antiepileptic_seiz_stat_1'] = 0.25
         self.parameters['init_prop_antiepileptic_seiz_stat_2'] = 0.30
         self.parameters['init_prop_antiepileptic_seiz_stat_3'] = 0.30
-#       self.parameters['base_3m_prob_epilepsy'] = 0.00065
-        self.parameters['base_3m_prob_epilepsy'] = 0.1
+        self.parameters['base_3m_prob_epilepsy'] = 0.00065
         self.parameters['rr_epilepsy_age_ge20'] = 0.5
         self.parameters['prop_inc_epilepsy_seiz_freq'] = 0.1
         self.parameters['rr_effectiveness_antiepileptics'] = 5
-#       self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.5
-#       self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.00
-        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.0
-#       self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
-#       self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
-        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.0
-#       self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
-        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.5
-#       self.parameters['base_prob_3m_antiepileptic'] = 0.02
-        self.parameters['base_prob_3m_antiepileptic'] = 0.3
+        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = 0.005
+        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_none_freq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = 0.05
+        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = 0.005
+        self.parameters['base_prob_3m_antiepileptic'] = 0.02
         self.parameters['rr_antiepileptic_seiz_infreq'] = 0.8
         self.parameters['base_prob_3m_stop_antiepileptic'] = 0.1
         self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = 0.5
-#       self.parameters['base_prob_3m_epi_death'] = 0.001
-        self.parameters['base_prob_3m_epi_death'] = 0.2
+        self.parameters['base_prob_3m_epi_death'] = 0.001
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
