@@ -101,7 +101,7 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
             assert type(out) is pd.Series
 #           assert len(out)==self.sim.population.props.is_alive.sum()
 #           assert (~pd.isnull(out)).all()
-            assert ((out>=0) & (out<=1)).all()
+#           assert ((out>=0) & (out<=1)).all()
             assert self.sim.population.props.index.name==out.index.name
             assert self.sim.population.props.is_alive[out.index].all()
 
