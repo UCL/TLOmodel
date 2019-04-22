@@ -147,9 +147,6 @@ class Depression(Module):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antidepressant'
 
-#   def __init__(self):
-#       super().__init__()
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
 
@@ -160,63 +157,46 @@ class Depression(Module):
         """
 
         dfd = pd.read_excel('./resources/Method_Depression.xlsx',
-                            sheet_name='parameter_values',)
+                            sheet_name='parameter_values')
+        dfd.set_index('parameter_name', inplace=True)
 
-#       params = self.parameters
-#       params['param_list'] = dfd['parameter_name']
-
-#       self.param_list.set_index("parameter_name", inplace=True)
-
-#       params['prob_infant_fast_progressor'] = self.param_list.loc['prob_infant_fast_progressor'].values
-
-
-#       self.parameters['param_list'] = dfd['value']
-
-#       self.parameters.param_list.set_index("parameter_name", inplace=True)
-#       dfd.set_index['parameter_name']
-
-#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
-#           dfd.loc['init_pr_depr_m_age1519_no_cc_wealth123', 'value']
-#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
-
-
-#       idx = dfd.index[dfd.parameter_name == 'init_pr_depr_m_age1519_no_cc_wealth123']
-        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
-            dfd.loc[dfd.parameter_name == 'init_pr_depr_m_age1519_no_cc_wealth123', 'value']
-
-#       x = dfd.loc[0, 'value']
-
-
-#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.08
-        self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
-        self.parameters['init_rp_depr_f_rec_preg'] = 3
-        self.parameters['init_rp_depr_age2059'] = 1
-        self.parameters['init_rp_depr_agege60'] = 3
-        self.parameters['init_rp_depr_cc'] = 1
-        self.parameters['init_rp_depr_wealth45'] = 1
-        self.parameters['init_rp_ever_depr_per_year_older_m'] = 0.006
-        self.parameters['init_rp_ever_depr_per_year_older_f'] = 0.008
-        self.parameters['init_pr_antidepr_curr_depr'] = 0.11
-        self.parameters['init_rp_never_depr'] = 0
-        self.parameters['init_rp_antidepr_ever_depr_not_curr'] = 0.5
-        self.parameters['base_3m_prob_depr'] = 0.0009
-        self.parameters['rr_depr_wealth45'] = 3
-        self.parameters['rr_depr_cc'] = 1.25
-        self.parameters['rr_depr_pregnancy'] = 3
-        self.parameters['rr_depr_female'] = 1.5
-        self.parameters['rr_depr_prev_epis'] = 50
-        self.parameters['rr_depr_on_antidepr'] = 30
-        self.parameters['rr_depr_age1519'] = 1
-        self.parameters['rr_depr_agege60'] = 3
+        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = \
+            dfd.loc['init_pr_depr_m_age1519_no_cc_wealth123', 'value']
+        self.parameters['init_rp_depr_f_not_rec_preg'] = \
+            dfd.loc['init_rp_depr_f_not_rec_preg', 'value']
+        self.parameters['init_rp_depr_f_rec_preg'] = \
+            dfd.loc['init_rp_depr_f_rec_preg', 'value']
+        self.parameters['init_rp_depr_age2059'] = dfd.loc['init_rp_depr_age2059', 'value']
+        self.parameters['init_rp_depr_agege60'] = dfd.loc['init_rp_depr_agege60', 'value']
+        self.parameters['init_rp_depr_cc'] = dfd.loc['init_rp_depr_cc', 'value']
+        self.parameters['init_rp_depr_wealth45'] = dfd.loc['init_rp_depr_wealth45', 'value']
+        self.parameters['init_rp_ever_depr_per_year_older_m'] \
+            = dfd.loc['init_rp_ever_depr_per_year_older_m', 'value']
+        self.parameters['init_rp_ever_depr_per_year_older_f'] \
+            = dfd.loc['init_rp_ever_depr_per_year_older_f', 'value']
+        self.parameters['init_pr_antidepr_curr_depr'] \
+            = dfd.loc['init_pr_antidepr_curr_depr', 'value']
+        self.parameters['init_rp_never_depr'] = dfd.loc['init_rp_never_depr', 'value']
+        self.parameters['init_rp_antidepr_ever_depr_not_curr'] \
+            = dfd.loc['init_rp_antidepr_ever_depr_not_curr', 'value']
+        self.parameters['base_3m_prob_depr'] = dfd.loc['base_3m_prob_depr', 'value']
+        self.parameters['rr_depr_wealth45'] = dfd.loc['rr_depr_wealth45', 'value']
+        self.parameters['rr_depr_cc'] = dfd.loc['rr_depr_cc', 'value']
+        self.parameters['rr_depr_pregnancy'] = dfd.loc['rr_depr_pregnancy', 'value']
+        self.parameters['rr_depr_female'] = dfd.loc['rr_depr_female', 'value']
+        self.parameters['rr_depr_prev_epis'] = dfd.loc['rr_depr_prev_epis', 'value']
+        self.parameters['rr_depr_on_antidepr'] = dfd.loc['rr_depr_on_antidepr', 'value']
+        self.parameters['rr_depr_age1519'] = dfd.loc['rr_depr_age1519', 'value']
+        self.parameters['rr_depr_agege60'] = dfd.loc['rr_depr_agege60', 'value']
         self.parameters['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
-        self.parameters['rr_resol_depr_cc'] = 0.5
-        self.parameters['rr_resol_depr_on_antidepr'] = 1.5
-        self.parameters['rate_init_antidep'] = 0.05
-        self.parameters['rate_stop_antidepr'] = 0.70
-        self.parameters['rate_default_antidepr'] = 0.20
-        self.parameters['prob_3m_suicide_depr_m'] = 0.0005
-        self.parameters['rr_suicide_depr_f'] = 0.333
-        self.parameters['prob_3m_selfharm_depr'] = 0.0005
+        self.parameters['rr_resol_depr_cc'] = dfd.loc['rr_resol_depr_cc', 'value']
+        self.parameters['rr_resol_depr_on_antidepr'] = dfd.loc['rr_resol_depr_on_antidepr', 'value']
+        self.parameters['rate_init_antidep'] = dfd.loc['rate_init_antidep', 'value']
+        self.parameters['rate_stop_antidepr'] = dfd.loc['rate_stop_antidepr', 'value']
+        self.parameters['rate_default_antidepr'] = dfd.loc['rate_default_antidepr', 'value']
+        self.parameters['prob_3m_suicide_depr_m'] = dfd.loc['prob_3m_suicide_depr_m', 'value']
+        self.parameters['rr_suicide_depr_f'] = dfd.loc['rr_suicide_depr_f', 'value']
+        self.parameters['prob_3m_selfharm_depr'] = dfd.loc['prob_3m_selfharm_depr', 'value']
 
     def initialise_population(self, population):
         """
@@ -423,14 +403,9 @@ class Depression(Module):
 #       logger.debug("This is Epilepsy being asked to report unified symptomology")
 
         # Map the specific symptoms for this disease onto the unified coding scheme
-         df = self.sim.population.props  # shortcut to population properties dataframe
+        df = self.sim.population.props  # shortcut to population properties dataframe
 
-#        df.loc[df.is_alive, 'ep_unified_symptom_code'] \
-#           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
-
-#        return df.loc[df.is_alive, 'ep_unified_symptom_code']
-
-         return pd.Series('1', index = df.index[df.is_alive])
+        return pd.Series('1', index = df.index[df.is_alive])
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
@@ -679,6 +654,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         for individual_id in death_this_period:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Suicide'),
                                     self.sim.date)
+
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
