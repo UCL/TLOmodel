@@ -549,61 +549,40 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # get some summary statistics
         df = population.props
-        alive = df.is_alive.sum()
 
-        """
-        epilepsy_idx = df.index[df.is_alive & df.ep_seiz_stat.isin(['1', '2', '3'])]
-        prevalence_epilepsy = len(epilepsy_idx) / alive
+        n_alive = (df.is_alive).sum()
+        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
+        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
+        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
+        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
 
-        epilepsy_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-        prevalence_epilepsy_nonenow = len(epilepsy_nonenow_idx) / alive
+        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
+        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
+        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
+        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
 
-        seiz_freq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-        seiz_freq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep]
-        prop_on_antiep_seiz_freq = len(seiz_freq_antiep_idx) / len(seiz_freq_idx)
+        n_epi_death = (df.ep_epi_death).sum()
 
-        seiz_infreq_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-        seiz_infreq_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep]
-        prop_on_antiep_seiz_infreq = len(seiz_infreq_antiep_idx) / len(seiz_infreq_idx)
+        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive
+        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive
+        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive
+        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive
 
-        seiz_nonenow_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-        seiz_nonenow_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
-        prop_on_antiep_seiz_nonenow = len(seiz_nonenow_antiep_idx) / len(seiz_nonenow_idx)
+        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0
+        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1
+        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
+        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
 
-        
-        logger.info('%s|prevalence_epilepsy|%s',
-                    self.sim.date, prevalence_epilepsy)
-           
 
-        logger.info('%s|prevalence_epilepsy_nonenow|%s',
-                    self.sim.date, prevalence_epilepsy_nonenow)
+#       logger.info('%s,%s,', self.sim.date, n_epi_death)
 
-        logger.info('%s|prop_on_antiep_seiz_freq|%s',
-                    self.sim.date, prop_on_antiep_seiz_freq)
-
-        logger.info('%s|prop_on_antiep_seiz_infreq|%s',
-                    self.sim.date, prop_on_antiep_seiz_infreq)
-
-        logger.info('%s|prop_on_antiep_seiz_nonenow|%s',
-                    self.sim.date, prop_on_antiep_seiz_nonenow)
-
-       
-        logger.info('%s|de_depr|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('de_depr').size().to_dict())
-        
-        logger.info('%s|p_depr|%s',
-                    self.sim.date,
-                    prop_depr)
-
-        logger.info('%s|de_ever_depr|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
-        
-        """
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
+        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%sprop_seiz_stat_2|%s|'
+                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
+                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s',
+                    self.sim.date,prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
+                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
+                    prop_antiepilep_seiz_stat_3, n_epi_death
+                    )
 
 
 
