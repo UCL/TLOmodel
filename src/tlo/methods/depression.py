@@ -8,12 +8,17 @@ import numpy as np
 import pandas as pd
 import random
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 
 
 class Depression(Module):
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     # Module parameters
     PARAMETERS = {
@@ -142,8 +147,8 @@ class Depression(Module):
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = 'antidepressant'
 
-    def __init__(self):
-        super().__init__()
+#   def __init__(self):
+#       super().__init__()
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -154,7 +159,35 @@ class Depression(Module):
           Typically modules would read a particular file within here.
         """
 
-        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.06
+        dfd = pd.read_excel('./resources/Method_Depression.xlsx',
+                            sheet_name='parameter_values',)
+
+#       params = self.parameters
+#       params['param_list'] = dfd['parameter_name']
+
+#       self.param_list.set_index("parameter_name", inplace=True)
+
+#       params['prob_infant_fast_progressor'] = self.param_list.loc['prob_infant_fast_progressor'].values
+
+
+#       self.parameters['param_list'] = dfd['value']
+
+#       self.parameters.param_list.set_index("parameter_name", inplace=True)
+#       dfd.set_index['parameter_name']
+
+#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
+#           dfd.loc['init_pr_depr_m_age1519_no_cc_wealth123', 'value']
+#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
+
+
+#       idx = dfd.index[dfd.parameter_name == 'init_pr_depr_m_age1519_no_cc_wealth123']
+        self.parameters['init_pr_depr_m_age1519_no_cc_wealth123 '] = \
+            dfd.loc[dfd.parameter_name == 'init_pr_depr_m_age1519_no_cc_wealth123', 'value']
+
+#       x = dfd.loc[0, 'value']
+
+
+#       self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = 0.08
         self.parameters['init_rp_depr_f_not_rec_preg'] = 1.5
         self.parameters['init_rp_depr_f_rec_preg'] = 3
         self.parameters['init_rp_depr_age2059'] = 1
@@ -186,7 +219,8 @@ class Depression(Module):
         self.parameters['prob_3m_selfharm_depr'] = 0.0005
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
+        """
+        Set our property values for the initial population.
 
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
