@@ -23,7 +23,6 @@ class Mockitis(Module):
 
     - Declaration of TREATMENT_ID
     - Registration of the disease module
-    - Registration of the interventions
     - Internal symptom tracking, responding to query_symptoms_now
     - Reading QALY weights and reporting qaly values related to this disease
     - Running an "outreach" event

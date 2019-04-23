@@ -23,22 +23,13 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability=None):
+                 service_availability='all'):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        if service_availability is None:
-            service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-            service_availability['Service'] = service_availability['Service'].astype('object')
-            service_availability['Available'] = service_availability['Available'].astype('bool')
 
         # Checks on the service_availability dateframe argument
-        assert type(service_availability) is pd.DataFrame
-        assert len(service_availability.columns) == 2
-        assert 'Service' in service_availability.columns
-        assert 'Available' in service_availability.columns
-        assert (service_availability['Service']).dtype.kind is 'O'
-        assert (service_availability['Available']).dtype.kind is 'b'
+        assert (service_availability=='all') or (service_availability=='none') or (type(service_availability)==list)
 
         self.service_availability = service_availability
 
@@ -56,9 +47,7 @@ class HealthSystem(Module):
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availabilty:")
-        print_table = service_availability.to_string().splitlines()
-        for line in print_table:
-            logger.info(line)
+        logger.info(service_availability)
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
@@ -172,18 +161,18 @@ class HealthSystem(Module):
 
             logger.info('Registering disease module %s', module.name)
 
-    def register_interventions(self, footprint_df):
-        # Register the interventions that can be requested
-
-        # Check that this footprint can be added to the registered interventions
-        assert type(footprint_df) == pd.DataFrame
-        assert not (footprint_df.Name.values in self.registered_interventions.Name.values)
-        assert 'Name' in footprint_df.columns
-        assert 'Nurse_Time' in footprint_df.columns
-        assert len(footprint_df.columns) == 5
-
-        self.registered_interventions = self.registered_interventions.append(footprint_df)
-        logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
+    # def register_interventions(self, footprint_df):
+    #     # Register the interventions that can be requested
+    #
+    #     # Check that this footprint can be added to the registered interventions
+    #     assert type(footprint_df) == pd.DataFrame
+    #     assert not (footprint_df.Name.values in self.registered_interventions.Name.values)
+    #     assert 'Name' in footprint_df.columns
+    #     assert 'Nurse_Time' in footprint_df.columns
+    #     assert len(footprint_df.columns) == 5
+    #
+    #     self.registered_interventions = self.registered_interventions.append(footprint_df)
+    #     logger.info('Registering intervention %s', footprint_df.at[0, 'Name'])
 
     def schedule_event(self, treatment_event, priority, topen, tclose):
 
@@ -212,20 +201,38 @@ class HealthSystem(Module):
         assert ( treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(consumables['Intervention_Pkg_Code']))
         assert ( treatment_event.CONS_FOOTPRINT['Item_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
 
+        # Check that this request is allowable under current policy (i.e. included in service_availability)
+        allowed= False
+        if self.service_availability=='all':
+            allowed=True
+        elif self.service_availability=='none':
+            allowed=False
+        elif (treatment_event.TREATMENT_ID in self.service_availability):
+            allowed=True
+        elif treatment_event.TREATMENT_ID==None:
+            allowed=True # (if no treatment_id it can pass)
+        else:
+            # check to see if anything provided given any wildcards
+            for s in range(len(self.service_availability)):
+                if '*' in self.service_availability[s]:
+                    stub = self.service_availability[s].split('*')[0]
+                    if treatment_event.TREATMENT_ID.startswith(stub):
+                        allowed=True
+                        break
 
-        # TODO: Check that this request is allowable under current policy
-        #
+        # If it is allowed then add this request to the queue of HEALTH_SYSTEM_CALLS
+        if allowed:
+            new_request = pd.DataFrame({
+                'treatment_event': [treatment_event],
+                'priority': [priority],
+                'topen': [topen],
+                'tclose': [tclose],
+                'status': 'Called'})
+            self.new_health_system_calls = self.new_health_system_calls.append(new_request, ignore_index=True)
+        else:
+            logger.debug('A request was made for a service but it was not included in the service_availability list: %s',
+                         self.sim.date)
 
-        # If checks ok, then add this request to the queue of HEALTH_SYSTEM_CALLS
-
-        new_request = pd.DataFrame({
-            'treatment_event': [treatment_event],
-            'priority': [priority],
-            'topen': [topen],
-            'tclose': [tclose],
-            'status': 'Called'})
-
-        self.new_health_system_calls = self.new_health_system_calls.append(new_request, ignore_index=True)
 
     def broadcast_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
@@ -263,7 +270,6 @@ class HealthSystem(Module):
         keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
         values = np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
-
         return (blank_footprint)
 
 
@@ -277,7 +283,6 @@ class HealthSystem(Module):
             'Intervention_Package_Code' : [] ,
             'Item_Code' : []
         }
-
         return (blank_footprint)
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
