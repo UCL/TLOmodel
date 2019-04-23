@@ -16,811 +16,751 @@
 14,Maternal/Newborn and Reproductive Health,Implant,4,Needle suture intestinal round bodied ½ circle trocar_6_CMST,11,0.2,115.99644
 15,Maternal/Newborn and Reproductive Health,Implant,4,"Jadelle (implant), box of 2_CMST",12,0.5,447.22104
 16,Maternal/Newborn and Reproductive Health,Implant,4,Implanon (Etonogestrel 68 mg),13,0.5,484.97022
-17,Maternal/Newborn and Reproductive Health,Female sterilization,5,Anaesthesia (local),14,,
-18,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Atropine sulphate, injection, 1 mg in 1 ml ampoule",15,1.0,17.99994
-19,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Diazepam, injection, 5 mg/ml, in 2 ml ampoule",16,1.0,130.47636
-20,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Lidocaine, injection, 1 % in 20 ml vial",17,1.0,149.99712
-21,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Lidocaine, spray, 10%, 500 ml bottle",18,0.02,1244.0022
-22,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Syringe, needle + swab",9,3.0,7.7469
-23,Maternal/Newborn and Reproductive Health,Female sterilization,5,Ligation and suturing,19,,
-24,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Gauze pad, 10 x 10 cm, sterile",20,2.0,14.72268
-25,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Needle, suture, assorted sizes, round body",21,3.0,600.00276
-26,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Suture, catgut, chromic, 0, 150 cm",22,3.0,3744.0018
-27,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll",23,1.0,426.10092
-28,Maternal/Newborn and Reproductive Health,Female sterilization,5,Other,24,,
-29,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Gloves, surgeon’s, latex, disposable, sterile, pair",25,2.0,137.45928
-30,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Paracetamol, tablet, 500 mg",26,8.0,4.3554
-31,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Povidone iodine, solution, 10 %, 5 ml per injection",5,2.0,2.00634
-32,Maternal/Newborn and Reproductive Health,Female sterilization,5,Cotton swab,27,2.0,1.9992
-33,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Gauze pad, 10 x 10 cm, sterile",20,1.0,14.72268
-34,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Gloves, surgeon’s, latex, disposable, sterile, pair",25,1.0,137.45928
-35,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Lidocaine, injection, 1 % in 20 ml vial",17,1.0,149.99712
-36,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Needle, suture, assorted sizes, round body",21,1.0,600.00276
-37,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Povidone iodine, solution, 10 %, 5 ml per injection",5,1.0,2.00634
-38,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Suture, catgut, chromic, 0, 150 cm",22,1.0,3744.0018
-39,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Syringe, needle + swab",9,1.0,7.7469
-40,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll",23,1.0,426.10092
-41,Maternal/Newborn and Reproductive Health,Female Condom,7,Female Condom_Each_CMST,28,120.0,33.72222
-42,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Misoprostol, tablet, 200 mcg",29,4.0,132.33276
-43,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Paracetamol, tablet, 500 mg",26,9.0,4.3554
-44,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Sepsis management,30,,
-45,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Ampicillin, powder for injection, 500 mg, vial",31,24.0,118.4526
-46,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,6.0,41.74758
-47,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Metronidazole, injection, 500 mg in 100 ml vial",33,8.0,51.48654
-48,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Tetracycline, tablet, 500 mg",34,40.0,0.9996
-49,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Uterine evacuation,35,,
-50,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,1.0,52.00062
-51,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Misoprostol, tablet, 200 mcg",29,2.0,132.33276
-52,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Syringe, needle + swab",9,1.0,7.7469
-53,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Uterine lacerations,36,,
-54,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Methylergometrine, Injection  0.2 mg/ml, 1 ml amp",37,3.0,14.00154
-55,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Pain management,38,,
-56,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Paracetamol, tablet, 500 mg",26,12.0,4.3554
-57,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Pethidine, 50 mg/ml, 2 ml ampoule",39,2.0,522.77652
-58,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Shock/Rehydration,40,,
-59,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,2.0,840.29946
-60,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,After stabilized,42,,
-61,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,2.0,840.29946
-62,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,Blood and urine,43,,
-63,Maternal/Newborn and Reproductive Health,Ectopic case management,9,Anesthesia,44,,
-64,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"IV giving/infusion set, with needle",45,1.0,231.84294
-65,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,1.0,52.00062
-66,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,2.0,808.94772
-67,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Syringe, needle + swab",9,0.1,7.7469
-68,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Epinephrine, ampoule, 1 mg/ml",47,0.1,82.0029
-69,Maternal/Newborn and Reproductive Health,Ectopic case management,9,Surgery,48,,
-70,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, absorbable, synthetic, 2/0, curved needle",49,0.01,75.99816
-71,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, catgut, chromic, 0, 150 cm",22,0.01,3744.0018
-72,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, non-absorbable, synthetic, 3/0, curved needle",50,0.01,1699.9983
-73,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Gauze pad, 10 x 10 cm, sterile",20,0.03,14.72268
-74,Maternal/Newborn and Reproductive Health,Ectopic case management,9,Infection control,51,,
-75,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Ampicillin, powder for injection, 500 mg, vial",31,64.0,118.4526
-76,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,12.0,41.74758
-77,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Metronidazole, injection, 500 mg in 100 ml vial",33,12.0,51.48654
-78,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,8.0,840.29946
-79,Maternal/Newborn and Reproductive Health,Ectopic case management,9,Pain management,38,,
-80,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Paracetamol, tablet, 500 mg",26,12.0,4.3554
-81,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Pethidine, 50 mg/ml, 2 ml ampoule",39,2.0,522.77652
-82,Maternal/Newborn and Reproductive Health,Tetanus toxoid (pregnant women),10,"Tetanus toxoid, injection",52,2.0,13.00194
-83,Maternal/Newborn and Reproductive Health,Tetanus toxoid (pregnant women),10,"Syringe, needle + swab",9,2.0,7.7469
-84,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,Screening,53,,
-85,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Blood collecting tube, 5 ml",54,1.0,122.42958
-86,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Gloves, exam, latex, disposable, pair",4,1.0,31.90866
-87,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Syringe, needle + swab",9,1.0,7.7469
-88,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Test, Rapid plasma reagin (RPR)",55,1.0,66.4377
-89,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,Treatment,56,,
-90,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Benzathine benzylpenicillin, powder for injection, 2.4 million IU",57,0.2,484.07058
-91,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Syringe, needle + swab",9,0.2,7.7469
-92,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Water for injection, 5 ml ampoule",58,0.2,25.8111
-93,Maternal/Newborn and Reproductive Health,Basic ANC,12,Ferrous sulphate 200mg _1000_CMST,59,0.0,1791.21894
-94,Maternal/Newborn and Reproductive Health,Basic ANC,12,Albendazole 200mg_1000_CMST,60,0.0,6375.6987
-95,Maternal/Newborn and Reproductive Health,Basic ANC,12,Carbon antigen VDRL 10ml_each_CMST,61,1.0,1942.00146
-96,Maternal/Newborn and Reproductive Health,Basic ANC,12,Urine analysis,62,4.0,627.9987
-97,Maternal/Newborn and Reproductive Health,Basic ANC,12,HIV EIA Elisa test,63,0.0,120.35898
-98,Maternal/Newborn and Reproductive Health,Basic ANC,12,"Cotton wool, 500g_1_CMST",64,0.001,416.99742
-99,Maternal/Newborn and Reproductive Health,Basic ANC,12,Haemoglobin test (HB),65,1.0,78.99696
-100,Maternal/Newborn and Reproductive Health,Hypertensive disorder case management,13,Proteinuria test (dipstick),66,5.0,3.9984
-101,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Albendazole, tablet, 400 mg",67,0.25,63.7602
-102,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Mebendazole, chewable tablet, 500 mg",68,0.25,18.98526
-103,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Praziquantel, 600 mg",69,0.75,2.8203
-104,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Levamisole, 80 mg",70,1.5,9.48906
-105,Maternal/Newborn and Reproductive Health,Active management of the 3rd stage of labour,15,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,1.0,39.24144
-106,Maternal/Newborn and Reproductive Health,Active management of the 3rd stage of labour,15,"Syringe, needle + swab",9,1.0,7.7469
-107,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Severe pre-eclampsia,72,,
-108,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Bag, urine, collecting, 2000 ml",73,1.0,157.40844
-109,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Foley catheter,74,1.0,306.44166
-110,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Test strips, urine analysis",75,8.0,3.9984
-111,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,High blood pressure (if diastolic BP > 0mmHg),76,,
-112,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Hydralazine, powder for injection, 20 mg ampoule",77,1.0,676.85058
-113,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"IV giving/infusion set, with needle",45,1.0,231.84294
-114,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,1.0,808.94772
-115,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"If pregnancy > 7 months and sign of fetal compromise, expedite delivery",78,,
-116,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Misoprostol, tablet, 200 mcg",29,0.8,132.33276
-117,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,0.8,39.24144
-118,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,0.4,840.29946
-119,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Convulsions,79,,
-120,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-121,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,0.4,808.94772
-122,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Syringe, needle + swab",9,0.1,7.7469
-123,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Water for injection, 10 ml ampoule",81,0.2,25.8111
-124,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,If pregnancy < 7 months monitor blood pressure and urine),82,,
-125,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Test strips, urine analysis",75,2.5,3.9984
-126,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Continued convulsions,83,,
-127,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.1,52.00062
-128,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-129,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Delayed labour or late referral,84,,
-130,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.6000000000000001,52.00062
-131,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.6000000000000001,439.38132
-132,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Recurring conversions,85,,
-133,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-134,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Severe pre-eclampsia,72,,
-135,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Bag, urine, collecting, 2000 ml",73,1.0,157.40844
-136,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Foley catheter,74,1.0,306.44166
-137,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Test strips, urine analysis",75,8.0,3.9984
-138,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,High blood pressure (if diastolic BP > 0mmHg),76,,
-139,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Hydralazine, powder for injection, 20 mg ampoule",77,1.0,676.85058
-140,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"IV giving/infusion set, with needle",45,1.0,231.84294
-141,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,1.0,808.94772
-142,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"If pregnancy > 7 months and sign of fetal compromise, expedite delivery",78,,
-143,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Misoprostol, tablet, 200 mcg",29,0.8,132.33276
-144,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,0.8,39.24144
-145,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,0.4,840.29946
-146,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Convulsions,79,,
-147,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-148,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,0.4,808.94772
-149,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Syringe, needle + swab",9,0.1,7.7469
-150,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Water for injection, 10 ml ampoule",81,0.2,25.8111
-151,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,If pregnancy < 7 months monitor blood pressure and urine),82,,
-152,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Test strips, urine analysis",75,2.5,3.9984
-153,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Continued convulsions,83,,
-154,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.1,52.00062
-155,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-156,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Delayed labour or late referral,84,,
-157,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.6000000000000001,52.00062
-158,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.6000000000000001,439.38132
-159,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Recurring conversions,85,,
-160,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",80,0.1,439.38132
-161,Maternal/Newborn and Reproductive Health,Neonatal resuscitation (institutional),18,"Resuscitator,hand-oper.,infant/child,set",86,0.005,0
-162,Maternal/Newborn and Reproductive Health,Neonatal resuscitation (institutional),18,"Infant resuscitator, clear plastic + mask + bag_each_CMST",87,1.0,5892.34212
-163,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,General,88,,
-164,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gloves, surgeon’s, latex, disposable, sterile, pair",25,4.0,137.45928
-165,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Spinal anesthesia,89,,
-166,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",45,0.9,231.84294
-167,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.9,52.00062
-168,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,1.8,808.94772
-169,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.9,7.7469
-170,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Epinephrine, ampoule, 1 mg/ml",47,0.225,82.0029
-171,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,And if necessary,90,,
-172,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.1,7.7469
-173,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Epinephrine, ampoule, 1 mg/ml",47,0.1,82.0029
-174,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,General anesthesia,91,,
-175,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Atropine sulphate, injection, 1 mg in 1 ml ampoule",15,0.1,17.99994
-176,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",45,0.1,231.84294
-177,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,0.2,808.94772
-178,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.2,7.7469
-179,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ketamine, 10 ml vial, 50 mg/ml",92,0.1,607.12848
-180,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Prophylactic antibiotics,93,,
-181,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ampicillin, powder for injection, 500 mg, vial",31,0.0,118.4526
-182,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Cefazolin, ampoule, 500 mg",94,4.0,20.2419
-183,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Other,24,,
-184,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Bag, urine, collecting, 2000 ml",73,1.0,157.40844
-185,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Foley catheter,74,1.0,306.44166
-186,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Procedure,95,,
-187,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gauze pad, 10 x 10 cm, sterile",20,5.0,14.72268
-188,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Needle, suture, assorted sizes, round body",21,3.0,600.00276
-189,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Povidone iodine, solution, 10 %, 5 ml per injection",5,1.0,2.00634
-190,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Suture, catgut, chromic, 0, 150 cm",22,1.0,3744.0018
-191,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Suture, non-absorbable, synthetic, 3/0, curved needle",50,1.0,1699.9983
-192,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Blade, surgical, no. 22, sterile, disposable",96,1.0,39.85548
-193,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,If signs of infection,97,,
-194,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ampicillin, powder for injection, 500 mg, vial",31,16.0,118.4526
-195,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,7.0,41.74758
-196,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",45,0.25,231.84294
-197,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Metronidazole, injection, 500 mg in 100 ml vial",33,3.0,51.48654
-198,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,2.0,840.29946
-199,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,After delivery,98,,
-200,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",45,1.0,231.84294
-201,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,2.0,39.24144
-202,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Paracetamol, tablet, 500 mg",26,12.0,4.3554
-203,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Pethidine, 50 mg/ml, 2 ml ampoule",39,1.0,522.77652
-204,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,8.0,808.94772
-205,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,1.0,7.7469
-206,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Gloves, exam, latex, disposable, pair",4,2.0,31.90866
-207,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Tetracycline eye ointment, 1 %, tube 5 mg",99,0.9000000000000001,31.68018
-208,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Gentian violet, powder 25 mg",100,0.1,992.90268
-209,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Amoxicillin, powder/oral suspension, 125 mg/5 ml",101,1.0,3.9984
-210,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,102,1.0,869.28072
-211,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Glove disposable powdered latex large_100_CMST,103,0.3,50.32986
-212,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Iodine strong 10% solution_500ml_CMST,104,0.1,1641.60024
-213,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Chlorhexidine 1.5% solution_5_CMST,105,0.04,12183.18906
-214,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",106,0.1,17.14314
-215,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,1.0,39.24144
-216,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Scalpel blade size 22 (individually wrapped)_100_CMST,107,0.1,3985.34808
-217,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catgut chromic 1 needle round bodied ½ circle 50mm_12_CMST,108,1.0,600.00276
-218,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"suture Vicryl® (2/0) 70cm + 1/2 rb ndl 26mm, V317H_36_IDA",109,0.08333,20999.99664
-219,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Cannula iv  (winged with injection pot) 20_each_CMST,110,2.0,118.43832
-220,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Giving set iv administration + needle 15 drops/ml_each_CMST,111,1.0,43.99668
-221,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Gauze pad, 10 x 10 cm, sterile",20,0.3,14.72268
-222,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ceftriaxone 1g, PFR_each_CMST",112,2.0,207.10998
-223,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,113,1.0,115.99644
-224,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Pethidine hydrochloride 50mg/1ml, 2ml_each_CMST",114,2.0,522.77652
-225,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Declofenac injection_each_CMST,115,14.0,20.99874
-226,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Plaster, elastic adhesive 10cm x 5m_each_CMST",116,0.05,539.07
-227,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ampicillin injection 500mg, PFR_each_CMST",117,2.0,118.4526
-228,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Cotton wool, 500g_1_CMST",64,1.0,416.99742
-229,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Diazepam 5mg/ml, 2ml_each_CMST",118,1.0,130.47636
-230,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"surgical face mask, disp., with metal nose piece_50_IDA",119,0.1,833.00238
-231,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Glove surgeon's size 8 sterile_2_CMST,120,7.0,273.7476
-232,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Halothane (fluothane)_250ml_CMST,121,0.2,21517.04688
-233,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ketamine, 10 ml vial, 50 mg/ml",92,0.04,607.12848
-234,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Lignocaine hydrochloride 5%+glucose 7.5%,heavy spinal,2ml_each_CMST",122,0.9,451.31226
-235,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Metronidazole 200mg_1000_CMST,123,0.001,5271.83328
-236,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Saline solution,124,4.0,135.00312
-237,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Paracetamol 500mg _1000_CMST,125,0.018,4353.87918
-238,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Needle spinal disposable Luer 22g x 10cm cutting bevel/pencil point_each_CMST,126,0.9,249.02178
-239,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Suture, catgut, chromic, 0, 150 cm",22,0.0,3744.0018
-240,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Suture, non-absorbable, synthetic, 1/0, curved needle",127,1.0,35.00028
-241,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catgut chromic 0 needle round bodied ½ circle 40mm_12_CMST,128,0.16667,3744.0018
-242,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Water for injection, 10ml_Each_CMST",129,1.0,32.57268
-243,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Benzylpenicillin 3g (5MU), PFR_each_CMST",130,1.0,194.6007
-244,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Syringe, 50ml, disposable, with 19g needle_each_CMST",131,2.0,182.91252
-245,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Iodine strong 10% solution_500ml_CMST,104,0.0,1641.60024
-246,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Chlorhexidine 1.5% solution_5_CMST,105,0.004,12183.18906
-247,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gauze, absorbent 90cm x 40m_each_CMST",132,1.0,5650.6317
-248,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Oxytocin 10 IU/ml, 1ml_each_CMST",133,0.0,39.24144
-249,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Glove disposable powdered latex large_100_CMST,103,0.3,50.32986
-250,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Scalpel blade size 22 (individually wrapped)_100_CMST,107,0.01,3985.34808
-251,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Catgut chromic 1 needle round bodied ½ circle 50mm_12_CMST,108,0.1,600.00276
-252,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Bandage, plaster of paris 15cm_12_CMST",134,0.33,1688.0031
-253,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"suture Vicryl® (2/0) 70cm + 1/2 rb ndl 26mm, V317H_36_IDA",109,0.0,20999.99664
-254,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Plaster, elastic adhesive 10cm x 5m_each_CMST",116,6.0,539.07
-255,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Cannula iv (winged with injection pot) 14_each_CMST,135,2.0,102.00204
-256,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Giving set iv administration + needle 15 drops/ml_each_CMST,111,1.0,43.99668
-257,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gauze pad, 10 x 10 cm, sterile",20,12.0,14.72268
-258,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Ceftriaxone 1g, PFR_each_CMST",112,2.0,207.10998
-259,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,113,1.0,115.99644
-260,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Pethidine, 50 mg/ml, 2 ml ampoule",39,12.0,522.77652
-261,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Declofenac injection_each_CMST,115,14.0,20.99874
-262,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Syringe, 50ml, disposable, with 19g needle_each_CMST",131,2.0,182.91252
-263,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Metronidazole 5mg/ml, 100ml_each_CMST",136,6.0,215.34954
-264,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Ampicillin injection 500mg, PFR_each_CMST",117,12.0,118.4526
-265,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gentamicin Sulphate 40mg/ml, 2ml_each_CMST",137,12.0,27.00348
-266,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Metronidazole 200mg_1000_CMST,123,1.764,5271.83328
-267,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Syringe, 5ml, disposable, hypoluer with 21g needle_each_CMST",138,40.0,149.98284
-268,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Glove disposable powdered latex large_100_CMST,103,2.0,50.32986
-269,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",106,0.2,17.14314
-270,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Cotton swab,27,20.0,1.9992
-271,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"umbilical cord clamp, disposable_50_IDA",139,1.0,26.26806
-272,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Filter paper No. 1_100_CMST,140,0.01,370.00194
-273,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Apron, disposable, polythene_100_CMST",141,1.0,74.19888
-274,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Oxytocin 10 IU/ml, 1ml_each_CMST",133,1.0,39.24144
-275,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Syringe, 20ml, disposable with 21g needle_each_CMST",142,1.0,182.94822
-276,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Chlorhexidine 1.5% solution_5_CMST,105,0.1,12183.18906
-277,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Cannula iv  (winged with injection pot) 20_each_CMST,110,1.0,118.43832
-278,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Cotton wool, 500g_1_CMST",64,1.0,416.99742
-279,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"surgical face mask, disp., with metal nose piece_50_IDA",119,0.02,833.00238
-280,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Ampicillin injection 500mg, PFR_each_CMST",117,2.0,118.4526
-281,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Glove surgeon's size 7 sterile_2_CMST,143,4.0,137.45928
-282,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Paracetamol 500mg_1000_CMST,144,1.0,4.16262
-283,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Catheter Foley's suction 53cm FG 10_each_CMST,145,1.0,71.99976
-284,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Cannula iv  (winged with injection pot) 20_each_CMST,110,2.0,118.43832
-285,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Glove disposable powdered latex large_100_CMST,103,0.2,50.32986
-286,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",106,0.3,17.14314
-287,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Cotton swab,27,20.0,1.9992
-288,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"umbilical cord clamp, disposable_50_IDA",139,1.0,26.26806
-289,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Apron, disposable, polythene_100_CMST",141,1.0,74.19888
-290,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,5.0,39.24144
-291,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Syringe, 20ml, disposable with 21g needle_each_CMST",142,4.0,182.94822
-292,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Chlorhexidine 1.5% solution_5_CMST,105,0.01,12183.18906
-293,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Needle suture abdominal straight 10cm_6_CMST,146,2.0,115.99644
-294,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Bandage, plaster of paris 15cm_12_CMST",134,0.2,1688.0031
-295,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,0.1,216.45624
-296,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,113,1.0,115.99644
-297,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Pethidine hydrochloride 50mg/1ml, 2ml_each_CMST",114,1.0,522.77652
-298,Maternal/Newborn and Reproductive Health,Clean practices and immediate essential newborn care (in facility),25,Clean delivery kit,148,1.0,977.63736
-299,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Dexamethasone, 1 ml injection, 4 mg/ml",149,6.0,128.72706
-300,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"IV giving/infusion set, with needle",45,1.0,231.84294
-301,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,4.0,840.29946
-302,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Syringe, needle + swab",9,2.0,7.7469
-303,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Nifedipine,150,4.0,9.91032
-304,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Cannula iv  (winged with injection pot) 16_each_CMST,151,1.0,77.34048
-305,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Saline solution,124,1.0,135.00312
-306,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Salbutamol 4mg_1000_CMST,152,0.03,2.76318
-307,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Amoxicillin, caplet, 250 mg",153,33.60000000000001,1.9992
-308,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Erythromycin, tablet, 250 mg",154,5.6000000000000005,5.9976
-309,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,Metronidazole 200mg_1000_CMST,123,1.0,5271.83328
-310,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Ampicillin injection 500mg, PFR_each_CMST",117,2.0,118.4526
-311,Maternal/Newborn and Reproductive Health,Induction of labour (beyond 41 weeks),28,"Misoprostol, tablet, 200 mcg",29,1.0,132.33276
-312,Maternal/Newborn and Reproductive Health,Induction of labour (beyond 41 weeks),28,Induction of labour (beyond 41 weeks) drugs/supplies to service a client,155,1.0,0
-313,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Antibiotics,156,,
-314,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Ampicillin, powder for injection, 500 mg, vial",31,64.0,118.4526
-315,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,9.0,41.74758
-316,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Metronidazole, injection, 500 mg in 100 ml vial",33,12.0,51.48654
-317,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Syringe, needle + swab",9,64.0,7.7469
-318,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Water for injection, 5 ml ampoule",58,64.0,25.8111
-319,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Amoxycillin 250mg_1000_CMST,157,0.18,16460.99868
-320,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Metronidazole 200mg_1000_CMST,123,0.03,5271.83328
-321,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Other,24,,
-322,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Bag, urine, collecting, 2000 ml",73,1.0,157.40844
-323,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Foley catheter,74,1.0,306.44166
-324,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gloves, surgeon’s, latex, disposable, sterile, pair",25,1.0,137.45928
-325,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"IV giving/infusion set, with needle",45,1.0,231.84294
-326,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Lancet, blood, disposable",158,1.0,0.9996
-327,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Oxygen, 1000 liters, primarily with oxygen cylinders",159,0.375,322.99932
-328,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Paracetamol, tablet, 500 mg",26,8.0,4.3554
-329,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,24.0,840.29946
-330,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Complete blood count,160,1.0,378.99834
-331,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Plaster, elastic adhesive 5cm x 5m_each_CMST",161,0.05,1451.99754
-332,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Cannula iv  (winged with injection pot) 16_each_CMST,151,2.0,77.34048
-333,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gentamicin 40mg/ml, 2ml_each_CMST",162,15.0,48.14502
-334,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Saline solution,124,6.0,135.00312
-335,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Cephalotin, 100 ml vial",163,1.2,125.99958
-336,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,5.0,41.74758
-337,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"IV giving/infusion set, with needle",45,0.2,231.84294
-338,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Oxygen, 1000 liters, primarily with oxygen cylinders",159,0.0,322.99932
-339,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Plaster, elastic adhesive 10cm x 5m_each_CMST",116,0.0025,539.07
-340,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Amoxicillin, powder/oral suspension, 125 mg/5 ml",101,0.01,3.9984
-341,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Ampicillin injection 250mg, PFR_each_CMST",164,7.0,118.4526
-342,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,Cannula iv  (winged with injection pot) 16_each_CMST,151,2.0,77.34048
-343,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Dextrose (glucose) 5%, 1000ml_each_CMST",165,2.0,1041.19764
-344,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Tube, feeding CH 8_each_CMST",166,1.0,401.11092
-345,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Gentamicin 40mg/ml, 2ml_each_CMST",162,0.0,48.14502
-346,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Disposables gloves, powder free, 100 pieces per box",167,0.3,5032.80036
-347,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,102,1.0,869.28072
-348,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Syringes, single use, 20 ml, 100 pieces per pack",168,3.0,182.94822
-349,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Water for injection, 10ml_Each_CMST",129,7.0,32.57268
-350,Maternal/Newborn and Reproductive Health,Newborn sepsis - injectable antibiotics,31,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,5.0,41.74758
-351,Maternal/Newborn and Reproductive Health,Newborn sepsis - injectable antibiotics,31,"Procaine benzylpenicillin, powder for injection, 1 g (= 1 million IU) in vial",169,1.0,320.50746
-352,Maternal/Newborn and Reproductive Health,Mastitis,32,"Erythromycin, tablet, 250 mg",154,40.0,5.9976
-353,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,After bleeding is controlled,170,,
-354,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Albendazole, tablet, 400 mg",67,0.25,63.7602
-355,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Lancet, blood, disposable",158,1.0,0.9996
-356,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Test, hemoglobin",171,1.0,0
-357,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Saline solution,124,6.0,135.00312
-358,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Complete blood count,160,1.0,378.99834
-359,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Haemoglobin test (HB),65,1.0,78.99696
-360,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,If there are signs of infection,172,,
-361,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ampicillin, powder for injection, 500 mg, vial",31,6.4,118.4526
-362,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,1.2000000000000002,41.74758
-363,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"IV giving/infusion set, with needle",45,0.1,231.84294
-364,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Metronidazole, injection, 500 mg in 100 ml vial",33,1.2000000000000002,51.48654
-365,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Sodium chloride, injectable solution, 0,9 %, 500 ml",41,0.8,840.29946
-366,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Water for injection, 5 ml ampoule",58,6.4,25.8111
-367,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Repair of tears and lacerations,173,,
-368,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Cotton swab,27,0.5,1.9992
-369,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Diazepam, injection, 5 mg/ml, in 2 ml ampoule",16,0.5,130.47636
-370,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Lidocaine, injection, 1 % in 20 ml vial",17,0.5,149.99712
-371,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Needle, suture, assorted sizes, round body",21,1.5,600.00276
-372,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Pethidine, 50 mg/ml, 2 ml ampoule",39,0.5,522.77652
-373,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Povidone iodine, solution, 10 %, 5 ml per injection",5,0.5,2.00634
-374,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Suture, catgut, chromic, 0, 150 cm",22,1.0,3744.0018
-375,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Suture, non-absorbable, synthetic, 2/0, needle",174,0.5,34.00068
-376,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"If HB < 7g/dL (severe anemia), first 3 months",175,,
-377,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",176,45.0,1.79214
-378,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"If HB < 7g/dL (severe anemia), following 6 months",177,,
-379,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",176,45.0,1.79214
-380,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,If HB between 7-11g/dL ,178,,
-381,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",176,135.0,1.79214
-382,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Atonic uterus,179,,
-383,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,3.0,39.24144
-384,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Other,24,,
-385,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Bag, urine, collecting, 2000 ml",73,1.0,157.40844
-386,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Blood, one unit",180,0.5,0
-387,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Foley catheter,74,1.0,306.44166
-388,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Gloves, surgeon’s, latex, disposable, sterile, pair",25,4.0,137.45928
-389,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"IV giving/infusion set, with needle",45,1.0,231.84294
-390,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Oxytocin, injection, 10 IU in 1 ml ampoule",71,1.0,39.24144
-391,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Sodium lactate injection (Ringer's), 500 ml, with giving set",46,2.0,808.94772
-392,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Syringe, needle + swab",9,1.0,7.7469
-393,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Plaster, elastic adhesive 10cm x 5m_each_CMST",116,0.05,539.07
-394,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Cannula iv  (winged with injection pot) 16_each_CMST,151,2.0,77.34048
-395,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"surgical face mask, disp., with metal nose piece_50_IDA",119,0.06,833.00238
-396,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"gauze compresses 5 x 5 cm ,12 ply, non sterile_100_IDA",181,1.0,295.00338
-397,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Disposables gloves, powder free, 100 pieces per box",167,0.05,5032.80036
-398,Maternal/Newborn and Reproductive Health,Chlorhexidine ,34,Chlorhexidine digluconate (10 ml bottle) ,182,1.0,53.99982
-399,Child Health,Hand washing with soap,35,Hand washing with soap - cost per client,183,1.0,143.64966
-400,Child Health,Hygienic disposal of children's stools,36,Hygienic disposal of children's stools - cost per client,184,1.0,3830.7885
-401,Child Health,ORS,37,"ORS, sachet",185,3.0,12.00234
-402,Child Health,Zinc,38,Children 0-6 months,186,,
-403,Child Health,Zinc,38,"Zinc, tablet, 20 mg",187,0.7000000000000001,9.639
-404,Child Health,Zinc,38,Children 6-59 months,188,,
-405,Child Health,Zinc,38,"Zinc, tablet, 20 mg",187,12.6,9.639
-406,Child Health,Antibiotics for treatment of dysentery,39,Ciprofloxacin 250mg_100_CMST,189,12.0,16.20066
-407,Child Health,Antibiotics for treatment of dysentery,39,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,102,6.0,869.28072
-408,Child Health,Treatment of severe diarrhea,40,"ORS, sachet",185,3.0,12.00234
-409,Child Health,Treatment of severe diarrhea,40,Giving set iv administration + needle 15 drops/ml_each_CMST,111,1.0,43.99668
-410,Child Health,Treatment of severe diarrhea,40,Saline solution,124,1.0,135.00312
-411,Child Health,Treatment of severe diarrhea,40,Cotton swab,27,1.0,1.9992
-412,Child Health,Treatment of severe diarrhea,40,"ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",190,0.08333,1309.02618
-413,Vaccine Preventable Diseases,Rotavirus vaccine,41,Rotavirus vaccine,191,4.0,395.97726
-414,Vaccine Preventable Diseases,Polio vaccine,42,Polio vaccine,192,4.0,20.66316
-415,Vaccine Preventable Diseases,BCG vaccine,43,BCG vaccine,193,1.0,12.03804
-416,Vaccine Preventable Diseases,BCG vaccine,43,"Syringe, autodisposable, BCG, 0.1 ml, with needle",194,1.0,110.96988
-417,Vaccine Preventable Diseases,BCG vaccine,43,"Safety box for used syringes/needles, 5 liter",195,1.0,11.45256
-418,Vaccine Preventable Diseases,Pneumococcal vaccine,44,Pneumococcal vaccine,196,3.0,526.56786
-419,Vaccine Preventable Diseases,Pneumococcal vaccine,44,"Syringe, 50ml, disposable, with 19g needle_each_CMST",131,3.0,182.91252
-420,Vaccine Preventable Diseases,Pneumococcal vaccine,44,"Syringe, auto-disposable, 0.5 ml, with needle",197,3.0,7.9968
-421,Vaccine Preventable Diseases,HPV vaccine,45,"Syringe, auto-disposable, 0.5 ml, with needle",197,3.0,7.9968
-422,Vaccine Preventable Diseases,HPV vaccine,45,"Safety box for used syringes/needles, 5 liter",195,3.0,11.45256
-423,Vaccine Preventable Diseases,HPV vaccine,45,HPV vaccine,198,3.0,151.99632
-424,Vaccine Preventable Diseases,Measles rubella vaccine,46,Measles vaccine,199,2.0,41.01216
-425,Vaccine Preventable Diseases,Measles rubella vaccine,46,"Safety box for used syringes/needles, 5 liter",195,2.0,11.45256
-426,Vaccine Preventable Diseases,Measles rubella vaccine,46,"Syringe, 50ml, disposable, with 19g needle_each_CMST",131,2.0,182.91252
-427,Malaria ,Larviciding,47,Larviciding,200,1.0,256853003.4
-428,Malaria ,ITN distribution to pregnant women,48,Insecticide-treated net,201,0.33299999999999996,677.02194
-429,Malaria ,Indoor residual spraying drugs,49,Indoor residual spraying drugs/supplies to service a client,202,1.0,4998
-430,Malaria ,IPT (pregnant women),50,"Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg",203,6.0,21.42
-431,Malaria ,"Uncomplicated (adult, <36 kg) ",51,Malaria test kit (RDT),204,1.0,292.74
-432,Malaria ,"Uncomplicated (adult, <36 kg) ",51,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",205,3.0,299.88
-433,Malaria ,"Uncomplicated (adult, <36 kg) ",51,Paracetamol 500mg_1000_CMST,144,18.0,4.16262
-434,Malaria ,"Uncomplicated (adult, >36 kg)",52,Malaria test kit (RDT),204,1.0,292.74
-435,Malaria ,"Uncomplicated (adult, >36 kg)",52,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",205,3.61905,299.88
-436,Malaria ,"Uncomplicated (adult, >36 kg)",52,Paracetamol 500mg_1000_CMST,144,18.0,4.16262
-437,Malaria ,"Uncomplicated - 2nd line (adult, <36 kg)",53,ASAQ (Artesunate + Amodiaquine) 100 + 270 mg,206,1.0,585.48
-438,Malaria ,"Uncomplicated - 2nd line (adult, >36 kg)",54,ASAQ (Artesunate + Amodiaquine) 100 + 270 mg,206,1.0,585.48
-439,Malaria ,"Uncomplicated (children, <15 kg)",55,Malaria test kit (RDT),204,1.0,292.74
-440,Malaria ,"Uncomplicated (children, <15 kg)",55,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",205,1.0,299.88
-441,Malaria ,"Uncomplicated (children, <15 kg)",55,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,102,18.0,869.28072
-442,Malaria ,"Uncomplicated (children, >15 kg)",56,Malaria test kit (RDT),204,1.0,292.74
-443,Malaria ,"Uncomplicated (children, >15 kg)",56,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",205,3.0,299.88
-444,Malaria ,"Uncomplicated (children, >15 kg)",56,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,102,18.0,869.28072
-445,Malaria ,"Uncomplicated - 2nd line (children, <15 kg)",57,artesunate 25mg + amodiaquine 67.5mg tab_25X3 _IDA,207,1.0,171.36
-446,Malaria ,"Uncomplicated - 2nd line (children, >15 kg)",58,ASAQ (Artesunate + Amodiaquine) 50 + 135 Mg,208,1.0,228.48
-447,Malaria ,First trimester - uncomplicated,59,Quinine sulphate 300mg_1000_CMST,209,42.0,35.7
-448,Malaria ,First trimester - uncomplicated,59,"Clindamycin, tabcap, 300 mg",210,42.0,49.98
-449,Malaria ,First trimester - uncomplicated,59,Paracetamol 500mg_1000_CMST,144,4.5,4.16262
-450,Malaria ,Second trimester - uncomplicated,60,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",205,3.0,299.88
-451,Malaria ,Second trimester - uncomplicated,60,Paracetamol 500mg_1000_CMST,144,18.0,4.16262
-452,Malaria ,"Complicated (adults, injectable artesunate)",61,Injectable artesunate,211,1.0,1406.58
-453,Malaria ,"Complicated (adults, injectable artesunate)",61,Cannula iv  (winged with injection pot) 18_each_CMST,212,3.0,130.07652
-454,Malaria ,"Complicated (adults, injectable artesunate)",61,Glove disposable latex medium_100_CMST,213,3.0,24.57588
-455,Malaria ,"Complicated (adults, injectable artesunate)",61,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",106,3.0,17.14314
-456,Malaria ,"Complicated (adults, injectable artesunate)",61,"Water for injection, 10ml_Each_CMST",129,3.0,32.57268
-457,Malaria ,"Complicated (children, injectable artesunate)",62,Injectable artesunate,211,0.25,1406.58
-458,Malaria ,"Complicated (children, injectable artesunate)",62,Cannula iv  (winged with injection pot) 18_each_CMST,212,3.0,130.07652
-459,Malaria ,"Complicated (children, injectable artesunate)",62,Glove disposable latex medium_100_CMST,213,3.0,24.57588
-460,Malaria ,"Complicated (children, injectable artesunate)",62,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",106,3.0,17.14314
-461,Malaria ,"Complicated (children, injectable artesunate)",62,"Water for injection, 10ml_Each_CMST",129,3.0,32.57268
-462,Malaria ,Pregnant women - complicated,63,"Quinine dihydrochloride 300mg/ml, 2ml_each_CMST",214,6.0,211.35828
-463,Malaria ,Pregnant women - complicated,63,Giving set iv administration + needle 15 drops/ml_each_CMST,111,1.0,43.99668
-464,Malaria ,Pregnant women - complicated,63,Cannula iv  (winged with injection pot) 18_each_CMST,212,1.0,130.07652
-465,Malaria ,Pregnant women - complicated,63,Bags syringe sterilization 15cm_1000_CMST,215,1.0,993.00264
-466,Malaria ,Pregnant women - complicated,63,Quinine sulphate 300mg_1000_CMST,209,21.0,35.7
-467,Malaria ,Pregnant women - complicated,63,"Clindamycin, tabcap, 300 mg",210,21.0,49.98
-468,Malaria ,Pregnant women - complicated,63,"Dextrose (glucose) 5%, 1000ml_each_CMST",165,1.0,1041.19764
-469,Tuberculosis,VCT for TB patients,64,HIV EIA Elisa test,63,1.0,120.35898
-470,Tuberculosis,First line treatment for new TB cases for adults,65,X-ray,216,1.0,182.51982
-471,Tuberculosis,First line treatment for new TB cases for adults,65,Cat. I & III Patient Kit A,217,1.0,14328.195
-472,Tuberculosis,First line treatment for retreatment TB cases for adults,66,X-ray,216,1.0,182.51982
-473,Tuberculosis,First line treatment for retreatment TB cases for adults,66,Cat. II Patient Kit A1,218,1.0,62248.305
-474,Tuberculosis,First line treatment for new TB cases for children,67,X-ray,216,2.0,182.51982
-475,Tuberculosis,First line treatment for new TB cases for children,67,Cat. I & III Patient Kit B,219,1.0,24188.0352
-476,Tuberculosis,First line treatment for retreatment TB cases for children,68,Cat. II Patient Kit A2,220,1.0,54397.6608
-477,Tuberculosis,First line treatment for retreatment TB cases for children,68,X-ray,216,1.0,182.51982
-478,Tuberculosis,MDR notification among new patients,69,X-ray,216,0.01,182.51982
-479,Tuberculosis,MDR notification among new patients,69,Category IV,221,1.0,2031548.11272
-480,Tuberculosis,MDR notification among previously treated patients,70,X-ray,216,0.01,182.51982
-481,Tuberculosis,MDR notification among previously treated patients,70,Category IV,221,1.0,2031548.11272
-482,Tuberculosis,Case management of MDR cases,71,Treatment: second-line drugs,222,1.0,346030.9965
-483,Tuberculosis,Case management of MDR cases,71,MDR Fuel,223,1.0,276347.03124
-484,Tuberculosis,Care and support for TB HIV+ patients,72,Care and support for TB HIV+ patients,224,1.0,149.99712
-485,Tuberculosis,Microscopy Test,73,Solid culture and DST,225,1.0,9887.5791
-486,Tuberculosis,LED test,74,Fluorescent stain,226,1.0,176.49366
-487,Tuberculosis,ZN test,75,ZN Stain,227,1.0,203.98266
-488,Tuberculosis,Xpert test,76,Xpert,228,1.0,7125.70572
-489,Tuberculosis,MGIT test,77,MGIT960 Culture and DST,229,1.0,23012.22
-490,Tuberculosis,LGA test,78,Line Probe Assay,230,1.0,149.99712
-491,HIV/AIDS,Viral Load,79,VL Test,231,1.0,5537.9982
-492,HIV/AIDS,CD4 Test,80,CD4 test,232,4.0,3403.23102
-493,HIV/AIDS,Isoniazid preventative therapy for HIV+ no TB,81,"Isoniazid/Pyridoxine, tablet 300 mg",233,1.0,1094.4192
-494,HIV/AIDS,Chemistry and hematology,82,Chemistry and hematology,234,1.0,1406.58
-495,HIV/AIDS,Interventions focused on female sex workers ,83,Interventions focused on sex workers and their clients drugs/supplies to service a client,235,1.0,21177.58986
-496,HIV/AIDS,Interventions focused on male sex workers ,84,Interventions focused on sex workers and their clients drugs/supplies to service a client,235,1.0,21177.58986
-497,HIV/AIDS,Interventions focused on men who have sex with men ,85,Interventions focused on men who have sex with men drugs/supplies to service a client,236,1.0,28234.50168
-498,HIV/AIDS,HIV Testing Services,86,"Test, HIV EIA Elisa",237,1.0,3430.67718
-499,HIV/AIDS,Condoms,87,Men having sex with other men,238,,
-500,HIV/AIDS,Condoms,87,"Condom, male",2,5.0,20.97018
-501,HIV/AIDS,Condoms,87,High risk,239,,
-502,HIV/AIDS,Condoms,87,"Condom, male",2,10.0,20.97018
-503,HIV/AIDS,Condoms,87,Medium risk,240,,
-504,HIV/AIDS,Condoms,87,"Condom, male",2,50.0,20.97018
-505,HIV/AIDS,Condoms,87,Low risk,241,,
-506,HIV/AIDS,Condoms,87,"Condom, male",2,40.0,20.97018
-507,HIV/AIDS,Male circumcision ,88,"Test, HIV EIA Elisa",237,0.0,3430.67718
-508,HIV/AIDS,Male circumcision ,88,"male circumcision kit, consumables (10 procedures)_1_IDA",242,1.0,669.41784
-509,HIV/AIDS,PMTCT,89,"Blood collecting tube, 5 ml",54,1.0,122.42958
-510,HIV/AIDS,PMTCT,89,"Gloves, exam, latex, disposable, pair",4,0.0,31.90866
-511,HIV/AIDS,PMTCT,89,HIV EIA Elisa test,63,2.0,120.35898
-512,HIV/AIDS,PMTCT,89,"Syringe, needle + swab",9,0.0,7.7469
-513,HIV/AIDS,PMTCT,89,"Nevirapine, oral solution, 10 mg/ml",243,0.0,1870.65858
-514,HIV/AIDS,PMTCT,89,"Nevirapine, tablet, 200 mg",244,0.0,27.3819
-515,HIV/AIDS,PMTCT,89,DNA PCR for infant after birth,245,1.0,7705.2024
-516,HIV/AIDS,PMTCT,89,Testing,246,,
-517,HIV/AIDS,PMTCT,89,"Blood collecting tube, 5 ml",54,1.0,122.42958
-518,HIV/AIDS,PMTCT,89,"Gloves, exam, latex, disposable, pair",4,1.0,31.90866
-519,HIV/AIDS,PMTCT,89,HIV EIA Elisa test,63,0.0,120.35898
-520,HIV/AIDS,PMTCT,89,"Syringe, needle + swab",9,0.0,7.7469
-521,HIV/AIDS,PMTCT,89,Infant - Single dose nevirapine,247,,
-522,HIV/AIDS,PMTCT,89,"Nevirapine, oral solution, 10 mg/ml",243,0.0,1870.65858
-523,PMTCT,PMTCT,89,"Nevirapine, oral solution, 10 mg/ml",243,0.0,1870.65858
-524,PMTCT,PMTCT,89,Mother - Single dose nevirapine,248,,
-525,PMTCT,PMTCT,89,"Nevirapine, tablet, 200 mg",244,0.0,27.3819
-526,PMTCT,PMTCT,89,Mother - Dual therapy,249,,
-527,PMTCT,PMTCT,89,"Zidovudine (AZT), capsule, 300 mg",250,0.0,90.17106
-528,PMTCT,PMTCT,89,Mother - Option A - Breastfeeding,251,,
-529,PMTCT,PMTCT,89,"Zidovudine (AZT), capsule, 300 mg",250,0.0,90.17106
-530,PMTCT,PMTCT,89,Mother - Option A - Non-breastfeeding,252,,
-531,PMTCT,PMTCT,89,"Zidovudine (AZT), capsule, 300 mg",250,0.0,90.17106
-532,PMTCT,Cotrimoxazole for children,90,"Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml",253,0.0,322.71372
-533,PMTCT,Cotrimoxazole for children,90,"Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg",203,0.0,21.42
-534,PMTCT,Cotrimoxazole for children,90,Cotrimoxazole 120mg_1000_CMST,254,1.0,3734.22
-535,PMTCT,Management of opportunistic infections associated with HIV/AIDS,91,"Cotrimoxizole, 960mg pppy",255,730.0,6.99006
-536,PMTCT,Nutrition supplements in first 6 months for HIV/AIDS cases ,92,Nutrition supplements in first six months drugs/supplies to service a client,256,1.0,2344.419
-537,PMTCT,Screen HIV+ cases for TB,93,X-ray,216,1.0,182.51982
-538,PMTCT,Screen HIV+ cases for TB,93,Culture test,257,0.8999999999999999,9887.5791
-539,PMTCT,Screen HIV+ cases for TB,93,Smear test,258,3.0,203.98266
-540,PMTCT,ART (+CPT) for TB HIV+ patients,94,"Cotrimoxizole, 960mg pppy",255,730.0,6.99006
-541,PMTCT,HIV prevention for TB patients,95,"Condom, male",2,1.0,20.97018
-542,Nutrition,Nutritional care and support (HIV+ pregnant and lactating women),96,Corn Soya Blend (or Supercereal - CSB++),259,36.0,856.8
-543,Nutrition,Vitamin A supplementation in pregnant women,97,"Vitamin A, caplet, 100,000 IU",260,84.0,19.89204
-544,Nutrition,Daily iron and folic acid supplementation (pregnant women),98,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",176,270.0,1.79214
-545,Nutrition,Management of moderate acute malnutrition (pregnant and lactating women),99,Vegetable oil,261,3.5999999999999996,703.29
-546,Nutrition,Management of moderate acute malnutrition (pregnant and lactating women),99,Corn Soya Blend (or Supercereal - CSB++),259,36.0,856.8
-547,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,100,Corn Soya Blend (or Supercereal - CSB++),259,24.48,856.8
-548,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,100,Vegetable oil,261,2.4480000000000004,703.29
-549,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,100,"Ready-to-use therapeutic food (RUTF), tablet",262,115.19999999999999,20.08482
-550,Nutrition,Vitamin A supplementation in infants and children 6-59 months,101,"Vitamin A, caplet, 100,000 IU",260,0.2,19.89204
-551,Nutrition,Vitamin A supplementation in infants and children 6-59 months,101,"Vitamin A, caplet, 200,000 IU",263,3.2,19.89204
-552,Nutrition,Deworming (children),102,Children 12-23 months,264,,
-553,Nutrition,Deworming (children),102,"Albendazole, tablet, 400 mg",67,0.07,63.7602
-554,Nutrition,Deworming (children),102,Children 2-15 years,265,,
-555,Nutrition,Deworming (children),102,"Albendazole, tablet, 400 mg",67,1.86,63.7602
-556,Nutrition,Management of moderate acute malnutrition (children),103,Corn Soya Blend (or Supercereal - CSB++),259,36.0,856.8
-557,Nutrition,Management of severe malnutrition (children),104,SAM theraputic foods,266,1.0,48625.87044
-558,Nutrition,Management of severe malnutrition (children),104,SAM medicines,267,1.0,15988.82334
-559,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,"Acetyl salysilic acid (aspirin), tablet, 75 mg",268,365.0,9.48906
-560,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,"Enalapril, tablet, 20 mg",269,365.0,9.48906
-561,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,"Atenolol, tablets, 50 mg",270,547.5,1.89924
-562,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,"Simvastatin, 15 mg",271,273.75,223.99608
-563,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,"Prednisolone, tablet, 5 mg",272,54.60000000000001,59.99742
-564,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Follow-up for those with diabetes,273,,
-565,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Blood glucose level test,274,2.6,685.99692
-566,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Laboratory tests per client,275,,
-567,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Blood glucose level test,274,1.74,685.99692
-568,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Cholesterol test,276,2.0,685.99692
-569,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke,105,Urine analysis,62,2.0,627.9987
-570,Non-communicable diseases,Treatment of cases with rheumatic heart disease ,106,"Penicillin G Benzathine, 1440 mg",277,30.0,268.19982
-571,Non-communicable diseases,Screening for risk of CVD/Diabetes,107,Blood glucose level test,274,0.3,685.99692
-572,Non-communicable diseases,Screening for risk of CVD/Diabetes,107,Cholesterol test,276,0.3,685.99692
-573,Non-communicable diseases,Screening for risk of CVD/Diabetes,107,Urine analysis,62,0.3,627.9987
-574,Non-communicable diseases,Screening for risk of CVD/Diabetes,107,Urine sugar analysis,278,1.0,230.00082
-575,Non-communicable diseases,Hypertension,108,"Enalapril, tablet, 20 mg",269,72.0,9.48906
-576,Non-communicable diseases,Hypertension,108,Nifedipine 10mg_100_CMST,279,288.0,3.12018
-577,Non-communicable diseases,Hypertension,108,Hydrochlorothiazide 25mg_1000_CMST,280,360.0,2.12058
-578,Non-communicable diseases,Hypertension,108,Methyldopa 250mg_1000_CMST,281,108.00000000000001,25.01856
-579,Non-communicable diseases,Hypertension,108,Hydralazine 25mg_100_CMST,282,0.0,915.99774
-580,Non-communicable diseases,Hypertension,108,"Hydralazine, powder for injection, 20 mg ampoule",77,0.25,676.85058
-581,Non-communicable diseases,Hypertension,108,Atenolol 100mg_1000_CMST,283,108.0,6.59736
-582,Non-communicable diseases,Hypertension,108,Frusemide 40mg_1000_CMST,284,0.0002,2630.61162
-583,Non-communicable diseases,Hypertension,108,Aspirin 300mg_1000_CMST,285,0.09,3034.77132
-584,Non-communicable diseases,Diabetes Type I,109,"Insulin soluble 100 IU/ml, 10ml_each_CMST",286,12.0,3336.3792
-585,Non-communicable diseases,Diabetes Type I,109,"Insulin zinc suspension (lente) 100 IU/ml, 10ml_each_CMST",287,24.0,3357.0495
-586,Non-communicable diseases,Diabetes Type I,109,Creatinine  test kit-Human_ 200ml  _CMST,288,1.0,24000.0033
-587,Non-communicable diseases,Diabetes Type I,109,Albumin test kit  (HUMAN)_ 1000ml  _CMST,289,1.0,34670.74758
-588,Non-communicable diseases,Diabetes Type I,109,"Syringe, NSEP, 1 cc",290,1.0,264.18
-589,Non-communicable diseases,Diabetes Type I,109,Glove disposable latex medium_100_CMST,213,1.0,24.57588
-590,Non-communicable diseases,Diabetes Type II,110,Glibenclamide 5mg_1000_CMST,291,1080.0,3.59856
-591,Non-communicable diseases,Diabetes Type II,110,Metformin hydrochloride 500mg_100_CMST,292,1080.0,10.26018
-592,Non-communicable diseases,Diabetes Type II,110,Blood glucose level test,274,1.0,685.99692
-593,Non-communicable diseases,Diabetes Type II,110,Albumin test kit  (HUMAN)_ 1000ml  _CMST,289,1.0,34670.74758
-594,Non-communicable diseases,Diabetes Type II,110,Creatinine  test kit-Human_ 200ml  _CMST,288,1.0,24000.0033
-595,Non-communicable diseases,High cholesterol,111,"Simvastatin, 15 mg",271,24.0,223.99608
-596,Non-communicable diseases,High cholesterol,111,Creatinine  test kit-Human_ 200ml  _CMST,288,1.0,24000.0033
-597,Non-communicable diseases,High cholesterol,111,Albumin test kit  (HUMAN)_ 1000ml  _CMST,289,1.0,34670.74758
-598,Non-communicable diseases,Ischemic heart disease,112,Aspirin 300mg_1000_CMST,285,0.03,3034.77132
-599,Non-communicable diseases,Screening: Mammography,113,X-ray film,293,4.0,420.3318
-600,Non-communicable diseases,Screening: Mammography,113,X-ray film chemistry,294,1.0,47.45958
-601,Non-communicable diseases,Breast Cancer (first line),114,Cyclophosphamide 1000mg Injection,295,6.0,2065.7091
-602,Non-communicable diseases,Breast Cancer (first line),114,"Doxorubicin, 50 mg vial",296,12.0,6850.85142
-603,Non-communicable diseases,Cervical cancer (first line),115,Cisplatin 50mg Injection,297,12.0,4891.77108
-604,Non-communicable diseases,Cervical cancer (first line),115,5-Fluorouracil 500mg injection,298,36.0,625.52112
-605,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,Tetanus toxin vaccine (TTV),299,0.2,1199.99838
-606,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"diclofenac sodium 25 mg, enteric coated_1000_IDA",300,60.0,0.92106
-607,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,Paracetamol 500mg_1000_CMST,144,80.0,4.16262
-608,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",301,0.4,549.50154
-609,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"Bandage, crepe 7.5cm x 1.4m long , when stretched",302,4.0,119.28798
-610,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"Gauze, swabs 8-ply 10cm x 10cm",303,10.0,14.72268
-611,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"Iodine solution, weak (iodine tincture) 0.5%_500ml_CMST",304,0.1,1742.63838
-612,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,Glove disposable latex medium_100_CMST,213,8.0,24.57588
-613,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,Suture pack,305,0.05,2856
-614,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,Flucloxacillin 250mg_100_CMST,306,22.400000000000002,40.39812
-615,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),116,"Cotton wool, 500g_1_CMST",64,10.0,416.99742
-616,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Tetanus toxin vaccine (TTV),299,0.2,1199.99838
-617,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"diclofenac sodium 25 mg, enteric coated_1000_IDA",300,60.0,0.92106
-618,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Paracetamol 500mg_1000_CMST,144,80.0,4.16262
-619,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",301,2.0,549.50154
-620,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Bandage, crepe 7.5cm x 1.4m long , when stretched",302,8.0,119.28798
-621,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Gauze, swabs 8-ply 10cm x 10cm",303,10.0,14.72268
-622,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Iodine strong 10% solution_500ml_CMST,104,0.1,1641.60024
-623,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST,307,12.0,16.9218
-624,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",308,6.0,723.0678
-625,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Glove surgeon's size 7 sterile_2_CMST,143,0.4,137.45928
-626,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Glove disposable latex medium_100_CMST,213,8.0,24.57588
-627,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Ketamine hydrochloride 50mg/ml, 10ml",309,0.024,607.12848
-628,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Syringe, 5ml, disposable, hypoluer with 21g needle_each_CMST",138,1.0,149.98284
-629,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Apron laboratory disposable_50_CMST,310,2.0,74.19888
-630,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Ceftriaxone 1g, PFR_each_CMST",112,1.4000000000000001,207.10998
-631,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"cloxacillin 500 mg, powder for injection_50_IDA",311,8.400000000000002,59.04066
-632,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Gentamycin, injection, 40 mg/ml in 2 ml vial",32,2.1000000000000005,41.74758
-633,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Vancomycin 500mg for injection,312,3.6,5999.99904
-634,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,"Chloramphenicol Sodium 1g, PFR_each_CMST",313,7.0,338.5431
-635,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Flucloxacillin 250mg_100_CMST,306,22.400000000000002,40.39812
-636,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,External fixator,314,0.01,42840
-637,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),117,Chloramphenicol 250mg_1000_CMST,315,112.0,28.06734
-638,Non-communicable diseases,Kaposi sarcoma - first line,118,"Doxorubicin, 50 mg vial",296,7.0,6850.85142
-639,Non-communicable diseases,Kaposi sarcoma - first line,118,Belomycin 15lu inj,316,7.0,5941.67952
-640,Non-communicable diseases,Kaposi sarcoma - first line,118,Vincristin 1mg Injection,317,7.0,901.13226
-641,Non-communicable diseases,Kaposi sarcoma - second line,119,Paclitaxel 100mg Injection,318,2.33331,31493.11914
-642,Non-communicable diseases,"Lymphomas, nonhodgkins",120,"Cyclophosphamide, 1 g",319,5.0,2065.7091
-643,Non-communicable diseases,"Lymphomas, nonhodgkins",120,Vincristin 1mg Injection,317,10.0,901.13226
-644,Non-communicable diseases,"Lymphomas, nonhodgkins",120,"Methylprednisolone acetate sub-conj. 40mg/ml,2ml_each_CMST",320,0.0,1623.07194
-645,Non-communicable diseases,"Lymphomas, nonhodgkins",120,"Doxorubicin, 50 mg vial",296,5.0,6850.85142
-646,Non-communicable diseases,Hodgkin's lymphoma,121,"bleomycin powder 15 mg (15,000 IU)   (**)_1_IDA",321,0.0,7709.25078
-647,Non-communicable diseases,Hodgkin's lymphoma,121,Belomycin 15lu inj,316,12.0,5941.67952
-648,Non-communicable diseases,Hodgkin's lymphoma,121,Vinblastin 10mg injection,322,12.0,5913.59076
-649,Non-communicable diseases,Hodgkin's lymphoma,121,Dacarbazine 500mg injection,323,18.0,12034.61994
-650,Non-communicable diseases,Hodgkin's lymphoma,121,"Doxorubicin, 50 mg vial",296,12.0,6850.85142
-651,Non-communicable diseases,Head and neck cancer (esophageal),122,Cisplatin 50mg Injection,297,12.5,4891.77108
-652,Non-communicable diseases,Head and neck cancer (esophageal),122,5-Fluorouracil 500mg injection,298,8.5,625.52112
-653,Non-communicable diseases,"GIT, intestine cancer",123,5-Fluorouracil 500mg injection,298,10.2,625.52112
-654,Non-communicable diseases,"GIT, intestine cancer",123,Leucovorin 50mg injection,324,3.5999999999999996,1931.16294
-655,"Mental, neurological, and substance use disorders",Anxiety,124,Amitriptyline 25mg_100_CMST,325,180.0,5.49066
-656,"Mental, neurological, and substance use disorders",Anxiety,124,Fluoxetine 20mg_1000_CMST,326,180.0,103.80846
-657,"Mental, neurological, and substance use disorders",Treatment of depression,125,Amitriptyline 25mg_100_CMST,325,180.0,5.49066
-658,"Mental, neurological, and substance use disorders",Treatment of depression,125,Fluoxetine 20mg_1000_CMST,326,180.0,103.80846
-659,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,126,Haloperidol  5mg_100_CMST,327,1.825,766.75032
-660,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,126,Chlorpromazine 100mg_1000_CMST,328,0.27375,8873.99898
-661,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,126,"Fluphenazine decanoate 25mg/ml, 2ml_each_CMST",329,1.2000000000000002,3156.951
-662,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,126,"Risperidone, 2 mg tab",330,146.0,14.2086
-663,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,126,"Biperiden, 2 mg tab",331,7.0,12.00234
-664,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,"Lithium, 300 mg",332,547.5,5.9976
-665,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,Sodium valproate 200mg_100_CMST,333,5.475000000000001,3154.11642
-666,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,Carbamazepine 200mg_1000_CMST,334,0.07300000000000001,11382.73794
-667,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,"Diazepam 5mg/ml, 2ml_each_CMST",118,12.0,130.47636
-668,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,"Syringe, 10 cc with needle",335,0.4,298.809
-669,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,127,Glove disposable latex medium_100_CMST,213,0.4,24.57588
-670,"Mental, neurological, and substance use disorders",Anti-epileptic medication,128,"Phenobarbital, 100 mg",336,729.99927,4.04124
-671,"Mental, neurological, and substance use disorders",Anti-epileptic medication,128,Phenytoin sodium 100mg_1000_CMST,337,328.49999999999994,3.84132
-672,"Mental, neurological, and substance use disorders",Anti-epileptic medication,128,Carbamazepine 200mg_1000_CMST,334,0.07300000000000001,11382.73794
-673,"Mental, neurological, and substance use disorders",Anti-epileptic medication,128,Sodium valproate 200mg_100_CMST,333,0.0,3154.11642
-674,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,129,Haloperidol  5mg_100_CMST,327,1.825,766.75032
-675,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,129,Chlorpromazine 100mg_1000_CMST,328,0.27375,8873.99898
-676,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,129,"Fluphenazine decanoate 25mg/ml, 2ml_each_CMST",329,1.2000000000000002,3156.951
-677,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,129,"Risperidone, 2 mg tab",330,146.0,14.2086
-678,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,129,"Biperiden, 2 mg tab",331,7.0,12.00234
-679,"Mental, neurological, and substance use disorders",Substance use disorder - alcohol,130,Diazepam 5mg_1000_CMST,338,0.002,2380.0833
-680,"Mental, neurological, and substance use disorders",Substance use disorder - alcohol,130,"Thiamine (vitamin B1), 100 mg",339,1.0,6.9972
-681,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,131,"Buprenorphine, 8 mg",340,1.25,450.9981
-682,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,131,"Methadone, 5 mg",341,1.75,606.00036
-683,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,131,"Clonidine, .1 mg",342,3.5,213.56454
-684,Neglected Tropical Diseases,Onchocerciasis mass drug administration,132,Mectizan,343,1.0,2142
-685,Neglected Tropical Diseases,Schistosomiasis mass drug administration,133,Praziquantel 600mg_1000_CMST,344,2.5,2.77032
-686,Neglected Tropical Diseases,LF hydrocele surgery,134,I/V R/lactate 3Lts,345,3.0,1309.02618
-687,Neglected Tropical Diseases,LF hydrocele surgery,134,"Ampicillin injection 500mg, PFR_each_CMST",117,1.0,118.4526
-688,Neglected Tropical Diseases,LF hydrocele surgery,134,"Metronidazole 5mg/ml, 100ml_each_CMST",136,1.0,215.34954
-689,Neglected Tropical Diseases,LF hydrocele surgery,134,Amoxycillin 250mg_1000_CMST,157,0.001,16460.99868
-690,Neglected Tropical Diseases,LF hydrocele surgery,134,Metronidazole 200mg_1000_CMST,123,0.001,5271.83328
-691,Neglected Tropical Diseases,LF hydrocele surgery,134,Diclofenac sodium 100mg _100_CMST,346,0.1,240.86076
-692,Neglected Tropical Diseases,LF hydrocele surgery,134,Catheter Foley's + urine bag (2000ml) 10g_each_CMST,347,1.0,297.98076
-693,Neglected Tropical Diseases,LF hydrocele surgery,134,Cannula iv  (winged with injection pot) 18_each_CMST,212,1.0,130.07652
-694,Neglected Tropical Diseases,LF hydrocele surgery,134,"Syringe, 20ml, disposable with 21g needle_each_CMST",142,1.0,182.94822
-695,Neglected Tropical Diseases,LF hydrocele surgery,134,"Water for injection, 10ml_Each_CMST",129,1.0,32.57268
-696,Neglected Tropical Diseases,LF hydrocele surgery,134,Underpants,348,1.0,2427.6
-697,Acute Respiratory Infections,Asthma,135,Prednisolone 5mg_100_CMST,349,18.0,8.3181
-698,Acute Respiratory Infections,Asthma,135,"Aminophylline 100mg, tablets",350,30.0,3.22728
-699,Acute Respiratory Infections,Asthma,135,Salbutamol Inhaler 100mcg/dose - 200 doses ,351,1.0,960.73698
-700,Acute Respiratory Infections,Asthma,135,Salbutamol 4mg_1000_CMST,152,30.0,2.76318
-701,Acute Respiratory Infections,Asthma,135,"Beclomethasone diproprionate inhalation, 50mcg/dose, 200 doses",352,1.0,1400.39676
-702,Acute Respiratory Infections,Pneumonia treatment (children),136,"Paracetamol, tablet, 100 mg",353,12.0,4.34826
-703,Acute Respiratory Infections,Pneumonia treatment (children),136,"Salbutamol, tablet, 4 mg",354,0.08,2.76318
-704,Acute Respiratory Infections,Pneumonia treatment (children),136,"Salbutamol, syrup, 2 mg/5 ml",355,0.36,6.9972
-705,Acute Respiratory Infections,Pneumonia treatment (children),136,"Salbutamol sulphate 1mg/ml, 5ml_each_CMST",356,0.024,86.0013
-706,Acute Respiratory Infections,Pneumonia treatment (children),136,"Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST",357,0.4,345.6117
-707,Acute Respiratory Infections,Pneumonia treatment (children),136,Amoxycillin 250mg_1000_CMST,157,0.005999999999999999,16460.99868
-708,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Benzylpenicillin 3g (5MU), PFR_each_CMST",130,12.0,194.6007
-709,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Gentamicin Sulphate 40mg/ml, 2ml_each_CMST",137,25.0,27.00348
-710,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Ceftriaxone 1g, PFR_each_CMST",112,1.25,207.10998
-711,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Tube, nasogastric CH 8_each_CMST",358,0.2,1194.00078
-712,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Oxygen, 1000 liters, primarily with oxygen concentrators",359,0.576,224.88144
-713,Acute Respiratory Infections,Treatment of severe pneumonia,137,Prednisolone 5mg_100_CMST,349,1.7999999999999998,8.3181
-714,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Salbutamol, syrup, 2 mg/5 ml",355,0.4,6.9972
-715,Acute Respiratory Infections,Treatment of severe pneumonia,137,"Syringe, needle + swab",9,0.36,7.7469
-716,Acute Respiratory Infections,Treatment of severe pneumonia,137,Amoxycillin 250mg_1000_CMST,157,0.006,16460.99868
-717,Acute Respiratory Infections,Treatment of severe pneumonia,137,Cannula iv  (winged with injection pot) 16_each_CMST,151,1.0,77.34048
-718,Acute Respiratory Infections,Treatment of severe pneumonia,137,X-ray,216,1.0,182.51982
-719,Acute Respiratory Infections,Asthma severe 1 step adult,138,Prednisolone 5mg_100_CMST,349,56.0,8.3181
-720,Acute Respiratory Infections,Asthma severe 1 step adult,138,Amoxycillin 250mg_1000_CMST,157,0.03,16460.99868
-721,Acute Respiratory Infections,Asthma severe 1 step adult,138,Glove disposable latex medium_100_CMST,213,6.0,24.57588
-722,Acute Respiratory Infections,Asthma severe 1 step adult,138,"Salbutamol solution for nebulising 5mg/ml, 30ml",360,2.0,676.25082
-723,Acute Respiratory Infections,Asthma severe 1 step adult,138,"IV giving/infusion set, with needle",45,1.0,231.84294
-724,Acute Respiratory Infections,Asthma severe 1 step adult,138,X-Ray developer for manual process,361,1.0,2.6418
-725,Acute Respiratory Infections,Asthma severe 1 step adult,138,Cannula iv  (winged with injection pot) 18_each_CMST,212,1.0,130.07652
-726,Acute Respiratory Infections,Asthma severe 1 step adult,138,"Plaster, elastic adhesive 7.5cm x 5m_each_CMST",362,1.0,869.57346
-727,Acute Respiratory Infections,Asthma severe 1 step adult,138,Hydrocotisone IV - 200mg,363,15.0,478.33002
-728,Acute Respiratory Infections,Asthma severe 1 step adult,138,"Oxygen, 1000 liters, primarily with oxygen concentrators",359,1.0,224.88144
-729,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,Prednisolone 5mg_100_CMST,349,56.0,8.3181
-730,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,Amoxycillin 250mg_1000_CMST,157,0.03,16460.99868
-731,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,Glove disposable latex medium_100_CMST,213,6.0,24.57588
-732,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Salbutamol solution for nebulising 5mg/ml, 30ml",360,2.0,676.25082
-733,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"IV giving/infusion set, with needle",45,1.0,231.84294
-734,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Sodium chloride 0.9%, 1000ml_each_CMST",364,1.0,783.05808
-735,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,Cannula iv  (winged with injection pot) 18_each_CMST,212,1.0,130.07652
-736,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Plaster, elastic adhesive 7.5cm x 5m_each_CMST",362,1.0,869.57346
-737,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,Hydrocotisone IV - 200mg,363,15.0,478.33002
-738,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Oxygen, 1000 liters, primarily with oxygen concentrators",359,0.05,224.88144
-739,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Aminophylline 100mg, tablets",350,2.0,3.22728
-740,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Atropine sulphate  600 micrograms/ml, 1ml_each_CMST",365,2.0,170.84592
-741,Acute Respiratory Infections,Asthma severe +n't resp 1 step,139,"Adrenaline 1/1000, 1ml_each_CMST",366,1.0,251.52792
-742,Acute Respiratory Infections,COPD,140,Prednisolone 5mg_100_CMST,349,80.0,8.3181
-743,Acute Respiratory Infections,COPD,140,Amoxycillin 250mg_1000_CMST,157,0.0,16460.99868
-744,Acute Respiratory Infections,COPD,140,Glove disposable latex medium_100_CMST,213,1.0,24.57588
-745,Acute Respiratory Infections,COPD,140,Salbutamol 4mg_1000_CMST,152,2.0,2.76318
-746,Acute Respiratory Infections,COPD,140,Salbutamol Inhaler 100mcg/dose - 200 doses ,351,1.0,960.73698
-747,Acute Respiratory Infections,COPD,140,X-ray,216,1.0,182.51982
-748,Acute Respiratory Infections,COPD,140,Complete blood count,160,1.0,378.99834
-749,Eye and Ear infection,Treatment of conjunctivitis,141,"Tetracycline eye ointment, 1 %, tube 5 mg",99,21.0,31.68018
-750,Eye and Ear infection,Treatment of conjunctivitis,141,Paracetamol 500mg _1000_CMST,125,0.03,4353.87918
-751,Eye and Ear infection,Treatment of conjunctivitis,141,Cotton swab,27,1.0,1.9992
-752,Eye and Ear infection,Acute otitis media in under 5s,142,Paracetamol 500mg _1000_CMST,125,0.015,4353.87918
-753,Eye and Ear infection,Acute otitis media in under 5s,142,Cotrimoxazole 480mg_1000_CMST,367,2.0,14.12292
-754,Eye and Ear infection,Scabies and other skin diseases,143,"Benzyl benzoate 25% lotion, 1000 ml bottle",368,1.0,3147.76896
-755,Eye and Ear infection,Scabies and other skin diseases,143,Erythromycin 250mg_1000_CMST,369,13.200000000000001,54.64956
-756,Eye and Ear infection,Trachoma mass drug administration,144,Azithromycin 500mg_10_CMST,370,1.6,96.62562
-757,Eye and Ear infection,Trachoma mass drug administration,144,"Tetracycline eye ointment, 1 %, tube 5 mg",99,1.92,31.68018
-758,Eye and Ear infection,Trachoma mass drug administration,144,"azithromycin 200 mg/5 ml, pwd for or. susp., 15 ml_120_IDA",371,0.36,469.9191
-759,Eye and Ear infection,Treatment of cataracts,145,Cataract set,372,0.1,940338
-760,Oral Health,Management of severe tooth pain - tooth extraction,146,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-761,Oral Health,Management of severe tooth pain - tooth extraction,146,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-762,Oral Health,Management of mild tooth pain - tooth filling,147,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-763,Oral Health,Management of mild tooth pain - tooth filling,147,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-764,Oral Health,Management of mild tooth pain - tooth filling,147,"Amalgam capsule no. 2, non-gamma _50_CMST",374,1.0,761.03118
-765,Oral Health,Management of mild tooth pain - tooth filling,147,Composite chemical cure & etching system,375,0.02,0
-766,Oral Health,Management of mild tooth pain - tooth filling,147,Zinc oxide eugenol liquid+powder_10_CMST,376,0.02,4008.66732
-767,Oral Health,Management of mild tooth pain - tooth filling,147,Zinc oxide eugenol powder_pack_CMST,377,0.02,6563.47356
-768,Oral Health,Management of mild tooth pain - tooth filling,147,Glass ionomer reinforced powder & liquid (Fujii IX),378,0.02,30565.26186
-769,Oral Health,Root canal therapy,148,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-770,Oral Health,Root canal therapy,148,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-771,Oral Health,Root canal therapy,148,Root canal spreader S/E NI-TI_each_CMST,379,0.02,21583.99152
-772,Oral Health,Root canal therapy,148,"Gutta Percha points, PD 15-80",380,0.02,0
-773,Oral Health,Root canal therapy,148,Root canal sealant ( Regular),381,0.02,0
-774,Oral Health,Root canal therapy,148,Cresophene 13ml root canal disinfectant,382,0.02,0
-775,Oral Health,Root canal therapy,148,Cavit medium,383,0.02,6537.39114
-776,Oral Health,Root canal therapy,148,"Amalgam capsule no. 2, non-gamma _50_CMST",374,0.02,761.03118
-777,Oral Health,Root canal therapy,148,Composite chemical cure & etching system,375,0.02,0
-778,Oral Health,Tooth scaling and polishing,149,Polishing system enhance (Detisply),384,0.01,96233.0271
-779,Oral Health,Intermaxillary Fixation,150,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-780,Oral Health,Intermaxillary Fixation,150,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-781,Oral Health,Intermaxillary Fixation,150,"Ligature wire, 0.16 inches (0.406mm) roll",385,0.05,11601.33618
-782,Oral Health,Intermaxillary Fixation,150,"Wire ligature 0.5mm, roll _each_CMST",386,0.05,10625.64804
-783,Oral Health,Bone plating,151,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-784,Oral Health,Bone plating,151,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-785,Oral Health,Bone plating,151,"Ligature wire, 0.16 inches (0.406mm) roll",385,0.05,11601.33618
-786,Oral Health,Bone plating,151,"Wire ligature 0.5mm, roll _each_CMST",386,0.05,10625.64804
-787,Oral Health,Intraoseous wiring,152,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-788,Oral Health,Intraoseous wiring,152,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-789,Oral Health,Intraoseous wiring,152,"Ligature wire, 0.16 inches (0.406mm) roll",385,0.05,11601.33618
-790,Oral Health,Intraoseous wiring,152,"Wire ligature 0.5mm, roll _each_CMST",386,0.05,10625.64804
-791,Oral Health,Tooth splinting,153,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-792,Oral Health,Tooth splinting,153,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-793,Oral Health,Tooth splinting,153,"Ligature wire, 0.16 inches (0.406mm) roll",385,0.05,11601.33618
-794,Oral Health,Enucleation and marsupulization of dental cysts,154,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-795,Oral Health,Enucleation and marsupulization of dental cysts,154,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-796,Oral Health,Excision and incisional biopsy of dental tumors,155,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-797,Oral Health,Excision and incisional biopsy of dental tumors,155,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-798,Oral Health,Incision and drainage of dental abscess,156,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-799,Oral Health,Incision and drainage of dental abscess,156,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-800,Oral Health,Denture,157,Alginate impression material (Supreme),387,0.1,6288.47646
-801,Oral Health,Denture,157,"POP dental stone, ortho",388,0.1,38361.01374
-802,Oral Health,Denture,157,"POP dental stone, yellow",389,0.1,3049.05846
-803,Oral Health,Denture,157,"Wax, modelling, no. 4 gauge",390,0.05,0
-804,Oral Health,Denture,157,"Tungstein Carbide Acrylic Trimmers, C75/060",391,0.05,16362.26676
-805,Oral Health,Tooth implants,158,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",147,1.0,216.45624
-806,Oral Health,Tooth implants,158,"Needle, disposable dental, 27g long sharewood",373,1.0,0.79254
-807,Oral Health,Tooth implants,158,Alginate impression material (Supreme),387,0.1,6288.47646
-808,Oral Health,Tooth implants,158,"POP dental stone, ortho",388,0.1,38361.01374
-809,Oral Health,Tooth implants,158,"POP dental stone, yellow",389,0.1,3049.05846
-810,Oral Health,Tooth implants,158,"Wax, modelling, no. 4 gauge",390,0.05,0
-811,Oral Health,Tooth implants,158,"Tungstein Carbide Acrylic Trimmers, C75/060",391,0.05,16362.26676
-812,Oral Health,Tooth crown and bridge,159,Pumice,392,0.03333,14069.07726
-813,Oral Health,Tooth crown and bridge,159,Alginate impression material (Supreme),387,0.1,6288.47646
-814,Oral Health,Tooth crown and bridge,159,"POP dental stone, ortho",388,0.1,38361.01374
-815,Oral Health,Tooth crown and bridge,159,"POP dental stone, yellow",389,0.1,3049.05846
-816,Oral Health,Orthodontic appliances,160,Alginate impression material (Supreme),387,0.1,6288.47646
-817,Oral Health,Orthodontic appliances,160,"POP dental stone, ortho",388,0.1,38361.01374
-818,Oral Health,Orthodontic appliances,160,"POP dental stone, yellow",389,0.1,3049.05846
-819,Oral Health,Orthodontic appliances,160,"Wax, modelling, no. 4 gauge",390,0.05,0
-820,Oral Health,Orthodontic appliances,160,Cold mould seal,393,0.06667,11724.47976
-821,Oral Health,Orthodontic appliances,160,Pumice,392,0.03333,14069.07726
-822,Oral Health,Orthodontic appliances,160,Orthodontic wire (tubing size 0.8),394,0.05,9694.49922
-823,Oral Health,Topical tooth fluoride application,161,Fluoride varnish (Duraphat),395,0.02,30412.17312
-824,Oral Health,Topical tooth fluoride application,161,Prophylactic paste,396,0.02,5399.99628
+17,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Atropine sulphate, injection, 1 mg in 1 ml ampoule",14,1.0,17.99994
+18,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Diazepam, injection, 5 mg/ml, in 2 ml ampoule",15,1.0,130.47636
+19,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Lidocaine, injection, 1 % in 20 ml vial",16,1.0,149.99712
+20,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Lidocaine, spray, 10%, 500 ml bottle",17,0.02,1244.0022
+21,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Syringe, needle + swab",9,3.0,7.7469
+22,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Gauze pad, 10 x 10 cm, sterile",18,2.0,14.72268
+23,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Needle, suture, assorted sizes, round body",19,3.0,600.00276
+24,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Suture, catgut, chromic, 0, 150 cm",20,3.0,3744.0018
+25,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll",21,1.0,426.10092
+26,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Gloves, surgeon’s, latex, disposable, sterile, pair",22,2.0,137.45928
+27,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Paracetamol, tablet, 500 mg",23,8.0,4.3554
+28,Maternal/Newborn and Reproductive Health,Female sterilization,5,"Povidone iodine, solution, 10 %, 5 ml per injection",5,2.0,2.00634
+29,Maternal/Newborn and Reproductive Health,Female sterilization,5,Cotton swab,24,2.0,1.9992
+30,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Gauze pad, 10 x 10 cm, sterile",18,1.0,14.72268
+31,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Gloves, surgeon’s, latex, disposable, sterile, pair",22,1.0,137.45928
+32,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Lidocaine, injection, 1 % in 20 ml vial",16,1.0,149.99712
+33,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Needle, suture, assorted sizes, round body",19,1.0,600.00276
+34,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Povidone iodine, solution, 10 %, 5 ml per injection",5,1.0,2.00634
+35,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Suture, catgut, chromic, 0, 150 cm",20,1.0,3744.0018
+36,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Syringe, needle + swab",9,1.0,7.7469
+37,Maternal/Newborn and Reproductive Health,Male sterilization,6,"Tape, adhesive, 2.5 cm wide, zinc oxide, 5 m roll",21,1.0,426.10092
+38,Maternal/Newborn and Reproductive Health,Female Condom,7,Female Condom_Each_CMST,25,120.0,33.72222
+39,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Misoprostol, tablet, 200 mcg",26,4.0,132.33276
+40,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Paracetamol, tablet, 500 mg",23,9.0,4.3554
+41,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Ampicillin, powder for injection, 500 mg, vial",27,24.0,118.4526
+42,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,6.0,41.74758
+43,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Metronidazole, injection, 500 mg in 100 ml vial",29,8.0,51.48654
+44,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Tetracycline, tablet, 500 mg",30,40.0,0.9996
+45,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,1.0,52.00062
+46,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Misoprostol, tablet, 200 mcg",26,2.0,132.33276
+47,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Syringe, needle + swab",9,1.0,7.7469
+48,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Methylergometrine, Injection  0.2 mg/ml, 1 ml amp",31,3.0,14.00154
+49,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Paracetamol, tablet, 500 mg",23,12.0,4.3554
+50,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Pethidine, 50 mg/ml, 2 ml ampoule",32,2.0,522.77652
+51,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,2.0,840.29946
+52,Maternal/Newborn and Reproductive Health,Post-abortion case management,8,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,2.0,840.29946
+53,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"IV giving/infusion set, with needle",34,1.0,231.84294
+54,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,1.0,52.00062
+55,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,2.0,808.94772
+56,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Syringe, needle + swab",9,0.1,7.7469
+57,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Epinephrine, ampoule, 1 mg/ml",36,0.1,82.0029
+58,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, absorbable, synthetic, 2/0, curved needle",37,0.01,75.99816
+59,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, catgut, chromic, 0, 150 cm",20,0.01,3744.0018
+60,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Suture, non-absorbable, synthetic, 3/0, curved needle",38,0.01,1699.9983
+61,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Gauze pad, 10 x 10 cm, sterile",18,0.03,14.72268
+62,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Ampicillin, powder for injection, 500 mg, vial",27,64.0,118.4526
+63,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,12.0,41.74758
+64,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Metronidazole, injection, 500 mg in 100 ml vial",29,12.0,51.48654
+65,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,8.0,840.29946
+66,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Paracetamol, tablet, 500 mg",23,12.0,4.3554
+67,Maternal/Newborn and Reproductive Health,Ectopic case management,9,"Pethidine, 50 mg/ml, 2 ml ampoule",32,2.0,522.77652
+68,Maternal/Newborn and Reproductive Health,Tetanus toxoid (pregnant women),10,"Tetanus toxoid, injection",39,2.0,13.00194
+69,Maternal/Newborn and Reproductive Health,Tetanus toxoid (pregnant women),10,"Syringe, needle + swab",9,2.0,7.7469
+70,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Blood collecting tube, 5 ml",40,1.0,122.42958
+71,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Gloves, exam, latex, disposable, pair",4,1.0,31.90866
+72,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Syringe, needle + swab",9,1.0,7.7469
+73,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Test, Rapid plasma reagin (RPR)",41,1.0,66.4377
+74,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Benzathine benzylpenicillin, powder for injection, 2.4 million IU",42,0.2,484.07058
+75,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Syringe, needle + swab",9,0.2,7.7469
+76,Maternal/Newborn and Reproductive Health,Syphilis detection and treatment (pregnant women),11,"Water for injection, 5 ml ampoule",43,0.2,25.8111
+77,Maternal/Newborn and Reproductive Health,Basic ANC,12,Ferrous sulphate 200mg _1000_CMST,44,0.0,1791.21894
+78,Maternal/Newborn and Reproductive Health,Basic ANC,12,Albendazole 200mg_1000_CMST,45,0.0,6375.6987
+79,Maternal/Newborn and Reproductive Health,Basic ANC,12,Carbon antigen VDRL 10ml_each_CMST,46,1.0,1942.00146
+80,Maternal/Newborn and Reproductive Health,Basic ANC,12,Urine analysis,47,4.0,627.9987
+81,Maternal/Newborn and Reproductive Health,Basic ANC,12,HIV EIA Elisa test,48,0.0,120.35898
+82,Maternal/Newborn and Reproductive Health,Basic ANC,12,"Cotton wool, 500g_1_CMST",49,0.001,416.99742
+83,Maternal/Newborn and Reproductive Health,Basic ANC,12,Haemoglobin test (HB),50,1.0,78.99696
+84,Maternal/Newborn and Reproductive Health,Hypertensive disorder case management,13,Proteinuria test (dipstick),51,5.0,3.9984
+85,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Albendazole, tablet, 400 mg",52,0.25,63.7602
+86,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Mebendazole, chewable tablet, 500 mg",53,0.25,18.98526
+87,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Praziquantel, 600 mg",54,0.75,2.8203
+88,Maternal/Newborn and Reproductive Health,Deworming (pregnant women),14,"Levamisole, 80 mg",55,1.5,9.48906
+89,Maternal/Newborn and Reproductive Health,Active management of the 3rd stage of labour,15,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,1.0,39.24144
+90,Maternal/Newborn and Reproductive Health,Active management of the 3rd stage of labour,15,"Syringe, needle + swab",9,1.0,7.7469
+91,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Bag, urine, collecting, 2000 ml",57,1.0,157.40844
+92,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,Foley catheter,58,1.0,306.44166
+93,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Test strips, urine analysis",59,8.0,3.9984
+94,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Hydralazine, powder for injection, 20 mg ampoule",60,1.0,676.85058
+95,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"IV giving/infusion set, with needle",34,1.0,231.84294
+96,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,1.0,808.94772
+97,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Misoprostol, tablet, 200 mcg",26,0.8,132.33276
+98,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,0.8,39.24144
+99,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,0.4,840.29946
+100,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+101,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,0.4,808.94772
+102,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Syringe, needle + swab",9,0.1,7.7469
+103,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Water for injection, 10 ml ampoule",62,0.2,25.8111
+104,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Test strips, urine analysis",59,2.5,3.9984
+105,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.1,52.00062
+106,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+107,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.6000000000000001,52.00062
+108,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.6000000000000001,439.38132
+109,Maternal/Newborn and Reproductive Health,Management of eclampsia,16,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+110,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Bag, urine, collecting, 2000 ml",57,1.0,157.40844
+111,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,Foley catheter,58,1.0,306.44166
+112,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Test strips, urine analysis",59,8.0,3.9984
+113,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Hydralazine, powder for injection, 20 mg ampoule",60,1.0,676.85058
+114,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"IV giving/infusion set, with needle",34,1.0,231.84294
+115,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,1.0,808.94772
+116,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Misoprostol, tablet, 200 mcg",26,0.8,132.33276
+117,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,0.8,39.24144
+118,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,0.4,840.29946
+119,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+120,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,0.4,808.94772
+121,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Syringe, needle + swab",9,0.1,7.7469
+122,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Water for injection, 10 ml ampoule",62,0.2,25.8111
+123,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Test strips, urine analysis",59,2.5,3.9984
+124,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.1,52.00062
+125,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+126,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.6000000000000001,52.00062
+127,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.6000000000000001,439.38132
+128,Maternal/Newborn and Reproductive Health,Management of pre-eclampsia,17,"Magnesium sulfate, injection, 500 mg/ml in 10-ml ampoule",61,0.1,439.38132
+129,Maternal/Newborn and Reproductive Health,Neonatal resuscitation (institutional),18,"Resuscitator,hand-oper.,infant/child,set",63,0.005,0
+130,Maternal/Newborn and Reproductive Health,Neonatal resuscitation (institutional),18,"Infant resuscitator, clear plastic + mask + bag_each_CMST",64,1.0,5892.34212
+131,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gloves, surgeon’s, latex, disposable, sterile, pair",22,4.0,137.45928
+132,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",34,0.9,231.84294
+133,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Lidocaine HCl (in dextrose 7.5%), ampoule 2 ml",8,0.9,52.00062
+134,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,1.8,808.94772
+135,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.9,7.7469
+136,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Epinephrine, ampoule, 1 mg/ml",36,0.225,82.0029
+137,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.1,7.7469
+138,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Epinephrine, ampoule, 1 mg/ml",36,0.1,82.0029
+139,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Atropine sulphate, injection, 1 mg in 1 ml ampoule",14,0.1,17.99994
+140,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",34,0.1,231.84294
+141,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,0.2,808.94772
+142,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,0.2,7.7469
+143,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ketamine, 10 ml vial, 50 mg/ml",65,0.1,607.12848
+144,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ampicillin, powder for injection, 500 mg, vial",27,0.0,118.4526
+145,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Cefazolin, ampoule, 500 mg",66,4.0,20.2419
+146,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Bag, urine, collecting, 2000 ml",57,1.0,157.40844
+147,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,Foley catheter,58,1.0,306.44166
+148,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gauze pad, 10 x 10 cm, sterile",18,5.0,14.72268
+149,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Needle, suture, assorted sizes, round body",19,3.0,600.00276
+150,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Povidone iodine, solution, 10 %, 5 ml per injection",5,1.0,2.00634
+151,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Suture, catgut, chromic, 0, 150 cm",20,1.0,3744.0018
+152,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Suture, non-absorbable, synthetic, 3/0, curved needle",38,1.0,1699.9983
+153,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Blade, surgical, no. 22, sterile, disposable",67,1.0,39.85548
+154,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Ampicillin, powder for injection, 500 mg, vial",27,16.0,118.4526
+155,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,7.0,41.74758
+156,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",34,0.25,231.84294
+157,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Metronidazole, injection, 500 mg in 100 ml vial",29,3.0,51.48654
+158,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,2.0,840.29946
+159,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"IV giving/infusion set, with needle",34,1.0,231.84294
+160,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,2.0,39.24144
+161,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Paracetamol, tablet, 500 mg",23,12.0,4.3554
+162,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Pethidine, 50 mg/ml, 2 ml ampoule",32,1.0,522.77652
+163,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,8.0,808.94772
+164,Maternal/Newborn and Reproductive Health,Management of obstructed labour,19,"Syringe, needle + swab",9,1.0,7.7469
+165,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Gloves, exam, latex, disposable, pair",4,2.0,31.90866
+166,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Tetracycline eye ointment, 1 %, tube 5 mg",68,0.9000000000000001,31.68018
+167,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Gentian violet, powder 25 mg",69,0.1,992.90268
+168,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,"Amoxicillin, powder/oral suspension, 125 mg/5 ml",70,1.0,3.9984
+169,Maternal/Newborn and Reproductive Health,Treatment of local infections (newborn),20,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,71,1.0,869.28072
+170,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Glove disposable powdered latex large_100_CMST,72,0.3,50.32986
+171,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Iodine strong 10% solution_500ml_CMST,73,0.1,1641.60024
+172,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Chlorhexidine 1.5% solution_5_CMST,74,0.04,12183.18906
+173,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",75,0.1,17.14314
+174,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,1.0,39.24144
+175,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Scalpel blade size 22 (individually wrapped)_100_CMST,76,0.1,3985.34808
+176,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catgut chromic 1 needle round bodied ½ circle 50mm_12_CMST,77,1.0,600.00276
+177,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"suture Vicryl® (2/0) 70cm + 1/2 rb ndl 26mm, V317H_36_IDA",78,0.08333,20999.99664
+178,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Cannula iv  (winged with injection pot) 20_each_CMST,79,2.0,118.43832
+179,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Giving set iv administration + needle 15 drops/ml_each_CMST,80,1.0,43.99668
+180,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Gauze pad, 10 x 10 cm, sterile",18,0.3,14.72268
+181,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ceftriaxone 1g, PFR_each_CMST",81,2.0,207.10998
+182,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,82,1.0,115.99644
+183,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Pethidine hydrochloride 50mg/1ml, 2ml_each_CMST",83,2.0,522.77652
+184,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Declofenac injection_each_CMST,84,14.0,20.99874
+185,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Plaster, elastic adhesive 10cm x 5m_each_CMST",85,0.05,539.07
+186,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ampicillin injection 500mg, PFR_each_CMST",86,2.0,118.4526
+187,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Cotton wool, 500g_1_CMST",49,1.0,416.99742
+188,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Diazepam 5mg/ml, 2ml_each_CMST",87,1.0,130.47636
+189,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"surgical face mask, disp., with metal nose piece_50_IDA",88,0.1,833.00238
+190,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Glove surgeon's size 8 sterile_2_CMST,89,7.0,273.7476
+191,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Halothane (fluothane)_250ml_CMST,90,0.2,21517.04688
+192,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Ketamine, 10 ml vial, 50 mg/ml",65,0.04,607.12848
+193,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Lignocaine hydrochloride 5%+glucose 7.5%,heavy spinal,2ml_each_CMST",91,0.9,451.31226
+194,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Metronidazole 200mg_1000_CMST,92,0.001,5271.83328
+195,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Saline solution,93,4.0,135.00312
+196,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Paracetamol 500mg _1000_CMST,94,0.018,4353.87918
+197,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Needle spinal disposable Luer 22g x 10cm cutting bevel/pencil point_each_CMST,95,0.9,249.02178
+198,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Suture, catgut, chromic, 0, 150 cm",20,0.0,3744.0018
+199,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Suture, non-absorbable, synthetic, 1/0, curved needle",96,1.0,35.00028
+200,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,Catgut chromic 0 needle round bodied ½ circle 40mm_12_CMST,97,0.16667,3744.0018
+201,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Water for injection, 10ml_Each_CMST",98,1.0,32.57268
+202,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Benzylpenicillin 3g (5MU), PFR_each_CMST",99,1.0,194.6007
+203,Maternal/Newborn and Reproductive Health,Cesearian section with indication,21,"Syringe, 50ml, disposable, with 19g needle_each_CMST",100,2.0,182.91252
+204,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Iodine strong 10% solution_500ml_CMST,73,0.0,1641.60024
+205,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Chlorhexidine 1.5% solution_5_CMST,74,0.004,12183.18906
+206,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gauze, absorbent 90cm x 40m_each_CMST",101,1.0,5650.6317
+207,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Oxytocin 10 IU/ml, 1ml_each_CMST",102,0.0,39.24144
+208,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Glove disposable powdered latex large_100_CMST,72,0.3,50.32986
+209,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Scalpel blade size 22 (individually wrapped)_100_CMST,76,0.01,3985.34808
+210,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Catgut chromic 1 needle round bodied ½ circle 50mm_12_CMST,77,0.1,600.00276
+211,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Bandage, plaster of paris 15cm_12_CMST",103,0.33,1688.0031
+212,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"suture Vicryl® (2/0) 70cm + 1/2 rb ndl 26mm, V317H_36_IDA",78,0.0,20999.99664
+213,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Plaster, elastic adhesive 10cm x 5m_each_CMST",85,6.0,539.07
+214,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Cannula iv (winged with injection pot) 14_each_CMST,104,2.0,102.00204
+215,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Giving set iv administration + needle 15 drops/ml_each_CMST,80,1.0,43.99668
+216,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gauze pad, 10 x 10 cm, sterile",18,12.0,14.72268
+217,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Ceftriaxone 1g, PFR_each_CMST",81,2.0,207.10998
+218,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,82,1.0,115.99644
+219,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Pethidine, 50 mg/ml, 2 ml ampoule",32,12.0,522.77652
+220,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Declofenac injection_each_CMST,84,14.0,20.99874
+221,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Syringe, 50ml, disposable, with 19g needle_each_CMST",100,2.0,182.91252
+222,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Metronidazole 5mg/ml, 100ml_each_CMST",105,6.0,215.34954
+223,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Ampicillin injection 500mg, PFR_each_CMST",86,12.0,118.4526
+224,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Gentamicin Sulphate 40mg/ml, 2ml_each_CMST",106,12.0,27.00348
+225,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,Metronidazole 200mg_1000_CMST,92,1.764,5271.83328
+226,Maternal/Newborn and Reproductive Health,Cesearian Section with indication (with complication),22,"Syringe, 5ml, disposable, hypoluer with 21g needle_each_CMST",107,40.0,149.98284
+227,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Glove disposable powdered latex large_100_CMST,72,2.0,50.32986
+228,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",75,0.2,17.14314
+229,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Cotton swab,24,20.0,1.9992
+230,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"umbilical cord clamp, disposable_50_IDA",108,1.0,26.26806
+231,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Filter paper No. 1_100_CMST,109,0.01,370.00194
+232,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Apron, disposable, polythene_100_CMST",110,1.0,74.19888
+233,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Oxytocin 10 IU/ml, 1ml_each_CMST",102,1.0,39.24144
+234,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Syringe, 20ml, disposable with 21g needle_each_CMST",111,1.0,182.94822
+235,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Chlorhexidine 1.5% solution_5_CMST,74,0.1,12183.18906
+236,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Cannula iv  (winged with injection pot) 20_each_CMST,79,1.0,118.43832
+237,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Cotton wool, 500g_1_CMST",49,1.0,416.99742
+238,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"surgical face mask, disp., with metal nose piece_50_IDA",88,0.02,833.00238
+239,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,"Ampicillin injection 500mg, PFR_each_CMST",86,2.0,118.4526
+240,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Glove surgeon's size 7 sterile_2_CMST,112,4.0,137.45928
+241,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Paracetamol 500mg_1000_CMST,113,1.0,4.16262
+242,Maternal/Newborn and Reproductive Health,Vaginal delivery - skilled attendance,23,Catheter Foley's suction 53cm FG 10_each_CMST,114,1.0,71.99976
+243,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Cannula iv  (winged with injection pot) 20_each_CMST,79,2.0,118.43832
+244,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Glove disposable powdered latex large_100_CMST,72,0.2,50.32986
+245,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",75,0.3,17.14314
+246,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Cotton swab,24,20.0,1.9992
+247,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"umbilical cord clamp, disposable_50_IDA",108,1.0,26.26806
+248,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Apron, disposable, polythene_100_CMST",110,1.0,74.19888
+249,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,5.0,39.24144
+250,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Syringe, 20ml, disposable with 21g needle_each_CMST",111,4.0,182.94822
+251,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Chlorhexidine 1.5% solution_5_CMST,74,0.01,12183.18906
+252,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Needle suture abdominal straight 10cm_6_CMST,115,2.0,115.99644
+253,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Bandage, plaster of paris 15cm_12_CMST",103,0.2,1688.0031
+254,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,0.1,216.45624
+255,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,Catheter Foley's + urine bag (2000ml) 14g_each_CMST,82,1.0,115.99644
+256,Maternal/Newborn and Reproductive Health,Vaginal Delivery - with complication,24,"Pethidine hydrochloride 50mg/1ml, 2ml_each_CMST",83,1.0,522.77652
+257,Maternal/Newborn and Reproductive Health,Clean practices and immediate essential newborn care (in facility),25,Clean delivery kit,117,1.0,977.63736
+258,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Dexamethasone, 1 ml injection, 4 mg/ml",118,6.0,128.72706
+259,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"IV giving/infusion set, with needle",34,1.0,231.84294
+260,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,4.0,840.29946
+261,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,"Syringe, needle + swab",9,2.0,7.7469
+262,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Nifedipine,119,4.0,9.91032
+263,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Cannula iv  (winged with injection pot) 16_each_CMST,120,1.0,77.34048
+264,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Saline solution,93,1.0,135.00312
+265,Maternal/Newborn and Reproductive Health,Antenatal corticosteroids for preterm labour,26,Salbutamol 4mg_1000_CMST,121,0.03,2.76318
+266,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Amoxicillin, caplet, 250 mg",122,33.60000000000001,1.9992
+267,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Erythromycin, tablet, 250 mg",123,5.6000000000000005,5.9976
+268,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,Metronidazole 200mg_1000_CMST,92,1.0,5271.83328
+269,Maternal/Newborn and Reproductive Health,Antibiotics for pPRoM,27,"Ampicillin injection 500mg, PFR_each_CMST",86,2.0,118.4526
+270,Maternal/Newborn and Reproductive Health,Induction of labour (beyond 41 weeks),28,"Misoprostol, tablet, 200 mcg",26,1.0,132.33276
+271,Maternal/Newborn and Reproductive Health,Induction of labour (beyond 41 weeks),28,Induction of labour (beyond 41 weeks) drugs/supplies to service a client,124,1.0,0
+272,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Ampicillin, powder for injection, 500 mg, vial",27,64.0,118.4526
+273,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,9.0,41.74758
+274,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Metronidazole, injection, 500 mg in 100 ml vial",29,12.0,51.48654
+275,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Syringe, needle + swab",9,64.0,7.7469
+276,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Water for injection, 5 ml ampoule",43,64.0,25.8111
+277,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Amoxycillin 250mg_1000_CMST,125,0.18,16460.99868
+278,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Metronidazole 200mg_1000_CMST,92,0.03,5271.83328
+279,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Bag, urine, collecting, 2000 ml",57,1.0,157.40844
+280,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Foley catheter,58,1.0,306.44166
+281,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gloves, surgeon’s, latex, disposable, sterile, pair",22,1.0,137.45928
+282,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"IV giving/infusion set, with needle",34,1.0,231.84294
+283,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Lancet, blood, disposable",126,1.0,0.9996
+284,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Oxygen, 1000 liters, primarily with oxygen cylinders",127,0.375,322.99932
+285,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Paracetamol, tablet, 500 mg",23,8.0,4.3554
+286,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,24.0,840.29946
+287,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Complete blood count,128,1.0,378.99834
+288,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Plaster, elastic adhesive 5cm x 5m_each_CMST",129,0.05,1451.99754
+289,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Cannula iv  (winged with injection pot) 16_each_CMST,120,2.0,77.34048
+290,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,"Gentamicin 40mg/ml, 2ml_each_CMST",130,15.0,48.14502
+291,Maternal/Newborn and Reproductive Health,Maternal sepsis case management,29,Saline solution,93,6.0,135.00312
+292,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Cephalotin, 100 ml vial",131,1.2,125.99958
+293,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,5.0,41.74758
+294,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"IV giving/infusion set, with needle",34,0.2,231.84294
+295,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Oxygen, 1000 liters, primarily with oxygen cylinders",127,0.0,322.99932
+296,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Plaster, elastic adhesive 10cm x 5m_each_CMST",85,0.0025,539.07
+297,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Amoxicillin, powder/oral suspension, 125 mg/5 ml",70,0.01,3.9984
+298,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Ampicillin injection 250mg, PFR_each_CMST",132,7.0,118.4526
+299,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,Cannula iv  (winged with injection pot) 16_each_CMST,120,2.0,77.34048
+300,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Dextrose (glucose) 5%, 1000ml_each_CMST",133,2.0,1041.19764
+301,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Tube, feeding CH 8_each_CMST",134,1.0,401.11092
+302,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Gentamicin 40mg/ml, 2ml_each_CMST",130,0.0,48.14502
+303,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Disposables gloves, powder free, 100 pieces per box",135,0.3,5032.80036
+304,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,71,1.0,869.28072
+305,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Syringes, single use, 20 ml, 100 pieces per pack",136,3.0,182.94822
+306,Maternal/Newborn and Reproductive Health,Newborn sepsis - full supportive care,30,"Water for injection, 10ml_Each_CMST",98,7.0,32.57268
+307,Maternal/Newborn and Reproductive Health,Newborn sepsis - injectable antibiotics,31,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,5.0,41.74758
+308,Maternal/Newborn and Reproductive Health,Newborn sepsis - injectable antibiotics,31,"Procaine benzylpenicillin, powder for injection, 1 g (= 1 million IU) in vial",137,1.0,320.50746
+309,Maternal/Newborn and Reproductive Health,Mastitis,32,"Erythromycin, tablet, 250 mg",123,40.0,5.9976
+310,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Albendazole, tablet, 400 mg",52,0.25,63.7602
+311,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Lancet, blood, disposable",126,1.0,0.9996
+312,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Test, hemoglobin",138,1.0,0
+313,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Saline solution,93,6.0,135.00312
+314,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Complete blood count,128,1.0,378.99834
+315,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Haemoglobin test (HB),50,1.0,78.99696
+316,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ampicillin, powder for injection, 500 mg, vial",27,6.4,118.4526
+317,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,1.2000000000000002,41.74758
+318,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"IV giving/infusion set, with needle",34,0.1,231.84294
+319,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Metronidazole, injection, 500 mg in 100 ml vial",29,1.2000000000000002,51.48654
+320,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Sodium chloride, injectable solution, 0,9 %, 500 ml",33,0.8,840.29946
+321,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Water for injection, 5 ml ampoule",43,6.4,25.8111
+322,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Cotton swab,24,0.5,1.9992
+323,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Diazepam, injection, 5 mg/ml, in 2 ml ampoule",15,0.5,130.47636
+324,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Lidocaine, injection, 1 % in 20 ml vial",16,0.5,149.99712
+325,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Needle, suture, assorted sizes, round body",19,1.5,600.00276
+326,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Pethidine, 50 mg/ml, 2 ml ampoule",32,0.5,522.77652
+327,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Povidone iodine, solution, 10 %, 5 ml per injection",5,0.5,2.00634
+328,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Suture, catgut, chromic, 0, 150 cm",20,1.0,3744.0018
+329,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Suture, non-absorbable, synthetic, 2/0, needle",139,0.5,34.00068
+330,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",140,45.0,1.79214
+331,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",140,45.0,1.79214
+332,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",140,135.0,1.79214
+333,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,3.0,39.24144
+334,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Bag, urine, collecting, 2000 ml",57,1.0,157.40844
+335,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Blood, one unit",141,0.5,0
+336,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Foley catheter,58,1.0,306.44166
+337,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Gloves, surgeon’s, latex, disposable, sterile, pair",22,4.0,137.45928
+338,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"IV giving/infusion set, with needle",34,1.0,231.84294
+339,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Oxytocin, injection, 10 IU in 1 ml ampoule",56,1.0,39.24144
+340,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Sodium lactate injection (Ringer's), 500 ml, with giving set",35,2.0,808.94772
+341,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Syringe, needle + swab",9,1.0,7.7469
+342,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Plaster, elastic adhesive 10cm x 5m_each_CMST",85,0.05,539.07
+343,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,Cannula iv  (winged with injection pot) 16_each_CMST,120,2.0,77.34048
+344,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"surgical face mask, disp., with metal nose piece_50_IDA",88,0.06,833.00238
+345,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"gauze compresses 5 x 5 cm ,12 ply, non sterile_100_IDA",142,1.0,295.00338
+346,Maternal/Newborn and Reproductive Health,Treatment of postpartum hemorrhage,33,"Disposables gloves, powder free, 100 pieces per box",135,0.05,5032.80036
+347,Maternal/Newborn and Reproductive Health,Chlorhexidine ,34,Chlorhexidine digluconate (10 ml bottle) ,143,1.0,53.99982
+348,Child Health,Hand washing with soap,35,Hand washing with soap - cost per client,144,1.0,143.64966
+349,Child Health,Hygienic disposal of children's stools,36,Hygienic disposal of children's stools - cost per client,145,1.0,3830.7885
+350,Child Health,ORS,37,"ORS, sachet",146,3.0,12.00234
+351,Child Health,Zinc for Children 0-6 months,38,"Zinc, tablet, 20 mg",147,7.0,9.639
+352,Child Health,Zinc for Children 6-59 months,39,"Zinc, tablet, 20 mg",147,14.0,9.639
+353,Child Health,Antibiotics for treatment of dysentery,40,Ciprofloxacin 250mg_100_CMST,148,12.0,16.20066
+354,Child Health,Antibiotics for treatment of dysentery,40,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,71,6.0,869.28072
+355,Child Health,Treatment of severe diarrhea,41,"ORS, sachet",146,3.0,12.00234
+356,Child Health,Treatment of severe diarrhea,41,Giving set iv administration + needle 15 drops/ml_each_CMST,80,1.0,43.99668
+357,Child Health,Treatment of severe diarrhea,41,Saline solution,93,1.0,135.00312
+358,Child Health,Treatment of severe diarrhea,41,Cotton swab,24,1.0,1.9992
+359,Child Health,Treatment of severe diarrhea,41,"ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",149,0.08333,1309.02618
+360,Vaccine Preventable Diseases,Rotavirus vaccine,42,Rotavirus vaccine,150,4.0,395.97726
+361,Vaccine Preventable Diseases,Polio vaccine,43,Polio vaccine,151,4.0,20.66316
+362,Vaccine Preventable Diseases,BCG vaccine,44,BCG vaccine,152,1.0,12.03804
+363,Vaccine Preventable Diseases,BCG vaccine,44,"Syringe, autodisposable, BCG, 0.1 ml, with needle",153,1.0,110.96988
+364,Vaccine Preventable Diseases,BCG vaccine,44,"Safety box for used syringes/needles, 5 liter",154,1.0,11.45256
+365,Vaccine Preventable Diseases,Pneumococcal vaccine,45,Pneumococcal vaccine,155,3.0,526.56786
+366,Vaccine Preventable Diseases,Pneumococcal vaccine,45,"Syringe, 50ml, disposable, with 19g needle_each_CMST",100,3.0,182.91252
+367,Vaccine Preventable Diseases,Pneumococcal vaccine,45,"Syringe, auto-disposable, 0.5 ml, with needle",156,3.0,7.9968
+368,Vaccine Preventable Diseases,HPV vaccine,46,"Syringe, auto-disposable, 0.5 ml, with needle",156,3.0,7.9968
+369,Vaccine Preventable Diseases,HPV vaccine,46,"Safety box for used syringes/needles, 5 liter",154,3.0,11.45256
+370,Vaccine Preventable Diseases,HPV vaccine,46,HPV vaccine,157,3.0,151.99632
+371,Vaccine Preventable Diseases,Measles rubella vaccine,47,Measles vaccine,158,2.0,41.01216
+372,Vaccine Preventable Diseases,Measles rubella vaccine,47,"Safety box for used syringes/needles, 5 liter",154,2.0,11.45256
+373,Vaccine Preventable Diseases,Measles rubella vaccine,47,"Syringe, 50ml, disposable, with 19g needle_each_CMST",100,2.0,182.91252
+374,Malaria ,Larviciding,48,Larviciding,159,1.0,256853003.4
+375,Malaria ,ITN distribution to pregnant women,49,Insecticide-treated net,160,0.33299999999999996,677.02194
+376,Malaria ,Indoor residual spraying drugs,50,Indoor residual spraying drugs/supplies to service a client,161,1.0,4998
+377,Malaria ,IPT (pregnant women),51,"Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg",162,6.0,21.42
+378,Malaria ,"Uncomplicated (adult, <36 kg) ",52,Malaria test kit (RDT),163,1.0,292.74
+379,Malaria ,"Uncomplicated (adult, <36 kg) ",52,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",164,3.0,299.88
+380,Malaria ,"Uncomplicated (adult, <36 kg) ",52,Paracetamol 500mg_1000_CMST,113,18.0,4.16262
+381,Malaria ,"Uncomplicated (adult, >36 kg)",53,Malaria test kit (RDT),163,1.0,292.74
+382,Malaria ,"Uncomplicated (adult, >36 kg)",53,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",164,3.61905,299.88
+383,Malaria ,"Uncomplicated (adult, >36 kg)",53,Paracetamol 500mg_1000_CMST,113,18.0,4.16262
+384,Malaria ,"Uncomplicated - 2nd line (adult, <36 kg)",54,ASAQ (Artesunate + Amodiaquine) 100 + 270 mg,165,1.0,585.48
+385,Malaria ,"Uncomplicated - 2nd line (adult, >36 kg)",55,ASAQ (Artesunate + Amodiaquine) 100 + 270 mg,165,1.0,585.48
+386,Malaria ,"Uncomplicated (children, <15 kg)",56,Malaria test kit (RDT),163,1.0,292.74
+387,Malaria ,"Uncomplicated (children, <15 kg)",56,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",164,1.0,299.88
+388,Malaria ,"Uncomplicated (children, <15 kg)",56,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,71,18.0,869.28072
+389,Malaria ,"Uncomplicated (children, >15 kg)",57,Malaria test kit (RDT),163,1.0,292.74
+390,Malaria ,"Uncomplicated (children, >15 kg)",57,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",164,3.0,299.88
+391,Malaria ,"Uncomplicated (children, >15 kg)",57,Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST,71,18.0,869.28072
+392,Malaria ,"Uncomplicated - 2nd line (children, <15 kg)",58,artesunate 25mg + amodiaquine 67.5mg tab_25X3 _IDA,166,1.0,171.36
+393,Malaria ,"Uncomplicated - 2nd line (children, >15 kg)",59,ASAQ (Artesunate + Amodiaquine) 50 + 135 Mg,167,1.0,228.48
+394,Malaria ,First trimester - uncomplicated,60,Quinine sulphate 300mg_1000_CMST,168,42.0,35.7
+395,Malaria ,First trimester - uncomplicated,60,"Clindamycin, tabcap, 300 mg",169,42.0,49.98
+396,Malaria ,First trimester - uncomplicated,60,Paracetamol 500mg_1000_CMST,113,4.5,4.16262
+397,Malaria ,Second trimester - uncomplicated,61,"Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST",164,3.0,299.88
+398,Malaria ,Second trimester - uncomplicated,61,Paracetamol 500mg_1000_CMST,113,18.0,4.16262
+399,Malaria ,"Complicated (adults, injectable artesunate)",62,Injectable artesunate,170,1.0,1406.58
+400,Malaria ,"Complicated (adults, injectable artesunate)",62,Cannula iv  (winged with injection pot) 18_each_CMST,171,3.0,130.07652
+401,Malaria ,"Complicated (adults, injectable artesunate)",62,Glove disposable latex medium_100_CMST,172,3.0,24.57588
+402,Malaria ,"Complicated (adults, injectable artesunate)",62,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",75,3.0,17.14314
+403,Malaria ,"Complicated (adults, injectable artesunate)",62,"Water for injection, 10ml_Each_CMST",98,3.0,32.57268
+404,Malaria ,"Complicated (children, injectable artesunate)",63,Injectable artesunate,170,0.25,1406.58
+405,Malaria ,"Complicated (children, injectable artesunate)",63,Cannula iv  (winged with injection pot) 18_each_CMST,171,3.0,130.07652
+406,Malaria ,"Complicated (children, injectable artesunate)",63,Glove disposable latex medium_100_CMST,172,3.0,24.57588
+407,Malaria ,"Complicated (children, injectable artesunate)",63,"Gauze, swabs 8-ply 10cm x 10cm_100_CMST",75,3.0,17.14314
+408,Malaria ,"Complicated (children, injectable artesunate)",63,"Water for injection, 10ml_Each_CMST",98,3.0,32.57268
+409,Malaria ,Pregnant women - complicated,64,"Quinine dihydrochloride 300mg/ml, 2ml_each_CMST",173,6.0,211.35828
+410,Malaria ,Pregnant women - complicated,64,Giving set iv administration + needle 15 drops/ml_each_CMST,80,1.0,43.99668
+411,Malaria ,Pregnant women - complicated,64,Cannula iv  (winged with injection pot) 18_each_CMST,171,1.0,130.07652
+412,Malaria ,Pregnant women - complicated,64,Bags syringe sterilization 15cm_1000_CMST,174,1.0,993.00264
+413,Malaria ,Pregnant women - complicated,64,Quinine sulphate 300mg_1000_CMST,168,21.0,35.7
+414,Malaria ,Pregnant women - complicated,64,"Clindamycin, tabcap, 300 mg",169,21.0,49.98
+415,Malaria ,Pregnant women - complicated,64,"Dextrose (glucose) 5%, 1000ml_each_CMST",133,1.0,1041.19764
+416,Tuberculosis,VCT for TB patients,65,HIV EIA Elisa test,48,1.0,120.35898
+417,Tuberculosis,First line treatment for new TB cases for adults,66,X-ray,175,1.0,182.51982
+418,Tuberculosis,First line treatment for new TB cases for adults,66,Cat. I & III Patient Kit A,176,1.0,14328.195
+419,Tuberculosis,First line treatment for retreatment TB cases for adults,67,X-ray,175,1.0,182.51982
+420,Tuberculosis,First line treatment for retreatment TB cases for adults,67,Cat. II Patient Kit A1,177,1.0,62248.305
+421,Tuberculosis,First line treatment for new TB cases for children,68,X-ray,175,2.0,182.51982
+422,Tuberculosis,First line treatment for new TB cases for children,68,Cat. I & III Patient Kit B,178,1.0,24188.0352
+423,Tuberculosis,First line treatment for retreatment TB cases for children,69,Cat. II Patient Kit A2,179,1.0,54397.6608
+424,Tuberculosis,First line treatment for retreatment TB cases for children,69,X-ray,175,1.0,182.51982
+425,Tuberculosis,MDR notification among new patients,70,X-ray,175,0.01,182.51982
+426,Tuberculosis,MDR notification among new patients,70,Category IV,180,1.0,2031548.11272
+427,Tuberculosis,MDR notification among previously treated patients,71,X-ray,175,0.01,182.51982
+428,Tuberculosis,MDR notification among previously treated patients,71,Category IV,180,1.0,2031548.11272
+429,Tuberculosis,Case management of MDR cases,72,Treatment: second-line drugs,181,1.0,346030.9965
+430,Tuberculosis,Case management of MDR cases,72,MDR Fuel,182,1.0,276347.03124
+431,Tuberculosis,Care and support for TB HIV+ patients,73,Care and support for TB HIV+ patients,183,1.0,149.99712
+432,Tuberculosis,Microscopy Test,74,Solid culture and DST,184,1.0,9887.5791
+433,Tuberculosis,LED test,75,Fluorescent stain,185,1.0,176.49366
+434,Tuberculosis,ZN test,76,ZN Stain,186,1.0,203.98266
+435,Tuberculosis,Xpert test,77,Xpert,187,1.0,7125.70572
+436,Tuberculosis,MGIT test,78,MGIT960 Culture and DST,188,1.0,23012.22
+437,Tuberculosis,LGA test,79,Line Probe Assay,189,1.0,149.99712
+438,HIV/AIDS,Viral Load,80,VL Test,190,1.0,5537.9982
+439,HIV/AIDS,CD4 Test,81,CD4 test,191,4.0,3403.23102
+440,HIV/AIDS,Isoniazid preventative therapy for HIV+ no TB,82,"Isoniazid/Pyridoxine, tablet 300 mg",192,1.0,1094.4192
+441,HIV/AIDS,Chemistry and hematology,83,Chemistry and hematology,193,1.0,1406.58
+442,HIV/AIDS,Interventions focused on female sex workers ,84,Interventions focused on sex workers and their clients drugs/supplies to service a client,194,1.0,21177.58986
+443,HIV/AIDS,Interventions focused on male sex workers ,85,Interventions focused on sex workers and their clients drugs/supplies to service a client,194,1.0,21177.58986
+444,HIV/AIDS,Interventions focused on men who have sex with men ,86,Interventions focused on men who have sex with men drugs/supplies to service a client,195,1.0,28234.50168
+445,HIV/AIDS,HIV Testing Services,87,"Test, HIV EIA Elisa",196,1.0,3430.67718
+446,HIV/AIDS,Condoms,88,"Condom, male",2,5.0,20.97018
+447,HIV/AIDS,Condoms,88,"Condom, male",2,10.0,20.97018
+448,HIV/AIDS,Condoms,88,"Condom, male",2,50.0,20.97018
+449,HIV/AIDS,Condoms,88,"Condom, male",2,40.0,20.97018
+450,HIV/AIDS,Male circumcision ,89,"Test, HIV EIA Elisa",196,0.0,3430.67718
+451,HIV/AIDS,Male circumcision ,89,"male circumcision kit, consumables (10 procedures)_1_IDA",197,1.0,669.41784
+452,HIV/AIDS,PMTCT,90,"Blood collecting tube, 5 ml",40,1.0,122.42958
+453,HIV/AIDS,PMTCT,90,"Gloves, exam, latex, disposable, pair",4,0.0,31.90866
+454,HIV/AIDS,PMTCT,90,HIV EIA Elisa test,48,2.0,120.35898
+455,HIV/AIDS,PMTCT,90,"Syringe, needle + swab",9,0.0,7.7469
+456,HIV/AIDS,PMTCT,90,"Nevirapine, oral solution, 10 mg/ml",198,0.0,1870.65858
+457,HIV/AIDS,PMTCT,90,"Nevirapine, tablet, 200 mg",199,0.0,27.3819
+458,HIV/AIDS,PMTCT,90,DNA PCR for infant after birth,200,1.0,7705.2024
+459,HIV/AIDS,PMTCT,90,"Blood collecting tube, 5 ml",40,1.0,122.42958
+460,HIV/AIDS,PMTCT,90,"Gloves, exam, latex, disposable, pair",4,1.0,31.90866
+461,HIV/AIDS,PMTCT,90,HIV EIA Elisa test,48,0.0,120.35898
+462,HIV/AIDS,PMTCT,90,"Syringe, needle + swab",9,0.0,7.7469
+463,HIV/AIDS,PMTCT,90,"Nevirapine, oral solution, 10 mg/ml",198,0.0,1870.65858
+464,PMTCT,PMTCT,90,"Nevirapine, oral solution, 10 mg/ml",198,0.0,1870.65858
+465,PMTCT,PMTCT,90,"Nevirapine, tablet, 200 mg",199,0.0,27.3819
+466,PMTCT,PMTCT,90,"Zidovudine (AZT), capsule, 300 mg",201,0.0,90.17106
+467,PMTCT,PMTCT,90,"Zidovudine (AZT), capsule, 300 mg",201,0.0,90.17106
+468,PMTCT,PMTCT,90,"Zidovudine (AZT), capsule, 300 mg",201,0.0,90.17106
+469,PMTCT,Cotrimoxazole for children,91,"Sulfamethoxazole + trimethropin, oral suspension, 240 mg, 100 ml",202,0.0,322.71372
+470,PMTCT,Cotrimoxazole for children,91,"Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg",162,0.0,21.42
+471,PMTCT,Cotrimoxazole for children,91,Cotrimoxazole 120mg_1000_CMST,203,1.0,3734.22
+472,PMTCT,Management of opportunistic infections associated with HIV/AIDS,92,"Cotrimoxizole, 960mg pppy",204,730.0,6.99006
+473,PMTCT,Nutrition supplements in first 6 months for HIV/AIDS cases ,93,Nutrition supplements in first six months drugs/supplies to service a client,205,1.0,2344.419
+474,PMTCT,Screen HIV+ cases for TB,94,X-ray,175,1.0,182.51982
+475,PMTCT,Screen HIV+ cases for TB,94,Culture test,206,0.8999999999999999,9887.5791
+476,PMTCT,Screen HIV+ cases for TB,94,Smear test,207,3.0,203.98266
+477,PMTCT,ART (+CPT) for TB HIV+ patients,95,"Cotrimoxizole, 960mg pppy",204,730.0,6.99006
+478,PMTCT,HIV prevention for TB patients,96,"Condom, male",2,1.0,20.97018
+479,Nutrition,Nutritional care and support (HIV+ pregnant and lactating women),97,Corn Soya Blend (or Supercereal - CSB++),208,36.0,856.8
+480,Nutrition,Vitamin A supplementation in pregnant women,98,"Vitamin A, caplet, 100,000 IU",209,84.0,19.89204
+481,Nutrition,Daily iron and folic acid supplementation (pregnant women),99,"Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg",140,270.0,1.79214
+482,Nutrition,Management of moderate acute malnutrition (pregnant and lactating women),100,Vegetable oil,210,3.5999999999999996,703.29
+483,Nutrition,Management of moderate acute malnutrition (pregnant and lactating women),100,Corn Soya Blend (or Supercereal - CSB++),208,36.0,856.8
+484,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,101,Corn Soya Blend (or Supercereal - CSB++),208,24.48,856.8
+485,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,101,Vegetable oil,210,2.4480000000000004,703.29
+486,Nutrition,Nutrition care and support program for Individuals with TB or other chronic diseases,101,"Ready-to-use therapeutic food (RUTF), tablet",211,115.19999999999999,20.08482
+487,Nutrition,Vitamin A supplementation in infants and children 6-59 months,102,"Vitamin A, caplet, 100,000 IU",209,0.2,19.89204
+488,Nutrition,Vitamin A supplementation in infants and children 6-59 months,102,"Vitamin A, caplet, 200,000 IU",212,3.2,19.89204
+489,Nutrition,Deworming (children) for Children 12-23 months,103,"Albendazole, tablet, 400 mg",52,1.0,63.7602
+490,Nutrition,Deworming (children),104,"Albendazole, tablet, 400 mg",52,1.86,63.7602
+491,Nutrition,Management of moderate acute malnutrition (children),105,Corn Soya Blend (or Supercereal - CSB++),208,36.0,856.8
+492,Nutrition,Management of severe malnutrition (children),106,SAM theraputic foods,213,1.0,48625.87044
+493,Nutrition,Management of severe malnutrition (children),106,SAM medicines,214,1.0,15988.82334
+494,Non-communicable diseases,Treatment of cases with rheumatic heart disease ,107,"Penicillin G Benzathine, 1440 mg",215,30.0,268.19982
+495,Non-communicable diseases,Screening for risk of CVD/Diabetes,108,Blood glucose level test,216,0.3,685.99692
+496,Non-communicable diseases,Screening for risk of CVD/Diabetes,108,Cholesterol test,217,0.3,685.99692
+497,Non-communicable diseases,Screening for risk of CVD/Diabetes,108,Urine analysis,47,0.3,627.9987
+498,Non-communicable diseases,Screening for risk of CVD/Diabetes,108,Urine sugar analysis,218,1.0,230.00082
+499,Non-communicable diseases,Hypertension,109,"Enalapril, tablet, 20 mg",219,72.0,9.48906
+500,Non-communicable diseases,Hypertension,109,Nifedipine 10mg_100_CMST,220,288.0,3.12018
+501,Non-communicable diseases,Hypertension,109,Hydrochlorothiazide 25mg_1000_CMST,221,360.0,2.12058
+502,Non-communicable diseases,Hypertension,109,Methyldopa 250mg_1000_CMST,222,108.00000000000001,25.01856
+503,Non-communicable diseases,Hypertension,109,Hydralazine 25mg_100_CMST,223,0.0,915.99774
+504,Non-communicable diseases,Hypertension,109,"Hydralazine, powder for injection, 20 mg ampoule",60,0.25,676.85058
+505,Non-communicable diseases,Hypertension,109,Atenolol 100mg_1000_CMST,224,108.0,6.59736
+506,Non-communicable diseases,Hypertension,109,Frusemide 40mg_1000_CMST,225,0.0002,2630.61162
+507,Non-communicable diseases,Hypertension,109,Aspirin 300mg_1000_CMST,226,0.09,3034.77132
+508,Non-communicable diseases,Diabetes Type I,110,"Insulin soluble 100 IU/ml, 10ml_each_CMST",227,12.0,3336.3792
+509,Non-communicable diseases,Diabetes Type I,110,"Insulin zinc suspension (lente) 100 IU/ml, 10ml_each_CMST",228,24.0,3357.0495
+510,Non-communicable diseases,Diabetes Type I,110,Creatinine  test kit-Human_ 200ml  _CMST,229,1.0,24000.0033
+511,Non-communicable diseases,Diabetes Type I,110,Albumin test kit  (HUMAN)_ 1000ml  _CMST,230,1.0,34670.74758
+512,Non-communicable diseases,Diabetes Type I,110,"Syringe, NSEP, 1 cc",231,1.0,264.18
+513,Non-communicable diseases,Diabetes Type I,110,Glove disposable latex medium_100_CMST,172,1.0,24.57588
+514,Non-communicable diseases,Diabetes Type II,111,Glibenclamide 5mg_1000_CMST,232,1080.0,3.59856
+515,Non-communicable diseases,Diabetes Type II,111,Metformin hydrochloride 500mg_100_CMST,233,1080.0,10.26018
+516,Non-communicable diseases,Diabetes Type II,111,Blood glucose level test,216,1.0,685.99692
+517,Non-communicable diseases,Diabetes Type II,111,Albumin test kit  (HUMAN)_ 1000ml  _CMST,230,1.0,34670.74758
+518,Non-communicable diseases,Diabetes Type II,111,Creatinine  test kit-Human_ 200ml  _CMST,229,1.0,24000.0033
+519,Non-communicable diseases,High cholesterol,112,"Simvastatin, 15 mg",234,24.0,223.99608
+520,Non-communicable diseases,High cholesterol,112,Creatinine  test kit-Human_ 200ml  _CMST,229,1.0,24000.0033
+521,Non-communicable diseases,High cholesterol,112,Albumin test kit  (HUMAN)_ 1000ml  _CMST,230,1.0,34670.74758
+522,Non-communicable diseases,Ischemic heart disease,113,Aspirin 300mg_1000_CMST,226,0.03,3034.77132
+523,Non-communicable diseases,Screening: Mammography,114,X-ray film,235,4.0,420.3318
+524,Non-communicable diseases,Screening: Mammography,114,X-ray film chemistry,236,1.0,47.45958
+525,Non-communicable diseases,Breast Cancer (first line),115,Cyclophosphamide 1000mg Injection,237,6.0,2065.7091
+526,Non-communicable diseases,Breast Cancer (first line),115,"Doxorubicin, 50 mg vial",238,12.0,6850.85142
+527,Non-communicable diseases,Cervical cancer (first line),116,Cisplatin 50mg Injection,239,12.0,4891.77108
+528,Non-communicable diseases,Cervical cancer (first line),116,5-Fluorouracil 500mg injection,240,36.0,625.52112
+529,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,Tetanus toxin vaccine (TTV),241,0.2,1199.99838
+530,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"diclofenac sodium 25 mg, enteric coated_1000_IDA",242,60.0,0.92106
+531,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,Paracetamol 500mg_1000_CMST,113,80.0,4.16262
+532,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",243,0.4,549.50154
+533,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"Bandage, crepe 7.5cm x 1.4m long , when stretched",244,4.0,119.28798
+534,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"Gauze, swabs 8-ply 10cm x 10cm",245,10.0,14.72268
+535,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"Iodine solution, weak (iodine tincture) 0.5%_500ml_CMST",246,0.1,1742.63838
+536,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,Glove disposable latex medium_100_CMST,172,8.0,24.57588
+537,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,Suture pack,247,0.05,2856
+538,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,Flucloxacillin 250mg_100_CMST,248,22.400000000000002,40.39812
+539,Non-communicable diseases,Treatment of Injuries (Blunt Trauma - Soft Tissue Injury),117,"Cotton wool, 500g_1_CMST",49,10.0,416.99742
+540,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Tetanus toxin vaccine (TTV),241,0.2,1199.99838
+541,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"diclofenac sodium 25 mg, enteric coated_1000_IDA",242,60.0,0.92106
+542,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Paracetamol 500mg_1000_CMST,113,80.0,4.16262
+543,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"morphine sulphate 10 mg/ml, 1 ml, injection (nt)_10_IDA",243,2.0,549.50154
+544,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Bandage, crepe 7.5cm x 1.4m long , when stretched",244,8.0,119.28798
+545,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Gauze, swabs 8-ply 10cm x 10cm",245,10.0,14.72268
+546,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Iodine strong 10% solution_500ml_CMST,73,0.1,1641.60024
+547,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Plaster of Paris (POP) 10cm x 7.5cm slab_12_CMST,249,12.0,16.9218
+548,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Monochromatic blue senstive X-ray Film, screen SizeSize: 30cm x 40cm",250,6.0,723.0678
+549,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Glove surgeon's size 7 sterile_2_CMST,112,0.4,137.45928
+550,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Glove disposable latex medium_100_CMST,172,8.0,24.57588
+551,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Ketamine hydrochloride 50mg/ml, 10ml",251,0.024,607.12848
+552,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Syringe, 5ml, disposable, hypoluer with 21g needle_each_CMST",107,1.0,149.98284
+553,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Apron laboratory disposable_50_CMST,252,2.0,74.19888
+554,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Ceftriaxone 1g, PFR_each_CMST",81,1.4000000000000001,207.10998
+555,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"cloxacillin 500 mg, powder for injection_50_IDA",253,8.400000000000002,59.04066
+556,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Gentamycin, injection, 40 mg/ml in 2 ml vial",28,2.1000000000000005,41.74758
+557,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Vancomycin 500mg for injection,254,3.6,5999.99904
+558,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,"Chloramphenicol Sodium 1g, PFR_each_CMST",255,7.0,338.5431
+559,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Flucloxacillin 250mg_100_CMST,248,22.400000000000002,40.39812
+560,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,External fixator,256,0.01,42840
+561,Non-communicable diseases,Treatment of injuries (Fracture and dislocation),118,Chloramphenicol 250mg_1000_CMST,257,112.0,28.06734
+562,Non-communicable diseases,Kaposi sarcoma - first line,119,"Doxorubicin, 50 mg vial",238,7.0,6850.85142
+563,Non-communicable diseases,Kaposi sarcoma - first line,119,Belomycin 15lu inj,258,7.0,5941.67952
+564,Non-communicable diseases,Kaposi sarcoma - first line,119,Vincristin 1mg Injection,259,7.0,901.13226
+565,Non-communicable diseases,Kaposi sarcoma - second line,120,Paclitaxel 100mg Injection,260,2.33331,31493.11914
+566,Non-communicable diseases,"Lymphomas, nonhodgkins",121,"Cyclophosphamide, 1 g",261,5.0,2065.7091
+567,Non-communicable diseases,"Lymphomas, nonhodgkins",121,Vincristin 1mg Injection,259,10.0,901.13226
+568,Non-communicable diseases,"Lymphomas, nonhodgkins",121,"Methylprednisolone acetate sub-conj. 40mg/ml,2ml_each_CMST",262,0.0,1623.07194
+569,Non-communicable diseases,"Lymphomas, nonhodgkins",121,"Doxorubicin, 50 mg vial",238,5.0,6850.85142
+570,Non-communicable diseases,Hodgkin's lymphoma,122,"bleomycin powder 15 mg (15,000 IU)   (**)_1_IDA",263,0.0,7709.25078
+571,Non-communicable diseases,Hodgkin's lymphoma,122,Belomycin 15lu inj,258,12.0,5941.67952
+572,Non-communicable diseases,Hodgkin's lymphoma,122,Vinblastin 10mg injection,264,12.0,5913.59076
+573,Non-communicable diseases,Hodgkin's lymphoma,122,Dacarbazine 500mg injection,265,18.0,12034.61994
+574,Non-communicable diseases,Hodgkin's lymphoma,122,"Doxorubicin, 50 mg vial",238,12.0,6850.85142
+575,Non-communicable diseases,Head and neck cancer (esophageal),123,Cisplatin 50mg Injection,239,12.5,4891.77108
+576,Non-communicable diseases,Head and neck cancer (esophageal),123,5-Fluorouracil 500mg injection,240,8.5,625.52112
+577,Non-communicable diseases,"GIT, intestine cancer",124,5-Fluorouracil 500mg injection,240,10.2,625.52112
+578,Non-communicable diseases,"GIT, intestine cancer",124,Leucovorin 50mg injection,266,3.5999999999999996,1931.16294
+579,"Mental, neurological, and substance use disorders",Anxiety,125,Amitriptyline 25mg_100_CMST,267,180.0,5.49066
+580,"Mental, neurological, and substance use disorders",Anxiety,125,Fluoxetine 20mg_1000_CMST,268,180.0,103.80846
+581,"Mental, neurological, and substance use disorders",Treatment of depression,126,Amitriptyline 25mg_100_CMST,267,180.0,5.49066
+582,"Mental, neurological, and substance use disorders",Treatment of depression,126,Fluoxetine 20mg_1000_CMST,268,180.0,103.80846
+583,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,127,Haloperidol  5mg_100_CMST,269,1.825,766.75032
+584,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,127,Chlorpromazine 100mg_1000_CMST,270,0.27375,8873.99898
+585,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,127,"Fluphenazine decanoate 25mg/ml, 2ml_each_CMST",271,1.2000000000000002,3156.951
+586,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,127,"Risperidone, 2 mg tab",272,146.0,14.2086
+587,"Mental, neurological, and substance use disorders",Treatment of acute psychotic disorders,127,"Biperiden, 2 mg tab",273,7.0,12.00234
+588,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,"Lithium, 300 mg",274,547.5,5.9976
+589,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,Sodium valproate 200mg_100_CMST,275,5.475000000000001,3154.11642
+590,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,Carbamazepine 200mg_1000_CMST,276,0.07300000000000001,11382.73794
+591,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,"Diazepam 5mg/ml, 2ml_each_CMST",87,12.0,130.47636
+592,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,"Syringe, 10 cc with needle",277,0.4,298.809
+593,"Mental, neurological, and substance use disorders",Treatment of bipolar disorder,128,Glove disposable latex medium_100_CMST,172,0.4,24.57588
+594,"Mental, neurological, and substance use disorders",Anti-epileptic medication,129,"Phenobarbital, 100 mg",278,729.99927,4.04124
+595,"Mental, neurological, and substance use disorders",Anti-epileptic medication,129,Phenytoin sodium 100mg_1000_CMST,279,328.49999999999994,3.84132
+596,"Mental, neurological, and substance use disorders",Anti-epileptic medication,129,Carbamazepine 200mg_1000_CMST,276,0.07300000000000001,11382.73794
+597,"Mental, neurological, and substance use disorders",Anti-epileptic medication,129,Sodium valproate 200mg_100_CMST,275,0.0,3154.11642
+598,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,130,Haloperidol  5mg_100_CMST,269,1.825,766.75032
+599,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,130,Chlorpromazine 100mg_1000_CMST,270,0.27375,8873.99898
+600,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,130,"Fluphenazine decanoate 25mg/ml, 2ml_each_CMST",271,1.2000000000000002,3156.951
+601,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,130,"Risperidone, 2 mg tab",272,146.0,14.2086
+602,"Mental, neurological, and substance use disorders",Treatment of schizophrenia,130,"Biperiden, 2 mg tab",273,7.0,12.00234
+603,"Mental, neurological, and substance use disorders",Substance use disorder - alcohol,131,Diazepam 5mg_1000_CMST,280,0.002,2380.0833
+604,"Mental, neurological, and substance use disorders",Substance use disorder - alcohol,131,"Thiamine (vitamin B1), 100 mg",281,1.0,6.9972
+605,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,132,"Buprenorphine, 8 mg",282,1.25,450.9981
+606,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,132,"Methadone, 5 mg",283,1.75,606.00036
+607,"Mental, neurological, and substance use disorders",Substance use disorder - cannabis,132,"Clonidine, .1 mg",284,3.5,213.56454
+608,Neglected Tropical Diseases,Onchocerciasis mass drug administration,133,Mectizan,285,1.0,2142
+609,Neglected Tropical Diseases,Schistosomiasis mass drug administration,134,Praziquantel 600mg_1000_CMST,286,2.5,2.77032
+610,Neglected Tropical Diseases,LF hydrocele surgery,135,I/V R/lactate 3Lts,287,3.0,1309.02618
+611,Neglected Tropical Diseases,LF hydrocele surgery,135,"Ampicillin injection 500mg, PFR_each_CMST",86,1.0,118.4526
+612,Neglected Tropical Diseases,LF hydrocele surgery,135,"Metronidazole 5mg/ml, 100ml_each_CMST",105,1.0,215.34954
+613,Neglected Tropical Diseases,LF hydrocele surgery,135,Amoxycillin 250mg_1000_CMST,125,0.001,16460.99868
+614,Neglected Tropical Diseases,LF hydrocele surgery,135,Metronidazole 200mg_1000_CMST,92,0.001,5271.83328
+615,Neglected Tropical Diseases,LF hydrocele surgery,135,Diclofenac sodium 100mg _100_CMST,288,0.1,240.86076
+616,Neglected Tropical Diseases,LF hydrocele surgery,135,Catheter Foley's + urine bag (2000ml) 10g_each_CMST,289,1.0,297.98076
+617,Neglected Tropical Diseases,LF hydrocele surgery,135,Cannula iv  (winged with injection pot) 18_each_CMST,171,1.0,130.07652
+618,Neglected Tropical Diseases,LF hydrocele surgery,135,"Syringe, 20ml, disposable with 21g needle_each_CMST",111,1.0,182.94822
+619,Neglected Tropical Diseases,LF hydrocele surgery,135,"Water for injection, 10ml_Each_CMST",98,1.0,32.57268
+620,Neglected Tropical Diseases,LF hydrocele surgery,135,Underpants,290,1.0,2427.6
+621,Acute Respiratory Infections,Asthma,136,Prednisolone 5mg_100_CMST,291,18.0,8.3181
+622,Acute Respiratory Infections,Asthma,136,"Aminophylline 100mg, tablets",292,30.0,3.22728
+623,Acute Respiratory Infections,Asthma,136,Salbutamol Inhaler 100mcg/dose - 200 doses ,293,1.0,960.73698
+624,Acute Respiratory Infections,Asthma,136,Salbutamol 4mg_1000_CMST,121,30.0,2.76318
+625,Acute Respiratory Infections,Asthma,136,"Beclomethasone diproprionate inhalation, 50mcg/dose, 200 doses",294,1.0,1400.39676
+626,Acute Respiratory Infections,Pneumonia treatment (children),137,"Paracetamol, tablet, 100 mg",295,12.0,4.34826
+627,Acute Respiratory Infections,Pneumonia treatment (children),137,"Salbutamol, tablet, 4 mg",296,0.08,2.76318
+628,Acute Respiratory Infections,Pneumonia treatment (children),137,"Salbutamol, syrup, 2 mg/5 ml",297,0.36,6.9972
+629,Acute Respiratory Infections,Pneumonia treatment (children),137,"Salbutamol sulphate 1mg/ml, 5ml_each_CMST",298,0.024,86.0013
+630,Acute Respiratory Infections,Pneumonia treatment (children),137,"Amoxycillin 125mg/5ml suspension, PFR_0.025_CMST",299,0.4,345.6117
+631,Acute Respiratory Infections,Pneumonia treatment (children),137,Amoxycillin 250mg_1000_CMST,125,0.005999999999999999,16460.99868
+632,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Benzylpenicillin 3g (5MU), PFR_each_CMST",99,12.0,194.6007
+633,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Gentamicin Sulphate 40mg/ml, 2ml_each_CMST",106,25.0,27.00348
+634,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Ceftriaxone 1g, PFR_each_CMST",81,1.25,207.10998
+635,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Tube, nasogastric CH 8_each_CMST",300,0.2,1194.00078
+636,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Oxygen, 1000 liters, primarily with oxygen concentrators",301,0.576,224.88144
+637,Acute Respiratory Infections,Treatment of severe pneumonia,138,Prednisolone 5mg_100_CMST,291,1.7999999999999998,8.3181
+638,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Salbutamol, syrup, 2 mg/5 ml",297,0.4,6.9972
+639,Acute Respiratory Infections,Treatment of severe pneumonia,138,"Syringe, needle + swab",9,0.36,7.7469
+640,Acute Respiratory Infections,Treatment of severe pneumonia,138,Amoxycillin 250mg_1000_CMST,125,0.006,16460.99868
+641,Acute Respiratory Infections,Treatment of severe pneumonia,138,Cannula iv  (winged with injection pot) 16_each_CMST,120,1.0,77.34048
+642,Acute Respiratory Infections,Treatment of severe pneumonia,138,X-ray,175,1.0,182.51982
+643,Acute Respiratory Infections,Asthma severe 1 step adult,139,Prednisolone 5mg_100_CMST,291,56.0,8.3181
+644,Acute Respiratory Infections,Asthma severe 1 step adult,139,Amoxycillin 250mg_1000_CMST,125,0.03,16460.99868
+645,Acute Respiratory Infections,Asthma severe 1 step adult,139,Glove disposable latex medium_100_CMST,172,6.0,24.57588
+646,Acute Respiratory Infections,Asthma severe 1 step adult,139,"Salbutamol solution for nebulising 5mg/ml, 30ml",302,2.0,676.25082
+647,Acute Respiratory Infections,Asthma severe 1 step adult,139,"IV giving/infusion set, with needle",34,1.0,231.84294
+648,Acute Respiratory Infections,Asthma severe 1 step adult,139,X-Ray developer for manual process,303,1.0,2.6418
+649,Acute Respiratory Infections,Asthma severe 1 step adult,139,Cannula iv  (winged with injection pot) 18_each_CMST,171,1.0,130.07652
+650,Acute Respiratory Infections,Asthma severe 1 step adult,139,"Plaster, elastic adhesive 7.5cm x 5m_each_CMST",304,1.0,869.57346
+651,Acute Respiratory Infections,Asthma severe 1 step adult,139,Hydrocotisone IV - 200mg,305,15.0,478.33002
+652,Acute Respiratory Infections,Asthma severe 1 step adult,139,"Oxygen, 1000 liters, primarily with oxygen concentrators",301,1.0,224.88144
+653,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,Prednisolone 5mg_100_CMST,291,56.0,8.3181
+654,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,Amoxycillin 250mg_1000_CMST,125,0.03,16460.99868
+655,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,Glove disposable latex medium_100_CMST,172,6.0,24.57588
+656,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Salbutamol solution for nebulising 5mg/ml, 30ml",302,2.0,676.25082
+657,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"IV giving/infusion set, with needle",34,1.0,231.84294
+658,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Sodium chloride 0.9%, 1000ml_each_CMST",306,1.0,783.05808
+659,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,Cannula iv  (winged with injection pot) 18_each_CMST,171,1.0,130.07652
+660,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Plaster, elastic adhesive 7.5cm x 5m_each_CMST",304,1.0,869.57346
+661,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,Hydrocotisone IV - 200mg,305,15.0,478.33002
+662,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Oxygen, 1000 liters, primarily with oxygen concentrators",301,0.05,224.88144
+663,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Aminophylline 100mg, tablets",292,2.0,3.22728
+664,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Atropine sulphate  600 micrograms/ml, 1ml_each_CMST",307,2.0,170.84592
+665,Acute Respiratory Infections,Asthma severe +n't resp 1 step,140,"Adrenaline 1/1000, 1ml_each_CMST",308,1.0,251.52792
+666,Acute Respiratory Infections,COPD,141,Prednisolone 5mg_100_CMST,291,80.0,8.3181
+667,Acute Respiratory Infections,COPD,141,Amoxycillin 250mg_1000_CMST,125,0.0,16460.99868
+668,Acute Respiratory Infections,COPD,141,Glove disposable latex medium_100_CMST,172,1.0,24.57588
+669,Acute Respiratory Infections,COPD,141,Salbutamol 4mg_1000_CMST,121,2.0,2.76318
+670,Acute Respiratory Infections,COPD,141,Salbutamol Inhaler 100mcg/dose - 200 doses ,293,1.0,960.73698
+671,Acute Respiratory Infections,COPD,141,X-ray,175,1.0,182.51982
+672,Acute Respiratory Infections,COPD,141,Complete blood count,128,1.0,378.99834
+673,Eye and Ear infection,Treatment of conjunctivitis,142,"Tetracycline eye ointment, 1 %, tube 5 mg",68,21.0,31.68018
+674,Eye and Ear infection,Treatment of conjunctivitis,142,Paracetamol 500mg _1000_CMST,94,0.03,4353.87918
+675,Eye and Ear infection,Treatment of conjunctivitis,142,Cotton swab,24,1.0,1.9992
+676,Eye and Ear infection,Acute otitis media in under 5s,143,Paracetamol 500mg _1000_CMST,94,0.015,4353.87918
+677,Eye and Ear infection,Acute otitis media in under 5s,143,Cotrimoxazole 480mg_1000_CMST,309,2.0,14.12292
+678,Eye and Ear infection,Scabies and other skin diseases,144,"Benzyl benzoate 25% lotion, 1000 ml bottle",310,1.0,3147.76896
+679,Eye and Ear infection,Scabies and other skin diseases,144,Erythromycin 250mg_1000_CMST,311,13.200000000000001,54.64956
+680,Eye and Ear infection,Trachoma mass drug administration,145,Azithromycin 500mg_10_CMST,312,1.6,96.62562
+681,Eye and Ear infection,Trachoma mass drug administration,145,"Tetracycline eye ointment, 1 %, tube 5 mg",68,1.92,31.68018
+682,Eye and Ear infection,Trachoma mass drug administration,145,"azithromycin 200 mg/5 ml, pwd for or. susp., 15 ml_120_IDA",313,0.36,469.9191
+683,Eye and Ear infection,Treatment of cataracts,146,Cataract set,314,0.1,940338
+684,Oral Health,Management of severe tooth pain - tooth extraction,147,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+685,Oral Health,Management of severe tooth pain - tooth extraction,147,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+686,Oral Health,Management of mild tooth pain - tooth filling,148,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+687,Oral Health,Management of mild tooth pain - tooth filling,148,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+688,Oral Health,Management of mild tooth pain - tooth filling,148,"Amalgam capsule no. 2, non-gamma _50_CMST",316,1.0,761.03118
+689,Oral Health,Management of mild tooth pain - tooth filling,148,Composite chemical cure & etching system,317,0.02,0
+690,Oral Health,Management of mild tooth pain - tooth filling,148,Zinc oxide eugenol liquid+powder_10_CMST,318,0.02,4008.66732
+691,Oral Health,Management of mild tooth pain - tooth filling,148,Zinc oxide eugenol powder_pack_CMST,319,0.02,6563.47356
+692,Oral Health,Management of mild tooth pain - tooth filling,148,Glass ionomer reinforced powder & liquid (Fujii IX),320,0.02,30565.26186
+693,Oral Health,Root canal therapy,149,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+694,Oral Health,Root canal therapy,149,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+695,Oral Health,Root canal therapy,149,Root canal spreader S/E NI-TI_each_CMST,321,0.02,21583.99152
+696,Oral Health,Root canal therapy,149,"Gutta Percha points, PD 15-80",322,0.02,0
+697,Oral Health,Root canal therapy,149,Root canal sealant ( Regular),323,0.02,0
+698,Oral Health,Root canal therapy,149,Cresophene 13ml root canal disinfectant,324,0.02,0
+699,Oral Health,Root canal therapy,149,Cavit medium,325,0.02,6537.39114
+700,Oral Health,Root canal therapy,149,"Amalgam capsule no. 2, non-gamma _50_CMST",316,0.02,761.03118
+701,Oral Health,Root canal therapy,149,Composite chemical cure & etching system,317,0.02,0
+702,Oral Health,Tooth scaling and polishing,150,Polishing system enhance (Detisply),326,0.01,96233.0271
+703,Oral Health,Intermaxillary Fixation,151,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+704,Oral Health,Intermaxillary Fixation,151,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+705,Oral Health,Intermaxillary Fixation,151,"Ligature wire, 0.16 inches (0.406mm) roll",327,0.05,11601.33618
+706,Oral Health,Intermaxillary Fixation,151,"Wire ligature 0.5mm, roll _each_CMST",328,0.05,10625.64804
+707,Oral Health,Bone plating,152,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+708,Oral Health,Bone plating,152,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+709,Oral Health,Bone plating,152,"Ligature wire, 0.16 inches (0.406mm) roll",327,0.05,11601.33618
+710,Oral Health,Bone plating,152,"Wire ligature 0.5mm, roll _each_CMST",328,0.05,10625.64804
+711,Oral Health,Intraoseous wiring,153,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+712,Oral Health,Intraoseous wiring,153,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+713,Oral Health,Intraoseous wiring,153,"Ligature wire, 0.16 inches (0.406mm) roll",327,0.05,11601.33618
+714,Oral Health,Intraoseous wiring,153,"Wire ligature 0.5mm, roll _each_CMST",328,0.05,10625.64804
+715,Oral Health,Tooth splinting,154,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+716,Oral Health,Tooth splinting,154,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+717,Oral Health,Tooth splinting,154,"Ligature wire, 0.16 inches (0.406mm) roll",327,0.05,11601.33618
+718,Oral Health,Enucleation and marsupulization of dental cysts,155,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+719,Oral Health,Enucleation and marsupulization of dental cysts,155,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+720,Oral Health,Excision and incisional biopsy of dental tumors,156,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+721,Oral Health,Excision and incisional biopsy of dental tumors,156,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+722,Oral Health,Incision and drainage of dental abscess,157,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+723,Oral Health,Incision and drainage of dental abscess,157,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+724,Oral Health,Denture,158,Alginate impression material (Supreme),329,0.1,6288.47646
+725,Oral Health,Denture,158,"POP dental stone, ortho",330,0.1,38361.01374
+726,Oral Health,Denture,158,"POP dental stone, yellow",331,0.1,3049.05846
+727,Oral Health,Denture,158,"Wax, modelling, no. 4 gauge",332,0.05,0
+728,Oral Health,Denture,158,"Tungstein Carbide Acrylic Trimmers, C75/060",333,0.05,16362.26676
+729,Oral Health,Tooth implants,159,"Lignocaine 2% Adrenaline 1/80,000 cartridge 1.8ml_50_CMST",116,1.0,216.45624
+730,Oral Health,Tooth implants,159,"Needle, disposable dental, 27g long sharewood",315,1.0,0.79254
+731,Oral Health,Tooth implants,159,Alginate impression material (Supreme),329,0.1,6288.47646
+732,Oral Health,Tooth implants,159,"POP dental stone, ortho",330,0.1,38361.01374
+733,Oral Health,Tooth implants,159,"POP dental stone, yellow",331,0.1,3049.05846
+734,Oral Health,Tooth implants,159,"Wax, modelling, no. 4 gauge",332,0.05,0
+735,Oral Health,Tooth implants,159,"Tungstein Carbide Acrylic Trimmers, C75/060",333,0.05,16362.26676
+736,Oral Health,Tooth crown and bridge,160,Pumice,334,0.03333,14069.07726
+737,Oral Health,Tooth crown and bridge,160,Alginate impression material (Supreme),329,0.1,6288.47646
+738,Oral Health,Tooth crown and bridge,160,"POP dental stone, ortho",330,0.1,38361.01374
+739,Oral Health,Tooth crown and bridge,160,"POP dental stone, yellow",331,0.1,3049.05846
+740,Oral Health,Orthodontic appliances,161,Alginate impression material (Supreme),329,0.1,6288.47646
+741,Oral Health,Orthodontic appliances,161,"POP dental stone, ortho",330,0.1,38361.01374
+742,Oral Health,Orthodontic appliances,161,"POP dental stone, yellow",331,0.1,3049.05846
+743,Oral Health,Orthodontic appliances,161,"Wax, modelling, no. 4 gauge",332,0.05,0
+744,Oral Health,Orthodontic appliances,161,Cold mould seal,335,0.06667,11724.47976
+745,Oral Health,Orthodontic appliances,161,Pumice,334,0.03333,14069.07726
+746,Oral Health,Orthodontic appliances,161,Orthodontic wire (tubing size 0.8),336,0.05,9694.49922
+747,Oral Health,Topical tooth fluoride application,162,Fluoride varnish (Duraphat),337,0.02,30412.17312
+748,Oral Health,Topical tooth fluoride application,162,Prophylactic paste,338,0.02,5399.99628
+749,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Acetyl salysilic acid (aspirin), tablet, 75 mg",339,365.0,9.48906
+750,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Enalapril, tablet, 20 mg",219,365.0,9.48906
+751,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Atenolol, tablets, 50 mg",340,547.5,1.89924
+752,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Simvastatin, 15 mg",234,273.75,223.99608
+753,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Prednisolone, tablet, 5 mg",341,54.60000000000001,59.99742
+754,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Blood glucose level test,216,2.0,685.99692
+755,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Cholesterol test,217,2.0,685.99692
+756,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Urine analysis,47,2.0,627.9987
+757,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Acetyl salysilic acid (aspirin), tablet, 75 mg",339,365.0,9.48906
+758,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Enalapril, tablet, 20 mg",219,365.0,9.48906
+759,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Atenolol, tablets, 50 mg",340,547.5,1.89924
+760,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Simvastatin, 15 mg",234,273.75,223.99608
+761,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,"Prednisolone, tablet, 5 mg",341,54.60000000000001,59.99742
+762,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Blood glucose level test,216,2.0,685.99692
+763,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Cholesterol test,217,2.0,685.99692
+764,Non-communicable diseases,Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes,163,Urine analysis,47,2.0,627.9987

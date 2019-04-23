@@ -9,7 +9,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
-from tlo.methods.healthsystem import HealthSystemInteractionEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -21,10 +20,8 @@ class ChronicSyndrome(Module):
 
     - Declaration of TREATMENT_ID
     - Registration of the disease module
-    - Registration of the interventions
-    - Internal symptom tracking, responding to query_symptoms_now
+    - Internal symptom tracking and health care seeking
     - Reading QALY weights and reporting qaly values related to this disease
-    - Commissioning a healthsystem interaction by the 'disease' itself
     """
 
 
@@ -78,8 +75,6 @@ class ChronicSyndrome(Module):
             '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
             categories=[0, 1, 2, 3, 4])
     }
-
-    TREATMENT_ID = 'ChronicSyndrome_Treatment'
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -178,19 +173,6 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # Register with the HealthSystem the treatment interventions that this module runs
-        # and define the footprint that each intervention has on the common resources
-        # Define the footprint for the intervention on the common resources
-        footprint_for_treatment = pd.DataFrame(index=np.arange(1),
-                                               data={
-                                                   'Name': ChronicSyndrome.TREATMENT_ID,
-                                                   'Nurse_Time': 30,
-                                                   'Doctor_Time': 200,
-                                                   'Electricity': True,
-                                                   'Water': True
-                                               })
-
-        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -211,40 +193,11 @@ class ChronicSyndrome(Module):
         df.at[child_id, 'cs_specific_symptoms'] = 'none'
         df.at[child_id, 'cs_unified_symptom_code'] = 0
 
-    def query_symptoms_now(self):
-        # This is called by the health-care seeking module
-        # All modules refresh the symptomology of persons at this time
-        # And report it on the unified symptomology scale
-
-        logger.debug("This is chronic syndome, being asked to report unified symptomology")
-        # print('Now being asked to update symptoms')
-        # df['cs_unified_symptom_code']
-        # df['cs_specific_symptoms']
-
-        # Map the specific symptoms for this disease onto the unified coding scheme
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        df.loc[df.is_alive, 'cs_unified_symptom_code'] = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
-            {
-                'none': 0,
-                'extreme illness': 4
-            })
-
-        return df.loc[df.is_alive, 'cs_unified_symptom_code']
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-
-        if self.sim.population.props.at[person_id,'cs_status']=='C':
-            # Query with health system whether this individual will get a desired treatment
-            gets_treatment = self.sim.modules['HealthSystem'].query_access_to_service(
-                person_id, self.TREATMENT_ID
-            )
-
-            if gets_treatment:
-                # # Commission treatment for this individual
-                event = ChronicSyndromeTreatmentEvent(self, person_id)
-                self.sim.schedule_event(event, self.sim.date)
-
+        logger.debug('This is ChronicSyndrome, being alerted about a health system interaction '
+                     'person %d triggered by cue_type: %s , disease_specific: %s', person_id, cue_type,
+                     disease_specific)
 
 
     def report_qaly_values(self):
@@ -317,13 +270,17 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
-            random_sample = rng.random_sample(size=len(become_severe_idx))
-            seeks_emergency_care = random_sample < p['prob_severe_symptoms_seek_emergency_care']
-            seeks_emergency_care_idx = become_severe_idx[seeks_emergency_care]
+            for person_index in become_severe_idx:
+                prob=self.sim.modules['HealthSystem'].get_prob_seek_care(person_index)
+                seeks_care = self.module.rng.rand() < prob
+                if seeks_care:
+                    event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
-            for person_index in seeks_emergency_care_idx:
-                event = HealthSystemInteractionEvent(self.module, person_index,cue_type='InitialDiseaseCall',disease_specific=self.module.name)
-                self.sim.schedule_event(event, self.sim.date)
+                    self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
@@ -340,9 +297,44 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(death, self.sim.date)
 
 
-class ChronicSyndromeTreatmentEvent(Event, IndividualScopeEventMixin):
+# ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+# Health System Interaction Events
+
+
+class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
+    and is immediately provided with treatment.
+
+    """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+        the_appt_footprint['AccidentsandEmerg'] = 1  # Plus, an amount of resources similar to an A&E
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] == 'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
+                                              'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+
+
+
 
     def apply(self, person_id):
         logger.debug("We are now ready to treat this person %d", person_id)
@@ -353,6 +345,7 @@ class ChronicSyndromeTreatmentEvent(Event, IndividualScopeEventMixin):
         if treatmentworks:
             df.at[person_id, 'cs_has_cs'] = False
             df.at[person_id, 'cs_status'] = 'P'
+
             # (in this we nullify the death event that has been scheduled.)
             df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
             df.at[person_id, 'cs_date_cure'] = self.sim.date
@@ -360,12 +353,17 @@ class ChronicSyndromeTreatmentEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'cs_unified_symptom_code'] = 0
 
 
+# ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+
+
+
 class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """comments...
+        """ There is no logging done here.
         """
         # run this event every month
-        self.repeat = 6
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
