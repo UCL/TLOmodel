@@ -333,7 +333,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             # Anyone with severe symptoms seeks care
 
             serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
-                    df['mi_specific_symptoms'] == 'coughing and irritiable'))
+                df['mi_specific_symptoms'] == 'coughing and irritiable'))
             # TODO: Insert call to the healthseeking module
 
             if len(df.loc[serious_symptoms].index > 0):
@@ -380,9 +380,11 @@ class Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixi
         self.TREATMENT_ID = 'Mockitis_Treatment Initiation'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
+        the_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_footprint['Over5OPD'] = 1  # This requires one out patient
-        self.FOOTPRINT = the_footprint
+        self.APPT_FOOTPRINT = the_footprint
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+
 
     def apply(self, person_id):
 
@@ -428,10 +430,25 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_Treatment Initiation'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
-        the_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-        self.FOOTPRINT = the_footprint
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
+        self.APPT_FOOTPRINT = the_appt_footprint
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg']=='First line treatment for new TB cases for adults','Intervention_Pkg_Code'])[0]
+        pkg_code2 = pd.unique(consumables.loc[consumables['Intervention_Pkg']=='MDR notification among previously treated patients','Intervention_Pkg_Code'])[0]
+
+        item_code1 = pd.unique(consumables.loc[consumables['Items']=='Ketamine hydrochloride 50mg/ml, 10ml','Item_Code'])[0]
+        item_code2 = pd.unique(consumables.loc[consumables['Items']=='Underpants','Item_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code' : [pkg_code1,pkg_code2] ,
+            'Item_Code' : [item_code1, item_code2]
+        }
+        self.CONS_FOOTPRINT = the_cons_footprint
+
 
     def apply(self, person_id):
         logger.debug('This is Mockitis_StartTreatment: initiating treatent for person %d', person_id)

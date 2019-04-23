@@ -85,7 +85,12 @@ class HealthSystem(Module):
 
         'Facilities_For_Each_District':
             Parameter(Types.DATA_FRAME,
-                      'Mapping between a district and all of the health facilities to which its population have access.')
+                      'Mapping between a district and all of the health facilities to which its population have access.'),
+
+        'Consumables':
+            Parameter(Types.DATA_FRAME,
+                      'List of consumables used in each intervention and their costs.')
+
     }
 
     PROPERTIES = {
@@ -120,6 +125,9 @@ class HealthSystem(Module):
             os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
         )
 
+        self.parameters['Consumables'] = pd.read_csv(
+            os.path.join(self.resourcefilepath, 'ResourceFile_Consumables.csv')
+        )
 
     def initialise_population(self, population):
         df = population.props
@@ -187,17 +195,19 @@ class HealthSystem(Module):
 
         # Check that this is a legitimate request for a treatment
 
-        # Correctly formatted footprint
+        # 1) Correctly formatted footprint
+        assert 'APPT_FOOTPRINT' in dir(treatment_event)
+        assert set(treatment_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
-        try:
-            print(treatment_event.FOOTPRINT.keys())
-        except:
-            print('problem')
+        # 2) All sensible numbers for the number of appointments requested
+        assert all(np.asarray([(treatment_event.APPT_FOOTPRINT[k]) for k in treatment_event.APPT_FOOTPRINT.keys()]) >= 0)
 
-        assert set(treatment_event.FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        # 3) That is has a dictionary for the consumables needed in the right format
+        assert 'CONS_FOOTPRINT' in dir(treatment_event)
+        consumables=self.parameters['Consumables']
+        assert ( treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(consumables['Intervention_Pkg_Code']))
+        assert ( treatment_event.CONS_FOOTPRINT['Item_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
 
-        # All sensible numbers for the number of appointments requested
-        assert all(np.asarray([(treatment_event.FOOTPRINT[k]) for k in treatment_event.FOOTPRINT.keys()]) >= 0)
 
         # TODO: Check that this request is allowable under current policy
         #
@@ -240,23 +250,31 @@ class HealthSystem(Module):
 
         return (capabilities)
 
-    def get_blank_footprint(self, calling_event):
+    def get_blank_appt_footprint(self):
         """
         This is a helper function so that disease modules can easily create their footprint.
-        It returns a dataframe containing the footprint information in the format that the HealthSystemScheduler expects.
+        It returns a dataframe containing the appointment footprint information in the format that the HealthSystemScheduler expects.
         """
 
         keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
         values = np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
 
-        # # TODO: this to be moved to the scheduler stuff,
-        # blank_footprint['TREATMENT_ID']=calling_event.TREATMENT_ID
-        # blank_footprint['DiseaseModuleName']=calling_event.module.name
-        # blank_footprint['DiseaseModule']=calling_event.module
-
         return (blank_footprint)
 
+
+    def get_blank_cons_footprint(self):
+        """
+        This is a helper function so that disease modules can easily create their footprint.
+        It returns a dictionary containing the consumables information in the format that the HealthSystemScheduler expects.
+        """
+
+        blank_footprint = {
+            'Intervention_Package_Code' : [] ,
+            'Item_Code' : []
+        }
+
+        return (blank_footprint)
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -360,7 +378,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 capabilities_of_the_health_facilities = capabilities.loc[
                     capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
 
-                the_treatment_footprint = hsc.at[e, 'treatment_event'].FOOTPRINT
+                the_treatment_footprint = hsc.at[e, 'treatment_event'].APPT_FOOTPRINT
 
                 # Test if capabilities of health system can meet this request
                 # This requires there to be one facility that can fulfill the entire request (each type of appointment)
@@ -429,6 +447,35 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # broadcast to other disease modules that this event is occuring
             self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
+
+            # Log that these resources were used
+            # Appointments:
+            appts = hsc.at[e,'treatment_event'].APPT_FOOTPRINT
+            appts_trimmed = {k: v for k, v in appts.items() if v} # remove the zeros
+
+            logger.info('%s|Appt|%s',
+                        self.sim.date,appts_trimmed)
+
+
+            # Consumables
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            consumables_used = pd.DataFrame(columns=['Item_Code','Expected_Units_Per_Case'])
+            cons= hsc.at[e,'treatment_event'].CONS_FOOTPRINT
+
+            if not cons['Intervention_Package_Code']==[]:
+                for p in cons['Intervention_Package_Code']:
+                    items = consumables.loc[consumables['Intervention_Pkg_Code']==p,['Item_Code','Expected_Units_Per_Case']]
+                    consumables_used=consumables_used.append(items,ignore_index=True, sort=False).reset_index(drop=True)
+
+            if not cons['Item_Code']==[]:
+                for i in cons['Item_Code']:
+                    items = pd.DataFrame(data={'Item_Code':i , 'Expected_Units_Per_Case':1},index=[0])
+                    consumables_used = consumables_used.append(items, ignore_index=True, sort=False).reset_index(
+                        drop=True)
+
+            if len(consumables_used)>0:
+                logger.info('%s|Consumables|%s',
+                        self.sim.date,consumables_used.to_dict())
 
             # update status of this heath resource call
             hsc.at[e, 'status'] = 'Done'
@@ -607,9 +654,11 @@ class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = treatment_id
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_footprint = self.sim.modules['HealthSystem'].get_blank_footprint(self)
-        the_footprint['Over5OPD'] = 1  # This requires one out patient
-        self.FOOTPRINT = the_footprint
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        self.APPT_FOOTPRINT = the_appt_footprint
+
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
 
         # Check that this is correctly specified interaction
         assert person_id in self.sim.population.props.index
