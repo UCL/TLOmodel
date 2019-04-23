@@ -204,6 +204,10 @@ class HealthSystem(Module):
 
         # 3) That is has a dictionary for the consumables needed in the right format
         assert 'CONS_FOOTPRINT' in dir(treatment_event)
+
+        assert type(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'])==list
+        assert type(treatment_event.CONS_FOOTPRINT['Item_Code'])==list
+
         consumables=self.parameters['Consumables']
         assert ( treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(consumables['Intervention_Pkg_Code']))
         assert ( treatment_event.CONS_FOOTPRINT['Item_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
