@@ -6,7 +6,9 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, mockitis, qaly
+from tlo.methods import demography, healthsystem, lifestyle, mockitis, qaly, chronicsyndrome
+
+# [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
 # Where will output go
 outputpath = ''
@@ -36,10 +38,11 @@ logging.getLogger().addHandler(fh)
 
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
+# ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed.
 # (This can be set to 'all' or 'none'; and it will allow any treatment_id that begins with a stub)
-
-service_availability = list(['Mockitis*','ChronicSyndrome*'])
+service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+# -----------------------------------------------------------------
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -47,7 +50,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, servic
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
-# sim.register(chronicsyndrome.ChronicSyndrome())
+sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)

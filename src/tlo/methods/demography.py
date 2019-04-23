@@ -4,6 +4,7 @@ The core demography module and its associated events.
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
+
 import logging
 import math
 import os
