@@ -311,6 +311,7 @@ class Depression(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # todo: amend this below when identifid data
         # Define the footprint for the intervention on the common resources
         footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
             'Name': Depression.TREATMENT_ID,
@@ -340,6 +341,7 @@ class Depression(Module):
         df.at[child_id, 'de_on_antidepr'] = False
         df.at[child_id, 'de_ever_depr'] = False
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
+        df.at[child_id, 'de_disability'] = 0
 
 
     def query_symptoms_now(self):
