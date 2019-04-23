@@ -173,45 +173,6 @@ class Epilepsy(Module):
         df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
         df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
 
-        """
-
-        # logging
-
-        n_alive = df.is_alive.sum()
-        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
-        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
-
-        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
-        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
-        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
-        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
-
-        n_epi_death = df.ep_epi_death.sum()
-
-        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive
-        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive
-        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive
-        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive
-
-        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0
-        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1
-        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
-        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
-
-        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
-
-        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
-                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
-                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s',
-                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
-                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
-                    prop_antiepilep_seiz_stat_3, n_epi_death
-                    )
-
-        """
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -231,6 +192,7 @@ class Epilepsy(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+        # todo: amend this below when identifid data
         # Define the footprint for the intervention on the common resources
         footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
             'Name': Epilepsy.TREATMENT_ID,
@@ -256,11 +218,13 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_seiz_stat'] = 0
         df.at[child_id, 'ep_antiep'] = False
         df.at[child_id, 'ep_epi_death'] = False
+        df.at[child_id, 'ep_disability'] = 0
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
         # And report it on the unified symptomology scale
+
 #       logger.debug("This is Epilepsy being asked to report unified symptomology")
 
         # Map the specific symptoms for this disease onto the unified coding scheme
@@ -271,7 +235,7 @@ class Epilepsy(Module):
 
 #       return df.loc[df.is_alive, 'ep_unified_symptom_code']
 
-        return pd.Series('1', index = df.index[df.is_alive])
+        return pd.Series('1', index=df.index[df.is_alive])
 
     def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
@@ -288,17 +252,9 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        p = self.parameters
+        disability_series = df.de_disability
 
-#       health_values = df.loc[df.is_alive, 'ep_unified_symptom_code'].map({
-#           '0': 0,
-#           '1': 0.9,  # todo create parameter for this value - ask qaly module
-#           '2': 0.3,
-#           '3': 0.2
-#       })
-#       return health_values.loc[df.is_alive]
-
-        return pd.Series(0.5, index=df.index[df.is_alive])
+        return disability_series
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
