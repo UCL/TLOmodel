@@ -487,9 +487,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_antidepr'] = False
         dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
 
-#       df.loc[depr_not_on_antidepr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
-
-        dont_start_antidepr_this_period_idx = dfx.index[~dfx.x_antidepr]
         start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
 
         # create a df with one row per person needing to start treatment - this is only way I have

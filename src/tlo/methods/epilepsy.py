@@ -252,7 +252,7 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_series = df.de_disability
+        disability_series = df.ep_disability
 
         return disability_series
 
@@ -307,6 +307,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # set ep_epi_death back to False after death
         df.loc[~df.is_alive, 'ep_epi_death'] = False
+        df['ep_disability'] = 0
 
         # update ep_seiz_stat for people ep_seiz_stat = 0
 
@@ -423,12 +424,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
 
+        # x_ep_antiep is whether requests health system for treatment to start
         dfx['x_ep_seiz_stat'] = '3'
         dfx.loc[(dfx.eff_prob_seiz_stat_2 > random_draw_01), 'x_ep_seiz_stat'] = '2'
 
         df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
-
-        # todo: add treatment event
 
         # update ep_antiep if ep_seiz_stat = 2
 
@@ -448,12 +448,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-        # todo: need / should have this line below ?
-        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
-
-        for person_id in dfx.index[dfx.x_ep_antiep]:
-            df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
-
         # update ep_antiep if ep_seiz_stat = 3
 
         alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
@@ -471,13 +465,23 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
-#       df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+        # start on treatment if health system has capacity
 
-        # check if this code being only applied to indices intended - may need t adopt same code as in depression
-        # program
+        start_antiep_this_period_idx = dfx.index[dfx.x_ep_antiep]
 
-        for person_id in dfx.index[dfx.x_ep_antiep]:
-            df.ep_antiep = self.sim.modules['HealthSystem'].query_access_to_service(person_id, TREATMENT_ID)
+        # create a df with one row per person needing to start treatment - this is only way I have
+        # managed to get query access to service code to work properly here (should be possible to remove
+        # relevant rows from dfx rather than create dfxx
+        e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
+        e2 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
+        dfxx = pd.concat([e1, e2], axis=1)
+        dfxx.columns = ['start_antiep_this_period', 'e2']
+
+        # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
+        for index in dfxx:
+            dfxx['gets_trt'] = self.sim.modules['HealthSystem'].query_access_to_service(index, TREATMENT_ID)
+
+        df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
@@ -550,6 +554,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'),
                                     self.sim.date)
 
+
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -586,14 +591,17 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
         prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
 
+        cum_deaths = (~df.is_alive).sum()
+
         #       logger.info('%s,%s,', self.sim.date, n_epi_death)
 
         logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
                     'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
-                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s',
+                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
+                    'cum_deaths|%s',
                     self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
                     prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
-                    prop_antiepilep_seiz_stat_3, n_epi_death
+                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths
                     )
 
 
