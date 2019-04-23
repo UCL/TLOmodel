@@ -444,7 +444,7 @@ class Mockitis_StartTreatment_TreatmentEvent(Event, IndividualScopeEventMixin):
         item_code2 = pd.unique(consumables.loc[consumables['Items']=='Underpants','Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code' : [pkg_code1,pkg_code2] ,
+            'Intervention_Package_Code' : [pkg_code1, pkg_code2] ,
             'Item_Code' : [item_code1, item_code2]
         }
         self.CONS_FOOTPRINT = the_cons_footprint
