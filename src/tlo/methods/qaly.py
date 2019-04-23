@@ -103,7 +103,7 @@ class LogQALYs(RegularEvent, PopulationScopeEventMixin):
 #           assert (~pd.isnull(out)).all()
 #           assert ((out>=0) & (out<=1)).all()
             assert self.sim.population.props.index.name==out.index.name
-            assert self.sim.population.props.is_alive[out.index].all()
+#           assert self.sim.population.props.is_alive[out.index].all()
 
             # Add to dataframe
             # (each column of this dataframe gives the reports from each module the HealthState)
