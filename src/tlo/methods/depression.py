@@ -292,60 +292,6 @@ class Depression(Module):
 
         df.loc[depr_idx, 'de_disability'] = 0.49
 
-        # logging - this should be as logging below,
-        # so that logging is done at time 0 as well as over time
-
-        n_ge15 = (df.is_alive & (df.age_years >= 15)).sum()
-        n_ge45 = (df.is_alive & (df.age_years >= 45)).sum()
-        n_ge15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
-        n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
-        n_age_50 = (df.is_alive & (df.age_years >= 49) & (df.age_years < 52)).sum()
-        n_depr = (df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
-        n_depr_ge45 = (df.de_depr & df.is_alive & (df.age_years >= 45)).sum()
-        n_ge15_m_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M') & df.de_depr).sum()
-        n_ge15_f_depr = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F') & df.de_depr).sum()
-
-        n_ever_depr = (df.de_ever_depr & df.is_alive & (df.age_years >= 15)).sum()
-        n_not_depr = (~df.de_depr & df.is_alive & (df.age_years >= 15)).sum()
-        n_antidepr = (df.is_alive & df.de_on_antidepr & (df.age_years >= 15)).sum()
-        n_antidepr_depr = (df.is_alive & df.de_on_antidepr & df.de_depr & (df.age_years >= 15)).sum()
-        n_antidepr_not_depr = (df.is_alive & df.de_on_antidepr & ~df.de_depr & (df.age_years >= 15)).sum()
-        n_antidepr_ever_depr = (df.is_alive & df.de_on_antidepr & df.de_ever_depr & (df.age_years >= 15)).sum()
-        n_age_50_ever_depr = (df.is_alive & (df.age_years >= 49) & (df.age_years < 52)
-                              & df.de_ever_depr).sum()
-        suicides_this_3m = (df.de_suicide).sum()
-        self_harm_events_this_3m = (df.de_non_fatal_self_harm_event).sum()
-
-        prop_depr = n_depr / n_ge15
-        prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
-        prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
-        prop_depr_ge45 = n_depr_ge45 / n_ge45
-        prop_ever_depr = n_ever_depr / n_ge15
-        prop_antidepr_depr = n_antidepr_depr / n_depr
-        prop_antidepr_not_depr = n_antidepr_not_depr / n_not_depr
-        prop_antidepr = n_antidepr / n_ge15
-        prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
-        prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
-
-        """
-        logger.info('%s|de_depr|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby('de_depr').size().to_dict())
-        """
-
-        #       logger.info('%s,%s,', self.sim.date, suicides_this_3m)
-
-        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
-                    'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
-                    '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
-                    self.sim.date,
-                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
-                    prop_antidepr_ever_depr, prop_ge15_m_depr, prop_ge15_f_depr, prop_age_50_ever_depr,
-                    prop_depr_ge45,
-                    suicides_this_3m, self_harm_events_this_3m)
-
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -360,7 +306,7 @@ class Depression(Module):
         sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
 
         event = DepressionLoggingEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=3))
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)

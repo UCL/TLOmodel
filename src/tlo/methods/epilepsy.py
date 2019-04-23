@@ -10,7 +10,7 @@ import random
 # todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 # logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
@@ -85,7 +85,9 @@ class Epilepsy(Module):
         'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
         'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
         'ep_unified_symptom_code': Property(Types.CATEGORICAL, '',
-                                            categories=['0', '1', '2', '3'])
+                                            categories=['0', '1', '2', '3']),
+        'ep_disability': Property(
+            Types.REAL, 'disability weight for current 3 month period')
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
@@ -143,6 +145,7 @@ class Epilepsy(Module):
         df['ep_seiz_stat'] = '0'
         df['ep_antiep'] = False
         df['ep_epi_death'] = False
+        df['ep_disability'] = 0
 
         # allocate initial ep_seiz_stat
         alive_idx = df.index[df.is_alive]
@@ -163,6 +166,51 @@ class Epilepsy(Module):
         seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
         random_draw = self.rng.random_sample(size=len(seiz_stat_3_idx))
         df.loc[seiz_stat_3_idx, 'ep_antiep'] = (random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_3'])
+
+        # disability
+
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.07
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
+
+        """
+
+        # logging
+
+        n_alive = df.is_alive.sum()
+        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
+
+        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
+        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
+        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
+        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
+
+        n_epi_death = df.ep_epi_death.sum()
+
+        prop_seiz_stat_0 = n_seiz_stat_0 / n_alive
+        prop_seiz_stat_1 = n_seiz_stat_1 / n_alive
+        prop_seiz_stat_2 = n_seiz_stat_2 / n_alive
+        prop_seiz_stat_3 = n_seiz_stat_3 / n_alive
+
+        prop_antiepilep_seiz_stat_0 = n_antiepilep_seiz_stat_0 / n_seiz_stat_0
+        prop_antiepilep_seiz_stat_1 = n_antiepilep_seiz_stat_1 / n_seiz_stat_1
+        prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
+        prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
+
+        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
+
+        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
+                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
+                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s',
+                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
+                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
+                    prop_antiepilep_seiz_stat_3, n_epi_death
+                    )
+
+        """
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -513,6 +561,16 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[alive_seiz_stat_1_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
 
+        # disability
+
+        seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.07
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
+
         # update ep_epi_death
 
         alive_seiz_stat_2_or_3_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
@@ -536,7 +594,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'),
                                     self.sim.date)
 
-
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -550,18 +607,18 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        n_alive = (df.is_alive).sum()
-        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
-        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
-        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
-        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
+        n_alive = df.is_alive.sum()
+        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2') & df.ep_antiep).sum()
+        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3') & df.ep_antiep).sum()
 
-        n_antiepilep_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
-        n_antiepilep_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
-        n_antiepilep_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
-        n_antiepilep_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
+        n_seiz_stat_0 = (df.is_alive & (df.ep_seiz_stat == '0')).sum()
+        n_seiz_stat_1 = (df.is_alive & (df.ep_seiz_stat == '1')).sum()
+        n_seiz_stat_2 = (df.is_alive & (df.ep_seiz_stat == '2')).sum()
+        n_seiz_stat_3 = (df.is_alive & (df.ep_seiz_stat == '3')).sum()
 
-        n_epi_death = (df.ep_epi_death).sum()
+        n_epi_death = df.ep_epi_death.sum()
 
         prop_seiz_stat_0 = n_seiz_stat_0 / n_alive
         prop_seiz_stat_1 = n_seiz_stat_1 / n_alive
@@ -573,13 +630,12 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
         prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
 
+        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
 
-#       logger.info('%s,%s,', self.sim.date, n_epi_death)
-
-        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%sprop_seiz_stat_2|%s|'
+        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
                     'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
                     'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s',
-                    self.sim.date,prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
+                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
                     prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
                     prop_antiepilep_seiz_stat_3, n_epi_death
                     )
