@@ -242,10 +242,10 @@ class ChronicSyndrome(Module):
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
 
-            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
-                                                            priority=0,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+            # self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+            #                                                 priority=0,
+            #                                                 topen=self.sim.date,
+            #                                                 tclose=None)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
@@ -384,7 +384,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
 
 
     def apply(self, person_id):
-        logger.debug("We are now ready to treat this person %d", person_id)
+        logger.debug("This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d", person_id)
 
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
