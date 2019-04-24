@@ -222,6 +222,10 @@ class Mockitis(Module):
             df.at[child_id, 'mi_unified_symptom_code'] = 0
 
     def on_healthsystem_interaction(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+
         logger.debug('This is Mockitis, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
