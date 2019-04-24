@@ -95,6 +95,7 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
+        self.end_date = end_date # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
         while self.event_queue:
