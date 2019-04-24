@@ -221,10 +221,9 @@ class Mockitis(Module):
             df.at[child_id, 'mi_specific_symptoms'] = 'none'
             df.at[child_id, 'mi_unified_symptom_code'] = 0
 
-    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+    def on_healthsystem_interaction(self, person_id, treatment_id):
         logger.debug('This is Mockitis, being alerted about a health system interaction '
-                     'person %d triggered by cue_type: %s , disease_specific: %s', person_id, cue_type,
-                     disease_specific)
+                     'person %d for: %s', person_id, treatment_id)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over

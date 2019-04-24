@@ -232,7 +232,7 @@ class HealthSystem(Module):
                          treatment_event.TREATMENT_ID)
 
 
-    def broadcast_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+    def broadcast_healthsystem_interaction(self, person_id, treatment_id, exclude_module_name=None):
 
         # person_id, cue_type = None, disease_specific = None
         df = self.sim.population.props
@@ -244,9 +244,9 @@ class HealthSystem(Module):
             registered_disease_modules = self.registered_disease_modules
 
             for module in registered_disease_modules.values():
-                module.on_healthsystem_interaction(person_id,
-                                                   cue_type=cue_type,
-                                                   disease_specific=disease_specific)
+                if not module.name == exclude_module_name:
+                    module.on_healthsystem_interaction(person_id=person_id,
+                                                       treatment_id=treatment_id)
 
     def GetCapabilities(self):
 
@@ -473,8 +473,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hsc.at[e, 'treatment_event'].run()
 
             # if individual level event, broadcast to other disease modules that this event is occurring
+            # (exclude the module that originated this HSI)
             if type(hsc.at[e,'treatment_event'].target) is int:
-                self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
+                self.module.broadcast_healthsystem_interaction(person_id=hsc.at[e,'treatment_event'].target,
+                                                               treatment_id=hsc.at[e,'treatment_event'].TREATMENT_ID,
+                                                               exclude_module_name=hsc.at[e,'treatment_event'].module.name)
 
             # Log that these resources were used
             # Appointments:
@@ -580,5 +583,5 @@ class HSI_Outreach_Event(Event, PopulationScopeEventMixin):
         for person_id in df.index[df.is_alive]:
             if self.target_fn(person_id):
                 for d in self.diseases:
-                    self.sim.modules['HealthSystem'].registered_disease_modules[d].on_healthsystem_interaction(person_id)
+                    self.sim.modules['HealthSystem'].registered_disease_modules[d].on_healthsystem_interaction(person_id,self.TREATMENT_ID)
 
