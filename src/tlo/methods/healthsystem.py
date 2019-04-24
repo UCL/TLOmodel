@@ -78,7 +78,11 @@ class HealthSystem(Module):
 
         'Consumables':
             Parameter(Types.DATA_FRAME,
-                      'List of consumables used in each intervention and their costs.')
+                      'List of consumables used in each intervention and their costs.'),
+
+        'Consumables_Cost_List':
+            Parameter(Types.DATA_FRAME,
+                      'List of each consumable item and it''s cost')
 
     }
 
@@ -117,6 +121,10 @@ class HealthSystem(Module):
         self.parameters['Consumables'] = pd.read_csv(
             os.path.join(self.resourcefilepath, 'ResourceFile_Consumables.csv')
         )
+
+        self.parameters['Consumables_Cost_List']=(self.parameters['Consumables'][['Item_Code','Unit_Cost']])\
+            .drop_duplicates().reset_index(drop=True)
+
 
     def initialise_population(self, population):
         df = population.props
@@ -466,31 +474,43 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
 
             # Consumables
+
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             consumables_used = pd.DataFrame(columns=['Item_Code','Expected_Units_Per_Case'])
             cons= hsc.at[e,'treatment_event'].CONS_FOOTPRINT
 
+            # Get the individual items in each package:
             if not cons['Intervention_Package_Code']==[]:
                 for p in cons['Intervention_Package_Code']:
                     items = consumables.loc[consumables['Intervention_Pkg_Code']==p,['Item_Code','Expected_Units_Per_Case']]
                     consumables_used=consumables_used.append(items,ignore_index=True, sort=False).reset_index(drop=True)
 
+            # Add in any additional items specified:
             if not cons['Item_Code']==[]:
                 for i in cons['Item_Code']:
                     items = pd.DataFrame(data={'Item_Code':i , 'Expected_Units_Per_Case':1},index=[0])
                     consumables_used = consumables_used.append(items, ignore_index=True, sort=False).reset_index(
                         drop=True)
 
-            # do a groupby for the different consumables
-            print("hello")
-            # add in estimate of cost
-
-
 
             if len(consumables_used)>0:
+
+                # do a groupby for the different consumables (there could be repeats which need to be summed)
+                consumables_used=pd.DataFrame(consumables_used.groupby('Item_Code').sum())
+                consumables_used= consumables_used.rename(columns={'Expected_Units_Per_Case':'Units_By_Item_Code'})
+
+                # Get the the total cost of the consumables
+                consumables_used_with_cost=consumables_used.merge(self.module.parameters['Consumables_Cost_List'], how='left', on='Item_Code',
+                                       left_index=True)
+                TotalCost=(consumables_used_with_cost['Units_By_Item_Code']*consumables_used_with_cost['Unit_Cost']).sum()
+
+                # Enter to the log
+                log_consumables = consumables_used.to_dict()
+                log_consumables['TREATMENT_ID'] = hsc.at[e, 'treatment_event'].TREATMENT_ID
+                log_consumables['Total_Cost']=TotalCost
                 logger.info('%s|Consumables|%s',
                             self.sim.date,
-                            consumables_used.to_dict())
+                            log_consumables)
 
             # update status of this heath resource call
             hsc.at[e, 'status'] = 'Done'
