@@ -356,6 +356,9 @@ class HealthSystem(Module):
             * 2nd element: an updated version of current capabilities (unchanged in the case of the footprint not being able to be accomodated)
         """
 
+        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any().any()
+
+
         # Gather useful information
         df=self.sim.population.props
         mfl = self.parameters['Master_Facilities_List']
@@ -407,6 +410,18 @@ class HealthSystem(Module):
                                                              'Time_Taken']].copy().reset_index(drop=True)
                     time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
+
+            # -------------------------
+            # TODO: Issue here is theat the check at line 433 passes if the time_requested is empty (!)
+            # TODO:     and there may not be good logic supporting why some appts are not possible at some facility-levels
+
+            try:
+                assert len(time_requested)>0
+            except:
+                print('stop')
+
+            # -------------------------
+
             # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
             time_requested = pd.DataFrame(
                 time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
@@ -434,6 +449,7 @@ class HealthSystem(Module):
 
                 break  # cease looking at other facility_types if the need has been met
 
+        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any().any()
 
         rtn_tuple = (can_do_footprint, current_capabilities)
         return(rtn_tuple)
@@ -507,9 +523,9 @@ class HealthSystem(Module):
         """
         # Log the current state of resource use
 
-        X=current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Used_Today']].sum()
+        X=current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Remaining_Today']].sum()
         X=X.merge(self.parameters['Master_Facilities_List'][['Facility_ID','Facility_Name']], how='left', left_index=True, right_on='Facility_ID')
-        X['Fraction_Time_Used']=X['Minutes_Used_Today'] / X['Total_Minutes_Per_Day']
+        X['Fraction_Time_Used']=1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
         X=X[['Facility_Name','Fraction_Time_Used']]
         X.index=X['Facility_Name']
         X=X.drop(columns='Facility_Name')
@@ -552,8 +568,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Get the total Capabilities for Appts for today
         current_capabilities = self.module.GetCapabilities()
 
-        # Add column for Minutes Used This Day (for live-tracking the use of those resources)
-        current_capabilities.loc[:, 'Minutes_Used_Today'] = 0
+        # Add column for Minutes Remaining Today (for live-tracking the use of those resources)
         current_capabilities.loc[:, 'Minutes_Remaining_Today'] = current_capabilities['Total_Minutes_Per_Day']
 
 
