@@ -23,6 +23,7 @@ class ChronicSyndrome(Module):
     - Registration of the disease module
     - Internal symptom tracking and health care seeking
     - Outreach campaign
+    - Piggy-backing appointments
     - Reading QALY weights and reporting qaly values related to this disease
     """
 
@@ -228,6 +229,23 @@ class ChronicSyndrome(Module):
                      'person %d for: %s', person_id, treatment_id)
 
 
+        # To simulate a "piggy-backing" appointment, whereby additional treatment and test are done
+        # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
+        # and set it to prioryty 0 to force it to happen.
+
+        if treatment_id == 'Mockitis_TreatmentMonitoring':
+            piggy_back_dx_at_appt= HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
+            piggy_back_dx_at_appt.TREATMENT_ID='ChronicSyndrome_PiggybackAppt'
+
+            # Arbitrarily reduce the size of appt footprint
+            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+
+
+            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+                                                            priority=0,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
