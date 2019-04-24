@@ -220,8 +220,13 @@ class ChronicSyndrome(Module):
 
 
     def on_healthsystem_interaction(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+
         logger.debug('This is ChronicSyndrome, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
+
 
 
     def report_qaly_values(self):
