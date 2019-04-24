@@ -1,7 +1,5 @@
 """
-This module stands in for the "Health System" in the current implementation of the module
-It is used to control access to interventions
-It will be replaced by the Health Care Seeking Behaviour Module and the
+This is the Health System Module
 """
 import logging
 import os
@@ -10,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -169,9 +167,9 @@ class HealthSystem(Module):
 
             #TODO: Check that the module being registered has the neccessary components.
 
-    def schedule_event(self, treatment_event, priority, topen, tclose):
+    def schedule_event(self, treatment_event, priority, topen, tclose=None):
 
-        logger.info('HealthSystem.schedule_event>>Logging a request for a treatment_event: %s for person: %d',
+        logger.debug('HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
                     treatment_event.TREATMENT_ID, treatment_event.target)
 
         # get population dataframe
@@ -214,6 +212,10 @@ class HealthSystem(Module):
                     if treatment_event.TREATMENT_ID.startswith(stub):
                         allowed=True
                         break
+
+        # If there is no specified tclose time then set this is after the end of the simulation
+        if (tclose==None) :
+            tclose=self.sim.end_date+DateOffset(days=1)
 
         # If it is allowed then add this request to the queue of HEALTH_SYSTEM_CALLS
         if allowed:
@@ -378,90 +380,101 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             due_events['Time_Since_Opened'] = self.sim.date - due_events['topen']
             due_events.sort_values(['priority', 'Time_Since_Opened'])
 
+
             # Loop through the events (in order of priority) and runs those which can happen
             for e in due_events.index:
 
-                # This is a treatment_event:
-                the_person_id = hsc.at[e, 'treatment_event'].target
-                the_treatment_event_name = hsc.at[e, 'treatment_event'].target
-                the_district = df.at[the_person_id, 'district_of_residence']
+                #Determine type of event (individual or population level)
+                if type(hsc.at[e,'treatment_event'].target) is int:
+                    # Individual-level event:
 
-                # sort the health_facilities on Facility_Level
-                the_health_facilities = fac_per_district.loc[fac_per_district['District'] == the_district]
-                the_health_facilities = the_health_facilities.sort_values(['Facility_Level'])
+                    # This is a treatment_event:
+                    the_person_id = hsc.at[e, 'treatment_event'].target
+                    the_treatment_event_name = hsc.at[e, 'treatment_event'].target
+                    the_district = df.at[the_person_id, 'district_of_residence']
 
-                capabilities_of_the_health_facilities = capabilities.loc[
-                    capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
+                    # sort the health_facilities on Facility_Level
+                    the_health_facilities = fac_per_district.loc[fac_per_district['District'] == the_district]
+                    the_health_facilities = the_health_facilities.sort_values(['Facility_Level'])
 
-                the_treatment_footprint = hsc.at[e, 'treatment_event'].APPT_FOOTPRINT
+                    capabilities_of_the_health_facilities = capabilities.loc[
+                        capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
 
-                # Test if capabilities of health system can meet this request
-                # This requires there to be one facility that can fulfill the entire request (each type of appointment)
+                    the_treatment_footprint = hsc.at[e, 'treatment_event'].APPT_FOOTPRINT
 
-                # Loop through facilities to look for facilities
-                # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
-                #  at the lowest levels and work upwards successively).
-                for try_fac_id in the_health_facilities.Facility_ID.values:
+                    # Test if capabilities of health system can meet this request
+                    # This requires there to be one facility that can fulfill the entire request (each type of appointment)
 
-                    this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
+                    # Loop through facilities to look for facilities
+                    # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
+                    #  at the lowest levels and work upwards successively).
+                    for try_fac_id in the_health_facilities.Facility_ID.values:
 
-                    # Establish how much time is available at this facility
-                    time_available = capabilities_of_the_health_facilities.loc[
-                        capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
-                                                                                             'Minutes_Remaining_Today']]
+                        this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
 
-                    # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
-                    time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
-                    for this_appt in appt_types:
-                        if the_treatment_footprint[this_appt] > 0:
-                            time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
-                                                                    (appt_times['Facility_Level'] == this_facility_level),
-                                                                    ['Officer_Type_Code',
-                                                                     'Time_Taken']].copy().reset_index(drop=True)
-                            time_requested = pd.concat([time_requested, time_req_for_this_appt])
+                        # Establish how much time is available at this facility
+                        time_available = capabilities_of_the_health_facilities.loc[
+                            capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
+                                                                                                 'Minutes_Remaining_Today']]
 
-                    # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
-                    time_requested = pd.DataFrame(
-                        time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
-                    time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
+                        # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
+                        time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
+                        for this_appt in appt_types:
+                            if the_treatment_footprint[this_appt] > 0:
+                                time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
+                                                                        (appt_times['Facility_Level'] == this_facility_level),
+                                                                        ['Officer_Type_Code',
+                                                                         'Time_Taken']].copy().reset_index(drop=True)
+                                time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
-                    # merge the Minutes_Available at this facility with the minutes required in the footprint
-                    comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
-                                                      indicator=True)
+                        # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
+                        time_requested = pd.DataFrame(
+                            time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
+                        time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
 
-                    # check if all the needs are met by this facility
-                    if all(comparison['_merge'] == 'both') & all(
-                        comparison['Minutes_Remaining_Today'] > comparison['Time_Taken']):
+                        # merge the Minutes_Available at this facility with the minutes required in the footprint
+                        comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
+                                                          indicator=True)
 
-                        # flag the event to run
-                        hsc.at[e, 'status'] = 'Run_Today'
+                        # check if all the needs are met by this facility
+                        if all(comparison['_merge'] == 'both') & all(
+                            comparison['Minutes_Remaining_Today'] > comparison['Time_Taken']):
 
-                        # impose the footprint:
-                        for this_officer_type in officer_type_codes:
-                            capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) & (capabilities[
-                                                                                                'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                                capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) &
-                                                 (capabilities[
-                                                      'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
-                                - time_requested.loc[
-                                    time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken']
+                            # flag the event to run
+                            hsc.at[e, 'status'] = 'Run_Today'
 
-                        break  # cease looking at other facility_types if the need has been met
+                            # impose the footprint:
+                            for this_officer_type in officer_type_codes:
+                                capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) & (capabilities[
+                                                                                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                    capabilities.loc[(capabilities['Facility_ID'] == try_fac_id) &
+                                                     (capabilities[
+                                                          'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
+                                    - time_requested.loc[
+                                        time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken']
+
+                            break  # cease looking at other facility_types if the need has been met
+                else:
+                    # Population level event
+                    # TODO: Gating based on the population level event,
+                    # For now, let all run
+                    hsc.at[e,'status']='Run_Today'
+
 
         # Execute the events that have been flagged for running today
         for e in hsc.loc[hsc['status'] == 'Run_Today'].index:
             logger.debug(
-                'HealthSystemScheduler>> Running event: date: %s, person: %d, treatment: %s',
+                'HealthSystemScheduler>> Running event: date: %s, treatment: %s',
                 self.sim.date,
-                the_person_id,
-                the_treatment_event_name
+                hsc.at[e,'treatment_event'].TREATMENT_ID
             )
 
             # fire the event
             hsc.at[e, 'treatment_event'].run()
 
-            # broadcast to other disease modules that this event is occuring
-            self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
+            # if individual level event, broadcast to other disease modules that this event is occurring
+            if type(hsc.at[e,'treatment_event'].target) is int:
+                self.module.broadcast_healthsystem_interaction(person_id=the_person_id)
 
             # Log that these resources were used
             # Appointments:
@@ -473,8 +486,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         appts_trimmed)
 
 
-            # Consumables
-
+            # Consumables:
             consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
             consumables_used = pd.DataFrame(columns=['Item_Code','Expected_Units_Per_Case'])
             cons= hsc.at[e,'treatment_event'].CONS_FOOTPRINT
@@ -518,128 +530,55 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
 
 
+# --------- OUTREACH EVENT -----
+class HSI_Outreach_Event(Event, PopulationScopeEventMixin):
+
+    """
+    This is a Health System Interaction Event.
+
+    This event can be used to simulate the occurrence of an 'outreach' intervention such as population screening.
+
+    It is associated with its own resource footprint and triggers an on_healthsystem_interaction() call for each
+    disease module and each person that is specified. Disease modules that are so notified can determine what to do.
+
+    Arguments are:
+        * diseases: a list of the names of the registered disease modules to be notified when the event occurs
+        * target_fn: a function that is used to construct the mask on the population.props data frame to determine who receives the outreach
+
+    """
+
+    def __init__(self, module: HealthSystem, diseases, target_fn):
+        super().__init__(module)
+
+        logger.debug('Outreach event being created.')
 
 
+        # Check the arguments that have been passed are OK:
 
+        # Check that diseases contains registered disease modules:
+        assert type(diseases) is list
+        for d in diseases:
+            assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
 
-class OutreachEvent(Event, PopulationScopeEventMixin):
-    pass
+        # Check that the function works and returns a bool
+        assert type(target_fn(0)) is bool
 
-    # """
-    # * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
-    #
-    # This event can be used to simulate the occurrence of an 'outreach' intervention such as screening.
-    # It commissions new interactions with the Health System for those persons reach. It receives an arguement 'target'
-    # which is a pd.Series (of length alive persons and with the index of the population dataframe) that shows who is
-    # reached in the outreach intervention. It does not automatically reschedule. The disease_specific argument determines
-    # the type of interaction that is triggered: if disease_specific = None, thee resulting HealthSystemInteractionEvents
-    # will have disease_specific=None; if disease_specific is set to a registered disease module name, this will be passed
-    # to the resulting HealthSystemInteractionEvents.
-    # NB. A known issue is that if this event is scheduled into the future, then persons that are born into the population
-    # after the event is defined will not benefit from the outreach intervention.
-    # """
-    #
-    # # TODO: Would like to create event and give rules for persons to be included/exlcuded that are evaluated when the event is run.
-    #
-    # def __init__(self, module, disease_specific=None, target=pd.Series(dtype=bool)):
-    #     super().__init__(module)
-    #
-    #     logger.debug('Outreach event being created. Type: %s, %s', disease_specific)
-    #
-    #     # Check the arguments that have been passed:
-    #     assert (disease_specific == None) or (
-    #             disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
-    #     assert type(target) is pd.Series
-    #     assert len(target) == self.sim.population.props.is_alive.sum()
-    #     assert self.sim.population.props.index.name == target.index.name
-    #     assert self.sim.population.props.is_alive[target.index].all()
-    #     assert (~pd.isnull(target)).all()
-    #
-    #     self.disease_specific = disease_specific
-    #     self.target = target
-    #
-    # def apply(self, population):
-    #
-    #     logger.debug('Outreach event running now')
-    #
-    #     target_indicies = self.target.index
-    #
-    #     # Schedule a first appointment for each person for this disease only
-    #     for person_id in target_indicies:
-    #
-    #         if self.sim.population.props.at[person_id, 'is_alive']:
-    #             event = HealthSystemInteractionEvent(self.module, person_id,
-    #                                                  cue_type='OutreachEvent',
-    #                                                  disease_specific=self.disease_specific)
-    #
-    #             self.sim.schedule_event(event, self.sim.date)
-    #
-    #     # Log the occurrence of the outreach event
-    #     logger.info('%s|outreach_event|%s', self.sim.date,
-    #                 {
-    #                     'disease_specific': self.disease_specific
-    #                 })
+        self.diseases=diseases
+        self.target_fn = target_fn
 
-#
-# class HealthSystemInteractionEvent(Event, IndividualScopeEventMixin):
-#     """
-#     * THIS EVENT CAN ONLY BE SCHEDULED BY HealthSystemScheduler()
-#
-#     This is the generic interaction between the person and the health system.
-#     All actual interactions between a person and the health system happen here.
-#
-#     It can be created by the HealthCareSeekingPoll, OutreachEvent or a DiseaseModule itself,
-#     but can only be scheduled by the HealthSystemScheduler().
-#
-#     When fired, this event broadcasts details of the interaction to all registered disease modules by calling
-#     the 'on_healthsystem_interaction' in each. It passes, the information about the type of interaction
-#     (cue_type and disease type) that have been received.
-#     * cue_type is the type of event that has caused this interaction.
-#     * disease_specific is the name of a disease module (or None) that is linked to this interaction.
-#     It logs the interaction and imposes any health system constraint that may exist.
-#     the calls for resources.
-#     """
-#
-#     def __init__(self, module, person_id, cue_type=None, disease_specific=None, treatment_id=None):
-#         super().__init__(module, person_id=person_id)
-#         self.cue_type = cue_type
-#         self.disease_specific = disease_specific
-#         self.TREATMENT_ID = treatment_id
-#
-#         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-#         self.APPT_FOOTPRINT = the_appt_footprint
-#
-#         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-#
-#         # Check that this is correctly specified interaction
-#         assert person_id in self.sim.population.props.index
-#         assert self.cue_type in ['HealthCareSeekingPoll', 'OutreachEvent', 'InitialDiseaseCall', 'FollowUp', None]
-#         assert (self.disease_specific == None) or (
-#             self.disease_specific in self.sim.modules['HealthSystem'].registered_disease_modules.keys())
-#
-#     def apply(self, person_id):
-#         logger.debug('@@@ An interaction with the health system')
-#
-#         df = self.sim.population.props
-#
-#         if df.at[person_id, 'is_alive']:
-#
-#             # For each disease module, trigger the on_healthsystem_interaction() event
-#
-#             registered_disease_modules = self.sim.modules['HealthSystem'].registered_disease_modules
-#
-#             for module in registered_disease_modules.values():
-#                 module.on_healthsystem_interaction(person_id,
-#                                                    cue_type=self.cue_type,
-#                                                    disease_specific=self.disease_specific)
-#
-#             # 4. Log the occurrence of this interaction with the health system
-#             logger.info('%s|InteractionWithHealthSystem|%s',
-#                         self.sim.date,
-#                         {
-#                             'person_id': person_id,
-#                             'cue_type': self.cue_type,
-#                             'disease_specific': self.disease_specific
-#                         })
+        # Define the necessary information for an HSI
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'Outreach_Event'
+        self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+
+    def apply(self, population):
+
+        logger.debug('Outreach event running now')
+
+        df=self.sim.population.props
+        for person_id in df.index[df.is_alive]:
+            if self.target_fn(person_id):
+                for d in self.diseases:
+                    self.sim.modules['HealthSystem'].registered_disease_modules[d].on_healthsystem_interaction(person_id)
+

@@ -8,10 +8,11 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import healthsystem
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class ChronicSyndrome(Module):
@@ -21,6 +22,7 @@ class ChronicSyndrome(Module):
     - Declaration of TREATMENT_ID
     - Registration of the disease module
     - Internal symptom tracking and health care seeking
+    - Outreach campaign
     - Reading QALY weights and reporting qaly values related to this disease
     """
 
@@ -173,6 +175,29 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
+
+        # -- Outreach Event Being Made And Scheduled --
+        # Create the outreach event intervention and put it in the health-system schedules
+        # First make the target_fn which will create a true/false mask for the population.props dataframe
+        # of people to include in this outrach event
+
+        def select(person_id):
+            person_id=int(person_id)
+            df=self.sim.population.props
+            return (df.at[person_id,'is_alive']) and (df.at[person_id,'sex']=='F')
+
+        # make the outreach event (let this disease module be alerted about it, and also Mockitis)
+        outreach_event = healthsystem.HSI_Outreach_Event(self,diseases=[self.name, 'Mockitis'], target_fn=select)
+
+        # Edit the outreach event's TREATMENT_ID to start with ChronicSyndrome so that it runs;
+        outreach_event.TREATMENT_ID='ChronicSyndrome_OutreachEvent'
+
+        date_for_outreach_event=self.sim.date + DateOffset(months=6)
+        self.sim.modules['HealthSystem'].schedule_event(outreach_event,
+                                                        priority=1,
+                                                        topen=date_for_outreach_event,
+                                                        tclose=None)
+        # -----------------------------
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -351,6 +376,10 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
             df.at[person_id, 'cs_date_cure'] = self.sim.date
             df.at[person_id, 'cs_specific_symptoms'] = 'none'
             df.at[person_id, 'cs_unified_symptom_code'] = 0
+
+
+
+
 
 
 # ---------------------------------------------------------------------------------

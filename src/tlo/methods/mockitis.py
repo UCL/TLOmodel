@@ -562,6 +562,8 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 #             outreachevent, priority=2, topen=self.sim.date, tclose=self.sim.date+DateOffset(days=1))
 
 
+
+
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'mockitis status'
