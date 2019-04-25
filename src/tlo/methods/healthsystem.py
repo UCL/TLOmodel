@@ -234,57 +234,6 @@ class HealthSystem(Module):
                          treatment_event.TREATMENT_ID)
 
 
-    def get_next_event_for_today(self):
-        """
-        This will return True if the event at the top of the HEALTH_SYSTEMS_CALLS queue is currently due.
-        It returns none if there is no event due by today (or earlier and not closed).
-        It will also remove any items from the queue that have expired (i.e. it it past their tclose time)
-        """
-
-        logger.debug('@@@@@ Doing get_next_event_for_today')
-
-        # Check that length is non-zero
-        if len(self.HEALTH_SYSTEM_CALLS) > 0:
-            top_event = self.HEALTH_SYSTEM_CALLS[0]
-            top_event_tclose = top_event[4]
-        else:
-            # There is nothing to run
-            return False
-
-        # Remove any events from the top of the queue that have expired
-        while ( (top_event_tclose < self.sim.date) and (len(self.HEALTH_SYSTEM_CALLS>0))  ):
-            hp.heappop(self.HEALTH_SYSTEM_CALLS)
-            top_event = self.HEALTH_SYSTEM_CALLS[0]
-            top_event_tclose = top_event[4]
-        # --------
-
-
-        # Check if the event at the top of the queue can be considered
-
-        if len(self.HEALTH_SYSTEM_CALLS)>0:
-
-            next_event_tuple= self.HEALTH_SYSTEM_CALLS[0]
-            next_event = dict({
-                'topen': next_event_tuple[0],
-                'priority': next_event_tuple[1],
-                'object': next_event_tuple[3],
-                'tclose': next_event_tuple[4]})
-
-            if next_event['topen'] <= self.sim.date:
-
-                # The top-event is due, so return True
-                return True
-
-            else:
-                # The next event in the queue is not yet due, so nothing to run
-                return None
-
-        else:
-            # There is nothing in the queue
-            return None
-
-
-
 
     def broadcast_healthsystem_interaction(self, person_id, treatment_id, exclude_module_name):
 
@@ -311,7 +260,7 @@ class HealthSystem(Module):
 
         capabilities = self.parameters['Daily_Capabilities']
 
-        return (capabilities)
+        return capabilities
 
     def get_blank_appt_footprint(self):
         """
@@ -356,8 +305,7 @@ class HealthSystem(Module):
             * 2nd element: an updated version of current capabilities (unchanged in the case of the footprint not being able to be accomodated)
         """
 
-        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any().any()
-
+        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
         # Gather useful information
         df=self.sim.population.props
@@ -449,7 +397,7 @@ class HealthSystem(Module):
 
                 break  # cease looking at other facility_types if the need has been met
 
-        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any().any()
+        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
         rtn_tuple = (can_do_footprint, current_capabilities)
         return(rtn_tuple)
@@ -546,8 +494,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     This event occurs every day, inspects the calls on the healthsystem and commissions event to occur that
     are consistent with the healthsystem's capabilities for the following day, given assumptions about how this
     decision is made.
+    Overall Prioritation algorithm is:
+        * ignore is topen is not yet
+        * remove and do nothing if tclose has expired
+        * if prioirty = 0 then run and log resource use
+        * if priority>0 then examine resource use and run/log accordingly
     At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
     """
+
 
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
@@ -571,37 +525,42 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Add column for Minutes Remaining Today (for live-tracking the use of those resources)
         current_capabilities.loc[:, 'Minutes_Remaining_Today'] = current_capabilities['Total_Minutes_Per_Day']
 
+        hold_over = list() # This heapq will hold events that cannot occur today before they are added back to the heapq
 
-        # Overall Prioritation algorithm is:
-        #       ignore is topen is not yet
-        #       remove and do nothing if tclose has expired
-        #       if prioirty = 0 then run and log resource use
-        #       if priority>0 then examine resource use and run/log accordingly
+        while len(self.module.HEALTH_SYSTEM_CALLS)>0 :
 
-        # Check if any events are due (by looking at date of first entry)
-        # (The first entry will have the oldest topen date and it's not yet due, no events will be due)
+            # Look at next event and stop if it is not due by today
+            # (The first entry will have the oldest topen date and it's not yet due, no events will be due)
 
+            if self.module.HEALTH_SYSTEM_CALLS[0][0] > self.sim.date:
+                break
 
-        # TODO: Currently, will get stuck if the event at the top of the heapq cannot be fulfilled
+            # Otherwise, pop the event:
+            next_event_tuple=hp.heappop(self.module.HEALTH_SYSTEM_CALLS)
 
-        while self.module.get_next_event_for_today():
-            # Checks if the event at the top of queue is eligible to run
+            next_event = dict({
+                'topen': next_event_tuple[0],
+                'priority': next_event_tuple[1],
+                'object': next_event_tuple[3],
+                'tclose': next_event_tuple[4]})
 
-            next_event_tuple= self.module.HEALTH_SYSTEM_CALLS[0]       # Gets the event at the top of the event queue
+            event = next_event['object']
 
-            event = next_event_tuple[3]
+            if next_event['tclose'] < self.sim.date:
+                # The event has expired, do nothing more
+                pass
 
+            elif type(event.target) is int:
+                # The event is eligible to run AND is a individual level event
+                # TODO: ** NB. population level events will not run **
 
-            if type(event.target) is int:
-                # Individual-level event:
-
-                # check if the HSI can run and apply the footprint if so
+                # check if the event can run
                 rtn_tuple = self.module.check_if_can_do_appt_footprint(event, current_capabilities=current_capabilities)
-
                 can_do_appt_footprint = rtn_tuple[0]
                 current_capabilities = rtn_tuple[1]
 
                 if can_do_appt_footprint:
+                    # The event will be run:
 
                     # Run the event
                     event.run()
@@ -616,20 +575,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     self.module.log_consumables_used(event)
                     self.module.log_appts_used(event)
 
-
                     # Pop the event off the heapq
                     hp.heappop(self.module.HEALTH_SYSTEM_CALLS)
 
-            else:
-                # Population level event
+                else:
+                    # The event will not be run and will be added back to the heapq
+                    hp.heappush(hold_over,next_event_tuple)
 
-                # TODO: Gating based on the population level event
-                # For now, let all run
 
-                event.run()
-                hp.heappop(self.module.HEALTH_SYSTEM_CALLS)
+        # Add back to the HEALTH_SYSTEM_CALLS heapq all those events which are eligible to run but which did not
+        while len(hold_over)>0 :
+            hp.heappush(self.module.HEALTH_SYSTEM_CALLS, hp.heappop(hold_over))
 
-        # After completing routine for the day, log total useage of the facilities
+        # After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
 
 
