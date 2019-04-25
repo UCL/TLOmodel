@@ -10,7 +10,7 @@ from tlo.methods import demography, healthsystem, lifestyle, qaly, hiv, \
     male_circumcision, hiv_behaviour_change, tb
 
 # Where will output go
-outputpath = './src/scripts/output logs/'
+outputpath = './src/scripts/outputLogs/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -50,17 +50,16 @@ service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
 service_availability['Service'] = service_availability.astype('object')
 service_availability['Available'] = service_availability.astype('bool')
 
-params = [0.2, 0.1, 0.05, 0.4, 0.5, 0.05]  # sample params for runs
+params = [0.2, 0.05]  # sample params for runs
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0], par_est1=params[1], par_est2=params[2],
-                     par_est3=params[3], par_est4=params[4]))
+sim.register(hiv.hiv(resourcefilepath=resourcefilepath, par_est=params[0]))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
-sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[5]))
+sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[1]))
 sim.register(hiv_behaviour_change.BehaviourChange())
 
 # Run the simulation and flush the logger

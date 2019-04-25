@@ -20,15 +20,10 @@ class hiv(Module):
     baseline hiv infection
     """
 
-    def __init__(self, name=None, resourcefilepath=None, par_est=None, par_est1=None, par_est2=None, par_est3=None,
-                 par_est4=None):
+    def __init__(self, name=None, resourcefilepath=None, par_est=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         self.beta_calib = par_est
-        self.testing_baseline_adult = par_est1
-        self.testing_baseline_child = par_est2
-        self.treatment_baseline_adult = par_est3
-        self.treatment_baseline_child = par_est4
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -124,8 +119,7 @@ class hiv(Module):
         'rr_testing_previously_positive': Parameter(Types.DATA_FRAME,
                                                     'relative change in testing if previously positive versus never tested'),
         'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
-        'testing_baseline_adult': Parameter(Types.REAL, 'baseline testing rate of adults'),
-        'testing_baseline_child': Parameter(Types.REAL, 'baseline testing rate of children'),
+
         'treatment_increase2016': Parameter(Types.REAL,
                                             'increase in treatment rates with eligibility guideline changes'),
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
@@ -269,11 +263,6 @@ class hiv(Module):
         if self.beta_calib:
             params['beta'] = float(self.beta_calib)
         # print('beta', params['beta'])
-
-        params['testing_baseline_adult'] = float(self.testing_baseline_adult)
-        params['testing_baseline_child'] = float(self.testing_baseline_child)
-        params['treatment_baseline_adult'] = float(self.treatment_baseline_adult)
-        params['treatment_baseline_child'] = float(self.treatment_baseline_child)
 
         params['hiv_prev'] = workbook['prevalence']  # for child prevalence
 
