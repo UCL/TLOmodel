@@ -20,26 +20,26 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 5000
+popsize = 2000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-# logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath + 'LogFile' + datestamp + '.log'
+
+if os.path.exists(logfile):
+    os.remove(logfile)
+fh = logging.FileHandler(logfile)
+fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+fh.setFormatter(fr)
+logging.getLogger().addHandler(fh)
 #
-# if os.path.exists(logfile):
-#     os.remove(logfile)
-# fh = logging.FileHandler(logfile)
-# fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-# fh.setFormatter(fr)
-# logging.getLogger().addHandler(fh)
-#
-# logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-# logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-# logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
-# logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-# logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
 
 params = [0.2, 0.05]  # sample params for runs
 
@@ -57,8 +57,8 @@ sim.register(hiv_behaviour_change.BehaviourChange())
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-# fh.flush()
-# fh.close()
+fh.flush()
+fh.close()
 #
 #
 # # %% read the results
