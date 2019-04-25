@@ -179,9 +179,9 @@ class ChronicSyndrome(Module):
 
         # -- Outreach Event Being Made And Scheduled --
         # Create the outreach event intervention and put it in the health-system schedules
+
         # First make the target_fn which will create a true/false mask for the population.props dataframe
         # of people to include in this outrach event
-
         def select(person_id):
             person_id=int(person_id)
             df=self.sim.population.props
