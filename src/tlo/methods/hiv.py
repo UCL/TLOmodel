@@ -747,7 +747,7 @@ class hiv(Module):
             if df.at[mother_id, 'hiv_on_art'] == 2:
                 df.at[child_id, 'hiv_mother_art'] = True
 
-        # ----------------------------------- MTCT -----------------------------------
+        # ----------------------------------- MTCT - PREGNANCY -----------------------------------
 
         #  TRANSMISSION DURING PREGNANCY / DELIVERY
         random_draw = self.sim.rng.random_sample(size=1)
@@ -775,6 +775,20 @@ class hiv(Module):
             and not df.at[child_id, 'hiv_inf'] \
             and (df.at[child_id, 'hiv_mother_art'] == '2'):
             df.at[child_id, 'hiv_inf'] = True
+
+        # ----------------------------------- PMTCT -----------------------------------
+        # TODO: PMTCT
+        # package offered on birth, mitigates risk of transmission during breastfeeding
+        if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
+            event = HSI_Hiv_PMTCT(self.module, person_id=child_id)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=4)
+                                                            )
+
+
+        # ----------------------------------- MTCT - BREASTFEEDING -----------------------------------
 
         #  TRANSMISSION DURING BREASTFEEDING
         # TODO: check if not on cotrim / NVP/AZT
@@ -830,13 +844,13 @@ class hiv(Module):
 
         # ----------------------------------- TESTING FOR INFANTS -----------------------------------
 
-        # if exposed to hiv through mother, schedule infant testing
-        if df.at[child_id, 'hiv_mother_inf']:
+        # if exposed to hiv through mother, schedule infant testing 4-6 weeks after birth
+        if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
             event = HSI_Hiv_InfantScreening(self.module, person_id=child_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(weeks=2)
+                                                            topen=self.sim.date + DateOffset(weeks=4),
+                                                            tclose=self.sim.date + DateOffset(weeks=8)
                                                             )
 
     # def query_symptoms_now(self):
@@ -1293,6 +1307,75 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
+# TODO: finish this - haven't check def apply arguments and footprints
+# TODO: add cotrim here?
+class HSI_Hiv_PMTCT(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event - PMTCT for infants of HIV+ mothers
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['PMTCT'] = 1  # This requires one infant hiv appt
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'PMTCT', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_PMTCT'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+
+    def apply(self, person_id):
+        logger.debug('This is HSI_Hiv_InfantScreening, a first appointment for infant %d', person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'hiv_ever_tested'] = True
+
+        # if hiv+ schedule treatment
+        # TODO: give cotrim also
+        # TODO: change properties for PMTCT - mother and child?
+        if df.at[person_id, 'hiv_inf']:
+            df.at[person_id, 'hiv_diagnosed'] = True
+
+            # request treatment
+            logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
+                         person_id, self.sim.date)
+
+            treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+            # Request the health system to start treatment
+            self.sim.modules['HealthSystem'].schedule_event(treatment,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+        # if hiv- then give cotrim + NVP/AZT
+        else:
+            # request treatment
+            logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
+                         person_id, self.sim.date)
+
+            treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
+
+            # Request the health system to start treatment
+            self.sim.modules['HealthSystem'].schedule_event(treatment,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
 
 class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
     """
@@ -1311,11 +1394,11 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         # TODO: get the correct consumables listing cotrim + NVP/AZT
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
+                                                  'Intervention_Pkg'] == 'Nevirapine, oral solution, 10 mg/ml', 'Intervention_Pkg_Code'])[
             0]
 
         item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Cotrimoxazole', 'Item_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1],
@@ -1359,13 +1442,9 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
             0]
 
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
+            'Item_Code': []
         }
 
         # Define the necessary information for an HSI
@@ -1407,7 +1486,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
 
         followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
 
-        # Request the heathsystem to have this follow-up appointment
+        # Request the health system to have this follow-up appointment
         for i in range(0, len(times)):
             followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
             self.sim.modules['HealthSystem'].schedule_event(followup_appt,
@@ -1426,7 +1505,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
 
         followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
-        # Request the heathsystem to have this follow-up appointment
+        # Request the health system to have this follow-up appointment
         self.sim.modules['HealthSystem'].schedule_event(followup_appt,
                                                         priority=2,
                                                         topen=date_repeat_prescription,
@@ -1434,11 +1513,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
                                                         )
 
 
-
-
-
 # TODO: check if CD4 counts done routinely
-# TODO: ART prescriptions every 90 days (every 6 months if stable?)
 class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment
@@ -1461,13 +1536,9 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
             0]
 
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
+            'Item_Code': []
         }
 
         # Define the necessary information for an HSI
