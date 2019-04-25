@@ -19,7 +19,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = 'resources/Demography_WorkingFile_Complete.xlsx'
+resourcefile_demography = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'
 
 
 # %% Run the Simulation

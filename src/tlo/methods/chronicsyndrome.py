@@ -51,7 +51,6 @@ class ChronicSyndrome(Module):
             Types.REAL, 'QALY weighting')
     }
 
-
     PROPERTIES = {
         'cs_has_cs': Property(
             Types.BOOL, 'Current status of mockitis'),
