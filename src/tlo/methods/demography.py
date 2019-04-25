@@ -17,7 +17,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -286,13 +286,13 @@ class Demography(Module):
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
         # Log the birth:
-        logger.info('%s|on_birth|%s',
-                    self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years']
-                    })
+        # logger.info('%s|on_birth|%s',
+        #             self.sim.date,
+        #             {
+        #                 'mother': mother_id,
+        #                 'child': child_id,
+        #                 'mother_age': df.at[mother_id, 'age_years']
+        #             })
 
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
@@ -509,21 +509,21 @@ class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         sex_count = df[df.is_alive].groupby('sex').size()
 
-        logger.info('%s|population|%s',
-                    self.sim.date,
-                    {
-                        'total': sum(sex_count),
-                        'male': sex_count['M'],
-                        'female': sex_count['F']
-                    })
+        # logger.info('%s|population|%s',
+        #             self.sim.date,
+        #             {
+        #                 'total': sum(sex_count),
+        #                 'male': sex_count['M'],
+        #                 'female': sex_count['F']
+        #             })
 
         # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
         # get the counts separately
         m_age_counts = df[df.is_alive & (df.sex == 'M')].groupby('age_range').size()
         f_age_counts = df[df.is_alive & (df.sex == 'F')].groupby('age_range').size()
 
-        logger.info('%s|age_range_m|%s', self.sim.date,
-                    m_age_counts.to_dict())
+        # logger.info('%s|age_range_m|%s', self.sim.date,
+        #             m_age_counts.to_dict())
 
-        logger.info('%s|age_range_f|%s', self.sim.date,
-                    f_age_counts.to_dict())
+        # logger.info('%s|age_range_f|%s', self.sim.date,
+        #             f_age_counts.to_dict())
