@@ -359,43 +359,53 @@ class HealthSystem(Module):
                     time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
 
-            # -------------------------
-            # TODO: Issue here is theat the check at line 433 passes if the time_requested is empty (!)
-            # TODO:     and there may not be good logic supporting why some appts are not possible at some facility-levels
+            if len(time_requested)>0:
+                # If the data-frame of time-requested is empty, it means that the appointments is not possible
+                # at that type of facility. So check that time_requested is not empty.
+                # -------------------------
 
-            try:
-                assert len(time_requested)>0
-            except:
-                print('stop')
+                # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
+                time_requested = pd.DataFrame(
+                    time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
+                time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
 
-            # -------------------------
+                # merge the Minutes_Available at this facility with the minutes required in the footprint
+                comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
+                                                  indicator=True)
 
-            # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
-            time_requested = pd.DataFrame(
-                time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
-            time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
+                # check if all the needs are met by this facility
+                if ( all(comparison['_merge'] == 'both') &
+                     all(comparison['Minutes_Remaining_Today'] > comparison['Time_Taken'])
+                ):
 
-            # merge the Minutes_Available at this facility with the minutes required in the footprint
-            comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
-                                              indicator=True)
+                    can_do_footprint=True
 
-            # check if all the needs are met by this facility
-            if all(comparison['_merge'] == 'both') & all(
-                comparison['Minutes_Remaining_Today'] > comparison['Time_Taken']):
+                    # Now, impose the footprint for each one of the types being requested
+                    for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
 
-                can_do_footprint=True
+                        old_mins_remaining = \
+                            current_capabilities.loc[(current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
+                                                                                            'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'].values[0]
 
-                # Now, impose the footprint
-                for this_officer_type in officer_type_codes:
-                    current_capabilities.loc[(current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                                                                        'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                        current_capabilities.loc[(current_capabilities['Facility_ID'] == try_fac_id) &
-                                         (current_capabilities[
-                                              'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] \
-                        - time_requested.loc[
-                            time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken']
+                        time_to_take_away = \
+                            time_requested.loc[
+                                time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken'].values[0]
 
-                break  # cease looking at other facility_types if the need has been met
+                        new_mins_remaining = \
+                            old_mins_remaining - time_to_take_away
+
+                        assert (new_mins_remaining>=0)
+
+                        # update
+                        current_capabilities.loc[
+                            (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
+                             'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                new_mins_remaining
+
+                    break  # cease looking at other facility_types if the need has been met
+
+
+
 
         assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
