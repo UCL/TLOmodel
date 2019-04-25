@@ -565,9 +565,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # TODO: ** NB. population level events will not run **
 
                 # check if the event can run
-                rtn_tuple = self.module.check_if_can_do_appt_footprint(event, current_capabilities=current_capabilities)
-                can_do_appt_footprint = rtn_tuple[0]
-                current_capabilities = rtn_tuple[1]
+                (can_do_appt_footprint,current_capabilities) = \
+                        self.module.check_if_can_do_appt_footprint(event, current_capabilities=current_capabilities)
 
                 if can_do_appt_footprint:
                     # The event will be run:
@@ -586,8 +585,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     self.module.log_consumables_used(event)
                     self.module.log_appts_used(event)
 
-                    # Pop the event off the heapq
-                    hp.heappop(self.module.HEALTH_SYSTEM_CALLS)
 
                 else:
                     # The event will not be run and will be added back to the heapq
