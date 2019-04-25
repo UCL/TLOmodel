@@ -9,7 +9,7 @@ import numpy as np
 import heapq as hp
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -184,7 +184,7 @@ class HealthSystem(Module):
         # 2) All sensible numbers for the number of appointments requested
         assert all(np.asarray([(treatment_event.APPT_FOOTPRINT[k]) for k in treatment_event.APPT_FOOTPRINT.keys()]) >= 0)
 
-        # 3) That is has a dictionary for the consumables needed in the right format
+        # 3) That it has a dictionary for the consumables needed in the right format
         assert 'CONS_FOOTPRINT' in dir(treatment_event)
 
         assert type(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'])==list
@@ -193,6 +193,16 @@ class HealthSystem(Module):
         consumables=self.parameters['Consumables']
         assert ( treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(consumables['Intervention_Pkg_Code']))
         assert ( treatment_event.CONS_FOOTPRINT['Item_Code'] ==[] ) or (set(treatment_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+
+        # 4) That it has a list for the other disease that will be alerted when it is run and that this make sense
+        assert 'ALERT_OTHER_DISEASES' in dir(treatment_event)
+        assert type(treatment_event.ALERT_OTHER_DISEASES) is list
+
+        for d in treatment_event.ALERT_OTHER_DISEASES:
+            assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
+
+        # TODO: Check that this ensure that the module is not itself alerted
+        assert not (treatment_event.module.name in treatment_event.ALERT_OTHER_DISEASES)
 
         # Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed= False
@@ -235,21 +245,23 @@ class HealthSystem(Module):
 
 
 
-    def broadcast_healthsystem_interaction(self, person_id, treatment_id, exclude_module_name):
+    def broadcast_healthsystem_interaction(self, person_id, treatment_id, alert_modules=[]):
 
-        # person_id, cue_type = None, disease_specific = None
-        df = self.sim.population.props
-
-        if df.at[person_id, 'is_alive']:
-
-            # For each disease module, trigger the on_healthsystem_interaction() event
-
-            registered_disease_modules = self.registered_disease_modules
-
-            for module in registered_disease_modules.values():
-                if not module.name == exclude_module_name:
-                    module.on_healthsystem_interaction(person_id=person_id,
-                                                       treatment_id=treatment_id)
+        pass
+        # TODO: Make this be limited to the modules that are passed in alert_modules
+        # # person_id, cue_type = None, disease_specific = None
+        # df = self.sim.population.props
+        #
+        # if df.at[person_id, 'is_alive']:
+        #
+        #     # For each disease module, trigger the on_healthsystem_interaction() event
+        #
+        #     registered_disease_modules = self.registered_disease_modules
+        #
+        #     for module in registered_disease_modules.values():
+        #         if not module.name == exclude_module_name:
+        #             module.on_healthsystem_interaction(person_id=person_id,
+        #                                                treatment_id=treatment_id)
 
     def GetCapabilities(self):
 
@@ -589,7 +601,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # (Exclude the module that originated this HSI)
                     self.module.broadcast_healthsystem_interaction(person_id=event.target,
                                                                    treatment_id=event.TREATMENT_ID,
-                                                                   exclude_module_name=event.module.name)
+                                                                   alert_modules=event.ALERT_OTHER_DISEASES)
 
                     # Write to the log
                     self.module.log_consumables_used(event)
@@ -607,57 +619,4 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
-
-
-# --------- OUTREACH EVENT -----
-class HSI_Outreach_Event(Event, PopulationScopeEventMixin):
-
-    """
-    This is a Health System Interaction Event.
-
-    This event can be used to simulate the occurrence of an 'outreach' intervention such as population screening.
-
-    It is associated with its own resource footprint and triggers an on_healthsystem_interaction() call for each
-    disease module and each person that is specified. Disease modules that are so notified can determine what to do.
-
-    Arguments are:
-        * diseases: a list of the names of the registered disease modules to be notified when the event occurs
-        * target_fn: a function that is used to construct the mask on the population.props data frame to determine who receives the outreach
-
-    """
-
-    def __init__(self, module: HealthSystem, diseases, target_fn):
-        super().__init__(module)
-
-        logger.debug('Outreach event being created.')
-
-
-        # Check the arguments that have been passed are OK:
-
-        # Check that diseases contains registered disease modules:
-        assert type(diseases) is list
-        for d in diseases:
-            assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
-
-        # Check that the function works and returns a bool
-        assert type(target_fn(0)) is bool
-
-        self.diseases=diseases
-        self.target_fn = target_fn
-
-        # Define the necessary information for an HSI
-        # (These are blank when created; but these should be filled-in by the module that calls it)
-        self.TREATMENT_ID = 'Outreach_Event'
-        self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-
-    def apply(self, population):
-
-        logger.debug('Outreach event running now')
-
-        df=self.sim.population.props
-        for person_id in df.index[df.is_alive]:
-            if self.target_fn(person_id):
-                for d in self.diseases:
-                    self.sim.modules['HealthSystem'].registered_disease_modules[d].on_healthsystem_interaction(person_id,self.TREATMENT_ID)
 
