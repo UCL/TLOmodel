@@ -573,7 +573,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # The event will be run:
 
                     # Run the event
-                    event.run()
+                    if df.at[event.target,'is_alive']:
+                        event.run()
 
                     # Broadcast to other modules that the event is running:
                     # (Exclude the module that originated this HSI)
