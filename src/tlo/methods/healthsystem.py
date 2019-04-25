@@ -454,6 +454,8 @@ class HealthSystem(Module):
             log_consumables = consumables_used.to_dict()
             log_consumables['TREATMENT_ID'] = event.TREATMENT_ID
             log_consumables['Total_Cost']=TotalCost
+            log_consumables['Person_ID']=event.target
+
             logger.info('%s|Consumables|%s',
                         self.sim.date,
                         log_consumables)
@@ -468,6 +470,7 @@ class HealthSystem(Module):
         log_appts=dict()
         log_appts['TREATMENT_ID'] = event.TREATMENT_ID
         log_appts['Number_By_Appt_Type_Code']= {k: v for k, v in appts.items() if v} # remove the zeros
+        log_appts['Person_ID']=event.target
 
         logger.info('%s|Appt|%s',
                     self.sim.date,
@@ -482,21 +485,28 @@ class HealthSystem(Module):
         # Log the current state of resource use
 
         X=current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Remaining_Today']].sum()
+        overall_useage = 1 - ( X['Minutes_Remaining_Today'].sum() /  X['Total_Minutes_Per_Day'].sum() )
         X=X.merge(self.parameters['Master_Facilities_List'][['Facility_ID','Facility_Name']], how='left', left_index=True, right_on='Facility_ID')
-        X['Fraction_Time_Used']=1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
+        X['Fraction_Time_Used']=1 - ( X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'] )
         X=X[['Facility_Name','Fraction_Time_Used']]
         X.index=X['Facility_Name']
         X=X.drop(columns='Facility_Name')
 
-        logger.info('-------------------------------------------------')
-        logger.info('Current State of Health Facilities Appts:')
+        logger.debug('-------------------------------------------------')
+        logger.debug('Current State of Health Facilities Appts:')
         print_table = X.to_string().splitlines()
         for line in print_table:
-            logger.info(line)
-        logger.info('-------------------------------------------------')
+            logger.debug(line)
+        logger.debug('-------------------------------------------------')
 
-        if (X['Fraction_Time_Used']>0).any():
-            print('@@@@ Some time being used!!!')
+        log_capacity=dict()
+        log_capacity['Frac_Time_Used_Overall'] =  overall_useage
+        log_capacity['Frac_Time_Used_By_Facility_Name'] = X.to_dict()
+
+        logger.info('%s|Capacity|%s',
+                    self.sim.date,
+                    log_capacity)
+
 
 # --------- SCHEDULING OF ACCESS TO HEALTH CARE -----
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
