@@ -241,11 +241,10 @@ class ChronicSyndrome(Module):
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
-
-            # self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
-            #                                                 priority=0,
-            #                                                 topen=self.sim.date,
-            #                                                 tclose=None)
+            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+                                                            priority=0,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
