@@ -1030,6 +1030,8 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
+        # ----------------------------------- DEVELOP SYMPTOMS -----------------------------------
+
         # hazard of moving from early to symptomatic
         symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'annual_prob_symptomatic_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
@@ -1037,8 +1039,12 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
         df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
 
         # for each person determine whether they will seek care on symptom change
-        # TODO: fix
-        seeks_care = pd.Series(data=True, index=df.loc[symp].index)
+        # get_prob_seek_care will be the healthcare seeking function developed by Wingston
+        seeks_care = pd.Series(data=False, index=df.loc[symp].index)
+        for i in df.index[symp]:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = self.module.rng.rand() < prob
+
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
                 logger.debug(
@@ -1054,11 +1060,31 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
             logger.debug(
                 'This is HivEvent, There is  no one with new severe symptoms so no new healthcare seeking')
 
+        # ----------------------------------- DEVELOP AIDS -----------------------------------
+
         # hazard of moving to aids (from early or symptomatic)
         aids = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'annual_prob_aids_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
                             df.hiv_specific_symptoms != 'aids')]
         df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
+
+        # for each person determine whether they will seek care on symptom change
+        seeks_care = pd.Series(data=False, index=df.loc[aids].index)
+        for i in df.index[aids]:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=3)
+            seeks_care[i] = self.module.rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is HivEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                    person_index)
+                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
 
 
 class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
