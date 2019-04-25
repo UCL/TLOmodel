@@ -836,7 +836,7 @@ class hiv(Module):
             #                                                       cue_type='InitialDiseaseCall',
             #                                                       disease_specific=self.name)
 
-                # self.sim.schedule_event(event, self.sim.date + pd.to_timedelta(28, unit='d'))
+            # self.sim.schedule_event(event, self.sim.date + pd.to_timedelta(28, unit='d'))
 
     # def query_symptoms_now(self):
     #     """This is called by the health-care seeking module
@@ -857,9 +857,13 @@ class hiv(Module):
     #
     #     return df.loc[df.is_alive, 'hiv_unified_symptom_code']
 
-    # def on_healthsystem_interaction(self, person_id, cue_type, disease_specific):
-    #     logger.debug('This is hiv, being asked what to do at a health system appointment for '
-    #                  'person %d triggered by %s', person_id, cue_type)
+    # TODO: modify this - include piggy-back appt for other diseases
+    # need to include malaria testing at follow-up appts
+    def on_healthsystem_interaction(self, person_id, treatment_id):
+
+        logger.debug('This is hiv, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
+
     #
     #     df = self.sim.population.props
     #
@@ -1033,7 +1037,7 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
         df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
 
         # for each person determine whether they will seek care on symptom change
-        #TODO: fix
+        # TODO: fix
         seeks_care = pd.Series(data=True, index=df.loc[symp].index)
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
@@ -1049,9 +1053,6 @@ class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
         else:
             logger.debug(
                 'This is HivEvent, There is  no one with new severe symptoms so no new healthcare seeking')
-
-
-
 
         # hazard of moving to aids (from early or symptomatic)
         aids = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
@@ -1157,13 +1158,11 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
 # Health System Interaction Events
 
 class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
-
     """
     This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
+    It is first appointment that someone has when they present to the healthcare system with the
     symptoms of hiv.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    Outcome is testing
     """
 
     def __init__(self, module, person_id):
@@ -1171,40 +1170,71 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        the_appt_footprint['Over5OPD'] = 1  # This requires one outpatient appt
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_PresentsForCareWithSymptoms'
+        self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.CONS_FOOTPRINT = the_cons_footprint
 
     def apply(self, person_id):
-
         logger.debug('This is HSI_Hiv_PresentsForCareWithSymptoms, a first appointment for person %d', person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
 
-        if df.at[person_id, 'age_years'] >= 15:
-            logger.debug(
-                '...This is HSI_Hiv_PresentsForCareWithSymptoms: there should now be treatment for person %d',
-                person_id)
-            event = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+        logger.debug(
+            '...This is HSI_Hiv_PresentsForCareWithSymptoms: there should now be testing for person %d',
+            person_id)
+        event = Hiv_Testing(self.module, person_id=person_id)
+        self.sim.modules['HealthSystem'].schedule_event(event,
+                                                        priority=2,
+                                                        topen=self.sim.date,
+                                                        tclose=None)
 
-        else:
-            logger.debug(
-                '...This is HSI_Hiv_PresentsForCareWithSymptoms: there will not be treatment for person %d',
-                person_id)
 
-            date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=date_turns_15,
-                                                            tclose=date_turns_15 + DateOffset(months=12))
+# this is hiv testing, triggered by a change in symptoms
+# the outcome should trigger treatment (if positive)
+class Hiv_Testing(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event - hiv testing
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug('This is Hiv_Testing: giving outcome of hiv test for person %d', person_id)
+        df = self.sim.population.props
+
+        df.at[person_id, 'hiv_ever_tested'] = True
+
+        if df.at[person_id, 'hiv_inf']:
+            df.at[person_id, 'hiv_diagnosed'] = True
+
+        # request treatment
+        logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
+                     person_id, self.sim.date)
+
+        treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+        # Request the health system to start treatment
+        self.sim.modules['HealthSystem'].schedule_event(treatment,
+                                                        priority=2,
+                                                        topen=self.sim.date,
+                                                        tclose=None)
+
 
 class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
     """
@@ -1222,7 +1252,6 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
@@ -1233,7 +1262,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
             0]
 
         item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
@@ -1256,22 +1285,22 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hiv_diagnosed'] and \
             (df.at[person_id, 'age_years'] < 15):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                        p=[(1 - params['vls_child']),
-                                                                           params['vls_child']])
+                                                                    p=[(1 - params['vls_child']),
+                                                                       params['vls_child']])
 
         if df.at[person_id, 'is_alive'] and \
             df.at[person_id, 'hiv_diagnosed'] and \
             (df.at[person_id, 'age_years'] >= 15) and \
             (df.at[person_id, 'sex'] == 'M'):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                        p=[(1 - params['vls_m']), params['vls_m']])
+                                                                    p=[(1 - params['vls_m']), params['vls_m']])
 
         if df.at[person_id, 'is_alive'] and \
             df.at[person_id, 'hiv_diagnosed'] and \
             (df.at[person_id, 'age_years'] >= 15) and \
             (df.at[person_id, 'sex'] == 'F'):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                        p=[(1 - params['vls_f']), params['vls_f']])
+                                                                    p=[(1 - params['vls_f']), params['vls_f']])
 
         df.at[person_id, 'hiv_date_art_start'] = self.sim.date
 
@@ -1286,7 +1315,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         # Request the heathsystem to have this follow-up appointment
         for i in range(0, len(times)):
-            followup_appt_date = times[i]
+            followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
             self.sim.modules['HealthSystem'].schedule_event(followup_appt,
                                                             priority=2,
                                                             topen=followup_appt_date,
@@ -1296,11 +1325,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
 class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for hiv is monitored.
-    (In practise, nothing happens!)
-
+    This is a Health System Interaction Event for hiv treatment
     """
 
     def __init__(self, module, person_id):
@@ -1308,8 +1333,8 @@ class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
+        the_appt_footprint['Over5OPD'] = 1  # This requires one outpatient appt
+        the_appt_footprint['NewAdult'] = 1  # This is an hiv specific appt type
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -1321,7 +1346,7 @@ class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
             0]
 
         item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
@@ -1336,6 +1361,7 @@ class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         pass
+
 
 # TODO: include hiv testing event as regular event
 # can include propensity for testing and schedule as HSI event

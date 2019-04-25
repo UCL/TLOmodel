@@ -390,8 +390,11 @@ class tb(Module):
         return df.loc[df.is_alive, 'tb_unified_symptom_code']
 
     # TODO: complete this
-    # def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-    #     logger.debug('This is tb, being alerted about a health system interaction '
+    def on_healthsystem_interaction(self, person_id, treatment_id):
+
+        logger.debug('This is tb, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
+        #     logger.debug('This is tb, being alerted about a health system interaction '
     #                  'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
     #
     #     df = self.sim.population.props
