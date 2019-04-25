@@ -11,7 +11,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARNING)
 
 
 class HealthSystem(Module):
@@ -358,7 +358,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Examine capabilities that are available
 
-        print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
+        # print('NOW LOOKING AT THE HEALTH SYSTEM CAPABILITIES')
 
         # Call out to a function to generate the total Capabilities for today
         capabilities = self.module.GetCapabilities()
@@ -377,7 +377,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         if len(due_events.index) > 0:
 
             # sort the due_events in terms of priority and time since opened:
-            due_events['Time_Since_Opened'] = self.sim.date - due_events['topen']
+            due_events.loc[:, 'Time_Since_Opened'] = self.sim.date - due_events['topen']
             due_events.sort_values(['priority', 'Time_Since_Opened'])
 
 
