@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2019, 7, 1)
-popsize = 300000
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -40,7 +40,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
 service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Epilepsy', True]
+service_availability.loc[0] = ['Oesophageal cancer', True]
 service_availability['Service'] = service_availability['Service'].astype('object')
 service_availability['Available'] = service_availability['Available'].astype('bool')
 
@@ -49,7 +49,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
 sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(epilepsy.Epilepsy())
+sim.register(oesophageal_cancer.Oesophageal_Cancer())
 
 # Run the simulation and flush the logger
 # sim.seed_rngs(0)
