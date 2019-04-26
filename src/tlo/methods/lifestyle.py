@@ -1,6 +1,5 @@
 """
 Lifestyle module
-
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import logging
@@ -11,7 +10,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.CRITICAL)
 
 
 class Lifestyle(Module):
@@ -448,9 +447,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """
     def __init__(self, module):
         """schedule to run every 3 months
-
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
-
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))

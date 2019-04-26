@@ -4,11 +4,13 @@ Oesophageal Cancer - module
 Documentation: 04 - Methods Repository/Method_Oesophageal_Cancer.xlsx
 """
 import logging
-
-import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import demography
+import numpy as np
+import pandas as pd
+import random
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -416,7 +418,7 @@ class Oesophageal_Cancer(Module):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        #       logger.debug('This is epilepsy reporting my health values')
+        #       logger.debug('This is oesophageal cancer reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
