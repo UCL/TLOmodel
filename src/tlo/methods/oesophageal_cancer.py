@@ -16,6 +16,11 @@ logger.setLevel(logging.DEBUG)
 
 class Oesophageal_Cancer(Module):
 
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+
     PARAMETERS = {
         'r_low_grade_dysplasia_none': Parameter(Types.REAL, 'probabilty per 3 months of incident low grade '
                                                             'oesophageal dysplasia, amongst people with no '
@@ -128,7 +133,8 @@ class Oesophageal_Cancer(Module):
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer'),
         'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer'),
         'ca_incident_oes_cancer_diagnosis_this_3_month_period': Property(Types.BOOL, 'incident oesophageal cancer'
-                                                                'diagnosis this 3 month period')
+                                                                'diagnosis this 3 month period'),
+        'ca_disability': Property(Types.REAL, 'disability weight this three month period')
     }
 
     def read_parameters(self, data_folder):
@@ -185,6 +191,7 @@ class Oesophageal_Cancer(Module):
         df['ca_oesophagus_curative_treatment'] = 'never'
         df['ca_oesophageal_cancer_death'] = False
         df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+        df['ca_disability'] = 0
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
@@ -385,6 +392,37 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, 'ca_oesophagus_curative_treatment'] = 'never'
         df.at[child_id, 'ca_oesophageal_cancer_death'] = 'never'
         df.at[child_id, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+
+    def query_symptoms_now(self):
+        # This is called by the health-care seeking module
+        # All modules refresh the symptomology of persons at this time
+        # And report it on the unified symptomology scale
+
+#       logger.debug("This is Epilepsy being asked to report unified symptomology")
+
+        # Map the specific symptoms for this disease onto the unified coding scheme
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        return pd.Series('1', index=df.index[df.is_alive])
+
+    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+
+        #       logger.debug('This is epilepsy, being alerted about a health system interaction '
+        #                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+
+        pass
+
+    def report_qaly_values(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # the past year
+
+        #       logger.debug('This is epilepsy reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        disability_series = df.ca_disability
+
+        return disability_series
 
 
 class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
