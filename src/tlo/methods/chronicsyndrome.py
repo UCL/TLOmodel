@@ -328,7 +328,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 
     """
     This is the event that is run by ChronicSyndrome and will submit the individual HSI outreach events.
-    (The large campaign is composed of many individual outreach events).
+    (Any large campaign is composed of many individual outreach events).
     """
 
     def __init__(self, module):
@@ -338,20 +338,17 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 
         df = self.sim.population.props
 
-        for person_id in df.index[df.is_alive]:
+        # Find the person_ids who are going to get the outreach
+        gets_outreach = df.index[(df['is_alive']) & (df['sex']=='F')]
+        for person_id in gets_outreach:
 
-            if ( df.at[person_id, 'sex'] == 'F' ):
+            # make the outreach event (let this disease module be alerted about it, and also Mockitis)
+            outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self,person_id=person_id)
 
-                # make the outreach event (let this disease module be alerted about it, and also Mockitis)
-                outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self,
-                                                                                           person_id=person_id,
-                                                                                           this_disease_name=self.module.name,
-                                                                                           other_disease_names=['Mockitis'])
-
-                self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
@@ -415,16 +412,13 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
     This is a Health System Interaction Event.
 
     This event can be used to simulate the occurrence of an 'outreach' intervention.
+
     NB. This needs to be created and run for each individual that benefits from the outreach campaign.
 
     """
-    # TODO: error checking on the input and make sure own disease don't get called too many times (not included in both lists)
-    # TODO: add small footprint
 
-    # TODO: SHOULD OUTREACH PREVENT THE CALLED OF ON_HEALTH SYSTEM FUNCTION
-    # TODO: PERHAPS ALL HSI SHOULD HAVE A FLAG ABOUT WHICH OTHER DISEASES THEY CALL **
 
-    def __init__(self, module, person_id, this_disease_name, other_disease_names=[]):
+    def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
         logger.debug('Outreach event being created.')
@@ -433,11 +427,13 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
         # (These are blank when created; but these should be filled-in by the module that calls it)
         self.TREATMENT_ID = 'ChronicSyndrome_Outreach_Individual'
         self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        self.APPT_FOOTPRINT['ConWithDCSA']=0.5      # outreach event takes small amount of time for DCSA
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ALERT_OTHER_DISEASES=['*']
 
     def apply(self, person_id):
 
-        logger.debug('Outreach event running now')
+        logger.debug('Outreach event running now for person: %s', person_id )
 
         # Do here whatever happens during an outreach event with an individual
         pass

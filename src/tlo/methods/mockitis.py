@@ -522,7 +522,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ALERT_OTHER_DISEASES = []
+        self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
 
