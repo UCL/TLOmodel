@@ -1,11 +1,11 @@
 """
 The core demography module and its associated events.
-
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
 import logging
 import math
+import os
 from collections import defaultdict
 
 import numpy as np
@@ -15,7 +15,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -63,9 +63,9 @@ class Demography(Module):
     'is_alive' status
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
@@ -77,7 +77,10 @@ class Demography(Module):
         'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
-        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio')
+        'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
+        'Village_District_Region_Data': Parameter(Types.DATA_FRAME,
+                                                  'Census data on the number of persons in '
+                                                  'residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -86,10 +89,12 @@ class Demography(Module):
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
+        'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
+        'date_of_last_pregnancy': Property(Types.DATE,
+                                           'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
                                   categories=['not using',
@@ -103,18 +108,23 @@ class Demography(Module):
         'age_range': Property(Types.CATEGORICAL,
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
-        'age_days': Property(Types.INT, 'The age of the individual in whole days')
+        'age_days': Property(Types.INT, 'The age of the individual in whole days'),
+
+        'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
+        'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
+        'village_of_residence': Property(Types.STRING, 'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
         Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(self.workbook_path, sheet_name=None)
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'ResourceFile_DemographicData.xlsx'),
+                                 sheet_name=None)
+
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
@@ -134,16 +144,20 @@ class Demography(Module):
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
+        self.parameters['Village_District_Region_Data'] = \
+            pd.read_csv(os.path.join(self.resourcefilepath,
+                                     'ResourceFile_PopBreakdownbyVillage.csv'))
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
         """
         df = population.props
+
+        df.date_of_death = pd.NaT
 
         worksheet = self.parameters['interpolated_pop']
 
@@ -170,12 +184,37 @@ class Demography(Module):
         pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
-        df.is_alive = True
+        df.is_alive: pd.Series = True
 
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
         df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
-        df.loc[df.is_alive, 'mother_id'] = -1  # we can't use np.nan because that casts the series into a float
+
+        # we can't use np.nan because that casts the series into a float
+        df.loc[df.is_alive, 'mother_id'] = -1
+
+
+        # Assign village, district and region of residence
+        region_info = self.parameters['Village_District_Region_Data']
+        prob_in_village = region_info['Population']/region_info['Population'].sum()
+        village_indx = self.rng.choice(region_info.index, size=df.is_alive.sum(), p=prob_in_village)
+
+        def get_mapping(list_of_words: pd.Series):
+            return {v: k for k, v in enumerate(list_of_words.unique())}
+
+        region_info['Region_ID'] = region_info['Region'].map(get_mapping(region_info['Region']))
+        region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
+        region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
+
+        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region'].values
+        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
+        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
+
+        # Check for no bad values being assigned to persons in the dataframe:
+        assert (not pd.isnull(df['region_of_residence']).any())
+        assert (not pd.isnull(df['district_of_residence']).any())
+        assert (not pd.isnull(df['village_of_residence']).any())
+
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
@@ -197,7 +236,6 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
@@ -218,9 +256,7 @@ class Demography(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
         This is called by the simulation whenever a new person is born.
-
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -246,14 +282,18 @@ class Demography(Module):
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
 
+        # Child's residence is inherited from the mother
+        df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
+        df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
+        df.at[child_id, 'village_of_residence'] = df.at[mother_id, 'village_of_residence']
+
         # Log the birth:
         logger.info('%s|on_birth|%s',
                     self.sim.date,
                     {
                         'mother': mother_id,
                         'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years'],
-                        'xxx': 0
+                        'mother_age': df.at[mother_id, 'age_years']
                     })
 
 
@@ -272,7 +312,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+#       df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
 
@@ -346,11 +386,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, mother_id):
         """Create a new birth event.
-
         We need to pass the person this event happens to to the base class constructor
         using super(). We also pass the module that created this event, so that random
         number generators can be scoped per-module.
-
         :param module: the module that created this event
         :param mother_id: the person giving birth
         """
@@ -436,15 +474,19 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
         self.cause = cause
 
+    def apply(self, person_id):
+        df = self.sim.population.props
+
     def apply(self, individual_id):
         df = self.sim.population.props
 
         logger.debug("@@@@ A Death is now occuring, to person %s", individual_id)
 
         if df.at[individual_id, 'is_alive']:
-            # here comes the death..
+            # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
             # the person is now dead
+            df.at[individual_id, 'date_of_death'] = self.sim.date
 
         logger.debug("*******************************************The person %s "
                      "is now officially dead and has died of %s", individual_id, self.cause)
@@ -453,7 +495,8 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         logger.info('%s|death|%s', self.sim.date,
                     {
                         'age': df.at[individual_id, 'age_years'],
-                        'cause': self.cause
+                        'cause': self.cause,
+                        'person_id': individual_id
                     })
 
 
