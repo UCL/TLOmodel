@@ -139,6 +139,8 @@ class Oesophageal_Cancer(Module):
         'ca_disability': Property(Types.REAL, 'disability weight this three month period')
     }
 
+    TREATMENT_ID = 'attempted curative treatment for oesophageal cancer'
+
     def read_parameters(self, data_folder):
         """Setup parameters used by the module
         """
@@ -381,6 +383,17 @@ class Oesophageal_Cancer(Module):
         event = OesCancerLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
+        # todo: amend this below when identifid data
+        # Define the footprint for the intervention on the common resources
+        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+            'Name': Oes_cancer.TREATMENT_ID,
+            'Nurse_Time': 15,
+            'Doctor_Time': 15,
+            'Electricity': False,
+            'Water': False})
+
+        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
         :param mother_id: the mother for this child
@@ -394,6 +407,7 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, 'ca_oesophagus_curative_treatment'] = 'never'
         df.at[child_id, 'ca_oesophageal_cancer_death'] = 'never'
         df.at[child_id, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+        df.at[child_id, 'ca_disability'] = 0
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -442,9 +456,16 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
+
+        TREATMENT_ID = 'attempted curative treatment for oesophageal cancer'
+
         df = population.props
         m = self.module
         rng = m.rng
+
+        # set ca_oesophageal_cancer_death back to False after death
+        df.loc[~df.is_alive, 'ca_oesophageal_cancer_death'] = False
+        df['ca_disability'] = 0
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
