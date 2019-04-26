@@ -9,7 +9,7 @@ import numpy as np
 import heapq as hp
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -252,11 +252,11 @@ class HealthSystem(Module):
         It receives an HSI event object
         """
 
-        # Get the name of the disease module that this event came from ultimately
-        originating_disease_module_name = event.module.name
+
 
         if event.ALERT_OTHER_DISEASES == []:
-            alert_modules = []
+            # there are not disease modules to alert, so do nothing
+            pass
 
         else:
             if event.ALERT_OTHER_DISEASES[0] == '*':
@@ -264,13 +264,16 @@ class HealthSystem(Module):
             else:
                 alert_modules = event.ALERT_OTHER_DISEASES
 
+            # remove the originating module from the list of modules to alert:
+            # Get the name of the disease module that this event came from ultimately
+            originating_disease_module_name = event.module.name
             if originating_disease_module_name in alert_modules:
                 alert_modules.remove(originating_disease_module_name)
 
-        for module_name in alert_modules:
-            module = self.registered_disease_modules.values[module_name]
-            module.on_healthsystem_interactionn(person_id=event.target,
-                                                treatment_id=event.TREATMENT_ID)
+            for module_name in alert_modules:
+                module = self.registered_disease_modules[module_name]
+                module.on_healthsystem_interaction(person_id=event.target,
+                                                    treatment_id=event.TREATMENT_ID)
 
 
     def GetCapabilities(self):

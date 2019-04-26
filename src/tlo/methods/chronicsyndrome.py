@@ -343,7 +343,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
         for person_id in gets_outreach:
 
             # make the outreach event (let this disease module be alerted about it, and also Mockitis)
-            outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self,person_id=person_id)
+            outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module,person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
                                                             priority=1,
