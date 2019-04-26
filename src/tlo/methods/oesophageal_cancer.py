@@ -386,7 +386,7 @@ class Oesophageal_Cancer(Module):
         # todo: amend this below when identifid data
         # Define the footprint for the intervention on the common resources
         footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-            'Name': Oes_cancer.TREATMENT_ID,
+            'Name': Oesophageal_Cancer.TREATMENT_ID,
             'Nurse_Time': 15,
             'Doctor_Time': 15,
             'Electricity': False,
