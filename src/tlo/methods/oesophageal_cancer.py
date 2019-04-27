@@ -1,18 +1,3 @@
-
-
-
-
-
-# todo:  register death
-# todo: logging to output events
-# todo: disability weights
-
-
-
-
-
-
-
 """
 Oesophageal Cancer - module
 
@@ -487,6 +472,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[~df.is_alive, 'ca_oesophageal_cancer_death'] = False
         df['ca_disability'] = 0
         df['ca_oesophagus_curative_treatment_requested'] = False
+        df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
@@ -819,6 +805,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
         ca_oes_stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
 
+        # todo
         df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.xx
         df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.xx
         df.loc[ca_oes_stage1_idx, 'ca_disability'] = 0.xx
@@ -838,7 +825,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Oesophageal_cancer'),
                                     self.sim.date)
 
-
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
     def __init__(self, module):
@@ -854,42 +840,35 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # calculate incidence of oesophageal cancer diagnosis in people aged > 60+
-        # (this includes people diagnosed with dysplasia, but diagnosis rate at this stage is very low)
+        n_alive = df.is_alive.sum()
+        n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
 
-        incident_oes_cancer_diagnosis_agege60_idx = df.index[df.ca_incident_oes_cancer_diagnosis_this_3_month_period
-        & (df.age_years >= 60)]
-        agege60_without_diagnosed_oes_cancer_idx = df.index[(df.age_years >= 60) & ~df.ca_oesophagus_diagnosed]
-
-#       incidence_per_year_oes_cancer_diagnosis = (4 * 100000 * len(incident_oes_cancer_diagnosis_agege60_idx))/\
-#                                                 len(agege60_without_diagnosed_oes_cancer_idx)
-
-#       incidence_per_year_oes_cancer_diagnosis = round(incidence_per_year_oes_cancer_diagnosis, 3)
-
-        logger.debug('%s|person_one|%s',
-                       self.sim.date,
-                       df.loc[0].to_dict())
-
-#       logger.info('%s|ca_oesophagus|%s',
-#                   self.sim.date,
-#                   df[df.is_alive].groupby(['ca_oesophagus']).size().to_dict())
-
-        # note below remove is_alive
-#       logger.info('%s|ca_oesophagus_death|%s',
-#                   self.sim.date,
-#                   df[df.age_years >= 20].groupby(['ca_oesophageal_cancer_death']).size().to_dict())
+        n_incident_oes_cancer_diagnosis = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period).sum()
+        n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'low_grade_dysplasia')).sum()
+        n_incident_high_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'high_grade_dysplasia')).sum()
+        n_incident_oc_stage1_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'stage1')).sum()
+        n_incident_oc_stage2_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'stage2')).sum()
+        n_incident_oc_stage3_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'stage3')).sum()
+        n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
+                                    & (df.ca_oesophasus == 'stage4')).sum()
 
 
-#       logger.info('%s|ca_incident_oes_cancer_diagnosis_this_3_month_period|%s',
-#                   self.sim.date,
-#                   incidence_per_year_oes_cancer_diagnosis)
 
 
-#       logger.info('%s|ca_oesophagus_diagnosed|%s',
-#                   self.sim.date,
-#                   df[df.age_years >= 20].groupby(['ca_oesophagus', 'ca_oesophagus_diagnosed']).size().to_dict())
+        cum_deaths = (~df.is_alive).sum()
 
-#       logger.info('%s|ca_oesophagus|%s',
-#                   self.sim.date,
-#                   df[df.is_alive].groupby(['age_range', 'ca_oesophagus']).size().to_dict())
+        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
 
+        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
+                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
+                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
+                    'cum_deaths|%s|epi_death_rate |%s',
+                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
+                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
+                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate
+                    )
