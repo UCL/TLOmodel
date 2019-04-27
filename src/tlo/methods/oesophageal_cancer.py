@@ -857,7 +857,19 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
                                     & (df.ca_oesophasus == 'stage4')).sum()
 
-        n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'low_grade_dysplasia')).sum(
+        n_low_grade_dysplasia = (df.is_alive & (df.ca_oesophasus == 'low_grade_dysplasia')).sum
+        n_high_grade_dysplasia = (df.is_alive & (df.ca_oesophasus == 'high_grade_dysplasia')).sum
+        n_stage1_oc = (df.is_alive & (df.ca_oesophasus == 'stage1')).sum
+        n_stage2_oc = (df.is_alive & (df.ca_oesophasus == 'stage2')).sum
+        n_stage3_oc = (df.is_alive & (df.ca_oesophasus == 'stage3')).sum
+        n_stage4_oc = (df.is_alive & (df.ca_oesophasus == 'stage4')).sum
+
+        n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'low_grade_dysplasia')).sum
+        n_high_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'high_grade_dysplasia')).sum
+        n_stage1_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'stage1')).sum
+        n_stage2_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'stage2')).sum
+        n_stage3_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'stage3')).sum
+        n_stage4_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'stage4')).sum
 
 
         cum_deaths = (~df.is_alive).sum()
