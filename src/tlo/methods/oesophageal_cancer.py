@@ -844,6 +844,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        n_alive = df.is_alive.sum()
         n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
 
         n_incident_oes_cancer_diagnosis = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period).sum()
@@ -895,7 +896,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     '|%s| n_stage1_oc_diag|%s| n_stage2_oc_diag|%s| n_stage3_oc_diag|%s| n_stage4_oc_diag |%s|'
                     'n_received_trt_this_period_low_grade_dysplasia |%s| n_received_trt_this_period_high_grade_dysplasia'
                     '|%s| n_received_trt_this_period_stage1|%s| n_received_trt_this_period_stage2|%s|'
-                    'n_received_trt_this_period_stage3|%s| cum_deaths  |%s',
+                    'n_received_trt_this_period_stage3|%s| cum_deaths |%s |n_alive|%s',
                     self.sim.date, n_alive_ge20, n_incident_oes_cancer_diagnosis, n_incident_low_grade_dys_diag,
                     n_incident_high_grade_dys_diag, n_incident_oc_stage1_diag,
                     n_incident_oc_stage2_diag, n_incident_oc_stage3_diag,n_incident_oc_stage4_diag,
@@ -904,7 +905,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     n_stage1_oc_diag, n_stage2_oc_diag, n_stage3_oc_diag, n_stage4_oc_diag,
                     n_received_trt_this_period_low_grade_dysplasia, n_received_trt_this_period_high_grade_dysplasia,
                     n_received_trt_this_period_stage1, n_received_trt_this_period_stage2,
-                    n_received_trt_this_period_stage3,cum_deaths
+                    n_received_trt_this_period_stage3, cum_deaths, n_alive
                     )
 
 #       logger.debug('%s|person_one|%s',
