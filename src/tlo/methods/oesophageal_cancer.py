@@ -857,7 +857,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
                                     & (df.ca_oesophasus == 'stage4')).sum()
 
-
+        n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophasus == 'low_grade_dysplasia')).sum(
 
 
         cum_deaths = (~df.is_alive).sum()
