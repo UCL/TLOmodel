@@ -1,3 +1,21 @@
+
+
+
+
+
+
+
+# todo:  query access to trteatment
+# todo:  register death
+# todo: logging to output events
+# todo: disability weights
+
+
+
+
+
+
+
 """
 Oesophageal Cancer - module
 
