@@ -875,15 +875,15 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_stage4_oc_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'stage4')).sum()
 
         n_received_trt_this_period_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
-                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date)
+                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
         n_received_trt_this_period_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
-                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date)
+                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
         n_received_trt_this_period_stage1 = (df.is_alive & (df.ca_oesophagus == 'stage1')
-                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date)
+                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
         n_received_trt_this_period_stage2 = (df.is_alive & (df.ca_oesophagus == 'stage2')
-                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date)
+                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
         n_received_trt_this_period_stage3 = (df.is_alive & (df.ca_oesophagus == 'stage3')
-                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date)
+                                                          & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
 
         cum_deaths = (~df.is_alive).sum()
 
