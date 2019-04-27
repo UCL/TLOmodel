@@ -139,7 +139,7 @@ class Oesophageal_Cancer(Module):
         'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer'),
         'ca_incident_oes_cancer_diagnosis_this_3_month_period': Property(Types.BOOL, 'incident oesophageal cancer'
                                                                 'diagnosis this 3 month period'),
-        'ca_date_treatment_oesophageal_cancer': Property(DATE, 'date of receiving attempted curative treatment'
+        'ca_date_treatment_oesophageal_cancer': Property(Types.DATE, 'date of receiving attempted curative treatment'),
         'ca_disability': Property(Types.REAL, 'disability weight this three month period')
     }
 
