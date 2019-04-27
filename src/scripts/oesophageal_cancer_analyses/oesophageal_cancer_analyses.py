@@ -59,7 +59,7 @@ fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
 
 
 # Load Model Results for n_suidides
