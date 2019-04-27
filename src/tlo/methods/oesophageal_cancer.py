@@ -3,9 +3,6 @@
 
 
 
-
-
-# todo:  query access to trteatment
 # todo:  register death
 # todo: logging to output events
 # todo: disability weights
@@ -142,14 +139,17 @@ class Oesophageal_Cancer(Module):
     PROPERTIES = {
         'ca_oesophagus': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage: none, low_grade_dysplasia'
                                                      'high_grade_dysplasia, stage1, stage2, stage3, stage4',
-                                   categories=['none', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
-                                               'stage2', 'stage3', 'stage4']),
+                                  categories=['none', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
+                                              'stage2', 'stage3', 'stage4']),
+        'ca_oesophagus_curative_treatment_requested': Property(Types.BOOL,
+                                                               'curative treatment requested of health care system '
+                                                               'this 3 month period'),
         'ca_oesophagus_curative_treatment': Property(Types.CATEGORICAL, 'oesophageal dysplasia / cancer stage at'
-                                                     'time of curative treatment: never had treatment'
+                                                     'time of attempted curative treatment: never had treatment'
                                                      'low grade dysplasia'
                                                      'high grade dysplasia, stage 1, stage 2, stage 3',
-                                  categories=['never', 'low_grade_dysplasia', 'high_grade_dysplasia', 'stage1',
-                                              'stage2', 'stage3']),
+                                                     categories=['never', 'low_grade_dysplasia', 'high_grade_dysplasia',
+                                                                 'stage1', 'stage2', 'stage3']),
         'ca_oesophagus_diagnosed': Property(Types.BOOL, 'diagnosed with oesophageal dysplasia / cancer'),
         'ca_oesophageal_cancer_death': Property(Types.BOOL, 'death from oesophageal cancer'),
         'ca_incident_oes_cancer_diagnosis_this_3_month_period': Property(Types.BOOL, 'incident oesophageal cancer'
@@ -163,6 +163,7 @@ class Oesophageal_Cancer(Module):
         """Setup parameters used by the module
         """
         p = self.parameters
+
         p['r_low_grade_dysplasia_none'] = 0.00001
         p['rr_low_grade_dysplasia_none_female'] = 1.3
         p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
@@ -214,6 +215,7 @@ class Oesophageal_Cancer(Module):
         df['ca_oesophageal_cancer_death'] = False
         df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
         df['ca_disability'] = 0
+        df['ca_oesophagus_curative_treatment_requested'] = False
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
@@ -484,6 +486,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # set ca_oesophageal_cancer_death back to False after death
         df.loc[~df.is_alive, 'ca_oesophageal_cancer_death'] = False
         df['ca_disability'] = 0
+        df['ca_oesophagus_curative_treatment_requested'] = False
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
@@ -713,8 +716,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                        df.ca_oesophagus_curative_treatment == 'never')])
         dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
         dfx.columns = ['eff_prob_treatment', 'random_draw']
-        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
+        requested_treatment_low_grade_dysplasia_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[requested_treatment_low_grade_dysplasia_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with high grade dysplasia w
 
@@ -731,8 +734,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                        df.ca_oesophagus_curative_treatment == 'never')])
         dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
         dfx.columns = ['eff_prob_treatment', 'random_draw']
-        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'high_grade_dysplasia'
+        requested_treatment_high_grade_dysplasia_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[requested_treatment_high_grade_dysplasia_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 1
 
@@ -749,8 +752,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                    df.ca_oesophagus_curative_treatment == 'never')])
         dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
         dfx.columns = ['eff_prob_treatment', 'random_draw']
-        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage1'
+        requested_treatment_stage1_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[requested_treatment_stage1_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 2
 
@@ -767,8 +770,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                        df.ca_oesophagus_curative_treatment == 'never')])
         dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
         dfx.columns = ['eff_prob_treatment', 'random_draw']
-        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage2'
+        requested_treatment_stage2_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[requested_treatment_stage2_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 3
 
@@ -785,18 +788,55 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                        df.ca_oesophagus_curative_treatment == 'never')])
         dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
         dfx.columns = ['eff_prob_treatment', 'random_draw']
-        idx_incident_treatment = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[idx_incident_treatment, 'ca_oesophagus_curative_treatment'] = 'stage3'
+        requested_treatment_stage3_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
+        df.loc[requested_treatment_stage3_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
-        # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
+        # receive an attempt at curative treatment if health system has capacity
+
+        requested_treatment_idx = df.index[df.is_alive & df.ca_oesophagus_curative_treatment_requested]
+
+        requested_treatment = pd.Series(True,
+                                        index=df.index[df.is_alive & df.ca_oesophagus_curative_treatment_requested])
+        stage_at_trt_request = pd.Series(df.ca_oesophagus,
+                                        index=df.index[df.is_alive & df.ca_oesophagus_curative_treatment_requested])
+
+        dfxx = pd.concat([requested_treatment, stage_at_trt_request], axis=1)
+        dfxx.columns = ['requested_treatment', 'stage_at_trt_request']
+
+        # note that in future may need to distinguish treatment by stage
+        # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
+        for index in dfxx:
+            dfxx['gets_trt'] = self.sim.modules['HealthSystem'].query_access_to_service(index, TREATMENT_ID)
+
+        df.loc[requested_treatment_idx, 'ca_oesophagus_curative_treatment'] = dfxx['stage_at_trt_request']
+
+        # -------------------- DISABLITY -----------------------------------------------------------
+
+        ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasa')]
+        ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasa')]
+        ca_oes_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')]
+        ca_oes_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2')]
+        ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
+        ca_oes_stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
+
+        df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.xx
+        df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.xx
+        df.loc[ca_oes_stage1_idx, 'ca_disability'] = 0.xx
+        df.loc[ca_oes_stage2_idx, 'ca_disability'] = 0.xx
+        df.loc[ca_oes_stage3_idx, 'ca_disability'] = 0.xx
+        df.loc[ca_oes_stage4_idx, 'ca_disability'] = 0.xx
+
+
+    # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
 
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
         random_draw = m.rng.random_sample(size=len(stage4_idx))
         df.loc[stage4_idx, 'ca_oesophageal_cancer_death'] = (random_draw < m.r_death_oesoph_cancer)
 
-        # todo - this code dealt with centrally
- #      dead_oes_can_idx = df.index[df.ca_oesophageal_cancer_death]
- #      df.loc[dead_oes_can_idx, 'is_alive'] = False
+        death_this_period = df.index[df.ca_oesophageal_cancer_death]
+        for individual_id in death_this_period:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Oesophageal_cancer'),
+                                    self.sim.date)
 
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
