@@ -374,6 +374,8 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ALERT_OTHER_DISEASES = []
+
 
     def apply(self, person_id):
 
@@ -443,6 +445,7 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
         logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
@@ -519,7 +522,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-
+        self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
 
@@ -543,29 +546,6 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------
-
-
-# class MockitisOutreachEvent(Event, PopulationScopeEventMixin):
-#     def __init__(self, module, outreach_type):
-#         super().__init__(module)
-#         self.outreach_type = outreach_type
-#
-#     def apply(self, population):
-#
-#         # As an example, this outreach screening intervention will only apply to women
-#         df = population.props
-#         mask_for_person_to_be_reached = (df.sex == 'F')
-#
-#         target = mask_for_person_to_be_reached.loc[df.is_alive]
-#
-#         # make and run the actual outreach event by the healthsystem
-#         outreachevent = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,target=target)
-#
-#         # submit to the health system schedule to determine if/when it shall occur
-#         self.sim.modules['HealthSystem'].request_service(
-#             outreachevent, priority=2, topen=self.sim.date, tclose=self.sim.date+DateOffset(days=1))
-
 
 
 
