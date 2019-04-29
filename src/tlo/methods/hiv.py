@@ -739,7 +739,7 @@ class hiv(Module):
         # TODO: PMTCT
         # package offered on birth, mitigates risk of transmission during breastfeeding
         if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
-            event = HSI_Hiv_PMTCT(self.module, person_id=child_id)
+            event = HSI_Hiv_PMTCT(self, person_id=child_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=1,
                                                             topen=self.sim.date,
@@ -805,7 +805,7 @@ class hiv(Module):
 
         # if exposed to hiv through mother, schedule infant testing 4-6 weeks after birth
         if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
-            event = HSI_Hiv_InfantScreening(self.module, person_id=child_id)
+            event = HSI_Hiv_InfantScreening(self, person_id=child_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=2,
                                                             topen=self.sim.date + DateOffset(weeks=4),
@@ -1247,6 +1247,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
+
 # TODO: finish this - haven't check def apply arguments and footprints
 # TODO: add cotrim here?
 class HSI_Hiv_PMTCT(Event, IndividualScopeEventMixin):
@@ -1308,6 +1309,8 @@ class HSI_Hiv_PMTCT(Event, IndividualScopeEventMixin):
             logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
                          person_id, self.sim.date)
 
+            # TODO: error with calling HSI_Hiv_StartInfantProphylaxis
+
             treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
 
             # Request the health system to start treatment
@@ -1322,7 +1325,6 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
     This is a Health System Interaction Event - start hiv prophylaxis for infants
     cotrim + NVP/AZT
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1354,11 +1356,12 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
 
         logger.debug('This is HSI_Hiv_StartInfantProphylaxis: initiating treatment for person %d', person_id)
 
-        params = self.module.parameters
         df = self.sim.population.props
 
         df.at[person_id, 'hiv_on_cotrim'] = True
 
+
+# TODO: need end cotrim event
 
 class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
     """
