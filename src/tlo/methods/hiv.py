@@ -163,12 +163,6 @@ class hiv(Module):
 
     }
 
-    # TREATMENT_ID will become a list for each treatment package available with a separate footprint
-    TREATMENT_ID = 'hiv_treatment'
-    TEST_ID = 'hiv_test'
-    PREVENTION_ID = 'hiv_infant_prophylaxis'
-    FOLLOWUP_ID = 'hiv_follow-up'
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         :param data_folder: path of a folder supplied to the Simulation containing data files.
@@ -681,41 +675,6 @@ class hiv(Module):
         # Schedule the outreach event...
         # self.sim.schedule_event(HivOutreachEvent(self), self.sim.date + DateOffset(months=1))
 
-        # Register with the HealthSystem the treatment interventions that this module runs
-        # and define the footprint that each intervention has on the common resources
-        footprint_for_test = pd.DataFrame(index=np.arange(1), data={
-            'Name': hiv.TEST_ID,
-            'Nurse_Time': 10,
-            'Doctor_Time': 5,
-            'Electricity': False,
-            'Water': False})
-
-        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-            'Name': hiv.TREATMENT_ID,
-            'Nurse_Time': 5,
-            'Doctor_Time': 10,
-            'Electricity': False,
-            'Water': False})
-
-        footprint_for_infant_prevention = pd.DataFrame(index=np.arange(1), data={
-            'Name': hiv.PREVENTION_ID,
-            'Nurse_Time': 15,
-            'Doctor_Time': 10,
-            'Electricity': False,
-            'Water': False})
-
-        footprint_for_followup = pd.DataFrame(index=np.arange(1), data={
-            'Name': hiv.FOLLOWUP_ID,
-            'Nurse_Time': 15,
-            'Doctor_Time': 10,
-            'Electricity': False,
-            'Water': False})
-
-        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_test)
-        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
-        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_infant_prevention)
-        # self.sim.modules['HealthSystem'].register_interventions(footprint_for_followup)
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
         """
@@ -852,25 +811,6 @@ class hiv(Module):
                                                             topen=self.sim.date + DateOffset(weeks=4),
                                                             tclose=self.sim.date + DateOffset(weeks=8)
                                                             )
-
-    # def query_symptoms_now(self):
-    #     """This is called by the health-care seeking module
-    #     All modules refresh the symptomology of persons at this time
-    #     And report it on the unified symptomology scale """
-    #
-    #     logger.debug("This is hiv, being asked to report unified symptomology")
-    #
-    #     # Map the specific symptoms for this disease onto the unified coding scheme
-    #     df = self.sim.population.props
-    #
-    #     df.loc[df.is_alive, 'hiv_unified_symptom_code'] = df.loc[df.is_alive, 'hiv_specific_symptoms'].map({
-    #         'none': 0,
-    #         'early': 1,
-    #         'symptomatic': 2,
-    #         'aids': 3
-    #     })  # no extreme emergency needed
-    #
-    #     return df.loc[df.is_alive, 'hiv_unified_symptom_code']
 
     # TODO: modify this - include piggy-back appt for other diseases
     # need to include malaria testing at follow-up appts
