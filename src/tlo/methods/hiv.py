@@ -1166,7 +1166,6 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                                                             tclose=None)
 
 
-# TODO: infant testing and treatment / cotrim / NVP/AZT
 class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
@@ -1209,7 +1208,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hiv_diagnosed'] = True
 
             # request treatment
-            logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
+            logger.debug('....This is HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
                          person_id, self.sim.date)
 
             treatment = HSI_Hiv_StartInfantTreatment(self.module, person_id=person_id)
@@ -1222,7 +1221,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         # if hiv- then give cotrim + NVP/AZT
         else:
             # request treatment
-            logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
+            logger.debug('....This is HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
                          person_id, self.sim.date)
 
             treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
@@ -1237,7 +1236,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
 class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv prophylaxis for infants
-    cotrim + NVP/AZT
+    cotrim 6 mths + NVP/AZT 6-12 weeks
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1271,12 +1270,28 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         df.at[person_id, 'hiv_on_cotrim'] = True
+        df.at[person_id, 'hiv_on_art'] = True
 
         # schedule end date of cotrim after six months
         self.sim.schedule_event(HivCotrimEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
+        # schedule end date of ARVs after 6-12 weeks
+        self.sim.schedule_event(HivARVEndEvent(self, person_id), self.sim.date + DateOffset(weeks=12))
 
-# TODO: need end cotrim event
+
+class HivARVEndEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Stopping ARVs", person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'hiv_on_art'] = False
+
+
 class HivCotrimEndEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -1289,11 +1304,11 @@ class HivCotrimEndEvent(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'hiv_on_cotrim'] = False
 
+
 class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment for infants + cotrim
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1305,11 +1320,10 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         # TODO: get the correct consumables listing, ART + cotrim
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
+                                                  'Intervention_Pkg'] == 'PMTCT', 'Intervention_Pkg_Code'])[0]
+        pkg_code2 = pd.unique(consumables.loc[
+                                  consumables[
+                                      'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1, pkg_code2],
@@ -1323,10 +1337,9 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
+        logger.debug('This is HSI_Hiv_StartInfantTreatment: initiating treatment for person %d', person_id)
 
         # ----------------------------------- ASSIGN ART ADHERENCE PROPERTIES -----------------------------------
-
-        logger.debug('This is HSI_Hiv_StartTreatment: initiating treatment for person %d', person_id)
 
         params = self.module.parameters
         df = self.sim.population.props
@@ -1392,7 +1405,6 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1467,7 +1479,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
 
-        # Request the heathsystem to have this follow-up appointment
+        # Request the health system to have this follow-up appointment
         for i in range(0, len(times)):
             followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
             self.sim.modules['HealthSystem'].schedule_event(followup_appt,
@@ -1486,7 +1498,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
-        # Request the heathsystem to have this follow-up appointment
+        # Request the health system to have this follow-up appointment
         self.sim.modules['HealthSystem'].schedule_event(followup_appt,
                                                         priority=2,
                                                         topen=date_repeat_prescription,
