@@ -900,6 +900,7 @@ class HSI_Tb_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
         logger.debug('This is HSI_Tb_PresentsForCareWithSymptoms, a first appointment for person %d', person_id)
@@ -1002,6 +1003,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Xpert_test'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
 
@@ -1079,6 +1081,7 @@ class HSI_Tb_StartTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Treatment_Initiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
 
@@ -1219,6 +1222,7 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Ipt'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
         logger.debug("Starting IPT", person_id)
