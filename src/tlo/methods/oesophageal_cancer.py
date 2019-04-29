@@ -150,7 +150,7 @@ class Oesophageal_Cancer(Module):
         """
         p = self.parameters
 
-        p['r_low_grade_dysplasia_none'] = 0.00001
+        p['r_low_grade_dysplasia_none'] = 0.0000005
         p['rr_low_grade_dysplasia_none_female'] = 1.3
         p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
         p['rr_low_grade_dysplasia_none_tobacco'] = 2.0
@@ -171,12 +171,12 @@ class Oesophageal_Cancer(Module):
         p['rr_curative_treatment_stage1'] = 1.0
         p['rr_curative_treatment_stage2'] = 1.0
         p['rr_curative_treatment_stage3'] = 1.0
-        p['r_diagnosis_stage1'] = 0.1
-        p['rr_diagnosis_low_grade_dysp'] = 0.1
-        p['rr_diagnosis_high_grade_dysp'] = 0.1
-        p['rr_diagnosis_stage2'] = 3
-        p['rr_diagnosis_stage3'] = 4
-        p['rr_diagnosis_stage4'] = 5
+        p['r_diagnosis_stage1'] = 0.01
+        p['rr_diagnosis_low_grade_dysp'] = 0.01
+        p['rr_diagnosis_high_grade_dysp'] = 0.01
+        p['rr_diagnosis_stage2'] = 2
+        p['rr_diagnosis_stage3'] = 10
+        p['rr_diagnosis_stage4'] = 50
         p['init_prop_oes_cancer_stage'] = [0.0003, 0.0001, 0.00005, 0.00003, 0.000005, 0.000001]
         p['rp_oes_cancer_female'] = 1.3
         p['rp_oes_cancer_per_year_older'] = 1.1
@@ -847,7 +847,6 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_alive = df.is_alive.sum()
         n_alive_ge20 = (df.is_alive & (df.age_years >= 20)).sum()
 
-        n_incident_oes_cancer_diagnosis = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period).sum()
         n_incident_low_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
                                     & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
         n_incident_high_grade_dys_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
@@ -861,12 +860,17 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
                                     & (df.ca_oesophagus == 'stage4')).sum()
 
+        n_incident_oes_cancer_diagnosis = n_incident_oc_stage1_diag + n_incident_oc_stage2_diag + \
+                                          n_incident_oc_stage3_diag + n_incident_oc_stage4_diag
+
         n_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
         n_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
         n_stage1_oc = (df.is_alive & (df.ca_oesophagus == 'stage1')).sum()
         n_stage2_oc = (df.is_alive & (df.ca_oesophagus == 'stage2')).sum()
         n_stage3_oc = (df.is_alive & (df.ca_oesophagus == 'stage3')).sum()
         n_stage4_oc = (df.is_alive & (df.ca_oesophagus == 'stage4')).sum()
+
+        n_stage4_undiagnosed_oc = (df.is_alive & (df.ca_oesophagus == 'stage4') & ~df.ca_oesophagus_diagnosed).sum()
 
         n_low_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
         n_high_grade_dysplasia_diag = (df.is_alive & df.ca_oesophagus_diagnosed & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
@@ -886,6 +890,8 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_received_trt_this_period_stage3 = (df.is_alive & (df.ca_oesophagus == 'stage3')
                                                           & df.ca_date_treatment_oesophageal_cancer == self.sim.date).sum()
 
+        n_oc_death = df.ca_oesophageal_cancer_death.sum()
+
         cum_deaths = (~df.is_alive).sum()
 
         logger.info('%s| n_alive_ge20 |%s| n_incident_oes_cancer_diagnosis|%s| n_incident_low_grade_dys_diag|%s| '
@@ -896,7 +902,8 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     '|%s| n_stage1_oc_diag|%s| n_stage2_oc_diag|%s| n_stage3_oc_diag|%s| n_stage4_oc_diag |%s|'
                     'n_received_trt_this_period_low_grade_dysplasia |%s| n_received_trt_this_period_high_grade_dysplasia'
                     '|%s| n_received_trt_this_period_stage1|%s| n_received_trt_this_period_stage2|%s|'
-                    'n_received_trt_this_period_stage3|%s| cum_deaths |%s |n_alive|%s',
+                    'n_received_trt_this_period_stage3|%s|n_stage4_undiagnosed_oc|%s| cum_deaths |%s |n_alive|%s|'
+                    'n_oc_death|%s',
                     self.sim.date, n_alive_ge20, n_incident_oes_cancer_diagnosis, n_incident_low_grade_dys_diag,
                     n_incident_high_grade_dys_diag, n_incident_oc_stage1_diag,
                     n_incident_oc_stage2_diag, n_incident_oc_stage3_diag,n_incident_oc_stage4_diag,
@@ -905,7 +912,7 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     n_stage1_oc_diag, n_stage2_oc_diag, n_stage3_oc_diag, n_stage4_oc_diag,
                     n_received_trt_this_period_low_grade_dysplasia, n_received_trt_this_period_high_grade_dysplasia,
                     n_received_trt_this_period_stage1, n_received_trt_this_period_stage2,
-                    n_received_trt_this_period_stage3, cum_deaths, n_alive
+                    n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
                     )
 
 #       logger.debug('%s|person_one|%s',
