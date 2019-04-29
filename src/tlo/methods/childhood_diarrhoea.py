@@ -20,10 +20,6 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
-        'rp_dysentery_agelt11mo': Parameter
-        (Types.REAL,
-         'relative prevalence of dysentery for age < 11 months'
-         ),
         'rp_dysentery_age12to23mo': Parameter
         (Types.REAL,
          'relative prevalence of dysentery for age 12 to 23 months'
@@ -81,10 +77,6 @@ class ChildhoodDiarrhoea(Module):
          'baseline incidence of dysentery, among children aged < 11 months, '
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no clean water source, no improved sanitation, wealth level 3'
-         ),
-        'rr_dysentery_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of dysentery for age < 11 months'
          ),
         'rr_dysentery_age12to23mo': Parameter
         (Types.REAL,
@@ -144,10 +136,6 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no clean water source, no improved sanitation, wealth level 3'
          ),
-        'rp_acute_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative prevalence of acute watery diarrhoea for age < 11 months'
-         ),
         'rp_acute_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
          'relative prevalence of acute watery diarrhoea for age 12 to 23 months'
@@ -205,10 +193,6 @@ class ChildhoodDiarrhoea(Module):
          'baseline incidence of acute watery diarrhoea, among children aged < 11 months, '
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no clean water source, no improved sanitation, wealth level 3'
-         ),
-        'rr_acute_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of acute watery diarrhoea for age < 11 months'
          ),
         'rr_acute_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
@@ -268,10 +252,6 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
-        'rp_persistent_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative prevalence of persistent diarrhoea for age < 11 months'
-         ),
         'rp_persistent_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
          'relative prevalence of persistent diarrhoea for age 12 to 23 months'
@@ -329,10 +309,6 @@ class ChildhoodDiarrhoea(Module):
          'initial prevalence of persistent diarrhoea, among children aged < 11 months,'
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
-         ),
-        'rr_persistent_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of persistent diarrhoea for age < 11 months'
          ),
         'rr_persistent_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
@@ -392,10 +368,6 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
-        'rr_progress_persistent_diar_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of progression to persistent diarrhoea for age <11 months'
-         ),
         'rr_progress_persistent_diar_age12to23mo': Parameter
         (Types.REAL,
          'relative rate of progression to persistent diarrhoea for age 12 to 23 months'
@@ -454,10 +426,6 @@ class ChildhoodDiarrhoea(Module):
          'HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing, no access to clean water, no improved sanitation, wealth level 3'
          ),
-        'rr_death_dysentery_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of death from dysentery for age < 11 months'
-         ),
         'rr_death_dysentery_age12to23mo': Parameter
         (Types.REAL,
          'relative rate of death from dysentery for age 12 to 23 months'
@@ -503,10 +471,6 @@ class ChildhoodDiarrhoea(Module):
          'recovery rate from dysentery among children aged 2-11 months, '
          'HIV negative, no SAM,  '
          ),
-        'rr_recovery_dysentery_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of recovery from dysentery for age < 11 months'
-         ),
         'rr_recovery_pneumonia_age12to23mo': Parameter
         (Types.REAL,
          'relative rate of recovery from dysentery for age between 12 to 23 months'
@@ -528,10 +492,6 @@ class ChildhoodDiarrhoea(Module):
          'baseline recovery rate from acute watery diarrhoea among children ages 2 to 11 months, '
          'HIV negative, no SAM'
          ),
-        'rr_recovery_acute_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of recovery from acute watery diarrhoea for age <11 months'
-         ),
         'rr_recovery_acute_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
          'relative rate of recovery from acute watery diarrhoea for age between 12 to 23 months'
@@ -550,12 +510,8 @@ class ChildhoodDiarrhoea(Module):
          ),
         'r_recovery_persistent_diarrhoea': Parameter
         (Types.REAL,
-         'baseline recovery rate from persistent diarrhoea among children ages 2 to 11 months, '
+         'baseline recovery rate from persistent diarrhoea among children less than 11 months, '
          'HIV negative, no SAM'
-         ),
-        'rr_recovery_persistent_diarrhoea_agelt11mo': Parameter
-        (Types.REAL,
-         'relative rate of recovery from acute watery diarrhoea for age <11 months'
          ),
         'rr_recovery_persistent_diarrhoea_age12to23mo': Parameter
         (Types.REAL,
@@ -589,6 +545,8 @@ class ChildhoodDiarrhoea(Module):
         'ei_diarrhoea_status': Property(Types.CATEGORICAL, 'enteric infections - diarrhoea status',
                                         categories=['none', 'dysentery', 'acute watery diarrhoea',
                                                     'persistent diarrhoea']),
+        'di_dehydration_status': Property(Types.CATEGORICAL, 'dehydration status',
+                                          categories = ['no dehydration', 'some dehydration', 'severe dehydration']),
         'has_hiv': Property(Types.BOOL, 'temporary property - has hiv'),
         'malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'indoor_air_pollution': Property(Types.BOOL, 'temporary property - indoor air pollution'),
@@ -604,8 +562,7 @@ class ChildhoodDiarrhoea(Module):
         """
         p = self.parameters
 
-        p['base_prev_dysentery'] = 0.2
-        p['rp_dysentery_agelt11mo'] = 1.2
+        p['base_prev_dysentery'] = 0.3
         p['rp_dysentery_age12to23mo'] = 0.8
         p['rp_dysentery_age24to59mo'] = 0.5
         p['rp_dysentery_HIV'] = 1.4
@@ -619,8 +576,7 @@ class ChildhoodDiarrhoea(Module):
         p['rp_dysentery_wealth2'] = 0.9
         p['rp_dysentery_wealth4'] = 1.2
         p['rp_dysentery_wealth5'] = 1.3
-        p['base_incidence_dysentery'] = 0.2
-        p['rr_dysentery_agelt11mo'] = 1.2
+        p['base_incidence_dysentery'] = 0.3
         p['rr_dysentery_age12to23mo'] = 0.8
         p['rr_dysentery_age24to59mo'] = 0.5
         p['rr_dysentery_HIV'] = 1.4
@@ -635,7 +591,6 @@ class ChildhoodDiarrhoea(Module):
         p['rr_dysentery_wealth4'] = 1.2
         p['rr_dysentery_wealth5'] = 1.3
         p['base_prev_acute_diarrhoea'] = 0.4
-        p['rp_acute_diarrhoea_agelt11mo'] = 1.3
         p['rp_acute_diarrhoea_age12to23mo'] = 0.8
         p['rp_acute_diarrhoea_age24to59mo'] = 0.5
         p['rp_acute_diarrhoea_HIV'] = 1.3
@@ -650,7 +605,6 @@ class ChildhoodDiarrhoea(Module):
         p['rp_acute_diarrhoea_wealth4'] = 1.2
         p['rp_acute_diarrhoea_wealth5'] = 1.3
         p['base_incidence_acute_diarrhoea'] = 0.5
-        p['rr_acute_diarrhoea_agelt11mo'] = 1.3
         p['rr_acute_diarrhoea_age12to23mo'] = 0.8
         p['rr_acute_diarrhoea_age24to59mo'] = 0.5
         p['rr_acute_diarrhoea_HIV'] = 1.3
@@ -665,7 +619,6 @@ class ChildhoodDiarrhoea(Module):
         p['rr_acute_diarrhoea_wealth4'] = 1.2
         p['rr_acute_diarrhoea_wealth5'] = 1.3
         p['base_prev_persistent_diarrhoea'] = 0.2
-        p['rp_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rp_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rp_persistent_diarrhoea_age24to59mo'] = 0.5
         p['rp_persistent_diarrhoea_HIV'] = 1.3
@@ -680,7 +633,6 @@ class ChildhoodDiarrhoea(Module):
         p['rp_persistent_diarrhoea_wealth4'] = 1.2
         p['rp_persistent_diarrhoea_wealth5'] = 1.3
         p['base_incidence_persistent_diarrhoea'] = 0.5
-        p['rr_persistent_diarrhoea_agelt11mo'] = 1.3
         p['rr_persistent_diarrhoea_age12to23mo'] = 0.8
         p['rr_persistent_diarrhoea_age24to59mo'] = 0.5
         p['rr_persistent_diarrhoea_HIV'] = 1.3
@@ -696,19 +648,16 @@ class ChildhoodDiarrhoea(Module):
         p['rr_persistent_diarrhoea_wealth5'] = 1.3
         p['init_prop_diarrhoea_status'] = [0.2, 0.2, 0.2]
         p['r_recovery_dysentery'] = 0.9
-        p['rr_recovery_dysentery_agelt11mo'] = 0.7
         p['rr_recovery_dysentery_age12to23mo'] = 0.9
         p['rr_recovery_dysentery_age24to59mo'] = 1.1
         p['rr_recovery_dysentery_HIV'] = 0.5
         p['rr_recovery_dysentery_SAM'] = 0.5
         p['r_recovery_acute_diarrhoea'] = 0.6
-        p['rr_recovery_acute_diarrhoea_agelt11mo'] = 0.7
         p['rr_recovery_acute_diarrhoea_age12to23mo'] = 0.9
         p['rr_recovery_acute_diarrhoea_age24to59mo'] = 1.2
         p['rr_recovery_acute_diarrhoea_HIV'] = 0.6
         p['rr_recovery_acute_diarrhoea_SAM'] = 0.3
         p['r_recovery_persistent_diarrhoea'] = 0.8
-        p['rr_recovery_persistent_diarrhoea_agelt11mo'] = 0.8
         p['rr_recovery_persistent_diarrhoea_age12to23mo'] = 1.2
         p['rr_recovery_persistent_diarrhoea_age24to59mo'] = 1.3
         p['rr_recovery_persistent_diarrhoea_HIV'] = 0.6
@@ -728,6 +677,7 @@ class ChildhoodDiarrhoea(Module):
         # -------------------- DEFAULTS ------------------------------------------------------------
 
         df['ei_diarrhoea_status'] = 'none'
+        df['di_dehydration_status'] = 'no dehydration'
         df['malnutrition'] = False
         df['has_HIV'] = False
         df['HHhandwashing'] = False
@@ -747,8 +697,6 @@ class ChildhoodDiarrhoea(Module):
         p_persistent_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[2], index=under5_idx)
 
         # create probabilities of dysentery  for all age under 5
-        p_dysentery_status.loc[
-            (df.age_exact_years < 1) & df.is_alive] *= self.rp_dysentery_agelt11mo
         p_dysentery_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_dysentery_age12to23mo
         p_dysentery_status.loc[
@@ -779,8 +727,6 @@ class ChildhoodDiarrhoea(Module):
 
         # create probabilities of acute watery diarrhoea for all age under 5
         p_acute_diarrhoea_status.loc[
-            (df.age_exact_years < 1) & df.is_alive] *= self.rp_acute_diarrhoea_agelt11mo
-        p_acute_diarrhoea_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_acute_diarrhoea_age12to23mo
         p_acute_diarrhoea_status.loc[
             (df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_age24to59mo
@@ -809,8 +755,6 @@ class ChildhoodDiarrhoea(Module):
             (df.li_wealth == 5) & (df.age_years < 5) & df.is_alive] *= self.rp_acute_diarrhoea_wealth5
 
         # create probabilities of persistent diarrhoea for all age under 5
-        p_persistent_diarrhoea_status.loc[
-            (df.age_exact_years < 1) & df.is_alive] *= self.rp_persistent_diarrhoea_agelt11mo
         p_persistent_diarrhoea_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_persistent_diarrhoea_age12to23mo
         p_persistent_diarrhoea_status.loc[
@@ -891,6 +835,7 @@ class ChildhoodDiarrhoea(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'ei_diarrhoea_status'] = 'none'
+        df.at[child_id, 'di_dehydration_status'] = 'no dehydration'
 
 
 class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
@@ -925,8 +870,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         di_current_none_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') & (df.age_years < 5)]
-        di_current_none_agelt11mo_idx = \
-            df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') & (df.age_exact_years < 1)]
         di_current_none_age12to23mo_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'none') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
@@ -971,7 +914,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                                               df.is_alive & (df.ei_diarrhoea_status == 'none') & (
                                                   df.age_years < 5)])
 
-        eff_prob_ei_dysentery.loc[di_current_none_agelt11mo_idx] *= m.rr_dysentery_agelt11mo
         eff_prob_ei_dysentery.loc[di_current_none_age12to23mo_idx] *= m.rr_dysentery_age12to23mo
         eff_prob_ei_dysentery.loc[di_current_none_age24to59mo_idx] *= m.rr_dysentery_age24to59mo
         eff_prob_ei_dysentery.loc[di_current_none_handwashing_idx] *= m.rr_dysentery_HHhandwashing
@@ -990,7 +932,7 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                                           index=df.index[
                                               df.is_alive & (df.ei_diarrhoea_status == 'none') & (
                                                   df.age_years < 5)])
-        eff_prob_ei_acute_diarrhoea.loc[di_current_none_agelt11mo_idx] *= m.rr_acute_diarrhoea_agelt11mo
+
         eff_prob_ei_acute_diarrhoea.loc[di_current_none_age12to23mo_idx] *= m.rr_acute_diarrhoea_age12to23mo
         eff_prob_ei_acute_diarrhoea.loc[di_current_none_age24to59mo_idx] *= m.rr_acute_diarrhoea_age24to59mo
         eff_prob_ei_acute_diarrhoea.loc[di_current_none_handwashing_idx] *= m.rr_acute_diarrhoea_HHhandwashing
@@ -1010,7 +952,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                                                     df.is_alive & (df.ei_diarrhoea_status == 'none') & (
                                                         df.age_years < 5)])
 
-        eff_prob_ei_persistent_diarrhoea.loc[di_current_none_agelt11mo_idx] *= m.rr_persistent_diarrhoea_agelt11mo
         eff_prob_ei_persistent_diarrhoea.loc[di_current_none_age12to23mo_idx] *= m.rr_persistent_diarrhoea_age12to23mo
         eff_prob_ei_persistent_diarrhoea.loc[di_current_none_age24to59mo_idx] *= m.rr_persistent_diarrhoea_age24to59mo
         eff_prob_ei_persistent_diarrhoea.loc[di_current_none_handwashing_idx] *= m.rr_persistent_diarrhoea_HHhandwashing
@@ -1060,8 +1001,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         di_current_dysentery_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_years < 5]
-        di_current_dysentery_agelt11mo_idx = \
-            df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') & df.age_exact_years < 1]
         di_current_dysentery_age12to23mo_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
@@ -1078,8 +1017,7 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_recovery_dysentery = pd.Series(m.r_recovery_dysentery,
                                                 index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'dysentery')
                                                                & (df.age_exact_years < 5)])
-     #   eff_prob_recovery_dysentery.loc[di_current_dysentery_agelt11mo_idx] *= \
-     #       m.rr_recovery_dysentery_agelt11mo
+
         eff_prob_recovery_dysentery.loc[di_current_dysentery_age12to23mo_idx] *= \
             m.rr_recovery_dysentery_age12to23mo
         eff_prob_recovery_dysentery.loc[di_current_dysentery_age24to59mo_idx] *= \
@@ -1102,8 +1040,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         di_current_acute_diarrhoea_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & df.age_exact_years < 5]
-        di_current_acute_diarrhoea_agelt11mo_idx = \
-            df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') & df.age_exact_years < 1]
         di_current_acute_diarrhoea_age12to23mo_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
@@ -1122,8 +1058,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                       index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea') &
                                      (df.age_exact_years < 5)])
 
-     #   eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_agelt11mo_idx] *= \
-     #       m.rr_recovery_acute_diarrhoea_agelt11mo
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age12to23mo_idx] *= \
             m.rr_recovery_acute_diarrhoea_age12to23mo
         eff_prob_recovery_acute_diarrhoea.loc[di_current_acute_diarrhoea_age24to59mo_idx] *= \
@@ -1146,8 +1080,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
 
         di_current_persistent_diarrhoea_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') & df.age_years < 5]
-        di_current_persistent_diarrhoea_agelt11mo_idx = \
-            df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') & df.age_exact_years < 1]
         di_current_persistent_diarrhoea_age12to23mo_idx = \
             df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)]
@@ -1166,8 +1098,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
                       index=df.index[df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea') &
                                      (df.age_exact_years < 5)])
 
-     #   eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_agelt11mo_idx] *= \
-    #      m.rr_recovery_persistent_diarrhoea_agelt11mo
         eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_age12to23mo_idx] *= \
             m.rr_recovery_persistent_diarrhoea_age12to23mo
         eff_prob_recovery_persistent_diarrhoea.loc[di_current_persistent_diarrhoea_age24to59mo_idx] *= \
@@ -1186,14 +1116,92 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         idx_recovery_persistent_diarrhoea = dfx.index[dfx.eff_prob_recovery_persistent_diarrhoea > dfx.random_draw_04]
         df.loc[idx_recovery_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'none'
 
+        # ---------------------------------------- ASSIGN DEHYDRATION STATUS --------------------------------------
 
-        # ---------------------------- DEATH FROM PNEUMONIA DISEASE ---------------------------------------
+        # for dysentery
+        under5_dysentery_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')]
 
-        eff_prob_death_pneumonia = \
+        eff_prob_some_dehydration_dysentery = pd.Series(0.5, index=under5_dysentery_idx)
+        eff_prob_severe_dehydration_dysentery = pd.Series(0.3, index=under5_dysentery_idx)
+        random_draw_a = pd.Series(self.sim.rng.random_sample(size=len(under5_dysentery_idx)),
+                                  index=df.index[(df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_dysentery, eff_prob_severe_dehydration_dysentery, random_draw_a],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_dysentery', 'eff_prob_severe_dehydration_dysentery', 'random_draw_a']
+        dfx['no_dehydration_dysentery'] = \
+            1 - (dfx.eff_prob_some_dehydration_dysentery + dfx.eff_prob_severe_dehydration_dysentery)
+
+        idx_some_dehydration_dysentery = \
+            dfx.index[(dfx.random_draw_a > dfx.no_dehydration_dysentery) &
+                      (dfx.random_draw_a < (dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery))]
+        idx_severe_dehydration_dysentery = \
+            dfx.index[((dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery) < dfx.random_draw_a) &
+                      ((dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery +
+                                                     dfx.eff_prob_severe_dehydration_dysentery) > dfx.random_draw_a)]
+        df.loc[idx_some_dehydration_dysentery, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_dysentery, 'di_dehydration_status'] = 'severe dehydration'
+
+        # for acute watery diarrhoea
+        under5_acute_diarrhoea_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea')]
+
+        eff_prob_some_dehydration_acute_diarrhoea = pd.Series(0.5, index=under5_acute_diarrhoea_idx)
+        eff_prob_severe_dehydration_acute_diarrhoea = pd.Series(0.3, index=under5_acute_diarrhoea_idx)
+        random_draw_b = pd.Series(self.sim.rng.random_sample(size=len(under5_acute_diarrhoea_idx)),
+                                  index=df.index[
+                                      (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_acute_diarrhoea, eff_prob_severe_dehydration_acute_diarrhoea, random_draw_b],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_acute_diarrhoea', 'eff_prob_severe_dehydration_acute_diarrhoea', 'random_draw_b']
+        dfx['no_dehydration_acute_diarrhoea'] = \
+            1 - (dfx.eff_prob_some_dehydration_acute_diarrhoea + dfx.eff_prob_severe_dehydration_acute_diarrhoea)
+
+        idx_some_dehydration_acute_diarrhoea = \
+            dfx.index[(dfx.random_draw_b > dfx.no_dehydration_acute_diarrhoea) &
+                      (dfx.random_draw_b < (dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea))]
+        idx_severe_dehydration_acute_diarrhoea = \
+            dfx.index[((dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea) < dfx.random_draw_b) &
+                      ((dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea +
+                        dfx.eff_prob_severe_dehydration_acute_diarrhoea) > dfx.random_draw_b)]
+        df.loc[idx_some_dehydration_acute_diarrhoea, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_acute_diarrhoea, 'di_dehydration_status'] = 'severe dehydration'
+
+        # for persistent diarrhoea
+        under5_persistent_diarrhoea_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea')]
+
+        eff_prob_some_dehydration_persistent_diarrhoea = pd.Series(0.5, index=under5_persistent_diarrhoea_idx)
+        eff_prob_severe_dehydration_persistent_diarrhoea = pd.Series(0.3, index=under5_persistent_diarrhoea_idx)
+        random_draw_c = pd.Series(self.sim.rng.random_sample(size=len(under5_persistent_diarrhoea_idx)),
+                                  index=df.index[
+                                      (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_persistent_diarrhoea, eff_prob_severe_dehydration_persistent_diarrhoea, random_draw_c],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_persistent_diarrhoea', 'eff_prob_severe_dehydration_persistent_diarrhoea', 'random_draw_c']
+        dfx['no_dehydration_persistent_diarrhoea'] = \
+            1 - (dfx.eff_prob_some_dehydration_persistent_diarrhoea + dfx.eff_prob_severe_dehydration_persistent_diarrhoea)
+
+        idx_some_dehydration_persistent_diarrhoea = \
+            dfx.index[(dfx.random_draw_c > dfx.no_dehydration_persistent_diarrhoea) &
+                      (dfx.random_draw_c < (dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea))]
+        idx_severe_dehydration_persistent_diarrhoea = \
+            dfx.index[((dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea) < dfx.random_draw_c) &
+                      ((dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea +
+                        dfx.eff_prob_severe_dehydration_persistent_diarrhoea) > dfx.random_draw_c)]
+        df.loc[idx_some_dehydration_persistent_diarrhoea, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_persistent_diarrhoea, 'di_dehydration_status'] = 'severe dehydration'
+
+        # ---------------------------- DEATH FROM DIARRHOEAL DISEASE (DUE TO DEHYDRATION)------------------------------
+
+        eff_prob_death_diarrhoea = \
             pd.Series(m.r_death_pneumonia,
                       index=df.index[df.is_alive & (df.ri_pneumonia_status == 'severe pneumonia') & (df.age_years < 5)])
-        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_agelt2mo_idx] *= \
-            m.rr_death_pneumonia_agelt2mo
+        eff_prob_death_pneumonia.loc[pn_current_severe_pneum_agelt11mo_idx] *= \
+            m.rr_death_pneumonia_agelt11mo
         eff_prob_death_pneumonia.loc[pn_current_severe_pneum_age12to23mo_idx] *= \
             m.rr_death_pneumonia_age12to23mo
         eff_prob_death_pneumonia.loc[pn_current_severe_pneum_age24to59mo_idx] *= \
@@ -1213,7 +1221,6 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_death, 'ri_pneumonia_death'] = True
 
 
-
 class EntericInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
 
@@ -1231,3 +1238,13 @@ class EntericInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         ri_pneumonia_status_total = df.ri_pneumonia_status.sum()
         proportion_pneumonia = ri_pneumonia_status_total / len(df)
+
+
+        for child in df.index[under5_dysentery_idx]:
+            if child is self.sim.rng.random_sample < 0.4:
+                return df.loc['di_dehydration_status'] == 'severe dehydration'
+            elif child is 0.8 > self.sim.rng.random_sample > 0.4:
+                return df.loc['di_dehydration_status'] == 'some dehydration'
+#            else:
+#                return df.loc['di_dehydration_status'] == 'no dehydration'
+
