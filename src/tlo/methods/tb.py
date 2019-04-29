@@ -92,7 +92,7 @@ class tb(Module):
         'tb_date_xpert_test': Property(Types.DATE, 'date of tb Xpert test'),
         'tb_diagnosed': Property(Types.BOOL, 'current diagnosis of active tb'),
         'tb_mdr_diagnosed': Property(Types.BOOL, 'current diagnosis of active tb_mdr'),
-        'tb_treated': Property(Types.BOOL, 'on tb treatment regimen'),
+        'tb_on_treatment': Property(Types.BOOL, 'on tb treatment regimen'),
         'tb_date_treated': Property(Types.DATE, 'date tb treatment started'),
         'tb_treatment_failure': Property(Types.BOOL, 'failed first line tb treatment'),
         'tb_treated_mdr': Property(Types.BOOL, 'on tb treatment MDR regimen'),
@@ -173,7 +173,7 @@ class tb(Module):
         df['tb_date_xpert_test'] = pd.NaT
         df['tb_diagnosed'] = False
         df['tb_mdr_diagnosed'] = False
-        df['tb_treated'] = False
+        df['tb_on_treatment'] = False
         df['tb_date_treated'] = pd.NaT
         df['tb_treatment_failure'] = False
         df['tb_treatedMDR'] = False
@@ -300,7 +300,7 @@ class tb(Module):
         df.at[child_id, 'tb_date_xpert_test'] = pd.NaT
         df.at[child_id, 'tb_diagnosed'] = False
         df.at[child_id, 'tb_mdr_diagnosed'] = False
-        df.at[child_id, 'tb_treated'] = False
+        df.at[child_id, 'tb_on_treatment'] = False
         df.at[child_id, 'tb_date_treated'] = pd.NaT
         df.at[child_id, 'tb_treatment_failure'] = False
         df.at[child_id, 'tb_treatedMDR'] = False
@@ -727,7 +727,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
         df.loc[
-            new_case, 'tb_inf'] = 'latent_mdr_secondary'  # unchanged status, high risk of relapse again as if just recovered
+            new_case, 'tb_inf'] = 'latent_mdr_secondary'  # unchanged status, high risk of relapse as if just infected
         df.loc[new_case, 'tb_date_latent'] = now
         df.loc[new_case, 'tb_specific_symptoms'] = 'latent'
 
@@ -861,8 +861,13 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------
-#   Health system interactions
+#   HEALTH SYSTEM INTERACTIONS
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+#   Testing
+# ---------------------------------------------------------------------------
+
 
 class HSI_Tb_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
     """
@@ -968,6 +973,7 @@ class HSI_Tb_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
+
 # TODO: complete
 class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
     """
@@ -1040,6 +1046,11 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                             tclose=None)
 
 
+# ---------------------------------------------------------------------------
+#   Treatment
+# ---------------------------------------------------------------------------
+
+
 # TODO: complete
 class HSI_Tb_StartTreatment(Event, IndividualScopeEventMixin):
     """
@@ -1071,230 +1082,21 @@ class HSI_Tb_StartTreatment(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
-        # ----------------------------------- ASSIGN ART ADHERENCE PROPERTIES -----------------------------------
-
-        logger.debug('This is HSI_Hiv_StartTreatment: initiating treatment for person %d', person_id)
+        logger.debug("We are now ready to treat this tb case", person_id)
 
         params = self.module.parameters
+        now = self.sim.date
         df = self.sim.population.props
 
-        if df.at[person_id, 'is_alive'] and \
-            df.at[person_id, 'hiv_diagnosed'] and \
-            (df.at[person_id, 'age_years'] < 15):
-            df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                    p=[(1 - params['vls_child']),
-                                                                       params['vls_child']])
+        # treatment allocated
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'tb_diagnosed']:
+            df.at[person_id, 'tb_on_treatment'] = True
+            df.at[person_id, 'date_tb_treated'] = now
 
-        if df.at[person_id, 'is_alive'] and \
-            df.at[person_id, 'hiv_diagnosed'] and \
-            (df.at[person_id, 'age_years'] >= 15) and \
-            (df.at[person_id, 'sex'] == 'M'):
-            df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                    p=[(1 - params['vls_m']), params['vls_m']])
+        # schedule a 6-month event where people are cured, symptoms return to latent or not cured
+        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
-        if df.at[person_id, 'is_alive'] and \
-            df.at[person_id, 'hiv_diagnosed'] and \
-            (df.at[person_id, 'age_years'] >= 15) and \
-            (df.at[person_id, 'sex'] == 'F'):
-            df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
-                                                                    p=[(1 - params['vls_f']), params['vls_f']])
 
-        df.at[person_id, 'hiv_date_art_start'] = self.sim.date
-
-        # change specific_symptoms to 'none' if virally suppressed and adherent (hiv_on_art = 2)
-        if df.at[person_id, 'hiv_on_art'] == 2:
-            df.at[person_id, 'hiv_specific_symptoms'] = 'none'
-
-        # ----------------------------------- SCHEDULE VL MONITORING -----------------------------------
-
-        # Create follow-up appointments for VL monitoring
-        times = params['VL_monitoring_times']
-
-        logger.debug('....This is HSI_Hiv_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-                     person_id)
-
-        followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        for i in range(0, len(times)):
-            followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
-            self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                            priority=2,
-                                                            topen=followup_appt_date,
-                                                            tclose=followup_appt_date + DateOffset(weeks=2)
-                                                            )
-
-        # ----------------------------------- SCHEDULE REPEAT PRESCRIPTIONS -----------------------------------
-
-        date_repeat_prescription = self.sim.date + DateOffset(months=3)
-
-        logger.debug(
-            '....This is HSI_Hiv_StartTreatment: scheduling a repeat prescription for person %d on date %s',
-            person_id, date_repeat_prescription)
-
-        followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=date_repeat_prescription,
-                                                        tclose=date_repeat_prescription + DateOffset(weeks=2)
-                                                        )
-
-# TODO: complete
-class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
-
-# ---------------------------------------------------------------------------
-#   Testing
-# ---------------------------------------------------------------------------
-#
-# class TbTestingEvent(Event, IndividualScopeEventMixin):
-#     """
-#     Testing algorithm for smear sputum tests only
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         params = self.module.parameters
-#         df = self.sim.population.props
-#         now = self.sim.date
-#
-#         df.at[person_id, 'tb_ever_tested'] = True
-#         df.at[person_id, 'tb_smear_test'] = True
-#         df.at[person_id, 'tb_date_smear_test'] = now
-#         df.at[person_id, 'tb_result_smear_test'] = False
-#         df.at[person_id, 'tb_diagnosed'] = False  # default
-#
-#         # ----------------------------------- OUTCOME OF TEST -----------------------------------
-#
-#         # hiv+
-#         if (df.at[person_id, 'tb_inf'] == 'active_susc') or (df.at[person_id, 'tb_inf'] == 'active_mdr') and df.at[
-#             person_id, 'hiv_inf']:
-#             diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
-#                                                                       (1 - params['prop_smear_positive'])])
-#             if diagnosed:
-#                 df.at[person_id, 'tb_result_smear_test'] = True
-#                 df.at[person_id, 'tb_diagnosed'] = True
-#
-#         # hiv-, 80% of smear tests will be negative - extrapulmonary
-#         elif (df.at[person_id, 'tb_inf'] == 'active_susc') or (df.at[person_id, 'tb_inf'] == 'active_mdr') and not \
-#             df.at[person_id, 'hiv_inf']:
-#             diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
-#                                                                       (1 - params['prop_smear_positive_hiv'])])
-#
-#             if diagnosed:
-#                 df.at[person_id, 'tb_result_smear_test'] = True
-#                 df.at[person_id, 'tb_diagnosed'] = True
-#
-#         # ----------------------------------- REFERRALS FOR SECONDARY TESTING -----------------------------------
-#         # remaining 20% of active cases and negative cases referred for xpert testing with some delay
-#         # schedule xpert testing at future date
-#         # random draw approx 2 months?
-#
-#         if not df.at[person_id, 'tb_diagnosed']:
-#             referral_time = abs(np.random.normal(loc=(2 / 12), scale=(0.5 / 12), size=1))  # in years
-#             future_test_time = now + pd.to_timedelta(referral_time[0] * 365.25, unit='d')
-#             # schedule another initial disease call
-#             repeat_test = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
-#                                                                     cue_type='InitialDiseaseCall',
-#                                                                     disease_specific=self.module.name)
-#             self.sim.schedule_event(repeat_test, future_test_time)
-#
-#         # ----------------------------------- REFERRALS FOR TREATMENT / IPT-----------------------------------
-#         if df.at[person_id, 'tb_diagnosed']:
-#             # request treatment
-#             treatment = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
-#                                                                   cue_type='InitialDiseaseCall',
-#                                                                   disease_specific=self.module.name)
-#             self.sim.schedule_event(treatment, now)
-#
-#             # trigger ipt outreach event for all paediatric contacts of case
-#             # randomly sample from <5 yr olds
-#             ipt_sample = df[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive].sample(n=5,
-#                                                                                                     replace=False).index
-#             # need to pass pd.Series length (df.is_alive) to outreach event
-#             test = pd.Series(False, index=df.index)
-#             test.loc[ipt_sample] = True
-#
-#             outreach_event = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,
-#                                                         target=test)
-#             self.sim.schedule_event(outreach_event, self.sim.date)
-#
-#
-# class TbXpertTest(Event, IndividualScopeEventMixin):
-#     """ Xpert test for people with negative smear result
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         df = self.sim.population.props
-#         now = self.sim.date
-#
-#         df.at[person_id, 'tb_ever_tested'] = True
-#         df.at[person_id, 'tb_xpert_test'] = True
-#         df.at[person_id, 'tb_date_xpert_test'] = now
-#         df.at[person_id, 'tb_result_xpert_test'] = False
-#         df.at[person_id, 'tb_diagnosed_mdr'] = False  # default
-#
-#         # a further 10% fail to be diagnosed with Xpert (smear-negative + sensitivity of test)
-#         # they will present back to the health system with some (delay 2-4 weeks)
-#         if (df.at[person_id, 'tb_inf'] == 'active_susc') or (df.at[person_id, 'tb_inf'] == 'active_mdr'):
-#
-#             diagnosed = self.sim.rng.choice([True, False], size=1, p=[0.9, 0.1])
-#             if diagnosed:
-#                 df.at[person_id, 'tb_result_xpert_test'] = True
-#                 df.at[person_id, 'tb_diagnosed'] = True
-#
-#                 if df.at[person_id, 'tb_inf'] == 'active_mdr':
-#                     df.at[person_id, 'tb_diagnosed_mdr'] = True
-#
-#             else:
-#                 delay = abs(np.random.normal(loc=4, scale=1, size=1))  # in weeks
-#                 future_test_time = now + pd.to_timedelta(delay[0] * 7, unit='d')
-#                 # schedule another initial disease call
-#                 repeat_test = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
-#                                                                         cue_type='InitialDiseaseCall',
-#                                                                         disease_specific=self.module.name)
-#                 self.sim.schedule_event(repeat_test, future_test_time)
-#
-#         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
-#         if df.at[person_id, 'tb_diagnosed']:
-#             # request treatment
-#             treatment = healthsystem.HealthSystemInteractionEvent(self.module, person_id,
-#                                                                   cue_type='InitialDiseaseCall',
-#                                                                   disease_specific=self.module.name)
-#             self.sim.schedule_event(treatment, now)
-#
-#
-# # ---------------------------------------------------------------------------
-# #   Treatment
-# # ---------------------------------------------------------------------------
-#
-# class TbTreatmentEvent(Event, IndividualScopeEventMixin):
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         logger.debug("We are now ready to treat this tb case", person_id)
-#
-#         params = self.module.parameters
-#         now = self.sim.date
-#         df = self.sim.population.props
-#
-#         # treatment allocated
-#         if df.at[person_id, 'is_alive'] and df.at[person_id, 'tb_diagnosed']:
-#             df.at[person_id, 'tb_treated'] = True
-#             df.at[person_id, 'date_tb_treated'] = now
-#
-#         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-#         self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
-#
-#
 # class TbTreatmentMdrEvent(Event, IndividualScopeEventMixin):
 #
 #     def __init__(self, module, person_id):
@@ -1315,38 +1117,43 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
 #         self.sim.schedule_event(TbCureMdrEvent(self, person_id), self.sim.date + DateOffset(months=6))
 #
 #
-# # ---------------------------------------------------------------------------
-# #   Cure
-# # ---------------------------------------------------------------------------
-#
-# class TbCureEvent(Event, IndividualScopeEventMixin):
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         logger.debug("Stopping tb treatment and curing person", person_id)
-#
-#         df = self.sim.population.props
-#
-#         # after six months of treatment, stop
-#         df.at[person_id, 'tb_treated'] = False
-#
-#         # if drug-susceptible then probability of successful treatment
-#         if df.at[person_id, 'tb_inf'] == 'active_susc':
-#
-#             cured = self.sim.random_sample(size=1) < self.module.parameters['prob_treatment_success']
-#
-#             if cured:
-#                 df.at[person_id, 'tb_inf'] = 'latent_susc'
-#                 df.at[person_id, 'tb_diagnosed'] = False
-#
-#             else:
-#                 # request a repeat / Xpert test - follow-up
-#                 # this will include drug-susceptible treatment failures and mdr-tb cases
-#                 followup_appt = healthsystem.HealthSystemInteractionEvent(self.module, person_id, cue_type='FollowUp',
-#                                                                           disease_specific=self.module.name)
-#                 self.sim.schedule_event(followup_appt, self.sim.date)  # TODO: include a delay here
+# ---------------------------------------------------------------------------
+#   Cure
+# ---------------------------------------------------------------------------
+
+
+class TbCureEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Stopping tb treatment and curing person", person_id)
+
+        df = self.sim.population.props
+
+        # after six months of treatment, stop
+        df.at[person_id, 'tb_on_treatment'] = False
+
+        # if drug-susceptible then probability of successful treatment
+        if df.at[person_id, 'tb_inf'] == 'active_susc':
+
+            cured = self.sim.random_sample(size=1) < self.module.parameters['prob_treatment_success']
+
+            if cured:
+                df.at[person_id, 'tb_inf'] = 'latent_susc'
+                df.at[person_id, 'tb_diagnosed'] = False
+
+            else:
+                # request a repeat / Xpert test - follow-up
+                # this will include drug-susceptible treatment failures and mdr-tb cases
+                secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_event(secondary_test,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 #
 #
 # class TbCureMdrEvent(Event, IndividualScopeEventMixin):
@@ -1378,55 +1185,84 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
 #                 self.sim.schedule_event(followup_appt, self.sim.date)  # TODO: include a delay here
 #
 #
-# # ---------------------------------------------------------------------------
-# #   IPT
-# # ---------------------------------------------------------------------------
-#
-# class TbIptEvent(Event, IndividualScopeEventMixin):
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         logger.debug("Starting IPT", person_id)
-#
-#         df = self.sim.population.props
-#
-#         df.at[person_id, 'tb_on_ipt'] = True
-#         df.at[person_id, 'tb_date_ipt'] = self.sim.date
-#
-#         # schedule end date of ipt after six months
-#         self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
-#
-#
-# class TbIptEndEvent(Event, IndividualScopeEventMixin):
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#     def apply(self, person_id):
-#         logger.debug("Stopping ipt", person_id)
-#
-#         df = self.sim.population.props
-#
-#         df.at[person_id, 'tb_on_ipt'] = False
-#
-#
-# class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
-#     """The regular event that offers ipt to HIV+ adolescents/adults
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(months=3))
-#
-#     def apply(self, population):
-#         df = population.props
-#         mask_for_person_to_be_reached = (df.age_years >= 15) & (df.tb_inf == 'uninfected') & df.hiv_inf
-#         target = mask_for_person_to_be_reached.loc[df.is_alive]
-#
-#         outreach_event = healthsystem.OutreachEvent(self.module, disease_specific=self.module.name,
-#                                                     target=target)
-#         self.sim.schedule_event(outreach_event, self.sim.date)
+# ---------------------------------------------------------------------------
+#   IPT
+# ---------------------------------------------------------------------------
+
+
+# TODO: complete, check target for ipt
+# TODO: find consumables isoniazid for non-hiv+
+class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
+    """
+        This is a Health System Interaction Event - give ipt
+        """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for adults',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Tb_Ipt'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+
+    def apply(self, person_id):
+        logger.debug("Starting IPT", person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'tb_on_ipt'] = True
+        df.at[person_id, 'tb_date_ipt'] = self.sim.date
+
+        # schedule end date of ipt after six months
+        self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
+
+
+class TbIptEndEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Stopping ipt", person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'tb_on_ipt'] = False
+
+
+class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that offers ipt to HIV+ adolescents/adults
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=3))
+
+    def apply(self, population):
+        df = population.props
+        mask_for_person_to_be_reached = (df.age_years >= 15) & (df.tb_inf == 'uninfected') & df.hiv_inf
+        target = mask_for_person_to_be_reached.loc[df.is_alive]
+
+        for person_id in target:
+            ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(ipt_event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
 
 # ---------------------------------------------------------------------------
@@ -1449,11 +1285,11 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         mortality_rate = pd.Series(0, index=df.index)
         mortality_rate.loc[((df.tb_inf == 'active_susc_primary') | (df.tb_inf == 'active_mdr_primary') | (
             df.tb_inf == 'active_susc_secondary') | (df.tb_inf == 'active_mdr_secondary')) & ~df.hiv_inf & (
-                               ~df.tb_treated | ~df.tb_treated_mdr)] = params[
+                               ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
             'monthly_prob_tb_mortality']
         mortality_rate.loc[((df.tb_inf == 'active_susc_primary') | (df.tb_inf == 'active_mdr_primary') | (
             df.tb_inf == 'active_susc_secondary') | (df.tb_inf == 'active_mdr_secondary')) & df.hiv_inf & (
-                               ~df.tb_treated | ~df.tb_treated_mdr)] = params[
+                               ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
             'monthly_prob_tb_mortality_hiv']
         # print('mort_rate: ', mortality_rate)
 
