@@ -2,8 +2,6 @@ import datetime
 import logging
 import os
 
-import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, qaly, hiv, \
@@ -34,7 +32,7 @@ fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
-#
+
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
@@ -59,7 +57,7 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
 fh.close()
-#
-#
+
+
 # # %% read the results
 # output = parse_log_file(logfile)
