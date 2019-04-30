@@ -77,10 +77,10 @@ class Contraception(Module):
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_failure'] = workbook['Failure']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
-        p = self.parameters
-        p['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
-        p['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
-        p['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
+        self.parameters['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
+        self.parameters['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
+        self.parameters['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
+        # TODO: to decide whether to have the above 3 parameters fixed (given model is deterministic) or with uncertainty (move toward a probabilistic model)
 
 
     def initialise_population(self, population):
@@ -308,10 +308,11 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                                                                            'periodic_abstinence',
                                                                                            'withdrawal',
                                                                                            'other_traditional']].tolist()
-        probabilities = df_new.loc[using_idx, ['is_pregnant','contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+        probabilities = df_new.loc[using_idx, ['age_years','is_pregnant','contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
+        probabilities['prob'] = probabilities['prob'] + (m.parameters['r_fail_cons'] + (m.parameters['r_fail_age']*probabilities['age_years']) + (m.parameters['r_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['preg'] = 'preg'
 
