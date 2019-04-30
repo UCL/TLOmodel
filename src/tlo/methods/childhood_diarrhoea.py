@@ -7,6 +7,7 @@ import logging
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -830,10 +831,10 @@ class ChildhoodDiarrhoea(Module):
 
         # add the basic event
         event = EntericInfectionEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(weeks=1))
+        sim.schedule_event(event, sim.date + DateOffset(weeks=2))
 
         # add an event to log to screen
-        sim.schedule_event(EntericInfectionLoggingEvent(self), sim.date + DateOffset(weeks=1))
+        sim.schedule_event(EntericInfectionLoggingEvent(self), sim.date + DateOffset(weeks=2))
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -1309,6 +1310,16 @@ class EntericInfectionEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_death_persistent_diarrhoea', 'random_draw']
         idx_incident_death_persistent_diarrhoea = dfx.index[dfx.eff_prob_death_persistent_diarrhoea > dfx.random_draw]
         df.loc[idx_incident_death_persistent_diarrhoea, 'ei_diarrhoea_death'] = True
+
+        death_this_period = df.index[df.ei_diarrhoea_death]
+        for individual_id in death_this_period:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodDiarrhoea'),
+                                    self.sim.date)
+
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
+
 
 class EntericInfectionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
