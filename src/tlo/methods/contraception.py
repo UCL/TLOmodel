@@ -35,11 +35,13 @@ class Contraception(Module):
     PARAMETERS = {
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
         # TODO: fertlity schedule (baseline fertlity) is currently in demography should it only be here in contraception?
-        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'), # 'irate_1_' sheet created manually as a work around to address to do point below
-        # TODO: irate1 is specified incorrectly as expos is too low for each method - should be total exposure time and the same for each method i.e. exposure should be those exposed to 'not_using'. The irate1 sheet also needs to be transposed to have one row for monthly, quarterly, year rate and columns for each method as in the Age_spec fertility rate, and column names spelt exactly the same as the contraception categories in the module
+        'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'),
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2_'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
-        'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure')
+        'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
+        'r_fail_age': Parameter(Types.REAL, 'change in drate (failure) per year of age increase'),
+        'r_fail_age_sq': Parameter(Types.REAL, 'change in drate (failure) per year of age squared increase'),
+        'r_fail_cons': Parameter(Types.REAL, 'drate (failure) at age zero - constant term from regression')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -75,6 +77,11 @@ class Contraception(Module):
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_failure'] = workbook['Failure']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
+        p = self.parameters
+        p['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
+        p['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
+        p['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -360,6 +367,11 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
         c_worksheet = m.parameters['contraception_initiation2']
         c_probs = c_worksheet.loc[0].values.tolist()
         c_names = c_worksheet.columns.tolist()
+        # Note the irate2s are low as they are just for the month after pregnancy and
+        # 	then for the 99.48% who 'initiate' to 'not_using' (i.e. 1 - sum(irate2s))
+        # 	they are then subject to the usual irate1s per month
+        # 	- see Contraception-Pregnancy.pdf schematic
+
 
         # get the indices of the women from the population with the relevant characterisitcs
         # those who have just given birth within the last month
