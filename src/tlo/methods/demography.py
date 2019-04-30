@@ -110,7 +110,7 @@ class Demography(Module):
         """
         workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
-        self.parameters['fertility_schedule'] = workbook['Age_spec fertility'] #TODO: this needs to have cmeth variable with each of the 11 contraception categories the same as contraception, for each age group
+        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
@@ -166,8 +166,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
 
-        # TODO: Lifestyle module should look after contraception property
-        df.loc[df.is_alive, 'contraception'] = 'not_using'  # this will be ascribed by the lifestype module
+        df.loc[df.is_alive, 'contraception'] = 'not_using'  # this will be ascribed by the Contraception module
 
         age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
@@ -221,7 +220,7 @@ class Demography(Module):
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
 
         df.at[child_id, 'is_married'] = False
-        df.at[child_id, 'contraception'] = 'not_using'  # TODO: contraception should be governed by lifestyle module
+        df.at[child_id, 'contraception'] = 'not_using'  # Contraception governed by Contraception module
 
         df.at[child_id, 'age_exact_years'] = 0.0
         df.at[child_id, 'age_years'] = 0
