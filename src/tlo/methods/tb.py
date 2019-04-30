@@ -13,7 +13,7 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, Individua
 from tlo.methods import healthsystem, demography
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 # TODO: add logging
@@ -562,6 +562,30 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[fast_progression, 'tb_ever_tb'] = True
             df.loc[fast_progression, 'tb_specific_symptoms'] = 'active'
 
+            # ----------------------------------- FAST PROGRESSORS SEEKING CARE -----------------------------------
+
+            # for each person determine whether they will seek care on symptom change
+            # get_prob_seek_care will be the healthcare seeking function developed by Wingston
+            seeks_care = pd.Series(data=False, index=df.loc[fast_progression].index)
+            for i in df.index[fast_progression]:
+                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+                seeks_care[i] = self.module.rng.rand() < prob
+
+            if seeks_care.sum() > 0:
+                for person_index in seeks_care.index[seeks_care]:
+                    logger.debug(
+                        'This is TbActiveEvent, scheduling Tb_PresentsForCareWithSymptoms for person %d',
+                        person_index)
+                    event = HSI_Tb_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+                    self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    )
+            else:
+                logger.debug(
+                    'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
+
         # ----------------------------------- SLOW PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
         # slow progressors with latent TB become active
@@ -608,6 +632,30 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_active_case, 'tb_ever_tb'] = True
         df.loc[new_active_case, 'tb_specific_symptoms'] = 'active'
 
+        # ----------------------------------- SLOW PROGRESSORS SEEKING CARE -----------------------------------
+
+        # for each person determine whether they will seek care on symptom change
+        # get_prob_seek_care will be the healthcare seeking function developed by Wingston
+        seeks_care = pd.Series(data=False, index=df.loc[new_active_case].index)
+        for i in df.index[new_active_case]:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = self.module.rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is TbActiveEvent, scheduling Tb_PresentsForCareWithSymptoms for person %d',
+                    person_index)
+                event = HSI_Tb_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug(
+                'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
+
         # ----------------------------------- RELAPSE -----------------------------------
         random_draw = self.sim.rng.random_sample(size=len(df))
 
@@ -637,6 +685,49 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_specific_symptoms'] = 'active'
 
+        # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
+
+        # relapse after complete treatment course - refer for xpert testing
+        seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
+        for i in df.loc[relapse_tx_complete].index:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = self.module.rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is TbActiveEvent, scheduling HSI_Tb_XpertTest for person %d',
+                    person_index)
+                event = HSI_Tb_XpertTest(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug(
+                'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
+
+        # relapse after incomplete treatment course - repeat treatment course
+        seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_incomplete].index)
+        for i in df.loc[relapse_tx_incomplete].index:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = self.module.rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is TbActiveEvent, scheduling HSI_Tb_StartTreatment for person %d',
+                    person_index)
+                event = HSI_Tb_StartTreatment(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug(
+                'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb self-cure events
@@ -1250,7 +1341,7 @@ class TbIptEndEvent(Event, IndividualScopeEventMixin):
 
 
 class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that offers ipt to HIV+ adolescents/adults
+    """The regular event that offers ipt to hiv+ adolescents/adults
     """
 
     def __init__(self, module):
@@ -1258,7 +1349,7 @@ class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        mask_for_person_to_be_reached = (df.age_years >= 15) & (df.tb_inf == 'uninfected') & df.hiv_inf
+        mask_for_person_to_be_reached = (df.age_years >= 15) & (df.tb_inf == 'uninfected') & df.hiv_inf & ~df.tb_on_ipt
         target = mask_for_person_to_be_reached.loc[df.is_alive]
 
         # schedule ipt start

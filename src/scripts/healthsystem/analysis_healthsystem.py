@@ -36,8 +36,8 @@ logging.getLogger().addHandler(fh)
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.hiv').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.tb').setLevel(logging.DEBUG)
 
 params = [0.2, 0.05]  # sample params for runs
 
