@@ -1027,43 +1027,46 @@ class HSI_Tb_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                 df.at[person_id, 'tb_result_smear_test'] = True
                 df.at[person_id, 'tb_diagnosed'] = True
 
-            # ----------------------------------- REFERRALS FOR SECONDARY TESTING -----------------------------------
-            # remaining 20% of active cases and negative cases referred for xpert testing
-            # schedule xpert testing
-            if not df.at[person_id, 'tb_diagnosed']:
+        # ----------------------------------- REFERRALS FOR SECONDARY TESTING -----------------------------------
+        # remaining 20% of active cases and negative cases referred for xpert testing
+        # schedule xpert testing
+        if not df.at[person_id, 'tb_diagnosed']:
+            logger.debug("This is HSI_Tb_PresentsForCareWithSymptoms scheduling xpert test for person %d", person_id)
 
-                secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
 
-                # Request the health system to give xpert test
-                self.sim.modules['HealthSystem'].schedule_event(secondary_test,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_event(secondary_test,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
-            # ----------------------------------- REFERRALS FOR TREATMENT / IPT-----------------------------------
-            if df.at[person_id, 'tb_diagnosed']:
-                # request treatment
-                treatment = HSI_Tb_StartTreatment(self.module, person_id=person_id)
+        # ----------------------------------- REFERRALS FOR TREATMENT / IPT-----------------------------------
+        if df.at[person_id, 'tb_diagnosed']:
+            logger.debug("This is HSI_Tb_PresentsForCareWithSymptoms scheduling treatment for person %d", person_id)
 
-                # Request the health system to start treatment
-                self.sim.modules['HealthSystem'].schedule_event(treatment,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            # request treatment
+            treatment = HSI_Tb_StartTreatment(self.module, person_id=person_id)
 
-                # trigger ipt outreach event for all paediatric contacts of case
-                # randomly sample from <5 yr olds
-                ipt_sample = df[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive].sample(n=5,
-                                                                                                        replace=False).index
-                # need to pass pd.Series length (df.is_alive) to outreach event
-                test = pd.Series(False, index=df.index)
-                test.loc[ipt_sample] = True
+            # Request the health system to start treatment
+            self.sim.modules['HealthSystem'].schedule_event(treatment,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
-                ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(ipt_event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            # trigger ipt outreach event for all paediatric contacts of case
+            # randomly sample from <5 yr olds
+            ipt_sample = df[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive].sample(n=5,
+                                                                                                    replace=False).index
+            # need to pass pd.Series length (df.is_alive) to outreach event
+            test = pd.Series(False, index=df.index)
+            test.loc[ipt_sample] = True
+
+            ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(ipt_event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
 
 
 # TODO: complete
@@ -1097,6 +1100,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
+        logger.debug("This is HSI_Tb_XpertTest giving xpert test for person %d", person_id)
 
         df = self.sim.population.props
         now = self.sim.date
@@ -1121,6 +1125,8 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
 
             else:
                 # Request the health system to give xpert test
+                logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_XpertTest", person_id)
+
                 secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_event(secondary_test,
                                                                 priority=2,
@@ -1130,9 +1136,9 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
         if df.at[person_id, 'tb_diagnosed']:
             # request treatment
-            treatment = HSI_Tb_StartTreatment(self.module, person_id=person_id)
+            logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatment", person_id)
 
-            # Request the health system to start treatment
+            treatment = HSI_Tb_StartTreatment(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(treatment,
                                                             priority=2,
                                                             topen=self.sim.date,
