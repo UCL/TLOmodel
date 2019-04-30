@@ -315,6 +315,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['preg'] = 'preg'
 
+        # TODO: modify failure probabilities by age according to newly added regression parameters
         # apply the probabilities of failure for each contraception method
         # to series which has index of all currently using
         # need to use a for loop to loop through each method
