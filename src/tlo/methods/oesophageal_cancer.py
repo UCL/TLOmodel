@@ -148,42 +148,59 @@ class Oesophageal_Cancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module
         """
+
         p = self.parameters
 
-        p['r_low_grade_dysplasia_none'] = 0.0000005
-        p['rr_low_grade_dysplasia_none_female'] = 1.3
-        p['rr_low_grade_dysplasia_none_per_year_older'] = 1.1
-        p['rr_low_grade_dysplasia_none_tobacco'] = 2.0
-        p['rr_low_grade_dysplasia_none_ex_alc'] = 1.0
-        p['r_high_grade_dysplasia_low_grade_dysp'] = 0.03
-        p['rr_high_grade_dysp_undergone_curative_treatment'] = 0.1
-        p['r_stage1_high_grade_dysp'] = 0.01
-        p['rr_stage1_undergone_curative_treatment'] = 0.1
-        p['r_stage2_stage1'] = 0.05
-        p['rr_stage2_undergone_curative_treatment'] = 0.1
-        p['r_stage3_stage2'] = 0.05
-        p['rr_stage3_undergone_curative_treatment'] = 0.1
-        p['r_stage4_stage3'] = 0.05
-        p['rr_stage4_undergone_curative_treatment'] = 0.3
-        p['r_death_oesoph_cancer'] = 0.4
-        p['r_curative_treatment_low_grade_dysp'] = 0.01
-        p['rr_curative_treatment_high_grade_dysp'] = 1.0
-        p['rr_curative_treatment_stage1'] = 1.0
-        p['rr_curative_treatment_stage2'] = 1.0
-        p['rr_curative_treatment_stage3'] = 1.0
-        p['r_diagnosis_stage1'] = 0.01
-        p['rr_diagnosis_low_grade_dysp'] = 0.01
-        p['rr_diagnosis_high_grade_dysp'] = 0.01
-        p['rr_diagnosis_stage2'] = 2
-        p['rr_diagnosis_stage3'] = 10
-        p['rr_diagnosis_stage4'] = 50
-        p['init_prop_oes_cancer_stage'] = [0.0003, 0.0001, 0.00005, 0.00003, 0.000005, 0.000001]
-        p['rp_oes_cancer_female'] = 1.3
-        p['rp_oes_cancer_per_year_older'] = 1.1
-        p['rp_oes_cancer_tobacco'] = 2.0
-        p['rp_oes_cancer_ex_alc'] = 1.0
-        p['init_prop_diagnosed_oes_cancer_by_stage'] = [0.01, 0.03, 0.10, 0.20, 0.30, 0.8]
-        p['init_prop_treatment_status_oes_cancer'] = [0.01, 0.01, 0.05, 0.05, 0.05, 0.05]
+        dfd = pd.read_excel('./resources/Method_Oesophageal_Cancer.xlsx',
+                            sheet_name='parameter_values')
+        dfd.set_index('parameter_name', inplace=True)
+
+        p['r_low_grade_dysplasia_none'] = dfd.loc['r_low_grade_dysplasia_none', 'value']
+        p['rr_low_grade_dysplasia_none_female'] = dfd.loc['rr_low_grade_dysplasia_none_female', 'value']
+        p['rr_low_grade_dysplasia_none_per_year_older'] = dfd.loc['rr_low_grade_dysplasia_none_per_year_older', 'value']
+        p['rr_low_grade_dysplasia_none_tobacco'] = dfd.loc['rr_low_grade_dysplasia_none_tobacco', 'value']
+        p['rr_low_grade_dysplasia_none_ex_alc'] = dfd.loc['rr_low_grade_dysplasia_none_ex_alc', 'value']
+        p['r_high_grade_dysplasia_low_grade_dysp'] = dfd.loc['r_high_grade_dysplasia_low_grade_dysp', 'value']
+        p['rr_high_grade_dysp_undergone_curative_treatment'] = dfd.loc['rr_high_grade_dysp_undergone_curative_treatment', 'value']
+        p['r_stage1_high_grade_dysp'] = dfd.loc['r_stage1_high_grade_dysp', 'value']
+        p['rr_stage1_undergone_curative_treatment'] = dfd.loc['rr_stage1_undergone_curative_treatment', 'value']
+        p['r_stage2_stage1'] = dfd.loc['r_stage2_stage1', 'value']
+        p['rr_stage2_undergone_curative_treatment'] = dfd.loc['rr_stage2_undergone_curative_treatment', 'value']
+        p['r_stage3_stage2'] = dfd.loc['r_stage3_stage2', 'value']
+        p['rr_stage3_undergone_curative_treatment'] = dfd.loc['rr_stage3_undergone_curative_treatment', 'value']
+        p['r_stage4_stage3'] = dfd.loc['r_stage4_stage3', 'value']
+        p['rr_stage4_undergone_curative_treatment'] = dfd.loc['rr_stage4_undergone_curative_treatment', 'value']
+        p['r_death_oesoph_cancer'] = dfd.loc['r_death_oesoph_cancer', 'value']
+        p['r_curative_treatment_low_grade_dysp'] = dfd.loc['r_curative_treatment_low_grade_dysp', 'value']
+        p['rr_curative_treatment_high_grade_dysp'] = dfd.loc['rr_curative_treatment_high_grade_dysp', 'value']
+        p['rr_curative_treatment_stage1'] = dfd.loc['rr_curative_treatment_stage1', 'value']
+        p['rr_curative_treatment_stage2'] = dfd.loc['rr_curative_treatment_stage2', 'value']
+        p['rr_curative_treatment_stage3'] = dfd.loc['rr_curative_treatment_stage3', 'value']
+        p['r_diagnosis_stage1'] = dfd.loc['r_diagnosis_stage1', 'value']
+        p['rr_diagnosis_low_grade_dysp'] = dfd.loc['rr_diagnosis_low_grade_dysp', 'value']
+        p['rr_diagnosis_high_grade_dysp'] = dfd.loc['rr_diagnosis_high_grade_dysp', 'value']
+        p['rr_diagnosis_stage2'] = dfd.loc['rr_diagnosis_stage2', 'value']
+        p['rr_diagnosis_stage3'] = dfd.loc['rr_diagnosis_stage3', 'value']
+        p['rr_diagnosis_stage4'] = dfd.loc['rr_diagnosis_stage4', 'value']
+        p['init_prop_oes_cancer_stage'] = \
+                    [dfd.loc['init_prop_oes_cancer_stage', 'value'], dfd.loc['init_prop_oes_cancer_stage', 'value2'],
+                     dfd.loc['init_prop_oes_cancer_stage', 'value3'], dfd.loc['init_prop_oes_cancer_stage', 'value4'],
+                     dfd.loc['init_prop_oes_cancer_stage', 'value5'], dfd.loc['init_prop_oes_cancer_stage', 'value6']]
+        p['rp_oes_cancer_female'] = dfd.loc['rp_oes_cancer_female', 'value']
+        p['rp_oes_cancer_per_year_older'] = dfd.loc['rp_oes_cancer_per_year_older', 'value']
+        p['rp_oes_cancer_tobacco'] = dfd.loc['rp_oes_cancer_tobacco', 'value']
+        p['rp_oes_cancer_ex_alc'] = dfd.loc['rp_oes_cancer_ex_alc', 'value']
+        p['init_prop_diagnosed_oes_cancer_by_stage'] = \
+            [dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value'], dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value2'],
+             dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value3'], dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value4'],
+             dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value5'], dfd.loc['init_prop_diagnosed_oes_cancer_by_stage', 'value6']]
+        p['init_prop_treatment_status_oes_cancer'] = \
+            [dfd.loc['init_prop_treatment_status_oes_cancer', 'value'],
+            dfd.loc['init_prop_treatment_status_oes_cancer', 'value2'],
+            dfd.loc['init_prop_treatment_status_oes_cancer', 'value3'],
+            dfd.loc['init_prop_treatment_status_oes_cancer', 'value4'],
+            dfd.loc['init_prop_treatment_status_oes_cancer', 'value5'],
+            dfd.loc['init_prop_treatment_status_oes_cancer', 'value6']]
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -471,7 +488,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         # set ca_oesophageal_cancer_death back to False after death
-        df.loc[~df.is_alive, 'ca_oesophageal_cancer_death'] = False
+        df['ca_oesophageal_cancer_death'] = False
         df['ca_disability'] = 0
         df['ca_oesophagus_curative_treatment_requested'] = False
         df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
@@ -860,8 +877,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_incident_oc_stage4_diag = (df.is_alive & df.ca_incident_oes_cancer_diagnosis_this_3_month_period
                                     & (df.ca_oesophagus == 'stage4')).sum()
 
-        n_incident_oes_cancer_diagnosis = n_incident_oc_stage1_diag + n_incident_oc_stage2_diag + \
-                                          n_incident_oc_stage3_diag + n_incident_oc_stage4_diag
+        n_incident_oes_cancer_diagnosis = n_incident_oc_stage1_diag \
+                                          + n_incident_oc_stage2_diag + n_incident_oc_stage3_diag + \
+                                          n_incident_oc_stage4_diag
 
         n_low_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')).sum()
         n_high_grade_dysplasia = (df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')).sum()
