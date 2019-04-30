@@ -8,8 +8,8 @@ from tlo.methods import demography, lifestyle, childhood_diarrhoea
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 4, 1)
-popsize = 3000
+end_date = Date(2010, 10, 1)
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
