@@ -1261,6 +1261,7 @@ class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
         mask_for_person_to_be_reached = (df.age_years >= 15) & (df.tb_inf == 'uninfected') & df.hiv_inf
         target = mask_for_person_to_be_reached.loc[df.is_alive]
 
+        # schedule ipt start
         for person_id in target:
             ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(ipt_event,
