@@ -39,9 +39,10 @@ class Contraception(Module):
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2_'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
         'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
-        'r_fail_age': Parameter(Types.REAL, 'change in drate (failure) per year of age increase'),
-        'r_fail_age_sq': Parameter(Types.REAL, 'change in drate (failure) per year of age squared increase'),
-        'r_fail_cons': Parameter(Types.REAL, 'drate (failure) at age zero - constant term from regression')
+        #'r_fail_age': Parameter(Types.REAL, 'change in drate (failure) per year of age increase'),
+        #'r_fail_age_sq': Parameter(Types.REAL, 'change in drate (failure) per year of age squared increase'),
+        #'r_fail_cons': Parameter(Types.REAL, 'drate (failure) at age zero - constant term from regression'),
+        'r_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -77,11 +78,11 @@ class Contraception(Module):
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_failure'] = workbook['Failure']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
-        self.parameters['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
-        self.parameters['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
-        self.parameters['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
+        #self.parameters['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
+        #self.parameters['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
+        #self.parameters['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
         # TODO: to decide whether to have the above 3 parameters fixed (given model is deterministic) or with uncertainty (move toward a probabilistic model)
-
+        self.parameters['r_fail_under25'] = 1.7 # From Guttmacher analysis
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -312,11 +313,14 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
-        probabilities['prob'] = probabilities['prob'] + (m.parameters['r_fail_cons'] + (m.parameters['r_fail_age']*probabilities['age_years']) + (m.parameters['r_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
+        #probabilities['prob'] = probabilities['prob'] + (m.parameters['r_fail_cons'] + (m.parameters['r_fail_age']*probabilities['age_years']) + (m.parameters['r_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
+        under25 = probabilities.index[probabilities.age_years.between(15, 25)]
+        probabilities.loc[under25, 'prob'] = probabilities['prob'] * m.parameters['r_fail_under25']  # apply increased risk of failure to under 25s
+        #if probabilities['age_years'] <= 25:
+        #    probabilities['prob'] = probabilities['prob'] * m.parameters['r_fail_under25']  # apply increased risk of failure to under 25s
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['preg'] = 'preg'
 
-        # TODO: modify failure probabilities by age according to newly added regression parameters
         # apply the probabilities of failure for each contraception method
         # to series which has index of all currently using
         # need to use a for loop to loop through each method
