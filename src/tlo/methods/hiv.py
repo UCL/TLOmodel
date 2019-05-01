@@ -9,9 +9,10 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
-from tlo.methods import demography, healthsystem
+from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
+
 
 # TODO: add property hiv_on_nvp_azt for risk of transmission on birth
 
@@ -529,7 +530,6 @@ class hiv(Module):
         df.loc[idx, 'hiv_specific_symptoms'] = 'aids'
         df.loc[idx, 'hiv_unified_symptom_code'] = 3
 
-
         # if >= 39 months from date infection, 0.5 prob symptomatic
         time_inf = (now - df.loc[adults, 'hiv_date_inf']).dt.days  # returns days
         t2 = time_inf >= (39 * 12)
@@ -581,7 +581,7 @@ class hiv(Module):
         # print(aids)
 
     def baseline_tested(self, population):
-        """ assign initial art coverage levels
+        """ assign initial hiv testing levels
         """
         now = self.sim.date
         df = population.props
@@ -1071,14 +1071,14 @@ class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
         aids_fast = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
                                  df.hiv_specific_symptoms != 'aids') & df.hiv_fast_progressor & (
-                                     (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
+                                 (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
         df.loc[aids_fast, 'hiv_specific_symptoms'] = 'aids'
         df.loc[aids_fast, 'hiv_unified_symptom_code'] = 3
 
         aids_slow = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
                                  df.hiv_specific_symptoms != 'aids') & ~df.hiv_fast_progressor & (
-                                     (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
+                                 (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
         df.loc[aids_slow, 'hiv_specific_symptoms'] = 'aids'
         df.loc[aids_slow, 'hiv_unified_symptom_code'] = 3
 
@@ -1141,21 +1141,25 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ALERT_OTHER_DISEASES = []
 
-
     def apply(self, person_id):
-        logger.debug('This is HSI_Hiv_PresentsForCareWithSymptoms, a first appointment for person %d', person_id)
+        logger.debug(
+            'This is HSI_Hiv_PresentsForCareWithSymptoms, giving a test in the first appointment for person %d',
+            person_id)
 
         df = self.sim.population.props
 
         df.at[person_id, 'hiv_ever_tested'] = True
+        df.at[person_id, 'hiv_date_tested'] = self.sim.date
+        df.at[person_id, 'hiv_number_tests'] = df.at[person_id, 'hiv_number_tests'] + 1
 
         # if hiv+ schedule treatment
         if df.at[person_id, 'hiv_inf']:
             df.at[person_id, 'hiv_diagnosed'] = True
 
             # request treatment
-            logger.debug('....This is HSI_Hiv_Testing: scheduling hiv treatment for person %d on date %s',
-                         person_id, self.sim.date)
+            logger.debug(
+                '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling hiv treatment for person %d on date %s',
+                person_id, self.sim.date)
 
             treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
@@ -1170,6 +1174,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1238,6 +1243,7 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
     This is a Health System Interaction Event - start hiv prophylaxis for infants
     cotrim 6 mths + NVP/AZT 6-12 weeks
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1264,7 +1270,6 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
-
         logger.debug('This is HSI_Hiv_StartInfantProphylaxis: initiating treatment for person %d', person_id)
 
         df = self.sim.population.props
@@ -1285,7 +1290,7 @@ class HivARVEndEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("Stopping ARVs", person_id)
+        logger.debug("Stopping ARVs for person %d", person_id)
 
         df = self.sim.population.props
 
@@ -1298,7 +1303,7 @@ class HivCotrimEndEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("Stopping cotrim", person_id)
+        logger.debug("Stopping cotrim for person %d", person_id)
 
         df = self.sim.population.props
 
@@ -1309,6 +1314,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment for infants + cotrim
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1364,7 +1370,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         # Create follow-up appointments for VL monitoring
         times = params['VL_monitoring_times']
 
-        logger.debug('....This is HSI_Hiv_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
+        logger.debug('....This is HSI_Hiv_StartTreatment: scheduling a follow-up appointment for person %d',
                      person_id)
 
         followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
@@ -1405,6 +1411,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1419,7 +1426,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
                                                   'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
             0]
         pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
+                                                  'Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
             0]
 
         the_cons_footprint = {
@@ -1442,9 +1449,12 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         df = self.sim.population.props
 
+        # condition: not already on art
+
         if df.at[person_id, 'is_alive'] and \
             df.at[person_id, 'hiv_diagnosed'] and \
-            (df.at[person_id, 'age_years'] < 15):
+            (df.at[person_id, 'age_years'] < 15) and \
+            (df.at[person_id, 'hiv_on_art'] == 0):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                     p=[(1 - params['vls_child']),
                                                                        params['vls_child']])
@@ -1452,14 +1462,16 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive'] and \
             df.at[person_id, 'hiv_diagnosed'] and \
             (df.at[person_id, 'age_years'] >= 15) and \
-            (df.at[person_id, 'sex'] == 'M'):
+            (df.at[person_id, 'sex'] == 'M') and \
+            (df.at[person_id, 'hiv_on_art'] == 0):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                     p=[(1 - params['vls_m']), params['vls_m']])
 
         if df.at[person_id, 'is_alive'] and \
             df.at[person_id, 'hiv_diagnosed'] and \
             (df.at[person_id, 'age_years'] >= 15) and \
-            (df.at[person_id, 'sex'] == 'F'):
+            (df.at[person_id, 'sex'] == 'F') and \
+            (df.at[person_id, 'hiv_on_art'] == 0):
             df.at[person_id, 'hiv_on_art'] = self.module.rng.choice([1, 2],
                                                                     p=[(1 - params['vls_f']), params['vls_f']])
 
@@ -1468,42 +1480,46 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         # change specific_symptoms to 'none' if virally suppressed and adherent (hiv_on_art = 2)
         if df.at[person_id, 'hiv_on_art'] == 2:
             df.at[person_id, 'hiv_specific_symptoms'] = 'none'
+            df.at[person_id, 'hiv_unified_symptom_code'] = 1
 
         # ----------------------------------- SCHEDULE VL MONITORING -----------------------------------
 
-        # Create follow-up appointments for VL monitoring
-        times = params['VL_monitoring_times']
+        if not df.at[person_id, 'hiv_on_art'] == 0:
 
-        logger.debug('....This is HSI_Hiv_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-                     person_id)
+            # Create follow-up appointments for VL monitoring
+            times = params['VL_monitoring_times']
 
-        followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
+            logger.debug('....This is HSI_Hiv_StartTreatment: scheduling a follow-up appointment for person %d',
+                         person_id)
 
-        # Request the health system to have this follow-up appointment
-        for i in range(0, len(times)):
-            followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
-            self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                            priority=2,
-                                                            topen=followup_appt_date,
-                                                            tclose=followup_appt_date + DateOffset(weeks=2)
-                                                            )
+            followup_appt = HSI_Hiv_TreatmentMonitoring(self.module, person_id=person_id)
+
+            # Request the health system to have this follow-up appointment
+            for i in range(0, len(times)):
+                followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
+                self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+                                                                priority=2,
+                                                                topen=followup_appt_date,
+                                                                tclose=followup_appt_date + DateOffset(weeks=2)
+                                                                )
 
         # ----------------------------------- SCHEDULE REPEAT PRESCRIPTIONS -----------------------------------
 
-        date_repeat_prescription = self.sim.date + DateOffset(months=3)
+        if not df.at[person_id, 'hiv_on_art'] == 0:
+            date_repeat_prescription = self.sim.date + DateOffset(months=3)
 
-        logger.debug(
-            '....This is HSI_Hiv_StartTreatment: scheduling a repeat prescription for person %d on date %s',
-            person_id, date_repeat_prescription)
+            logger.debug(
+                '....This is HSI_Hiv_StartTreatment: scheduling a repeat prescription for person %d on date %s',
+                person_id, date_repeat_prescription)
 
-        followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
+            followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
-        # Request the health system to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=date_repeat_prescription,
-                                                        tclose=date_repeat_prescription + DateOffset(weeks=2)
-                                                        )
+            # Request the health system to have this follow-up appointment
+            self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+                                                            priority=2,
+                                                            topen=date_repeat_prescription,
+                                                            tclose=date_repeat_prescription + DateOffset(weeks=2)
+                                                            )
 
 
 class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
@@ -1538,7 +1554,7 @@ class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         logger.debug(
-            '....This is Hiv_TreatmentMonitoring: giving a viral load test to person person %d',
+            '....This is Hiv_TreatmentMonitoring: giving a viral load test to person %d',
             person_id)
 
 
@@ -1576,7 +1592,6 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
-
         date_repeat_prescription = self.sim.date + DateOffset(months=3)
 
         logger.debug(
@@ -1591,6 +1606,7 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
                                                         topen=date_repeat_prescription,
                                                         tclose=date_repeat_prescription + DateOffset(weeks=2)
                                                         )
+
 
 # TODO: include hiv testing event as regular event for those not triggered by symptom change
 # this could be an outreach event
