@@ -428,11 +428,10 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         self.APPT_FOOTPRINT['ConWithDCSA']=0.5      # outreach event takes small amount of time for DCSA
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ALERT_OTHER_DISEASES=['*']
+        self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
-
-        logger.debug('Outreach event running now for person: %s', person_id )
+        logger.debug('Outreach event running now for person: %s', person_id)
 
         # Do here whatever happens during an outreach event with an individual
         pass

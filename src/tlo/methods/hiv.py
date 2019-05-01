@@ -12,7 +12,6 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, Individua
 from tlo.methods import demography, healthsystem
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 # TODO: add property hiv_on_nvp_azt for risk of transmission on birth
 
@@ -416,7 +415,8 @@ class hiv(Module):
         # probability of hiv > random number, assign hiv_inf = True
         # TODO: cluster this by mother's hiv status??
         # if mother hiv+ at time of birth...
-        hiv_index = df_hivprob.index[df.is_alive & (df_hivprob.prev_prop > random_draw) & df.age_years.between(0, 14)]
+        hiv_index = df_hivprob.index[
+            df.is_alive & (df_hivprob.prev_prop > random_draw) & df_hivprob.age_years.between(0, 14)]
         # print(hiv_index)
 
         df.loc[hiv_index, 'hiv_inf'] = True
@@ -1650,7 +1650,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         if prop < params['proportion_female_sex_workers']:
             # number new fsw needed
             recruit = int((params['proportion_female_sex_workers'] - prop) * eligible)
-            fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
+            fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat == 2)].sample(
                 n=recruit).index
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
 
