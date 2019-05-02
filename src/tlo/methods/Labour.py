@@ -80,13 +80,21 @@ class Labour (Module):
         'cfr_uterine_rupture': Parameter(
             Types.REAL, 'case fatality rate for uterine rupture in labour'),
         'prob_still_birth_aph': Parameter(
-            Types.REAL, 'probability of a still birth following antepartum haemorrhage'),
+            Types.REAL, 'probability of a still birth following antepartum haemorrhage where the mother survives'),
+        'prob_still_birth_aph_md': Parameter(
+            Types.REAL, 'probability of a still birth following antepartum haemorrhage where the mother dies'),
         'prob_still_birth_sepsis': Parameter(
-            Types.REAL, 'probability of a still birth following sepsis in labour'),
+            Types.REAL, 'probability of a still birth following sepsis in labour where the mother survives'),
+        'prob_still_birth_sepsis_md': Parameter(
+            Types.REAL, 'probability of a still birth following sepsis in labour where the mother dies'),
         'prob_still_birth_ur': Parameter(
-            Types.REAL, 'probability of a still birth following uterine rupture in labour'),
+            Types.REAL, 'probability of a still birth following uterine rupture in labour where the mother survives'),
+        'prob_still_birth_ur_md': Parameter(
+            Types.REAL, 'probability of a still birth following uterine rupture in labour where the mother dies'),
         'prob_still_birth_eclampsia': Parameter(
-            Types.REAL, 'probability of still birth following eclampsia in labour'),
+            Types.REAL, 'probability of still birth following eclampsia in labour where the mother survives'),
+        'prob_still_birth_eclampsia_md': Parameter(
+            Types.REAL, 'probability of still birth following eclampsia in labour where the mother dies'),
         'prob_pn_eclampsia_ptb': Parameter(
             Types.REAL, 'probability of eclampsia following delivery for women who were in spotaneous unobstructed '
                         'labour'),
@@ -126,17 +134,23 @@ class Labour (Module):
 
     PROPERTIES = {
 
-        'la_labour': Property(Types.CATEGORICAL,'not in labour, spontaneous unobstructed labour, prolonged or '
-                                                'obstructed labour, Preterm Labour, Immediate Postpartum'
-                                                '', categories=['not_in_labour', 'spontaneous_unobstructed_labour',
-                                                                'prolonged_or_obstructed_labour', 'pretterm_labour',
-                                                                'immediate_postpartum']),
-        'la_still_birth_this_delivery': Property(Types.BOOL,'whether this womans pregnancy has ended in a stillbirth'),
-        'la_abortion': Property(Types.DATE, 'the date on which a pregnant has had an abortion'),
+        'la_labour': Property(Types.CATEGORICAL, 'not in labour, spontaneous unobstructed labour, prolonged or '
+                              'obstructed labour, Preterm Labour, Immediate Postpartum',
+                              categories=['not_in_labour', 'spontaneous_unobstructed_labour',
+                                          'prolonged_or_obstructed_labour', 'pretterm_labour','immediate_postpartum']),
+        'la_still_birth_this_delivery': Property(Types.BOOL,'whether this womans most recent pregnancy has ended in a '
+                                                            'stillbirth'),
+        'la_abortion': Property(Types.DATE, 'the date on which a pregnant woman has had an abortion'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_previous_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
         'la_previous_ptb': Property(Types.BOOL, 'whether the woman has had a previous preterm delivery for any of her'
-                                                'previous deliveries')
+                                                'previous deliveries'),
+        'la_aph': Property(Types.BOOL, 'whether the woman has experienced an antepartum haemorrhage in this delivery'),
+        'la_uterine_rupture': Property(Types.BOOL, 'whether the woman has experienced uterine rupture in this delivery'),
+        'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
+        'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
+        'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
+        'la_died_in_labour': Property(Types.BOOL, 'whether the woman has died during this labour')
     }
 
     def read_parameters(self, data_folder):
@@ -178,9 +192,13 @@ class Labour (Module):
         params['cfr_sepsis'] = 0.02
         params['cfr_uterine_rupture'] = 0.045
         params['prob_still_birth_aph'] = 0.35
+        params['prob_still_birth_aph_md'] = 0.90
         params['prob_still_birth_sepsis'] = 0.25
+        params['prob_still_birth_sepsis_md'] = 0.90
         params['prob_still_birth_ur'] = 0.75
+        params['prob_still_birth_ur_md'] = 0.90
         params['prob_still_birth_eclampsia'] = 0.55
+        params['prob_still_birth_eclampsia_md'] = 0.90
         params['prob_pn_eclampsia_ptb'] = 0.01
         params['prob_pn_pph_ptb'] = 0.01
         params['prob_pn_sepsis_ptb'] = 0.05
@@ -195,7 +213,6 @@ class Labour (Module):
         params['cfr_pn_pph'] = 0.03
         params['cfr_pn_eclampsia'] = 0.05
         params['cfr_pn_sepsis'] = 0.04
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -221,10 +238,15 @@ class Labour (Module):
         df['la_previous_ptb'] = False
         df['la_gestation'] = 0
         df['la_due_date'] = pd.NaT
-
+        df['la_aph'] = False
+        df['la_uterine_rupture'] = False
+        df['la_sepsis'] = False
+        df['la_eclampsia'] = False
+        df['la_pph'] = False
+        df['la_died_in_labour'] = False
     # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) ----------------------------
 
-        # Dummy code to generate pregnancies from Labour.py
+        # Dummy code to generate pregnancies at initialisation from Labour.py
 
         women_idx = df.index[(df.age_years >= 15) & (df.age_years <= 49) & df.is_alive & (df.sex == 'F')]
 
@@ -259,7 +281,7 @@ class Labour (Module):
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'due_date'] = dfx.due_date
 
-        #  No one at baseline can be "over due"
+        #  No one at baseline can be "over-due"
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -391,6 +413,12 @@ class Labour (Module):
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs'] = 0
         df.at[child_id, 'la_previous_ptb'] = False
+        df.at[child_id, 'la_aph'] = False
+        df.at[child_id, 'la_uterine_rupture'] = False
+        df.at[child_id, 'la_sepsis'] = False
+        df.at[child_id, 'la_eclampsia'] = False
+        df.at[child_id, 'la_pph'] = False
+        df.at[child_id, 'la_died_in_labour'] = False
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -422,9 +450,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         elif gestation_weeks < 37 and gestation_weeks >28:
             df.at[individual_id, 'la_labour'] = "preterm_labour"
-            df.at[individual_id, 'la_previous_ptb'] = True  # or should this be following live birth?
+            df.at[individual_id, 'la_previous_ptb'] = True  # should this only be true if the baby is delivered live?
 
-        else:
+        elif gestation_weeks < 28: # no one is being generated with a GW of <28 from ND at this point- to review
             df.at[individual_id, 'la_labour'] = "not_in_labour"
             df.at[individual_id, 'is_pregnant'] = False
             df.at[individual_id, 'la_abortion'] = self.sim.date
@@ -432,40 +460,43 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             # need to consider the benefits of a "previous spont miscarriage" property
             # also need to incorporate induction and planned CS
 
-    #  Complications During Delivery: (HOW DOES ORDER EFFECT THIS)
+    #  Complications During Delivery: (HOW DOES ORDER OF THE CODE EFFECT THIS)
+    #  Do I need to reset "is_pregnant" for women who die?
 
-#  ----------------------------Uterine Rupture--------------------------------------------------------------------
-
+#  ----------------------------Uterine Rupture------------------------------------------------------------------
     #   Need to consider women in SL who have had previous CS section/uterine scar?
 
         if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() < \
-            params['prob_an_ur_pl_ol']:   # To Do: need to think about how to capture UR (fertility)
+            params['prob_an_ur_pl_ol']:
+                df.at[individual_id, 'la_uterine_rupture'] = True
                 random_draw = (self.sim.rng.random_sample(size=1))
                 if random_draw < params['cfr_uterine_rupture']:  # Women dies based on CFR of UR
+                    df.at[individual_id, 'la_died_in_labour'] = True
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                          cause='uterine rupture'),
-                                            self.sim.date)
+                                                                          cause='uterine rupture'), self.sim.date)
+                    if self.sim.rng.random_sample() < params['prob_still_birth_ur_md']:
+                       df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
                 else:  # here deal with women who survive but still have UR
                     if self.sim.rng.random_sample() < params['prob_still_birth_ur']:
-                       df.at[individual_id,'la_still_birth_this_delivery'] = True
+                       df.at[individual_id, 'la_still_birth_this_delivery'] = True
 
                 #  If the woman does have a still birth because of this complication- the child is still generated
-                #  in demography, if the above condition is met then instanenous death is sheduled with a cause of
+                #  in demography, if the above condition is met then instantaneous death is scheduled with a cause of
                 #  death being still birth
-
 
 #  ----------------------------------Eclampsia--------------------------------------------------------------------------
 
-        # Will we just use baseline incidence of eclampsia, ignoring pre eclampisa as a risk factor
+        # Will we just use baseline incidence of eclampsia, ignoring pre-eclampisa as a risk factor?
 
         if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample() < \
             params['prob_an_eclampsia_sl']:
+            df.at[individual_id, 'la_eclampsia'] = True
             random_draw = (self.sim.rng.random_sample(size=1))
-            if random_draw < params['cfr_eclampsia']:  # Women dies based on CFR of eclampsia in labour
+            if random_draw < params['cfr_eclampsia']:
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='eclampsia'),
-                                        self.sim.date)
-            else:  # here deal with women who survive but still have experienced eclampsia in labour
+                                                                      cause='eclampsia'), self.sim.date)
+            else:
                 if self.sim.rng.random_sample() < params['prob_still_birth_eclampsia']:
                     df.at[individual_id, 'la_still_birth_this_delivery'] = True
 
@@ -493,13 +524,174 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 
 #  ----------------------------Sepsis--------------------------------------------------------------------------
+
+        if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_sepsis_sl']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_sepsis']:  # Women dies based on CFR of sepsis in labour
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='sepsis'),
+                                        self.sim.date)
+            else:  # here deal with women who survive but still have experienced sepsis in labour
+                if self.sim.rng.random_sample() < params['prob_still_birth_sepsis']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+        if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_sepsis_pl_ol']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_sepsis']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='sepsis'),
+                                        self.sim.date)
+            else:
+                if self.sim.rng.random_sample() < params['prob_still_birth_sepsis']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+        if df.at[individual_id, 'la_labour'] == 'pretterm_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_sepsis_ptb']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_sepsis']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='sepsis'),
+                                        self.sim.date)
+            else:
+                if self.sim.rng.random_sample() < params['prob_still_birth_sepsis']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
 #  ----------------------------Antepartum Haemorrhage -----------------------------------------------------------
 
-    # Postpartum complications
+        if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_aph_sl']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_aph']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='antepartum haemorrhage'),
+                                        self.sim.date)
+            else:
+                if self.sim.rng.random_sample() < params['prob_still_birth_aph']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
 
-#  ----------------------------Postpartum Haemorrhage Rupture-----------------------------------------------------
-#  ----------------------------Eclampsia--------------------------------------------------------------------------
-#  ----------------------------Sepsis--------------------------------------------------------------------------
+        if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_aph_pl_ol']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_aph']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='antepartum haemorrhage'),
+                                        self.sim.date)
+            else:
+                if self.sim.rng.random_sample() < params['prob_still_birth_aph']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+        if df.at[individual_id, 'la_labour'] == 'pretterm_labour' and self.sim.rng.random_sample() < \
+            params['prob_an_aph_ptb']:
+            random_draw = (self.sim.rng.random_sample(size=1))
+            if random_draw < params['cfr_aph']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='antepartum haemorrhage'),
+                                        self.sim.date)
+            else:
+                if self.sim.rng.random_sample() < params['prob_still_birth_aph']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+
+class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
+
+        """applies probability of postpartum complications to women who have just delivered """
+
+        def __init__(self, module, individual_id, cause):
+            super().__init__(module, person_id=individual_id)
+
+        def apply(self, individual_id):
+            df = self.sim.population.props
+            params = self.module.parameters
+            m = self
+
+# NEED TO CONSIDER THE EFFECTS FOLLOWING ABORTION/SPONT MISCARRIAGE
+
+#  ----------------------------Postpartum Haemorrhage -----------------------------------------------------
+
+            if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample()\
+                < params['prob_pn_pph_sl']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_pph']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum haemorrhage'), self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_pph_pl_ol']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_pph']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='postpartum haemorrhage'), self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'pretterm_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_pph_ptb']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_pph']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='postpartum haemorrhage'), self.sim.date)
+
+#  ----------------------------  Postpartum Eclampsia   ----------------------------------------------------------------
+
+        # Confirm likelihood of eclamptic fit immediately following delivery- exclude if very low?
+
+            if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_eclampsia_sl']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_eclampsia']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum eclampsia'),
+                                            self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_eclampsia_pl_ol']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_eclampsia']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum eclampsia'),
+                                            self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'pretterm_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_eclampsia_ptb']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_eclampsia']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum eclampsia'),
+                                            self.sim.date)
+
+#  ------------------------------  Postpartum  Sepsis     --------------------------------------------------------------
+
+# how do we deal with women who were septic in labour and will that impact liklihood of sepsis postnatally
+
+            if df.at[individual_id, 'la_labour'] == 'spontaneous_unobstructed_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_sepsis_sl']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_sepsis']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum sepsis'),
+                                            self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_sepsis_pl_ol']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_sepsis']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum sepsis'),
+                                            self.sim.date)
+
+            if df.at[individual_id, 'la_labour'] == 'pretterm_labour' and self.sim.rng.random_sample() \
+                < params['prob_pn_sepsis_ptb']:
+                random_draw = (self.sim.rng.random_sample(size=1))
+                if random_draw < params['cfr_pn_sepsis']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='postpartum sepsis'), self.sim.date)
+
+
+#  ---------------------------- Reset Labour Status --------------------------------------------------------------------
+        # (commented out so can view effects at this point)
+#            if df.at[individual_id, 'is_alive']:
+#                df.at[individual_id, 'la_labour'] = "not_in_labour"
+
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
