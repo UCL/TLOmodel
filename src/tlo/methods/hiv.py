@@ -752,26 +752,12 @@ class hiv(Module):
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'hiv_inf']:
             df.at[child_id, 'hiv_date_inf'] = self.sim.date
 
-            # assign fast/slow progressor
-            progr = self.rng.choice(['FAST', 'SLOW'], size=1, p=[params['prob_infant_fast_progressor'][0],
-                                                                 params['prob_infant_fast_progressor'][1]])
-
-            # then draw death date and assign fast/slow progressor
-            if progr == 'SLOW':
-                # draw from weibull
-                time_death = self.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                              size=1) * params[
-                                 'weibull_scale_mort_infant_slow_progressor']
-                df.at[child_id, 'hiv_specific_symptoms'] = 'early'
-                df.at[child_id, 'hiv_unified_symptom_code'] = 1
-
-            else:
-                # draw from exp, returns an array not a single value!!
-                time_death = self.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
-                                                  size=1)
-                df.at[child_id, 'hiv_fast_progressor'] = True
-                df.at[child_id, 'hiv_specific_symptoms'] = 'symptomatic'
-                df.at[child_id, 'hiv_unified_symptom_code'] = 2
+            # assume all fast progressors, draw from exp, returns an array not a single value!!
+            time_death = self.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
+                                              size=1)
+            df.at[child_id, 'hiv_fast_progressor'] = True
+            df.at[child_id, 'hiv_specific_symptoms'] = 'symptomatic'
+            df.at[child_id, 'hiv_unified_symptom_code'] = 2
 
             time_death = pd.to_timedelta(time_death[0] * 365.25, unit='d')
             df.at[child_id, 'hiv_date_death'] = now + time_death
@@ -886,7 +872,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 # TODO: monthly risk of hiv with breastfeeding
 # depends on PMTCT - assume complete protection?
 class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
-    """ hiv infection event during breastfeeding
+    """ hiv infection event in infants during breastfeeding
     """
 
     def __init__(self, module):
@@ -926,25 +912,12 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_inf, 'hiv_unified_symptom_code'] = 1
 
         # ----------------------------------- TIME OF DEATH -----------------------------------
-        # assign fast progressor
-        fast = self.sim.rng.choice([True, False], size=len(new_inf), p=[params['prob_infant_fast_progressor'][0],
-                                                                        params['prob_infant_fast_progressor'][1]])
-
-        fast_idx = new_inf[fast]
-        time_death_fast = self.sim.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
-                                                   size=len(fast_idx))
-        time_death_fast = pd.to_timedelta(time_death_fast[0] * 365.25, unit='d')
-        df.loc[fast_idx, 'hiv_date_death'] = now + time_death_fast
-        df.loc[fast_idx, 'hiv_specific_symptoms'] = 'symptomatic'
-        df.loc[fast_idx, 'hiv_unified_symptom_code'] = 2
-
         # assign slow progressor
-        slow_idx = new_inf[~fast]
         time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                               size=len(slow_idx)) * params[
+                                               size=len(new_inf)) * params[
                               'weibull_scale_mort_infant_slow_progressor']
         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
-        df.loc[slow_idx, 'hiv_date_death'] = now + time_death_slow
+        df.loc[new_inf, 'hiv_date_death'] = now + time_death_slow
 
         # schedule the death event
         for person in new_inf:
@@ -1666,7 +1639,8 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         if prop < params['proportion_female_sex_workers']:
             # number new fsw needed
             recruit = int((params['proportion_female_sex_workers'] - prop) * eligible)
-            fsw_new = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat == 2)].sample(
+            fsw_new = df[
+                df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (~df.li_mar_stat == 2)].sample(
                 n=recruit).index
             df.loc[fsw_new, 'hiv_sexual_risk'] = 'sex_work'
 
