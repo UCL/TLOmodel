@@ -252,7 +252,7 @@ class Demography(Module):
                         'xxx': 0
                     })
 
-        if df.at[mother_id, 'la.still_birth_at_this_delivery']:
+        if df.at[mother_id, 'la_still_birth_this_delivery']:
             death = InstantaneousDeath(self, child_id, cause='Late Stillbirth')
             self.sim.schedule_event(death, self.sim.date)
 
@@ -354,8 +354,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
             scheduled_labour_date = df.at[female_id, 'due_date']
 
-            Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour')
-            self.sim.schedule_event(Labour.LabourEvent, scheduled_labour_date)
+            self.sim.schedule_event(Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
+                                    scheduled_labour_date)
 
             logger.debug('birth booked for: %s', df.due_date)
 
@@ -395,8 +395,18 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         # If the mother is alive and still pregnant
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
-        #   df.at[mother_id, 'la_labour'] = "not_in_labour"
-        # commented out so I can continue to see women moving into correct state of labour
+            df.at[mother_id, 'la_parity'] = + 1  # Parity includes still birth? will this run
+
+            self.sim.schedule_event(Labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
+                                                                 cause='postpartum'), self.sim.date)
+
+        if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] & df.at[mother_id, 'la_died_in_labour']:
+            self.sim.do_birth(mother_id)
+
+
+
+        # Those women who survive labour move into the immediate postpartum period and are scheduled to enter to post-
+        # partum phase of labour where possible complications can act.
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
