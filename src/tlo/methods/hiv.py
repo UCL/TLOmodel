@@ -111,7 +111,7 @@ class hiv(Module):
         'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
         'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
         'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
-        'art_coverage': Parameter(Types.DATA_FRAME, 'estimated ART coverage'),
+
         'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
                                           'relative increase in testing probability if high sexual risk'),
         'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
@@ -159,7 +159,7 @@ class hiv(Module):
         'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
         'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
         'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
-        'hiv_fast_progressor': Property(Types.BOOL, 'infant classified as fast progressor')
+        'hiv_fast_progressor': Property(Types.BOOL, 'infant fast progressor')
 
     }
 
@@ -268,7 +268,6 @@ class hiv(Module):
         params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
         params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
         params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
-        params['art_coverage'] = self.param_list.loc['art_coverage', 'Value1']
 
         params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
         params['rr_testing_female'] = self.param_list.loc['rr_testing_female', 'Value1']
@@ -581,7 +580,7 @@ class hiv(Module):
         # print(aids)
 
     def baseline_tested(self, population):
-        """ assign initial hiv testing levels
+        """ assign initial hiv testing levels, only for adults
         """
         now = self.sim.date
         df = population.props
@@ -590,19 +589,19 @@ class hiv(Module):
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         # probability of baseline population ever testing for HIV
-        art_index_male = df.index[
+        test_index_male = df.index[
             (random_draw < self.parameters['testing_coverage_male']) & df.is_alive & (df.sex == 'M') & (
                 df.age_years >= 15)]
         # print('art_index: ', art_index)
 
-        art_index_female = df.index[
+        test_index_female = df.index[
             (random_draw < self.parameters['testing_coverage_female']) & df.is_alive & (df.sex == 'F') & (
                 df.age_years >= 15)]
 
         # we don't know date tested, assume date = now
-        df.loc[art_index_male | art_index_female, 'hiv_ever_tested'] = True
-        df.loc[art_index_male | art_index_female, 'hiv_date_tested'] = now
-        df.loc[art_index_male | art_index_female, 'hiv_number_tests'] = 1
+        df.loc[test_index_male | test_index_female, 'hiv_ever_tested'] = True
+        df.loc[test_index_male | test_index_female, 'hiv_date_tested'] = now
+        df.loc[test_index_male | test_index_female, 'hiv_number_tests'] = 1
 
         # outcome of test
         diagnosed_idx = df.index[df.hiv_ever_tested & df.is_alive & df.hiv_inf]
@@ -621,11 +620,8 @@ class hiv(Module):
 
         # merge all susceptible individuals with their coverage probability based on sex and age
         df_art = df.merge(coverage,
-
                           left_on=['age_years', 'sex'],
-
                           right_on=['single_age', 'sex'],
-
                           how='left')
 
         # no data for ages 100+ so fill missing values with 0
@@ -637,20 +633,31 @@ class hiv(Module):
         # get a list of random numbers between 0 and 1 for the whole population
         random_draw = self.sim.rng.random_sample(size=len(df_art))
 
-        # probability of baseline population receiving art: requirement = hiv_diagnosed
+        # ----------------------------------- ART - CHILDREN -----------------------------------
+
+        # no testing rates for children so assign ever_tested=True if allocated treatment
         art_idx_child = df_art.index[
-            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
+            (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf &
             df_art.age_years.between(0, 14)]
 
         df.loc[art_idx_child, 'hiv_on_art'] = 2  # assumes all are adherent at baseline
         df.loc[art_idx_child, 'hiv_date_art_start'] = now
+        df.loc[art_idx_child, 'hiv_ever_tested'] = True
+        df.loc[art_idx_child, 'hiv_date_tested'] = now
+        df.loc[art_idx_child, 'hiv_number_tests'] = 1
+        df.loc[art_idx_child, 'hiv_diagnosed'] = True
 
+        # ----------------------------------- ART - ADULTS -----------------------------------
+
+        # probability of adult baseline population receiving art: requirement = hiv_diagnosed
         art_idx_adult = df_art.index[
             (random_draw < df_art.prop_coverage) & df.is_alive & df_art.hiv_inf & df.hiv_diagnosed &
             df_art.age_years.between(15, 64)]
 
         df.loc[art_idx_adult, 'hiv_on_art'] = 2  # assumes all are adherent, then stratify into category 1/2
         df.loc[art_idx_adult, 'hiv_date_art_start'] = now
+
+        # ----------------------------------- ADHERENCE -----------------------------------
 
         # allocate proportion to non-adherent category
         # if condition added, error with small numbers of children to sample
@@ -666,6 +673,61 @@ class hiv(Module):
         idx_f = df[df.is_alive & (df.hiv_on_art == 2) & (df.sex == 'F') & (df.age_years.between(15, 64))].sample(
             frac=(1 - self.parameters['vls_f'])).index
         df.loc[idx_f, 'hiv_on_art'] = 1  # change to non=adherent
+
+    def schedule_symptoms(self, population):
+        """ assign level of symptoms to infected people
+        """
+        df = population.props
+        now = self.sim.date
+        params = self.parameters
+
+        # ----------------------------------- PROGRESSION IN INFANTS -----------------------------------
+
+        # schedule transition from early to AIDS in slow progressing infants, no art
+        # select population
+        idx = df.index[
+            df.is_alive & (df.age_years < 15) & ~df.hiv_fast_progressor & (df.hiv_specific_symptoms == 'early') & (
+                    ~df.hiv_on_art == 2)]
+
+        # random draw from distribution of times
+        t_symp = self.sim.rng.uniform(low=params['median_time_symptoms_infant_slow_mths'][0], high= \
+            params['median_time_symptoms_infant_slow_mths'][1], size=len(idx))
+        t_symp_td = pd.to_timedelta(t_symp, unit='m')
+
+        # TODO: check hiv_date_symptomatic is AFTER self.sim.date
+        df.loc[idx, 'hiv_date_symptomatic'] = df.loc[idx, 'hiv_date_inf'] + t_symp_td
+
+        # schedule the symptom update event for each person
+        for person_index in idx:
+            symp_event = HivSymptomaticInfant(self, person_index)
+            self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_symptomatic'])
+
+        # TODO: also schedule the symptom update and aids events for on_birth infections and hiv_events
+        # TODO: create the symptom update events which are called
+        # TODO: make sure to have the condition not on art for event to occur
+
+        # TODO: this
+        # ----------------------------------- PROGRESSION IN ADULTS -----------------------------------
+
+        # schedule transition from early to AIDS in adults
+
+    def schedule_aids(self, population):
+        """ assign level of symptoms to infected people
+        """
+        df = population.props
+        now = self.sim.date
+        params = self.parameters
+
+        # ----------------------------------- PROGRESSION IN INFANTS -----------------------------------
+
+        # schedule transition from symptomatic to AIDS in fast progressing infants
+
+        # schedule transition from symptomatic to AIDS in slow progressing infants
+
+        # ----------------------------------- PROGRESSION IN ADULTS -----------------------------------
+
+        # schedule transition from symptomatic to AIDS in adults
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -910,6 +972,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[new_inf, 'hiv_date_inf'] = now
         df.loc[new_inf, 'hiv_specific_symptoms'] = 'early'  # default - all start at early
         df.loc[new_inf, 'hiv_unified_symptom_code'] = 1
+        df.loc[new_inf, 'hiv_fast_progressor'] = False
 
         # ----------------------------------- TIME OF DEATH -----------------------------------
         # assign slow progressor
