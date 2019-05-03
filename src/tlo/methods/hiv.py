@@ -705,6 +705,8 @@ class hiv(Module):
         # TODO: also schedule the symptom update and aids events for on_birth infections and hiv_events
         # TODO: create the symptom update events which are called
         # TODO: make sure to have the condition not on art for event to occur
+        # TODO: add the new parameters above
+        # TODO: include schedule_symptoms in the initialise_population
 
         # TODO: this
         # ----------------------------------- PROGRESSION IN ADULTS -----------------------------------
