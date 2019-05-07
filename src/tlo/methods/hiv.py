@@ -1121,16 +1121,19 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("Scheduling symptom onset for person %d", person_id)
+
 
         df = self.sim.population.props
-        df.at[person_id, 'hiv_specific_symptoms'] = 'symptomatic'
-        df.at[person_id, 'hiv_unified_symptom_code'] = 2
 
-        prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
-        seeks_care = self.module.rng.rand() < prob
+        if not df.at[person_id, 'hiv_on_art']:
+            logger.debug("Scheduling symptom onset for person %d", person_id)
+            df.at[person_id, 'hiv_specific_symptoms'] = 'symptomatic'
+            df.at[person_id, 'hiv_unified_symptom_code'] = 2
 
-        if seeks_care:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            seeks_care = self.module.rng.rand() < prob
+
+            if seeks_care:
                 logger.debug(
                     'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
@@ -1140,6 +1143,8 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
                                                                 )
+        else:
+            logger.debug("This is HivSymptomaticEvent doing nothing because person %d is on art", person_id)
 
 
 class HivAidsEvent(Event, IndividualScopeEventMixin):
@@ -1150,25 +1155,31 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("Scheduling aids onset for person %d", person_id)
 
         df = self.sim.population.props
-        df.at[person_id, 'hiv_specific_symptoms'] = 'aids'
-        df.at[person_id, 'hiv_unified_symptom_code'] = 3
 
-        prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
-        seeks_care = (self.module.rng.rand() < prob) & ~df.at[person_id, 'hiv_diagnosed']
+        if not df.at[person_id, 'hiv_on_art']:
+            logger.debug("This is HivAidsEvent scheduling aids onset for person %d", person_id)
 
-        if seeks_care:
-            logger.debug(
-                'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                person_id)
-            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=3,
-                                                            topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(weeks=2)
-                                                            )
+            df.at[person_id, 'hiv_specific_symptoms'] = 'aids'
+            df.at[person_id, 'hiv_unified_symptom_code'] = 3
+
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
+            seeks_care = (self.module.rng.rand() < prob) & ~df.at[person_id, 'hiv_diagnosed']
+
+            if seeks_care:
+                logger.debug(
+                    'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                    person_id)
+                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=3,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug("This is HivAidsEvent doing nothing because person %d is on art", person_id)
+
 
 
 # ---------------------------------------------------------------------------
