@@ -122,13 +122,17 @@ class hiv(Module):
         'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
 
         'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
-        'annual_prob_symptomatic_adult': Parameter(Types.REAL, 'annual probability of adults becoming symptomatic'),
-        'annual_prob_aids_adult': Parameter(Types.REAL, 'annual probability of adults developing aids'),
-        'monthly_prob_symptomatic_infant': Parameter(Types.REAL, 'monthly probability of infants becoming symptomatic'),
-        'monthly_prob_aids_infant_fast': Parameter(Types.REAL,
-                                                   'monthly probability of infants developing aids - fast progressors'),
-        'monthly_prob_aids_infant_slow': Parameter(Types.REAL,
-                                                   'monthly probability of infants developing aids - slow progressors'),
+
+        'median_time_symptoms_infant_slow_mths': Parameter(Types.REAL,
+                                                           'median time for slow progressing infants to become symptomatic'),
+        'median_time_aids_infant_slow_yrs': Parameter(Types.REAL,
+                                                      'median time for infants to develop aids - slow progressors'),
+        'median_time_aids_infant_fast_yrs': Parameter(Types.REAL,
+                                                      'median time for infants to develop aids - fast progressors'),
+        'median_time_symptoms_adults_yrs': Parameter(Types.REAL,
+                                                     'median time for adults to develop symptoms'),
+        'median_time_aids_adults_yrs': Parameter(Types.REAL,
+                                                 'median time for adults to develop aids'),
 
     }
 
@@ -149,6 +153,8 @@ class hiv(Module):
                                           categories=['none', 'early', 'symptomatic', 'aids']),
         'hiv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
                                              categories=[0, 1, 2, 3, 4]),
+        'hiv_date_symptomatic': Property(Types.DATE, 'Date becomes symptomatic'),
+        'hiv_date_aids': Property(Types.DATE, 'Date develops AIDS'),
 
         'hiv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
         'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
@@ -278,11 +284,12 @@ class hiv(Module):
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
         params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
-        params['annual_prob_symptomatic_adult'] = self.param_list.loc['annual_prob_symptomatic_adult', 'Value1']
-        params['annual_prob_aids_adult'] = self.param_list.loc['annual_prob_aids_adult', 'Value1']
-        params['monthly_prob_symptomatic_infant'] = self.param_list.loc['monthly_prob_symptomatic_infant', 'Value1']
-        params['monthly_prob_aids_infant_fast'] = self.param_list.loc['monthly_prob_aids_infant_fast', 'Value1']
-        params['monthly_prob_aids_infant_slow'] = self.param_list.loc['monthly_prob_aids_infant_slow', 'Value1']
+        params['median_time_symptoms_infant_slow_mths'] = self.param_list.loc[
+            'median_time_symptoms_infant_slow_mths'].values
+        params['median_time_aids_infant_slow_yrs'] = self.param_list.loc['median_time_aids_infant_slow_yrs'].values
+        params['median_time_aids_infant_fast_yrs'] = self.param_list.loc['median_time_aids_infant_fast_yrs'].values
+        params['median_time_symptoms_adults_yrs'] = self.param_list.loc['median_time_symptoms_adults_yrs'].values
+        params['median_time_aids_adults_yrs'] = self.param_list.loc['median_time_aids_adults_yrs'].values
 
         self.parameters['initial_art_coverage'] = workbook['coverage']
 
@@ -302,6 +309,9 @@ class hiv(Module):
 
         df['hiv_specific_symptoms'] = 'none'
         df['hiv_unified_symptom_code'].values[:] = 0
+
+        df['hiv_date_symptomatic'] = pd.NaT
+        df['hiv_date_aids'] = pd.NaT
 
         df['hiv_ever_tested'] = False  # default: no individuals tested
         df['hiv_date_tested'] = pd.NaT
@@ -681,10 +691,9 @@ class hiv(Module):
         now = self.sim.date
         params = self.parameters
 
-        # ----------------------------------- PROGRESSION IN INFANTS -----------------------------------
-
+        # ----------------------------------- PROGRESSION TO SYMPTOMATIC IN INFANTS -----------------------------------
+        # only needed for those still in early stage
         # schedule transition from early to AIDS in slow progressing infants, no art
-        # select population
         idx = df.index[
             df.is_alive & (df.age_years < 15) & ~df.hiv_fast_progressor & (df.hiv_specific_symptoms == 'early') & (
                     ~df.hiv_on_art == 2)]
@@ -694,12 +703,18 @@ class hiv(Module):
             params['median_time_symptoms_infant_slow_mths'][1], size=len(idx))
         t_symp_td = pd.to_timedelta(t_symp, unit='m')
 
-        # TODO: check hiv_date_symptomatic is AFTER self.sim.date
         df.loc[idx, 'hiv_date_symptomatic'] = df.loc[idx, 'hiv_date_inf'] + t_symp_td
+
+        while np.any(df.loc[idx, 'hiv_date_symptomatic'] < now):
+            # find which entries occur before 'now'
+            tmp = df.index[df.hiv_date_symptomatic < now]
+
+            # reschedule to now + 1 month
+            df.loc[tmp, 'hiv_date_symptomatic'] = now + DateOffset(weeks=4)
 
         # schedule the symptom update event for each person
         for person_index in idx:
-            symp_event = HivSymptomaticInfant(self, person_index)
+            symp_event = HivSymptomaticEvent(self, person_index)
             self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_symptomatic'])
 
         # TODO: also schedule the symptom update and aids events for on_birth infections and hiv_events
@@ -709,9 +724,31 @@ class hiv(Module):
         # TODO: include schedule_symptoms in the initialise_population
 
         # TODO: this
-        # ----------------------------------- PROGRESSION IN ADULTS -----------------------------------
+        # ----------------------------------- PROGRESSION TO SYMPTOMATIC IN ADULTS -----------------------------------
 
-        # schedule transition from early to AIDS in adults
+        # schedule transition from early to AIDS in adults, no art
+        # only needed for those still in early stage
+        idx = df.index[
+            df.is_alive & (df.age_years >= 15) & (df.hiv_specific_symptoms == 'early') & (~df.hiv_on_art == 2)]
+
+        # random draw from distribution of times
+        t_symp = self.sim.rng.uniform(low=params['median_time_symptoms_adult_yrs'][0], high= \
+            params['median_time_symptoms_adult_yrs'][1], size=len(idx))
+        t_symp_td = pd.to_timedelta(t_symp, unit='m')
+
+        df.loc[idx, 'hiv_date_symptomatic'] = df.loc[idx, 'hiv_date_inf'] + t_symp_td
+
+        while np.any(df.loc[idx, 'hiv_date_symptomatic'] < now):
+            # find which entries occur before 'now'
+            tmp = df.index[df.hiv_date_symptomatic < now]
+
+            # reschedule to now + 1 month
+            df.loc[tmp, 'hiv_date_symptomatic'] = now + DateOffset(weeks=4)
+
+        # schedule the symptom update event for each person
+        for person_index in idx:
+            symp_event = HivSymptomaticEvent(self, person_index)
+            self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_symptomatic'])
 
     def schedule_aids(self, population):
         """ assign level of symptoms to infected people
@@ -720,15 +757,84 @@ class hiv(Module):
         now = self.sim.date
         params = self.parameters
 
-        # ----------------------------------- PROGRESSION IN INFANTS -----------------------------------
+        # ----------------------------------- PROGRESSION TO AIDS IN INFANTS (SLOW PROGRESSORS) -----------------------------------
 
-        # schedule transition from symptomatic to AIDS in fast progressing infants
+        # schedule transition from symptomatic to AIDS in slow progressing infants, no art
+        idx = df.index[
+            df.is_alive & (df.age_years < 15) & ~df.hiv_fast_progressor & (
+                    df.hiv_specific_symptoms == 'symptomatic') & (
+                ~df.hiv_on_art == 2)]
 
-        # schedule transition from symptomatic to AIDS in slow progressing infants
+        # random draw from distribution of times
+        t_aids = self.sim.rng.uniform(low=params['median_time_aids_infant_slow_yrs'][0], high= \
+            params['median_time_aids_infant_slow_yrs'][1], size=len(idx))
+        t_aids_td = pd.to_timedelta(t_aids, unit='y')
 
-        # ----------------------------------- PROGRESSION IN ADULTS -----------------------------------
+        df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
+
+        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+            # find which entries occur before 'now'
+            tmp = df.index[df.hiv_date_aids < now]
+
+            # reschedule to now + 1 month
+            df.loc[tmp, 'hiv_date_aids'] = now + DateOffset(weeks=4)
+
+        # schedule the symptom update event for each person
+        for person_index in idx:
+            symp_event = HivAidsEvent(self, person_index)
+            self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_aids'])
+
+        # ----------------------------------- PROGRESSION TO AIDS IN INFANTS (FAST PROGRESSORS) -----------------------------------
+
+        # schedule transition from symptomatic to AIDS in fast progressing infants, no art
+        idx = df.index[
+            df.is_alive & (df.age_years < 15) & df.hiv_fast_progressor & (df.hiv_specific_symptoms == 'symptomatic') & (
+                ~df.hiv_on_art == 2)]
+
+        # random draw from distribution of times
+        t_aids = self.sim.rng.uniform(low=params['median_time_aids_infant_fast_yrs'][0], high= \
+            params['median_time_aids_infant_fast_yrs'][1], size=len(idx))
+        t_aids_td = pd.to_timedelta(t_aids, unit='y')
+
+        df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
+
+        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+            # find which entries occur before 'now'
+            tmp = df.index[df.hiv_date_aids < now]
+
+            # reschedule to now + 1 month
+            df.loc[tmp, 'hiv_date_aids'] = now + DateOffset(weeks=4)
+
+        # schedule the symptom update event for each person
+        for person_index in idx:
+            symp_event = HivAidsEvent(self, person_index)
+            self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_aids'])
+
+        # ----------------------------------- PROGRESSION TO AIDS IN ADULTS -----------------------------------
 
         # schedule transition from symptomatic to AIDS in adults
+        idx = df.index[
+            df.is_alive & (df.age_years >= 15) & (df.hiv_specific_symptoms == 'symptomatic') & (
+                ~df.hiv_on_art == 2)]
+
+        # random draw from distribution of times
+        t_aids = self.sim.rng.uniform(low=params['median_time_aids_adults_yrs'][0], high= \
+            params['median_time_aids_adults_yrs'][1], size=len(idx))
+        t_aids_td = pd.to_timedelta(t_aids, unit='y')
+
+        df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
+
+        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+            # find which entries occur before 'now'
+            tmp = df.index[df.hiv_date_aids < now]
+
+            # reschedule to now + 1 month
+            df.loc[tmp, 'hiv_date_aids'] = now + DateOffset(weeks=4)
+
+        # schedule the symptom update event for each person
+        for person_index in idx:
+            symp_event = HivAidsEvent(self, person_index)
+            self.sim.schedule_event(symp_event, df.at[person_index, 'hiv_date_aids'])
 
 
     def initialise_simulation(self, sim):
@@ -763,6 +869,9 @@ class hiv(Module):
         df.at[child_id, 'hiv_specific_symptoms'] = 'none'
         df.at[child_id, 'hiv_unified_symptom_code'] = 0
         df.at[child_id, 'hiv_fast_progressor'] = False
+
+        df[child_id, 'hiv_date_symptomatic'] = pd.NaT
+        df[child_id, 'hiv_date_aids'] = pd.NaT
 
         df.at[child_id, 'hiv_ever_tested'] = False
         df.at[child_id, 'hiv_date_tested'] = pd.NaT
@@ -811,12 +920,12 @@ class hiv(Module):
             and (df.at[child_id, 'hiv_mother_art'] == '2'):
             df.at[child_id, 'hiv_inf'] = True
 
-        # ----------------------------------- ASSIGN DEATHS + FAST/SLOW PROGRESSOR -----------------------------------
+        # ----------------------------------- ASSIGN DEATHS  -----------------------------------
 
         if df.at[child_id, 'is_alive'] and df.at[child_id, 'hiv_inf']:
             df.at[child_id, 'hiv_date_inf'] = self.sim.date
 
-            # assume all fast progressors, draw from exp, returns an array not a single value!!
+            # assume all FAST PROGRESSORS, draw from exp, returns an array not a single value!!
             time_death = self.rng.exponential(scale=params['exp_rate_mort_infant_fast_progressor'],
                                               size=1)
             df.at[child_id, 'hiv_fast_progressor'] = True
@@ -831,6 +940,19 @@ class hiv(Module):
             death_scheduled = df.at[child_id, 'hiv_date_death']
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
+            # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
+
+            # schedule transition from symptomatic to AIDS in fast progressing infants
+            t_aids = self.sim.rng.uniform(low=params['median_time_aids_infant_fast_yrs'][0], high= \
+                params['median_time_aids_infant_fast_yrs'][1], size=1)
+            t_aids_td = pd.to_timedelta(t_aids, unit='y')
+
+            df.at[child_id, 'hiv_date_aids'] = df.at[child_id, 'hiv_date_inf'] + t_aids_td
+
+            # schedule the aids event
+            symp_event = HivAidsEvent(self, child_id)
+            self.sim.schedule_event(symp_event, df.at[child_id, 'hiv_date_aids'])
+
         # ----------------------------------- PMTCT -----------------------------------
         # TODO: PMTCT
         # TODO: check difference between HIV/AIDS, PMTCT and PMTCT. Both have code 90
@@ -843,9 +965,9 @@ class hiv(Module):
                                                             tclose=self.sim.date + DateOffset(weeks=4)
                                                             )
 
-    # TODO: modify this - include piggy-back appt for other diseases
     # need to include malaria testing at follow-up appts
     def on_healthsystem_interaction(self, person_id, treatment_id):
+        # TODO: modify this - include piggy-back appt for other diseases
 
         logger.debug('This is hiv, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
@@ -991,154 +1113,62 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(death, time_death)  # schedule the death
 
 
-class SymptomUpdateEventAdult(RegularEvent, PopulationScopeEventMixin):
-    """ update the status of symptoms for infected adults
+class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
+    """ change symptom level and determine whether person will seek care on symptom change
     """
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
 
-    def apply(self, population):
-        df = population.props
-        params = self.module.parameters
+    def apply(self, person_id):
+        logger.debug("Scheduling symptom onset for person %d", person_id)
 
-        # ----------------------------------- DEVELOP SYMPTOMS -----------------------------------
+        df = self.sim.population.props
+        df.at[person_id, 'hiv_specific_symptoms'] = 'symptomatic'
+        df.at[person_id, 'hiv_unified_symptom_code'] = 2
 
-        # hazard of moving from early to symptomatic
-        symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'annual_prob_symptomatic_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
-                            df.hiv_specific_symptoms == 'early') & ((df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
-        df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
-        df.loc[symp, 'hiv_unified_symptom_code'] = 2
+        prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+        seeks_care = self.module.rng.rand() < prob
 
-        # for each person determine whether they will seek care on symptom change
-        # get_prob_seek_care will be the healthcare seeking function developed by Wingston
-        seeks_care = pd.Series(data=False, index=df.loc[symp].index)
-        for i in df.index[symp]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care]:
+        if seeks_care:
                 logger.debug(
-                    'This is HivEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                    person_index)
-                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
+                    'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                    person_id)
+                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
                                                                 )
-        else:
-            logger.debug(
-                'This is HivEvent, There is  no one with new severe symptoms so no new healthcare seeking')
-
-        # ----------------------------------- DEVELOP AIDS -----------------------------------
-
-        # hazard of moving to aids (from early or symptomatic)
-        aids = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'annual_prob_aids_adult']) & df.is_alive & df.hiv_inf & (df.age_years >= 15) & (
-                            df.hiv_specific_symptoms != 'aids') & ((df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
-        df.loc[aids, 'hiv_specific_symptoms'] = 'aids'
-        df.loc[aids, 'hiv_unified_symptom_code'] = 3
-
-        # for each person determine whether they will seek care on symptom change
-        seeks_care = pd.Series(data=False, index=df.loc[aids].index)
-        for i in df.index[aids]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=3)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care]:
-                logger.debug(
-                    'This is HivEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                    person_index)
-                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                priority=3,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
 
 
-class SymptomUpdateEventInfant(RegularEvent, PopulationScopeEventMixin):
-    """ update the status of symptoms for infected children
+class HivAidsEvent(Event, IndividualScopeEventMixin):
+    """ change symptom level and determine whether person will seek care on symptom change
     """
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # every month
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
 
-    def apply(self, population):
-        df = population.props
-        params = self.module.parameters
+    def apply(self, person_id):
+        logger.debug("Scheduling aids onset for person %d", person_id)
 
-        # ----------------------------------- DEVELOP SYMPTOMS -----------------------------------
+        df = self.sim.population.props
+        df.at[person_id, 'hiv_specific_symptoms'] = 'aids'
+        df.at[person_id, 'hiv_unified_symptom_code'] = 3
 
-        # hazard of moving from early to symptomatic,  apply to slow progressing infants only
-        symp = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_prob_symptomatic_infant']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
-                            df.hiv_specific_symptoms == 'early') & ((df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
-        df.loc[symp, 'hiv_specific_symptoms'] = 'symptomatic'
-        df.loc[symp, 'hiv_unified_symptom_code'] = 2
+        prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
+        seeks_care = (self.module.rng.rand() < prob) & ~df.at[person_id, 'hiv_diagnosed']
 
-        # for each person determine whether they will seek care on symptom change
-        # get_prob_seek_care will be the healthcare seeking function developed by Wingston
-        seeks_care = pd.Series(data=False, index=df.loc[symp].index)
-        for i in df.index[symp]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care]:
-                logger.debug(
-                    'This is HivEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                    person_index)
-                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
-        else:
+        if seeks_care:
             logger.debug(
-                'This is HivEvent, There is  no one with new severe symptoms so no new healthcare seeking')
-
-        # ----------------------------------- DEVELOP AIDS -----------------------------------
-
-        # apply prob of aids to infants, fast and slow
-        aids_fast = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
-                                 df.hiv_specific_symptoms != 'aids') & df.hiv_fast_progressor & (
-                                 (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
-        df.loc[aids_fast, 'hiv_specific_symptoms'] = 'aids'
-        df.loc[aids_fast, 'hiv_unified_symptom_code'] = 3
-
-        aids_slow = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
-            'monthly_prob_aids_infant_fast']) & df.is_alive & df.hiv_inf & (df.age_years < 15) & (
-                                 df.hiv_specific_symptoms != 'aids') & ~df.hiv_fast_progressor & (
-                                 (df.hiv_on_art == 0) | (df.hiv_on_art == 1))]
-        df.loc[aids_slow, 'hiv_specific_symptoms'] = 'aids'
-        df.loc[aids_slow, 'hiv_unified_symptom_code'] = 3
-
-        aids = np.concatenate([aids_fast, aids_slow])  # join the indices to get all new aids cases
-
-        # for each person determine whether they will seek care on symptom change
-        seeks_care = pd.Series(data=False, index=df.loc[aids].index)
-        for i in df.index[aids]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=3)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care]:
-                logger.debug(
-                    'This is HivEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                    person_index)
-                event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                priority=3,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
+                'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                person_id)
+            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=3,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=2)
+                                                            )
 
 
 # ---------------------------------------------------------------------------
