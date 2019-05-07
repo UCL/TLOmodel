@@ -586,9 +586,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='labour'), self.sim.date)
 
-        risk_eclampsia = params['prob_an_eclampsia_sl']
-
-
     # ============================ COMPLICATIONS FOR OBSTRUCTED LABOUR ===============================================
 
   #      elif df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour':
