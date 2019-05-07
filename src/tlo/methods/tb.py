@@ -1012,17 +1012,18 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
             # trigger ipt outreach event for all paediatric contacts of case
             # randomly sample from <5 yr olds
-            ipt_sample = df[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive].sample(n=5,
-                                                                                                    replace=False).index
-            # need to pass pd.Series length (df.is_alive) to outreach event
-            test = pd.Series(False, index=df.index)
-            test.loc[ipt_sample] = True
+            if len(df.index[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive] > 5):
+                ipt_sample = df[(df.age_years <= 5) & (df.tb_inf == 'uninfected') & df.is_alive].sample(n=5,
+                                                                                                        replace=False).index
+                # need to pass pd.Series length (df.is_alive) to outreach event
+                test = pd.Series(False, index=df.index)
+                test.loc[ipt_sample] = True
 
-            ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(ipt_event,
-                                                            priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+                ipt_event = HSI_Tb_Ipt(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_event(ipt_event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
 
 # TODO: complete
@@ -1146,7 +1147,7 @@ class HSI_Tb_StartTreatment(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
-        params = self.module.parameters
+        params = self.sim.modules['tb'].parameters
         now = self.sim.date
         df = self.sim.population.props
 
@@ -1210,7 +1211,6 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
 #   Cure
 # ---------------------------------------------------------------------------
 
-
 class TbCureEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -1220,6 +1220,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
         logger.debug("Stopping tb treatment and curing person %d", person_id)
 
         df = self.sim.population.props
+        params = self.sim.modules['tb'].parameters
 
         # after six months of treatment, stop
         df.at[person_id, 'tb_on_treatment'] = False
@@ -1227,7 +1228,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
         # if drug-susceptible then probability of successful treatment for both primary and secondary
         if df.at[person_id, 'tb_inf'].startswith("active_susc"):
 
-            cured = self.sim.rng.random_sample(size=1) < self.module.parameters['prob_treatment_success']
+            cured = self.sim.rng.random_sample(size=1) < params['prob_treatment_success']
 
             if cured:
                 df.at[person_id, 'tb_inf'] = 'latent_susc_secondary'
