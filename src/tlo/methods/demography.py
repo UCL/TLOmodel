@@ -403,8 +403,6 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] & df.at[mother_id, 'la_died_in_labour']:
             self.sim.do_birth(mother_id)
 
-
-
         # Those women who survive labour move into the immediate postpartum period and are scheduled to enter to post-
         # partum phase of labour where possible complications can act.
 
