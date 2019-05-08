@@ -14,8 +14,6 @@ from tlo.methods import demography
 logger = logging.getLogger(__name__)
 
 
-# TODO: add property hiv_on_nvp_azt for risk of transmission on birth
-
 class hiv(Module):
     """
     baseline hiv infection
@@ -165,7 +163,7 @@ class hiv(Module):
         'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
         'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
         'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
-        'hiv_fast_progressor': Property(Types.BOOL, 'infant fast progressor')
+        'hiv_fast_progressor': Property(Types.BOOL, 'infant fast progressor'),
 
     }
 
@@ -354,7 +352,6 @@ class hiv(Module):
         assign baseline hiv prevalence
         """
 
-        # TODO: assign baseline prevalence by district
         # odds ratios from Wingston's analysis dropbox Data-MDHS
         now = self.sim.date
         df = population.props
@@ -425,7 +422,7 @@ class hiv(Module):
         random_draw = self.rng.random_sample(size=len(df_hivprob))
 
         # probability of hiv > random number, assign hiv_inf = True
-        # TODO: cluster this by mother's hiv status??
+        # TODO: cluster this by mother's hiv status?? currently no linked mother pre-baseline year
         # if mother hiv+ at time of birth...
         hiv_index = df_hivprob.index[
             df.is_alive & (df_hivprob.prev_prop > random_draw) & df_hivprob.age_years.between(0, 14)]
@@ -694,10 +691,11 @@ class hiv(Module):
         params = self.parameters
 
         # ----------------------------------- PROGRESSION TO SYMPTOMATIC IN INFANTS -----------------------------------
-        # only needed for those still in early stage
+        # not needed if already symptomatic or aids, so early symptoms only
         # schedule transition from early to AIDS in slow progressing infants, no art
         idx = df.index[
-            df.is_alive & (df.age_years < 15) & ~df.hiv_fast_progressor & (df.hiv_specific_symptoms == 'early') & (
+            df.is_alive & (df.age_years < 15) & df.hiv_inf & ~df.hiv_fast_progressor & (
+                    df.hiv_specific_symptoms == 'early') & (
                 df.hiv_on_art != 2)]
 
         # random draw from distribution of times
@@ -725,7 +723,8 @@ class hiv(Module):
         # schedule transition from early to symptomatic in adults, no art
         # only needed for those still in early stage
         idx = df.index[
-            df.is_alive & (df.age_years >= 15) & (df.hiv_specific_symptoms == 'early') & (df.hiv_on_art != 2)]
+            df.is_alive & (df.age_years >= 15) & df.hiv_inf & (df.hiv_specific_symptoms == 'early') & (
+                    df.hiv_on_art != 2)]
 
         # random draw from distribution of times
         t_symp = self.sim.rng.uniform(low=params['median_time_symptoms_adults_yrs'][0], high= \
@@ -756,9 +755,10 @@ class hiv(Module):
         # ----------------------------------- PROGRESSION TO AIDS IN INFANTS (SLOW PROGRESSORS) -----------------------------------
 
         # schedule transition from symptomatic to AIDS in slow progressing infants, no art
+        # not needed if already in aids stage
         idx = df.index[
-            df.is_alive & (df.age_years < 15) & ~df.hiv_fast_progressor & (
-                    df.hiv_specific_symptoms == 'symptomatic') & (
+            df.is_alive & (df.age_years < 15) & df.hiv_inf & ~df.hiv_fast_progressor & (
+                df.hiv_specific_symptoms != 'aids') & (
                 ~df.hiv_on_art == 2)]
 
         # random draw from distribution of times
@@ -768,7 +768,7 @@ class hiv(Module):
 
         df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
 
-        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+        if np.any(df.loc[idx, 'hiv_date_aids'] < now):
             # find which entries occur before 'now'
             tmp = df.index[df.hiv_date_aids < now]
 
@@ -784,7 +784,8 @@ class hiv(Module):
 
         # schedule transition from symptomatic to AIDS in fast progressing infants, no art
         idx = df.index[
-            df.is_alive & (df.age_years < 15) & df.hiv_fast_progressor & (df.hiv_specific_symptoms == 'symptomatic') & (
+            df.is_alive & (df.age_years < 15) & df.hiv_inf & df.hiv_fast_progressor & (
+                    df.hiv_specific_symptoms != 'aids') & (
                 df.hiv_on_art != 2)]
 
         # random draw from distribution of times
@@ -794,7 +795,7 @@ class hiv(Module):
 
         df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
 
-        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+        if np.any(df.loc[idx, 'hiv_date_aids'] < now):
             # find which entries occur before 'now'
             tmp = df.index[df.hiv_date_aids < now]
 
@@ -810,7 +811,7 @@ class hiv(Module):
 
         # schedule transition from symptomatic to AIDS in adults
         idx = df.index[
-            df.is_alive & (df.age_years >= 15) & (df.hiv_specific_symptoms == 'symptomatic') & (
+            df.is_alive & (df.age_years >= 15) & df.hiv_inf & (df.hiv_specific_symptoms != 'aids') & (
                 df.hiv_on_art != 2)]
 
         # random draw from distribution of times
@@ -820,7 +821,7 @@ class hiv(Module):
 
         df.loc[idx, 'hiv_date_aids'] = df.loc[idx, 'hiv_date_inf'] + t_aids_td
 
-        while np.any(df.loc[idx, 'hiv_date_aids'] < now):
+        if np.any(df.loc[idx, 'hiv_date_aids'] < now):
             # find which entries occur before 'now'
             tmp = df.index[df.hiv_date_aids < now]
 
@@ -830,7 +831,8 @@ class hiv(Module):
         # schedule the symptom update event for each person
         for person_index in idx:
             aids_event = HivAidsEvent(self, person_index)
-            self.sim.schedule_event(aids_event, df.at[person_index, 'hiv_date_aids'])
+            date = df.at[person_index, 'hiv_date_aids']
+            self.sim.schedule_event(aids_event, date)
 
 
     def initialise_simulation(self, sim):
@@ -877,6 +879,7 @@ class hiv(Module):
         df.at[child_id, 'hiv_viral_load_test'] = pd.NaT
         df.at[child_id, 'hiv_on_cotrim'] = False
         df.at[child_id, 'hiv_date_cotrim'] = pd.NaT
+        df.at[child_id, 'hiv_on_nvp_azt'] = False
 
         df.at[child_id, 'hiv_mother_inf'] = False
         df.at[child_id, 'hiv_mother_art'] = False
@@ -937,19 +940,18 @@ class hiv(Module):
 
             # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
 
-            # # schedule transition from symptomatic to AIDS in fast progressing infants
-            # t_aids = self.sim.rng.uniform(low=params['median_time_aids_infant_fast_mths'][0], high= \
-            #     params['median_time_aids_infant_fast_mths'][1], size=1)
-            # t_aids_td = pd.to_timedelta(t_aids[0], unit='m')
-            #
-            # df.at[child_id, 'hiv_date_aids'] = df.at[child_id, 'hiv_date_inf'] + t_aids_td
-            #
-            # # schedule the aids event
-            # symp_event = HivAidsEvent(self, child_id)
-            # self.sim.schedule_event(symp_event, df.at[child_id, 'hiv_date_aids'])
+            # schedule transition from symptomatic to AIDS in fast progressing infants
+            t_aids = self.sim.rng.uniform(low=params['median_time_aids_infant_fast_mths'][0], high= \
+                params['median_time_aids_infant_fast_mths'][1], size=1)
+            t_aids_td = pd.to_timedelta(t_aids[0], unit='m')
+
+            df.at[child_id, 'hiv_date_aids'] = df.at[child_id, 'hiv_date_inf'] + t_aids_td
+
+            # schedule the aids event
+            symp_event = HivAidsEvent(self, child_id)
+            self.sim.schedule_event(symp_event, df.at[child_id, 'hiv_date_aids'])
 
         # ----------------------------------- PMTCT -----------------------------------
-        # TODO: PMTCT
         # TODO: check difference between HIV/AIDS, PMTCT and PMTCT. Both have code 90
         # first contact is testing, then schedule treatment / prophylaxis as needed
         if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
@@ -1082,8 +1084,6 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(death, time_death)  # schedule the death
 
 
-# TODO: monthly risk of hiv with breastfeeding
-# depends on PMTCT - assume complete protection?
 class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
     """ hiv infection event in infants during breastfeeding
     """
@@ -1096,7 +1096,6 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         now = self.sim.date
 
-        # TODO: check if any risk once child is on ART
         # mother NOT ON ART & child NOT ON ART
         i1 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_breastfeeding_untreated'])
@@ -1107,7 +1106,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                       & df.hiv_mother_inf
                       & ~df.hiv_mother_art]
 
-        # mother ON ART & child NOT ON ART
+        # mother ON ART & assume child on azt/nvp
         i2 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_breastfeeding_untreated'])
                       & df.is_alive
@@ -1345,7 +1344,6 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         df.at[person_id, 'hiv_ever_tested'] = True
 
         # if hiv+ schedule treatment
-        # TODO: give cotrim also
         if df.at[person_id, 'hiv_inf']:
             df.at[person_id, 'hiv_diagnosed'] = True
 
