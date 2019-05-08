@@ -148,7 +148,7 @@ class Labour (Module):
         'la_labour': Property(Types.CATEGORICAL, 'not in labour, spontaneous unobstructed labour, prolonged or '
                               'obstructed labour, Preterm Labour, Immediate Postpartum',
                               categories=['not_in_labour', 'spontaneous_labour',
-                                          'prolonged_or_obstructed_labour', 'pretterm_labour','immediate_postpartum']),
+                                          'prolonged_or_obstructed_labour', 'preterm_labour','immediate_postpartum']),
         'la_still_birth_this_delivery': Property(Types.BOOL,'whether this womans most recent pregnancy has ended in a '
                                                             'stillbirth'),
         'la_abortion': Property(Types.DATE, 'the date on which a pregnant woman has had an abortion'),
@@ -205,7 +205,7 @@ class Labour (Module):
         params['prob_an_ur_pl_ol'] = 0.06
         params['cfr_aph'] = 0.05
         params['cfr_eclampsia'] = 0.03
-        params['cfr_sepsis'] = 0.02
+        params['cfr_sepsis'] = 0.05
         params['cfr_uterine_rupture'] = 0.045
         params['prob_still_birth_aph'] = 0.35
         params['prob_still_birth_aph_md'] = 0.90
@@ -478,7 +478,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             else:
                 df.at[individual_id, 'la_labour'] = 'spontaneous_labour'
 
-            # To Do: consider risk factors for preterm birth
+            # TODO: consider risk factors for preterm birth
             # and of having a planned CS or Induction
 
         elif gestation_weeks < 37 and gestation_weeks >28:
@@ -490,14 +490,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'is_pregnant'] = False
             df.at[individual_id, 'la_abortion'] = self.sim.date
 
-            # need to consider the benefits of a "previous spont miscarriage" property
-            # also need to incorporate induction and planned CS
+            # TODO:need to consider the benefits of a "previous spont miscarriage" property
+            # TODO:also need to incorporate induction and planned CS
 
-    #  Do I need to reset "is_pregnant" for women who die?
+    # TODO: Do I need to reset "is_pregnant" for women who die?
 
     # ============================ COMPLICATIONS FOR SPONTANEOUS LABOUR ===============================================
 
-    # TO DO: N.b only allow women who have pre-eclampsia to have an eclamptic fit?
+    # TODO: N.b only allow women who have pre-eclampsia to have an eclamptic fit?
     # Applying risk factors for complications
 
         risk_eclampsia = params['prob_an_eclampsia_sl']
@@ -525,9 +525,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'age_years'] >= 35:
             risk_eclampsia = params['rr_an_aph_noedu'] * params['prob_an_aph_sl']
 
-# ============================== Determining labour complications =====================================================
-
-# ********************** RANDOM NUMBER GENERATOR IS BETWEEN 0-1 STARTING AT 0.1???? ***********************************
+    # TODO: RANDOM NUMBER GENERATOR IS BETWEEN 0-1 STARTING AT 0.1????
 
         if df.at[individual_id, 'la_labour'] == 'spontaneous_labour':
             p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
@@ -582,13 +580,155 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     if self.sim.rng.random_sample() < params['prob_still_birth_aph_md']:
                         df.at[individual_id, 'la_still_birth_this_delivery'] = True
 
-            if 'True' in p_comp_sl['maternal_death']:
+            deaths = pd.Series(p_comp_sl['maternal_death'])
+            if deaths.any():
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='labour'), self.sim.date)
 
     # ============================ COMPLICATIONS FOR OBSTRUCTED LABOUR ===============================================
 
-  #      elif df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour':
+    #  TODO: RISK FACTORS?
+
+        risk_eclampsia = params['prob_an_eclampsia_pl_ol']
+        risk_sepsis = params['prob_an_sepsis_pl_ol']
+        risk_aph = params['prob_an_aph_pl_ol']
+        risk_ur= params ['prob_an_ur_pl_ol']
+
+        if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour':
+            p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_eclampsia'], self.sim.rng.random_sample(size=1), False),
+                                           (risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_sepsis'], self.sim.rng.random_sample(size=1), False),
+                                           (risk_aph, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_aph'], self.sim.rng.random_sample(size=1), False),
+                                           (risk_ur, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_uterine_rupture'], self.sim.rng.random_sample(size=1), False)],
+                                     columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                              'random_draw2', 'maternal_death'], index=('eclampsia', 'sepsis', 'aph',
+                                                                                        'uterine_rupture'))
+
+            if p_comp_sl.at['eclampsia', 'random_draw'] < p_comp_sl.at['eclampsia', 'complication_prob']:
+                p_comp_sl.at['eclampsia', 'complication'] = True
+                df.at[individual_id, 'la_eclampsia'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_eclampsia']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['sepsis', 'random_draw'] < p_comp_sl.at['sepsis', 'complication_prob']:
+                p_comp_sl.at['sepsis', 'complication'] = True
+                df.at[individual_id, 'la_sepsis'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_sepsis']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['aph', 'random_draw'] < p_comp_sl.at['aph', 'complication_prob']:
+                p_comp_sl.at['aph', 'complication'] = True
+                df.at[individual_id, 'la_aph'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_aph']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['uterine_rupture', 'random_draw'] < p_comp_sl.at['uterine_rupture', 'complication_prob']:
+                p_comp_sl.at['uterine_rupture', 'complication'] = True
+                df.at[individual_id, 'la_uterine_rupture'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_ur']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            # If a complication is experienced the case fatality rate is used to determine if this will cause death
+
+            if p_comp_sl.at['eclampsia', 'complication'] and p_comp_sl.at['eclampsia', 'random_draw2'] \
+                < p_comp_sl.at['eclampsia', 'prob_cfr']:
+                    p_comp_sl.at['eclampsia', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_eclampsia_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['sepsis', 'complication'] and p_comp_sl.at['sepsis', 'random_draw2'] \
+                < p_comp_sl.at['sepsis', 'prob_cfr']:
+                    p_comp_sl.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_sepsis_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['aph', 'complication'] and p_comp_sl.at['aph', 'random_draw2'] \
+                < p_comp_sl.at['aph', 'prob_cfr']:
+                    p_comp_sl.at['aph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_aph_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['uterine_rupture', 'complication'] and p_comp_sl.at['uterine_rupture', 'random_draw2'] \
+                < p_comp_sl.at['uterine_rupture', 'prob_cfr']:
+                    p_comp_sl.at['uterine_rupture', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_ur_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            deaths = pd.Series(p_comp_sl['maternal_death'])
+            if deaths.any():
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='labour'), self.sim.date)
+
+    # ============================ COMPLICATIONS FOR PRETERM LABOUR ===================================================
+        #  TODO: RISK FACTORS?
+
+        risk_eclampsia = params['prob_an_eclampsia_ptb']
+        risk_sepsis = params['prob_an_sepsis_ptb']
+        risk_aph = params['prob_an_aph_ptb']
+
+        if df.at[individual_id, 'la_labour'] == 'preterm_labour':
+            p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_eclampsia'], self.sim.rng.random_sample(size=1), False),
+                                           (risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_sepsis'], self.sim.rng.random_sample(size=1), False),
+                                           (risk_aph, self.sim.rng.random_sample(size=1), False,
+                                            params['cfr_aph'], self.sim.rng.random_sample(size=1), False)],
+                                     columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                              'random_draw2', 'maternal_death'], index=('eclampsia', 'sepsis', 'aph'))
+
+            if p_comp_sl.at['eclampsia', 'random_draw'] < p_comp_sl.at['eclampsia', 'complication_prob']:
+                p_comp_sl.at['eclampsia', 'complication'] = True
+                df.at[individual_id, 'la_eclampsia'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_eclampsia']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['sepsis', 'random_draw'] < p_comp_sl.at['sepsis', 'complication_prob']:
+                p_comp_sl.at['sepsis', 'complication'] = True
+                df.at[individual_id, 'la_sepsis'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_sepsis']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['aph', 'random_draw'] < p_comp_sl.at['aph', 'complication_prob']:
+                p_comp_sl.at['aph', 'complication'] = True
+                df.at[individual_id, 'la_aph'] = True
+                if self.sim.rng.random_sample() < params['prob_still_birth_aph']:
+                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            # If a complication is experienced the case fatality rate is used to determine if this will cause death
+
+            if p_comp_sl.at['eclampsia', 'complication'] and p_comp_sl.at['eclampsia', 'random_draw2'] \
+                < p_comp_sl.at['eclampsia', 'prob_cfr']:
+                    p_comp_sl.at['eclampsia', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_eclampsia_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['sepsis', 'complication'] and p_comp_sl.at['sepsis', 'random_draw2'] \
+                < p_comp_sl.at['sepsis', 'prob_cfr']:
+                    p_comp_sl.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_sepsis_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            if p_comp_sl.at['aph', 'complication'] and p_comp_sl.at['aph', 'random_draw2'] \
+                < p_comp_sl.at['aph', 'prob_cfr']:
+                    p_comp_sl.at['aph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+                    if self.sim.rng.random_sample() < params['prob_still_birth_aph_md']:
+                        df.at[individual_id, 'la_still_birth_this_delivery'] = True
+
+            deaths = pd.Series(p_comp_sl['maternal_death'])
+            if deaths.any():
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                      cause='labour'), self.sim.date)
+
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
@@ -602,10 +742,166 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
             params = self.module.parameters
             m = self
 
-# NEED TO CONSIDER THE EFFECTS FOLLOWING ABORTION/SPONT MISCARRIAGE
+# ===================================== POSTPARTUM COMPLICATIONS FOLLOWING SPONTANEOUS LABOUR =========================
+
+            # TODO: risk factors
+            risk_eclampsia = params['prob_pn_eclampsia_sl']
+            risk_sepsis = params['prob_pn_sepsis_sl']
+            risk_pph = params['prob_pn_pph_sl']
+
+            if df.at[individual_id, 'la_labour'] == 'spontaneous_labour':
+                p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_eclampsia'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_sepsis'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_pph, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_pph'], self.sim.rng.random_sample(size=1), False)],
+                                         columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                                  'random_draw2', 'maternal_death'],
+                                         index=('eclampsia', 'sepsis', 'pph'))
+
+                # Determine is a woman who is in normal labour will experience a complication during delivery
+
+                # TODO: consider increased likelihood of eclamptic fit in women who fitted in labour
+
+                if p_comp_sl.at['eclampsia', 'random_draw'] < p_comp_sl.at['eclampsia', 'complication_prob']:
+                    p_comp_sl.at['eclampsia', 'complication'] = True
+                    df.at[individual_id, 'la_eclampsia'] = True
+                if p_comp_sl.at['eclampsia', 'complication'] and p_comp_sl.at['eclampsia', 'random_draw2'] \
+                    < p_comp_sl.at['eclampsia', 'prob_cfr']:
+                    p_comp_sl.at['eclampsia', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                # TODO: consider women who are diagnosed as septic during labour
+
+                if p_comp_sl.at['sepsis', 'random_draw'] < p_comp_sl.at['sepsis', 'complication_prob']:
+                    p_comp_sl.at['sepsis', 'complication'] = True
+                    df.at[individual_id, 'la_sepsis'] = True
+                if p_comp_sl.at['sepsis', 'complication'] and p_comp_sl.at['sepsis', 'random_draw2'] \
+                    < p_comp_sl.at['sepsis', 'prob_cfr']:
+                    p_comp_sl.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                if p_comp_sl.at['pph', 'random_draw'] < p_comp_sl.at['pph', 'complication_prob']:
+                    p_comp_sl.at['pph', 'complication'] = True
+                    df.at[individual_id, 'la_pph'] = True
+                if p_comp_sl.at['pph', 'complication'] and p_comp_sl.at['pph', 'random_draw2'] \
+                    < p_comp_sl.at['pph', 'prob_cfr']:
+                    p_comp_sl.at['pph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                deaths = pd.Series(p_comp_sl['maternal_death'])
+                if deaths.any():
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='labour'), self.sim.date)
+
+# TODO NEED TO CONSIDER THE EFFECTS FOLLOWING ABORTION/SPONT MISCARRIAGE
+
+# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PROLONGED/OBSTRUCTED LABOUR =========================
+
+            # TODO: risk factors
+            risk_eclampsia = params['prob_pn_eclampsia_pl_ol']
+            risk_sepsis = params['prob_pn_sepsis_pl_ol']
+            risk_pph = params['prob_pn_pph_pl_ol']
+
+            if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour':
+                p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_eclampsia'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_sepsis'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_pph, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_pph'], self.sim.rng.random_sample(size=1), False)],
+                                         columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                                  'random_draw2', 'maternal_death'],
+                                         index=('eclampsia', 'sepsis', 'pph'))
+
+                # Determine is a woman who is in normal labour will experience a complication during delivery
+
+                # TODO: consider increased likelihood of eclamptic fit in women who fitted in labour
+
+                if p_comp_sl.at['eclampsia', 'random_draw'] < p_comp_sl.at['eclampsia', 'complication_prob']:
+                    p_comp_sl.at['eclampsia', 'complication'] = True
+                    df.at[individual_id, 'la_eclampsia'] = True
+                if p_comp_sl.at['eclampsia', 'complication'] and p_comp_sl.at['eclampsia', 'random_draw2'] \
+                    < p_comp_sl.at['eclampsia', 'prob_cfr']:
+                    p_comp_sl.at['eclampsia', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                # TODO: consider women who are diagnosed as septic during labour
+
+                if p_comp_sl.at['sepsis', 'random_draw'] < p_comp_sl.at['sepsis', 'complication_prob']:
+                    p_comp_sl.at['sepsis', 'complication'] = True
+                    df.at[individual_id, 'la_sepsis'] = True
+                if p_comp_sl.at['sepsis', 'complication'] and p_comp_sl.at['sepsis', 'random_draw2'] \
+                    < p_comp_sl.at['sepsis', 'prob_cfr']:
+                    p_comp_sl.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                # TODO: consider bleeding in relation to UR
+
+                if p_comp_sl.at['pph', 'random_draw'] < p_comp_sl.at['pph', 'complication_prob']:
+                    p_comp_sl.at['pph', 'complication'] = True
+                    df.at[individual_id, 'la_pph'] = True
+                if p_comp_sl.at['pph', 'complication'] and p_comp_sl.at['pph', 'random_draw2'] \
+                    < p_comp_sl.at['pph', 'prob_cfr']:
+                    p_comp_sl.at['pph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                deaths = pd.Series(p_comp_sl['maternal_death'])
+                if deaths.any():
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='labour'), self.sim.date)
+
+# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR ======================================
+
+            # TODO: risk factors
+            risk_eclampsia = params['prob_pn_eclampsia_ptb']
+            risk_sepsis = params['prob_pn_sepsis_ptb']
+            risk_pph = params['prob_pn_pph_ptb']
+
+            if df.at[individual_id, 'la_labour'] == 'prolonged_or_obstructed_labour':
+                p_comp_sl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_eclampsia'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_sepsis'], self.sim.rng.random_sample(size=1), False),
+                                               (risk_pph, self.sim.rng.random_sample(size=1), False,
+                                                params['cfr_pn_pph'], self.sim.rng.random_sample(size=1), False)],
+                                         columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                                  'random_draw2', 'maternal_death'],
+                                         index=('eclampsia', 'sepsis', 'pph'))
+
+                if p_comp_sl.at['eclampsia', 'random_draw'] < p_comp_sl.at['eclampsia', 'complication_prob']:
+                    p_comp_sl.at['eclampsia', 'complication'] = True
+                    df.at[individual_id, 'la_eclampsia'] = True
+                if p_comp_sl.at['eclampsia', 'complication'] and p_comp_sl.at['eclampsia', 'random_draw2'] \
+                    < p_comp_sl.at['eclampsia', 'prob_cfr']:
+                    p_comp_sl.at['eclampsia', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                if p_comp_sl.at['sepsis', 'random_draw'] < p_comp_sl.at['sepsis', 'complication_prob']:
+                    p_comp_sl.at['sepsis', 'complication'] = True
+                    df.at[individual_id, 'la_sepsis'] = True
+                if p_comp_sl.at['sepsis', 'complication'] and p_comp_sl.at['sepsis', 'random_draw2'] \
+                    < p_comp_sl.at['sepsis', 'prob_cfr']:
+                    p_comp_sl.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                if p_comp_sl.at['pph', 'random_draw'] < p_comp_sl.at['pph', 'complication_prob']:
+                    p_comp_sl.at['pph', 'complication'] = True
+                    df.at[individual_id, 'la_pph'] = True
+                if p_comp_sl.at['pph', 'complication'] and p_comp_sl.at['pph', 'random_draw2'] \
+                    < p_comp_sl.at['pph', 'prob_cfr']:
+                    p_comp_sl.at['pph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                deaths = pd.Series(p_comp_sl['maternal_death'])
+                if deaths.any():
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='labour'), self.sim.date)
 
 
-#  ---------------------------- Reset Labour Status --------------------------------------------------------------------
+#  =============================================== RESET LABOUR STATUS =================================================
+
         # (commented out so can view effects at this point)
 #            if df.at[individual_id, 'is_alive']:
 #                df.at[individual_id, 'la_labour'] = "not_in_labour"
