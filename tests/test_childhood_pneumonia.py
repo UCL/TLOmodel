@@ -8,7 +8,7 @@ from tlo.methods import demography, lifestyle, childhood_pneumonia
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 4, 1)
+end_date = Date(2015, 4, 1)
 popsize = 1000
 
 
