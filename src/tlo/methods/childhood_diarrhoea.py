@@ -49,11 +49,11 @@ class ChildhoodDiarrhoea(Module):
         (Types.REAL,
          'relative prevalence of dysentery for household handwashing'
          ),
-        'rp_pneumonia_clean_water': Parameter
+        'rp_dysentery_clean_water': Parameter
         (Types.REAL,
          'relative prevalence of dysentery for access to clean water'
          ),
-        'rp_pneumonia_improved_sanitation': Parameter
+        'rp_dysentery_improved_sanitation': Parameter
         (Types.REAL,
          'relative prevalence of dysentery for improved sanitation'
          ),
@@ -721,7 +721,7 @@ class DysenteryEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(weeks=4))
+        super().__init__(module, frequency=DateOffset(weeks=2))
 
     def apply(self, population):
         """Apply this event to the population.
@@ -804,13 +804,13 @@ class DysenteryEvent(RegularEvent, PopulationScopeEventMixin):
         after_death_dysentery_idx = df.index[(df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')]
 
         if self.sim.date + DateOffset(weeks=2):
-            df.loc[after_death_dysentery_idx, 'ei_diarrhoea_status'] == 'none'
+            return df.loc[after_death_dysentery_idx, 'ei_diarrhoea_status'] == 'none'
 
 
 class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=30))
+        super().__init__(module, frequency=DateOffset(weeks=2))
 
     def apply(self, population):
 
@@ -895,19 +895,22 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                    (df.ei_diarrhoea_status == 'acute watery diarrhoea')]
 
         if self.sim.date + DateOffset(weeks=2):
-            df.loc[after_death_acute_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
+            return df.loc[after_death_acute_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
 
 
 class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(days=30))
+        super().__init__(module, frequency=DateOffset(weeks=4))
 
     def apply(self, population):
 
         df = population.props
         m = self.module
         rng = m.rng
+
+        # -------------------------- UPDATING PERSISTENT DIARRHOEA STATUS OVER TIME ---------------------------
+        # updating persistent diarrhoea for children under 5 with current status 'none'
 
         eff_prob_ei_persistent_diarrhoea = pd.Series(m.base_incidence_persistent_diarrhoea,
                                                      index=df.index[
@@ -984,7 +987,7 @@ class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                    (df.ei_diarrhoea_status == 'persistent diarrhoea')]
 
         if self.sim.date + DateOffset(weeks=4):
-            df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
+            return df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
 
         # ---------------------------------- DEATH FROM DIARRHOEAL DISEASE ------------------------------------
 
@@ -992,10 +995,6 @@ class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual_id in death_this_period:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodDiarrhoea'),
                                     self.sim.date)
-
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
 
 
 class DysenteryDeathEvent(DysenteryEvent, IndividualScopeEventMixin):
