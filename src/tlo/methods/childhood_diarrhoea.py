@@ -804,7 +804,7 @@ class DysenteryEvent(RegularEvent, PopulationScopeEventMixin):
         after_death_dysentery_idx = df.index[(df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')]
 
         if self.sim.date + DateOffset(weeks=2):
-            return df.loc[after_death_dysentery_idx, 'ei_diarrhoea_status'] == 'none'
+            df.loc[after_death_dysentery_idx, 'ei_diarrhoea_status'] == 'none'
 
 
 class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
@@ -895,13 +895,13 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                    (df.ei_diarrhoea_status == 'acute watery diarrhoea')]
 
         if self.sim.date + DateOffset(weeks=2):
-            return df.loc[after_death_acute_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
+            df.loc[after_death_acute_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
 
 
 class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(weeks=4))
+        super().__init__(module, frequency=DateOffset(weeks=2))
 
     def apply(self, population):
 
@@ -986,15 +986,17 @@ class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         after_death_persistent_diarrhoea_idx = df.index[(df.age_years < 5) & df.is_alive &
                                                    (df.ei_diarrhoea_status == 'persistent diarrhoea')]
 
-        if self.sim.date + DateOffset(weeks=4):
-            return df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
-
-        # ---------------------------------- DEATH FROM DIARRHOEAL DISEASE ------------------------------------
-
-        death_this_period = df.index[df.ei_diarrhoea_death]
+        death_this_period = df.index[(df.ei_diarrhoea_death == True)]
         for individual_id in death_this_period:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodDiarrhoea'),
                                     self.sim.date)
+
+        if self.sim.date + DateOffset(weeks=4):
+            df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
+
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
 
 
 class DysenteryDeathEvent(DysenteryEvent, IndividualScopeEventMixin):
