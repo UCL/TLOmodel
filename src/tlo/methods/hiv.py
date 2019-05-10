@@ -18,11 +18,10 @@ class hiv(Module):
     """
     baseline hiv infection
     """
-
     def __init__(self, name=None, resourcefilepath=None, par_est=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.beta_calib = par_est
+        # self.beta_calib = par_est
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -49,6 +48,8 @@ class hiv(Module):
             Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
         'rr_behaviour_change':
             Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
+        'rel_infectiousness_treated':
+            Parameter(Types.REAL, 'relative infectiousness in hiv+ on art'),
         'prob_mtct_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission'),
         'prob_mtct_treated':
@@ -195,14 +196,16 @@ class hiv(Module):
             self.param_list.loc['proportion_female_sex_workers', 'Value1']
         params['rr_HIV_high_sexual_risk_fsw'] = \
             self.param_list.loc['rr_HIV_high_sexual_risk_fsw', 'Value1']
-        # params['beta'] = \
-        #     self.param_list.loc['beta', 'Value1']
+        params['beta'] = \
+            self.param_list.loc['beta', 'Value1']
         params['irr_hiv_f'] = \
             self.param_list.loc['irr_hiv_f', 'Value1']
         params['rr_circumcision'] = \
             self.param_list.loc['rr_circumcision', 'Value1']
         params['rr_behaviour_change'] = \
             self.param_list.loc['rr_behaviour_change', 'Value1']
+        params['rel_infectiousness_treated'] = \
+            self.param_list.loc['rel_infectiousness_treated', 'Value1']
         params['prob_mtct_untreated'] = \
             self.param_list.loc['prob_mtct_untreated', 'Value1']
         params['prob_mtct_treated'] = \
@@ -256,9 +259,8 @@ class hiv(Module):
         params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
         params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
-        # TODO: put beta in worksheet for default
-        if self.beta_calib:
-            params['beta'] = float(self.beta_calib)
+        # if self.beta_calib:
+        #     params['beta'] = float(self.beta_calib)
         # print('beta', params['beta'])
 
         params['hiv_prev'] = workbook['prevalence']  # for child prevalence
@@ -390,7 +392,6 @@ class hiv(Module):
         # print('infected_idx', infected_idx)
         # test = infected_idx.isnull().sum()  # sum number of nan
         # print("number of nan: ", test)
-
         df.loc[infected_idx, 'hiv_inf'] = True
 
         # for time since infection use a reverse weibull distribution
@@ -1006,24 +1007,27 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ----------------------------------- FOI -----------------------------------
 
-        #  calculate relative infectivity for everyone hiv+
-        # infective if: hiv_inf & hiv_on_art = none (0) or poor (1)
-        infective = len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art != 2)])
-        # print('infective', infective)
-        total_pop = len(df[df.is_alive & (df.age_years >= 15)])
-        foi = params['beta'] * infective / total_pop
-        # print('foi:', foi)
-
-        #  relative risk
+        #  relative risk of acquisition
         eff_susc = pd.Series(0, index=df.index)
-        eff_susc.loc[df.is_alive & ~df.hiv_inf & (df.age_years >= 15)] = foi  # foi applied to all HIV- adults
+        eff_susc.loc[df.is_alive & ~df.hiv_inf & (df.age_years >= 15)] = 1  # applied to all HIV- adults
         eff_susc.loc[df.hiv_sexual_risk == 'sex_work'] *= params['rr_HIV_high_sexual_risk_fsw']  # fsw
         eff_susc.loc[df.is_circumcised] *= params['rr_circumcision']  # circumcision
         eff_susc.loc[df.behaviour_change] *= params['rr_behaviour_change']  # behaviour counselling
         # TODO: susceptibility=0 if condom use
 
+        #  calculate relative infectivity for everyone hiv+
+        # infective if: hiv_inf & hiv_on_art = none (0) or poor (1)
+        untreated = len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art != 2)])
+        treated_poor = (len(df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15) & (df.hiv_on_art == 2)])) * params[
+            'rel_infectiousness_treated']
+        infective = untreated + treated_poor
+        # print('infective', infective)
+
+        foi = params['beta'] * infective / sum(1 * eff_susc)
+        # print('foi:', foi)
+
         #  sample using the FOI scaled by relative susceptibility
-        newly_infected_index = df.index[(self.sim.rng.random_sample(size=len(df)) < eff_susc)]
+        newly_infected_index = df.index[(self.sim.rng.random_sample(size=len(df)) < (foi * eff_susc))]
         # print('newly_infected_index', newly_infected_index)
 
         df.loc[newly_infected_index, 'hiv_inf'] = True
