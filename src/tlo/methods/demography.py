@@ -253,7 +253,7 @@ class Demography(Module):
                     })
 
         if df.at[mother_id, 'la_still_birth_this_delivery']:
-            death = InstantaneousDeath(self, child_id, cause='Late Stillbirth')
+            death = InstantaneousDeath(self, child_id, cause='Intrapartum Stillbirth')
             self.sim.schedule_event(death, self.sim.date)
 
 
@@ -323,10 +323,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         newly_pregnant_ids = females.index[newly_pregnant]
 
         # updating the pregancy status for that women
+
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
         df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
-        newly_pregnant_ids=(df.index[df.date_of_last_pregnancy == self.sim.date])
+        newly_pregnant_ids =(df.index[df.date_of_last_pregnancy == self.sim.date])
 
         conception = pd.Series(df.date_of_last_pregnancy, index=df.index[df.date_of_last_pregnancy == self.sim.date])
         new_pregnancy_count = conception.count()
@@ -344,9 +345,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
 
-        # JC Notes: will need to select all women who have with DOB set for sim date, who survived and had a live baby
-        # then have demography generate a child
-
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
@@ -363,7 +361,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Here the woman's birth is scheduled after 2 days of labour
 
-            scheduled_birth_date= df.at[female_id, 'due_date'] + DateOffset(days=2)
+            scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
 
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
 
@@ -395,12 +393,16 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         # If the mother is alive and still pregnant
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
-            df.at[mother_id, 'la_parity'] = + 1  # Parity includes still birth? will this run
+            df.at[mother_id, 'la_parity'] += 1  # Parity includes still birth? will this run
 
             self.sim.schedule_event(Labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
                                                                  cause='postpartum'), self.sim.date)
 
-        if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] & df.at[mother_id, 'la_died_in_labour']:
+        # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
+        # stillbirth
+
+        if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] == True & df.at[mother_id,
+                                                                                           'la_died_in_labour'] == True:
             self.sim.do_birth(mother_id)
 
         # Those women who survive labour move into the immediate postpartum period and are scheduled to enter to post-
