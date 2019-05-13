@@ -6,7 +6,7 @@ import logging
 
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -670,7 +670,9 @@ class ChildhoodDiarrhoea(Module):
         df.loc[idx_persistent_diarrhoea, 'ei_diarrhoea_status'] = 'persistent diarrhoea'
 
         # get all the individuals with diarrhoea
-        # diarrhoea_count = df.ei_diarrhoea_status['dysentery', 'acute watery diarrhoea', 'persistent diarrhoea'].sum()
+        # diarrhoea_count = df.loc[(df.ei_diarrhoea_status == 'dysentery') |
+        #                          (df.ei_diarrhoea_status == 'acute watery diarrhoea') |
+        #                          (df.ei_diarrhoea_status == 'persistent diarrhoea')].sum()
         # print(diarrhoea_count)
 
     def initialise_simulation(self, sim):
@@ -805,6 +807,15 @@ class DysenteryEvent(RegularEvent, PopulationScopeEventMixin):
 
         if self.sim.date + DateOffset(weeks=2):
             df.loc[after_death_dysentery_idx, 'ei_diarrhoea_status'] == 'none'
+
+        if len(idx_incident_dysentery):
+            for child in idx_incident_dysentery:
+                logger.info('%s|start_dysentery|%s', self.sim.date,
+                            {
+                                'child_index': child,
+                                'diarrhoea_type': df.at[child, 'ei_diarrhoea_status'],
+                                'died': df.at[child, 'ei_diarrhoea_death']
+                            })
 
 
 class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
@@ -994,35 +1005,6 @@ class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         if self.sim.date + DateOffset(weeks=4):
             df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
 
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
-
-
-class DysenteryDeathEvent(DysenteryEvent, IndividualScopeEventMixin):
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
-        self.individual = individual
-
-    def apply(self, individual):
-        pass
-
-
-class AcuteDiarrhoeaDeathEvent(AcuteDiarrhoeaEvent, IndividualScopeEventMixin):
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
-
-    def apply(self, individual):
-        pass
-
-
-class PersistentDiarrhoeaDeathEvent(PersistentDiarrhoeaEvent, IndividualScopeEventMixin):
-    def __init__(self, module, individual):
-        super().__init__(module, person=individual)
-
-    def apply(self, individual):
-        pass
-
 
 class DysenteryLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1036,7 +1018,16 @@ class DysenteryLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         """Apply this event to the population.
         """
-        pass
+        df = population.props
+
+        diarrhoea_total = df.loc[(df.ei_diarrhoea_status == 'dysentery') |
+                                 (df.ei_diarrhoea_status == 'acute watery diarrhoea') |
+                                 (df.ei_diarrhoea_status == 'persistent diarrhoea') & df.is_alive].sum()
+
+        logger.info('%s|summary|%s', self.sim.date,
+                    {
+                        'people_who_got_diarrhoea': diarrhoea_total
+                    })
 
 
 class AcuteDiarrhoeaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
