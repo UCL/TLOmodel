@@ -970,6 +970,19 @@ class hiv(Module):
         logger.debug('This is hiv, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
+        if treatment_id == 'Tb_Testing':
+            piggy_back_dx_at_appt = HSI_Hiv_PresentsForCareWithSymptoms(self, person_id)
+            piggy_back_dx_at_appt.TREATMENT_ID = 'Hiv_PiggybackAppt'
+
+            # Arbitrarily reduce the size of appt footprint
+            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+
+            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+                                                            priority=0,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
