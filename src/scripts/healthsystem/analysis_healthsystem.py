@@ -36,10 +36,9 @@ logging.getLogger().addHandler(fh)
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.hiv').setLevel(logging.DEBUG)
-logging.getLogger('tlo.methods.tb').setLevel(logging.DEBUG)
-
-params = [0.05]  # sample params for male circumcision
+logging.getLogger('tlo.methods.hiv').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -48,7 +47,7 @@ sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
-sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath, par_est5=params[0]))
+sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
 sim.register(hiv_behaviour_change.BehaviourChange())
 
 # Run the simulation and flush the logger
