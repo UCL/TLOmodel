@@ -1011,7 +1011,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         eff_susc = pd.Series(0, index=df.index)
         eff_susc.loc[df.is_alive & ~df.hiv_inf & (df.age_years >= 15)] = 1  # applied to all HIV- adults
         eff_susc.loc[df.hiv_sexual_risk == 'sex_work'] *= params['rr_HIV_high_sexual_risk_fsw']  # fsw
-        eff_susc.loc[df.is_circumcised] *= params['rr_circumcision']  # circumcision
+        eff_susc.loc[df.mc_is_circumcised] *= params['rr_circumcision']  # circumcision
         eff_susc.loc[df.behaviour_change] *= params['rr_behaviour_change']  # behaviour counselling
         # TODO: susceptibility=0 if condom use
 

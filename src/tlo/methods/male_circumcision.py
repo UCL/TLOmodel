@@ -2,12 +2,16 @@
 Male circumcision
 """
 import os
+import logging
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class male_circumcision(Module):
@@ -18,8 +22,6 @@ class male_circumcision(Module):
     def __init__(self, name=None, resourcefilepath=None, par_est5=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.rate_circum = par_est5
-        self.store = {'Time': [], 'proportion_circumcised': [], 'recently_circumcised': []}
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -32,8 +34,16 @@ class male_circumcision(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'is_circumcised': Property(Types.BOOL, 'individual is circumcised'),
-        'date_circumcised': Property(Types.DATE, 'Date of circumcision'),
+        'mc_is_circumcised': Property(Types.BOOL, 'individual is circumcised'),
+        'mc_date_circumcised': Property(Types.DATE, 'Date of circumcision'),
+        'mc_specific_symptoms': Property(
+            Types.CATEGORICAL, 'Level of symptoms for circumcision specifically',
+            categories=['none']),
+        'mc_unified_symptom_code': Property(
+            Types.CATEGORICAL,
+            'Level of symptoms on the standardised scale (governing health-care seeking): '
+            '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
+            categories=[0, 1, 2, 3, 4])
     }
 
     def read_parameters(self, data_folder):
@@ -50,20 +60,21 @@ class male_circumcision(Module):
 
         params = self.parameters
         params['param_list'] = workbook['circumcision']
-        params['rate_circum'] = float(self.rate_circum)
-        
+
     def initialise_population(self, population):
         df = population.props
         now = self.sim.date.year
 
-        df['is_circumcised'] = False  # default: no individuals circumcised
-        df['date_circumcised'] = pd.NaT  # default: not a time
+        df['mc_is_circumcised'] = False  # default: no individuals circumcised
+        df['mc_date_circumcised'] = pd.NaT  # default: not a time
+        df['mc_specific_symptoms'] = 'none'
+        df['mc_unified_symptom_code'] = 0
 
         self.parameters['initial_circumcision'] = self.param_list.loc[self.param_list.year == now, 'coverage'].values[0]
         # print('initial_circumcision', self.parameters['initial_circumcision'])
 
         # select all eligible uncircumcised men
-        uncircum = df.index[df.is_alive & (df.age_years >= 15) & ~df.is_circumcised & (df.sex == 'M')]
+        uncircum = df.index[df.is_alive & (df.age_years >= 15) & ~df.mc_is_circumcised & (df.sex == 'M')]
         # print('uncircum', len(uncircum))
 
         # 2. baseline prevalence of circumcisions
@@ -73,31 +84,61 @@ class male_circumcision(Module):
 
         # print('circum', circum.sum())
 
-        # if any are infected
+        # if any are circumcised
         if circum.sum():
             circum_idx = uncircum[circum]
             # print('circum_idx', len(circum_idx))
 
-            df.loc[circum_idx, 'is_circumcised'] = True
-            df.loc[circum_idx, 'date_circumcised'] = self.sim.date
+            df.loc[circum_idx, 'mc_is_circumcised'] = True
+            df.loc[circum_idx, 'mc_date_circumcised'] = self.sim.date
+
+
 
     def initialise_simulation(self, sim):
         """
         """
         # add the basic event
         event = CircumcisionEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1))
+        sim.schedule_event(event, sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(CircumcisionLoggingEvent(self), sim.date + DateOffset(months=1))
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         """
         df = self.sim.population.props
 
-        df.at[child_id, 'is_circumcised'] = False
-        df.at[child_id, 'date_circumcised'] = pd.NaT
+        df.at[child_id, 'mc_is_circumcised'] = False
+        df.at[child_id, 'mc_date_circumcised'] = pd.NaT
+        df.at[child_id, 'mc_specific_symptoms'] = 'none'
+        df.at[child_id, 'mc_unified_symptom_code'] = 0
+
+    def on_healthsystem_interaction(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+
+        logger.debug('This is male circumcision, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
+
+    def report_qaly_values(self):
+        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # the past year
+
+        # logger.debug('This is mockitis reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+
+        p = self.parameters
+
+        health_values = df.loc[df.is_alive, 'mc_specific_symptoms'].map({
+            'none': 0
+        })
+        return health_values.loc[df.is_alive]
 
 
 class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
@@ -111,20 +152,80 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         now = self.sim.date
         df = population.props
-        params = self.module.parameters
 
-        # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        # Determine if anyone will request circumcision
+        eligible = (df['is_alive']) & (~df['mc_is_circumcised']) & (df['age_years'] >= 10) & (
+            df['age_years'] < 35) & (df['sex'] == 'M')
 
-        # print('rate_circum', params['rate_circum'])
+        seeks_care = pd.Series(data=False, index=df.loc[eligible].index)
+        for i in df.index[eligible]:
+            # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=0)
+            prob = 0.05  # placeholder as get_prob_seek_care returns 1
+            seeks_care[i] = self.module.rng.rand() < prob
 
-        # probability of circumcision
-        circumcision_index = df.index[
-            (random_draw < params['rate_circum']) & ~df.is_circumcised & df.is_alive & (df.age_years >= 10) & (
-                df.age_years < 35) & (df.sex == 'M')]
-        # print('circumcision_index', circumcision_index)
-        df.loc[circumcision_index, 'is_circumcised'] = True
-        df.loc[circumcision_index, 'date_circumcised'] = now
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care == True]:
+                logger.debug(
+                    'This is CircumcisionEvent, scheduling Circumcision_PresentsForCare for person %d',
+                    person_index)
+                event = HSI_Circumcision_PresentsForCare(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=4)
+                                                                )
+        else:
+            logger.debug(
+                'This is CircumcisionEvent, There is  no one with new severe symptoms so no new healthcare seeking')
+
+
+# ---------------------------------------------------------------------------
+#   Health system interactions
+# ---------------------------------------------------------------------------
+
+
+class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is first appointment that someone has when they present to the healthcare system with the severe
+    symptoms of Mockitis.
+    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['MinorSurg'] = 1  # This requires one out patient
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Male circumcision ', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Circumcision'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('This is HSI_Circumcision_PresentsForCare, a first appointment for person %d', person_id)
+
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        df.at[person_id, 'mc_is_circumcised'] = True
+        df.at[person_id, 'mc_date_circumcised'] = self.sim.date
+
 
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -133,16 +234,17 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
+
         df = population.props
 
-        circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.is_circumcised & (df.sex == 'M')])
+        circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.mc_is_circumcised & (df.sex == 'M')])
         proportion_circumcised = circumcised_total / len(
             df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
 
-        mask = (df['date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
-        circumcised_in_last_timestep = mask.sum()
+        mask = (df['mc_date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
 
-        self.module.store['Time'].append(self.sim.date)
-        self.module.store['proportion_circumcised'].append(proportion_circumcised)
-        self.module.store['recently_circumcised'].append(circumcised_in_last_timestep)
+        logger.info('%s|summary|%s', self.sim.date,
+                    {
+                        'TotalCircumcised': circumcised_total,
+                        'PropCircumcised': proportion_circumcised,
+                    })
