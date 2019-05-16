@@ -38,7 +38,7 @@ logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.WARNING)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))

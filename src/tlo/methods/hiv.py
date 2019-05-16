@@ -1242,6 +1242,25 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             logger.debug("This is HivAidsEvent doing nothing because person %d is on art", person_id)
 
 
+class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # Find the person_ids who are going to get the outreach
+        gets_outreach = df.index[(df['is_alive']) & (df['sex'] == 'F') & (df.age_years.between(15, 49))]
+        for person_id in gets_outreach:
+            # make the outreach event
+            outreach_event_for_individual = HSI_Hiv_OutreachIndividual(self.module, person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=12))
+
 
 # ---------------------------------------------------------------------------
 #   Health system interactions
@@ -1369,6 +1388,63 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                          person_id, self.sim.date)
 
             treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
+
+            # Request the health system to start treatment
+            self.sim.modules['HealthSystem'].schedule_event(treatment,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
+
+class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_Testing'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            'This is HSI_Hiv_OutreachIndividual, giving a test in the first appointment for person %d',
+            person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'hiv_ever_tested'] = True
+        df.at[person_id, 'hiv_date_tested'] = self.sim.date
+        df.at[person_id, 'hiv_number_tests'] = df.at[person_id, 'hiv_number_tests'] + 1
+
+        # if hiv+ schedule treatment
+        if df.at[person_id, 'hiv_inf']:
+            df.at[person_id, 'hiv_diagnosed'] = True
+
+            # request treatment
+            logger.debug(
+                '....This is HSI_Hiv_OutreachIndividual: scheduling hiv treatment for person %d on date %s',
+                person_id, self.sim.date)
+
+            treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
             # Request the health system to start treatment
             self.sim.modules['HealthSystem'].schedule_event(treatment,
