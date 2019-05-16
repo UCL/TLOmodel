@@ -72,7 +72,6 @@ class tb(Module):
                            description='tb status'),
         'tb_date_active': Property(Types.DATE, 'Date active tb started'),
         'tb_date_latent': Property(Types.DATE, 'Date acquired tb infection (latent stage)'),
-        'tb_date_death': Property(Types.DATE, 'Projected time of tb death if untreated'),
         'tb_ever_tb': Property(Types.BOOL, 'if ever had active drug-susceptible tb'),
         'tb_ever_tb_mdr': Property(Types.BOOL, 'if ever had active multi-drug resistant tb'),
         'tb_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for tb',
@@ -153,7 +152,6 @@ class tb(Module):
         df['tb_inf'].values[:] = 'uninfected'
         df['tb_date_active'] = pd.NaT
         df['tb_date_latent'] = pd.NaT
-        df['tb_date_death'] = pd.NaT
 
         df['tb_ever_tb'] = False
         df['tb_ever_tb_mdr'] = False
@@ -268,7 +266,6 @@ class tb(Module):
         df.at[child_id, 'tb_inf'] = 'uninfected'
         df.at[child_id, 'tb_date_active'] = pd.NaT
         df.at[child_id, 'tb_date_latent'] = pd.NaT
-        df.at[child_id, 'tb_date_death'] = pd.NaT
         df.at[child_id, 'tb_ever_tb'] = False
         df.at[child_id, 'tb_ever_tb_mdr'] = False
         df.at[child_id, 'tb_specific_symptoms'] = 'none'
@@ -941,7 +938,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ALERT_OTHER_DISEASES = []
+        self.ALERT_OTHER_DISEASES = ['hiv']
 
     def apply(self, person_id):
         logger.debug('This is HSI_Tb_SputumTest, a first appointment for person %d', person_id)
