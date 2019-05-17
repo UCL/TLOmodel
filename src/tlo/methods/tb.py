@@ -60,6 +60,8 @@ class tb(Module):
             Parameter(Types.REAL, 'QALY weighting for latent tb'),
         'qalywt_active':
             Parameter(Types.REAL, 'QALY weighting for active tb'),
+        'qalywt_active_hiv':
+            Parameter(Types.REAL, 'QALY weighting for active tb and hiv coinfection'),
     }
 
     PROPERTIES = {
@@ -137,10 +139,10 @@ class tb(Module):
         params['prop_smear_positive'] = 0.8
         params['prop_smear_positive_hiv'] = 0.5
 
-        params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(0)
-        params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(1)
+        params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
+        params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
+        params['qalywt_active_hiv'] = self.sim.modules['QALY'].get_qaly_weight(7)
         # Drug-susceptible, Multidrug-resistant and Extensively drug-resistant tb all have the same DALY weights
-        # TODO: co-infected hiv-tb need different DALY weights
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -310,6 +312,9 @@ class tb(Module):
             'active': params['qalywt_active']
         })
 
+        coinfected = df[(df.tb_specific_symptoms == 'active') & df.is_alive & df.hiv_inf].index
+        health_values.loc[coinfected] = params['qalywt_active_hiv']
+
         return health_values.loc[df.is_alive]
 
 
@@ -439,6 +444,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
 
         # slow progressors with latent TB become active
         # random sample with weights for RR of active disease
+        # TODO HIV+ on ART should have same progression rates as HIV-
         eff_prob_active_tb = pd.Series(0, index=df.index)
         eff_prob_active_tb.loc[(df.tb_inf == 'latent_susc_primary')] = params['monthly_prob_progr_active']
         # print('eff_prob_active_tb: ', eff_prob_active_tb)

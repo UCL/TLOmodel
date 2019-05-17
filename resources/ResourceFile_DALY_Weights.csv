@@ -7,10 +7,12 @@ TLO_Sequela_Code,Sequela,Health state name,Health state lay description,disabili
 5,Drug-susceptible HIV/AIDS - Tuberculosis with moderate anemia,"Tuberculosis, HIV infected and anemia, moderate",(combined DW),0.439,0.307,0.577
 6,Drug-susceptible HIV/AIDS - Tuberculosis with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
 7,Drug-susceptible HIV/AIDS - Tuberculosis without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
+
 8,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with severe anemia,"Tuberculosis, HIV infected and anemia, severe",(combined DW),0.495,0.353,0.64
 9,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
 10,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with moderate anemia,"Tuberculosis, HIV infected and anemia, moderate",(combined DW),0.439,0.307,0.577
 11,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
+
 12,Extensively drug-resistant HIV/AIDS - Tuberculosis with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
 13,Extensively drug-resistant HIV/AIDS - Tuberculosis with severe anemia,"Tuberculosis, HIV infected and anemia, severe",(combined DW),0.495,0.353,0.64
 14,Extensively drug-resistant HIV/AIDS - Tuberculosis without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
