@@ -229,7 +229,7 @@ class Demography(Module):
 
         df.at[child_id, 'mother_id'] = mother_id
         df.at[child_id, 'is_pregnant'] = False
-        df.at[child_id, 'due_date'] =pd.NaT
+        df.at[child_id, 'due_date'] = pd.NaT
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
 
         df.at[child_id, 'is_married'] = False
@@ -255,7 +255,9 @@ class Demography(Module):
         if df.at[mother_id, 'la_still_birth_this_delivery']:
             death = InstantaneousDeath(self, child_id, cause='Intrapartum Stillbirth')
             self.sim.schedule_event(death, self.sim.date)
+            df.loc[mother_id, 'la_still_birth_this_delivery'] = False
 
+            # Reset still birth status in case of future pregnancy
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """

@@ -26,9 +26,17 @@ class Labour (Module):
     PARAMETERS = {
 
         'prob_pregnancy': Parameter(
-            Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMTER
+            Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMETER
         'prob_miscarriage': Parameter(
-            Types.REAL, 'baseline probability of pregnancy loss before 28 weeks gestation'),  # DUMMY PARAMTER
+            Types.REAL, 'baseline probability of pregnancy loss before 28 weeks gestation'),
+        'rr_miscarriage_prevmiscarriage': Parameter(
+            Types.REAL, 'relative risk of pregnancy loss for women who have previously miscarried'),
+        'rr_miscarriage_35': Parameter(
+            Types.REAL, 'relative risk of pregnancy loss for women who is over 35 years old'),
+        'rr_miscarriage_3134': Parameter(
+            Types.REAL, 'relative risk of pregnancy loss for women who is between 31 and 34 years old'),
+        'rr_miscarriage_grav4': Parameter(
+            Types.REAL, 'relative risk of pregnancy loss for women who has a gravidity of greater than 4'),
         'prob_pl_ol': Parameter(
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
@@ -148,12 +156,13 @@ class Labour (Module):
     PROPERTIES = {
 
         'la_labour': Property(Types.CATEGORICAL, 'not in labour, unobstructed term labour, prolonged or '
-                              'obstructed labour, Preterm Labour',
+                              'obstructed labour, Preterm Labour, Post term labour',
                               categories=['not_in_labour', 'unobstructed_term_labour',
-                                          'prolonged_or_obstructed_labour', 'preterm_labour']),
+                                          'prolonged_or_obstructed_labour', 'preterm_labour', 'post_term_labour']),
         'la_still_birth_this_delivery': Property(Types.BOOL,'whether this womans most recent pregnancy has ended in a '
                                                             'stillbirth'),
         'la_miscarriage': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
+        'la_miscarriage_date': Property(Types.DATE, 'the date this woman has last experienced spontaneous miscarriage'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_previous_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
         'la_previous_ptb': Property(Types.BOOL, 'whether the woman has had a previous preterm delivery for any of her'
@@ -178,15 +187,15 @@ class Labour (Module):
 
         params['prob_pregnancy'] = 0.03  # DUMMY PREGNANCY GENERATOR
         params['prob_miscarriage'] = 0.186
+        params['rr_miscarriage_prevmiscarriage'] = 2.23
+        params['rr_miscarriage_35'] = 4.02
+        params['rr_miscarriage_3134'] = 2.13
+        params['rr_miscarriage_grav4'] = 1.63
         params['prob_pl_ol'] = 0.06
         params['rr_PL_OL_nuliparity'] = 1.8
         params['rr_PL_OL_parity_3'] = 0.8
         params['rr_PL_OL_age_less20'] = 1.3
-        params['rr_PL_OL_baby>3.5kg'] = 1.2
-        params['rr_PL_OL_baby<1.5kg'] = 0.7
-        params['rr_PL_OL_bmi<18'] = 0.8
-        params['rr_PL_OL_bmi>25'] = 1.4
-        params['prob_ptl'] = 0.2
+        params['prob_ptl'] = 0.18
         params['prob_an_eclampsia_ptb'] = 0.02
         params['prob_an_aph_ptb'] = 0.03
         params['prob_an_sepsis_ptb'] = 0.15
@@ -247,6 +256,7 @@ class Labour (Module):
 
         df['la_labour'] = 'not_in_labour'
         df['la_miscarriage'] = 0
+        df['la_miscarriage_date'] =pd.NaT
         df['la_still_birth_this_delivery'] = False
         df['la_partiy'] = 0
         df['la_previous_cs'] = 0
@@ -261,7 +271,7 @@ class Labour (Module):
         df['la_died_in_labour'] = False
     # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) ----------------------------
 
-        # Dummy code to generate pregnancies at initialisation from Labour.py
+        # TODO: code in effect of contraception on likelihood of pregnancy at baseline (copy demography code?)
 
         women_idx = df.index[(df.age_years >= 15) & (df.age_years <= 49) & df.is_alive & (df.sex == 'F')]
 
@@ -280,6 +290,8 @@ class Labour (Module):
 
         # Assigns a date of last pregnancy and due date for women who are pregnant at baseline
 
+        # TODO: ensure women at baseline can go into preterm labour or be overdue
+
         pregnant_idx = df.index[df.is_pregnant & df.is_alive]
 
         random_draw = pd.Series(rng.random_sample(size=len(pregnant_idx)),
@@ -295,8 +307,6 @@ class Labour (Module):
 
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'due_date'] = dfx.due_date
-
-        #  No one at baseline can be "over-due"
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -347,7 +357,7 @@ class Labour (Module):
         idx_parity = dfi.index[dfi.baseline_p < dfi.random_draw]
         df.loc[idx_parity, 'la_parity'] = random_draw
 
-#   ------------------------------ ASSIGN PREVIOUS CS AT BASELINE (dummy)-----------------------------------------------
+#   ------------------------------ ASSIGN PREVIOUS CS AT BASELINE -----------------------------------------------
 
         women_para1_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1)]
         women_para2_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 2)]
@@ -373,23 +383,32 @@ class Labour (Module):
         idx_prev_cs = dfx.index[dfx.baseline_cs < dfx.random_draw]
         df.loc[idx_prev_cs, 'la_previous_cs'] = random_draw2
 
-        # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE (dummy)---------------------------------------
+        # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
 
-        women_ptb_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 1)]
+        # TODO: apply risk factors for preterm birth at baseline
 
-        # do we want to exclude para1 who delivered by CS- not sure of indication or prevelance of CS in PTB
-        # need to consider how we incorporate risk factors
-        # does this also need to be an interger
+        women_para1_nocs_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1) &
+                                        (df.la_previous_cs ==0)]
+        women_para2_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity >= 2)]
 
-        baseline_ptb = pd.Series(m.prob_ptl, index=women_ptb_idx)
+        baseline_ptb = pd.Series(m.prob_ptl, index=women_para1_nocs_idx)
+        baseline_ptb_p2 = pd.Series(m.prob_ptl, index=women_para2_idx)
 
-        random_draw = pd.Series(rng.random_sample(size=len(women_ptb_idx)),
+        random_draw = pd.Series(rng.random_sample(size=len(women_para1_nocs_idx)),
                                 index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
-                                               (df.la_parity >= 1)])
+                                               (df.la_parity == 1) & (df.la_previous_cs == 0)])
+        random_draw2 = pd.Series(rng.random_sample(size=len(women_para2_idx)),
+                                index=df.index[ (df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
+                                                (df.la_parity >= 2)])
 
         dfx = pd.concat([baseline_ptb, random_draw], axis=1)
         dfx.columns = ['baseline_ptb', 'random_draw']
         idx_prev_ptb = dfx.index[dfx.baseline_ptb > dfx.random_draw]
+        df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
+
+        dfx = pd.concat([baseline_ptb_p2, random_draw2], axis=1)
+        dfx.columns = ['baseline_ptb_p2', 'random_draw2']
+        idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
         df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
 
     def baseline_labour_scheduler(self, population):
@@ -412,7 +431,7 @@ class Labour (Module):
         It is a good place to add initial events to the event queue.
         """
 
-        Event = MiscarriagePoll(self)
+        event = MiscarriagePoll(self)
         sim.schedule_event(MiscarriagePoll(self), sim.date + DateOffset(months=2))
 
         event = LabourLoggingEvent(self)
@@ -433,6 +452,7 @@ class Labour (Module):
 
         df.at[child_id, 'la_labour'] = 'not_in_labour'
         df.at[child_id, 'la_miscarriage'] = 0
+        df.at[child_id, 'la_miscarriage_date'] = pd.NaT
         df.at[child_id, 'la_still_birth_this_delivery'] = False
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs'] = 0
@@ -450,12 +470,14 @@ class MiscarriagePoll(RegularEvent, PopulationScopeEventMixin):
     dependent on risk factors """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=2))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
         df = population.props
         params = self.module.parameters
         m = self
+
+        # Polling all pregnant women who have yet to reach 28 weeks gestation
 
         pregnant_women = df.index[((df.is_pregnant == True) & df.is_alive & (df.la_labour == 'not_in_labour'))]
 
@@ -464,27 +486,47 @@ class MiscarriagePoll(RegularEvent, PopulationScopeEventMixin):
 
         dfx = pd.concat([conception, simdate], axis=1)
         dfx['gestweeks'] = simdate-conception
-        dfx['gestweeks'] = dfx['gestweeks']/ np.timedelta64(1,'W')
+        dfx['gestweeks'] = dfx['gestweeks'] / np.timedelta64(1,'W')
         poss_miscarriage = dfx.index[dfx.gestweeks <= 28]
         prob_mc = params['prob_miscarriage']
 
+        # Apply cumulative probability of miscarriage in the first 28 weeks
+
         eff_prob_miscarriage = pd.Series(prob_mc, index=poss_miscarriage)
+
+        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
+                                          (df.la_miscarriage >= 1) & (df.la_parity + df.la_miscarriage <= 3) &
+                                          (df.age_years <= 30))] *= params['rr_miscarriage_prevmiscarriage']
+
+        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
+                                          (df.la_miscarriage == 0) & (df.age_years >= 31) & (df.age_years <= 34))]\
+            *= params['rr_miscarriage_3134']
+        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
+                                            (df.la_miscarriage == 0) & (df.age_years >= 35))]\
+            *= params['rr_miscarriage_35']
+        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
+                                           (df.la_miscarriage == 0) + (df.la_parity >= 4) & (df.age_years <= 30))]\
+            *= params['rr_miscarriage_grav4']
+
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(poss_miscarriage)),
                                 index=dfx.index[dfx.gestweeks <= 28])
 
         dfx = pd.concat([eff_prob_miscarriage, random_draw], axis=1)
         dfx.columns = ['eff_prob_miscarriage', 'random_draw']
         idx_miscarriage = dfx.index[dfx.eff_prob_miscarriage > dfx.random_draw]
+
+        # For woman who experience miscarriage, pregnancy status is reset, number of miscarriages recorded including
+        # date and woman is scheduled to move to postpartum event to determine if she experiences complications
+
         df.loc[idx_miscarriage, 'is_pregnant'] = False
         df.loc[idx_miscarriage, 'la_miscarriage'] += 1
         df.loc[idx_miscarriage, 'due_date'] = pd.NaT
+        df.loc[idx_miscarriage, 'la_miscarriage_date'] = self.sim.date
 
-        # Need a test function?
-        #TODO: RISK FACTORS
-        # wealth
-        # gravidity
-        # previous pregnancy loss
-        # HIV status
+        new_miscarriage_idx = df.index[(df.la_miscarriage_date == self.sim.date)]
+        for mother_id in new_miscarriage_idx:
+            self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id,
+                                                             cause='post miscarriage'), self.sim.date)
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -533,52 +575,49 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             else:
                 df.at[individual_id, 'la_labour'] = 'unobstructed_term_labour'
 
-            # TODO: consider risk factors for preterm birth
-            # and of having a planned CS or Induction
+            # TODO: apply risk factors for preterm birth
 
-        elif gestation_weeks < 37 and gestation_weeks >28:
+        elif gestation_weeks > 28 < 37:
             df.at[individual_id, 'la_labour'] = "preterm_labour"
-            df.at[individual_id, 'la_previous_ptb'] = True  # should this only be true if the baby is delivered live?
+            df.at[individual_id, 'la_previous_ptb'] = True
 
-
-            # TODO:need to consider the benefits of a "previous spont miscarriage" property
-            # TODO:also need to incorporate induction and planned CS
-
-    # TODO: Do I need to reset "is_pregnant" for women who die?
+        if gestation_weeks >42:
+            df.at[individual_id,'la_labour'] = "post_term_labour"
 
     # ======================= COMPLICATIONS FOR UNOBSTRUCTED TERM LABOUR ===============================================
 
     # TODO: N.b only allow women who have pre-eclampsia to have an eclamptic fit?
     # Applying risk factors for complications
 
-        risk_eclampsia = params['prob_an_eclampsia_utl']
         risk_sepsis = params['prob_an_sepsis_utl']
-        risk_aph = params['prob_an_aph_utl']
-
-    # TODO: REGRESSION
-
-        if df.at[individual_id, 'age_years'] >= 35:
-            risk_eclampsia = params['rr_an_eclampsia_35'] * params['prob_an_eclampsia_utl']
-        elif df.at[individual_id, 'age_years'] >= 30 <= 34: # is this right?
-            risk_eclampsia = params['rr_an_eclampsia_30_34'] * params['prob_an_eclampsia_utl']
 
         if df.at[individual_id, 'la_parity'] == 0:
-            risk_eclampsia = params['rr_an_eclampsia_nullip'] * params['prob_an_eclampsia_utl']
+            nullip_risk = params['rr_an_eclampsia_nullip']
+        else:
+            nullip_risk = 0
+        if df.at[individual_id, 'age_years'] >= 35:
+            over35_risk = params['rr_an_eclampsia_35']
+        else:
+            over35_risk = 0
+        if df.at[individual_id, 'age_years'] >= 30 <= 34:
+            over30_risk = params['rr_an_eclampsia_30_34']
+        else:
+            over30_risk = 0
 
-        if df.at[individual_id, 'age_years'] >= 35 and df.at[individual_id, 'la_parity'] == 0:
-            risks= params['rr_an_eclampsia_nullip'] + params['rr_an_eclampsia_35']
-            risk_eclampsia= risks * params['prob_an_eclampsia_utl']
-        elif df.at[individual_id, 'age_years']  >= 30 <= 34 and df.at[individual_id, 'la_parity'] == 0:
-            risks = params['rr_an_eclampsia_nullip'] + params['rr_an_eclampsia_30_34']
-            risk_eclampsia = risks * params['prob_an_eclampsia_utl']
+        risk_factors = (nullip_risk + over35_risk + over30_risk)
+
+        if risk_factors == 0:
+            risk_eclampsia = params['prob_an_eclampsia_utl']
+        else:
+            risk_eclampsia = risk_factors * params['prob_an_eclampsia_utl']
 
 #        if df.at[individual_id, 'anc_4'] == True: (commented out- no ANC property generated yet)
 #            risk_sepsis =  params['rr_an_sepsis_anc_4']* params['prob_an_sepsis_utl']
 
         if df.at[individual_id, 'age_years'] >= 35:
-            risk_eclampsia = params['rr_an_aph_noedu'] * params['prob_an_aph_utl']
-
-    # TODO: RANDOM NUMBER GENERATOR IS BETWEEN 0-1 STARTING AT 0.1????
+            risk_aph = params['rr_an_aph_noedu'] * params['prob_an_aph_utl']
+        else:
+            risk_aph = params['prob_an_aph_utl']
 
         if df.at[individual_id, 'la_labour'] == 'unobstructed_term_labour':
             p_comp_utl = pd.DataFrame(data=[(risk_eclampsia, self.sim.rng.random_sample(size=1), False,
@@ -640,7 +679,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
     # ============================ COMPLICATIONS FOR OBSTRUCTED LABOUR ===============================================
 
-    #  TODO: RISK FACTORS?
+    #  TODO: Apply risk factors for complications in obstructed labour
 
         risk_eclampsia = params['prob_an_eclampsia_pl_ol']
         risk_sepsis = params['prob_an_sepsis_pl_ol']
@@ -720,7 +759,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                       cause='labour'), self.sim.date)
 
     # ============================ COMPLICATIONS FOR PRETERM LABOUR ===================================================
-        #  TODO: RISK FACTORS?
+
+        #  TODO: Apply riskfactors for complications of preterm labour?
 
         risk_eclampsia = params['prob_an_eclampsia_ptb']
         risk_sepsis = params['prob_an_sepsis_ptb']
@@ -905,7 +945,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='labour'), self.sim.date)
 
-# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR ======================================
+# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR =======================================
 
             # TODO: risk factors
             risk_eclampsia = params['prob_pn_eclampsia_ptb']
@@ -952,6 +992,43 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                           cause='labour'), self.sim.date)
 
+# ==============================  COMPLICATIONS FOLLOWING SPONTANEOUS MISCARRIAGE ======================================
+
+        # TODO: consider stage of pregnancy loss and its impact on liklihood of complications i.e retained product
+
+            risk_sepsis= params['prob_sa_sepsis']
+            risk_pph = params['prob_sa_pph']
+
+            if df.at[individual_id, 'la_miscarriage_date'] == self.sim.date:
+                p_comp_mc = pd.DataFrame(data=[(risk_sepsis, self.sim.rng.random_sample(size=1), False,
+                                                        params['cfr_pn_sepsis'], self.sim.rng.random_sample(size=1),
+                                                False), (risk_pph, self.sim.rng.random_sample(size=1), False,
+                                                        params['cfr_pn_pph'], self.sim.rng.random_sample(size=1), False)],
+                                                  columns=['complication_prob', 'random_draw', 'complication', 'prob_cfr',
+                                                           'random_draw2', 'maternal_death'],
+                                                  index=('sepsis', 'pph'))
+
+                if p_comp_mc.at['sepsis', 'random_draw'] < p_comp_mc.at['sepsis', 'complication_prob']:
+                    p_comp_mc.at['sepsis', 'complication'] = True
+                    df.at[individual_id, 'la_sepsis'] = True
+                if p_comp_mc.at['sepsis', 'complication'] and p_comp_mc.at['sepsis', 'random_draw2'] \
+                    < p_comp_mc.at['sepsis', 'prob_cfr']:
+                    p_comp_mc.at['sepsis', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                if p_comp_mc.at['pph', 'random_draw'] < p_comp_mc.at['pph', 'complication_prob']:
+                    p_comp_mc.at['pph', 'complication'] = True
+                    df.at[individual_id, 'la_pph'] = True
+                if p_comp_mc.at['pph', 'complication'] and p_comp_mc.at['pph', 'random_draw2'] \
+                    < p_comp_mc.at['pph', 'prob_cfr']:
+                    p_comp_mc.at['pph', 'maternal_death'] = True
+                    df.at[individual_id, 'la_died_in_labour'] = True
+
+                deaths = pd.Series(p_comp_mc['maternal_death'])
+                if deaths.any():
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='miscarriage complications'),
+                                            self.sim.date)
 
 #  =============================================== RESET LABOUR STATUS =================================================
 
