@@ -1798,7 +1798,7 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one outpatient appt
+        # TODO need a pharmacy appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
 
         # TODO: get correct consumables listing for ART
