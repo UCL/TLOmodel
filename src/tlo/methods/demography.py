@@ -258,6 +258,7 @@ class Demography(Module):
             df.loc[mother_id, 'la_still_birth_this_delivery'] = False
 
             # Reset still birth status in case of future pregnancy
+            #Schedule newborns to move through newborn disease module?
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
