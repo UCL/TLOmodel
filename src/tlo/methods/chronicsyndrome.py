@@ -197,7 +197,7 @@ class ChronicSyndrome(Module):
         df.at[child_id, 'cs_specific_symptoms'] = 'none'
         df.at[child_id, 'cs_unified_symptom_code'] = 0
 
-    def on_healthsystem_interaction(self, person_id, treatment_id):
+    def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """

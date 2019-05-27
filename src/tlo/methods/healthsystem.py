@@ -163,6 +163,8 @@ class HealthSystem(Module):
         Register Disease Modules
         In order for a disease module to use the functionality of the health system it must be registered
         This list is also used to alert other disease modules when a health system interaction occurs
+
+        :param new_disease_modules: The pointer to the disease module
         """
         for module in new_disease_modules:
             assert module.name not in self.registered_disease_modules, (
@@ -175,32 +177,33 @@ class HealthSystem(Module):
 
     def schedule_event(self, hsi_event, priority, topen, tclose=None):
         """
+        Schedule the health system interaction event
 
-        :param hsi_event:
-        :param priority:
-        :param topen:
-        :param tclose:
-        :return:
+        :param hsi_event: the hsi_event to be scheduled
+        :param priority: the priority for the hsi event (0 (highest), 1 or 2 (lowest)
+        :param topen: the earliest date at which the hsi event should run
+        :param tclose: the latest date at which the hsi event should run
         """
+
         logger.debug('HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
                      hsi_event.TREATMENT_ID, hsi_event.target)
 
         # get population dataframe
         df = self.sim.population.props
 
-        # Check that this is a legitimate request for a treatment
+        # 1) Check that this is a legitimate health system interaction event
 
-        # 1) Correctly formatted footprint
+        # Correctly formatted footprint
         assert 'APPT_FOOTPRINT' in dir(hsi_event)
         assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
         list(hsi_event.APPT_FOOTPRINT.values())
 
-        # 2) All sensible numbers for the number of appointments requested (no negative and at least one appt req)
+        # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
         assert all(
             np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
         assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
 
-        # 3) That it has a dictionary for the consumables needed in the right format
+        # That it has a dictionary for the consumables needed in the right format
         assert 'CONS_FOOTPRINT' in dir(hsi_event)
         assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
         assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
@@ -211,7 +214,7 @@ class HealthSystem(Module):
         assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
             set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
 
-        # 4) That it has a list for the other disease that will be alerted when it is run and that this make sense
+        # That it has a list for the other disease that will be alerted when it is run and that this make sense
         assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
         assert type(hsi_event.ALERT_OTHER_DISEASES) is list
 
@@ -220,7 +223,20 @@ class HealthSystem(Module):
                 for d in hsi_event.ALERT_OTHER_DISEASES:
                     assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
 
-        # 5) Check that this request is allowable under current policy (i.e. included in service_availability)
+
+        # 2) Check topen, tclose and priority
+
+        # If there is no specified tclose time then set this is after the end of the simulation
+        if (tclose == None):
+            tclose = self.sim.end_date + DateOffset(days=1)
+
+        # Check topen is not in the past
+        assert topen >= self.sim.date
+
+        # Check that priority is either 0, 1 or 2
+        assert priority in {0,1,2}
+
+        # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed = False
         if (self.service_availability == 'all') or (self.service_availability[0] == '*'):
             allowed = True
@@ -239,20 +255,26 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # If there is no specified tclose time then set this is after the end of the simulation
-        if (tclose == None):
-            tclose = self.sim.end_date + DateOffset(days=1)
 
-        # If it is allowed then add this request to the queue of HEALTH_SYSTEM_CALLS
+
+        # 4) If all is correct and the hsi event is allowed then add this request to the queue of HEALTH_SYSTEM_CALLS
+
         if allowed:
 
-            # First two parts of tuple used for sorting (smaller values come first), last part is the event
-            # (topen, priority []) [ie. sort by order in which needed, and then the priority of the call]
+            # Create a tuple to go into the heapq
+            # (NB. the sorting is done asceding and by the order of the items in the tuple)
+            # Pos 1: topen,
+            # Pos 2: priority,
+            # Pos 3: the hsi_event itself
+            # Pos 4: tclose
 
             new_request = (topen, priority, self.heap_counter, hsi_event, tclose)
             self.heap_counter = self.heap_counter + 1
 
             hp.heappush(self.HEALTH_SYSTEM_CALLS, new_request)
+
+            logger.debug('HealthSystem.schedule_event>>HSI has been added to the queue: %s for person: %s',
+                     hsi_event.TREATMENT_ID, hsi_event.target)
 
         else:
             logger.debug(
@@ -260,36 +282,40 @@ class HealthSystem(Module):
                 self.sim.date,
                 hsi_event.TREATMENT_ID)
 
-    def broadcast_healthsystem_interaction(self, event):
+
+    def broadcast_healthsystem_interaction(self, hsi_event):
 
         """
-        This will alert disease modules than a treatment_id is occuring to a particular person.
-        It receives an HSI event object
+        This will alert disease modules than a treatment_id is occurring to a particular person.
+        :param hsi_event: the health system interaction event
         """
 
-        if event.ALERT_OTHER_DISEASES == []:
-            # there are not disease modules to alert, so do nothing
+        if hsi_event.ALERT_OTHER_DISEASES == []:
+            # There are no disease modules to alert, so do nothing
             pass
 
         else:
-            if event.ALERT_OTHER_DISEASES[0] == '*':
+            # Alert some disease modules
+
+            if hsi_event.ALERT_OTHER_DISEASES[0] == '*':
                 alert_modules = list(self.registered_disease_modules.keys())
             else:
-                alert_modules = event.ALERT_OTHER_DISEASES
+                alert_modules = hsi_event.ALERT_OTHER_DISEASES
 
-            # remove the originating module from the list of modules to alert:
+            # Remove the originating module from the list of modules to alert.
+
             # Get the name of the disease module that this event came from ultimately
-            originating_disease_module_name = event.module.name
+            originating_disease_module_name = hsi_event.module.name
             if originating_disease_module_name in alert_modules:
                 alert_modules.remove(originating_disease_module_name)
 
             for module_name in alert_modules:
                 module = self.registered_disease_modules[module_name]
-                module.on_healthsystem_interaction(person_id=event.target,
-                                                   treatment_id=event.TREATMENT_ID)
+                module.on_hsi_alert(person_id=hsi_event.target,
+                                    treatment_id=hsi_event.TREATMENT_ID)
+
 
     def GetCapabilities(self):
-
         """
         This will return a dataframe of the capabilities that the healthsystem has for today.
         Function can go in here in the future that could expand the time available, simulating increasing efficiency.
@@ -615,7 +641,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         event.run()
 
                         # Broadcast to other modules that the event is running:
-                        self.module.broadcast_healthsystem_interaction(event=event)
+                        self.module.broadcast_healthsystem_interaction(hsi_event=event)
 
                         # Write to the log
                         self.module.log_consumables_used(event)
