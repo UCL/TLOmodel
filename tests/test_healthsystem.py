@@ -15,6 +15,7 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
 
+
 # Simply test whether the system runs under multiple configurations
 # The Mockitits and ChronicSyndrome module test all aspects of the healthsystem module.
 
@@ -22,9 +23,15 @@ popsize = 50
 def disable_logging():
     logging.disable(logging.INFO)
 
+def check_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+
 
 def test_RunWithHealthSystem_NoInterventionsDefined():
-
     sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
@@ -37,8 +44,7 @@ def test_RunWithHealthSystem_NoInterventionsDefined():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True # if got here with no errors, it's working
-
+    check_dtypes(sim)
 
 
 def test_RunWithHealthSystem_WithQALY():
@@ -52,17 +58,14 @@ def test_RunWithHealthSystem_WithQALY():
     sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
-
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert True  # if got here with no errors, it's working
-
+    check_dtypes(sim)
 
 
 def test_RunWithHealthSystem_InterventionsOn():
-
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
@@ -86,12 +89,4 @@ def test_RunWithHealthSystem_InterventionsOn():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-
-    assert True  # if got here with no errors, it's working
-
-
-
-
-
-
-
+    check_dtypes(sim)

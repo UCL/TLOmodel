@@ -214,12 +214,12 @@ for d in pop_districts:
 for r in pop_regions:
     mfl = mfl.append(pd.DataFrame({
         'Facility_Level': Facility_Levels[2], 'District': None, 'Region': r
-    },index=[0]), ignore_index=True, sort=True)
+    }, index=[0]), ignore_index=True, sort=True)
 
 # Add in the National Hosital, one for whole country
 mfl = mfl.append(pd.DataFrame({
     'Facility_Level': Facility_Levels[3], 'District': None, 'Region': None
-},index=[0]), ignore_index=True, sort=True)
+}, index=[0]), ignore_index=True, sort=True)
 
 # Create the Facility_ID
 mfl.loc[:, 'Facility_ID'] = mfl.index
@@ -327,9 +327,9 @@ appt_types_table = pd.DataFrame(data={'Appt_Type_Code': retained_appt_type_code}
 
 # Fill in the missing information about the appointment type that was added above
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Cat'] = \
-new_appt_for_CHW.name.split('_')[1]
+    new_appt_for_CHW.name.split('_')[1]
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Type'] = \
-new_appt_for_CHW.name.split('_')[1]
+    new_appt_for_CHW.name.split('_')[1]
 
 # drop the merge check column
 appt_types_table.drop(columns='_merge', inplace=True)
@@ -371,17 +371,16 @@ Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC
 HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 
 Av_DistrictLevel_ExpectTime = (
-                               District_Hospital_ExpecTime + Community_Hospital_ExpecTime + Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 4
+                                  District_Hospital_ExpecTime + Community_Hospital_ExpecTime + Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 4
 
 X = pd.DataFrame({
-    '3': Central_Hospital_ExpecTime,        # (our "National Hospital" at national level)
-    '2': Central_Hospital_ExpecTime,        # (our "Referral Hospital" at region level)
-    '1': Av_DistrictLevel_ExpectTime,      # (our "District-level facilities" within the district)
-    '0': HealthPost_ExpecTime               # (our "Community Health Station" at local level)
+    '3': Central_Hospital_ExpecTime,  # (our "National Hospital" at national level)
+    '2': Central_Hospital_ExpecTime,  # (our "Referral Hospital" at region level)
+    '1': Av_DistrictLevel_ExpectTime,  # (our "District-level facilities" within the district)
+    '0': HealthPost_ExpecTime  # (our "Community Health Station" at local level)
 })
 
 assert set(X.columns.astype(int)) == set(Facility_Levels)
-
 
 # split out the index into appointment type and officer type
 labels = pd.Series(X.index, index=X.index).str.split(pat='_', expand=True)
@@ -391,7 +390,7 @@ ApptTimeTable = pd.melt(Y, id_vars=['Officer_Type_Code', 'Appt_Type_Code'],
                         var_name='Facility_Level', value_name='Time_Taken')
 
 # Confirm that Facility_Level is an int
-ApptTimeTable['Facility_Level']=ApptTimeTable['Facility_Level'].astype(int)
+ApptTimeTable['Facility_Level'] = ApptTimeTable['Facility_Level'].astype(int)
 
 # Merge in Officer_Type
 ApptTimeTable = ApptTimeTable.merge(officer_types_table, on='Officer_Type_Code')
@@ -437,9 +436,9 @@ for a in appt_types_table['Appt_Type_Code'].values:
                  'Officer_Type_Codes': need_officer_types
                  }, ignore_index=True)
 
-
 # Turn this into the the set of staff that are required for each type of appointment
-FacLevel_By_Officer = pd.DataFrame(columns=pd.unique(Facility_Levels), index=officer_types_table['Officer_Type_Code'].values)
+FacLevel_By_Officer = pd.DataFrame(columns=pd.unique(Facility_Levels),
+                                   index=officer_types_table['Officer_Type_Code'].values)
 FacLevel_By_Officer = FacLevel_By_Officer.fillna(False)
 
 for o in officer_types_table['Officer_Type_Code'].values:
@@ -459,10 +458,10 @@ for o in officer_types_table['Officer_Type_Code'].values:
 # We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are apparently not called by any appointment type
 
 # Assign that the Nutrition Staff will go to the Referral and National Hospitals
-FacLevel_By_Officer.loc['T01', [2,3]] = True
+FacLevel_By_Officer.loc['T01', [2, 3]] = True
 
 # Assign that the Sonographer will go to the Referral and National Hospitals
-FacLevel_By_Officer.loc['R03', [2,3]] = True
+FacLevel_By_Officer.loc['R03', [2, 3]] = True
 
 # Assign that the Radiotherapist will go to the National Hospital
 FacLevel_By_Officer.loc['R04', 3] = True
@@ -481,36 +480,35 @@ assert (FacLevel_By_Officer.sum(axis=1) > 0).all()
 facility_assignment = pd.DataFrame(index=staff_list.index, columns=['Staff_ID', 'Facility_ID'])
 facility_assignment['Staff_ID'] = staff_list['Staff_ID']
 
-
 # Loop through each staff member and allocate them to
 for staffmember in staff_list.index:
 
     if (staff_list.Is_DistrictLevel[staffmember]) & (staff_list.Officer_Type_Code[staffmember] == 'E01'):
         # This staff member must be at level = 0 in that district
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==0) & (mfl['District']==staff_list.District_Or_Hospital[staffmember]) , 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 0) & (
+                mfl['District'] == staff_list.District_Or_Hospital[staffmember]), 'Facility_ID'].values[0]
 
     elif staff_list.Is_DistrictLevel[staffmember]:
         # This staff member must be at level 1 in that district
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==1) & (mfl['District']==staff_list.District_Or_Hospital[staffmember]) , 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 1) & (
+                mfl['District'] == staff_list.District_Or_Hospital[staffmember]), 'Facility_ID'].values[0]
 
-    elif (~staff_list.Is_DistrictLevel[staffmember]) & (staff_list.District_Or_Hospital[staffmember]=='National Hospital'):
+    elif (~staff_list.Is_DistrictLevel[staffmember]) & (
+        staff_list.District_Or_Hospital[staffmember] == 'National Hospital'):
         # This staff member must be at the National Hospital
-        chosen_facility = mfl.loc[mfl['Facility_Name']=='National Hospital','Facility_ID'].values[0]
+        chosen_facility = mfl.loc[mfl['Facility_Name'] == 'National Hospital', 'Facility_ID'].values[0]
 
     else:
         # This staff member must be at one of the regional hospital
-        hosp_name= staff_list.District_Or_Hospital[staffmember]
+        hosp_name = staff_list.District_Or_Hospital[staffmember]
         region = hosp_name.split('_')[1]
 
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==2) & (mfl['Region']==region), 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 2) & (mfl['Region'] == region), 'Facility_ID'].values[0]
 
-
-    facility_assignment.loc[facility_assignment['Staff_ID']==staffmember,'Facility_ID']= chosen_facility
-
+    facility_assignment.loc[facility_assignment['Staff_ID'] == staffmember, 'Facility_ID'] = chosen_facility
 
 # Do some checks
 assert ~ (pd.isnull(facility_assignment).any().any())
-
 
 # -----------------
 # -----------------
@@ -618,7 +616,7 @@ Y = Y.merge(mfl, on='Facility_ID', how='left')
 Y = Y.merge(officer_types_table, on='Officer_Type_Code', how='left')
 
 # Last checks: every facility has at least one person in
-assert (( Y.groupby('Facility_ID')['Facility_Level'].count() ) > 0 ).all()
+assert ((Y.groupby('Facility_ID')['Facility_Level'].count()) > 0).all()
 
 Y.to_csv(resourcefilepath + 'ResourceFile_Daily_Capabilities.csv')
 

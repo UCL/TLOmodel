@@ -28,7 +28,7 @@ class HealthSystem(Module):
 
         # Checks on the service_availability dateframe argument
         assert (service_availability == 'all') or (service_availability == 'none') or (
-                type(service_availability) == list)
+            type(service_availability) == list)
 
         self.service_availability = service_availability
 
@@ -84,7 +84,7 @@ class HealthSystem(Module):
     }
 
     PROPERTIES = {
-        'Distance_To_Nearest_HealthFacility':
+        'hs_dist_to_facility':
             Property(Types.REAL,
                      'The distance for each person to their nearest clinic (of any type)')
     }
@@ -125,10 +125,10 @@ class HealthSystem(Module):
     def initialise_population(self, population):
         df = population.props
 
-        # Assign Distance_To_Nearest_HealthFacility'
+        # Assign hs_dist_to_facility'
         # For now, let this be a random number, but in future it will be properly informed based on population density distribitions.
         # Note that this characteritic is inherited from mother to child.
-        df['Distance_To_Nearest_HealthFacility'] = self.sim.rng.uniform(0.01, 5.00, len(df))
+        df['hs_dist_to_facility'] = self.sim.rng.uniform(0.01, 5.00, len(df))
 
     def initialise_simulation(self, sim):
 
@@ -151,8 +151,8 @@ class HealthSystem(Module):
 
     def on_birth(self, mother_id, child_id):
         df = self.sim.population.props
-        df.at[child_id, 'Distance_To_Nearest_HealthFacility'] = \
-            df.at[mother_id, 'Distance_To_Nearest_HealthFacility']
+        df.at[child_id, 'hs_dist_to_facility'] = \
+            df.at[mother_id, 'hs_dist_to_facility']
 
     def register_disease_module(self, *new_disease_modules):
         # Register Disease Modules (so that the health system can broadcast triggers to all disease modules)
@@ -252,8 +252,6 @@ class HealthSystem(Module):
         It receives an HSI event object
         """
 
-
-
         if event.ALERT_OTHER_DISEASES == []:
             # there are not disease modules to alert, so do nothing
             pass
@@ -273,8 +271,7 @@ class HealthSystem(Module):
             for module_name in alert_modules:
                 module = self.registered_disease_modules[module_name]
                 module.on_healthsystem_interaction(person_id=event.target,
-                                                    treatment_id=event.TREATMENT_ID)
-
+                                                   treatment_id=event.TREATMENT_ID)
 
     def GetCapabilities(self):
 
@@ -469,7 +466,7 @@ class HealthSystem(Module):
                                                                 left_index=True
                                                                 )
             TotalCost = (
-                    consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
+                consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
 
             # Enter to the log
             log_consumables = consumables_used.to_dict()
