@@ -37,7 +37,7 @@ class HealthSystem(Module):
         self.registered_disease_modules = {}
 
         # Define the container for calls for health system interaction events
-        self.HEALTH_SYSTEM_CALLS = []
+        self.HSI_EVENT_QUEUE = []
         self.heap_counter = 0  # Counter to help with the sorting in the heapq
 
         logger.info('----------------------------------------------------------------------')
@@ -173,7 +173,7 @@ class HealthSystem(Module):
         logger.info('Registering disease module %s', new_disease_module.name)
 
 
-    def schedule_event(self, hsi_event, priority, topen, tclose=None):
+    def schedule_hsi_event(self, hsi_event, priority, topen, tclose=None):
         """
         Schedule the health system interaction event
 
@@ -256,21 +256,22 @@ class HealthSystem(Module):
 
 
 
-        # 4) If all is correct and the hsi event is allowed then add this request to the queue of HEALTH_SYSTEM_CALLS
+        # 4) If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
 
         if allowed:
 
             # Create a tuple to go into the heapq
-            # (NB. the sorting is done asceding and by the order of the items in the tuple)
+            # (NB. the sorting is done ascending and by the order of the items in the tuple)
+            # Pos 0: priority,
             # Pos 1: topen,
-            # Pos 2: priority,
-            # Pos 3: the hsi_event itself
-            # Pos 4: tclose
+            # Pos 2: heap_counter,
+            # Pos 3: tclose,
+            # Pos 4: the hsi_event itself
 
-            new_request = (topen, priority, self.heap_counter, hsi_event, tclose)
+            new_request = (priority, topen, self.heap_counter, tclose, hsi_event)
             self.heap_counter = self.heap_counter + 1
 
-            hp.heappush(self.HEALTH_SYSTEM_CALLS, new_request)
+            hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
             logger.debug('HealthSystem.schedule_event>>HSI has been added to the queue: %s for person: %s',
                      hsi_event.TREATMENT_ID, hsi_event.target)
@@ -447,7 +448,7 @@ class HealthSystem(Module):
                     all(comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])
                 ):
 
-                    # the appt_footprint can be accomodated
+                    # the appt_footprint can be accommodated
                     can_do_footprint = True 
 
                     # Impose the footprint for each one of the types being requested
@@ -617,8 +618,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                      self.sim.date)
 
         logger.debug('----------------------------------------------------------------------')
-        logger.debug("This is the entire HealthSystemCalls heapq:")
-        logger.debug(self.module.HEALTH_SYSTEM_CALLS)
+        logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
+        logger.debug(self.module.HSI_EVENT_QUEUE)
         logger.debug('----------------------------------------------------------------------')
 
         # Get the total Capabilities for Appts for today
@@ -631,28 +632,39 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # This will hold events that cannot occur today before they are added back to the heapq
         hold_over = list()
 
-        while len(self.module.HEALTH_SYSTEM_CALLS) > 0:
+        while len(self.module.HSI_EVENT_QUEUE) > 0:
 
-            # Look at next event and stop if it is not due by today
-            # (The first entry will have the oldest topen date and it's not yet due, no events will be due)
+            # Pop the next event off the heapq
+            next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
-            if self.module.HEALTH_SYSTEM_CALLS[0][0] > self.sim.date:
-                break
-
-            # Otherwise, remove (pop) the event:
-            next_event_tuple = hp.heappop(self.module.HEALTH_SYSTEM_CALLS)
+            # Read the tuple:
+            # Pos 0: priority,
+            # Pos 1: topen,
+            # Pos 2: heap_counter,
+            # Pos 3: tclose,
+            # Pos 4: the hsi_event itself
 
             next_event = dict({
-                'topen': next_event_tuple[0],
-                'priority': next_event_tuple[1],
-                'object': next_event_tuple[3],
-                'tclose': next_event_tuple[4]})
+                'priority': next_event_tuple[0],
+                'topen': next_event_tuple[1],
+                'tclose': next_event_tuple[3],
+                'object': next_event_tuple[4]})
 
             event = next_event['object']
 
-            if next_event['tclose'] < self.sim.date:
+
+            if self.sim.date > next_event['tclose']:
                 # The event has expired, do nothing more
                 pass
+
+            elif self.sim.date < next_event['topen']:
+                # The event is not yet due, add to the hold-over list
+                hp.heappush(hold_over, next_event_tuple)
+
+                if next_event['priority']==2:
+                    # If the next event is not due and has low priorty, then stop looking through the heapq
+                    # as all other events will also not be due.
+                    break
 
             else:
 
@@ -675,12 +687,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         self.module.log_appts_used(event)
 
                 else:
-                    # The event will not be run and will be added back to the heapq
+                    # Add to hold-over list
                     hp.heappush(hold_over, next_event_tuple)
 
-        # Add back to the HEALTH_SYSTEM_CALLS heapq all those events which are eligible to run but which did not
+        # Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
         while len(hold_over) > 0:
-            hp.heappush(self.module.HEALTH_SYSTEM_CALLS, hp.heappop(hold_over))
+            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
         # After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
+
+        #TODO: @Asif, this is the way I could see to make the heapq deliver the desired effects...
+        # ... But it seems inefficient to keep loading up the 'hold-over' list. If there another way?

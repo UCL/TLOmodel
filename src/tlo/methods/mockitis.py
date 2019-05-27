@@ -314,7 +314,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
                         person_index)
                     event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-                    self.sim.modules['HealthSystem'].schedule_event(event,
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(weeks=2)
@@ -383,7 +383,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
                 '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
                 person_id)
             event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -395,7 +395,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
             date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=2,
                                                             topen=date_turns_15,
                                                             tclose=date_turns_15 + DateOffset(months=12))
@@ -468,7 +468,7 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
         # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                         priority=2,
                                                         topen=target_date_for_followup_appt,
                                                         tclose=target_date_for_followup_appt + DateOffset(weeks=2)
@@ -533,7 +533,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
         # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                         priority=2,
                                                         topen=target_date_for_followup_appt,
                                                         tclose=target_date_for_followup_appt + DateOffset(weeks=2))
