@@ -8,9 +8,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
 
-resourcefilepath = os.path.join(os.path.dirname(__file__), 'resources')
-# resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/tests/resources/'
-
+resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
@@ -70,11 +68,7 @@ def test_RunWithHealthSystem_InterventionsOn():
     sim = Simulation(start_date=start_date)
 
     # Define the service availability
-    service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-    service_availability.loc[0] = ['Mockitis_Treatment', True]
-    service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-    service_availability['Service'] = service_availability['Service'].astype('object')
-    service_availability['Available'] = service_availability['Available'].astype('bool')
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -90,3 +84,4 @@ def test_RunWithHealthSystem_InterventionsOn():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
