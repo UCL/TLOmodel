@@ -142,7 +142,7 @@ class ChronicSyndrome(Module):
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
-        df.loc[df.cs_has_cs, 'cs_date_infected'] = self.sim.date - acquired_td_ago
+        df.loc[df.cs_has_cs, 'cs_date_acquired'] = self.sim.date - acquired_td_ago
         df.loc[df.cs_has_cs, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
 
         # get the QALY values that this module will use from the weight database (these codes are just random!)

@@ -17,7 +17,8 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    resourcefilepath = os.path.join(os.path.dirname(__file__), 'resources')
+    resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
+    # TODO (ASIF?): will this work on all systems? (I am trying to point to real resource folder, not the one inside tests)
 
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
@@ -29,7 +30,6 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
-
 
 def test_dypes(simulation):
     # check types of columns
