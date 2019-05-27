@@ -16,15 +16,15 @@ logger.setLevel(logging.DEBUG)
 
 
 class ChronicSyndrome(Module):
-    """This is a dummy chronic disease
+    """
+    This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
-
-    - Declaration of TREATMENT_ID
-    - Registration of the disease module
-    - Internal symptom tracking and health care seeking
-    - Outreach campaign
-    - Piggy-backing appointments
-    - Reading QALY weights and reporting qaly values related to this disease
+        - Declaration of TREATMENT_ID
+        - Registration of the disease module
+        - Internal symptom tracking and health care seeking
+        - Outreach campaign
+        - Piggy-backing appointments
+        - Reading QALY weights and reporting qaly values related to this disease
     """
 
     PARAMETERS = {
@@ -77,9 +77,10 @@ class ChronicSyndrome(Module):
             categories=[0, 1, 2, 3, 4])
     }
 
+
+
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
         For now, we are going to hard code them explicity
         """
         self.parameters['p_acquisition_per_year'] = 0.10
@@ -134,7 +135,6 @@ class ChronicSyndrome(Module):
         acquired_years_ago = np.random.exponential(scale=10, size=acquired_count)
 
         # pandas requires 'timedelta' type for date calculations
-        # TODO: timedelta arithmetic requires days
         acquired_td_ago = pd.to_timedelta(acquired_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
@@ -207,7 +207,7 @@ class ChronicSyndrome(Module):
 
         # To simulate a "piggy-backing" appointment, whereby additional treatment and test are done
         # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
-        # and set it to prioryty 0 to force it to happen.
+        # and set it to priority 0 (to give it highest possible priority).
 
         if treatment_id == 'Mockitis_TreatmentMonitoring':
             piggy_back_dx_at_appt = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
@@ -320,8 +320,9 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
 
 class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
-    This is the event that is run by ChronicSyndrome and will submit the individual HSI outreach events.
-    (Any large campaign is composed of many individual outreach events).
+    This is the event that is run by ChronicSyndrome and it is the Outreach Event.
+    It will now submit the individual HSI events that occur when each individual is met.
+    (i.e. Any large campaign is composed of many individual outreach events).
     """
 
     def __init__(self, module):
@@ -352,7 +353,6 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
     This is a Health System Interaction Event.
     It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
     and is immediately provided with treatment.
-
     """
 
     def __init__(self, module, person_id):
