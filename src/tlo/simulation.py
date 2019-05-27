@@ -113,7 +113,8 @@ class Simulation:
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
-        assert not 'footprint' in dir(event), 'Events that impose a healthsystem resource use footprint must be handed to the healthsystem scheduler'
+        assert not 'TREATMENT_ID' in dir(event), 'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert ( event.__str__().find('HSI_') < 0 ), 'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
         self.event_queue.schedule(event, date)
 
@@ -159,6 +160,7 @@ class EventQueue:
         :param event: the event to schedule
         :param date: when it should happen
         """
+
         entry = (date, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 

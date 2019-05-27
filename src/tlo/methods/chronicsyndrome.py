@@ -217,7 +217,7 @@ class ChronicSyndrome(Module):
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
-            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                             priority=0,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -298,7 +298,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 if seeks_care:
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
-                    self.sim.modules['HealthSystem'].schedule_event(event,
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=1,
                                                                     topen=self.sim.date,
                                                                     tclose=None)
@@ -337,7 +337,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
             # make the outreach event (let this disease module be alerted about it, and also Mockitis)
             outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module, person_id=person_id)
 
-            self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
                                                             priority=1,
                                                             topen=self.sim.date,
                                                             tclose=None)
