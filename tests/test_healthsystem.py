@@ -63,6 +63,30 @@ def test_RunWithHealthSystem_WithQALY():
     check_dtypes(sim)
 
 
+def test_RunWithHealthSystem_InterventionsOff():
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
+    # Define the service availability
+    service_availability = []
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+    sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+
+    assert sim.modules['HealthSystem'].hsi_event_queue_counter==0
+    check_dtypes(sim)
+
+
 def test_RunWithHealthSystem_InterventionsOn():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
