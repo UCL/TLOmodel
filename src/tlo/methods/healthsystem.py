@@ -1,6 +1,5 @@
-"""
-This is the Health System Module
-"""
+
+
 import logging
 import os
 
@@ -17,7 +16,9 @@ logger.setLevel(logging.DEBUG)
 
 class HealthSystem(Module):
     """
-    Requests for access to particular services are handled by Disease/Intervention Modules by this Module
+    This is the Health System Module
+    Version: May 2019
+    The execution of all health systems interactions are controlled through this module.
     """
 
     def __init__(self, name=None,
@@ -26,24 +27,21 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        # Checks on the service_availability dateframe argument
+        # Check that the service_availability list is specified correctly
         assert (service_availability == 'all') or (service_availability == 'none') or (
             type(service_availability) == list)
 
         self.service_availability = service_availability
 
+        # Define empty set of registered disease modules
         self.registered_disease_modules = {}
 
-        self.registered_interventions = pd.DataFrame(
-            columns=['Name', 'Nurse_Time', 'Doctor_Time', 'Electricity', 'Water'])
-
-        self.health_system_resources = None
-
-        self.HEALTH_SYSTEM_CALLS = []  # This will be the heapq for storing all the health system calls
+        # Define the container for calls for health system interaction events
+        self.HEALTH_SYSTEM_CALLS = []
         self.heap_counter = 0  # Counter to help with the sorting in the heapq
 
         logger.info('----------------------------------------------------------------------')
-        logger.info("Setting up the Health System With the Following Service Availabilty:")
+        logger.info("Setting up the Health System With the Following Service Availability:")
         logger.info(service_availability)
         logger.info('----------------------------------------------------------------------')
 
@@ -122,13 +120,15 @@ class HealthSystem(Module):
         self.parameters['Consumables_Cost_List'] = (self.parameters['Consumables'][['Item_Code', 'Unit_Cost']]) \
             .drop_duplicates().reset_index(drop=True)
 
+
     def initialise_population(self, population):
         df = population.props
 
         # Assign hs_dist_to_facility'
-        # For now, let this be a random number, but in future it will be properly informed based on population density distribitions.
+        # (For now, let this be a random number, but in future it may be properly informed based on population density distribitions)
         # Note that this characteritic is inherited from mother to child.
         df['hs_dist_to_facility'] = self.sim.rng.uniform(0.01, 5.00, len(df))
+
 
     def initialise_simulation(self, sim):
 
@@ -146,29 +146,44 @@ class HealthSystem(Module):
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
-        # Launch the healthsystem_scheduler (a regular event occurring each day)
+
+        # Launch the healthsystem scheduler (a regular event occurring each day)
         sim.schedule_event(HealthSystemScheduler(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
+
+        # New child inherits the hs_dist_to_facility of the mother
         df = self.sim.population.props
         df.at[child_id, 'hs_dist_to_facility'] = \
             df.at[mother_id, 'hs_dist_to_facility']
 
+
     def register_disease_module(self, *new_disease_modules):
-        # Register Disease Modules (so that the health system can broadcast triggers to all disease modules)
+        """
+        Register Disease Modules
+        In order for a disease module to use the functionality of the health system it must be registered
+        This list is also used to alert other disease modules when a health system interaction occurs
+        """
         for module in new_disease_modules:
             assert module.name not in self.registered_disease_modules, (
                 'A module named {} has already been registered'.format(module.name))
             self.registered_disease_modules[module.name] = module
 
             logger.info('Registering disease module %s', module.name)
-
             # TODO: Check that the module being registered has the neccessary components.
 
-    def schedule_event(self, treatment_event, priority, topen, tclose=None):
 
+    def schedule_event(self, hsi_event, priority, topen, tclose=None):
+        """
+
+        :param hsi_event:
+        :param priority:
+        :param topen:
+        :param tclose:
+        :return:
+        """
         logger.debug('HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
-                     treatment_event.TREATMENT_ID, treatment_event.target)
+                     hsi_event.TREATMENT_ID, hsi_event.target)
 
         # get population dataframe
         df = self.sim.population.props
@@ -176,33 +191,33 @@ class HealthSystem(Module):
         # Check that this is a legitimate request for a treatment
 
         # 1) Correctly formatted footprint
-        assert 'APPT_FOOTPRINT' in dir(treatment_event)
-        assert set(treatment_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        list(treatment_event.APPT_FOOTPRINT.values())
+        assert 'APPT_FOOTPRINT' in dir(hsi_event)
+        assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        list(hsi_event.APPT_FOOTPRINT.values())
 
         # 2) All sensible numbers for the number of appointments requested (no negative and at least one appt req)
         assert all(
-            np.asarray([(treatment_event.APPT_FOOTPRINT[k]) for k in treatment_event.APPT_FOOTPRINT.keys()]) >= 0)
-        assert not all(value == 0 for value in treatment_event.APPT_FOOTPRINT.values())
+            np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
+        assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
 
         # 3) That it has a dictionary for the consumables needed in the right format
-        assert 'CONS_FOOTPRINT' in dir(treatment_event)
-        assert type(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
-        assert type(treatment_event.CONS_FOOTPRINT['Item_Code']) == list
+        assert 'CONS_FOOTPRINT' in dir(hsi_event)
+        assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
+        assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
         consumables = self.parameters['Consumables']
-        assert (treatment_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
-            set(treatment_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
+        assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
+            set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
                 consumables['Intervention_Pkg_Code']))
-        assert (treatment_event.CONS_FOOTPRINT['Item_Code'] == []) or (
-            set(treatment_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+        assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
+            set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
 
         # 4) That it has a list for the other disease that will be alerted when it is run and that this make sense
-        assert 'ALERT_OTHER_DISEASES' in dir(treatment_event)
-        assert type(treatment_event.ALERT_OTHER_DISEASES) is list
+        assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
+        assert type(hsi_event.ALERT_OTHER_DISEASES) is list
 
-        if len(treatment_event.ALERT_OTHER_DISEASES) > 0:
-            if not (treatment_event.ALERT_OTHER_DISEASES[0] == '*'):
-                for d in treatment_event.ALERT_OTHER_DISEASES:
+        if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
+            if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
+                for d in hsi_event.ALERT_OTHER_DISEASES:
                     assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
 
         # 5) Check that this request is allowable under current policy (i.e. included in service_availability)
@@ -211,16 +226,16 @@ class HealthSystem(Module):
             allowed = True
         elif (self.service_availability == 'none') or (self.service_availability[0] == []):
             allowed = False
-        elif (treatment_event.TREATMENT_ID in self.service_availability):
+        elif (hsi_event.TREATMENT_ID in self.service_availability):
             allowed = True
-        elif treatment_event.TREATMENT_ID == None:
+        elif hsi_event.TREATMENT_ID == None:
             allowed = True  # (if no treatment_id it can pass)
         else:
             # check to see if anything provided given any wildcards
             for s in range(len(self.service_availability)):
                 if '*' in self.service_availability[s]:
                     stub = self.service_availability[s].split('*')[0]
-                    if treatment_event.TREATMENT_ID.startswith(stub):
+                    if hsi_event.TREATMENT_ID.startswith(stub):
                         allowed = True
                         break
 
@@ -234,7 +249,7 @@ class HealthSystem(Module):
             # First two parts of tuple used for sorting (smaller values come first), last part is the event
             # (topen, priority []) [ie. sort by order in which needed, and then the priority of the call]
 
-            new_request = (topen, priority, self.heap_counter, treatment_event, tclose)
+            new_request = (topen, priority, self.heap_counter, hsi_event, tclose)
             self.heap_counter = self.heap_counter + 1
 
             hp.heappush(self.HEALTH_SYSTEM_CALLS, new_request)
@@ -243,7 +258,7 @@ class HealthSystem(Module):
             logger.debug(
                 '%s| A request was made for a service but it was not included in the service_availability list: %s',
                 self.sim.date,
-                treatment_event.TREATMENT_ID)
+                hsi_event.TREATMENT_ID)
 
     def broadcast_healthsystem_interaction(self, event):
 
