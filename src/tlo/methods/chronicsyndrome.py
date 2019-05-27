@@ -27,7 +27,6 @@ class ChronicSyndrome(Module):
     - Reading QALY weights and reporting qaly values related to this disease
     """
 
-
     PARAMETERS = {
         'p_acquisition': Parameter(
             Types.REAL,
@@ -50,7 +49,6 @@ class ChronicSyndrome(Module):
         'qalywt_ill': Parameter(
             Types.REAL, 'QALY weighting')
     }
-
 
     PROPERTIES = {
         'cs_has_cs': Property(
@@ -176,10 +174,9 @@ class ChronicSyndrome(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-
         # Schedule the event that will launch the Outreach event
-        outreach_event=ChronicSyndrome_LaunchOutreachEvent(self)
-        self.sim.schedule_event(outreach_event, self.sim.date+ DateOffset(months=6))
+        outreach_event = ChronicSyndrome_LaunchOutreachEvent(self)
+        self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=6))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -200,7 +197,6 @@ class ChronicSyndrome(Module):
         df.at[child_id, 'cs_specific_symptoms'] = 'none'
         df.at[child_id, 'cs_unified_symptom_code'] = 0
 
-
     def on_healthsystem_interaction(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -209,14 +205,13 @@ class ChronicSyndrome(Module):
         logger.debug('This is ChronicSyndrome, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-
         # To simulate a "piggy-backing" appointment, whereby additional treatment and test are done
         # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
         # and set it to prioryty 0 to force it to happen.
 
         if treatment_id == 'Mockitis_TreatmentMonitoring':
-            piggy_back_dx_at_appt= HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
-            piggy_back_dx_at_appt.TREATMENT_ID='ChronicSyndrome_PiggybackAppt'
+            piggy_back_dx_at_appt = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
+            piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
@@ -298,7 +293,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
             for person_index in become_severe_idx:
-                prob=self.sim.modules['HealthSystem'].get_prob_seek_care(person_index)
+                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_index)
                 seeks_care = self.module.rng.rand() < prob
                 if seeks_care:
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
@@ -307,7 +302,6 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                                                                     priority=1,
                                                                     topen=self.sim.date,
                                                                     tclose=None)
-
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
@@ -325,7 +319,6 @@ class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
 
 
 class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
-
     """
     This is the event that is run by ChronicSyndrome and will submit the individual HSI outreach events.
     (Any large campaign is composed of many individual outreach events).
@@ -335,20 +328,19 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-
         df = self.sim.population.props
 
         # Find the person_ids who are going to get the outreach
-        gets_outreach = df.index[(df['is_alive']) & (df['sex']=='F')]
+        gets_outreach = df.index[(df['is_alive']) & (df['sex'] == 'F')]
         for person_id in gets_outreach:
-
             # make the outreach event (let this disease module be alerted about it, and also Mockitis)
-            outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module,person_id=person_id)
+            outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module, person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
                                                             priority=1,
                                                             topen=self.sim.date,
                                                             tclose=None)
+
 
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
@@ -362,6 +354,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
     and is immediately provided with treatment.
 
     """
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -387,9 +380,10 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ALERT_OTHER_DISEASES = []
 
-
     def apply(self, person_id):
-        logger.debug("This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d", person_id)
+        logger.debug(
+            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d",
+            person_id)
 
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -405,9 +399,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
             df.at[person_id, 'cs_unified_symptom_code'] = 0
 
 
-
 class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
-
     """
     This is a Health System Interaction Event.
 
@@ -416,7 +408,6 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
     NB. This needs to be created and run for each individual that benefits from the outreach campaign.
 
     """
-
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -427,13 +418,12 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
         # (These are blank when created; but these should be filled-in by the module that calls it)
         self.TREATMENT_ID = 'ChronicSyndrome_Outreach_Individual'
         self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        self.APPT_FOOTPRINT['ConWithDCSA']=0.5      # outreach event takes small amount of time for DCSA
+        self.APPT_FOOTPRINT['ConWithDCSA'] = 0.5  # outreach event takes small amount of time for DCSA
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ALERT_OTHER_DISEASES=['*']
+        self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
-
-        logger.debug('Outreach event running now for person: %s', person_id )
+        logger.debug('Outreach event running now for person: %s', person_id)
 
         # Do here whatever happens during an outreach event with an individual
         pass
@@ -441,7 +431,6 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
 
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
-
 
 
 class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):

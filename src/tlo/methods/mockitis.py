@@ -229,8 +229,6 @@ class Mockitis(Module):
         logger.debug('This is Mockitis, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-
-
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
