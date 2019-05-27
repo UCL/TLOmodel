@@ -39,9 +39,11 @@ logging.getLogger().addHandler(fh)
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # ----- Control over the types of intervention that can occur -----
-# Make a list that contains the treatment_id that will be allowed.
+# Make a list that contains the treatment_id that will be allowed (can also use *). Empoty list means nothing allowed
 # (This can be set to 'all' or 'none'; and it will allow any treatment_id that begins with a stub)
-service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+service_availability = '*'
+
+
 # -----------------------------------------------------------------
 
 # Register the appropriate modules

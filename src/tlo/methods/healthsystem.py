@@ -28,9 +28,7 @@ class HealthSystem(Module):
         self.resourcefilepath = resourcefilepath
 
         # Check that the service_availability list is specified correctly
-        assert (service_availability == 'all') or (service_availability == 'none') or (
-            type(service_availability) == list)
-
+        assert (service_availability == '*') or (type(service_availability) == list)
         self.service_availability = service_availability
 
         # Define empty set of registered disease modules
@@ -38,7 +36,7 @@ class HealthSystem(Module):
 
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
-        self.heap_counter = 0  # Counter to help with the sorting in the heapq
+        self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availability:")
@@ -237,10 +235,10 @@ class HealthSystem(Module):
 
         # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed = False
-        if (self.service_availability == 'all') or (self.service_availability[0] == '*'):
-            allowed = True
-        elif (self.service_availability == 'none') or (self.service_availability[0] == []):
+        if (self.service_availability == []):
             allowed = False
+        elif (self.service_availability == '*') or (self.service_availability[0] == '*'):
+            allowed = True
         elif (hsi_event.TREATMENT_ID in self.service_availability):
             allowed = True
         elif hsi_event.TREATMENT_ID == None:
@@ -264,12 +262,12 @@ class HealthSystem(Module):
             # (NB. the sorting is done ascending and by the order of the items in the tuple)
             # Pos 0: priority,
             # Pos 1: topen,
-            # Pos 2: heap_counter,
+            # Pos 2: hsi_event_queue_counter,
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            new_request = (priority, topen, self.heap_counter, tclose, hsi_event)
-            self.heap_counter = self.heap_counter + 1
+            new_request = (priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+            self.hsi_event_queue_counter = self.hsi_event_queue_counter + 1
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
@@ -640,7 +638,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # Read the tuple:
             # Pos 0: priority,
             # Pos 1: topen,
-            # Pos 2: heap_counter,
+            # Pos 2: hsi_event_queue_counter,
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
