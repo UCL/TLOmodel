@@ -44,6 +44,8 @@ class QALY(Module):
     def initialise_simulation(self, sim):
         """ Launch the QALY Logger to run every year
         """
+
+        ## TODO: loop through all modules to make sure they have right functionality
         sim.schedule_event(LogQALYs(self), sim.date)
 
     def on_birth(self, mother_id, child_id):

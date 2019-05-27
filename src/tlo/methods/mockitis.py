@@ -18,12 +18,11 @@ class Mockitis(Module):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
-
-    - Declaration of TREATMENT_ID
-    - Registration of the disease module
-    - Reading QALY weights and reporting qaly values related to this disease
-    - Health care seeking
-    - Running an "outreach" event
+        - Declaration of TREATMENT_ID
+        - Registration of the disease module
+        - Reading QALY weights and reporting qaly values related to this disease
+        - Health care seeking
+        - Running an "outreach" event
     """
 
     PARAMETERS = {
@@ -86,6 +85,7 @@ class Mockitis(Module):
         p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
 
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -128,8 +128,8 @@ class Mockitis(Module):
         # date of infection of infected individuals
         # sample years in the past
         infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
+
         # pandas requires 'timedelta' type for date calculations
-        # TODO: timedelta calculations should always be in days
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
@@ -166,12 +166,9 @@ class Mockitis(Module):
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
 
+
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
-
-        # Schedule the outreach event...
-        # event = MockitisOutreachEvent(self, 'this_module_only')
-        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -484,7 +481,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
-    It is appointment at which treatment for mockitiis is monitored.
+    It is appointment at which treatment for mockitis is monitored.
     (In practise, nothing happens!)
 
     """
