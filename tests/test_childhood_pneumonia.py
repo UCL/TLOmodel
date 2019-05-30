@@ -3,12 +3,12 @@ import os
 
 import pytest
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, iCCM
+from tlo.methods import demography, lifestyle, childhood_pneumonia
 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 2, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 
@@ -25,7 +25,7 @@ def simulation():
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
-    sim.register(iCCM.ChildhoodPneumonia())
+    sim.register(childhood_pneumonia.ChildhoodPneumonia())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)
