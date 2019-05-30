@@ -1,7 +1,4 @@
 
-#   todo: enact one-off probabilities of transition in properties dependent on urban/rural upon move from rural
-#   todo: to urban - same for other changes in any property - consider possible effects on down-stream properties
-
 #   todo: create high_salt high_satfat high_sugar low_fruveg and make high_satfat
 #   todo: and high_sugar determinants of overwt
 #   todo: finalise decision with group whether to do this
