@@ -2,4 +2,4 @@
 Authors
 =======
 
-* Jonathan Cooper - https://iris.ucl.ac.uk/iris/browse/profile?upi=JCOOP83
+* Jonathan Cooper - https://www.ucl.ac.uk/research-it-services/about-rits/people/jonathan-cooper
