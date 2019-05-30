@@ -29,3 +29,7 @@ notifications:
   email:
     on_success: never
     on_failure: always
+addons:
+  apt:
+    packages:
+      - libssl1.0.0
