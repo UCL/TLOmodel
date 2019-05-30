@@ -18,6 +18,7 @@ Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 import logging
 
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -57,8 +58,9 @@ class Lifestyle(Module):
                                                    'initial relative prevalence of wood_burn_stove if rural'),
         'init_p_no_access_handwashing': Parameter(Types.REAL,
                                                   'initial probability of no_access_handwashing given wealth 1'),
-        'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial relative prevalence of no_'
-                                                                                'access_handwashing per lower wealth level'),
+        'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL,
+                                                                    'initial relative prevalence of no_'
+                                                                    'access_handwashing per lower wealth level'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -179,7 +181,11 @@ class Lifestyle(Module):
         'li_no_access_handwashing': Property(Types.BOOL, 'no_access_handwashing - no water, no soap, no other '
                                                          'cleaning agent - as in DHS'),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
-        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
+        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
+        'li_date_acquire_improved_sanitation': Property(Types.DATE, ''),
+        'li_date_acquire_access_handwashing': Property(Types.DATE, ''),
+        'li_date_acquire_clean_drinking_water': Property(Types.DATE, ''),
+        'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, ''),
     }
 
     def read_parameters(self, data_folder):
@@ -581,6 +587,10 @@ class Lifestyle(Module):
         df.at[child_id, 'li_no_access_handwashing'] = df.at[mother_id, 'li_no_access_handwashing']
         df.at[child_id, 'li_no_clean_drinking_water'] = df.at[mother_id, 'li_no_clean_drinking_water']
         df.at[child_id, 'li_wood_burn_stove'] = df.at[mother_id, 'li_wood_burn_stove']
+        df.at[child_id, 'li_date_acquire_improved_sanitation'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_access_handwashing'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_clean_drinking_water'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -662,7 +672,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
         adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
-        currently_tob = df.index[df.li_tob & df.is_alive]
+        # currently_tob = df.index[df.li_tob & df.is_asolive]
 
         # start tobacco use
         eff_p_tob = pd.Series(m.r_tob, index=adults_not_tob)

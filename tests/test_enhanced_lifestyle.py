@@ -1,10 +1,8 @@
 import logging
 import os
 
-import logging
-import os
-
 import pytest
+
 from tlo import Date, Simulation
 from tlo.methods import demography, enhanced_lifestyle
 
@@ -34,22 +32,12 @@ def simulation():
     return sim
 
 
-def __check_properties(df):
-
- def test_make_initial_population(simulation):
+def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
 
 
 def test_simulate(simulation):
     simulation.simulate(end_date=end_date)
-
-
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
 
 
 def test_dypes(simulation):
