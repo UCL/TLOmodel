@@ -58,7 +58,7 @@ class Lifestyle(Module):
         'init_p_no_access_handwashing': Parameter(Types.REAL,
                                                   'initial probability of no_access_handwashing given wealth 1'),
         'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial relative prevalence of no_'
-                                                                    'access_handwashing per lower wealth level'),
+                                                                                'access_handwashing per lower wealth level'),
         'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -143,13 +143,13 @@ class Lifestyle(Module):
         'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
                                                                'school per 1 higher wealth level'),
         'r_improved_sanitation': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                         'unimproved_sanitation true to false'),
+                                                       'unimproved_sanitation true to false'),
         'r_clean_drinking_water': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                           'drinking_water true to false'),
+                                                        'drinking_water true to false'),
         'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                   'wood_burn_stove true to false'),
+                                                       'wood_burn_stove true to false'),
         'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                         'no_access_handwashing true to false')
+                                                      'no_access_handwashing true to false')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -457,7 +457,7 @@ class Lifestyle(Module):
         p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
 
         # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_some_ed *= m.init_rp_some_ed_per_higher_wealt h* *(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         # calculate baseline of education level 3, and adjust for age and wealth
         p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
@@ -468,7 +468,7 @@ class Lifestyle(Module):
         p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
         p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
         p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealt h* *(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
@@ -761,7 +761,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # create a series to hold the probablity of primary education for children at age 5
         prob_primary = pd.Series(m.p_ed_primary, index=age5)
-        prob_primary *= m.rp_ed_primary_higher_wealth**(5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        prob_primary *= m.rp_ed_primary_higher_wealt h* *(5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
         age5_in_primary = rng.random_sample(len(age5)) < prob_primary
@@ -775,7 +775,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # they have a probability of gaining secondary education (level 3), based on wealth
         prob_secondary = pd.Series(m.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= m.rp_ed_secondary_higher_wealth**(5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
+        prob_secondary *= m.rp_ed_secondary_higher_wealt h* *(5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
 
         # randomly select some to get secondary education
         age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
@@ -788,7 +788,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # baseline rate of leaving education then adjust for wealth level
         p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
-        p_leave_ed *= m.rr_stop_ed_lower_wealth**(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
+        p_leave_ed *= m.rr_stop_ed_lower_wealt h* *(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
         now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
@@ -854,12 +854,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of no clean drinking water upon moving to urban from rural
         no_clean_drinking_water_newly_urban_idx = df.index[df.li_no_clean_drinking_water & df.is_alive &
-                                                         df.li_date_trans_to_urban == self.sim.date]
+                                                           df.li_date_trans_to_urban == self.sim.date]
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
 
         eff_prev_no_clean_drinking_water_urban = pd.Series(m.init_p_no_clean_drinking_water,
-                                                         index=no_clean_drinking_water_newly_urban_idx)
+                                                           index=no_clean_drinking_water_newly_urban_idx)
 
         df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] \
             = random_draw < eff_prev_no_clean_drinking_water_urban
@@ -880,12 +880,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # probability of moving to wood burn stove upon moving to urban from rural
         wood_burn_stove_newly_urban_idx = df.index[df.li_wood_burn_stove & df.is_alive &
-                                                         df.li_date_trans_to_urban == self.sim.date]
+                                                   df.li_date_trans_to_urban == self.sim.date]
 
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
 
         eff_prev_wood_burn_stove_urban = pd.Series(m.init_p_wood_burn_stove,
-                                                         index=wood_burn_stove_newly_urban_idx)
+                                                   index=wood_burn_stove_newly_urban_idx)
 
         df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] \
             = random_draw < eff_prev_wood_burn_stove_urban
@@ -906,9 +906,9 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-    #   logger.info('%s|li_wealth li_no_access_handwashing|%s',
-    #               self.sim.date,
-    #               df[df.is_alive].groupby(['li_wealth', 'li_no_access_handwashing']).size().to_dict())
+        #   logger.info('%s|li_wealth li_no_access_handwashing|%s',
+        #               self.sim.date,
+        #               df[df.is_alive].groupby(['li_wealth', 'li_no_access_handwashing']).size().to_dict())
 
         logger.debug('%s|person_one|%s',
                      self.sim.date,
@@ -918,28 +918,20 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
-        
+
         logger.info('%s|li_wealth|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_wealth').size().to_dict())
-
         logger.info('%s|li_overwt|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
-
         logger.info('%s|li_low_ex|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
-
         logger.info('%s|li_tob|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
-
         logger.info('%s|li_ed_lev_by_age|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
         """
-
-
-
-
