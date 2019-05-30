@@ -265,12 +265,10 @@ class Lifestyle(Module):
         p['rp_ed_primary_higher_wealth'] = 1.01
         p['p_ed_secondary'] = 0.20
         p['rp_ed_secondary_higher_wealth'] = 1.45
-
-        p['r_unimproved_sanitation'] = ......
-        p['r_no_clean_drinking_water'] = ......
-        p['r_wood_burn_stove'] = ......
-        p['r_no_access_handwashing'] = ......
-
+        p['r_unimproved_sanitation'] = 0.001   # place-holder very low rate
+        p['r_no_clean_drinking_water'] = 0.001  # place-holder very low rate
+        p['r_wood_burn_stove'] = 0.001   # place-holder very low rate
+        p['r_no_access_handwashing'] = 0.001    # place-holder very low rate
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -300,7 +298,7 @@ class Lifestyle(Module):
         df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
         df['li_unimproved_sanitation'] = True  # default: unimproved_sanitation
         df['li_no_access_handwashing'] = True  # default: no_access_handwashing
-        df['li_unimproved_sanitation'] = True  # default: unimproved_sanitation
+        df['li_no_clean_drinking_water'] = True  # default: unimproved_sanitation
         df['li_wood_burn_stove'] = True  # default: li_wood_burn_stove
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -494,6 +492,68 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
+
+        # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
+
+        rural_idx = df.index[df.is_alive & ~df.li_urban]
+        all_idx = df.index[df.is_alive]
+
+        eff_prev_unimproved_sanitation = pd.Series(m.init_p_unimproved_sanitation,
+                                                   index=df.index[df.is_alive])
+
+        eff_prev_unimproved_sanitation.loc[rural_idx] *= m.init_rp_unimproved_sanitation_rural
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+
+        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < eff_prev_unimproved_sanitation
+
+        # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
+
+        rural_idx = df.index[df.is_alive & ~df.li_urban]
+        all_idx = df.index[df.is_alive]
+
+        eff_prev_no_clean_drinking_water = pd.Series(m.init_p_no_clean_drinking_water,
+                                                   index=df.index[df.is_alive])
+
+        eff_prev_no_clean_drinking_water.loc[rural_idx] *= m.init_rp_no_clean_drinking_water
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+
+        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < eff_prev_no_clean_drinking_water
+
+        # -------------------- WOOD BURN STOVE ---------------------------------------------------
+
+        rural_idx = df.index[df.is_alive & ~df.li_urban]
+        all_idx = df.index[df.is_alive]
+
+        eff_prev_wood_burn_stove = pd.Series(m.init_p_wood_burn_stove, index=df.index[df.is_alive])
+
+        eff_prev_wood_burn_stove.loc[rural_idx] *= m.init_rp_wood_burn_stove
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+
+        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove
+
+        # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
+
+        all_idx = df.index[df.is_alive]
+        wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2)]
+        wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3)]
+        wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
+        wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
+
+        eff_prev_no_access_handwashing = pd.Series(m.init_p_no_access_handwashing, index=df.index[df.is_alive])
+
+        eff_prev_no_access_handwashing.loc[wealth2_idx] *= m.init_rp_no_access_handwashing_per_lower_wealth
+        eff_prev_no_access_handwashing.loc[wealth3_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 2)
+        eff_prev_no_access_handwashing.loc[wealth4_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 3)
+        eff_prev_no_access_handwashing.loc[wealth5_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 4)
+
+        dfx = pd.Series(eff_prev_no_access_handwashing, index=df.index[df.is_alive])
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+
+        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < eff_prev_no_access_handwashing
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -726,13 +786,13 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        # logger.info('%s|li_ed_lev|%s',
-        #             self.sim.date,
-        #             df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
+        logger.info('%s|li_wealth li_no_access_handwashing|%s',
+                    self.sim.date,
+                    df[df.is_alive].groupby(['li_wealth', 'li_no_access_handwashing']).size().to_dict())
 
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
+        #logger.debug('%s|person_one|%s',
+        #             self.sim.date,
+        #             df.loc[0].to_dict())
 
         """
         logger.info('%s|li_urban|%s',
