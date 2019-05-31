@@ -78,6 +78,7 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio')
+
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -113,6 +114,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
+
         workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
@@ -258,7 +260,8 @@ class Demography(Module):
             df.loc[mother_id, 'la_still_birth_this_delivery'] = False
 
             # Reset still birth status in case of future pregnancy
-            #Schedule newborns to move through newborn disease module?
+            # Schedule newborns to move through newborn disease module?
+
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -290,6 +293,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         self.age_high = 49
 
     def apply(self, population):
+
+        params = self.module.parameters
 
         logger.debug('Checking to see if anyone should become pregnant....')
 
@@ -325,12 +330,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         newly_pregnant_ids = females.index[newly_pregnant]
 
-        # updating the pregancy status for that women
+        # updating the pregnancy status for that women
 
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
         df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
-        newly_pregnant_ids =(df.index[df.date_of_last_pregnancy == self.sim.date])
+        newly_pregnant_ids = (df.index[df.date_of_last_pregnancy == self.sim.date])
 
         conception = pd.Series(df.date_of_last_pregnancy, index=df.index[df.date_of_last_pregnancy == self.sim.date])
         new_pregnancy_count = conception.count()
@@ -351,22 +356,22 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
-            # Here the start of a woman's labour is scheduled via her due date
+            self.sim.schedule_event(Labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
+                                                            cause='miscarriage event'), self.sim.date)
 
-            scheduled_labour_date = df.at[female_id, 'due_date']
+            if df.at[female_id,'is_pregnant']:
+                    scheduled_labour_date = df.at[female_id, 'due_date']
 
-            self.sim.schedule_event(Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
+                    self.sim.schedule_event(Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
                                     scheduled_labour_date)
 
-            logger.debug('birth booked for: %s', df.due_date)
-
-            # date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * self.module.rng.random_sample())
+                    logger.debug('birth booked for: %s', df.due_date)
 
             # Here the woman's birth is scheduled after 2 days of labour
 
-            scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
+                    scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
 
-            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
+                    self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
