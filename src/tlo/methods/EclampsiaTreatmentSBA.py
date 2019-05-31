@@ -17,7 +17,7 @@ logger.setLevel(logging.DEBUG)
 class EclampsiaTreatmentSBA(Module):
     """
     This module overseas the treatment and prevention of intra and postpartum eclamptic seizures for
-    women recieving skilled birth attendance
+    women receiving skilled birth attendance
     """
 
     PARAMETERS = {
@@ -30,15 +30,13 @@ class EclampsiaTreatmentSBA(Module):
         'prob_cure_diazepam': Parameter(
             Types.REAL, 'probability of administration of diazepam preventing additional eclamptic seizures'),
         'prob_cure_thiopental': Parameter(
-            Types.REAL, 'probability of administration of thiopental preventing additional eclamptic seizures'),
+            Types.REAL, 'probability of administration of thiopental preventing additional eclamptic seizures')
 
     }
 
     PROPERTIES = {
 
-        'ect_treat_received': Property(Types.BOOL, 'dummy-has this woman received treatment'),
-
-       # temp presently
+        'ect_treat_received': Property(Types.BOOL, 'dummy-has this woman received treatment')  # dummy property
     }
 
     def read_parameters(self, data_folder):
@@ -108,11 +106,9 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
 
         receiving_treatment_idx = df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)]
 
-        # 2.)Apply the probability that first line treatment will stop/prevenet seizures
+        # 2.)Apply the probability that first line treatment will stop/prevent seizures
 
-        # treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
-
-        treatment_effect = pd.Series(0.4, index=receiving_treatment_idx)
+        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
                                 index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])

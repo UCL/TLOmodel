@@ -396,26 +396,12 @@ class Labour (Module):
 
     def initialise_simulation(self, sim):
 
-        """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-        """
-
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
         self.baseline_labour_scheduler(sim.population)
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
-
-        This is called by the simulation whenever a new person is born.
-
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
 
         df = self.sim.population.props
 
