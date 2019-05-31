@@ -1,6 +1,6 @@
 """
-First draft of Labour module (Natural history)
 Documentation:
+First draft of Labour module (Natural history)
 """
 import logging
 
@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography
+from tlo.methods import demography, EclampsiaTreatmentSBA
 
 
 logger = logging.getLogger(__name__)
@@ -22,6 +22,11 @@ class Labour (Module):
 
     """
     This module models labour and delivery and generates the properties for "complications" of delivery """
+
+    # Read in data file
+    file_path = '/Users/sejjj49/Dropbox/Thanzi la Onse/04 - Methods Repository/Method_Labour_Natural_History.xlsx'
+    method_labour_data = pd.read_excel(file_path, sheet_name=None, header=0)
+    labour_parameters = method_labour_data['parameters']
 
     PARAMETERS = {
 
@@ -152,7 +157,7 @@ class Labour (Module):
         """
         params = self.parameters
 
-        params['prob_pregnancy'] = 0.03  # DUMMY PREGNANCY GENERATOR
+        params['prob_pregnancy'] = 0.083  # Calculated from DHS 2010
         params['prob_miscarriage'] = 0.189
         params['rr_miscarriage_prevmiscarriage'] = 2.23
         params['rr_miscarriage_35'] = 4.02
@@ -163,7 +168,7 @@ class Labour (Module):
         params['rr_PL_OL_parity_3'] = 0.8
         params['rr_PL_OL_age_less20'] = 1.3
         params['prob_ptl'] = 0.18
-        params['prob_an_eclampsia'] = 0.02
+        params['prob_an_eclampsia'] = 0.5 # 0.02
         params['prob_an_aph'] = 0.03
         params['prob_an_sepsis'] = 0.15
         params['prob_an_ur'] = 0.06
@@ -341,6 +346,7 @@ class Labour (Module):
 
         # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
 
+
         # TODO: apply risk factors for preterm birth at baseline
 
         women_para1_nocs_idx = df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') & (df.la_parity == 1) &
@@ -370,13 +376,23 @@ class Labour (Module):
     def baseline_labour_scheduler(self, population):
         """Schedules labour for women who are pregnant at baseline"""
 
+        # The possibility of miscarriage and labour are scheduled for women who are pregnant at baseline
+
         df = population.props
 
         pregnant_baseline = df.index[(df.is_pregnant == True) & df.is_alive]
         for person in pregnant_baseline:
-            scheduled_labour_date = df.at[person, 'due_date']
-            labour = LabourEvent(self, individual_id=person, cause='labour')
-            self.sim.schedule_event(labour, scheduled_labour_date)
+            gestation_date = df.at[person, 'due_date'] - (df.at[person, 'date_of_last_pregnancy'])
+            gestation_weeks = gestation_date / np.timedelta64(1, 'W')
+            if gestation_weeks < 28:
+                self.sim.schedule_event(Labour.MiscarriageEvent(self.sim.modules['Labour'], person,
+                                                                cause='miscarriage event'), self.sim.date)
+
+        for person in pregnant_baseline:
+            if df.at[person, 'is_pregnant']:
+                scheduled_labour_date = df.at[person, 'due_date']
+                labour = LabourEvent(self, individual_id=person, cause='labour')
+                self.sim.schedule_event(labour, scheduled_labour_date)
 
     def initialise_simulation(self, sim):
 
@@ -386,9 +402,6 @@ class Labour (Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-
-        event = MiscarriagePoll(self)
-        sim.schedule_event(MiscarriagePoll(self), sim.date + DateOffset(months=1))
 
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -423,34 +436,20 @@ class Labour (Module):
         df.at[child_id, 'la_died_in_labour'] = False
 
 
-class MiscarriagePoll(RegularEvent, PopulationScopeEventMixin):
-    """Poll of all pregnant women and applies likelihood of miscarriage (loss of pregnancy before 28 weeks gestation)
-    dependent on risk factors """
+class MiscarriageEvent(Event, IndividualScopeEventMixin):
+    """On conception event that applies a cumulative risk of early pregnancy loss to women """
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=6))
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
 
     def apply(self, population):
-        df = population.props
+        df = self.sim.population.props
         params = self.module.parameters
         m = self
 
-        # Polling all pregnant women who have yet to reach 28 weeks gestation
+        poss_miscarriage_idx = df.index[(df.date_of_last_pregnancy == self.sim.date)]
 
-        pregnant_women = df.index[((df.is_pregnant == True) & df.is_alive & (df.la_labour == 'not_in_labour'))]
-
-        conception = pd.Series(df.date_of_last_pregnancy, index=pregnant_women)
-        simdate = pd.Series(self.sim.date, index=pregnant_women)
-
-        dfx = pd.concat([conception, simdate], axis=1)
-        dfx['gestweeks'] = simdate-conception
-        dfx['gestweeks'] = dfx['gestweeks'] / np.timedelta64(1,'W')
-        poss_miscarriage = dfx.index[dfx.gestweeks <= 28]
-        prob_mc = params['prob_miscarriage']
-
-        # Apply cumulative probability of miscarriage in the first 28 weeks
-
-        eff_prob_miscarriage = pd.Series(prob_mc, index=poss_miscarriage)
+        eff_prob_miscarriage = pd.Series(params['prob_miscarriage'], index=poss_miscarriage_idx)
 
         eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
                                           (df.la_miscarriage >= 1) & (df.la_parity + df.la_miscarriage <= 3) &
@@ -466,8 +465,8 @@ class MiscarriagePoll(RegularEvent, PopulationScopeEventMixin):
                                            (df.la_miscarriage == 0) & (df.la_parity >= 4) & (df.age_years <= 30))]\
             *= params['rr_miscarriage_grav4']
 
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(poss_miscarriage)),
-                                index=dfx.index[dfx.gestweeks <= 28])
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(poss_miscarriage_idx)),
+                                index=df.index[df.date_of_last_pregnancy == self.sim.date])
 
         dfx = pd.concat([eff_prob_miscarriage, random_draw], axis=1)
         dfx.columns = ['eff_prob_miscarriage', 'random_draw']
@@ -501,8 +500,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================================== LABOUR STATE  ==================================================================
 
-#       Application of risk factors for women to enter prolonged/obstructed labour
-
         gestation_date = df.at[individual_id, 'due_date'] - (df.at[individual_id, 'date_of_last_pregnancy'])
         gestation_weeks = gestation_date / np.timedelta64(1, 'W')
 
@@ -522,9 +519,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ================================== COMPLICATIONS FOR TERM LABOUR ===============================================
 
-        # First it is determine if this woman's labour will be obstructed
+        # First determine if this woman's labour will be obstructed
 
         in_labour = df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True) & (df.la_labour == 'term_labour')]
+
         eff_prob_plol = pd.Series(params['prob_pl_ol'], index=in_labour)
 
         eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
@@ -589,73 +587,22 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                          eff_prob_ur, random_draw4],
                         axis=1)
         dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_aph', 'random_draw2', 'eff_prob_sepsis',
-                       'random_draw3','eff_prob_ur','random_draw4' ]
+                       'random_draw3','eff_prob_ur','random_draw4']
 
         idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
         idx_aph = dfx.index[dfx.eff_prob_aph > dfx.random_draw2]
-        idx_sepsis =dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
+        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
         idx_ur = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
         df.loc[idx_eclamp, 'la_eclampsia'] = True
         df.loc[idx_aph, 'la_aph'] = True
         df.loc[idx_sepsis, 'la_sepsis'] = True
         df.loc[idx_ur, 'la_uterine_rupture'] = True
 
+        # Schedule treatment for women who develop eclampsia
+
         for individual_id in idx_eclamp:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_eclampsia']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_eclampsia_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_eclampsia']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_aph:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_aph']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_aph_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_aph']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_sepsis:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_sepsis']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_sepsis_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_sepsis']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_ur:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_uterine_rupture']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_ur_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_ur']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        # Schedule death for women who die in labour
-
-        maternal_death = df.index[(df.due_date == self.sim.date) & (df.la_labour == 'unobstructed_term_labour')
-                                  & (df.la_died_in_labour == True)]
-
-        for individual_id in maternal_death:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause ='labour'), self.sim.date)
+            self.sim.schedule_event(EclampsiaTreatmentSBA.EclampsiaTreatmentEvent(self.module, individual_id,
+                                                                  cause='eclampsia'), self.sim.date)
 
     # ============================ COMPLICATIONS FOR PRETERM LABOUR ===================================================
 
@@ -715,64 +662,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_eclamp, 'la_eclampsia'] = True
         df.loc[idx_aph, 'la_aph'] = True
         df.loc[idx_sepsis, 'la_sepsis'] = True
-        df.loc [idx_sepsis, 'la_uterine_rupture'] =True
-
-        for individual_id in idx_eclamp:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_eclampsia']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_eclampsia_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_eclampsia']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_aph:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_aph']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_aph_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_aph']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_sepsis:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_sepsis']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_sepsis_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_sepsis']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        for individual_id in idx_ur:
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_uterine_rupture']:
-                df.at[individual_id, 'la_died_in_labour'] = True
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_ur_md']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-            else:
-                random = self.sim.rng.random_sample()
-                if random < params['prob_still_birth_ur']:
-                    df.at[individual_id, 'la_still_birth_this_delivery'] = True
-
-        # Schedule death for women who die in labour
-
-        maternal_death = df.index[(df.due_date == self.sim.date) & (df.la_labour == 'preterm_labour')
-                                  & (df.la_died_in_labour == True)]
-
-        for individual_id in maternal_death:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                  cause='labour'), self.sim.date)
+        df.loc[idx_sepsis, 'la_uterine_rupture'] =True
 
     # ============================ COMPLICATIONS FOR POST TERM LABOUR ==================================================
 
@@ -835,6 +725,189 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_sepsis, 'la_sepsis'] = True
         df.loc[idx_sepsis, 'la_uterine_rupture'] = True
 
+
+class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
+
+    """applies probability of postpartum complications to women who have just delivered """
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+# ============================== POSTPARTUM COMPLICATIONS FOLLOWING TERM LABOUR =======================================
+
+        tl_women_pn = df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
+                                    (df.due_date == self.sim.date - DateOffset(days=2))]
+
+        eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=tl_women_pn)
+        eff_prob_pph = pd.Series(params['prob_pn_pph'], index=tl_women_pn)
+        eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=tl_women_pn)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
+                                    index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
+                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
+                                     index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
+                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
+                                     index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
+                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+
+        dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
+                            axis=1)
+        dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
+                           'random_draw3']
+
+        idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
+        idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
+        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
+        df.loc[idx_eclamp, 'la_eclampsia'] = True
+        df.loc[idx_pph, 'la_pph'] = True
+        df.loc[idx_sepsis, 'la_sepsis'] = True
+
+
+# ============================ POSTPARTUM COMPLICATIONS FOLLOWING POST TERM  LABOUR ====================================
+
+            # TODO: risk factors
+        potl_women_pn = df.index[(df.la_labour == 'post_term_labour') & (df.is_alive == True) &
+                                    (df.due_date == self.sim.date - DateOffset(days=2))]
+
+        eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=potl_women_pn)
+        eff_prob_pph = pd.Series(params['prob_pn_pph'], index=potl_women_pn)
+        eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=potl_women_pn)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
+                                    index=df.index[
+                                        (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
+                                        (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
+                                     index=df.index[
+                                         (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
+                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
+                                     index=df.index[
+                                         (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
+                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+
+        dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
+                            axis=1)
+        dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
+                           'random_draw3']
+
+        idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
+        idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
+        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
+        df.loc[idx_eclamp, 'la_eclampsia'] = True
+        df.loc[idx_pph, 'la_pph'] = True
+        df.loc[idx_sepsis, 'la_sepsis'] = True
+
+# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR =======================================
+
+        ptl_women_pn = df.index[(df.la_labour == 'preterm_labour') & (df.is_alive == True) &
+                                     (df.due_date == self.sim.date - DateOffset(days=2))]
+
+        eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=ptl_women_pn)
+        eff_prob_pph = pd.Series(params['prob_pn_pph'], index=ptl_women_pn)
+        eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=ptl_women_pn)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
+                                    index=df.index[
+                                        (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
+                                        (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
+                                     index=df.index[
+                                         (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
+                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
+                                     index=df.index[
+                                         (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
+                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+
+        dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
+                            axis=1)
+        dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
+                           'random_draw3']
+
+        idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
+        idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
+        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
+        df.loc[idx_eclamp, 'la_eclampsia'] = True
+        df.loc[idx_pph, 'la_pph'] = True
+        df.loc[idx_sepsis, 'la_sepsis'] = True
+
+
+
+# ==============================  COMPLICATIONS FOLLOWING SPONTANEOUS MISCARRIAGE ======================================
+
+        # TODO: consider stage of pregnancy loss and its impact on liklihood of complications i.e retained product
+
+        post_miscarriage = df.index[ (df.is_alive == True) & (df.la_miscarriage_date == self.sim.date)]
+
+        eff_prob_pph = pd.Series(params['prob_sa_pph'], index=post_miscarriage)
+        eff_prob_sepsis = pd.Series(params['prob_sa_sepsis'], index=post_miscarriage)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(post_miscarriage)),
+                                    index=df.index[((df.is_alive == True) & (df.la_miscarriage_date == self.sim.date))])
+
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(post_miscarriage)),
+                                    index=df.index[((df.is_alive == True) & (df.la_miscarriage_date == self.sim.date))])
+
+        dfx = pd.concat([eff_prob_pph, random_draw, eff_prob_sepsis, random_draw2],
+                            axis=1)
+        dfx.columns = ['eff_prob_pph', 'random_draw', 'eff_prob_sepsis', 'random_draw2']
+
+        idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw]
+        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw2]
+        df.loc[idx_pph, 'la_pph'] = True
+        df.loc[idx_sepsis, 'la_sepsis'] = True
+
+        for individual_id in idx_pph:
+            random = self.sim.rng.random_sample()
+            if random < params['cfr_pn_pph']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause=' complication of miscarriage'),
+                                            self.sim.date)
+
+        for individual_id in idx_sepsis:
+            random = self.sim.rng.random_sample()
+            if random < params['cfr_pn_sepsis']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
+                                                                          cause='complication of miscarriage'),self.sim.date)
+
+
+#  =============================================== RESET LABOUR STATUS =================================================
+
+        # (commented out so can view effects at this point)
+#            if df.at[individual_id, 'is_alive']:
+#                df.at[individual_id, 'la_labour'] = "not_in_labour"
+
+
+        #Todo: Health System interaction events? here?
+
+
+class LabourDeathEvent (Event, IndividualScopeEventMixin):
+
+    """handles death in labour"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+        # TODO: review and restructure as needed
+
+        idx_eclamp = df.index[df.la_eclampsia & (df.due_date == self.sim.date)]
+        idx_aph = df.index[df.la_aph & (df.due_date == self.sim.date)]
+        idx_sepsis = df.index[df.la_sepsis & (df.due_date == self.sim.date)]
+        idx_ur = df.index[df.la_ur & (df.due_date == self.sim.date)]
+
         for individual_id in idx_eclamp:
             random = self.sim.rng.random_sample()
             if random < params['cfr_eclampsia']:
@@ -883,9 +956,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_ur']:
                     df.at[individual_id, 'la_still_birth_this_delivery'] = True
 
-        # Schedule death for women who die in labour
+            # Schedule death for women who die in labour
 
-        maternal_death = df.index[(df.due_date == self.sim.date) & (df.la_labour == 'preterm_labour')
+        maternal_death = df.index[(df.due_date == self.sim.date) & (df.la_labour == 'post_term_labour')
                                   & (df.la_died_in_labour == True)]
 
         for individual_id in maternal_death:
@@ -893,9 +966,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                   cause='labour'), self.sim.date)
 
 
-class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
+class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
 
-    """applies probability of postpartum complications to women who have just delivered """
+    """handles death following labour"""
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -905,225 +978,35 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-# ============================== POSTPARTUM COMPLICATIONS FOLLOWING TERM LABOUR =======================================
-
-        tl_women_pn = df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))]
-
-        eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=tl_women_pn)
-        eff_prob_pph = pd.Series(params['prob_pn_pph'], index=tl_women_pn)
-        eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=tl_women_pn)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
-                                    index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
-        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
-                                     index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
-        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
-                                     index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
-
-        dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
-                            axis=1)
-        dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
-                           'random_draw3']
-
-        idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
-        idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
-        idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
-        df.loc[idx_eclamp, 'la_eclampsia'] = True
-        df.loc[idx_pph, 'la_pph'] = True
-        df.loc[idx_sepsis, 'la_sepsis'] = True
+        idx_eclamp = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_eclampsia]
+        idx_pph = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_pph]
+        idx_sepsis = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_sepsis]
 
         for individual_id in idx_eclamp:
             random = self.sim.rng.random_sample()
             if random < params['cfr_pn_eclampsia']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
+                df.at[individual_id, 'la_died_in_labour'] = True
 
         for individual_id in idx_pph:
             random = self.sim.rng.random_sample()
             if random < params['cfr_pn_pph']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
+                df.at[individual_id, 'la_died_in_labour'] = True
 
         for individual_id in idx_sepsis:
             random = self.sim.rng.random_sample()
             if random < params['cfr_pn_sepsis']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            # TODO: consider increased likelihood of eclamptic fit in women who fitted in labour
-            # TODO: consider women who are diagnosed as septic during labour
+                df.at[individual_id, 'la_died_in_labour'] = True
 
         maternal_death = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) &
-                                       (df.la_labour == 'term_labour') & (df.la_died_in_labour == True) &
-                                       (df.is_alive == True)]
+                                  (df.la_labour == 'preterm_labour') & (df.la_died_in_labour == True) &
+                                  (df.is_alive == True)]
 
         for individual_id in maternal_death:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='postpartum labour'), self.sim.date)
+                                                                  cause='postpartum labour'), self.sim.date)
 
 
-# ============================ POSTPARTUM COMPLICATIONS FOLLOWING POST TERM  LABOUR ====================================
 
-            # TODO: risk factors
-            potl_women_pn = df.index[(df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                    (df.due_date == self.sim.date - DateOffset(days=2))]
-
-            eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=potl_women_pn)
-            eff_prob_pph = pd.Series(params['prob_pn_pph'], index=potl_women_pn)
-            eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=potl_women_pn)
-
-            random_draw = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
-                                    index=df.index[
-                                        (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                        (df.due_date == self.sim.date - DateOffset(days=2))])
-            random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
-                                     index=df.index[
-                                         (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
-            random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
-                                     index=df.index[
-                                         (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
-
-            dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
-                            axis=1)
-            dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
-                           'random_draw3']
-
-            idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
-            idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
-            idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
-            df.loc[idx_eclamp, 'la_eclampsia'] = True
-            df.loc[idx_pph, 'la_pph'] = True
-            df.loc[idx_sepsis, 'la_sepsis'] = True
-
-            for individual_id in idx_eclamp:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_eclampsia']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            for individual_id in idx_pph:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_pph']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            for individual_id in idx_sepsis:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_sepsis']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            maternal_death = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) &
-                                      (df.la_labour == 'preterm_labour') & (df.la_died_in_labour == True) &
-                                      (df.is_alive == True)]
-
-            for individual_id in maternal_death:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='postpartum labour'), self.sim.date)
-
-
-# ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR =======================================
-
-            ptl_women_pn = df.index[(df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                     (df.due_date == self.sim.date - DateOffset(days=2))]
-
-            eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=ptl_women_pn)
-            eff_prob_pph = pd.Series(params['prob_pn_pph'], index=ptl_women_pn)
-            eff_prob_sepsis = pd.Series(params['prob_pn_sepsis'], index=ptl_women_pn)
-
-            random_draw = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
-                                    index=df.index[
-                                        (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                        (df.due_date == self.sim.date - DateOffset(days=2))])
-            random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
-                                     index=df.index[
-                                         (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
-            random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
-                                     index=df.index[
-                                         (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
-
-            dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
-                            axis=1)
-            dfx.columns = ['eff_prob_eclamp', 'random_draw', 'eff_prob_pph', 'random_draw2', 'eff_prob_sepsis',
-                           'random_draw3']
-
-            idx_eclamp = dfx.index[dfx.eff_prob_eclamp > dfx.random_draw]
-            idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw2]
-            idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw3]
-            df.loc[idx_eclamp, 'la_eclampsia'] = True
-            df.loc[idx_pph, 'la_pph'] = True
-            df.loc[idx_sepsis, 'la_sepsis'] = True
-
-            for individual_id in idx_eclamp:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_eclampsia']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            for individual_id in idx_pph:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_pph']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            for individual_id in idx_sepsis:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_sepsis']:
-                    df.at[individual_id, 'la_died_in_labour'] = True
-
-            maternal_death = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) &
-                                      (df.la_labour == 'preterm_labour') & (df.la_died_in_labour == True) &
-                                      (df.is_alive == True)]
-
-            for individual_id in maternal_death:
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='postpartum labour'), self.sim.date)
-
-# ==============================  COMPLICATIONS FOLLOWING SPONTANEOUS MISCARRIAGE ======================================
-
-        # TODO: consider stage of pregnancy loss and its impact on liklihood of complications i.e retained product
-
-            post_miscarriage = df.index[ (df.is_alive == True) & (df.la_miscarriage_date == self.sim.date)]
-
-            eff_prob_pph = pd.Series(params['prob_sa_pph'], index=post_miscarriage)
-            eff_prob_sepsis = pd.Series(params['prob_sa_sepsis'], index=post_miscarriage)
-
-            random_draw = pd.Series(self.sim.rng.random_sample(size=len(post_miscarriage)),
-                                    index=df.index[((df.is_alive == True) & (df.la_miscarriage_date == self.sim.date))])
-
-            random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(post_miscarriage)),
-                                    index=df.index[((df.is_alive == True) & (df.la_miscarriage_date == self.sim.date))])
-
-            dfx = pd.concat([eff_prob_pph, random_draw, eff_prob_sepsis, random_draw2],
-                            axis=1)
-            dfx.columns = ['eff_prob_pph', 'random_draw', 'eff_prob_sepsis', 'random_draw2']
-
-            idx_pph = dfx.index[dfx.eff_prob_pph > dfx.random_draw]
-            idx_sepsis = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw2]
-            df.loc[idx_pph, 'la_pph'] = True
-            df.loc[idx_sepsis, 'la_sepsis'] = True
-
-            for individual_id in idx_pph:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_pph']:
-                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                          cause=' complication of miscarriage'),
-                                            self.sim.date)
-
-            for individual_id in idx_sepsis:
-                random = self.sim.rng.random_sample()
-                if random < params['cfr_pn_sepsis']:
-                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                          cause='complication of miscarriage'),
-                                            self.sim.date)
-
-        # TODO: here order of complications means more likely to die from pph? Review
-
-#  =============================================== RESET LABOUR STATUS =================================================
-
-        # (commented out so can view effects at this point)
-#            if df.at[individual_id, 'is_alive']:
-#                df.at[individual_id, 'la_labour'] = "not_in_labour"
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
