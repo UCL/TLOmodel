@@ -2,6 +2,7 @@
 This Module runs the counting of QALYS across all persons and logs it
 """
 
+
 import logging
 import os
 
@@ -45,7 +46,7 @@ class QALY(Module):
         """ Launch the QALY Logger to run every year
         """
 
-        ## TODO: loop through all modules to make sure they have right functionality
+        # Will add a loop through all modules to make sure they have right functionality
         sim.schedule_event(LogQALYs(self), sim.date)
 
     def on_birth(self, mother_id, child_id):

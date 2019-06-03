@@ -8,7 +8,6 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import healthsystem
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
@@ -76,8 +75,6 @@ class ChronicSyndrome(Module):
             '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
             categories=[0, 1, 2, 3, 4])
     }
-
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -218,9 +215,9 @@ class ChronicSyndrome(Module):
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
-                                                            priority=0,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
@@ -299,9 +296,9 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=1,
-                                                                    topen=self.sim.date,
-                                                                    tclose=None)
+                                                                        priority=1,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None)
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
@@ -338,9 +335,9 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
             outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module, person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
 
 # ---------------------------------------------------------------------------------
@@ -366,8 +363,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
-                                              'Intervention_Pkg_Code'])[0]
+            'Intervention_Pkg'] ==
+            'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
+            'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1],
