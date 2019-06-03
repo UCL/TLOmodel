@@ -9,28 +9,26 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 
 from tlo.methods import demography, Labour
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class EclampsiaTreatmentSBA(Module):
+class EclampsiaTreatment(Module):
     """
     This module overseas the treatment and prevention of intra and postpartum eclamptic seizures for
     women receiving skilled birth attendance
     """
 
     PARAMETERS = {
-
-        'prob_cure_mgso4': Parameter(
-            Types.REAL, 'probability of administration of magnesium sulphate preventing additonal eclamptic seizures'),
-        'prob_prevent_mgso4': Parameter(
-            Types.REAL, 'probability of administration of magnesium sulphate preventing eclampsia in severe '
-                        'preeclampsia'),
-        'prob_cure_diazepam': Parameter(
-            Types.REAL, 'probability of administration of diazepam preventing additional eclamptic seizures'),
-        'prob_cure_thiopental': Parameter(
-            Types.REAL, 'probability of administration of thiopental preventing additional eclamptic seizures')
+        'prob_recurrent_seizure': Parameter(
+            Types.REAL, 'probability of recurrent seizures following first seizure'),
+        'rr_cure_mgso4': Parameter(
+            Types.REAL, 'relative risk of additional seizures following of administration of magnesium sulphate'),
+        'rr_prevent_mgso4': Parameter(
+            Types.REAL, 'relative risk of eclampsia following administration of magnesium sulphate in women '
+                        'with severe preeclampsia'),
+        'rr_cure_diazepam': Parameter(
+            Types.REAL, 'relative risk of additional seizures following of administration of diazepam')
 
     }
 
@@ -43,10 +41,10 @@ class EclampsiaTreatmentSBA(Module):
 
         params = self.parameters
 
-        params['prob_cure_mgso4'] = 0.43  # Risk reduction for additional seizures (vs diazepam alone)
-        params['prob_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
-        params['prob_cure_diazepam'] = 0.2  # Dummy - to include if no effectiveness data?
-        params['prob_cure_thiopental'] = 0.2  # Dummy - to include if no effectiveness data?
+        params['prob_recurrent_seizure'] = 0.80  # DUMMY
+        params['rr_cure_mgso4'] = 0.43  # Risk reduction for additional seizures (vs diazepam alone)
+        params['rr_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
+        params['rr_cure_diazepam'] = 0.8  # Dummy - to include if no effectiveness data?
 
     def initialise_population(self, population):
 
@@ -60,8 +58,6 @@ class EclampsiaTreatmentSBA(Module):
 
         event = EclampsiaTreatmentLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
-
-        self.baseline_labour_scheduler(sim.population)
 
     def on_birth(self, mother_id, child_id):
 
@@ -102,23 +98,24 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
 
         # Todo: clarify with Asif if there is a better way of doing this in individual events
 
-        # 1.)Get and hold all women who are have an eclamptic fit in labour
+        # 1.)Get and hold all women who have had a eclamptic fit in labour
 
-        receiving_treatment_idx = df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)]
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date)]
 
         # 2.)Apply the probability that first line treatment will stop/prevent seizures
 
-        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
+        treatment_effect_math = params['prob_recurrent_seizure'] * params['rr_cure_mgso4']
+        treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
                                 index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
+        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
+        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
 
-        # 2.) For those where eclampsia is stopped reset property to false
+        # 2.) For those where treatment is successful reset eclampsia statment to false
 
         df.loc[successful_treatment, 'la_eclampsia'] = False
         df.loc[successful_treatment, 'ect_treat_received'] = True
@@ -126,32 +123,32 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
         # 3.) Get and hold all women whose seizures have stopped and schedule an assisted vaginal delivery as per
         # guidelines
 
-        for individual_id in successful_treatment:
-            women=df.index[df.is_pregnant] # placeholder
+    #   for individual_id in successful_treatment:
+    #      women=df.index[df.is_pregnant] # placeholder
 
             # HERE SCHEDULE ASSISTED VAGINAL DELIVERY
 
         # 4.) Get and hold all women whose seizures havent stopped and apply probability of second line treatment
         # stopping seizures
 
-        second_treatment_effect = pd.Series(params['prob_cure_diazepam'], index=unsuccessful_treatment)
+        second_treatment_math = params['prob_recurrent_seizure'] * params['rr_cure_diazepam']
+        second_treatment_effect = pd.Series(second_treatment_math, index=unsuccessful_treatment)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
-                                index=dfx.index[dfx.treatment_effect < dfx.random_draw])
+                                index=dfx.index[dfx.treatment_effect > dfx.random_draw])
 
         dfx = pd.concat([second_treatment_effect, random_draw], axis=1)
         dfx.columns = ['second_treatment_effect', 'random_draw']
-        successful_treatment_secondary = dfx.index[dfx.treatment_effect > dfx.random_draw]
-        unsuccessful_treatment_secondary = dfx.index[dfx.treatment_effect < dfx.random_draw]
+        successful_treatment_secondary = dfx.index[dfx.second_treatment_effect > dfx.random_draw]
+        unsuccessful_treatment_secondary = dfx.index[dfx.second_treatment_effect < dfx.random_draw]
 
         df.loc[successful_treatment_secondary, 'la_eclampsia'] = False
         df.loc[successful_treatment_secondary, 'ect_treat_received'] = True
 
         # 5.) If suitable and seizures controlled schedule assisted vaginal delivery
 
-        for individual_id in successful_treatment_secondary:
-            women=df.index[df.is_pregnant] # placeholder
-            # SCHEDULE AVD
+    #    for individual_id in successful_treatment_secondary:
+    #        women=df.index[df.is_pregnant] # placeholder
 
         # 5.) If seizures not controlled schedule emergency caesarean section
 
@@ -159,7 +156,8 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
             women = df.index[df.is_pregnant]  # placeholder
             # SCHEDULE CS
 
-        # Todo: Consider where death event will be scheduled?
+        # Todo: Consider where death event will be scheduled
+        # Will need to calculate somehow the remaining liklihood of death and schedule it for those who meet criteria
 
 
 class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
@@ -173,6 +171,46 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+
+        # 1.) Here the woman undergoes the same treatment cascade without any alternative delivery options
+
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date -
+                                                                        DateOffset(days=2))]
+
+        treatment_effect_math = params['prob_recurrent_seizure'] * params['rr_cure_mgso4']
+        treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
+                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])
+
+        dfx = pd.concat([treatment_effect, random_draw], axis=1)
+        dfx.columns = ['treatment_effect', 'random_draw']
+        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
+        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
+
+        df.loc[successful_treatment, 'la_eclampsia'] = False
+        df.loc[successful_treatment, 'ect_treat_received'] = True
+
+        second_treatment_math = params['prob_recurrent_seizure'] * params['rr_cure_diazepam']
+        second_treatment_effect = pd.Series(second_treatment_math, index=unsuccessful_treatment)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
+                                index=dfx.index[dfx.treatment_effect > dfx.random_draw])
+
+        dfx = pd.concat([second_treatment_effect, random_draw], axis=1)
+        dfx.columns = ['second_treatment_effect', 'random_draw']
+        successful_treatment_secondary = dfx.index[dfx.second_treatment_effect > dfx.random_draw]
+        unsuccessful_treatment_secondary = dfx.index[dfx.second_treatment_effect < dfx.random_draw]
+
+        df.loc[successful_treatment_secondary, 'la_eclampsia'] = False
+        df.loc[successful_treatment_secondary, 'ect_treat_received'] = True
+
+        # Women for who treatment has failed are passed back to the Labour module, a case fatality ratio is applied
+
+        for individual_id in unsuccessful_treatment_secondary:
+            self.sim.schedule_event(Labour.PostPartumDeathEvent(self.sim.modules['Labour'],
+                                                                               individual_id, cause='eclampsia'),
+                                    self.sim.date)
 
 
 class EclampsiaTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):

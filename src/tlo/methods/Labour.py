@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, EclampsiaTreatmentSBA
+from tlo.methods import demography, EclampsiaTreatment
 
 
 logger = logging.getLogger(__name__)
@@ -587,10 +587,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # Schedule treatment for women who develop eclampsia
 
         for individual_id in idx_eclamp:
-            self.sim.schedule_event(EclampsiaTreatmentSBA.EclampsiaTreatmentEvent(self.module, individual_id,
-                                                                  cause='eclampsia'), self.sim.date)
+            self.sim.schedule_event(EclampsiaTreatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
+                                                                               individual_id, cause='eclampsia'),
+                                    self.sim.date)
 
-    # ============================ COMPLICATIONS FOR PRETERM LABOUR ===================================================
+    # ============================ COMPLICATIONS FOR PRETERM LABOUR ====================================================
 
         # First it is determine if this woman's labour will be obstructed
         # Todo: impact of preterm labour on risk of obstructed labour
@@ -648,7 +649,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_eclamp, 'la_eclampsia'] = True
         df.loc[idx_aph, 'la_aph'] = True
         df.loc[idx_sepsis, 'la_sepsis'] = True
-        df.loc[idx_sepsis, 'la_uterine_rupture'] =True
+        df.loc[idx_ur, 'la_uterine_rupture'] =True
 
     # ============================ COMPLICATIONS FOR POST TERM LABOUR ==================================================
 
@@ -709,7 +710,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_eclamp, 'la_eclampsia'] = True
         df.loc[idx_aph, 'la_aph'] = True
         df.loc[idx_sepsis, 'la_sepsis'] = True
-        df.loc[idx_sepsis, 'la_uterine_rupture'] = True
+        df.loc[idx_ur, 'la_uterine_rupture'] = True
 
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
@@ -755,8 +756,12 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_pph, 'la_pph'] = True
         df.loc[idx_sepsis, 'la_sepsis'] = True
 
+        for individual_id in idx_eclamp:
+            self.sim.schedule_event(EclampsiaTreatment.EclampsiaTreatmentEventPostPartum(self.sim.modules['EclampsiaTreatment'],
+                                                                               individual_id, cause='eclampsia'),
+                                    self.sim.date)
 
-# ============================ POSTPARTUM COMPLICATIONS FOLLOWING POST TERM  LABOUR ====================================
+        # ============================ POSTPARTUM COMPLICATIONS FOLLOWING POST TERM  LABOUR ====================================
 
             # TODO: risk factors
         potl_women_pn = df.index[(df.la_labour == 'post_term_labour') & (df.is_alive == True) &
