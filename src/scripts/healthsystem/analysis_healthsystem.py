@@ -2,8 +2,6 @@ import datetime
 import logging
 import os
 
-import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, mockitis, qaly, chronicsyndrome

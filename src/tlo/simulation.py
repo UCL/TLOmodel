@@ -95,7 +95,7 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
-        self.end_date = end_date # store the end_date so that others can reference it
+        self.end_date = end_date  # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
         while self.event_queue:
@@ -113,8 +113,10 @@ class Simulation:
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
-        assert not 'TREATMENT_ID' in dir(event), 'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-        assert ( event.__str__().find('HSI_') < 0 ), 'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert 'TREATMENT_ID' not in dir(event), \
+            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert (event.__str__().find('HSI_') < 0), \
+            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
         self.event_queue.schedule(event, date)
 

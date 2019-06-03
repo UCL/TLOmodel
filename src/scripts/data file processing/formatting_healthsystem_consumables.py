@@ -6,8 +6,12 @@ The file is provided by Mathias Arnold and derives from the EHP work.
 
 """
 
+import pandas as pd
+import numpy as np
+
 # EHP Consumables list
-workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx'
+workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-healthsystem/From Matthias Arnold/ORIGINAL_Intervention input.xlsx'
 
 # OUTPUT RESOURCE_FILES TO:
 resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
@@ -15,10 +19,6 @@ resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 # ----------
 # ----------
 # ----------
-
-import pandas as pd
-import numpy as np
-
 # ----------
 
 wb_import = pd.read_excel(workingfile, sheet_name='Intervention input costs', header=None)
