@@ -168,7 +168,7 @@ class Labour (Module):
         params['rr_PL_OL_parity_3'] = 0.8
         params['rr_PL_OL_age_less20'] = 1.3
         params['prob_ptl'] = 0.18
-        params['prob_an_eclampsia'] = 0.5 # 0.02
+        params['prob_an_eclampsia'] = 0.02
         params['prob_an_aph'] = 0.03
         params['prob_an_sepsis'] = 0.15
         params['prob_an_ur'] = 0.06
@@ -837,7 +837,6 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_sepsis, 'la_sepsis'] = True
 
 
-
 # ==============================  COMPLICATIONS FOLLOWING SPONTANEOUS MISCARRIAGE ======================================
 
         # TODO: consider stage of pregnancy loss and its impact on liklihood of complications i.e retained product
@@ -903,7 +902,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         idx_eclamp = df.index[df.la_eclampsia & (df.due_date == self.sim.date)]
         idx_aph = df.index[df.la_aph & (df.due_date == self.sim.date)]
         idx_sepsis = df.index[df.la_sepsis & (df.due_date == self.sim.date)]
-        idx_ur = df.index[df.la_ur & (df.due_date == self.sim.date)]
+        idx_ur = df.index[df.la_uterine_rupture & (df.due_date == self.sim.date)]
 
         for individual_id in idx_eclamp:
             random = self.sim.rng.random_sample()

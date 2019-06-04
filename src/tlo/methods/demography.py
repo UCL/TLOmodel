@@ -12,7 +12,7 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import Labour
+from tlo.methods import labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -356,14 +356,14 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
 
-            self.sim.schedule_event(Labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
+            self.sim.schedule_event(labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
                                                             cause='miscarriage event'), self.sim.date)
 
             if df.at[female_id,'is_pregnant']:
                     scheduled_labour_date = df.at[female_id, 'due_date']
 
-                    self.sim.schedule_event(Labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
-                                    scheduled_labour_date)
+                    self.sim.schedule_event(labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
+                                            scheduled_labour_date)
 
                     logger.debug('birth booked for: %s', df.due_date)
 
@@ -403,7 +403,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1  # Parity includes still birth? will this run
 
-            self.sim.schedule_event(Labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
+            self.sim.schedule_event(labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
                                                                  cause='postpartum'), self.sim.date)
 
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor

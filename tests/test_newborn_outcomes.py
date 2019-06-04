@@ -4,7 +4,8 @@ import os
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, labour, eclampsia_treatment
+from tlo.methods import demography, lifestyle, labour, eclampsia_treatment, caesarean_section, sepsis_treatment, \
+    newborn_outcomes
 
 workbook_name = 'demography.xlsx'
 
@@ -27,7 +28,7 @@ def simulation():
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
     sim.register(labour.Labour())
-    sim.register(eclampsia_treatment.EclampsiaTreatment())
+    sim.register(newborn_outcomes.NewbornOutcomes())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)

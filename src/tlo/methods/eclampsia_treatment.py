@@ -7,7 +7,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, Labour
+from tlo.methods import demography, labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -108,7 +108,7 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
         treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])
+                                index=df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
@@ -181,7 +181,8 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])
+                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date -
+                                                                        DateOffset(days=2))])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
@@ -208,8 +209,8 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         # Women for who treatment has failed are passed back to the Labour module, a case fatality ratio is applied
 
         for individual_id in unsuccessful_treatment_secondary:
-            self.sim.schedule_event(Labour.PostPartumDeathEvent(self.sim.modules['Labour'],
-                                                                               individual_id, cause='eclampsia'),
+            self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'],
+                                                                individual_id, cause='eclampsia'),
                                     self.sim.date)
 
 
