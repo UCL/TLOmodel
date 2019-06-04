@@ -881,7 +881,6 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 #            if df.at[individual_id, 'is_alive']:
 #                df.at[individual_id, 'la_labour'] = "not_in_labour"
 
-
         #Todo: Health System interaction events? here?
 
 
@@ -1000,9 +999,6 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         for individual_id in maternal_death:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
-
-
-
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):
