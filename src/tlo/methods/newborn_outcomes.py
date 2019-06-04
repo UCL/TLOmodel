@@ -39,6 +39,7 @@ class NewbornOutcomes(Module):
     }
 
     PROPERTIES = {
+        'nb_preterm': Property(Types.BOOL, 'this child has been born preterm'),
         'nb_congenital_anomaly': Property(Types.BOOL, 'this child has been born with a congenital anomaly'),
         'nb_neonatal_sepsis': Property(Types.BOOL, 'this child has developed neonatal sepsis following birth'),
         'nb_neonatal_enchep': Property(Types.BOOL, 'this child has developed neonatal encephalopathy secondary to '
@@ -66,6 +67,7 @@ class NewbornOutcomes(Module):
         m = self
         rng = m.rng
 
+        df['nb_preterm'] = False
         df['nb_congenital_anomaly'] = False
         df['nb_neonatal_sepsis'] = False
         df['nb_neonatal_enchep'] = False
@@ -85,6 +87,12 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_neonatal_enchep'] = False
         df.at[child_id, 'nb_ptb_comps'] = False
 
+        # Newborns delievered at less than 37 weeks are given the preterm property
+        if df.at[mother_id, 'la_gestation_at_labour'] < 37:
+            df.at[child_id, 'nb_preterm'] = True
+        else:
+            df.at[child_id, 'nb_preterm'] = False
+
         if df.at[child_id, 'is_alive']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                             cause='newborn outcomes event'), self.sim.date)
@@ -101,25 +109,27 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # Get and hold all newborns who are born that day
-        newborns = df.index[(df.date_of_birth == self.sim.date) & df.is_alive]
+    # =================================== COMPLICATIONS IN PRETERM INFANTS ============================================
+
+        # Get and hold all preterm newborns who are born that day
+        preterm_newborns = df.index[(df.date_of_birth == self.sim.date) & df.is_alive & df.nb_preterm]
 
         # Create a series containing probability of complications for this index of newborns
-        eff_prob_cba = pd.Series(params['prob_cba'], index=newborns)
-        eff_prob_sepsis = pd.Series(params['prob_neonatal_sepsis'], index=newborns)
-        eff_prob_enceph = pd.Series(params['prob_neonatal_enceph'], index=newborns)
-        eff_prob_ptb_comp = pd.Series(params['prob_ptb_comps'], index=newborns)
+        eff_prob_cba = pd.Series(params['prob_cba'], index=preterm_newborns)
+        eff_prob_sepsis = pd.Series(params['prob_neonatal_sepsis'], index=preterm_newborns)
+        eff_prob_enceph = pd.Series(params['prob_neonatal_enceph'], index=preterm_newborns)
+        eff_prob_ptb_comp = pd.Series(params['prob_ptb_comps'], index=preterm_newborns)
 
         # Todo: Apply risk factors that will influence the probability of newborns experiencing these complications
 
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(newborns)),
-                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive])
-        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(newborns)),
-                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive])
-        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(newborns)),
-                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive])
-        random_draw4 = pd.Series(self.sim.rng.random_sample(size=len(newborns)),
-                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive])
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(preterm_newborns)),
+                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive & df.nb_preterm])
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(preterm_newborns)),
+                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive & df.nb_preterm])
+        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(preterm_newborns)),
+                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive & df.nb_preterm])
+        random_draw4 = pd.Series(self.sim.rng.random_sample(size=len(preterm_newborns)),
+                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive & df.nb_preterm])
 
         # Create a data frame comparing likelihood of complication with a random draw
         dfx = pd.concat([eff_prob_cba, random_draw, eff_prob_sepsis, random_draw2, eff_prob_enceph, random_draw3,
@@ -142,17 +152,57 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # Apply a case fatality rate to those newborns who experience a complication and schedule the death
         # todo: decide if this is the best way to organise newborn deaths and not in another event
 
-        for individual_id in idx_cba:
+        # =======================================  COMPLICATIONS IN TERM INFANTS ====================================
+
+        term_newborns = df.index[(df.date_of_birth == self.sim.date) & df.is_alive & (df.nb_preterm == False)]
+
+        # Create a series containing probability of complications for this index of newborns
+        eff_prob_cba = pd.Series(params['prob_cba'], index=term_newborns)
+        eff_prob_sepsis = pd.Series(params['prob_neonatal_sepsis'], index=term_newborns)
+        eff_prob_enceph = pd.Series(params['prob_neonatal_enceph'], index=term_newborns)
+
+        # Todo: Apply risk factors that will influence the probability of newborns experiencing these complications
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(term_newborns)),
+                                index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive &
+                                               (df.nb_preterm == False)])
+        random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(term_newborns)),
+                                 index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive &
+                                                (df.nb_preterm == False)])
+        random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(term_newborns)),
+                                 index=df.index[(df.date_of_birth == self.sim.date) & df.is_alive& (
+                                     df.nb_preterm == False)])
+
+        # Create a data frame comparing likelihood of complication with a random draw
+        dfx = pd.concat([eff_prob_cba, random_draw, eff_prob_sepsis, random_draw2, eff_prob_enceph, random_draw3],
+                        axis=1)
+
+        dfx.columns = ['eff_prob_cba', 'random_draw', 'eff_prob_sepsis', 'random_draw2', 'eff_prob_enceph',
+                       'random_draw3']
+
+        # Base on the results of the random draw a newborn will experience complications
+
+        idx_cba_t = dfx.index[dfx.eff_prob_cba > dfx.random_draw]
+        idx_sepsis_t = dfx.index[dfx.eff_prob_sepsis > dfx.random_draw2]
+        idx_enceph_t = dfx.index[dfx.eff_prob_enceph > dfx.random_draw3]
+
+        df.loc[idx_cba_t, 'nb_congenital_anomaly'] = True
+        df.loc[idx_sepsis_t, 'nb_neonatal_sepsis'] = True
+        df.loc[idx_enceph_t, 'nb_neonatal_enchep'] = True
+
+        # Get and hold all newborns that have experienced complications following birth and apply case fatality rate
+
+        for individual_id in idx_cba & idx_cba_t:
             random = self.sim.rng.random_sample()
             if random > params['cfr_cba']:
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='congenital birth anomoly'), self.sim.date)
-        for individual_id in idx_sepsis:
+        for individual_id in idx_sepsis & idx_sepsis_t:
             random = self.sim.rng.random_sample()
             if random > params['cfr_neonatal_sepsis']:
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='neonatal sepsis'), self.sim.date)
-        for individual_id in idx_enceph:
+        for individual_id in idx_enceph & idx_enceph_t:
             random = self.sim.rng.random_sample()
             if random > params['cfr_neonatal_enceph']:
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
