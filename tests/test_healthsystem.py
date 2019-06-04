@@ -79,7 +79,7 @@ def test_RunWithHealthSystem_InterventionsOn():
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
     sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
-    sim.register(mockitis.Mockitis())
+    sim.register(mockitis.Hypertension())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
     # Run the simulation and flush the logger
