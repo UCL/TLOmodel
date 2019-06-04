@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, eclampsia_treatment, Labour
+from tlo.methods import demography, eclampsia_treatment, labour
 
 
 logger = logging.getLogger(__name__)
@@ -66,7 +66,7 @@ class SepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date)])
+                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
@@ -76,8 +76,8 @@ class SepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         df.loc[successful_treatment, 'la_sepsis'] = False
 
         for individual_id in unsuccessful_treatment:
-            self.sim.schedule_event(Labour.LabourDeathEvent(self.sim.modules['Labour'],
-                                                                individual_id, cause='sepsis'),
+            self.sim.schedule_event(labour.LabourDeathEvent(self.sim.modules['Labour'],
+                                                            individual_id, cause='sepsis'),
                                     self.sim.date)
 
 
@@ -90,6 +90,27 @@ class PostPartumSepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date -
+                                                                                      DateOffset(days=2))]
+
+        treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
+
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
+                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date -
+                                                                                      DateOffset(days=2))])
+
+        dfx = pd.concat([treatment_effect, random_draw], axis=1)
+        dfx.columns = ['treatment_effect', 'random_draw']
+        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
+        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
+
+        df.loc[successful_treatment, 'la_sepsis'] = False
+
+        for individual_id in unsuccessful_treatment:
+            self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'],
+                                                                individual_id, cause='sepsis'),
+                                    self.sim.date)
 
 
 class SepsisTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):

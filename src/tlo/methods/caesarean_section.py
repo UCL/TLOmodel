@@ -8,7 +8,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, Labour, eclampsia_treatment
+from tlo.methods import demography, labour, eclampsia_treatment
 
 
 logger = logging.getLogger(__name__)
