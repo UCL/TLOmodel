@@ -51,7 +51,7 @@ class NewbornOutcomes(Module):
 
         params = self.parameters
 
-        params['prob_cba'] = 0.1 # DUMMY
+        params['prob_cba'] = 0.1  # DUMMY
         params['prob_neonatal_sepsis'] = 0.15  # DUMMY
         params['prob_neonatal_enceph'] = 0.16  # DUMMY
         params['prob_ptb_comps'] = 0.15  # DUMMY
