@@ -9,7 +9,7 @@ from tlo import Date, Simulation
 from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
 
 resourcefilepath = os.path.join(os.path.dirname(__file__), 'resources')
-# resourcefilepath='/Users/tbh03/PycharmProjects/TLOmodel/tests/resources/'
+#resourcefilepath='/Users/mc1405/PycharmProjects/TLOmodel/resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
