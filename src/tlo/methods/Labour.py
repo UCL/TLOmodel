@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, EclampsiaTreatment
+from tlo.methods import demography, eclampsia_treatment, sepsis_treatment
 
 
 logger = logging.getLogger(__name__)
@@ -585,10 +585,16 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_ur, 'la_uterine_rupture'] = True
 
         # Schedule treatment for women who develop eclampsia
+        # Apply probability of treatment? Or wait for healthsystem
 
         for individual_id in idx_eclamp:
-            self.sim.schedule_event(EclampsiaTreatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
-                                                                               individual_id, cause='eclampsia'),
+            self.sim.schedule_event(eclampsia_treatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
+                                                                                individual_id, cause='eclampsia'),
+                                    self.sim.date)
+
+        for individual_id in idx_sepsis:
+            self.sim.schedule_event(sepsis_treatment.SepsisTreatmentEvent(self.sim.modules['SepsisTreatment'],
+                                                                                individual_id, cause='Sepsis'),
                                     self.sim.date)
 
     # ============================ COMPLICATIONS FOR PRETERM LABOUR ====================================================
@@ -757,8 +763,8 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         df.loc[idx_sepsis, 'la_sepsis'] = True
 
         for individual_id in idx_eclamp:
-            self.sim.schedule_event(EclampsiaTreatment.EclampsiaTreatmentEventPostPartum(self.sim.modules['EclampsiaTreatment'],
-                                                                               individual_id, cause='eclampsia'),
+            self.sim.schedule_event(eclampsia_treatment.EclampsiaTreatmentEventPostPartum(self.sim.modules['EclampsiaTreatment'],
+                                                                                          individual_id, cause='eclampsia'),
                                     self.sim.date)
 
         # ============================ POSTPARTUM COMPLICATIONS FOLLOWING POST TERM  LABOUR ====================================
