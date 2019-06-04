@@ -136,7 +136,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
                                            # this effectively removes capabilities of HS:
                                            capabilities_coefficient=0.0))
     sim.register(lifestyle.Lifestyle())
-    sim.register(mockitis.Mockitis())
+    sim.register(mockitis.Hypertension())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
     # Run the simulation and flush the logger
