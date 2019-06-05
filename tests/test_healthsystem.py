@@ -28,7 +28,6 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-
 def test_RunWithHealthSystem_NoInterventionsDefined():
     sim = Simulation(start_date=start_date)
 
