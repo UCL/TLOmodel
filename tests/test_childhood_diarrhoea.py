@@ -3,7 +3,7 @@ import os
 
 import pytest
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle
+from tlo.methods import demography, lifestyle, childhood_diarrhoea
 
 workbook_name = 'demography.xlsx'
 
@@ -25,7 +25,7 @@ def simulation():
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
-    sim.register(iCCM.ChildhoodDiarrhoea())
+    sim.register(childhood_diarrhoea.ChildhoodDiarrhoea())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)
