@@ -174,9 +174,8 @@ class HT(Module):
         ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence,
                                                                       left_on=['age_years'],
                                                                       right_on=['age'],
-                                                                      how='inner')['probability']
+                                                                      how='left')['probability']
 
-        # TODO: looks like there is an extra line at 0 when merging
         assert alive_count == len(ht_prob) #ToDO: what does this line do?
 
         # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
