@@ -79,6 +79,7 @@ class HealthBurden(Module):
 
         # Dump them to the log
 
+        # Consider forcing coherence in naming (i.e. that YLD are attribited to DiseaseModule_name) ?
 
         pass
 
