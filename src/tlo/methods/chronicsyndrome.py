@@ -43,7 +43,7 @@ class ChronicSyndrome(Module):
             Types.REAL,
             'Probability that an individual will seak emergency care on developing extreme illneess'),
         'daly_wt_ill': Parameter(
-            Types.REAL, 'DALY weigh for being ill caused by Chronic Syndrome')
+            Types.REAL, 'DALY weight for being ill caused by Chronic Syndrome')
     }
 
     PROPERTIES = {
