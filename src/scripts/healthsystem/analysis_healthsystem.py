@@ -4,7 +4,7 @@ import os
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, mockitis, qaly, chronicsyndrome
+from tlo.methods import demography, healthsystem, lifestyle, mockitis, healthburden, chronicsyndrome
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
@@ -47,7 +47,7 @@ service_availability = '*'
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())

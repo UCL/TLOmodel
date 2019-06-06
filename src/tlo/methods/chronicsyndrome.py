@@ -1,6 +1,3 @@
-"""
-A skeleton template for disease methods.
-"""
 import logging
 
 import numpy as np
@@ -23,7 +20,7 @@ class ChronicSyndrome(Module):
         - Internal symptom tracking and health care seeking
         - Outreach campaign
         - Piggy-backing appointments
-        - Reading QALY weights and reporting qaly values related to this disease
+        - Reading DALY weights and reporting daly values related to this disease
     """
 
     PARAMETERS = {
@@ -45,8 +42,8 @@ class ChronicSyndrome(Module):
         'prob_severe_symptoms_seek_emergency_care': Parameter(
             Types.REAL,
             'Probability that an individual will seak emergency care on developing extreme illneess'),
-        'qalywt_ill': Parameter(
-            Types.REAL, 'QALY weighting')
+        'daly_wt_ill': Parameter(
+            Types.REAL, 'DALY weigh for being ill caused by Chronic Syndrome')
     }
 
     PROPERTIES = {
@@ -90,6 +87,10 @@ class ChronicSyndrome(Module):
             })
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
+
+        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        seq_code = 87   # the sequale code that is related to this disease (notionally!)
+        self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -142,8 +143,8 @@ class ChronicSyndrome(Module):
         df.loc[df.cs_has_cs, 'cs_date_acquired'] = self.sim.date - acquired_td_ago
         df.loc[df.cs_has_cs, 'cs_scheduled_date_death'] = self.sim.date + death_td_ahead
 
-        # get the QALY values that this module will use from the weight database (these codes are just random!)
-        p['qalyw_ill'] = self.sim.modules['QALY'].get_qaly_weight(87)
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
 
@@ -167,9 +168,6 @@ class ChronicSyndrome(Module):
         for person_index in indicies_of_persons_who_will_die:
             death_event = ChronicSyndromeDeathEvent(self, person_index)
             self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Schedule the event that will launch the Outreach event
         outreach_event = ChronicSyndrome_LaunchOutreachEvent(self)
@@ -210,7 +208,7 @@ class ChronicSyndrome(Module):
             piggy_back_dx_at_appt = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self, person_id)
             piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
 
-            # Arbitrarily reduce the size of appt footprint
+            # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
@@ -219,8 +217,9 @@ class ChronicSyndrome(Module):
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over the past year
+    def report_daly_values(self):
+        # This must send back a pd.Series that reports on the average daly-weights that have been experienced by
+        # persons in the previous month.
 
         logging.debug('This is chronicsyndrome reporting my health values')
 
@@ -229,7 +228,7 @@ class ChronicSyndrome(Module):
         health_values = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
             {
                 'none': 0,
-                'extreme illness': self.parameters['qalyw_ill']
+                'extreme illness': self.parameters['daly_wt_ill']
             })
 
         return health_values.loc[df.is_alive]

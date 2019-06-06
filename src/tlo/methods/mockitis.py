@@ -1,6 +1,3 @@
-"""
-A skeleton template for disease methods.
-"""
 import logging
 
 import numpy as np
@@ -20,7 +17,7 @@ class Mockitis(Module):
     It demonstrates the following behaviours in respect of the healthsystem module:
         - Declaration of TREATMENT_ID
         - Registration of the disease module
-        - Reading QALY weights and reporting qaly values related to this disease
+        - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
         - Running an "outreach" event
     """
@@ -34,12 +31,12 @@ class Mockitis(Module):
             Types.REAL, 'Probability that a treatment is successful in curing the individual'),
         'initial_prevalence': Parameter(
             Types.REAL, 'Prevalence of the disease in the initial population'),
-        'qalywt_mild_sneezing': Parameter(
-            Types.REAL, 'QALY weighting for mild sneezing'),
-        'qalywt_coughing': Parameter(
-            Types.REAL, 'QALY weighting for coughing'),
-        'qalywt_advanced': Parameter(
-            Types.REAL, 'QALY weighting for extreme emergency')
+        'daly_wt_mild_sneezing': Parameter(
+            Types.REAL, 'DALY weight for mild sneezing'),
+        'daly_wt_coughing': Parameter(
+            Types.REAL, 'DALY weight for coughing'),
+        'daly_wt_advanced': Parameter(
+            Types.REAL, 'DALY weight for extreme emergency')
     }
 
     PROPERTIES = {
@@ -79,11 +76,10 @@ class Mockitis(Module):
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
-        # get the QALY values that this module will use from the weight database
-        # (these codes are just random!)
-        p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
+        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        p['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+        p['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+        p['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -139,6 +135,9 @@ class Mockitis(Module):
         df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
         df.loc[df.mi_is_infected, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_simulation(self, sim):
 
         """Get ready for simulation start.
@@ -165,8 +164,6 @@ class Mockitis(Module):
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -224,11 +221,11 @@ class Mockitis(Module):
         logger.debug('This is Mockitis, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
+    def report_daly_values(self):
+        # This must send back a pd.Series that reports on the average daly-weights that have been experienced by
+        # persons in the previous month.
 
-        # logger.debug('This is mockitis reporting my health values')
+        logger.debug('This is mockitis reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -236,9 +233,9 @@ class Mockitis(Module):
 
         health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
             'none': 0,
-            'mild sneezing': p['qalywt_mild_sneezing'],
-            'coughing and irritable': p['qalywt_coughing'],
-            'extreme emergency': p['qalywt_advanced']
+            'mild sneezing': p['daly_wt_mild_sneezing'],
+            'coughing and irritable': p['daly_wt_coughing'],
+            'extreme emergency': p['daly_wt_advanced']
         })
         return health_values.loc[df.is_alive]
 
