@@ -35,15 +35,21 @@ class HT(Module):
     """
 
     PARAMETERS = {
-        'prob_HT_basic': Parameter(Types.REAL,
-                                    'Probability of getting hypertension given no pre-existing condition'),
-        #'prob_HTgivenHC': Parameter(Types.REAL, 'Probability of getting hypertension given pre-existing high cholesterol'),
-        #'prob_HTgivenDiab': Parameter(Types.REAL,
-        #                            'Probability of getting hypertension given pre-existing diabetes'),
-        #'prob_HTgivenHIV': Parameter(Types.REAL,
-        #                            'Probability of getting hypertension given pre-existing HIV'),
-        'prob_success_treat': Parameter(Types.REAL,
-                                    'Probability of intervention for hypertension reduced blood pressure to normal levels'),
+
+        # 1. Risk parameters
+        'prob_HT_basic': Parameter(Types.REAL,              'Probability of hypertension given no pre-existing condition'),
+        'prob_HTgivenHC': Parameter(Types.REAL,             'Probability of getting hypertension given pre-existing high cholesterol'),
+        'prob_HTgivenDiab': Parameter(Types.REAL,           'Probability of getting hypertension given pre-existing diabetes'),
+        'prob_HTgivenHIV': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing HIV'),
+
+        # 2. Health care parameters
+        'prob_success_diag': Parameter(Types.REAL,          'Probability of being diagnosed'),
+        'prob_success_treat': Parameter(Types.REAL,         'Probability of being treated'),
+        'prob_success_contr': Parameter(Types.REAL,         'Probability achieving normal blood pressure levels on medication'),
+        'level_of_symptoms': Parameter(Types.CATEGORICAL,   'Level of symptoms that the individual will have'),
+        'qalywt_mild_sneezing': Parameter(Types.REAL,       'QALY weighting for mild sneezing'),
+        'qalywt_coughing': Parameter(Types.REAL,            'QALY weighting for coughing'),
+        'qalywt_advanced': Parameter(Types.REAL,            'QALY weighting for extreme emergency'),
 
         # TODO: Merge/Delete underneath after testing above
         'p_infection': Parameter(
@@ -63,27 +69,27 @@ class HT(Module):
     }
 
     PROPERTIES = {
-        'ht_risk': Property(Types.REAL, 'Risk of hypertension given pre-existing condition'),
-        'ht_current_status': Property(Types.BOOL, 'Current hypertension status'),
-        'ht_historic_status': Property(Types.CATEGORICAL,
-                                       'Historical status: N=never; C=Current, P=Previous',
-                                       categories=['N', 'C', 'P']),
-        'ht_case_date': Property(Types.DATE, 'Date of latest hypertension'),
-
-        'ht_diag_status': Property(Types.CATEGORICAL,
-                                        'Status: N=No; Y=Yes',
-                                        categories=['N', 'C', 'P']),
-        'ht_diag_date': Property(Types.DATE, 'Date of latest hypertension diagnosis'),
-
-        'ht_treat_status': Property(Types.CATEGORICAL,
-                                        'Status: N=never; C=Current, P=Previous',
-                                        categories=['N', 'C', 'P']),
-        'ht_treat_date': Property(Types.DATE, 'Date of latest hypertension treatment'),
-
-        'ht_contr_status': Property(Types.CATEGORICAL,
-                                        'Status: N=No; Y=Yes',
-                                        categories=['N', 'C', 'P']),
-        'ht_contr_date': Property(Types.DATE, 'Date of latest hypertension control'),
+        # 1. Disease properties
+        'ht_risk': Property(Types.REAL,                       'Risk of hypertension given pre-existing condition'),
+        'ht_case_date': Property(Types.DATE,                  'Date of latest hypertension'),
+        'ht_current_status': Property(Types.BOOL,             'Current hypertension status'),
+        'ht_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
+                                                               categories=['N', 'C', 'P']),
+        # 2. Health care properties
+        'ht_diag_date': Property(Types.DATE,                  'Date of latest hypertension diagnosis'),
+        'ht_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
+                                                               categories=['N', 'C', 'P']),
+        'ht_treat_date': Property(Types.DATE,                 'Date of latest hypertension treatment'),
+        'ht_treat_status': Property(Types.CATEGORICAL,        'Status: N=never; C=Current, P=Previous',
+                                                               categories=['N', 'C', 'P']),
+        'ht_contr_date': Property(Types.DATE,                 'Date of latest hypertension control'),
+        'ht_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
+                                                               categories=['N', 'C', 'P']),
+        'ht_specific_symptoms': Property(Types.CATEGORICAL,   'Level of symptoms for HT specifically',
+                                                               categories=['none', 'mild sneezing', 'coughing and irritable', 'extreme emergency']),
+        'ht_unified_symptom_code': Property(Types.CATEGORICAL,'Level of symptoms on the standardised scale (governing health-care seeking): '
+                                                              '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
+                                                               categories=[0, 1, 2, 3, 4]),
 
         # TODO: Merge/Delete underneath after testing above
         'mi_is_infected': Property(
@@ -108,14 +114,32 @@ class HT(Module):
     }
 
     def read_parameters(self, data_folder):
+        #  TODO: Read in risks from file, test it 'holds' them in python
+        # TODO: update to data HR and varialbles here and above
+
+        # 1. Shortcut to parameters
         p = self.parameters
 
-        p = self.parameters
-        p['prob_HT_basic'] = 1.0
-        p['prob_HTgivenHC'] = 2.0
-        # p['prob_HTgivenDiab'] = 1.4
-        # p['prob_HTgivenHIV'] = 1.49
+        # 2. Risk parameters
+        p['prob_HT_basic']      = 1.0
+        p['prob_HTgivenHC']     = 2.0
+        p['prob_HTgivenDiab']   = 1.4
+        p['prob_HTgivenHIV']    = 1.49
+
+        # 3. Health care parameter
+        p['prob_success_diag']  = 0.5
         p['prob_success_treat'] = 0.5
+        p['prob_success_contr'] = 0.5
+        p['level_of_symptoms']  = pd.DataFrame(data={'level_of_symptoms':
+                                      ['none',
+                                      'mild sneezing',
+                                      'coughing and irritable',
+                                      'extreme emergency'],
+                                      'probability': [0.25, 0.25, 0.25, 0.25]
+                                    })
+        p['qalywt_mild_sneezing']     = self.sim.modules['QALY'].get_qaly_weight(50)
+        p['qalywt_coughing']          = self.sim.modules['QALY'].get_qaly_weight(50)
+        p['qalywt_extreme_emergency'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
         # TODO: Merge/Delete underneath after testing above
         p['p_infection'] = 0.001
@@ -134,6 +158,7 @@ class HT(Module):
         # (these codes are just random!)
         p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
+        p['qalywt_extreme_emergency'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -146,9 +171,9 @@ class HT(Module):
         """
 
         # 1. Define key variables
-        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        df = population.props                               # Shortcut to the data frame storing individual data
 
-        # 2. Set default for properties
+        # 2. Disease and health care properties
         df.loc[df.is_alive,'ht_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
         df.loc[df.is_alive,'ht_current_status'] = False     # Default setting: no one has hypertension
         df.loc[df.is_alive,'ht_historic_status'] = 'N'      # Default setting: no one has hypertension
@@ -157,8 +182,10 @@ class HT(Module):
         df.loc[df.is_alive,'ht_diag_status'] = 'N'          # Default setting: no one is diagnosed
         df.loc[df.is_alive,'ht_treat_date'] = pd.NaT        # Default setting: no one is treated
         df.loc[df.is_alive,'ht_treat_status'] = 'N'         # Default setting: no one is treated
-        df.loc[df.is_alive,'ht_case_date'] = pd.NaT         # Default setting: no one is controlled
-        df.loc[df.is_alive,'ht_case_status'] = 'N'          # Default setting: no one is controlled
+        df.loc[df.is_alive,'ht_contr_date'] = pd.NaT        # Default setting: no one is controlled
+        df.loc[df.is_alive,'ht_contr_status'] = 'N'         # Default setting: no one is controlled
+        df.loc[df.is_alive,'ht_specific_symptoms'] = 'none' # Default setting: no one has symptoms
+        df.loc[df.is_alive,'ht_unified_symptom_code'] = 0   # Default setting: no one has symptoms
 
         # TODO: Merge/Delete underneath after testing above
         df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
@@ -175,9 +202,9 @@ class HT(Module):
                                                                       left_on=['age_years'],
                                                                       right_on=['age'],
                                                                       how='left')['probability']
-
         assert alive_count == len(ht_prob) #ToDO: what does this line do?
 
+        # ToDO: Re-add this later after testing HT alone
         # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
         #df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
         #df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
@@ -185,18 +212,19 @@ class HT(Module):
         # 3.2. Finish assigning prevalene
         ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
-        df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)  # Assign prevalence at t0
-
-        # 4. Count all individuals by status at the start
+        df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
         hypertension_count = (df.is_alive & df.ht_current_status).sum()
 
-        # 5. Set date of hypertension amongst those with prevalent cases
-        ht_years_ago = self.rng.exponential(scale=5, size=hypertension_count)
-        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d') #TODO: set current date
-
-        # 5.1 Set the properties of those with prevalent hypertension
-        df.loc[df.is_alive & df.ht_current_status, 'ht_date_case'] = self.sim.date - infected_td_ago
+        # 4. Set relevant properties of those with prevalent hypertension
+        df.loc[df.is_alive & df.ht_current_status, 'ht_date_case'] = self.sim.date - 1 # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
+
+        # 5. Assign level of symptoms
+        level_of_symptoms = self.parameters['level_of_symptoms']
+        symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
+                                   size=hypertension_count,
+                                   p=level_of_symptoms.probability)
+        df.loc[df.ht_current_status, 'ht_specific_symptoms'] = symptoms
 
         print("\n", "Population has been initialised, prevalent cases have been assigned.  ")
 
