@@ -71,7 +71,7 @@ class HT(Module):
     PROPERTIES = {
         # 1. Disease properties
         'ht_risk': Property(Types.REAL,                       'Risk of hypertension given pre-existing condition'),
-        'ht_case_date': Property(Types.DATE,                  'Date of latest hypertension'),
+        'ht_date': Property(Types.DATE,                  'Date of latest hypertension'),
         'ht_current_status': Property(Types.BOOL,             'Current hypertension status'),
         'ht_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
                                                                categories=['N', 'C', 'P']),
@@ -151,7 +151,7 @@ class HT(Module):
                                       'mild sneezing',
                                       'coughing and irritable',
                                       'extreme emergency'],
-                'probability': [0.25, 0.25, 0.25, 0.25]
+                'probability': [0.05, 0.1, 0.05, 0.8]
             })
 
         # get the QALY values that this module will use from the weight database
@@ -177,7 +177,7 @@ class HT(Module):
         df.loc[df.is_alive,'ht_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
         df.loc[df.is_alive,'ht_current_status'] = False     # Default setting: no one has hypertension
         df.loc[df.is_alive,'ht_historic_status'] = 'N'      # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_case_date'] = pd.NaT         # Default setting: no one has hypertension
+        df.loc[df.is_alive,'ht_date'] = pd.NaT         # Default setting: no one has hypertension
         df.loc[df.is_alive,'ht_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
         df.loc[df.is_alive,'ht_diag_status'] = 'N'          # Default setting: no one is diagnosed
         df.loc[df.is_alive,'ht_treat_date'] = pd.NaT        # Default setting: no one is treated
@@ -202,7 +202,7 @@ class HT(Module):
                                                                       left_on=['age_years'],
                                                                       right_on=['age'],
                                                                       how='left')['probability']
-        assert alive_count == len(ht_prob) #ToDO: what does this line do?
+        assert alive_count == len(ht_prob)
 
         # ToDO: Re-add this later after testing HT alone
         # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
@@ -212,11 +212,14 @@ class HT(Module):
         # 3.2. Finish assigning prevalene
         ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
+        prevalence = sum(random_numbers < ht_prob)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
         hypertension_count = (df.is_alive & df.ht_current_status).sum()
 
         # 4. Set relevant properties of those with prevalent hypertension
-        df.loc[df.is_alive & df.ht_current_status, 'ht_date_case'] = self.sim.date - 1 # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
+        ht_years_ago = 1
+        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
+        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
         # 5. Assign level of symptoms
@@ -275,18 +278,17 @@ class HT(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=1)) # ToDo: need to update this to adjust to time used for this method
 
         # add an event to log to screen
-        sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(HypLoggingEvent(self), sim.date + DateOffset(months=6))
 
-        # ToDo: understand the below, remove if not necessary
         # a shortcut to the dataframe storing data for individiuals
         df = sim.population.props
 
-        # add the death event of infected individuals
+        # add the death event of infected individuals # TODO: could be used for testing later
         # schedule the mockitis death event
-        people_who_will_die = df.index[df.mi_is_infected]
-        for person_id in people_who_will_die:
-            self.sim.schedule_event(MockitisDeathEvent(self, person_id),
-                                    df.at[person_id, 'mi_scheduled_date_death'])
+        #people_who_will_die = df.index[df.mi_is_infected]
+        #for person_id in people_who_will_die:
+        #    self.sim.schedule_event(MockitisDeathEvent(self, person_id),
+        #                            df.at[person_id, 'mi_scheduled_date_death'])
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -305,19 +307,20 @@ class HT(Module):
         """
 
         df = self.sim.population.props
-        df.at[child_id, 'ht_risk'] = 1.0                # Default setting: no risk given pre-existing conditions
-        df.at[child_id, 'ht_current_status'] = False    # Default setting: no one has hypertension
-        df.at[child_id, 'ht_historic_status'] = 'N'     # Default setting: no one has hypertension
-        df.at[child_id, 'ht_case_date'] = pd.NaT        # Default setting: no one has hypertension
-        df.at[child_id, 'ht_diag_date'] = pd.NaT        # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_status'] = 'N'         # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_date'] = pd.NaT        # Default setting: no one is treated
-        df.at[child_id, 'ht_diag_status'] = 'N'         # Default setting: no one is treated
-        df.at[child_id, 'ht_contr_date'] = pd.NaT       # Default setting: no one is controlled
-        df.at[child_id, 'ht_contr_status'] = 'N'        # Default setting: no one is controlled
+        df.at[child_id, 'ht_risk'] = 1.0                        # Default setting: no risk given pre-existing conditions
+        df.at[child_id, 'ht_current_status'] = False            # Default setting: no one has hypertension
+        df.at[child_id, 'ht_historic_status'] = 'N'             # Default setting: no one has hypertension
+        df.at[child_id, 'ht_date'] = pd.NaT                # Default setting: no one has hypertension
+        df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is diagnosed
+        df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is diagnosed
+        df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is treated
+        df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is treated
+        df.at[child_id, 'ht_contr_date'] = pd.NaT               # Default setting: no one is controlled
+        df.at[child_id, 'ht_contr_status'] = 'N'                # Default setting: no one is controlled
+        df.loc[df.is_alive, 'ht_specific_symptoms'] = 'none'    # Default setting: no one has symptoms
+        df.loc[df.is_alive, 'ht_unified_symptom_code'] = 0      # Default setting: no one has symptoms
 
-        # TODO: REMOVE THIS!
-        df.at[child, 'hc_current_status'] = False
+
 
         # ToDo: Merge/Delete this later
         df = self.sim.population.props  # shortcut to the population props dataframe
@@ -346,8 +349,8 @@ class HT(Module):
             df.at[child_id, 'mi_unified_symptom_code'] = 0
 
             # Schedule death event:
-            death_event = MockitisDeathEvent(self, child_id)
-            self.sim.schedule_event(death_event, df.at[child_id, 'mi_scheduled_date_death'])
+            #death_event = MockitisDeathEvent(self, child_id)
+            #self.sim.schedule_event(death_event, df.at[child_id, 'mi_scheduled_date_death'])
 
         else:
             # Assign the default for a child who is not infected
@@ -379,7 +382,7 @@ class HT(Module):
 
         p = self.parameters
 
-        health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive, 'ht_specific_symptoms'].map({
             'none': 0,
             'mild sneezing': p['qalywt_mild_sneezing'],
             'coughing and irritable': p['qalywt_coughing'],
@@ -397,6 +400,11 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1)) # TODO: change time scale if needed
+        self.prob_HT_basic = module.parameters['prob_HT_basic']
+        self.prob_HTgivenHC = module.parameters['prob_HTgivenHC']
+        self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
+        self.prob_HTgivenHIV = module.parameters['prob_HTgivenHIV']
+        self.prob_success_treat = module.parameters['prob_success_treat']
 
         # ToDO: need to add code from original if it bugs.
 
@@ -414,11 +422,19 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
 
+        if df.is_alive.sum():
+            prevalence = len(currently_ht_yes) / (
+                len(currently_ht_yes) + len(currently_ht_no))
+        else:
+            prevalence = 0
+
+        print("\n", "Time is: ", self.sim.date, "Prevalence is ]: ", prevalence)
+
         # 3. Handle new cases of hypertension
         ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
                                                                                         left_on=['age_years'],
                                                                                         right_on=['age'],
-                                                                                        how='inner').set_index(
+                                                                                        how='left').set_index(
             'person')['probability']
 
         assert len(currently_ht_no) == len(ht_prob)
@@ -440,12 +456,37 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[ht_idx, 'ht_current_status'] = True
         df.loc[ht_idx, 'ht_historic_status'] = 'C'
-        df.loc[ht_idx, 'ht_date_case'] = self.sim.date
+        df.loc[ht_idx, 'ht_date'] = self.sim.date
+
+        # 5. Assign level of symptoms
+        level_of_symptoms = self.parameters['level_of_symptoms']
+        symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
+                                   size=ht_idx,
+                                   p=level_of_symptoms.probability)
+        df.loc[ht_idx, 'ht_specific_symptoms'] = symptoms
 
         print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  ")
 
+        # 6. Determine if anyone with severe symptoms will seek care
+        serious_symptoms = (df['is_alive']) & ((df['ht_specific_symptoms'] == 'extreme emergency') | (
+            df['ht_specific_symptoms'] == 'coughing and irritiable'))
 
+        seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
+        for i in df.index[serious_symptoms]:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
+            seeks_care[i] = self.module.rng.rand() < prob
 
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care == True]:
+                logger.debug(
+                    'This is HTN, scheduling Hyp_PresentsForCareWithSevereSymptoms for person %d',
+                    person_index)
+                event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
 
 
         # TODO: remove/merge below after test
@@ -484,9 +525,9 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'mi_unified_symptom_code'] = 0
 
             # schedule death events for newly infected individuals
-            for person_index in infected_idx:
-                death_event = MockitisDeathEvent(self, person_index)
-                self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
+            #for person_index in infected_idx:
+            #    death_event = MockitisDeathEvent(self, person_index)
+            #    self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
             # Determine if anyone with severe symptoms will seek care
             serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
@@ -502,7 +543,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
                     logger.debug(
                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
                         person_index)
-                    event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+                    event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
                     self.sim.modules['HealthSystem'].schedule_event(event,
                                                                     priority=2,
                                                                     topen=self.sim.date,
@@ -537,7 +578,7 @@ class HTDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+class HSI_Hyp_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
 
     """
     This is a Health System Interaction Event.
@@ -555,7 +596,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
+        self.TREATMENT_ID = 'Hyp_PresentsForCareWithSevereSymptoms'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ALERT_OTHER_DISEASES = []
@@ -563,15 +604,15 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
     def apply(self, person_id):
 
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
+        logger.debug('This is HSI_Hyp_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
 
         if df.at[person_id, 'age_years'] >= 15:
             logger.debug(
-                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
+                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
                 person_id)
-            event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
+            event = HSI_Hyp_StartTreatment(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=2,
                                                             topen=self.sim.date,
@@ -579,18 +620,18 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
         else:
             logger.debug(
-                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
+                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
                 person_id)
 
             date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
+            event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=2,
                                                             topen=date_turns_15,
                                                             tclose=date_turns_15 + DateOffset(months=12))
 
 
-class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
+class HSI_Hyp_StartTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -733,7 +774,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
 
 
-class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class HypLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'mockitis status'
         """
