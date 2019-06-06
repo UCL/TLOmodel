@@ -6,7 +6,7 @@ import os
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
+from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, healthburden
 
 resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
 start_date = Date(2010, 1, 1)
@@ -52,7 +52,7 @@ def test_RunWithHealthSystem_WithQALY():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
     # Run the simulation and flush the logger
@@ -73,7 +73,7 @@ def test_RunWithHealthSystem_InterventionsOff():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-    sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -97,7 +97,7 @@ def test_RunWithHealthSystem_InterventionsOn():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-    sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.QALY(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
