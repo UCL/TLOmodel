@@ -35,46 +35,38 @@ class HT(Module):
     """
 
     PARAMETERS = {
+        # ToDo: Update HR and variables to mirror finalised method
+        # ToDO: Remove symptoms (and QALYs)
 
         # 1. Risk parameters
-        'prob_HT_basic': Parameter(Types.REAL,              'Probability of hypertension given no pre-existing condition'),
-        'prob_HTgivenHC': Parameter(Types.REAL,             'Probability of getting hypertension given pre-existing high cholesterol'),
-        'prob_HTgivenDiab': Parameter(Types.REAL,           'Probability of getting hypertension given pre-existing diabetes'),
-        'prob_HTgivenHIV': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing HIV'),
+        'prob_HT_basic': Parameter(Types.REAL,               'Probability of hypertension given no pre-existing condition'),
+        'prob_HTgivenHC': Parameter(Types.REAL,              'Probability of getting hypertension given pre-existing high cholesterol'),
+        'prob_HTgivenDiab': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing diabetes'),
+        'prob_HTgivenHIV': Parameter(Types.REAL,             'Probability of getting hypertension given pre-existing HIV'),
+        'prob_death': Parameter(Types.REAL,                  'Probability of dying'),
 
         # 2. Health care parameters
-        'prob_success_diag': Parameter(Types.REAL,          'Probability of being diagnosed'),
-        'prob_success_treat': Parameter(Types.REAL,         'Probability of being treated'),
-        'prob_success_contr': Parameter(Types.REAL,         'Probability achieving normal blood pressure levels on medication'),
-        'level_of_symptoms': Parameter(Types.CATEGORICAL,   'Level of symptoms that the individual will have'),
-        'qalywt_mild_sneezing': Parameter(Types.REAL,       'QALY weighting for mild sneezing'),
-        'qalywt_coughing': Parameter(Types.REAL,            'QALY weighting for coughing'),
-        'qalywt_advanced': Parameter(Types.REAL,            'QALY weighting for extreme emergency'),
+        'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'),
+        'prob_treat': Parameter(Types.REAL,                  'Probability of being treated'),
+        'prob_contr': Parameter(Types.REAL,                  'Probability achieving normal blood pressure levels on medication'),
+        'level_of_symptoms': Parameter(Types.CATEGORICAL,    'Level of symptoms that the individual will have'),
+        'qalywt_mild_sneezing': Parameter(Types.REAL,        'QALY weighting for mild sneezing'),
+        'qalywt_coughing': Parameter(Types.REAL,             'QALY weighting for coughing'),
+        'qalywt_advanced': Parameter(Types.REAL,             'QALY weighting for extreme emergency'),
 
-        # TODO: Merge/Delete underneath after testing above
-        'p_infection': Parameter(
-            Types.REAL, 'Probability that an uninfected individual becomes infected'),
-        'level_of_symptoms': Parameter(
-            Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
-        'p_cure': Parameter(
-            Types.REAL, 'Probability that a treatment is successful in curing the individual'),
-        'initial_prevalence': Parameter(
-            Types.REAL, 'Prevalence of the disease in the initial population'),
-        'qalywt_mild_sneezing': Parameter(
-            Types.REAL, 'QALY weighting for mild sneezing'),
-        'qalywt_coughing': Parameter(
-            Types.REAL, 'QALY weighting for coughing'),
-        'qalywt_advanced': Parameter(
-            Types.REAL, 'QALY weighting for extreme emergency')
     }
 
     PROPERTIES = {
+        # ToDo: Remove death and symptoms
+
         # 1. Disease properties
         'ht_risk': Property(Types.REAL,                       'Risk of hypertension given pre-existing condition'),
-        'ht_date': Property(Types.DATE,                  'Date of latest hypertension'),
+        'ht_date': Property(Types.DATE,                       'Date of latest hypertension'),
         'ht_current_status': Property(Types.BOOL,             'Current hypertension status'),
         'ht_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
                                                                categories=['N', 'C', 'P']),
+        'ht_death_date': Property(Types.DATE,       'Date of scheduled death of infected individual'),
+
         # 2. Health care properties
         'ht_diag_date': Property(Types.DATE,                  'Date of latest hypertension diagnosis'),
         'ht_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
@@ -91,31 +83,11 @@ class HT(Module):
                                                               '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
                                                                categories=[0, 1, 2, 3, 4]),
 
-        # TODO: Merge/Delete underneath after testing above
-        'mi_is_infected': Property(
-            Types.BOOL, 'Current status of mockitis'),
-        'mi_status': Property(
-            Types.CATEGORICAL, 'Historical status: N=never; C=currently; P=previously',
-            categories=['N', 'C', 'P']),
-        'mi_date_infected': Property(
-            Types.DATE, 'Date of latest infection'),
-        'mi_scheduled_date_death': Property(
-            Types.DATE, 'Date of scheduled death of infected individual'),
-        'mi_date_cure': Property(
-            Types.DATE, 'Date an infected individual was cured'),
-        'mi_specific_symptoms': Property(
-            Types.CATEGORICAL, 'Level of symptoms for mockitiis specifically',
-            categories=['none', 'mild sneezing', 'coughing and irritable', 'extreme emergency']),
-        'mi_unified_symptom_code': Property(
-            Types.CATEGORICAL,
-            'Level of symptoms on the standardised scale (governing health-care seeking): '
-            '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
-            categories=[0, 1, 2, 3, 4])
     }
 
     def read_parameters(self, data_folder):
-        #  TODO: Read in risks from file, test it 'holds' them in python
-        # TODO: update to data HR and varialbles here and above
+        # TODO: Read in risks from file, test it 'holds' them in python
+        # TODO: update to data HR and variables here and above
 
         # 1. Shortcut to parameters
         p = self.parameters
@@ -125,11 +97,12 @@ class HT(Module):
         p['prob_HTgivenHC']     = 2.0
         p['prob_HTgivenDiab']   = 1.4
         p['prob_HTgivenHIV']    = 1.49
+        p['prob_death']         = 0.5
 
         # 3. Health care parameter
-        p['prob_success_diag']  = 0.5
-        p['prob_success_treat'] = 0.5
-        p['prob_success_contr'] = 0.5
+        p['prob_diag']          = 0.5
+        p['prob_treat']         = 0.5
+        p['prob_contr']         = 0.5
         p['level_of_symptoms']  = pd.DataFrame(data={'level_of_symptoms':
                                       ['none',
                                       'mild sneezing',
@@ -141,24 +114,6 @@ class HT(Module):
         p['qalywt_coughing']          = self.sim.modules['QALY'].get_qaly_weight(50)
         p['qalywt_extreme_emergency'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
-        # TODO: Merge/Delete underneath after testing above
-        p['p_infection'] = 0.001
-        p['p_cure'] = 0.50
-        p['initial_prevalence'] = 0.5
-        p['level_of_symptoms'] = pd.DataFrame(
-            data={
-                'level_of_symptoms': ['none',
-                                      'mild sneezing',
-                                      'coughing and irritable',
-                                      'extreme emergency'],
-                'probability': [0.05, 0.1, 0.05, 0.8]
-            })
-
-        # get the QALY values that this module will use from the weight database
-        # (these codes are just random!)
-        p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_extreme_emergency'] = self.sim.modules['QALY'].get_qaly_weight(50)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -177,7 +132,8 @@ class HT(Module):
         df.loc[df.is_alive,'ht_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
         df.loc[df.is_alive,'ht_current_status'] = False     # Default setting: no one has hypertension
         df.loc[df.is_alive,'ht_historic_status'] = 'N'      # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_date'] = pd.NaT         # Default setting: no one has hypertension
+        df.loc[df.is_alive,'ht_date'] = pd.NaT              # Default setting: no one has hypertension
+        df.loc[df.is_alive,'ht_death_date'] = pd.NaT        # Default setting: no one has hypertension
         df.loc[df.is_alive,'ht_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
         df.loc[df.is_alive,'ht_diag_status'] = 'N'          # Default setting: no one is diagnosed
         df.loc[df.is_alive,'ht_treat_date'] = pd.NaT        # Default setting: no one is treated
@@ -187,82 +143,46 @@ class HT(Module):
         df.loc[df.is_alive,'ht_specific_symptoms'] = 'none' # Default setting: no one has symptoms
         df.loc[df.is_alive,'ht_unified_symptom_code'] = 0   # Default setting: no one has symptoms
 
-        # TODO: Merge/Delete underneath after testing above
-        df.loc[df.is_alive, 'mi_is_infected'] = False  # default: no individuals infected
-        df.loc[df.is_alive, 'mi_status'] = 'N'  # default: never infected
-        df.loc[df.is_alive, 'mi_date_infected'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_scheduled_date_death'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_date_cure'] = pd.NaT  # default: not a time
-        df.loc[df.is_alive, 'mi_specific_symptoms'] = 'none'
-        df.loc[df.is_alive, 'mi_unified_symptom_code'] = 0
-
         # 3. Assign prevalence as per data
         alive_count = df.is_alive.sum()
-        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence,
-                                                                      left_on=['age_years'],
-                                                                      right_on=['age'],
-                                                                      how='left')['probability']
-        assert alive_count == len(ht_prob)
 
         # ToDO: Re-add this later after testing HT alone
-        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
-        #df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
-        #df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
-
-        # 3.2. Finish assigning prevalene
+        # 3.1 First get relative risk for hypertension
+        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
+                                                                      how='left')['probability']
+        # df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
+        assert alive_count == len(ht_prob)
         ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
-        prevalence = sum(random_numbers < ht_prob)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
         hypertension_count = (df.is_alive & df.ht_current_status).sum()
 
-        # 4. Set relevant properties of those with prevalent hypertension
-        ht_years_ago = 1
-        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
-        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
-        df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
+        # 3.2. Calculate prevalence
+        count =df.ht_current_status.sum()
+        prevalence = (sum(count) / alive_count) * 100
 
-        # 5. Assign level of symptoms
+        # 4. Assign level of symptoms
         level_of_symptoms = self.parameters['level_of_symptoms']
         symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
                                    size=hypertension_count,
                                    p=level_of_symptoms.probability)
         df.loc[df.ht_current_status, 'ht_specific_symptoms'] = symptoms
 
-        print("\n", "Population has been initialised, prevalent cases have been assigned.  ")
-
-        # ToDo: Merge/Delete below code
-
-        # randomly selected some individuals as infected
-        initial_infected = self.parameters['initial_prevalence']
-        df.loc[df.is_alive, 'mi_is_infected'] = self.rng.random_sample(size=alive_count) < initial_infected
-        df.loc[df.mi_is_infected, 'mi_status'] = 'C'
-
-        # Assign time of infections and dates of scheduled death for all those infected
-        # get all the infected individuals
-        infected_count = df.mi_is_infected.sum()
-
-        # Assign level of symptoms
-        level_of_symptoms = self.parameters['level_of_symptoms']
-        symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
-                                   size=infected_count,
-                                   p=level_of_symptoms.probability)
-        df.loc[df.mi_is_infected, 'mi_specific_symptoms'] = symptoms
-
-        # date of infection of infected individuals
-        # sample years in the past
-        infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
-        # pandas requires 'timedelta' type for date calculations
-        # TODO: timedelta calculations should always be in days
-        infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
-
-        # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=20, size=infected_count)
+        # 5. Set date of death # TODO: correct this to parameter not distribution and bbelow in event
+        death_years_ahead = np.random.exponential(scale=20, size=count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
-        # set the properties of infected individuals
-        df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
-        df.loc[df.mi_is_infected, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
+        # 6. Set relevant properties of those with prevalent hypertension
+        ht_years_ago = 1
+        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
+        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
+        df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
+        df.loc[df.is_alive & df.ht_current_status, 'ht_death_date'] = self.sim.date + death_td_ahead
+
+        print("\n", "Population has been initialised, prevalent cases have been assigned.  "
+              "\n", "Prevalence of hypertension is: ", prevalence, "%")
+
 
     def initialise_simulation(self, sim):
 
@@ -273,28 +193,28 @@ class HT(Module):
         It is a good place to add initial events to the event queue.
         """
 
-        # add the basic event
+        # 1. Add  basic event
         event = HTEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=1)) # ToDo: need to update this to adjust to time used for this method
 
-        # add an event to log to screen
+        # 2. Add an event to log to screen
         sim.schedule_event(HypLoggingEvent(self), sim.date + DateOffset(months=6))
 
-        # a shortcut to the dataframe storing data for individiuals
+        # 3. Add shortcut to the data frame
         df = sim.population.props
 
         # add the death event of infected individuals # TODO: could be used for testing later
         # schedule the mockitis death event
         #people_who_will_die = df.index[df.mi_is_infected]
         #for person_id in people_who_will_die:
-        #    self.sim.schedule_event(MockitisDeathEvent(self, person_id),
+        #    self.sim.schedule_event(HypDeathEvent(self, person_id),
         #                            df.at[person_id, 'mi_scheduled_date_death'])
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Schedule the outreach event... # ToDo: need to test this with HT!
-        # event = MockitisOutreachEvent(self, 'this_module_only')
+        # event = HypOutreachEvent(self, 'this_module_only')
         # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
     def on_birth(self, mother_id, child_id):
@@ -310,7 +230,8 @@ class HT(Module):
         df.at[child_id, 'ht_risk'] = 1.0                        # Default setting: no risk given pre-existing conditions
         df.at[child_id, 'ht_current_status'] = False            # Default setting: no one has hypertension
         df.at[child_id, 'ht_historic_status'] = 'N'             # Default setting: no one has hypertension
-        df.at[child_id, 'ht_date'] = pd.NaT                # Default setting: no one has hypertension
+        df.at[child_id, 'ht_date'] = pd.NaT                     # Default setting: no one has hypertension
+        df.at[child_id, 'ht_death_date'] = pd.NaT               # Default setting: no one has hypertension
         df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is diagnosed
         df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is diagnosed
         df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is treated
@@ -320,54 +241,12 @@ class HT(Module):
         df.loc[df.is_alive, 'ht_specific_symptoms'] = 'none'    # Default setting: no one has symptoms
         df.loc[df.is_alive, 'ht_unified_symptom_code'] = 0      # Default setting: no one has symptoms
 
-
-
-        # ToDo: Merge/Delete this later
-        df = self.sim.population.props  # shortcut to the population props dataframe
-
-        # Initialise all the properties that this module looks after:
-
-        child_is_infected = df.at[mother_id, 'mi_is_infected']  # is infected if mother is infected
-
-        if child_is_infected:
-
-            # Scheduled death date
-            death_years_ahead = np.random.exponential(scale=20)
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-
-            # Level of symptoms
-            symptoms = self.rng.choice(self.parameters['level_of_symptoms']['level_of_symptoms'],
-                                       p=self.parameters['level_of_symptoms']['probability'])
-
-            # Assign properties
-            df.at[child_id, 'mi_is_infected'] = True
-            df.at[child_id, 'mi_status'] = 'C'
-            df.at[child_id, 'mi_date_infected'] = self.sim.date
-            df.at[child_id, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
-            df.at[child_id, 'mi_date_cure'] = pd.NaT
-            df.at[child_id, 'mi_specific_symptoms'] = symptoms
-            df.at[child_id, 'mi_unified_symptom_code'] = 0
-
-            # Schedule death event:
-            #death_event = MockitisDeathEvent(self, child_id)
-            #self.sim.schedule_event(death_event, df.at[child_id, 'mi_scheduled_date_death'])
-
-        else:
-            # Assign the default for a child who is not infected
-            df.at[child_id, 'mi_is_infected'] = False
-            df.at[child_id, 'mi_status'] = 'N'
-            df.at[child_id, 'mi_date_infected'] = pd.NaT
-            df.at[child_id, 'mi_scheduled_date_death'] = pd.NaT
-            df.at[child_id, 'mi_date_cure'] = pd.NaT
-            df.at[child_id, 'mi_specific_symptoms'] = 'none'
-            df.at[child_id, 'mi_unified_symptom_code'] = 0
-
     def on_healthsystem_interaction(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
+        logger.debug('This is Hypertension, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
 
@@ -410,7 +289,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        logger.debug('This is MockitisEvent, tracking the disease progression of the population.')
+        logger.debug('This is HypertenionEvent, tracking the disease progression of the population.')
 
         # 1. Basic variables
         df = population.props
@@ -421,6 +300,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         # 2. Get (and hold) index of people with and w/o hypertension
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
+        alive_count = df.is_alive.sum()
 
         if df.is_alive.sum():
             prevalence = len(currently_ht_yes) / (
@@ -431,41 +311,43 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         print("\n", "Time is: ", self.sim.date, "Prevalence is ]: ", prevalence)
 
         # 3. Handle new cases of hypertension
+        # 3.1 First get relative risk
         ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
-                                                                                        left_on=['age_years'],
-                                                                                        right_on=['age'],
-                                                                                        how='left').set_index(
-            'person')['probability']
-
+                                            left_on=['age_years'], right_on=['age'], how='left').set_index(
+                                            'person')['probability']
+        # df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
         assert len(currently_ht_no) == len(ht_prob)
-
-        # 3.1 Depending on pre-existing conditions, get associated risk and update prevalence and assign hypertension
-        #df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
-        #df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
-
         ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
         random_numbers = rng.random_sample(size=len(ht_prob))
-        now_hypertensive = (ht_prob > random_numbers)  # Assign incidence
-
-        # 3.2 Ways to check what's happening
-        # temp = pd.merge(population.age, df, left_index=True, right_index=True, how='inner')
-        # temp_2 = pd.DataFrame([population.age.years, joined.probability, random_numbers, df['ht_current_status']])
-
-        # 3.3 If newly hypertensive
+        now_hypertensive = (ht_prob > random_numbers)
         ht_idx = currently_ht_no[now_hypertensive]
 
-        df.loc[ht_idx, 'ht_current_status'] = True
-        df.loc[ht_idx, 'ht_historic_status'] = 'C'
-        df.loc[ht_idx, 'ht_date'] = self.sim.date
+        # 3.2. Calculate prevalence
+        count = df.ht_current_status.sum()
+        prevalence = (sum(count) / alive_count) * 100
 
-        # 5. Assign level of symptoms
+        # 4. Assign level of symptoms
         level_of_symptoms = self.parameters['level_of_symptoms']
         symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
                                    size=ht_idx,
                                    p=level_of_symptoms.probability)
         df.loc[ht_idx, 'ht_specific_symptoms'] = symptoms
 
-        print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  ")
+        # 5. Set date of death
+        death_years_ahead = np.random.exponential(scale=20, size=ht_idx)
+        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+
+         # 3.3 If newly hypertensive
+        df.loc[ht_idx, 'ht_current_status'] = True
+        df.loc[ht_idx, 'ht_historic_status'] = 'C'
+        df.loc[ht_idx, 'ht_date'] = self.sim.date
+        df.loc[ht_idx, 'ht_death_date'] = self.sim.date + death_td_ahead
+
+
+
+        print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  "
+              "\n", "Prevalence is: ", prevalence, "%")
 
         # 6. Determine if anyone with severe symptoms will seek care
         serious_symptoms = (df['is_alive']) & ((df['ht_specific_symptoms'] == 'extreme emergency') | (
@@ -487,76 +369,14 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
                                                                 )
-
-
-        # TODO: remove/merge below after test
-
-        # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[df.mi_is_infected & df.is_alive]
-        currently_uninfected = df.index[~df.mi_is_infected & df.is_alive]
-
-        if df.is_alive.sum():
-            prevalence = len(currently_infected) / (
-                len(currently_infected) + len(currently_uninfected))
-        else:
-            prevalence = 0
-
-        # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
-
-        # if any are infected
-        if now_infected.sum():
-            infected_idx = currently_uninfected[now_infected]
-
-            death_years_ahead = np.random.exponential(scale=2, size=now_infected.sum())
-            death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-            symptoms = self.module.rng.choice(
-                self.module.parameters['level_of_symptoms']['level_of_symptoms'],
-                size=now_infected.sum(),
-                p=self.module.parameters['level_of_symptoms']['probability'])
-
-            df.loc[infected_idx, 'mi_is_infected'] = True
-            df.loc[infected_idx, 'mi_status'] = 'C'
-            df.loc[infected_idx, 'mi_date_infected'] = self.sim.date
-            df.loc[infected_idx, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
-            df.loc[infected_idx, 'mi_date_cure'] = pd.NaT
-            df.loc[infected_idx, 'mi_specific_symptoms'] = symptoms
-            df.loc[infected_idx, 'mi_unified_symptom_code'] = 0
-
-            # schedule death events for newly infected individuals
-            #for person_index in infected_idx:
-            #    death_event = MockitisDeathEvent(self, person_index)
-            #    self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
-
-            # Determine if anyone with severe symptoms will seek care
-            serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
-                df['mi_specific_symptoms'] == 'coughing and irritiable'))
-
-            seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
-            for i in df.index[serious_symptoms]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-                seeks_care[i] = self.module.rng.rand() < prob
-
-            if seeks_care.sum() > 0:
-                for person_index in seeks_care.index[seeks_care == True]:
-                    logger.debug(
-                        'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
-                        person_index)
-                    event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-                    self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                    priority=2,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=2)
-                                                                    )
             else:
                 logger.debug(
                     'This is MockitisEvent, There is  no one with new severe symptoms so no new healthcare seeking')
         else:
             logger.debug('This is MockitisEvent, no one is newly infected.')
 
-# TODO: remove afterwards - no HT deaths
-class HTDeathEvent(Event, IndividualScopeEventMixin):
+
+class HTDeathEvent(Event, IndividualScopeEventMixin):   # TODO: remove afterwards - no HT deaths
     """
     This is the death event for mockitis
     """
