@@ -497,6 +497,10 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                         'person_id': individual_id
                     })
 
+        # Report the deaths to the healthburden module so that it tracks the live years lost
+        date_of_birth = df.at[individual_id,'date_of_birth']
+        self.sim.modules['HealthBurden'].report_live_years_lost(date_of_birth=date_of_birth , cause=self.cause)
+
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

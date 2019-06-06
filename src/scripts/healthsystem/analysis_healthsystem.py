@@ -17,8 +17,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource files
 resourcefilepath = 'resources'
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+start_date = Date(year=2010, month=1, day=1)
+end_date = Date(year=2014, month=12, day=31)
 popsize = 50
 
 # Establish the simulation object

@@ -5,7 +5,7 @@ This Module runs the counting of QALYS across all persons and logs it
 
 import logging
 import os
-
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Property, Types
@@ -24,11 +24,12 @@ class HealthBurden(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        self.Disability = pd.DataFrame()  # This dataframe keep track of all time lived with disability
-
     PARAMETERS = {
-        'DALY_Weight_Database': Property(Types.DATA_FRAME, 'Weight Database')
+        'DALY_Weight_Database': Property(Types.DATA_FRAME, 'Weight Database') ,
         # NB. This is a DALY database (From Salomon, Lancet, 2016), so complement of the values must be used.
+
+        'Age_Limit_For_YLL': Property(Types.REAL,
+                                      'The age up to which deaths are recorded as having induced a lost of life years')
     }
 
     PROPERTIES = {}
@@ -36,18 +37,26 @@ class HealthBurden(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_DALY_Weights.csv'))
+        p['Age_Limit_For_YLL'] = 70.0   # Assumption that deaths younger than 70y incur years of lost life
 
     def initialise_population(self, population):
         pass
 
     def initialise_simulation(self, sim):
 
+        self.Disability = pd.DataFrame()  # This dataframe keeps track of all time lived with disability (age/sex/time)
+
+        # Create dataframe to keep track of the years of live that are lost
+        first_year = self.sim.start_date.year
+        last_year = self.sim.end_date.year
+        self.LifeYearsLost = pd.DataFrame(index=np.arange(first_year,last_year))
+
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
             assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
 
         # Launch the DALY Logger to run every month
-        sim.schedule_event(LogDALYs(self), sim.date)
+        sim.schedule_event(Log_DALYs(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -70,9 +79,61 @@ class HealthBurden(Module):
 
         return daly_wt
 
+    def report_live_years_lost(self,date_of_birth,cause):
+        print('reporting that someone had died')
+
+        # calculate the start and end dates of the period for which there is 'years of lost life'
+        # NB. the upper limit of the end-date is truncated by the end of the simulation.
+
+        start_date = self.sim.date
+        end_date = min(self.sim.end_date , (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'] )))
+
+        # get the years of life lost split out by year and age-group
+        yll= self.decompose_yll_by_age_and_time(start_date=start_date, end_date=end_date, date_of_birth=date_of_birth)
+
+        # Add the years-of-life-lost from this death to the overall dataframe keeping track
+        if cause not in self.LifeYearsLost.columns:
+           # cause has not been added to the LifeYearsLost dataframe, so make a new columns
+           self.LifeYearsLost[cause]=0.0
+
+        # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
+        self.LifeYearsLost[cause] = self.LifeYearsLost[cause] + yll
 
 
-class LogDALYs(RegularEvent, PopulationScopeEventMixin):
+    def decompose_yll_by_age_and_time(self,start_date,end_date,date_of_birth):
+        """
+        This helper function will decompose a period of years of lost life into time-spent in each age group in each
+        calendar year
+        :param date_of_birth:
+        :param date_of_death:
+        :param upper_age_limit:
+        :return: a dataframe of the person-time (in years) spent by age-group and time-period
+        """
+
+        df=pd.DataFrame()
+
+        # Get all the dates between start and end
+        df['days']= pd.date_range(start=start_date, end=end_date, freq='D')
+        df['year'] = df['days'].dt.year
+
+        # Get the age that this person will be on each day
+        df['age_in_years'] =  ( (df['days'] - date_of_birth).dt.days.values/ 365 ).astype(int)
+
+        age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
+        df['age_group'] = df['age_in_years'].map(age_range_lookup)
+
+        X=pd.DataFrame(df.groupby(by=['year','age_group'])['days'].count())
+        X['person_years']=(X['days']/365).clip(lower=0.0, upper=1.0)
+
+        # replace the multiindex with columns
+        X.reset_index(inplace=True)
+
+        X=X.drop(columns=['days'],axis=1)
+
+        return X
+
+
+class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
     """
     This is the DALY Logger event. It runs every months and asks each disease module to report the average disability
     weight for each living person during the previous month. It reconciles this into a unified value.

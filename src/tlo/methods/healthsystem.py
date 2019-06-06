@@ -300,7 +300,7 @@ class HealthSystem(Module):
                 module.on_hsi_alert(person_id=hsi_event.target,
                                     treatment_id=hsi_event.TREATMENT_ID)
 
-    def GetCapabilities(self):
+    def get_capabilities(self):
         """
         This will return a dataframe of the capabilities that the healthsystem has for today.
         Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
@@ -612,7 +612,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         logger.debug('----------------------------------------------------------------------')
 
         # Get the total Capabilities for Appts for today
-        current_capabilities = self.module.GetCapabilities()
+        current_capabilities = self.module.get_capabilities()
 
         # Add column for Minutes Remaining Today (for live-tracking the use of those resources)
         current_capabilities.loc[:, 'Minutes_Remaining_Today'] = current_capabilities['Total_Minutes_Per_Day']
