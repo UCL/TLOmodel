@@ -87,13 +87,14 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_neonatal_enchep'] = False
         df.at[child_id, 'nb_ptb_comps'] = False
 
-        # Newborns delievered at less than 37 weeks are given the preterm property
+        # Newborns delivered at less than 37 weeks are given the preterm property
+
         if df.at[mother_id, 'la_gestation_at_labour'] < 37:
             df.at[child_id, 'nb_preterm'] = True
         else:
             df.at[child_id, 'nb_preterm'] = False
 
-        if df.at[child_id, 'is_alive']:
+        if df.at[child_id, 'is_alive'] & ~df.at[mother_id, 'la_still_birth_this_delivery']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                             cause='newborn outcomes event'), self.sim.date)
 

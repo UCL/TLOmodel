@@ -70,6 +70,9 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+    # All births occur, does not need to be controlled here
+    # We can just use the la_delivery_mode property to signify that this woman has had
+
 
 class CaesareanLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
