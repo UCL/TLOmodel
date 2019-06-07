@@ -337,7 +337,7 @@ class ChildhoodPneumonia(Module):
         'pn_difficult_breathing': Property(Types.BOOL, 'difficult breathing from non-severe pneumonia, severe pneumonia or very severe pneumonia'),
         'pn_fast_breathing': Property(Types.BOOL, 'fast breathing from non-severe pneumonia'),
         'pn_chest_indrawing': Property(Types.BOOL, 'chest indrawing from severe pneumonia or very severe pneumonia'),
-        'pn_any_general danger_sign': Property(Types.BOOL, 'any danger sign - lethargic/uncounscious, not able to drink/breastfeed, convulsions and vomiting everything'),
+        'pn_any_general_danger_sign': Property(Types.BOOL, 'any danger sign - lethargic/uncounscious, not able to drink/breastfeed, convulsions and vomiting everything'),
         'pn_stridor_in_calm_child': Property(Types.BOOL, 'stridor in calm child from very severe pneumonia'),
     }
 
@@ -412,6 +412,12 @@ class ChildhoodPneumonia(Module):
         p['rr_progress_severe_pneum_age24to59mo'] = 0.6
         p['rr_progress_severe_pneum_HIV'] = 1.2
         p['rr_progress_severe_pneum_SAM'] = 1.1
+        p['r_progress_to_very_severe_pneum'] = 0.5
+        p['rr_progress_very_severe_pneum_agelt2mo'] = 1.3
+        p['rr_progress_very_severe_pneum_age12to23mo'] = 0.9
+        p['rr_progress_very_severe_pneum_age24to59mo'] = 0.6
+        p['rr_progress_very_severe_pneum_HIV'] = 1.2
+        p['rr_progress_very_severe_pneum_SAM'] = 1.1
         p['r_death_pneumonia'] = 0.5
         p['rr_death_pneumonia_agelt2mo'] = 1.2
         p['rr_death_pneumonia_age12to23mo'] = 0.8
@@ -431,8 +437,7 @@ class ChildhoodPneumonia(Module):
         m = self
         rng = m.rng
 
-        # -------------------- DEFAULTS ------------------------------------------------------------
-
+        # defaults
         df['ri_pneumonia_status'] = 'none'
         df['malnutrition'] = False
         df['has_HIV'] = False
@@ -513,7 +518,6 @@ class ChildhoodPneumonia(Module):
         p_very_sev_pneum_status.loc[
             (df.li_wood_burn_stove == False) & (df.age_years < 5) & df.is_alive] *= self.rp_very_severe_pneum_IAP
 
-
         random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive])
 
@@ -549,25 +553,19 @@ class ChildhoodPneumonia(Module):
         """
 
         # add the basic event
-        event_pneumonia = PneumoniaEvent(self)
-        sim.schedule_event(event_pneumonia, sim.date + DateOffset(weeks=2))
+        sim.schedule_event(PneumoniaEvent(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(SeverePneumoniaEvent(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(VerySeverePneumoniaEvent(self), sim.date + DateOffset(months=3))
 
         # add an event to log to screen
-        sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(weeks=2))
+        sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
+        sim.schedule_event(SeverePneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
+        # sim.schedule_event(VerySeverePneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
 
-        # add the basic event
-        event_severe_pneumonia = SeverePneumoniaEvent(self)
-        sim.schedule_event(event_severe_pneumonia, sim.date + DateOffset(weeks=2))
-
-        # add an event to log to screen
-        sim.schedule_event(SeverePneumoniaLoggingEvent(self), sim.date + DateOffset(weeks=2))
+        # Register this disease module with the health system
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual.
-        This is called by the simulation whenever a new person is born.
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
         pass
 
 
@@ -626,12 +624,13 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
 
-        # SYMPTOMS FROM NON-SEVERE PNEUMONIA
-
+        # ------------------------------ SYMPTOMS FROM NON-SEVERE PNEUMONIA -------------------------------
+        # fast breathing
         pn_current_pneumonia_idx = df.index[df.is_alive & (df.age_years < 5) & (df.ri_pneumonia_status == 'pneumonia')]
         for individual in pn_current_pneumonia_idx:
             df.at[individual, 'pn_fast_breathing'] = True
 
+        # cough
         eff_prob_cough = pd.Series(0.89, index=pn_current_pneumonia_idx)
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                 index=df.index[(df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'pneumonia')])
@@ -640,6 +639,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_cough = dfx.index[dfx.eff_prob_cough > random_draw]
         df.loc[idx_cough, 'pn_cough'] = True
 
+        # difficult breathing
         eff_prob_difficult_breathing = pd.Series(0.89, index=pn_current_pneumonia_idx)
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                 index=df.index[
@@ -648,8 +648,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_difficult_breathing', 'random number']
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
         df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
-
-
 
         # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
 
@@ -682,8 +680,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw_03]
         df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
-        # -------------------- UPDATING OF NON-SEVERE PNEUMONIA RECOVERY OVER TIME --------------------------------
-        # recovery from non-severe pneumonia
+        # ------------------------------------------------------
+        # recovery from severe pneumonia
 
         after_progression_pneumonia_idx = df.index[df.is_alive &
                                                    (df.ri_pneumonia_status == 'pneumonia') & (df.age_years < 5)]
@@ -744,7 +742,7 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
-        # SYMPTOMS FROM SEVERE PNEUMONIA
+        # SYMPTOMS FROM SEVERE PNEUMONIA ------------------------------------------------------------
 
         pn_current_severe_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
                                                (df.ri_pneumonia_status == 'severe pneumonia')]
@@ -778,6 +776,50 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_fast_breathing = dfx.index[dfx.eff_prob_fast_breathing > random_draw]
         df.loc[idx_fast_breathing, 'pn_fast_breathing'] = True
 
+        # -------------------------- SEEKING CARE ---------------------------------
+        # Determine if anyone with symptoms will seek care
+        severe_pneumonia_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
+                                           (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == True)]
+
+        seeks_care = pd.Series(data=False, index=severe_pneumonia_symptoms)
+        for individual in severe_pneumonia_symptoms:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
+            seeks_care[individual] = self.module.rng.rand() < prob
+
+        # --------------------------------------------------------------------------------------------------
+        # ------------- updating current status ' severe pneumonia' to 'very severe pneumonia'--------------
+
+        eff_prob_prog_very_sev_pneumonia = pd.Series(m.r_progress_to_very_severe_pneum,
+                                                     index=df.index[
+                                                         df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
+                                                         & (df.age_years < 5)])
+
+        eff_prob_prog_very_sev_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                                             (df.age_years < 5)] *= m.rr_progress_very_severe_pneum_agelt2mo
+        eff_prob_prog_very_sev_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                                             (df.age_exact_years >= 1) & (
+                                                 df.age_exact_years < 2)] *= m.rr_progress_very_severe_pneum_age12to23mo
+        eff_prob_prog_very_sev_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                                             (df.age_exact_years >= 2) & (df.age_exact_years < 5)] *= \
+            m.rr_progress_very_severe_pneum_age24to59mo
+        eff_prob_prog_very_sev_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                                             df.has_hiv == True & (df.age_years < 5)] *= \
+            m.rr_progress_very_severe_pneum_HIV
+        eff_prob_prog_very_sev_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
+                                             df.malnutrition == True & (df.age_years < 5)] *= \
+            m.rr_progress_very_severe_pneum_SAM
+
+        pn_current_severe_pneumonia_idx = df.index[df.is_alive & (df.age_years < 5) &
+                                                   (df.ri_pneumonia_status == 'severe pneumonia')]
+
+        random_draw_03 = pd.Series(rng.random_sample(size=len(pn_current_severe_pneumonia_idx)),
+                                   index=df.index[(df.age_years < 5) & df.is_alive &
+                                                  (df.ri_pneumonia_status == 'severe pneumonia')])
+        dfx = pd.concat([eff_prob_prog_very_sev_pneumonia, random_draw_03], axis=1)
+        dfx.columns = ['eff_prob_prog_very_severe_pneumonia', 'random_draw_03']
+        idx_ri_progress_very_sev_pneumonia = dfx.index[dfx.eff_prob_prog_very_severe_pneumonia > dfx.random_draw_03]
+        df.loc[idx_ri_progress_very_sev_pneumonia, 'ri_pneumonia_status'] = 'very severe pneumonia'
+
 
 class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
@@ -792,7 +834,7 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # updating for children under 5 with current status 'none' to severe pneumonia
+        # updating for children under 5 with current status 'none' to very severe pneumonia
 
         eff_prob_ri_very_sev_pneumonia = pd.Series(m.base_incidence_very_severe_pneum,
                                                  index=df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
@@ -834,6 +876,47 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'very severe pneumonia'
 
+        # SYMPTOMS FROM VERY SEVERE PNEUMONIA ------------------------------------------------------------
+
+        pn_current_very_sev_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
+                                               (df.ri_pneumonia_status == 'very severe pneumonia')]
+
+        eff_prob_cough = pd.Series(0.857, index=pn_current_very_sev_pneum_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
+                                index=df.index[(df.age_years < 5) & df.is_alive &
+                                               (df.ri_pneumonia_status == 'very severe pneumonia')])
+        dfx = pd.concat([eff_prob_cough, random_draw], axis=1)
+        dfx.columns = ['eff_prob_cough', 'random number']
+        idx_cough = dfx.index[dfx.eff_prob_cough > random_draw]
+        df.loc[idx_cough, 'pn_cough'] = True
+
+        eff_prob_difficult_breathing = pd.Series(0.43, index=pn_current_very_sev_pneum_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
+                                index=df.index[
+                                    (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'very severe pneumonia')])
+        dfx = pd.concat([eff_prob_difficult_breathing, random_draw], axis=1)
+        dfx.columns = ['eff_prob_difficult_breathing', 'random number']
+        idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
+        df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
+
+        eff_prob_fast_breathing = pd.Series(0.857, index=pn_current_very_sev_pneum_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
+                                index=df.index[
+                                    (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'very severe pneumonia')])
+        dfx = pd.concat([eff_prob_fast_breathing, random_draw], axis=1)
+        dfx.columns = ['eff_prob_fast_breathing', 'random number']
+        idx_fast_breathing = dfx.index[dfx.eff_prob_fast_breathing > random_draw]
+        df.loc[idx_fast_breathing, 'pn_fast_breathing'] = True
+
+        eff_prob_chest_indrawing = pd.Series(0.76, index=pn_current_very_sev_pneum_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(pn_current_very_sev_pneum_idx)),
+                                index=df.index[(df.age_years < 5) & df.is_alive &
+                                               (df.ri_pneumonia_status == 'very severe pneumonia')])
+        dfx = pd.concat([eff_prob_chest_indrawing, random_draw], axis=1)
+        dfx.columns = ['eff_prob_chest_indrawing', 'random number']
+        idx_chest_indrawing = dfx.index[dfx.eff_prob_chest_indrawing > random_draw]
+        df.loc[idx_chest_indrawing, 'pn_chest_indrawing'] = True
+
         # now work out who will seek care for having severe diarrhoea
         # loop through everyone who has severe diarhoea
         # for each person with severe diarrhoa, seek if they seek care ( by using the prob_seek_care function of health system)
@@ -842,6 +925,16 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # submit this event to the health system scheduler
         # (the health system scheduler will do the rest....)
 
+        # -------------------------- SEEKING CARE ---------------------------------
+        # Determine if anyone with symptoms will seek care
+        very_sev_pneum_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
+                                           (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == True) |
+                                           (df.pn_any_general_danger_sign == True)]
+
+        seeks_care = pd.Series(data=False, index=very_sev_pneum_symptoms)
+        for individual in very_sev_pneum_symptoms:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1) # depends on health seeking module
+            seeks_care[individual] = self.module.rng.rand() < prob
 
         # ---------------------------- DEATH FROM VERY SEVERE PNEUMONIA DISEASE ---------------------------------------
 
