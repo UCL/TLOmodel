@@ -33,7 +33,7 @@ class SepsisTreatment(Module):
     def read_parameters(self, data_folder):
         params = self.parameters
 
-        params['prob_cure_antibiotics'] = 0.5 # dummy
+        params['prob_cure_antibiotics'] = 0.5  # dummy
 
     def initialise_population(self, population):
 

@@ -254,14 +254,6 @@ class Demography(Module):
                         'xxx': 0
                     })
 
-        if df.at[mother_id, 'la_still_birth_this_delivery']:
-            death = InstantaneousDeath(self, child_id, cause='Intrapartum Stillbirth')
-            self.sim.schedule_event(death, self.sim.date)
-            df.loc[mother_id, 'la_still_birth_this_delivery'] = False
-
-            # Reset still birth status in case of future pregnancy
-            # Schedule newborns to move through newborn disease module?
-
 
 class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     """
@@ -367,11 +359,16 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
                     logger.debug('birth booked for: %s', df.due_date)
 
+                    self.sim.schedule_event(labour.BirthEvent(self.sim.modules['Labour'], female_id),
+                                            scheduled_labour_date + DateOffset(days=2))
+
             # Here the woman's birth is scheduled after 2 days of labour
 
-                    scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
+            #        scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
 
-                    self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
+            #       self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -406,6 +403,8 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
                                                                  cause='postpartum'), self.sim.date)
 
+        # Need to schedule PostPartumCaesarean event for women who had a CS
+
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
         # stillbirth
 
@@ -414,7 +413,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(mother_id)
 
         # Those women who survive labour move into the immediate postpartum period and are scheduled to enter to post-
-        # partum phase of labour where possible complications can act.
+         # partum phase of labour where possible complications can act.
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):

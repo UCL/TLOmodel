@@ -20,14 +20,13 @@ class EclampsiaTreatment(Module):
     """
 
     PARAMETERS = {
-        'prob_recurrent_seizure': Parameter(
-            Types.REAL, 'probability of recurrent seizures following first seizure'),
-        'rr_cure_mgso4': Parameter(
+
+        'prob_cure_mgso4': Parameter(
             Types.REAL, 'relative risk of additional seizures following of administration of magnesium sulphate'),
-        'rr_prevent_mgso4': Parameter(
+        'prob_prevent_mgso4': Parameter(
             Types.REAL, 'relative risk of eclampsia following administration of magnesium sulphate in women '
                         'with severe preeclampsia'),
-        'rr_cure_diazepam': Parameter(
+        'prob_cure_diazepam': Parameter(
             Types.REAL, 'relative risk of additional seizures following of administration of diazepam')
 
     }
@@ -41,10 +40,9 @@ class EclampsiaTreatment(Module):
 
         params = self.parameters
 
-        params['prob_recurrent_seizure'] = 0.80  # DUMMY
-        params['rr_cure_mgso4'] = 0.43  # Risk reduction for additional seizures (vs diazepam alone)
-        params['rr_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
-        params['rr_cure_diazepam'] = 0.8  # Dummy - to include if no effectiveness data?
+        params['prob_cure_mgso4'] = 0.57  # probability taken from RR of 0.43for additional seizures (vs diazepam alone)
+        params['prob_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
+        params['prob_cure_diazepam'] = 0.8
 
     def initialise_population(self, population):
 
@@ -104,16 +102,15 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
 
         # 2.)Apply the probability that first line treatment will stop/prevent seizures
 
-        treatment_effect_math = params['prob_recurrent_seizure'] * params['rr_cure_mgso4']
-        treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
+        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
                                 index=df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
+        successful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
+        unsuccessful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
 
         # 2.) For those where treatment is successful reset eclampsia statment to false
 
@@ -131,11 +128,10 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
         # 4.) Get and hold all women whose seizures havent stopped and apply probability of second line treatment
         # stopping seizures
 
-        second_treatment_math = params['prob_recurrent_seizure'] * params['rr_cure_diazepam']
-        second_treatment_effect = pd.Series(second_treatment_math, index=unsuccessful_treatment)
+        second_treatment_effect = pd.Series(params['prob_cure_diazepam'], index=unsuccessful_treatment)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
-                                index=dfx.index[dfx.treatment_effect > dfx.random_draw])
+                                index=dfx.index[dfx.treatment_effect < dfx.random_draw])
 
         dfx = pd.concat([second_treatment_effect, random_draw], axis=1)
         dfx.columns = ['second_treatment_effect', 'random_draw']
@@ -177,8 +173,7 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date -
                                                                         DateOffset(days=2))]
 
-        treatment_effect_math = params['prob_recurrent_seizure'] * params['rr_cure_mgso4']
-        treatment_effect = pd.Series(treatment_effect_math, index=receiving_treatment_idx)
+        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
                                 index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date -
@@ -192,8 +187,7 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         df.loc[successful_treatment, 'la_eclampsia'] = False
         df.loc[successful_treatment, 'ect_treat_received'] = True
 
-        second_treatment_math = params['prob_recurrent_seizure'] * params['rr_cure_diazepam']
-        second_treatment_effect = pd.Series(second_treatment_math, index=unsuccessful_treatment)
+        second_treatment_effect = pd.Series(params['prob_cure_diazepam'], index=unsuccessful_treatment)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
                                 index=dfx.index[dfx.treatment_effect > dfx.random_draw])

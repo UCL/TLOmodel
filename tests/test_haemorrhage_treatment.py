@@ -4,14 +4,13 @@ import os
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, labour, eclampsia_treatment, caesarean_section, sepsis_treatment, \
-    newborn_outcomes, haemorrhage_treatment
+from tlo.methods import demography, lifestyle, labour, haemorrhage_treatment
 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 100
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
@@ -28,10 +27,6 @@ def simulation():
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
     sim.register(labour.Labour())
-    sim.register(eclampsia_treatment.EclampsiaTreatment())
-    sim.register(caesarean_section.CaesareanSection())
-    sim.register(sepsis_treatment.SepsisTreatment())
-    sim.register(newborn_outcomes.NewbornOutcomes())
     sim.register(haemorrhage_treatment.HaemorrhageTreatment())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
