@@ -52,7 +52,7 @@ class HT(Module):
         'level_of_symptoms': Parameter(Types.CATEGORICAL,    'Level of symptoms that the individual will have'),
         'qalywt_mild_sneezing': Parameter(Types.REAL,        'QALY weighting for mild sneezing'),
         'qalywt_coughing': Parameter(Types.REAL,             'QALY weighting for coughing'),
-        'qalywt_advanced': Parameter(Types.REAL,             'QALY weighting for extreme emergency'),
+        'qalywt_extreme_emergency': Parameter(Types.REAL,             'QALY weighting for extreme emergency'),
 
     }
 
@@ -159,8 +159,8 @@ class HT(Module):
         hypertension_count = (df.is_alive & df.ht_current_status).sum()
 
         # 3.2. Calculate prevalence
-        count =df.ht_current_status.sum()
-        prevalence = (sum(count) / alive_count) * 100
+        count = df.ht_current_status.sum()
+        prevalence = (count / alive_count) * 100
 
         # 4. Assign level of symptoms
         level_of_symptoms = self.parameters['level_of_symptoms']
@@ -255,7 +255,7 @@ class HT(Module):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        # logger.debug('This is mockitis reporting my health values')
+        # logger.debug('This is hypertension reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -265,7 +265,7 @@ class HT(Module):
             'none': 0,
             'mild sneezing': p['qalywt_mild_sneezing'],
             'coughing and irritable': p['qalywt_coughing'],
-            'extreme emergency': p['qalywt_advanced']
+            'extreme emergency': p['qalywt_extreme_emergency']
         })
         return health_values.loc[df.is_alive]
 
@@ -283,7 +283,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         self.prob_HTgivenHC = module.parameters['prob_HTgivenHC']
         self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
         self.prob_HTgivenHIV = module.parameters['prob_HTgivenHIV']
-        self.prob_success_treat = module.parameters['prob_success_treat']
+        self.prob_treat = module.parameters['prob_treat']
 
         # ToDO: need to add code from original if it bugs.
 
