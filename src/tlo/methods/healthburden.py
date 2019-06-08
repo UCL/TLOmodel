@@ -258,6 +258,9 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
 
+        dalys_to_add = Disability_Monthly_Summary.sum().sum()     # for checking
+        dalys_current = self.module.YearsLivedWithDisability.sum().sum()
+
         # This will add columns that are not otherwise present and add values to columns where they are
         X = self.module.YearsLivedWithDisability.combine(
             Disability_Monthly_Summary,
@@ -269,4 +272,6 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index).merge(
             X, left_index=True, right_index=True, how='left')
 
+        # check multi-index is in check and that the addition of DALYS has worked
         assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index)
+        assert (self.module.YearsLivedWithDisability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
