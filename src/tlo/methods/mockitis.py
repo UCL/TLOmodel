@@ -8,7 +8,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Mockitis(Module):
@@ -164,7 +164,6 @@ class Mockitis(Module):
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
 
-
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -290,7 +289,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
             # schedule death events for newly infected individuals
             for person_index in infected_idx:
-                death_event = MockitisDeathEvent(self, person_index)
+                death_event = MockitisDeathEvent(self.module, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
             # Determine if anyone with severe symptoms will seek care
@@ -333,6 +332,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
         # Apply checks to ensure that this death should occur
         if df.at[person_id, 'mi_status'] == 'C':
+
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
             self.sim.schedule_event(death, self.sim.date)
