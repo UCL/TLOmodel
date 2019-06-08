@@ -5,7 +5,7 @@ This Module runs the counting of DALYS
 import logging
 import os
 import pandas as pd
-
+import numpy as np
 from tlo import DateOffset, Module, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -49,24 +49,18 @@ class HealthBurden(Module):
         year_index = list(range(first_year, last_year + 1))
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index], names=['sex', 'age_range', 'year'])
+        self.multi_index = multi_index
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
-
-        self.YearsLivedWithDisability = pd.DataFrame(
-            index=multi_index,
-            columns=list(
-                self.sim.modules['HealthSystem'].registered_disease_modules.keys()),
-            data=0.0)
-
-        assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
+        self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
             assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
 
         # Launch the DALY Logger to run every month
-        sim.schedule_event(Log_DALYs(self), sim.date)
+        sim.schedule_event(Get_Current_DALYS(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -75,7 +69,9 @@ class HealthBurden(Module):
         logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
 
         # Label and concantenate YLL and YLD dataframes
-        assert self.YearsLifeLost.index.equals(self.YearsLivedWithDisability.index)
+        assert self.YearsLifeLost.index.equals(self.multi_index)
+        assert self.YearsLivedWithDisability.index.equals(self.multi_index)
+
         self.YearsLifeLost = self.YearsLifeLost.add_prefix('YLL_')
         self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix('YLD_')
 
@@ -119,7 +115,7 @@ class HealthBurden(Module):
         :param label: title for the column in YLL dataframe (of form <ModuleName>_<CauseOfDeath>)
         """
 
-        assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
+        assert self.YearsLifeLost.index.equals(self.multi_index)
 
         # date from which years of life are lost
         start_date = self.sim.date
@@ -147,7 +143,7 @@ class HealthBurden(Module):
 
         # check that the index of the YLL dataframe is not changed
         assert indx_after.equals(indx_before)
-        assert indx_after.equals(self.YearsLivedWithDisability.index)
+        assert indx_after.equals(self.multi_index)
 
     def decompose_yll_by_age_and_time(self, start_date, end_date, date_of_birth):
         """
@@ -179,9 +175,9 @@ class HealthBurden(Module):
         return X
 
 
-class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
+class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the DALY Logger event. It runs every months and asks each disease module to report the average disability
+    This event runs every months and asks each disease module to report the average disability
     weight for each living person during the previous month. It reconciles this with reports from other disease modules
     to ensure that no person has a total weight greater than one.
     A known (small) limitation of this is that persons who died during the previous month do not contribute any YLD.
@@ -203,20 +199,27 @@ class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Ask each disease module to log the DALYS for the previous month
         for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
+
             disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
 
             dalys_from_disease_module = disease_module.report_daly_values()
 
+            # Check type is acceptable and make into dataframe if not already
+            assert type(dalys_from_disease_module) in (pd.Series, pd.DataFrame)
+
+            if type(dalys_from_disease_module) is pd.Series:
+                dalys_from_disease_module = pd.DataFrame(dalys_from_disease_module)
+
             # Perform checks on what has been returned
-            assert type(dalys_from_disease_module) is pd.Series
-            assert len(dalys_from_disease_module) == df.is_alive.sum()
-            assert (~pd.isnull(dalys_from_disease_module)).all()
-            assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all()
             assert df.index.name == dalys_from_disease_module.index.name
+            assert len(dalys_from_disease_module) == df.is_alive.sum()
             assert df.is_alive[dalys_from_disease_module.index].all()
+            assert (~pd.isnull(dalys_from_disease_module)).all().all()
+            assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
+            assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
 
             # Label with the name of the disease module
-            dalys_from_disease_module.name = disease_module_name
+            dalys_from_disease_module = dalys_from_disease_module.add_prefix(disease_module_name + '_')
 
             # Add to overall data-frame for this month of report dalys
             disease_specific_daly_values_this_month = pd.concat([disease_specific_daly_values_this_month,
@@ -252,10 +255,19 @@ class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
         Disability_Monthly_Summary = Disability_Monthly_Summary.reorder_levels(['sex', 'age_range', 'year'])
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
+        # This will add columns that are not otherwise present and add values to columns where they are
+        self.module.YearsLivedWithDisability = self.module.YearsLivedWithDisability.combine(
+            Disability_Monthly_Summary,
+            fill_value=0.0,
+            func=np.add,
+            overwrite=False)
 
-        for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-            # for disease module that reported DALY weights:
+        # check that the merge/adding has worked out ok
+        self.module.YearsLivedWithDisability.index.equals(self.module.YearsLifeLost.index)
 
-            self.module.YearsLivedWithDisability[disease_module_name] = \
-                self.module.YearsLivedWithDisability[disease_module_name].add(
-                    Disability_Monthly_Summary[disease_module_name], fill_value=0.0)
+        # for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
+        #     # for disease module that reported DALY weights:
+        #
+        #     self.module.YearsLivedWithDisability[disease_module_name] = \
+        #         self.module.YearsLivedWithDisability[disease_module_name].add(
+        #             Disability_Monthly_Summary[disease_module_name], fill_value=0.0)
