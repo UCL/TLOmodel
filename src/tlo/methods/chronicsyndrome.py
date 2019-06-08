@@ -378,9 +378,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'Treatment for those with cerebrovascular \
-                                                  disease and post-stroke_ No Diabetes', 'Intervention_Pkg_Code'])[
-            0]
+                                        'Intervention_Pkg'] ==
+                                'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
+                                'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1],
