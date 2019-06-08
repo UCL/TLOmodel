@@ -15,11 +15,10 @@ class Mockitis(Module):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
-        - Declaration of TREATMENT_ID
         - Registration of the disease module
         - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
-        - Running an "outreach" event
+        - Usual HSI behaviour
     """
 
     PARAMETERS = {
@@ -221,8 +220,10 @@ class Mockitis(Module):
                      'person %d for: %s', person_id, treatment_id)
 
     def report_daly_values(self):
-        # This must send back a pd.Series that reports on the average daly-weights that have been experienced by
-        # persons in the previous month.
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug('This is mockitis reporting my health values')
 
@@ -236,7 +237,9 @@ class Mockitis(Module):
             'coughing and irritable': p['daly_wt_coughing'],
             'extreme emergency': p['daly_wt_advanced']
         })
-        return health_values.loc[df.is_alive]
+        health_values.name = 'Mockitis Symptoms'    # label the cause of this disability
+
+        return health_values.loc[df.is_alive]   # returns the series
 
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):

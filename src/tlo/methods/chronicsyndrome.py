@@ -15,12 +15,13 @@ class ChronicSyndrome(Module):
     """
     This is a dummy chronic disease
     It demonstrates the following behaviours in respect of the healthsystem module:
-        - Declaration of TREATMENT_ID
+
         - Registration of the disease module
         - Internal symptom tracking and health care seeking
-        - Outreach campaign
+        - Outreach campaigns
         - Piggy-backing appointments
-        - Reading DALY weights and reporting daly values related to this disease
+        - Reporting two sets of DALY weights with specific labels
+        - Usual HSI behaviour
     """
 
     PARAMETERS = {
@@ -89,7 +90,7 @@ class ChronicSyndrome(Module):
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
-        seq_code = 87   # the sequale code that is related to this disease (notionally!)
+        seq_code = 87  # the sequale code that is related to this disease (notionally!)
         self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
 
     def initialise_population(self, population):
@@ -218,20 +219,35 @@ class ChronicSyndrome(Module):
                                                                 tclose=None)
 
     def report_daly_values(self):
-        # This must send back a pd.Series that reports on the average daly-weights that have been experienced by
-        # persons in the previous month.
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logging.debug('This is chronicsyndrome reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        health_values = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
+        # ChronicSyndrome will produce two sets of DALYS as it want to be able to count up disability according to
+        # different types of disability.
+
+        health_values_1 = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
             {
                 'none': 0,
                 'extreme illness': self.parameters['daly_wt_ill']
             })
+        health_values_1.name = 'Extreme Illness'
 
-        return health_values.loc[df.is_alive]
+        health_values_2 = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
+            {
+                'none': 0,
+                'extreme illness': 0.05
+            })
+        health_values_2.name = 'Extra Terrible'
+
+        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
+
+        return health_values_df  # return the dataframe
 
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
@@ -362,9 +378,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-            'Intervention_Pkg'] ==
-            'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
-            'Intervention_Pkg_Code'])[0]
+                                                  'Intervention_Pkg'] == 'Treatment for those with cerebrovascular \
+                                                  disease and post-stroke_ No Diabetes', 'Intervention_Pkg_Code'])[
+            0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code1],
