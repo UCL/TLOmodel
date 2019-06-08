@@ -4,8 +4,10 @@ This Module runs the counting of DALYS
 
 import logging
 import os
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from tlo import DateOffset, Module, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -255,19 +257,16 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         Disability_Monthly_Summary = Disability_Monthly_Summary.reorder_levels(['sex', 'age_range', 'year'])
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
+
         # This will add columns that are not otherwise present and add values to columns where they are
-        self.module.YearsLivedWithDisability = self.module.YearsLivedWithDisability.combine(
+        X = self.module.YearsLivedWithDisability.combine(
             Disability_Monthly_Summary,
             fill_value=0.0,
             func=np.add,
             overwrite=False)
 
-        # check that the merge/adding has worked out ok
-        self.module.YearsLivedWithDisability.index.equals(self.module.YearsLifeLost.index)
+        # merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
+        self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index).merge(
+            X, left_index=True, right_index=True, how='left')
 
-        # for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-        #     # for disease module that reported DALY weights:
-        #
-        #     self.module.YearsLivedWithDisability[disease_module_name] = \
-        #         self.module.YearsLivedWithDisability[disease_module_name].add(
-        #             Disability_Monthly_Summary[disease_module_name], fill_value=0.0)
+        assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index)
