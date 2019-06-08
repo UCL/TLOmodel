@@ -47,7 +47,7 @@ class HealthBurden(Module):
         last_year = self.sim.end_date.year
 
         sex_index = ['M','F']
-        year_index= np.arange(first_year,last_year)
+        year_index= list(range(first_year,last_year+1))
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
         multi_index=pd.MultiIndex.from_product([sex_index,age_index,year_index],names=['sex','age_range','year'])
 
@@ -59,6 +59,9 @@ class HealthBurden(Module):
                                             columns=list(\
                                                 self.sim.modules['HealthSystem'].registered_disease_modules.keys()),
                                             data=0.0)
+
+        assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
+
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
@@ -73,15 +76,26 @@ class HealthBurden(Module):
     def on_end_of_simulation(self):
         logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
 
-        print('hello')
 
-        # Add prefixes to the YearsLiveLost and YearsLivedWithDisability dataframes and combine them
+        # Label and concantenate YLL and YLD dataframes
+        assert self.YearsLifeLost.index.equals(self.YearsLivedWithDisability.index)
+        self.YearsLifeLost=self.YearsLifeLost.add_prefix('YLL_')
+        self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix('YLD_')
 
-        # Dump them to the log
+        DALYS=self.YearsLifeLost.join(self.YearsLivedWithDisability)
 
-        # Consider forcing coherence in naming (i.e. that YLD are attribited to DiseaseModule_name) ?
+        # Dump the DALYS dateframe to the log this dataframe to the log
 
-        pass
+        # 1) Turn multi-index into regular columns
+        DALYS = DALYS.reset_index()
+
+        # 2) Go line-by-line and dump to the log
+        for line_num in range(len(DALYS)):
+            line_as_dict= DALYS.loc[line_num].to_dict()
+            year=line_as_dict.pop('year')
+            year_as_date = pd.Timestamp(year=year, month=12,day=31)     # log output for the year on 31st December
+            logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
+
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -110,6 +124,8 @@ class HealthBurden(Module):
         :param cause: cause of death for the person that has died
         """
 
+        assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
+
         # date from which years of life are lost
         start_date = self.sim.date
 
@@ -124,13 +140,21 @@ class HealthBurden(Module):
         yll.set_index('sex', append=True, inplace=True)
         yll=yll.reorder_levels(['sex', 'age_range', 'year'])
 
+
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
         if cause not in self.YearsLifeLost.columns:
            # cause has not been added to the LifeYearsLost dataframe, so make a new columns
            self.YearsLifeLost[cause]=0.0
 
         # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
+        indx_before = self.YearsLifeLost.index
         self.YearsLifeLost[cause] = self.YearsLifeLost[cause].add(yll['person_years'], fill_value=0)
+        indx_after= self.YearsLifeLost.index
+
+        # check that the index of the YLL dataframe is not changed
+        assert indx_after.equals(indx_before)
+        assert indx_after.equals(self.YearsLivedWithDisability.index)
+
 
 
     def decompose_yll_by_age_and_time(self,start_date,end_date,date_of_birth):
@@ -246,24 +270,3 @@ class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
                 self.module.YearsLivedWithDisability[disease_module_name].add(
                     Disability_Monthly_Summary[disease_module_name],fill_value=0.0)
 
-
-
-# class Summarize_And_Log_DALYs(Event, PopulationScopeEventMixin):
-#     """
-#     This is event will summarize the DALYS (collapse the dataframes that have been created for YearsLivedWithDisability and add in the
-#      Years of Live Lost). It will then output them to the log
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module,)
-#
-#     def apply(self, population):
-#         pass
-#
-#         # #       Men
-#         # logger.info('%s|DALYS_M|%s', self.sim.date,
-#         #             m_healthstate_sum.to_dict())
-#         #
-#         # #       Women
-#         # logger.info('%s|DALYS_F|%s', self.sim.date,
-#         #             f_healthstate_sum.to_dict())
