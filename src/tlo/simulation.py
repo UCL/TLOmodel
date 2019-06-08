@@ -105,10 +105,10 @@ class Simulation:
                 break
             self.fire_single_event(event, date)
 
-        # Add in a call to 'on_end_of_simulation' at the end of simulation (if the module has it)
+        # The simulation has ended. Call 'on_end_of_simulation' method at the end of simulation (if a module has it)
         for module in self.modules.values():
             try:
-                module.on_end_of_simulation(self)
+                module.on_end_of_simulation()
             except:
                 pass
 
