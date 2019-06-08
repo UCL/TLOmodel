@@ -200,6 +200,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         disease_specific_daly_values_this_month = pd.DataFrame(index=df.index[df.is_alive])
 
         # 1) Ask each disease module to log the DALYS for the previous month
+
         for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
 
             disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
