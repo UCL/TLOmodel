@@ -4,14 +4,13 @@ This Module runs the counting of DALYS
 
 import logging
 import os
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class HealthBurden(Module):
@@ -35,7 +34,7 @@ class HealthBurden(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         p['DALY_Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_DALY_Weights.csv'))
-        p['Age_Limit_For_YLL'] = 70.0   # Assumption that deaths younger than 70y incur years of lost life
+        p['Age_Limit_For_YLL'] = 70.0  # Assumption that deaths younger than 70y incur years of lost life
 
     def initialise_population(self, population):
         pass
@@ -46,22 +45,21 @@ class HealthBurden(Module):
         first_year = self.sim.start_date.year
         last_year = self.sim.end_date.year
 
-        sex_index = ['M','F']
-        year_index= list(range(first_year,last_year+1))
+        sex_index = ['M', 'F']
+        year_index = list(range(first_year, last_year + 1))
         age_index = self.sim.modules['Demography'].AGE_RANGE_CATEGORIES
-        multi_index=pd.MultiIndex.from_product([sex_index,age_index,year_index],names=['sex','age_range','year'])
+        multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index], names=['sex', 'age_range', 'year'])
 
         # Create the YLL and YLD storage data-frame (using sex/age_range/year multi-index)
         self.YearsLifeLost = pd.DataFrame(index=multi_index)
 
         self.YearsLivedWithDisability = pd.DataFrame(
-                                            index=multi_index,
-                                            columns=list(\
-                                                self.sim.modules['HealthSystem'].registered_disease_modules.keys()),
-                                            data=0.0)
+            index=multi_index,
+            columns=list(
+                self.sim.modules['HealthSystem'].registered_disease_modules.keys()),
+            data=0.0)
 
         assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
-
 
         # Check that all registered disease modules have the report_daly_values() function
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
@@ -76,13 +74,12 @@ class HealthBurden(Module):
     def on_end_of_simulation(self):
         logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
 
-
         # Label and concantenate YLL and YLD dataframes
         assert self.YearsLifeLost.index.equals(self.YearsLivedWithDisability.index)
-        self.YearsLifeLost=self.YearsLifeLost.add_prefix('YLL_')
+        self.YearsLifeLost = self.YearsLifeLost.add_prefix('YLL_')
         self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix('YLD_')
 
-        DALYS=self.YearsLifeLost.join(self.YearsLivedWithDisability)
+        DALYS = self.YearsLifeLost.join(self.YearsLivedWithDisability)
 
         # Dump the DALYS dateframe to the log this dataframe to the log
 
@@ -91,11 +88,10 @@ class HealthBurden(Module):
 
         # 2) Go line-by-line and dump to the log
         for line_num in range(len(DALYS)):
-            line_as_dict= DALYS.loc[line_num].to_dict()
-            year=line_as_dict.pop('year')
-            year_as_date = pd.Timestamp(year=year, month=12,day=31)     # log output for the year on 31st December
+            line_as_dict = DALYS.loc[line_num].to_dict()
+            year = line_as_dict.pop('year')
+            year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
             logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
-
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -115,13 +111,12 @@ class HealthBurden(Module):
 
         return daly_wt
 
-
-    def report_live_years_lost(self,sex,date_of_birth,cause):
+    def report_live_years_lost(self, sex, date_of_birth, label):
         """
         Calculate the start and end dates of the period for which there is 'years of lost life'
         :param sex: sex of the person that had died
         :param date_of_birth: date_of_birth of the person that has died
-        :param cause: cause of death for the person that has died
+        :param label: title for the column in YLL dataframe (of form <ModuleName>_<CauseOfDeath>)
         """
 
         assert self.YearsLivedWithDisability.index.equals(self.YearsLifeLost.index)
@@ -130,34 +125,31 @@ class HealthBurden(Module):
         start_date = self.sim.date
 
         # data to count up to for years of life lost (the earliest of the age_limit or end of simulation)
-        end_date = min(self.sim.end_date , (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'] )))
+        end_date = min(self.sim.end_date, (date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL'])))
 
         # get the years of life lost split out by year and age-group
-        yll= self.decompose_yll_by_age_and_time(start_date=start_date, end_date=end_date, date_of_birth=date_of_birth)
+        yll = self.decompose_yll_by_age_and_time(start_date=start_date, end_date=end_date, date_of_birth=date_of_birth)
 
         # augment the multi-index of yll with sex so that it is sex/age_range/year
-        yll['sex']=sex
+        yll['sex'] = sex
         yll.set_index('sex', append=True, inplace=True)
-        yll=yll.reorder_levels(['sex', 'age_range', 'year'])
-
+        yll = yll.reorder_levels(['sex', 'age_range', 'year'])
 
         # Add the years-of-life-lost from this death to the overall YLL dataframe keeping track
-        if cause not in self.YearsLifeLost.columns:
-           # cause has not been added to the LifeYearsLost dataframe, so make a new columns
-           self.YearsLifeLost[cause]=0.0
+        if label not in self.YearsLifeLost.columns:
+            # cause has not been added to the LifeYearsLost dataframe, so make a new columns
+            self.YearsLifeLost[label] = 0.0
 
         # Add the life-years-lost from this death to the running total in LifeYearsLost dataframe
         indx_before = self.YearsLifeLost.index
-        self.YearsLifeLost[cause] = self.YearsLifeLost[cause].add(yll['person_years'], fill_value=0)
-        indx_after= self.YearsLifeLost.index
+        self.YearsLifeLost[label] = self.YearsLifeLost[label].add(yll['person_years'], fill_value=0)
+        indx_after = self.YearsLifeLost.index
 
         # check that the index of the YLL dataframe is not changed
         assert indx_after.equals(indx_before)
         assert indx_after.equals(self.YearsLivedWithDisability.index)
 
-
-
-    def decompose_yll_by_age_and_time(self,start_date,end_date,date_of_birth):
+    def decompose_yll_by_age_and_time(self, start_date, end_date, date_of_birth):
         """
         This helper function will decompose a period of years of lost life into time-spent in each age group in each
         calendar year
@@ -167,22 +159,22 @@ class HealthBurden(Module):
         :return: a dataframe (X) of the person-time (in years) spent by age-group and time-period
         """
 
-        df=pd.DataFrame()
+        df = pd.DataFrame()
 
         # Get all the days between start and end
-        df['days']= pd.date_range(start=start_date, end=end_date, freq='D')
+        df['days'] = pd.date_range(start=start_date, end=end_date, freq='D')
         df['year'] = df['days'].dt.year
 
         # Get the age that this person will be on each day
-        df['age_in_years'] =  ( (df['days'] - date_of_birth).dt.days.values/ 365 ).astype(int)
+        df['age_in_years'] = ((df['days'] - date_of_birth).dt.days.values / 365).astype(int)
 
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
 
-        X=pd.DataFrame(df.groupby(by=['year','age_range'])['days'].count())
-        X['person_years']=(X['days']/365).clip(lower=0.0, upper=1.0)
+        X = pd.DataFrame(df.groupby(by=['year', 'age_range'])['days'].count())
+        X['person_years'] = (X['days'] / 365).clip(lower=0.0, upper=1.0)
 
-        X=X.drop(columns=['days'],axis=1)
+        X = X.drop(columns=['days'], axis=1)
 
         return X
 
@@ -211,7 +203,7 @@ class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
 
         # 1) Ask each disease module to log the DALYS for the previous month
         for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
-            disease_module=self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
+            disease_module = self.sim.modules['HealthSystem'].registered_disease_modules[disease_module_name]
 
             dalys_from_disease_module = disease_module.report_daly_values()
 
@@ -224,49 +216,46 @@ class Log_DALYs(RegularEvent, PopulationScopeEventMixin):
             assert df.is_alive[dalys_from_disease_module.index].all()
 
             # Label with the name of the disease module
-            dalys_from_disease_module.name=disease_module_name
+            dalys_from_disease_module.name = disease_module_name
 
             # Add to overall data-frame for this month of report dalys
-            disease_specific_daly_values_this_month= pd.concat([disease_specific_daly_values_this_month,
-                                                                dalys_from_disease_module],
+            disease_specific_daly_values_this_month = pd.concat([disease_specific_daly_values_this_month,
+                                                                 dalys_from_disease_module],
                                                                 axis=1)
-
 
         # 2) Rescale the DALY weights
 
         # Create a scaling-factor (if total DALYS for one person is more than 1, all DALYS weights are scaled so that
         #   their sum equals one).
-        scaling_factor=( disease_specific_daly_values_this_month.sum(axis=1).clip(lower=0,upper=1) / \
-            disease_specific_daly_values_this_month.sum(axis=1) ).fillna(1.0)
+        scaling_factor = (disease_specific_daly_values_this_month.sum(axis=1).clip(lower=0, upper=1) /
+                          disease_specific_daly_values_this_month.sum(axis=1)).fillna(1.0)
 
-        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(scaling_factor,axis=0)
+        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.multiply(scaling_factor,
+                                                                                                   axis=0)
 
         # Multiply 1/12 as these weights are for one month only
-        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1/12)
-
+        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month * (1 / 12)
 
         # 3) Summarise the results for this month wrt age and sex
 
         # merge in age/sex information
-        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.merge( \
-            df.loc[df.is_alive,['sex','age_range']],left_index=True,right_index=True, how='left')
+        disease_specific_daly_values_this_month = disease_specific_daly_values_this_month.merge(
+            df.loc[df.is_alive, ['sex', 'age_range']], left_index=True, right_index=True, how='left')
 
         # Sum of daly_weight, by sex and age
-        Disability_Monthly_Summary = pd.DataFrame( \
-            disease_specific_daly_values_this_month.groupby(['sex','age_range']).sum().fillna(0))
+        Disability_Monthly_Summary = pd.DataFrame(
+            disease_specific_daly_values_this_month.groupby(['sex', 'age_range']).sum().fillna(0))
 
         # Add the year into the multi-index
-        Disability_Monthly_Summary['year']=self.sim.date.year
+        Disability_Monthly_Summary['year'] = self.sim.date.year
         Disability_Monthly_Summary.set_index('year', append=True, inplace=True)
-        Disability_Monthly_Summary=Disability_Monthly_Summary.reorder_levels(['sex', 'age_range', 'year'])
-
+        Disability_Monthly_Summary = Disability_Monthly_Summary.reorder_levels(['sex', 'age_range', 'year'])
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
 
         for disease_module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
             # for disease module that reported DALY weights:
 
-            self.module.YearsLivedWithDisability[disease_module_name]= \
+            self.module.YearsLivedWithDisability[disease_module_name] = \
                 self.module.YearsLivedWithDisability[disease_module_name].add(
-                    Disability_Monthly_Summary[disease_module_name],fill_value=0.0)
-
+                    Disability_Monthly_Summary[disease_module_name], fill_value=0.0)
