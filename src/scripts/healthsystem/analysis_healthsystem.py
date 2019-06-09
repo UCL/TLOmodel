@@ -41,7 +41,6 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.INFO)
 # (This can be set to 'all' or 'none'; and it will allow any treatment_id that begins with a stub)
 service_availability = '*'
 
-
 # -----------------------------------------------------------------
 
 # Register the appropriate modules
