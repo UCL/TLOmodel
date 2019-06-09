@@ -11,6 +11,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class HealthSystem(Module):
     """
     This is the Health System Module
@@ -212,11 +213,11 @@ class HealthSystem(Module):
         print('hello')
         assert 'ACCEPTED_FACILITY_LEVELS' in dir(hsi_event)
         assert type(hsi_event.ACCEPTED_FACILITY_LEVELS) is list
-        assert len(hsi_event.ACCEPTED_FACILITY_LEVELS)>0
+        assert len(hsi_event.ACCEPTED_FACILITY_LEVELS) > 0
         all_fac_levels = list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
-        if hsi_event.ACCEPTED_FACILITY_LEVELS[0]=='*':
+        if hsi_event.ACCEPTED_FACILITY_LEVELS[0] == '*':
             # replace the '*' with all the facility_levels being used
-            hsi_event.ACCEPTED_FACILITY_LEVELS=all_fac_levels
+            hsi_event.ACCEPTED_FACILITY_LEVELS = all_fac_levels
         assert set(hsi_event.ACCEPTED_FACILITY_LEVELS).issubset(set(all_fac_levels))
 
         # That it has a list for the other disease that will be alerted when it is run and that this make sense
@@ -413,9 +414,9 @@ class HealthSystem(Module):
         #  at the lowest levels and work upwards successively).
 
         if self.ignore_appt_constraints is True:
-            can_do_footprint=True   # appt_constraint is being ignored
+            can_do_footprint = True  # appt_constraint is being ignored
         else:
-                                    # apply the appt_constraint:
+            # apply the appt_constraint:
             can_do_footprint = False  # set outcome to False (may be overwritten with True during the checks)
 
             for try_fac_id in the_acceptable_health_facilities.Facility_ID.values:
@@ -428,7 +429,8 @@ class HealthSystem(Module):
                     capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
                                                                                          'Minutes_Remaining_Today']]
 
-                # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
+                # Transform the treatment footprint into a demand for time for officers of each type, for this
+                # facility type
                 time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
                 for this_appt in appt_types:
                     if the_treatment_footprint[this_appt] > 0:
@@ -443,7 +445,8 @@ class HealthSystem(Module):
                     # at that type of facility. So we check that time_requested is not empty.)
                     # -------------------------
 
-                    # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
+                    # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each
+                    # Officer_Type_Code
                     time_requested = pd.DataFrame(
                         time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
                     time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
@@ -452,9 +455,10 @@ class HealthSystem(Module):
                     comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
                                                       indicator=True)
 
-                    # Check if there are sufficient minutes available for each type of officer to satisfy the appt_footprint
+                    # Check if there are sufficient minutes available for each type of officer to satisfy
+                    # the appt_footprint
                     if (all(comparison['_merge'] == 'both') & all(
-                                                    comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
+                            comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
                         # the appt_footprint can be accommodated
                         can_do_footprint = True
@@ -463,9 +467,9 @@ class HealthSystem(Module):
                         for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
                             old_mins_remaining = \
                                 current_capabilities.loc[
-                                    (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                        'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'].values[
-                                    0]
+                                    (current_capabilities['Facility_ID'] == try_fac_id) &
+                                    (current_capabilities['Officer_Type_Code'] == this_officer_type),
+                                    'Minutes_Remaining_Today'].values[0]
 
                             time_to_take_away = \
                                 time_requested.loc[
@@ -483,7 +487,6 @@ class HealthSystem(Module):
                                 new_mins_remaining
 
                         break  # cease looking at other facility_types if the need has been met
-
 
         assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 

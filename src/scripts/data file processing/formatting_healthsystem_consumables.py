@@ -156,7 +156,6 @@ wb = wb[['Intervention_Cat',
 
 assert not pd.isnull(wb).any().any()
 
-
 # ----------
 # Now looking at the OneHealth file (29-5-19 Slack Msg from Tara: this comes from Palladium Grp originally)
 # This file should be the essentially the same as the file that has been imported already but with some
@@ -166,41 +165,41 @@ onehealthfile = workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanz
 OneHealth projection files/OneHealth commodities.xlsx'
 
 oh = pd.read_excel(workingfile, sheet='consumables')
-oh.columns=oh.loc[0]
+oh.columns = oh.loc[0]
 oh = oh.drop(index=0)
 # take only the values for 2010 as the values are the same in all the years
-oh=oh[['Drug or supply',2010.0]].rename(columns={'Drug or supply': 'Items',2010.0: 'Unit_Cost'})
+oh = oh[['Drug or supply', 2010.0]].rename(columns={'Drug or supply': 'Items', 2010.0: 'Unit_Cost'})
 
 # compare the list of unique consumbale items in the one health sheet with the original file
-list_of_consumables_oh = pd.DataFrame({'Items':pd.unique(oh['Items'])})
-list_of_consumables_orig = pd.DataFrame({'Items':pd.unique(wb['Items'])})
-comparison= pd.DataFrame(list_of_consumables_orig).merge(list_of_consumables_oh,
-                                                         on='Items',
-                                                         indicator=True,
-                                                         how='outer')
+list_of_consumables_oh = pd.DataFrame({'Items': pd.unique(oh['Items'])})
+list_of_consumables_orig = pd.DataFrame({'Items': pd.unique(wb['Items'])})
+comparison = pd.DataFrame(list_of_consumables_orig).merge(list_of_consumables_oh,
+                                                          on='Items',
+                                                          indicator=True,
+                                                          how='outer')
 
 # get the ones which are only in the one health dataset
-only_in_oh=comparison.loc[comparison['_merge']=='right_only','Items'].reset_index(drop=True)
+only_in_oh = comparison.loc[comparison['_merge'] == 'right_only', 'Items'].reset_index(drop=True)
 
 # merge in Unit_Cost for the combined joint set
-only_in_oh = pd.DataFrame({'Items': only_in_oh}).merge(oh,on='Items',how='left')
-only_in_oh = only_in_oh.drop_duplicates() # drop duplicates caused by the merge
+only_in_oh = pd.DataFrame({'Items': only_in_oh}).merge(oh, on='Items', how='left')
+only_in_oh = only_in_oh.drop_duplicates()  # drop duplicates caused by the merge
 
 # Append these records to the end of the wb dataframe (the resource file)
 # They fall into a "misceallanerous" package code. But at least they can still be accessed by the disease modules
 
 # Add columns so that the only-in-oh dataframe can be appended to the wb
 
-only_in_oh['Intervention_Cat']='Imported From One Health'
-only_in_oh['Intervention_Pkg']='Misc'
-only_in_oh['Intervention_Pkg_Code']=-99
-only_in_oh['Item_Code']=np.arange(1000,1000+len(only_in_oh))
-only_in_oh['Expected_Units_Per_Case']=1.0
+only_in_oh['Intervention_Cat'] = 'Imported From One Health'
+only_in_oh['Intervention_Pkg'] = 'Misc'
+only_in_oh['Intervention_Pkg_Code'] = -99
+only_in_oh['Item_Code'] = np.arange(1000, 1000 + len(only_in_oh))
+only_in_oh['Expected_Units_Per_Case'] = 1.0
 
 assert set(only_in_oh.columns) == set(wb.columns)
 
 # Add these to the overall dataframe: now complte listing of consumables
-cons=pd.concat([wb,only_in_oh],axis=0,ignore_index=True, sort=False)
+cons = pd.concat([wb, only_in_oh], axis=0, ignore_index=True, sort=False)
 
 # --------------
 # Notes:
@@ -222,7 +221,6 @@ cons['Available_Facility_Level_0'] = 0.50
 cons['Available_Facility_Level_1'] = 0.75
 cons['Available_Facility_Level_2'] = 0.90
 cons['Available_Facility_Level_3'] = 0.90
-
 
 # Save:
 cons.to_csv(resourcefilepath + 'ResourceFile_Consumables.csv')
