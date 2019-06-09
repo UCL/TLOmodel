@@ -217,10 +217,10 @@ cons = pd.concat([wb, only_in_oh], axis=0, ignore_index=True, sort=False)
 # As we do not know anything about this yet, for now follow a simple rule.
 # This should be much better informed
 
-cons['Available_Facility_Level_0'] = 0.50
-cons['Available_Facility_Level_1'] = 0.75
-cons['Available_Facility_Level_2'] = 0.90
-cons['Available_Facility_Level_3'] = 0.90
+cons['Available_Facility_Level_0'] = 0.85
+cons['Available_Facility_Level_1'] = 0.90
+cons['Available_Facility_Level_2'] = 0.95
+cons['Available_Facility_Level_3'] = 0.99
 
 # Save:
 cons.to_csv(resourcefilepath + 'ResourceFile_Consumables.csv')

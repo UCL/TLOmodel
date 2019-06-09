@@ -27,7 +27,6 @@ def check_dtypes(simulation):
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
 
-
 def test_run_with_healthsystem_no_interventions_defined():
     sim = Simulation(start_date=start_date)
 
