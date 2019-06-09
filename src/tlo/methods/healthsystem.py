@@ -11,7 +11,6 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 class HealthSystem(Module):
     """
     This is the Health System Module
@@ -21,9 +20,14 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability='*'):
+                 service_availability='*',
+                 ignore_appt_constraints=False,
+                 ignore_cons_constraints=False):
+
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.ignore_appt_constraints = ignore_appt_constraints
+        self.ignore_cons_constraints = ignore_cons_constraints
 
         # Check that the service_availability list is specified correctly
         assert (service_availability == '*') or (type(service_availability) == list)
@@ -180,7 +184,7 @@ class HealthSystem(Module):
         logger.debug('HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
                      hsi_event.TREATMENT_ID, hsi_event.target)
 
-        # 1) Check that this is a legitimate health system interaction event
+        # 1) Check that this is a legitimate health system interaction (HSI) event
 
         # Correctly formatted footprint
         assert 'APPT_FOOTPRINT' in dir(hsi_event)
@@ -202,6 +206,18 @@ class HealthSystem(Module):
                 consumables['Intervention_Pkg_Code']))
         assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
             set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+
+        # That it has an 'ACCEPTED_FACILITY_LEVELS' attribute (a list of Ok facility levels of a '*'
+        # If it a list with one element '*' in it, then update that with all the facility levels
+        print('hello')
+        assert 'ACCEPTED_FACILITY_LEVELS' in dir(hsi_event)
+        assert type(hsi_event.ACCEPTED_FACILITY_LEVELS) is list
+        assert len(hsi_event.ACCEPTED_FACILITY_LEVELS)>0
+        all_fac_levels = list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
+        if hsi_event.ACCEPTED_FACILITY_LEVELS[0]=='*':
+            # replace the '*' with all the facility_levels being used
+            hsi_event.ACCEPTED_FACILITY_LEVELS=all_fac_levels
+        assert set(hsi_event.ACCEPTED_FACILITY_LEVELS).issubset(set(all_fac_levels))
 
         # That it has a list for the other disease that will be alerted when it is run and that this make sense
         assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
@@ -329,7 +345,6 @@ class HealthSystem(Module):
         It returns a dictionary containing the consumables information in the format that the /
         HealthSystemScheduler expects.
         """
-
         blank_footprint = {
             'Intervention_Package_Code': [],
             'Item_Code': []
@@ -341,9 +356,7 @@ class HealthSystem(Module):
         This gives the probability that a person who had developed a particular symptom will seek care.
         Disease modules call this when a person has symptoms onset to determine if there will be a health interaction.
         """
-
         # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
-
         return 1.0
 
     def check_if_can_do_appt_footprint(self, hsi_event, current_capabilities):
@@ -376,12 +389,17 @@ class HealthSystem(Module):
         the_person_id = hsi_event.target
         the_district = df.at[the_person_id, 'district_of_residence']
 
-        # Get the health_facilities available to this person and sort by Facility_Level
-        the_health_facilities = fac_per_district.loc[fac_per_district['District'] == the_district]
-        the_health_facilities = the_health_facilities.sort_values(['Facility_Level'])
+        # Get the health_facilities available to this person (based on their district), and which are accepted by the
+        # hsi_event.ACCEPTED_FACILITY_LEVELS. Then sort by Facility_Level (to determine the order in which to try to
+        # place the hsi_event: lowest level first).
+        the_acceptable_health_facilities = fac_per_district.loc[(fac_per_district['District'] == the_district) &
+                                                                fac_per_district['Facility_Level'].isin(
+                                                                    hsi_event.ACCEPTED_FACILITY_LEVELS)]
+        the_acceptable_health_facilities = the_acceptable_health_facilities.sort_values(['Facility_Level'])
 
+        # get the capability of acceptable health facilities
         capabilities_of_the_health_facilities = current_capabilities.loc[
-            current_capabilities['Facility_ID'].isin(the_health_facilities['Facility_ID'])]
+            current_capabilities['Facility_ID'].isin(the_acceptable_health_facilities['Facility_ID'])]
 
         the_treatment_footprint = hsi_event.APPT_FOOTPRINT
 
@@ -394,73 +412,78 @@ class HealthSystem(Module):
         # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
         #  at the lowest levels and work upwards successively).
 
-        can_do_footprint = False  # set outcome to False (may be overwritten with True during the checks)
+        if self.ignore_appt_constraints is True:
+            can_do_footprint=True   # appt_constraint is being ignored
+        else:
+                                    # apply the appt_constraint:
+            can_do_footprint = False  # set outcome to False (may be overwritten with True during the checks)
 
-        for try_fac_id in the_health_facilities.Facility_ID.values:
-            # Look at each facility to which the person in the hsi event has access:
+            for try_fac_id in the_acceptable_health_facilities.Facility_ID.values:
+                # Look at each facility to which the person in the hsi event has access:
 
-            this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
+                this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
 
-            # Establish how much time is available at this facility
-            time_available = capabilities_of_the_health_facilities.loc[
-                capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
-                                                                                     'Minutes_Remaining_Today']]
+                # Establish how much time is available at this facility
+                time_available = capabilities_of_the_health_facilities.loc[
+                    capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
+                                                                                         'Minutes_Remaining_Today']]
 
-            # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
-            time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
-            for this_appt in appt_types:
-                if the_treatment_footprint[this_appt] > 0:
-                    time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
-                                                            (appt_times['Facility_Level'] == this_facility_level),
-                                                            ['Officer_Type_Code',
-                                                             'Time_Taken']].copy().reset_index(drop=True)
-                    time_requested = pd.concat([time_requested, time_req_for_this_appt])
+                # Transform the treatment footprint into a demand for time for officers of each type, for this facility type
+                time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
+                for this_appt in appt_types:
+                    if the_treatment_footprint[this_appt] > 0:
+                        time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
+                                                                (appt_times['Facility_Level'] == this_facility_level),
+                                                                ['Officer_Type_Code',
+                                                                 'Time_Taken']].copy().reset_index(drop=True)
+                        time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
-            if len(time_requested) > 0:
-                # (If the data-frame of time-requested is empty, it means that the appointments is not possible
-                # at that type of facility. So we check that time_requested is not empty.)
-                # -------------------------
+                if len(time_requested) > 0:
+                    # (If the data-frame of time-requested is empty, it means that the appointments is not possible
+                    # at that type of facility. So we check that time_requested is not empty.)
+                    # -------------------------
 
-                # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
-                time_requested = pd.DataFrame(
-                    time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
-                time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
+                    # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each Officer_Type_Code
+                    time_requested = pd.DataFrame(
+                        time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
+                    time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
 
-                # Merge the Minutes_Available at this facility with the minutes required in the footprint
-                comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
-                                                  indicator=True)
+                    # Merge the Minutes_Available at this facility with the minutes required in the footprint
+                    comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
+                                                      indicator=True)
 
-                # Check if there are sufficient minutes available for each type of officer to satisfy the appt_footprint
-                if (all(comparison['_merge'] == 'both') & all(
-                                                comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
+                    # Check if there are sufficient minutes available for each type of officer to satisfy the appt_footprint
+                    if (all(comparison['_merge'] == 'both') & all(
+                                                    comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
-                    # the appt_footprint can be accommodated
-                    can_do_footprint = True
+                        # the appt_footprint can be accommodated
+                        can_do_footprint = True
 
-                    # Impose the footprint for each one of the types being requested
-                    for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
-                        old_mins_remaining = \
+                        # Impose the footprint for each one of the types being requested
+                        for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
+                            old_mins_remaining = \
+                                current_capabilities.loc[
+                                    (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
+                                        'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'].values[
+                                    0]
+
+                            time_to_take_away = \
+                                time_requested.loc[
+                                    time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken'].values[0]
+
+                            new_mins_remaining = \
+                                old_mins_remaining - time_to_take_away
+
+                            assert (new_mins_remaining >= 0)
+
+                            # update
                             current_capabilities.loc[
                                 (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'].values[
-                                0]
+                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                new_mins_remaining
 
-                        time_to_take_away = \
-                            time_requested.loc[
-                                time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken'].values[0]
+                        break  # cease looking at other facility_types if the need has been met
 
-                        new_mins_remaining = \
-                            old_mins_remaining - time_to_take_away
-
-                        assert (new_mins_remaining >= 0)
-
-                        # update
-                        current_capabilities.loc[
-                            (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                            new_mins_remaining
-
-                    break  # cease looking at other facility_types if the need has been met
 
         assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
