@@ -261,12 +261,15 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) If ignoring the priority in scheduling, then over-write the provided priority information
+        # 4) Manipulate the priority level
+
+        # If ignoring the priority in scheduling, then over-write the provided priority information
         if self.ignore_priority:
             priority = 0    # set all event to priority 0
+        # This is where could attach a different priority score according to the treatment_id (and other things)
+        # in order to examine the influence of the prioritisation score.
 
         # 5) If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
-
         if allowed:
 
             # Create a tuple to go into the heapq
@@ -390,10 +393,12 @@ class HealthSystem(Module):
         fac_per_district = self.parameters['Facilities_For_Each_District']
         appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
         appt_times = self.parameters['Appt_Time_Table']
+        consumables = self.parameters['Consumables']
 
         # Gather information about the HSI event
         the_person_id = hsi_event.target
         the_district = df.at[the_person_id, 'district_of_residence']
+        the_treatment_footprint = hsi_event.APPT_FOOTPRINT
 
         # Get the health_facilities available to this person (based on their district), and which are accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVELS. Then sort by Facility_Level (to determine the order in which to try to
@@ -403,11 +408,9 @@ class HealthSystem(Module):
                                                                     hsi_event.ACCEPTED_FACILITY_LEVELS)]
         the_acceptable_health_facilities = the_acceptable_health_facilities.sort_values(['Facility_Level'])
 
-        # get the capability of acceptable health facilities
+        # get the capabilities of acceptable health facilities
         capabilities_of_the_health_facilities = current_capabilities.loc[
             current_capabilities['Facility_ID'].isin(the_acceptable_health_facilities['Facility_ID'])]
-
-        the_treatment_footprint = hsi_event.APPT_FOOTPRINT
 
         # ------------
         # Test if capabilities of health system can meet this request
@@ -424,7 +427,7 @@ class HealthSystem(Module):
         can_do_cons_footprint = False
 
         for try_fac_id in the_acceptable_health_facilities.Facility_ID.values:
-            # Look at each facility to which the person in the hsi event has access:
+            # Look at each facility to see if it can run the appointment
 
             this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
 
@@ -434,7 +437,7 @@ class HealthSystem(Module):
                                                                                      'Minutes_Remaining_Today']]
 
             # Transform the treatment footprint into a demand for time for officers of each type, for this
-            # facility type
+            # facility level (it varies by facility level)
             time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
             for this_appt in appt_types:
                 if the_treatment_footprint[this_appt] > 0:
@@ -446,8 +449,8 @@ class HealthSystem(Module):
 
             if ((len(time_requested) > 0) or (self.ignore_appt_constraints)):
                 # (If the data-frame of time-requested is empty, it means that the appointments is not possible
-                # at that type of facility. So we check that time_requested is not empty.)
-                # We also als allow the request to progress if we are ignoring appt_constraints
+                # at that type of facility. So we check that time_requested is not empty before progressing.)
+                # We also also allow the request to progress if we are ignoring appt_constraints
                 # -------------------------
 
                 # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each
@@ -465,22 +468,21 @@ class HealthSystem(Module):
                 if self.ignore_appt_constraints or (all(comparison['_merge'] == 'both') & all(
                                     comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
-                    # the appt_footprint can be accommodated
+                    # the appt_footprint can be accommodated by officers at this facility
                     can_do_appt_footprint = True
 
-                    # check if the consumables are available
-                    consumables = self.parameters['Consumables']
+                    # Now, check if the consumables are available at this facility
                     consumables_used = self.get_consumable_items(hsi_event)
 
-                    # get the probabilities that each item is available
+                    #   Get the probabilities that each item is available
                     prob_item_available = consumables.loc[consumables['Item_Code'].isin(consumables_used['Item_Code']),
                                                           'Available_Facility_Level_' + str(this_facility_level)]
 
-                    # detetermine if this facility level ever has these consumables
-                    # (the appt_footprint will be imposed if these items are ever available)
+                    #   Detetermine if this facility level ever has these consumables
+                    #   (the appt_footprint will be imposed if these items are ever available)
                     all_items_available_ever = bool((prob_item_available > 0).all())
 
-                    # get random numbers and see if the the items will be available on this occassion:
+                    #   Get random numbers and see if the the items will be available on this occasion:
                     all_items_available_now = bool(
                         (prob_item_available > self.rng.rand(len(prob_item_available))).all())
 
@@ -490,8 +492,9 @@ class HealthSystem(Module):
                     # -- Determine if the appt_footprint should be imposed:
                     if (can_do_appt_footprint and all_items_available_ever) \
                             or (can_do_appt_footprint and self.ignore_cons_constraints):
-                        # (Impose the appt_footprint if it can be done at the consumables are ever available,
-                        # or if ignoring consumables constraints)
+                        # (Impose the appt_footprint if it can be done and the consumables are ever available,
+                        #  [represening that the appt happens but this is a temporary stock-out] or if ignoring
+                        # consumables constraints)
 
                         # Impose the footprint for each one of the types being requested
                         for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
