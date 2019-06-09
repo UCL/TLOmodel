@@ -89,9 +89,10 @@ class ChronicSyndrome(Module):
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
 
-        # get the DALY weight that this module will use from the weight database (these codes are just random!)
-        seq_code = 87  # the sequale code that is related to this disease (notionally!)
-        self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
+        if 'HealthBurden' in self.sim.modules.keys():
+            # get the DALY weight that this module will use from the weight database (these codes are just random!)
+            seq_code = 87  # the sequale code that is related to this disease (notionally!)
+            self.parameters['daly_wt_ill'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=seq_code)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
