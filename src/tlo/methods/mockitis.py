@@ -77,9 +77,10 @@ class Mockitis(Module):
             })
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
-        p['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
-        p['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
-        p['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
+        if 'HealthBurden' in self.sim.modules.keys():
+            p['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+            p['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+            p['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
