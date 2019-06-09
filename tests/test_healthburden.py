@@ -28,23 +28,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthsystem_no_interventions_defined():
-    sim = Simulation(start_date=start_date)
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
-
-    # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-
-def test_run_with_healthsystem_and_healthburden():
+def test_run_with_healthsystem_and_healthburden_no_intvs():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
@@ -62,30 +46,7 @@ def test_run_with_healthsystem_and_healthburden():
     check_dtypes(sim)
 
 
-def test_run_with_healthsystem_interventions_off():
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
-
-    # Define the service availability
-    service_availability = []
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-
-    # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    assert sim.modules['HealthSystem'].hsi_event_queue_counter==0
-    check_dtypes(sim)
-
-
-def test_run_with_healthsystem_interventions_on():
+def test_run_with_healthsystem_and_healthburden_intvs_on():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
