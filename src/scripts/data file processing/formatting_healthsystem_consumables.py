@@ -199,14 +199,30 @@ only_in_oh['Expected_Units_Per_Case']=1.0
 
 assert set(only_in_oh.columns) == set(wb.columns)
 
-# Add these to the overall dataframe
-x=pd.concat([wb,only_in_oh],axis=0,ignore_index=True, sort=False)
-
-# Save:
-x.to_csv(resourcefilepath + 'ResourceFile_Consumables.csv')
+# Add these to the overall dataframe: now complte listing of consumables
+cons=pd.concat([wb,only_in_oh],axis=0,ignore_index=True, sort=False)
 
 # --------------
 # Notes:
 # These is some duplication/overlap between the file from EHP (Matthias Arnold provided) and the OneHealth file.
 # Also, these have not been cross-checked against the Malawi treatment guidelines or 'sense-checked'
 # --------------
+
+
+# Finally augment the file to indicate the availability of each items according to Facility_Level
+# Columns will be created indicating availability at each Facility_Level
+# 0: not available
+# 1: always available
+# (0.0, 1.0): available with this probability [this is representing stock-outs]
+
+# As we do not know anything about this yet, for now follow a simple rule.
+# This should be much better informed
+
+cons['Available_Facility_Level_0'] = 0.50
+cons['Available_Facility_Level_1'] = 0.75
+cons['Available_Facility_Level_2'] = 0.90
+cons['Available_Facility_Level_3'] = 0.90
+
+
+# Save:
+cons.to_csv(resourcefilepath + 'ResourceFile_Consumables.csv')
