@@ -21,10 +21,11 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability='*',          # '*' or list of treatment_ids to allow
-                 ignore_appt_constraints=False,     # remove constraints to do with officer numbers and time
-                 ignore_cons_constraints=False,     # remove constraints to do with consumables availability
-                 ignore_priority=False):            # do not use the priroity information in HSI event to schedule
+                 service_availability='*',  # '*' or list of treatment_ids to allow
+                 ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
+                 ignore_cons_constraints=False,  # remove constraints to do with consumables availability
+                 ignore_priority=False,  # do not use the priroity information in HSI event to schedule
+                 capabilities_coefficient=1.0):  # multiplier for the capabailities of health officers
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -35,6 +36,11 @@ class HealthSystem(Module):
         # Check that the service_availability list is specified correctly
         assert (service_availability == '*') or (type(service_availability) == list)
         self.service_availability = service_availability
+
+        # Check that the capabilities coefficident is correct
+        assert capabilities_coefficient >= 0
+        assert type(capabilities_coefficient) is float
+        self.capabilities_coefficient = capabilities_coefficient
 
         # Define empty set of registered disease modules
         self.registered_disease_modules = {}
@@ -265,7 +271,7 @@ class HealthSystem(Module):
 
         # If ignoring the priority in scheduling, then over-write the provided priority information
         if self.ignore_priority:
-            priority = 0    # set all event to priority 0
+            priority = 0  # set all event to priority 0
         # This is where could attach a different priority score according to the treatment_id (and other things)
         # in order to examine the influence of the prioritisation score.
 
@@ -329,10 +335,14 @@ class HealthSystem(Module):
         """
         This will return a dataframe of the capabilities that the healthsystem has for today.
         Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley)
+        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
+        named capabilities_coefficient.
         """
 
         capabilities = self.parameters['Daily_Capabilities']
+
+        # apply the coefficient
+        capabilities['Total_Minutes_Per_Day'] = capabilities['Total_Minutes_Per_Day'] * self.capabilities_coefficient
 
         return capabilities
 
@@ -466,7 +476,7 @@ class HealthSystem(Module):
                 # Check if there are sufficient minutes available for each type of officer to satisfy
                 # the appt_footprint
                 if self.ignore_appt_constraints or (all(comparison['_merge'] == 'both') & all(
-                                    comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
+                                comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
                     # the appt_footprint can be accommodated by officers at this facility
                     can_do_appt_footprint = True
@@ -486,7 +496,7 @@ class HealthSystem(Module):
                     all_items_available_now = bool(
                         (prob_item_available > self.rng.rand(len(prob_item_available))).all())
 
-                    if self.ignore_appt_constraints or all_items_available_now:
+                    if self.ignore_cons_constraints or all_items_available_now:
                         can_do_cons_footprint = True
 
                     # -- Determine if the appt_footprint should be imposed:
@@ -511,15 +521,15 @@ class HealthSystem(Module):
                             new_mins_remaining = \
                                 old_mins_remaining - time_to_take_away
 
-                            assert (new_mins_remaining >= 0)
+                            assert (new_mins_remaining >= 0) or self.ignore_appt_constraints
 
-                        # update current_capabilities
-                        current_capabilities.loc[
-                            (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                            new_mins_remaining
+                            # update current_capabilities
+                            current_capabilities.loc[
+                                (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
+                                     'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                new_mins_remaining
 
-                    break  # cease looking at other facility_types if the need has been met
+                    break  # cease looking at other facility_types as the need has been met
 
         assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
@@ -622,10 +632,18 @@ class HealthSystem(Module):
         # Log the current state of resource use
 
         X = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
-        overall_useage = 1 - (X['Minutes_Remaining_Today'].sum() / X['Total_Minutes_Per_Day'].sum())
+
+        if X['Total_Minutes_Per_Day'].sum() > 0:
+            overall_useage = 1 - (X['Minutes_Remaining_Today'].sum() / X['Total_Minutes_Per_Day'].sum())
+        else:
+            overall_useage = 0.0  # in the case of there being no capabilities and nan arising
+
         X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
                     left_index=True, right_on='Facility_ID')
         X['Fraction_Time_Used'] = 1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
+        X['Fraction_Time_Used'] = X['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
+        X['Fraction_Time_Used'] = X['Fraction_Time_Used'].fillna(0.0)
+
         X = X[['Facility_Name', 'Fraction_Time_Used']]
         X.index = X['Facility_Name']
         X = X.drop(columns='Facility_Name')
