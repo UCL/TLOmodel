@@ -1,22 +1,12 @@
-#   todo: create high_salt high_satfat high_sugar low_fruveg and make high_satfat
-#   todo: and high_sugar determinants of overwt - finalise decision with group whether to do this
-
-#   todo: make exercise and smoking determinants of overwt, remove urban and gender as direct determinants ?
-#   todo: finalise decision with group whether to do this
-
-#   todo: consider overweight as > 30 ?  integrate with weight in childhood and malnutrition
-
-#   note:  urban rural will be created externally so will be simply used here (with a different name) rather than
-#   note:  created and used
-
-
 """
 Lifestyle module
+
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import logging
 
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -31,67 +21,6 @@ class Lifestyle(Module):
     """
 
     PARAMETERS = {
-
-        # -------- parameters relating to setting baseline values of property values -----------------------
-
-        'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
-                                                              'given urban'),
-        # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
-        #                                                     'true to false upon move from rural to urban'
-        'init_rp_unimproved_sanitation_rural': Parameter(Types.REAL,
-                                                         'initial relative prevalence of unimproved_sanitation if '
-                                                         'rural'),
-        'init_p_no_clean_drinking_water': Parameter(Types.REAL,
-                                                    'initial probability of no_clean_drinking_water given urban'),
-        # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
-        #                                                     'true to false upon move from rural to urban'
-        'init_rp_no_clean_drinking_water_rural': Parameter(Types.REAL,
-                                                           'initial relative prevalence of no clean drinking_water '
-                                                           'if rural'),
-        'init_p_wood_burn_stove': Parameter(Types.REAL,
-                                            'initial probability of wood_burn_stove given urban'),
-        # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
-        #                                                     'true to false upon move from rural to urban'
-        'init_rp_wood_burn_stove_rural': Parameter(Types.REAL,
-                                                   'initial relative prevalence of wood_burn_stove if rural'),
-        'init_p_no_access_handwashing': Parameter(Types.REAL,
-                                                  'initial probability of no_access_handwashing given wealth 1'),
-        'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial relative prevalence of no_'
-                                                                                'access_handwashing per lower wealth level'),
-        'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
-        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
-        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_dist_mar_stat_age1320': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
-        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
-        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
-        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
-        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
-        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
-        'init_p_on_contrac': Parameter(Types.REAL, 'initial proportion of women age 15-49 on contraceptives'),
-        'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
-        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
-                                                         'education at baseline'),
-        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
-        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
-        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
-        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
-        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
-        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
-        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline '
-                                                                   'per higher wealth level'),
-        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
-                                                      'proportion of low wealth aged 20-30 with some education who '
-                                                      'have secondary education at baseline'),
-        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
-        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
-        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
-        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
-        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
-        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of secondary education '
-                                                                       'per higher wealth level'),
-
-        # ------------ parameters relating to updating of property values over time ------------------------
-
         'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
         'r_overwt': Parameter(Types.REAL, 'probability per 3 months of change from not overweight to '
@@ -119,9 +48,20 @@ class Lifestyle(Module):
         'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
                                               'not excess alcohol'),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
+        'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
+        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
+        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+        'init_dist_mar_stat_age1320': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
+        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
+        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
+        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
+        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
+        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
         'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
                                            'amongst those married'),
+        'init_p_on_contrac': Parameter(Types.REAL, 'initial proportion of women age 15-49 on contraceptives'),
+        'init_dist_con_t': Parameter(Types.LIST, 'initial proportions on different contraceptive types'),
         'r_contrac': Parameter(Types.REAL, 'probability per 3 months of starting contraceptive if age 15-50'),
         'r_contrac_int': Parameter(Types.REAL, 'probability per 3 months of interrupting or stopping contraception '
                                                '(note current method of contraception is a different property'),
@@ -141,14 +81,26 @@ class Lifestyle(Module):
                                                 'if in primary education and wealth level 5'),
         'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
                                                                'school per 1 higher wealth level'),
-        'r_improved_sanitation': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'unimproved_sanitation true to false'),
-        'r_clean_drinking_water': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                        'drinking_water true to false'),
-        'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'wood_burn_stove true to false'),
-        'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                      'no_access_handwashing true to false')
+        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
+                                                         'education at baseline'),
+        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
+        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
+        'init_rp_some_ed_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of some education at baseline '
+                                                                   'per higher wealth level'),
+        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
+                                                      'proportion of low wealth aged 20-30 with some education who '
+                                                      'have secondary education at baseline'),
+        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
+        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
+        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
+        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
+        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'relative prevalence of secondary education '
+                                                                       'per higher wealth level'),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -159,13 +111,9 @@ class Lifestyle(Module):
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_overwt': Property(Types.BOOL, 'currently overweight'),
-        'li_date_no_longer_overwt': Property(Types.DATE, 'li_date_no_longer_overwt'),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
-        'li_date_no_longer_low_ex': Property(Types.DATE, 'li_date_no_longer_low_ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
-        'li_date_quit_tob': Property(Types.DATE, 'li_date_quit_tob'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
-        'li_date_no_longer_ex_alc': Property(Types.DATE, 'li_date_no_longer_ex_alc'),
         'li_mar_stat': Property(Types.CATEGORICAL,
                                 'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
                                 categories=[1, 2, 3]),
@@ -173,56 +121,12 @@ class Lifestyle(Module):
         'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
-        'li_unimproved_sanitation': Property(Types.BOOL, 'uninproved sanitation - anything other than own or '
-                                                         'shared latrine'),
-        'li_no_access_handwashing': Property(Types.BOOL, 'no_access_handwashing - no water, no soap, no other '
-                                                         'cleaning agent - as in DHS'),
-        'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
-        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
     }
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the lifestyle module
         """
         p = self.parameters
-
-        p['init_p_urban'] = 0.17
-        p['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
-        p['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
-        p['init_p_overwt_agelt15'] = 0.0
-        p['init_p_ex_alc_m'] = 0.15
-        p['init_p_ex_alc_f'] = 0.01
-        p['init_dist_mar_stat_age1520'] = [0.70, 0.30, 0.00]
-        p['init_dist_mar_stat_age2030'] = [0.15, 0.80, 0.05]
-        p['init_dist_mar_stat_age3040'] = [0.05, 0.70, 0.25]
-        p['init_dist_mar_stat_age4050'] = [0.03, 0.50, 0.47]
-        p['init_dist_mar_stat_age5060'] = [0.03, 0.30, 0.67]
-        p['init_dist_mar_stat_agege60'] = [0.03, 0.20, 0.77]
-        p['init_age2030_w5_some_ed'] = 0.97
-        p['init_rp_some_ed_age0513'] = 1.01
-        p['init_rp_some_ed_age1320'] = 1.00
-        p['init_rp_some_ed_age3040'] = 1.00
-        p['init_rp_some_ed_age4050'] = 0.99
-        p['init_rp_some_ed_age5060'] = 0.99
-        p['init_rp_some_ed_agege60'] = 0.98
-        p['init_rp_some_ed_per_higher_wealth'] = 1.005
-        p['init_prop_age2030_w5_some_ed_sec'] = 0.20
-        p['init_rp_some_ed_sec_age1320'] = 1.00
-        p['init_rp_some_ed_sec_age3040'] = 0.90
-        p['init_rp_some_ed_sec_age4050'] = 0.85
-        p['init_rp_some_ed_sec_age5060'] = 0.80
-        p['init_rp_some_ed_sec_agege60'] = 0.75
-        p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
-        p['init_p_on_contrac'] = 0.30
-        p['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
-        p['init_p_unimproved_sanitation'] = 0.04
-        p['init_rp_unimproved_sanitation_rural'] = 4.5
-        p['init_p_no_clean_drinking_water'] = 0.017
-        p['init_rp_no_clean_drinking_water'] = 8.6
-        p['init_p_wood_burn_stove'] = 0.257
-        p['init_rp_wood_burn_stove'] = 3.6
-        p['init_p_no_access_handwashing'] = 0.478
-        p['init_rp_no_access_handwashing_per_lower_wealth'] = 1.06
         p['r_urban'] = 0.002
         p['r_rural'] = 0.0001
         p['r_overwt'] = 0.0025
@@ -242,8 +146,22 @@ class Lifestyle(Module):
         p['r_ex_alc'] = 0.003
         p['r_not_ex_alc'] = 0.000
         p['rr_ex_alc_f'] = 0.07
+        p['init_p_urban'] = 0.17
+        p['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
+        p['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
+        p['init_p_overwt_agelt15'] = 0.0
+        p['init_p_ex_alc_m'] = 0.15
+        p['init_p_ex_alc_f'] = 0.01
+        p['init_dist_mar_stat_age1520'] = [0.70, 0.30, 0.00]
+        p['init_dist_mar_stat_age2030'] = [0.15, 0.80, 0.05]
+        p['init_dist_mar_stat_age3040'] = [0.05, 0.70, 0.25]
+        p['init_dist_mar_stat_age4050'] = [0.03, 0.50, 0.47]
+        p['init_dist_mar_stat_age5060'] = [0.03, 0.30, 0.67]
+        p['init_dist_mar_stat_agege60'] = [0.03, 0.20, 0.77]
         p['r_mar'] = 0.03
         p['r_div_wid'] = 0.01
+        p['init_p_on_contrac'] = 0.30
+        p['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
         p['r_contrac'] = 0.05
         p['r_contrac_int'] = 0.1
         p['r_con_from_1'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
@@ -258,10 +176,21 @@ class Lifestyle(Module):
         p['rp_ed_primary_higher_wealth'] = 1.01
         p['p_ed_secondary'] = 0.20
         p['rp_ed_secondary_higher_wealth'] = 1.45
-        p['r_improved_sanitation'] = 0.001  # place-holder very low rate
-        p['r_clean_drinking_water'] = 0.001  # place-holder very low rate
-        p['r_non_wood_burn_stove'] = 0.001   # place-holder very low rate
-        p['r_access_handwashing'] = 0.001     # place-holder very low rate
+        p['init_age2030_w5_some_ed'] = 0.97
+        p['init_rp_some_ed_age0513'] = 1.01
+        p['init_rp_some_ed_age1320'] = 1.00
+        p['init_rp_some_ed_age3040'] = 1.00
+        p['init_rp_some_ed_age4050'] = 0.99
+        p['init_rp_some_ed_age5060'] = 0.99
+        p['init_rp_some_ed_agege60'] = 0.98
+        p['init_rp_some_ed_per_higher_wealth'] = 1.005
+        p['init_prop_age2030_w5_some_ed_sec'] = 0.20
+        p['init_rp_some_ed_sec_age1320'] = 1.00
+        p['init_rp_some_ed_sec_age3040'] = 0.90
+        p['init_rp_some_ed_sec_age4050'] = 0.85
+        p['init_rp_some_ed_sec_age5060'] = 0.80
+        p['init_rp_some_ed_sec_agege60'] = 0.75
+        p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -282,19 +211,13 @@ class Lifestyle(Module):
         df['li_ex_alc'] = False  # default all not ex alc
         df['li_mar_stat'].values[:] = 1  # default: all individuals never married
         df['li_on_con'] = False  # default: all not on contraceptives
+
         # default: call contraceptive type 1, but when li_on_con = False this property becomes most
         # recent contraceptive used
         df['li_con_t'].values[:] = 1
-        df['li_in_ed'] = False   # default: not in education
-        df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
-        df['li_unimproved_sanitation'] = True  # default: unimproved_sanitation
-        df['li_date_acquire_improved_sanitation'] = pd.NaT
-        df['li_no_access_handwashing'] = True  # default: no_access_handwashing
-        df['li_date_acquire_access_handwashing'] = pd.NaT
-        df['li_no_clean_drinking_water'] = True  # default: unimproved_sanitation
-        df['li_date_acquire_clean_drinking_water'] = pd.NaT
-        df['li_wood_burn_stove'] = True  # default: li_wood_burn_stove
-        df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
+
+        df['li_in_ed'] = False  # default: not in education
+        df['li_ed_lev'].values[:] = 1  # default: education level = 1 - no education
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
@@ -365,7 +288,7 @@ class Lifestyle(Module):
                                    ('M', '85-89', 0.06),
                                    ('M', '90-94', 0.06),
                                    ('M', '95-99', 0.06),
-                                   ('M', '100+',  0.06),
+                                   ('M', '100+', 0.06),
 
                                    ('F', '15-19', 0.002),
                                    ('F', '20-24', 0.002),
@@ -384,7 +307,7 @@ class Lifestyle(Module):
                                    ('F', '85-89', 0.002),
                                    ('F', '90-94', 0.002),
                                    ('F', '95-99', 0.002),
-                                   ('F', '100+',  0.002)],
+                                   ('F', '100+', 0.002)],
                                   columns=['sex', 'age_range', 'p_tob'])
 
         # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
@@ -456,7 +379,7 @@ class Lifestyle(Module):
         p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
 
         # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_some_ed *= m.init_rp_some_ed_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         # calculate baseline of education level 3, and adjust for age and wealth
         p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
@@ -467,7 +390,7 @@ class Lifestyle(Module):
         p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
         p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
         p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
@@ -487,65 +410,6 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 1) & df.is_alive, 'li_in_ed'] = False
         df.loc[df.age_years.between(5, 12) & (df['li_ed_lev'] == 2) & df.is_alive, 'li_in_ed'] = True
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
-
-        # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
-
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
-        all_idx = df.index[df.is_alive]
-
-        eff_prev_unimproved_sanitation = pd.Series(m.init_p_unimproved_sanitation,
-                                                   index=df.index[df.is_alive])
-
-        eff_prev_unimproved_sanitation.loc[rural_idx] *= m.init_rp_unimproved_sanitation_rural
-
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
-
-        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < eff_prev_unimproved_sanitation
-
-        # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
-
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
-        all_idx = df.index[df.is_alive]
-
-        eff_prev_no_clean_drinking_water = pd.Series(m.init_p_no_clean_drinking_water, index=df.index[df.is_alive])
-
-        eff_prev_no_clean_drinking_water.loc[rural_idx] *= m.init_rp_no_clean_drinking_water
-
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
-
-        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < eff_prev_no_clean_drinking_water
-
-        # -------------------- WOOD BURN STOVE ---------------------------------------------------
-
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
-        all_idx = df.index[df.is_alive]
-
-        eff_prev_wood_burn_stove = pd.Series(m.init_p_wood_burn_stove, index=df.index[df.is_alive])
-
-        eff_prev_wood_burn_stove.loc[rural_idx] *= m.init_rp_wood_burn_stove
-
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
-
-        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove
-
-        # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
-
-        all_idx = df.index[df.is_alive]
-        wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2)]
-        wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3)]
-        wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
-        wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
-
-        eff_prev_no_access_handwashing = pd.Series(m.init_p_no_access_handwashing, index=df.index[df.is_alive])
-
-        eff_prev_no_access_handwashing.loc[wealth2_idx] *= m.init_rp_no_access_handwashing_per_lower_wealth
-        eff_prev_no_access_handwashing.loc[wealth3_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 2)
-        eff_prev_no_access_handwashing.loc[wealth4_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 3)
-        eff_prev_no_access_handwashing.loc[wealth5_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 4)
-
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
-
-        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < eff_prev_no_access_handwashing
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -576,19 +440,18 @@ class Lifestyle(Module):
         df.at[child_id, 'li_con_t'] = 1
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
-        df.at[child_id, 'li_unimproved_sanitation'] = df.at[mother_id, 'li_unimproved_sanitation']
-        df.at[child_id, 'li_no_access_handwashing'] = df.at[mother_id, 'li_no_access_handwashing']
-        df.at[child_id, 'li_no_clean_drinking_water'] = df.at[mother_id, 'li_no_clean_drinking_water']
-        df.at[child_id, 'li_wood_burn_stove'] = df.at[mother_id, 'li_wood_burn_stove']
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all lifestyle properties for population
     """
+
     def __init__(self, module):
         """schedule to run every 3 months
+
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
+
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))
@@ -630,15 +493,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # random draw and start of overweight status
         df.loc[adults_not_ow, 'li_overwt'] = (rng.random_sample(len(adults_not_ow)) < eff_p_ow)
 
-        # transition from over weight to not over weight
-        overwt_idx = df.index[df.li_overwt & df.is_alive]
-        eff_rate_not_overwt = pd.Series(m.r_not_overwt, index=overwt_idx)
-        random_draw = rng.random_sample(len(overwt_idx))
-        newly_not_overwt: pd.Series = random_draw < eff_rate_not_overwt
-        newly_not_overwt_idx = overwt_idx[newly_not_overwt]
-        df.loc[newly_not_overwt_idx, 'li_overwt'] = False
-        df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
-
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
@@ -648,15 +502,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_low_ex.loc[df.li_urban] *= m.rr_low_ex_urban
 
         df.loc[adults_not_low_ex, 'li_low_ex'] = (rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex)
-
-        # transition from low exercise to not low exercise
-        low_ex_idx = df.index[df.li_low_ex & df.is_alive]
-        eff_rate_not_low_ex = pd.Series(m.r_not_low_ex, index=low_ex_idx)
-        random_draw = rng.random_sample(len(low_ex_idx))
-        newly_not_low_ex: pd.Series = random_draw < eff_rate_not_low_ex
-        newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
-        df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
-        df.loc[newly_not_low_ex_idx, 'li_date_no_longer_low_ex'] = self.sim.date
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -672,14 +517,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[adults_not_tob, 'li_tob'] = (rng.random_sample(len(adults_not_tob)) < eff_p_tob)
 
-        # transition from tobacco to no tobacco
-        tob_idx = df.index[df.li_tob & df.is_alive]
-        eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
-        random_draw = rng.random_sample(len(tob_idx))
-        newly_not_tob: pd.Series = random_draw < eff_rate_not_tob
-        newly_not_tob_idx = tob_idx[newly_not_tob]
-        df.loc[newly_not_tob_idx, 'li_tob'] = False
-        df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
+        # stop tobacco use
+        df.loc[currently_tob, 'li_tob'] = ~(rng.random_sample(len(currently_tob)) < m.r_not_tob)
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
@@ -690,15 +529,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[not_ex_alc_f, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_f)) < m.r_ex_alc * m.rr_ex_alc_f
         df.loc[not_ex_alc_m, 'li_ex_alc'] = rng.random_sample(len(not_ex_alc_m)) < m.r_ex_alc
         df.loc[now_ex_alc, 'li_ex_alc'] = ~(rng.random_sample(len(now_ex_alc)) < m.r_not_ex_alc)
-
-        # transition from excess alcohol to not excess alcohol
-        ex_alc_idx = df.index[df.li_ex_alc & df.is_alive]
-        eff_rate_not_ex_alc = pd.Series(m.r_not_ex_alc, index=ex_alc_idx)
-        random_draw = rng.random_sample(len(ex_alc_idx))
-        newly_not_ex_alc: pd.Series = random_draw < eff_rate_not_ex_alc
-        newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
-        df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
-        df.loc[newly_not_ex_alc_idx, 'li_date_no_longer_ex_alc'] = self.sim.date
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -723,6 +553,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_on_con = rng.random_sample(size=len(curr_not_on_con)) < m.r_contrac
         df.loc[curr_not_on_con[now_on_con], 'li_on_con'] = True
 
+        # todo: default contraceptive type is 1; should type be chosen here?
+
         # currently using contraceptives -> interrupted
         now_not_on_con = rng.random_sample(size=len(curr_on_con)) < m.r_contrac_int
         df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
@@ -734,15 +566,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # contraceptive method transitions
         # note: transitions contr. type for those already using, not those who just started in this event
         def con_method_transition(con_type, rates):
-            curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
+            curr_on_con_type = df.index[possibly_using & df.li_on_con & (df.li_con_t == con_type)]
             df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
 
-#       con_method_transition(1, m.r_con_from_1)
-#       con_method_transition(2, m.r_con_from_2)
-#       con_method_transition(3, m.r_con_from_3)
-#       con_method_transition(4, m.r_con_from_4)
-#       con_method_transition(5, m.r_con_from_5)
-#       con_method_transition(6, m.r_con_from_6)
+        con_method_transition(1, m.r_con_from_1)
+        con_method_transition(2, m.r_con_from_2)
+        con_method_transition(3, m.r_con_from_3)
+        con_method_transition(4, m.r_con_from_4)
+        con_method_transition(5, m.r_con_from_5)
+        con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
@@ -760,7 +592,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # create a series to hold the probablity of primary education for children at age 5
         prob_primary = pd.Series(m.p_ed_primary, index=age5)
-        prob_primary *= m.rp_ed_primary_higher_wealth**(5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        prob_primary *= m.rp_ed_primary_higher_wealth ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
         age5_in_primary = rng.random_sample(len(age5)) < prob_primary
@@ -774,7 +606,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # they have a probability of gaining secondary education (level 3), based on wealth
         prob_secondary = pd.Series(m.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= m.rp_ed_secondary_higher_wealth**(5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
+        prob_secondary *= m.rp_ed_secondary_higher_wealth ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
 
         # randomly select some to get secondary education
         age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
@@ -787,7 +619,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # baseline rate of leaving education then adjust for wealth level
         p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
-        p_leave_ed *= m.rr_stop_ed_lower_wealth**(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
+        p_leave_ed *= m.rr_stop_ed_lower_wealth ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
         now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
@@ -797,101 +629,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # everyone leaves education at age 20
         df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
 
-        # -------------------- UNIMPROVED SANITATION --------------------------------------------------------
-
-        # probability of improved sanitation at all follow-up times
-        unimproved_sanitaton_idx = df.index[df.li_unimproved_sanitation & df.is_alive]
-
-        eff_rate_improved_sanitation = pd.Series(m.r_improved_sanitation, index=unimproved_sanitaton_idx)
-
-        random_draw = rng.random_sample(len(unimproved_sanitaton_idx))
-
-        newly_improved_sanitation: pd.Series = random_draw < eff_rate_improved_sanitation
-        newly_improved_sanitation_idx = unimproved_sanitaton_idx[newly_improved_sanitation]
-        df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
-        df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
-
-        # probability of improved sanitation upon moving to urban from rural
-        unimproved_sanitation_newly_urban_idx = df.index[df.li_unimproved_sanitation & df.is_alive &
-                                                         df.li_date_trans_to_urban == self.sim.date]
-
-        random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
-
-        eff_prev_unimproved_sanitation_urban = pd.Series(m.init_p_unimproved_sanitation,
-                                                         index=unimproved_sanitation_newly_urban_idx)
-
-        df.loc[unimproved_sanitation_newly_urban_idx, 'li_unimproved_sanitation'] \
-            = random_draw < eff_prev_unimproved_sanitation_urban
-
-        # -------------------- NO ACCESS HANDWASHING --------------------------------------------------------
-
-        # probability of moving to access to handwashing at all follow-up times
-        no_access_handwashing_idx = df.index[df.li_no_access_handwashing & df.is_alive]
-
-        eff_rate_access_handwashing = pd.Series(m.r_access_handwashing, index=no_access_handwashing_idx)
-
-        random_draw = rng.random_sample(len(no_access_handwashing_idx))
-
-        newly_access_handwashing: pd.Series = random_draw < eff_rate_access_handwashing
-        newly_access_handwashing_idx = no_access_handwashing_idx[newly_access_handwashing]
-        df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
-        df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
-
-        # -------------------- NO CLEAN DRINKING WATER  --------------------------------------------------------
-
-        # probability of moving to clean drinking water at all follow-up times
-        no_clean_drinking_water_idx = df.index[df.li_no_clean_drinking_water & df.is_alive]
-
-        eff_rate_clean_drinking_water = pd.Series(m.r_clean_drinking_water, index=no_clean_drinking_water_idx)
-
-        random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
-
-        newly_clean_drinking_water: pd.Series = random_draw < eff_rate_clean_drinking_water
-        newly_clean_drinking_water_idx = no_clean_drinking_water_idx[newly_clean_drinking_water]
-        df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
-        df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
-
-        # probability of no clean drinking water upon moving to urban from rural
-        no_clean_drinking_water_newly_urban_idx = df.index[df.li_no_clean_drinking_water & df.is_alive &
-                                                           df.li_date_trans_to_urban == self.sim.date]
-
-        random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
-
-        eff_prev_no_clean_drinking_water_urban = pd.Series(m.init_p_no_clean_drinking_water,
-                                                           index=no_clean_drinking_water_newly_urban_idx)
-
-        df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] \
-            = random_draw < eff_prev_no_clean_drinking_water_urban
-
-        # -------------------- WOOD BURN STOVE -------------------------------------------------------------
-
-        # probability of moving to non wood burn stove at all follow-up times
-        wood_burn_stove_idx = df.index[df.li_wood_burn_stove & df.is_alive]
-
-        eff_rate_non_wood_burn_stove = pd.Series(m.r_non_wood_burn_stove, index=wood_burn_stove_idx)
-
-        random_draw = rng.random_sample(len(wood_burn_stove_idx))
-
-        newly_non_wood_burn_stove: pd.Series = random_draw < eff_rate_non_wood_burn_stove
-        newly_non_wood_burn_stove_idx = wood_burn_stove_idx[newly_non_wood_burn_stove]
-        df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
-        df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
-
-        # probability of moving to wood burn stove upon moving to urban from rural
-        wood_burn_stove_newly_urban_idx = df.index[df.li_wood_burn_stove & df.is_alive &
-                                                   df.li_date_trans_to_urban == self.sim.date]
-
-        random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
-
-        eff_prev_wood_burn_stove_urban = pd.Series(m.init_p_wood_burn_stove,
-                                                   index=wood_burn_stove_newly_urban_idx)
-
-        df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] \
-            = random_draw < eff_prev_wood_burn_stove_urban
-
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
+
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
@@ -905,31 +646,34 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        #   logger.info('%s|li_wealth li_no_access_handwashing|%s',
-        #               self.sim.date,
-        #               df[df.is_alive].groupby(['li_wealth', 'li_no_access_handwashing']).size().to_dict())
+        # logger.info('%s|li_ed_lev|%s',
+        #             self.sim.date,
+        #             df[df.is_alive].groupby(['li_wealth', 'li_ed_lev']).size().to_dict())
 
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
+        # logger.debug('%s|person_one|%s',
+        #              self.sim.date,
+        #              df.loc[0].to_dict())
 
-        """
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
+
         logger.info('%s|li_wealth|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_wealth').size().to_dict())
+
         logger.info('%s|li_overwt|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_overwt']).size().to_dict())
+
         logger.info('%s|li_low_ex|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_low_ex']).size().to_dict())
+
         logger.info('%s|li_tob|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['sex', 'li_tob']).size().to_dict())
+
         logger.info('%s|li_ed_lev_by_age|%s',
                     self.sim.date,
                     df[df.is_alive].groupby(['age_range', 'li_in_ed', 'li_ed_lev']).size().to_dict())
-        """

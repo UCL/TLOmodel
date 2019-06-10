@@ -17,6 +17,16 @@ class Skeleton(Module):
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
     * `on_birth(mother, child)`
+
+    And, if the module represents a disease:
+    * It must register itself: self.sim.modules['HealthSystem'].register_disease_module(self)
+    * `query_symptoms_now(self)`
+    * `report_qaly_values(self)`
+    * `on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None)`
+
+    If this module represents a form of treatment:
+    * TREATMENT_ID: must be defined
+    * It must register the treatment: self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -32,6 +42,9 @@ class Skeleton(Module):
     PROPERTIES = {
         'property_a': Property(Types.BOOL, 'Description of property a'),
     }
+
+    # Declaration of how we will refer to any treatments that are related to this disease.
+    TREATMENT_ID = ''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -60,7 +73,21 @@ class Skeleton(Module):
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
+
+        If this is a disease module, register this disease module with the healthsystem:
+        e.g. self.sim.modules['HealthSystem'].register_disease_module(self)"
+
+        If this is an interveton module: register the footprints with the healthsystem:
+        e.g.    footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
+                 'Name': self.TREATMENT_ID,
+                 'Nurse_Time': 5,
+                 'Doctor_Time': 10,
+                 'Electricity': False,
+                 'Water': False})
+             self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+
         """
+
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -72,6 +99,50 @@ class Skeleton(Module):
         :param child_id: the new child
         """
         raise NotImplementedError
+
+    def query_symptoms_now(self):
+        """
+        If this is a registered disease module, this is called by the HealthCareSeekingPoll in order to determine the
+        healthlevel of each person. It can be called at any time and must return a Series with length equal to the
+        number of persons alive and index matching sim.population.props. The entries encode the symptoms on the
+        following "unified symptom scale":
+        0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency
+        """
+
+        raise NotImplementedError
+
+    def report_qaly_values(self):
+        """
+        If this is a registered disease module, this is called periodically by the QALY module in order to compute the
+        total 'Quality of Life' for all alive persons. Each disease module must return a Series with length equal to the
+        number of persons alive and index matching sim.population.props. The entries encode a QALY weight, between zero
+        and 1, which summarise the quality of life for that persons for the total of the past 12 months. Note that this
+        can be called at any time.
+
+        Disease modules should look-up the weights to use by calling QALY.get_qaly_weight(sequaluecode). The sequalue
+        code to use can be found in the ResourceFile_DALYWeights. ie. Find the appropriate sequalue in that file, and
+        then hard-code the sequale code in this call.
+        e.g. p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
+
+        """
+
+        raise NotImplementedError
+
+    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+        """
+        If this is a registered disease module, this is called whenever there is any interaction between an individual
+        and the healthsystem. All disease modules are notified of all interactions with the healthsystem but can choose
+        if they will respond by looking at the arguments that are passed.
+
+        * cue_type: determines what has caused the interaction and can be "HealthCareSeekingPoll", "OutreachEvent",
+            "InitialDiseaseCall" or "FollowUp".
+        * disease_specific: determines if this interaction has been triggered by, or is otherwise intended to be,
+            specfifc to a particular disease. If will either take the value None or the name of the registered disease
+            module.
+
+
+        """
+        pass
 
 
 class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):

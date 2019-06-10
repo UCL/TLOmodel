@@ -25,7 +25,12 @@ def parse_line(line):
     :param line: the full line from log file
     :return: a dictionary with parsed line
     """
+
+    print(line)
+
     parts = line.split('|')
+    if len(parts) != 5:
+        return None
     logger.debug('%s', line)
     info = {
         'logger': parts[1],
@@ -90,9 +95,12 @@ def parse_output(list_of_log_lines):
 
     # for each logged line
     for line in list_of_log_lines:
-        # we only parse 'INFO' lines
+        # we only parse 'INFO' lines that have 5 parts
         if line.startswith('INFO'):
             i = parse_line(line.strip())
+            # if this line isn't in the right format
+            if not i:
+                continue
             # add a dictionary for the logger name, if required
             if i['logger'] not in o:
                 o[i['logger']] = dict()
@@ -121,7 +129,8 @@ def parse_output(list_of_log_lines):
                 row = dict(zip(df.columns[1:], i['object']))
                 row['date'] = i['sim_date']
             else:
-                raise ValueError('Cannot handle log object of type %s' % type(i['object']))
+                print('Could not parse line: %s' % line)
+                continue
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o

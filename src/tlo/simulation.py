@@ -95,14 +95,22 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
+        self.end_date = end_date  # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
         while self.event_queue:
             event, date = self.event_queue.next_event()
-            if date >= end_date:
+            if date >= end_date:    # TODO: Asif, I propose to remove the '=' here, so that events on end_date run.
                 self.date = end_date
                 break
             self.fire_single_event(event, date)
+
+        # The simulation has ended. Call 'on_end_of_simulation' method at the end of simulation (if a module has it)
+        for module in self.modules.values():
+            try:
+                module.on_end_of_simulation()
+            except AttributeError:
+                pass
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
@@ -111,6 +119,12 @@ class Simulation:
         :param date: when the event should happen
         """
         assert date >= self.date, 'Cannot schedule events in the past'
+
+        assert 'TREATMENT_ID' not in dir(event), \
+            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert (event.__str__().find('HSI_') < 0), \
+            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+
         self.event_queue.schedule(event, date)
 
     def fire_single_event(self, event, date):
@@ -155,6 +169,7 @@ class EventQueue:
         :param event: the event to schedule
         :param date: when it should happen
         """
+
         entry = (date, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
