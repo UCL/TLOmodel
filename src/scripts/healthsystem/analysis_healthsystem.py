@@ -18,7 +18,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = 'resources'
 
 start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=2011, month=12, day=31)
+end_date = Date(year=2015, month=12, day=31)
 popsize = 50
 
 # Establish the simulation object
@@ -34,7 +34,6 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.INFO)
 
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed (can also use *). Empoty list means nothing allowed
@@ -45,7 +44,8 @@ service_availability = '*'
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
