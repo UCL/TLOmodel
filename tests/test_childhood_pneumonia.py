@@ -3,7 +3,7 @@ import os
 
 import pytest
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, childhood_pneumonia
+from tlo.methods import demography, lifestyle, childhood_pneumonia, healthsystem
 
 workbook_name = 'demography.xlsx'
 
@@ -25,6 +25,7 @@ def simulation():
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(workbook_path=demography_workbook))
     sim.register(lifestyle.Lifestyle())
+    sim.register(healthsystem.HealthSystem())
     sim.register(childhood_pneumonia.ChildhoodPneumonia())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)

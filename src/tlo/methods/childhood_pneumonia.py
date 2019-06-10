@@ -935,6 +935,12 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual in very_sev_pneum_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1) # depends on health seeking module
             seeks_care[individual] = self.module.rng.rand() < prob
+            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=2)
+                                                            )
 
         # ---------------------------- DEATH FROM VERY SEVERE PNEUMONIA DISEASE ---------------------------------------
 
@@ -984,6 +990,7 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         if self.sim.date + DateOffset(weeks=2):
             df.loc[after_death_sev_pneumonia_idx, 'ri_pneumonia_status'] == 'none'
+
 
 class PneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1052,7 +1059,6 @@ class SeverePneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #       -- child has bouth fever and cough
         # make a event for the treatment for this condition
         # HSI_Treatment_For_Fever_And_Cough
-
 
 
 # define HSI_Treatment_For_fever_and_Cough

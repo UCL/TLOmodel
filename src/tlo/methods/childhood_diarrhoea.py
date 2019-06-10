@@ -498,21 +498,6 @@ class ChildhoodDiarrhoea(Module):
         p['rr_persistent_diarrhoea_clean_water'] = 0.6
         p['rr_persistent_diarrhoea_improved_sanitation'] = 0.7
         p['init_prop_diarrhoea_status'] = [0.2, 0.2, 0.2]
-        p['r_recovery_dysentery'] = 0.9
-        p['rr_recovery_dysentery_age12to23mo'] = 0.9
-        p['rr_recovery_dysentery_age24to59mo'] = 1.1
-        p['rr_recovery_dysentery_HIV'] = 0.5
-        p['rr_recovery_dysentery_SAM'] = 0.5
-        p['r_recovery_acute_diarrhoea'] = 0.6
-        p['rr_recovery_acute_diarrhoea_age12to23mo'] = 0.9
-        p['rr_recovery_acute_diarrhoea_age24to59mo'] = 1.2
-        p['rr_recovery_acute_diarrhoea_HIV'] = 0.6
-        p['rr_recovery_acute_diarrhoea_SAM'] = 0.3
-        p['r_recovery_persistent_diarrhoea'] = 0.8
-        p['rr_recovery_persistent_diarrhoea_age12to23mo'] = 1.2
-        p['rr_recovery_persistent_diarrhoea_age24to59mo'] = 1.3
-        p['rr_recovery_persistent_diarrhoea_HIV'] = 0.6
-        p['rr_recovery_persistent_diarrhoea_SAM'] = 0.5
         p['r_death_dysentery'] = 0.3
         p['rr_death_dysentery_age12to23mo'] = 0.7
         p['rr_death_dysentery_age24to59mo'] = 0.5
@@ -545,6 +530,7 @@ class ChildhoodDiarrhoea(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
         m = self
         rng = m.rng
+        now = self.sim.date
 
         # DEFAULTS
         df['ei_diarrhoea_status'] = 'none'
@@ -685,21 +671,21 @@ class ChildhoodDiarrhoea(Module):
 
         # add the basic event for dysentery ---------------------------------------------------
         event_dysentery = DysenteryEvent(self)
-        sim.schedule_event(event_dysentery, sim.date + DateOffset(weeks=2))
+        sim.schedule_event(event_dysentery, sim.date + DateOffset(months=3))
 
         # add an event to log to screen
         sim.schedule_event(DysenteryLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # add the basic event for acute watery diarrhoea ---------------------------------------
         event_acute_diar = AcuteDiarrhoeaEvent(self)
-        sim.schedule_event(event_acute_diar, sim.date + DateOffset(weeks=2))
+        sim.schedule_event(event_acute_diar, sim.date + DateOffset(months=3))
 
         # add an event to log to screen
         sim.schedule_event(AcuteDiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # add the basic event for persistent diarrhoea ------------------------------------------
         event_persistent_diar = PersistentDiarrhoeaEvent(self)
-        sim.schedule_event(event_persistent_diar, sim.date + DateOffset(weeks=4))
+        sim.schedule_event(event_persistent_diar, sim.date + DateOffset(months=3))
 
         # add an event to log to screen
         sim.schedule_event(PersistentDiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=6))
