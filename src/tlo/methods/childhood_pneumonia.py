@@ -448,7 +448,9 @@ class ChildhoodPneumonia(Module):
         df['pn_difficult_breathing'] = False
         df['pn_fast_breathing'] = False
 
-        # -------------------- ASSIGN VALUES OF RESPIRATORY INFECTION STATUS AT BASELINE -------------
+        # --------------------------------------------------------------------------------------------------------
+        # ------------------------- ASSIGN VALUES OF ALRI - PNEUMONIA STATUS AT BASELINE -------------------------
+        # --------------------------------------------------------------------------------------------------------
 
         under5_idx = df.index[(df.age_years < 5) & df.is_alive]
 
@@ -582,9 +584,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # ------------------- UPDATING OF LOWER RESPIRATORY INFECTION - PNEUMONIA STATUS OVER TIME -------------------
-
-        # updating for children under 5 with current status 'none' to non-severe pneumonia
+        # --------------------------------------------------------------------------------------------------------
+        # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'NONE' TO NON-SEVERE PNEUMONIA
+        # --------------------------------------------------------------------------------------------------------
 
         eff_prob_ri_pneumonia = pd.Series(m.base_incidence_pneumonia,
                                           index=df.index[
@@ -624,7 +626,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
 
-        # ------------------------------ SYMPTOMS FROM NON-SEVERE PNEUMONIA -------------------------------
+        # # # # # # # # # SYMPTOMS FROM NON-SEVERE PNEUMONIA # # # # # # # # #
+
         # fast breathing
         pn_current_pneumonia_idx = df.index[df.is_alive & (df.age_years < 5) & (df.ri_pneumonia_status == 'pneumonia')]
         for individual in pn_current_pneumonia_idx:
@@ -649,7 +652,27 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
         df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
 
-        # ---------- updating for children under 5 with current status 'pneumonia' to 'severe pneumonia'----------
+        # --------------------------------------------------------------------------------------------------------
+        # SEEKING CARE FOR NON-SEVERE PNEUMONIA
+        # --------------------------------------------------------------------------------------------------------
+
+        pneumonia_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
+                                      (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == False)]
+
+        seeks_care = pd.Series(data=False, index=severe_pneumonia_symptoms)
+        for individual in pneumonia_symptoms:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
+            seeks_care[individual] = self.module.rng.rand() < prob
+            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=2)
+                                                            )
+
+        # --------------------------------------------------------------------------------------------------------
+        # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'PNEUMONIA' TO 'SEVERE PNEUMONIA'
+        # --------------------------------------------------------------------------------------------------------
 
         eff_prob_prog_severe_pneumonia = pd.Series(m.r_progress_to_severe_pneum,
                                                    index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
@@ -700,7 +723,9 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # updating for children under 5 with current status 'none' to severe pneumonia
+        # --------------------------------------------------------------------------------------------------------
+        # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'NONE' TO 'SEVERE PNEUMONIA'
+        # --------------------------------------------------------------------------------------------------------
 
         eff_prob_ri_severe_pneumonia = pd.Series(m.base_incidence_severe_pneum,
                                                   index=df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
@@ -742,7 +767,7 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
-        # SYMPTOMS FROM SEVERE PNEUMONIA ------------------------------------------------------------
+        # # # # # # # # # SYMPTOMS FROM SEVERE PNEUMONIA # # # # # # # # #
 
         pn_current_severe_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
                                                (df.ri_pneumonia_status == 'severe pneumonia')]
@@ -776,8 +801,10 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_fast_breathing = dfx.index[dfx.eff_prob_fast_breathing > random_draw]
         df.loc[idx_fast_breathing, 'pn_fast_breathing'] = True
 
-        # -------------------------- SEEKING CARE ---------------------------------
-        # Determine if anyone with symptoms will seek care
+        # --------------------------------------------------------------------------------------------------------
+        # SEEKING CARE FOR SEVERE PNEUMONIA
+        # --------------------------------------------------------------------------------------------------------
+
         severe_pneumonia_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
                                            (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == True)]
 
@@ -785,9 +812,16 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual in severe_pneumonia_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
             seeks_care[individual] = self.module.rng.rand() < prob
+            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=self.sim.date + DateOffset(weeks=2)
+                                                            )
 
-        # --------------------------------------------------------------------------------------------------
-        # ------------- updating current status ' severe pneumonia' to 'very severe pneumonia'--------------
+        # --------------------------------------------------------------------------------------------------------
+        # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'SEVERE PNEUMONIA' TO 'VERY SEVERE PNEUMONIA'
+        # --------------------------------------------------------------------------------------------------------
 
         eff_prob_prog_very_sev_pneumonia = pd.Series(m.r_progress_to_very_severe_pneum,
                                                      index=df.index[
@@ -834,7 +868,9 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         m = self.module
         rng = m.rng
 
-        # updating for children under 5 with current status 'none' to very severe pneumonia
+        # --------------------------------------------------------------------------------------------------------
+        # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'NONE' TO 'VERY SEVERE PNEUMONIA'
+        # --------------------------------------------------------------------------------------------------------
 
         eff_prob_ri_very_sev_pneumonia = pd.Series(m.base_incidence_very_severe_pneum,
                                                  index=df.index[df.is_alive & (df.ri_pneumonia_status == 'none') &
@@ -876,7 +912,7 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'very severe pneumonia'
 
-        # SYMPTOMS FROM VERY SEVERE PNEUMONIA ------------------------------------------------------------
+        # # # # # # # # # SYMPTOMS FROM VERY SEVERE PNEUMONIA # # # # # # # # #
 
         pn_current_very_sev_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
                                                (df.ri_pneumonia_status == 'very severe pneumonia')]
@@ -917,23 +953,17 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_chest_indrawing = dfx.index[dfx.eff_prob_chest_indrawing > random_draw]
         df.loc[idx_chest_indrawing, 'pn_chest_indrawing'] = True
 
-        # now work out who will seek care for having severe diarrhoea
-        # loop through everyone who has severe diarhoea
-        # for each person with severe diarrhoa, seek if they seek care ( by using the prob_seek_care function of health system)
-        #       ( that gives a probability, flip a coin to work out if they actually do seek care)
-        # if a person is seeking care, create an event 'HSI_Sick_Child_Seeks_Care_From_CHW()'
-        # submit this event to the health system scheduler
-        # (the health system scheduler will do the rest....)
+        # --------------------------------------------------------------------------------------------------------
+        # SEEKING CARE FOR VERY SEVERE PNEUMONIA
+        # --------------------------------------------------------------------------------------------------------
 
-        # -------------------------- SEEKING CARE ---------------------------------
-        # Determine if anyone with symptoms will seek care
         very_sev_pneum_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
                                            (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == True) |
                                            (df.pn_any_general_danger_sign == True)]
 
         seeks_care = pd.Series(data=False, index=very_sev_pneum_symptoms)
         for individual in very_sev_pneum_symptoms:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1) # depends on health seeking module
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1) # what happens with multiple symptoms of different severity??
             seeks_care[individual] = self.module.rng.rand() < prob
             event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
             self.sim.modules['HealthSystem'].schedule_event(event,
@@ -941,6 +971,15 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(weeks=2)
                                                             )
+
+        # Determine if anyone with symptoms will seek care
+        # now work out who will seek care for having severe diarrhoea
+        # loop through everyone who has severe diarhoea
+        # for each person with severe diarrhoa, seek if they seek care ( by using the prob_seek_care function of health system)
+        #       ( that gives a probability, flip a coin to work out if they actually do seek care)
+        # if a person is seeking care, create an event 'HSI_Sick_Child_Seeks_Care_From_CHW()'
+        # submit this event to the health system scheduler
+        # (the health system scheduler will do the rest....)
 
         # ---------------------------- DEATH FROM VERY SEVERE PNEUMONIA DISEASE ---------------------------------------
 
