@@ -34,7 +34,7 @@ class HT(Module):
     - Running an "outreach" event
     """
 
-    print("\n", "Hypertension method is running")
+    print("\n", "Hypertension method is running", "\n")
 
     PARAMETERS = {
         # ToDO: Update QALYs - ask Tim and Alison. Put in CKD and CVD as per IHME?
@@ -70,6 +70,7 @@ class HT(Module):
         'ht_contr_date': Property(Types.DATE,                 'Date of latest hypertension control'),
         'ht_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
+        'ht_specific_symptoms': Property(Types.CATEGORICAL,  'Status: N=none', categories=['N'])
     }
 
     def read_parameters(self, data_folder):
@@ -100,7 +101,7 @@ class HT(Module):
         p['prob_diag']          = 0.5
         p['prob_treat']         = 0.5
         p['prob_contr']         = 0.5
-        p['qalywt_mild_ht']     = self.sim.modules['QALY'].get_qaly_weight(50)
+        p['qalywt_mild_ht']     = 0.01 #TODO: addfress this and code removal below
 
 
     def initialise_population(self, population):
@@ -127,6 +128,7 @@ class HT(Module):
         df.loc[df.is_alive,'ht_treat_status'] = 'N'         # Default setting: no one is treated
         df.loc[df.is_alive,'ht_contr_date'] = pd.NaT        # Default setting: no one is controlled
         df.loc[df.is_alive,'ht_contr_status'] = 'N'         # Default setting: no one is controlled
+        df.loc[df.is_alive,'ht_specific_symptoms'] = 'N'    # TODO: remove this later
 
         #2.1. Calculate prevalence
         dummy_prevalence = 0.30                             # ToDO: set this to data later as read in from file.
@@ -158,8 +160,8 @@ class HT(Module):
         df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
-        print("\n", "Population has been initialised, prevalent cases have been assigned.  "
-              "\n", "Prevalence of hypertension is: ", prevalence, "%")
+        print("\n", "Population has been initialised, hypertension prevalent cases have been assigned.  "
+              "\n", "Prevalence of HYPERTENSION is: ", prevalence, "%", "\n")
 
 
     def initialise_simulation(self, sim):
@@ -208,6 +210,7 @@ class HT(Module):
         df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is treated
         df.at[child_id, 'ht_contr_date'] = pd.NaT               # Default setting: no one is controlled
         df.at[child_id, 'ht_contr_status'] = 'N'                # Default setting: no one is controlled
+        df.at[child_id, 'ht_specific_symptoms'] = 'N'           # TODO: remove this later
 
     def on_healthsystem_interaction(self, person_id, treatment_id):
         """
@@ -230,8 +233,7 @@ class HT(Module):
         p = self.parameters
 
         health_values = df.loc[df.is_alive, 'ht_specific_symptoms'].map({
-            'none': 0,
-            'mild ht': p['qalywt_mild_ht']
+            'N': 0,
         })
         return health_values.loc[df.is_alive]
 
@@ -274,7 +276,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prevalence = 0
 
-        print("\n", "Time is: ", self.sim.date, "Prevalence is ]: ", prevalence)
+        print("\n", "Time is: ", self.sim.date, "Prevalence of HYPERTENSION is ]: ", prevalence, "\n")
 
         # 3. Handle new cases of hypertension
         # 3.1 First get relative risk
@@ -298,8 +300,8 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[ht_idx, 'ht_historic_status'] = 'C'
         df.loc[ht_idx, 'ht_date'] = self.sim.date
 
-        print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  "
-              "\n", "Prevalence is: ", prevalence, "%")
+        print("\n", "Time is: ", self.sim.date, "New HYPERTENSION cases have been assigned.  "
+              "\n", "Prevalence of HYPERTENSION is: ", prevalence, "%", "\n")
 
 
 # ---------------------------------------------------------------------------------
