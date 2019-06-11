@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Read in data
-file_path = 'resources/Method_HT.xlsx'
-method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prevalence, HT_incidence, HT_treatment, HT_risk = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                                            method_ht_data['treatment_parameters'], method_ht_data['parameters']
+file_path = 'resources/Method_T2DM.xlsx'
+method_T2DM_data = pd.read_excel(file_path, sheet_name=None, header=0)
+T2DM_prevalence, T2DM_incidence, T2DM_treatment, T2DM_risk = method_T2DM_data['prevalence2018'], method_T2DM_data['incidence2018_plus'], \
+                                            method_T2DM_data['treatment_parameters'], method_T2DM_data['parameters']
 
-class HT(Module):
+class T2DM(Module):
     """
     This is hypertension.
     It demonstrates the following behaviours in respect of the healthsystem module:
@@ -34,52 +34,60 @@ class HT(Module):
     - Running an "outreach" event
     """
 
+    print("\n", "Type 2 Diabetes mellitus method is running", "\n")
+
     PARAMETERS = {
-        # ToDo: Update HR and variables to mirror finalised method
-        # ToDO: Remove symptoms (and QALYs)
+        # ToDO: Update complication, symptoms and QALYs in line with DALY file
+        # TODO: how to handle symptoms and how specific to be - develop
+        # TODO: What about Qaly for mild symptoms (urination, tiredness etc), nephrology, amputation, and NOTE: severe vision impairmenet and blindness same qaly so only one
 
         # 1. Risk parameters
-        'prob_HT_basic': Parameter(Types.REAL,               'Probability of hypertension given no pre-existing condition'),
-        'prob_HTgivenHC': Parameter(Types.REAL,              'Probability of getting hypertension given pre-existing high cholesterol'),
-        'prob_HTgivenDiab': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing diabetes'),
-        'prob_HTgivenHIV': Parameter(Types.REAL,             'Probability of getting hypertension given pre-existing HIV'),
-        'prob_death': Parameter(Types.REAL,                  'Probability of dying'),
+        'prob_T2DM_basic': Parameter(Types.REAL,               'Probability of T2DM given no pre-existing condition'),
+        'prob_T2DMgivenWeight': Parameter(Types.REAL,          'Probability of getting T2DM given pre-existing high cholesterol'),
+        'prob_T2DMgivenHT': Parameter(Types.REAL,              'Probability of getting T2DM given pre-existing hypertension'),
+        'prob_T2DMgivenGD': Parameter(Types.REAL,              'Probability of getting T2DM given pre-existing gestational diabetes'),
+        'prob_T2DMgivenFamHis': Parameter(Types.REAL,          'Probability of getting T2DM given family history'),
+        'prob_RetinoComp': Parameter(Types.REAL,               'Probability of developing retinopathy'),
+        'prob_NephroComp': Parameter(Types.REAL,               'Probability of developing diabetic nephropathy'),
+        'prob_NeuroComp': Parameter(Types.REAL,                'Probability of developing peripheral neuropathy'),
+        'prob_death': Parameter(Types.REAL,                    'Probability of dying'),
 
         # 2. Health care parameters
-        'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'),
-        'prob_treat': Parameter(Types.REAL,                  'Probability of being treated'),
-        'prob_contr': Parameter(Types.REAL,                  'Probability achieving normal blood pressure levels on medication'),
-        'level_of_symptoms': Parameter(Types.CATEGORICAL,    'Level of symptoms that the individual will have'),
-        'qalywt_mild_sneezing': Parameter(Types.REAL,        'QALY weighting for mild sneezing'),
-        'qalywt_coughing': Parameter(Types.REAL,             'QALY weighting for coughing'),
-        'qalywt_extreme_emergency': Parameter(Types.REAL,             'QALY weighting for extreme emergency'),
+        'prob_diag': Parameter(Types.REAL,                     'Probability of being diagnosed'),
+        'prob_treat': Parameter(Types.REAL,                    'Probability of being treated'),
+        'prob_contr': Parameter(Types.REAL,                    'Probability achieving normal glucose levels on medication'),
+        'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Level of symptoms that the individual will have'),
+        'qalywt_mild_retino': Parameter(Types.REAL,            'QALY weighting for mild retinopathy'),
+        'qalywt_severe_retino': Parameter(Types.REAL,          'QALY weighting for severe retinopathy'),
+        'qalywt_uncomplicated': Parameter(Types.REAL,          'QALY weighting for uncomplicated diabetic'),
+        'qalywt_neuropathy': Parameter(Types.REAL,             'QALY weighting for neuropathy'),
 
     }
 
     PROPERTIES = {
-        # ToDo: Remove death and symptoms
+        # ToDo: Update symptoms
 
         # 1. Disease properties
-        'ht_risk': Property(Types.REAL,                       'Risk of hypertension given pre-existing condition'),
-        'ht_date': Property(Types.DATE,                       'Date of latest hypertension'),
-        'ht_current_status': Property(Types.BOOL,             'Current hypertension status'),
-        'ht_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
+        'T2DM_risk': Property(Types.REAL,                       'Risk of T2DM given pre-existing condition'),
+        'T2DM_date': Property(Types.DATE,                       'Date of latest T2DM'),
+        'T2DM_current_status': Property(Types.BOOL,             'Current T2DM status'),
+        'T2DM_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
                                                                categories=['N', 'C', 'P']),
-        'ht_death_date': Property(Types.DATE,       'Date of scheduled death of infected individual'),
+        'T2DM_death_date': Property(Types.DATE,       'Date of scheduled death of infected individual'),
 
         # 2. Health care properties
-        'ht_diag_date': Property(Types.DATE,                  'Date of latest hypertension diagnosis'),
-        'ht_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
+        'T2DM_diag_date': Property(Types.DATE,                  'Date of latest T2DM diagnosis'),
+        'T2DM_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
-        'ht_treat_date': Property(Types.DATE,                 'Date of latest hypertension treatment'),
-        'ht_treat_status': Property(Types.CATEGORICAL,        'Status: N=never; C=Current, P=Previous',
+        'T2DM_treat_date': Property(Types.DATE,                 'Date of latest T2DM treatment'),
+        'T2DM_treat_status': Property(Types.CATEGORICAL,        'Status: N=never; C=Current, P=Previous',
                                                                categories=['N', 'C', 'P']),
-        'ht_contr_date': Property(Types.DATE,                 'Date of latest hypertension control'),
-        'ht_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
+        'T2DM_contr_date': Property(Types.DATE,                 'Date of latest T2DM control'),
+        'T2DM_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
-        'ht_specific_symptoms': Property(Types.CATEGORICAL,   'Level of symptoms for HT specifically',
+        'T2DM_specific_symptoms': Property(Types.CATEGORICAL,   'Level of symptoms for T2DM specifically',
                                                                categories=['none', 'mild sneezing', 'coughing and irritable', 'extreme emergency']),
-        'ht_unified_symptom_code': Property(Types.CATEGORICAL,'Level of symptoms on the standardised scale (governing health-care seeking): '
+        'T2DM_unified_symptom_code': Property(Types.CATEGORICAL,'Level of symptoms on the standardised scale (governing health-care seeking): '
                                                               '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
                                                                categories=[0, 1, 2, 3, 4]),
 
@@ -93,10 +101,11 @@ class HT(Module):
         p = self.parameters
 
         # 2. Risk parameters
-        p['prob_HT_basic']      = 1.0
-        p['prob_HTgivenHC']     = 2.0
-        p['prob_HTgivenDiab']   = 1.4
-        p['prob_HTgivenHIV']    = 1.49
+        p['prob_T2DM_basic']      = 1.0
+        p['prob_T2DMgivenWeight']     = 2.0
+        p['prob_T2DMgivenHT']   = 1.4
+        p['prob_T2DMgivenGD']    = 1.49
+        p['prob_T2DMgivenFamHis'] = 1.49
         p['prob_death']         = 0.5
 
         # 3. Health care parameter
@@ -105,14 +114,15 @@ class HT(Module):
         p['prob_contr']         = 0.5
         p['level_of_symptoms']  = pd.DataFrame(data={'level_of_symptoms':
                                       ['none',
-                                      'mild sneezing',
-                                      'coughing and irritable',
+                                      'mild',
+                                      'moderate',
                                       'extreme emergency'],
                                       'probability': [0.25, 0.25, 0.25, 0.25]
                                     })
-        p['qalywt_mild_sneezing']     = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_coughing']          = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_extreme_emergency'] = self.sim.modules['QALY'].get_qaly_weight(50)
+        p['qalywt_mild_retino']   = self.sim.modules['QALY'].get_qaly_weight(967)
+        p['qalywt_severe_retino'] = self.sim.modules['QALY'].get_qaly_weight(977)
+        p['qalywt_uncomplicated'] = self.sim.modules['QALY'].get_qaly_weight(971)
+        p['qalywt_neuropathy'] = self.sim.modules['QALY'].get_qaly_weight(970)
 
 
     def initialise_population(self, population):
@@ -129,59 +139,59 @@ class HT(Module):
         df = population.props                               # Shortcut to the data frame storing individual data
 
         # 2. Disease and health care properties
-        df.loc[df.is_alive,'ht_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
-        df.loc[df.is_alive,'ht_current_status'] = False     # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_historic_status'] = 'N'      # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_date'] = pd.NaT              # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_death_date'] = pd.NaT        # Default setting: no one has hypertension
-        df.loc[df.is_alive,'ht_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
-        df.loc[df.is_alive,'ht_diag_status'] = 'N'          # Default setting: no one is diagnosed
-        df.loc[df.is_alive,'ht_treat_date'] = pd.NaT        # Default setting: no one is treated
-        df.loc[df.is_alive,'ht_treat_status'] = 'N'         # Default setting: no one is treated
-        df.loc[df.is_alive,'ht_contr_date'] = pd.NaT        # Default setting: no one is controlled
-        df.loc[df.is_alive,'ht_contr_status'] = 'N'         # Default setting: no one is controlled
-        df.loc[df.is_alive,'ht_specific_symptoms'] = 'none' # Default setting: no one has symptoms
-        df.loc[df.is_alive,'ht_unified_symptom_code'] = 0   # Default setting: no one has symptoms
+        df.loc[df.is_alive,'t2dm_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
+        df.loc[df.is_alive,'t2dm_current_status'] = False     # Default setting: no one has T2DM
+        df.loc[df.is_alive,'t2dm_historic_status'] = 'N'      # Default setting: no one has T2DM
+        df.loc[df.is_alive,'t2dm_date'] = pd.NaT              # Default setting: no one has T2DM
+        df.loc[df.is_alive,'t2dm_death_date'] = pd.NaT        # Default setting: no one has T2DM
+        df.loc[df.is_alive,'t2dm_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
+        df.loc[df.is_alive,'t2dm_diag_status'] = 'N'          # Default setting: no one is diagnosed
+        df.loc[df.is_alive,'t2dm_treat_date'] = pd.NaT        # Default setting: no one is treated
+        df.loc[df.is_alive,'t2dm_treat_status'] = 'N'         # Default setting: no one is treated
+        df.loc[df.is_alive,'t2dm_contr_date'] = pd.NaT        # Default setting: no one is controlled
+        df.loc[df.is_alive,'t2dm_contr_status'] = 'N'         # Default setting: no one is controlled
+        df.loc[df.is_alive,'t2dm_specific_symptoms'] = 'none' # Default setting: no one has symptoms
+        df.loc[df.is_alive,'t2dm_unified_symptom_code'] = 0   # Default setting: no one has symptoms
 
         # 3. Assign prevalence as per data
         alive_count = df.is_alive.sum()
 
         # ToDO: Re-add this later after testing HT alone
-        # 3.1 First get relative risk for hypertension
-        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
+        # 3.1 First get relative risk for T2DM
+        t2dm_prob = df.loc[df.is_alive, ['t2dm_risk', 'age_years']].merge(T2DM_prevalence, left_on=['age_years'], right_on=['age'],
                                                                       how='left')['probability']
-        # df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
-        # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
-        assert alive_count == len(ht_prob)
-        ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
+        # df.loc[df.is_alive & ~df.hc_current_status, 't2dm_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        # df.loc[df.is_alive & df.hc_current_status, 't2dm_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
+        assert alive_count == len(t2dm_prob)
+        t2dm_prob = t2dm_prob * df.loc[df.is_alive, 't2dm_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
-        df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
-        hypertension_count = (df.is_alive & df.ht_current_status).sum()
+        df.loc[df.is_alive, 't2dm_current_status'] = (random_numbers < t2dm_prob)
+        T2DM_count = (df.is_alive & df.t2dm_current_status).sum()
 
         # 3.2. Calculate prevalence
-        count = df.ht_current_status.sum()
+        count = df.t2dm_current_status.sum()
         prevalence = (count / alive_count) * 100
 
         # 4. Assign level of symptoms
         level_of_symptoms = self.parameters['level_of_symptoms']
         symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
-                                   size=hypertension_count,
+                                   size=T2DM_count,
                                    p=level_of_symptoms.probability)
-        df.loc[df.ht_current_status, 'ht_specific_symptoms'] = symptoms
+        df.loc[df.t2dm_current_status, 't2dm_specific_symptoms'] = symptoms
 
         # 5. Set date of death # TODO: correct this to parameter not distribution and bbelow in event
         death_years_ahead = np.random.exponential(scale=20, size=count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
-        # 6. Set relevant properties of those with prevalent hypertension
-        ht_years_ago = 1
-        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
-        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
-        df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
-        df.loc[df.is_alive & df.ht_current_status, 'ht_death_date'] = self.sim.date + death_td_ahead
+        # 6. Set relevant properties of those with prevalent T2DM
+        t2dm_years_ago = 1
+        infected_td_ago = pd.to_timedelta(t2dm_years_ago * 365.25, unit='d')
+        df.loc[df.is_alive & df.t2dm_current_status, 't2dm_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
+        df.loc[df.is_alive & df.t2dm_current_status, 't2dm_historic_status'] = 'C'
+        df.loc[df.is_alive & df.t2dm_current_status, 't2dm_death_date'] = self.sim.date + death_td_ahead
 
-        print("\n", "Population has been initialised, prevalent cases have been assigned.  "
-              "\n", "Prevalence of hypertension is: ", prevalence, "%")
+        print("\n", "Population has been initialised, prevalent T2DM cases have been assigned.  "
+              "\n", "Prevalence of T2DM is: ", prevalence, "%", "\n")
 
 
     def initialise_simulation(self, sim):
@@ -227,19 +237,19 @@ class HT(Module):
         """
 
         df = self.sim.population.props
-        df.at[child_id, 'ht_risk'] = 1.0                        # Default setting: no risk given pre-existing conditions
-        df.at[child_id, 'ht_current_status'] = False            # Default setting: no one has hypertension
-        df.at[child_id, 'ht_historic_status'] = 'N'             # Default setting: no one has hypertension
-        df.at[child_id, 'ht_date'] = pd.NaT                     # Default setting: no one has hypertension
-        df.at[child_id, 'ht_death_date'] = pd.NaT               # Default setting: no one has hypertension
-        df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_date'] = pd.NaT                # Default setting: no one is treated
-        df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is treated
-        df.at[child_id, 'ht_contr_date'] = pd.NaT               # Default setting: no one is controlled
-        df.at[child_id, 'ht_contr_status'] = 'N'                # Default setting: no one is controlled
-        df.loc[df.is_alive, 'ht_specific_symptoms'] = 'none'    # Default setting: no one has symptoms
-        df.loc[df.is_alive, 'ht_unified_symptom_code'] = 0      # Default setting: no one has symptoms
+        df.at[child_id, 't2dm_risk'] = 1.0                        # Default setting: no risk given pre-existing conditions
+        df.at[child_id, 't2dm_current_status'] = False            # Default setting: no one has T2DM
+        df.at[child_id, 't2dm_historic_status'] = 'N'             # Default setting: no one has T2DM
+        df.at[child_id, 't2dm_date'] = pd.NaT                     # Default setting: no one has T2DM
+        df.at[child_id, 't2dm_death_date'] = pd.NaT               # Default setting: no one has T2DM
+        df.at[child_id, 't2dm_diag_date'] = pd.NaT                # Default setting: no one is diagnosed
+        df.at[child_id, 't2dm_diag_status'] = 'N'                 # Default setting: no one is diagnosed
+        df.at[child_id, 't2dm_diag_date'] = pd.NaT                # Default setting: no one is treated
+        df.at[child_id, 't2dm_diag_status'] = 'N'                 # Default setting: no one is treated
+        df.at[child_id, 't2dm_contr_date'] = pd.NaT               # Default setting: no one is controlled
+        df.at[child_id, 't2dm_contr_status'] = 'N'                # Default setting: no one is controlled
+        df.loc[df.is_alive, 't2dm_specific_symptoms'] = 'none'    # Default setting: no one has symptoms
+        df.loc[df.is_alive, 't2dm_unified_symptom_code'] = 0      # Default setting: no one has symptoms
 
     def on_healthsystem_interaction(self, person_id, treatment_id):
         """
@@ -255,17 +265,18 @@ class HT(Module):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        # logger.debug('This is hypertension reporting my health values')
+        # logger.debug('This is T2DM reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
         p = self.parameters
 
-        health_values = df.loc[df.is_alive, 'ht_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive, 't2dm_specific_symptoms'].map({
             'none': 0,
-            'mild sneezing': p['qalywt_mild_sneezing'],
-            'coughing and irritable': p['qalywt_coughing'],
-            'extreme emergency': p['qalywt_extreme_emergency']
+            'mild retinopathy': p['qalywt_mild_retino'],
+            'severe retinopathy': p['qalywt_severe_retino'],
+            'uncomplicated diabetes': p['qalywt_uncomplicated'],
+            'neuropathy': p['qalywt_neuropathy']
         })
         return health_values.loc[df.is_alive]
 
@@ -279,10 +290,11 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1)) # TODO: change time scale if needed
-        self.prob_HT_basic = module.parameters['prob_HT_basic']
-        self.prob_HTgivenHC = module.parameters['prob_HTgivenHC']
-        self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
-        self.prob_HTgivenHIV = module.parameters['prob_HTgivenHIV']
+        self.prob_T2DM_basic = module.parameters['prob_T2DM_basic']
+        self.prob_T2DMgivenWeight = module.parameters['prob_T2DMgivenWeight']
+        self.prob_T2DMgivenHT = module.parameters['prob_T2DMgivenHT']
+        self.prob_T2DMgivenGD = module.parameters['prob_T2DMgivenGD']
+        self.prob_T2DMgivenFamHis = module.parameters['prob_T2DMgivenFamHis']
         self.prob_treat = module.parameters['prob_treat']
 
         # ToDO: need to add code from original if it bugs.
@@ -295,63 +307,63 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         rng = self.module.rng
 
-        ht_total = (df.is_alive & df.ht_current_status).sum()
+        t2dm_total = (df.is_alive & df.t2dm_current_status).sum()
 
-        # 2. Get (and hold) index of people with and w/o hypertension
-        currently_ht_yes = df[df.ht_current_status & df.is_alive].index
-        currently_ht_no = df[~df.ht_current_status & df.is_alive].index
+        # 2. Get (and hold) index of people with and w/o T2DM
+        currently_t2dm_yes = df[df.t2dm_current_status & df.is_alive].index
+        currently_t2dm_no = df[~df.t2dm_current_status & df.is_alive].index
         alive_count = df.is_alive.sum()
 
         if df.is_alive.sum():
-            prevalence = len(currently_ht_yes) / (
-                len(currently_ht_yes) + len(currently_ht_no))
+            prevalence = len(currently_t2dm_yes) / (
+                len(currently_t2dm_yes) + len(currently_t2dm_no))
         else:
             prevalence = 0
 
-        print("\n", "Time is: ", self.sim.date, "Prevalence is ]: ", prevalence)
+        print("\n", "Time is: ", self.sim.date, "Prevalence of T2DM is ]: ", prevalence)
 
-        # 3. Handle new cases of hypertension
+        # 3. Handle new cases of T2DM
         # 3.1 First get relative risk
-        ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
+        t2dm_prob = df.loc[currently_t2dm_no, ['age_years', 't2dm_risk']].reset_index().merge(HT_incidence,
                                             left_on=['age_years'], right_on=['age'], how='left').set_index(
                                             'person')['probability']
-        # df.loc[df.is_alive & ~df.hc_current_status, 'ht_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
-        # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
-        assert len(currently_ht_no) == len(ht_prob)
-        ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
-        random_numbers = rng.random_sample(size=len(ht_prob))
-        now_hypertensive = (ht_prob > random_numbers)
-        ht_idx = currently_ht_no[now_hypertensive]
+        # df.loc[df.is_alive & ~df.hc_current_status, 't2dm_risk'] = self.prob_HT_basic  # Basic risk, no pre-existing conditions
+        # df.loc[df.is_alive & df.hc_current_status, 't2dm_risk'] = self.prob_HTgivenHC  # Risk if pre-existing high cholesterol
+        assert len(currently_t2dm_no) == len(t2dm_prob)
+        t2dm_prob = t2dm_prob * df.loc[currently_t2dm_no, 't2dm_risk']
+        random_numbers = rng.random_sample(size=len(t2dm_prob))
+        now_T2DM = (t2dm_prob > random_numbers)
+        t2dm_idx = currently_t2dm_no[now_T2DM]
 
         # 3.2. Calculate prevalence
-        count = df.ht_current_status.sum()
+        count = df.t2dm_current_status.sum()
         prevalence = (sum(count) / alive_count) * 100
 
         # 4. Assign level of symptoms
         level_of_symptoms = self.parameters['level_of_symptoms']
         symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
-                                   size=ht_idx,
+                                   size=t2dm_idx,
                                    p=level_of_symptoms.probability)
-        df.loc[ht_idx, 'ht_specific_symptoms'] = symptoms
+        df.loc[t2dm_idx, 't2dm_specific_symptoms'] = symptoms
 
         # 5. Set date of death
-        death_years_ahead = np.random.exponential(scale=20, size=ht_idx)
+        death_years_ahead = np.random.exponential(scale=20, size=t2dm_idx)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
-         # 3.3 If newly hypertensive
-        df.loc[ht_idx, 'ht_current_status'] = True
-        df.loc[ht_idx, 'ht_historic_status'] = 'C'
-        df.loc[ht_idx, 'ht_date'] = self.sim.date
-        df.loc[ht_idx, 'ht_death_date'] = self.sim.date + death_td_ahead
+         # 3.3 If newly T2DM
+        df.loc[t2dm_idx, 't2dm_current_status'] = True
+        df.loc[t2dm_idx, 't2dm_historic_status'] = 'C'
+        df.loc[t2dm_idx, 't2dm_date'] = self.sim.date
+        df.loc[t2dm_idx, 't2dm_death_date'] = self.sim.date + death_td_ahead
 
 
 
-        print("\n", "Time is: ", self.sim.date, "New cases have been assigned.  "
-              "\n", "Prevalence is: ", prevalence, "%")
+        print("\n", "Time is: ", self.sim.date, "New T2DM cases have been assigned.  "
+              "\n", "Prevalence of T2DM is: ", prevalence, "%")
 
         # 6. Determine if anyone with severe symptoms will seek care
-        serious_symptoms = (df['is_alive']) & ((df['ht_specific_symptoms'] == 'extreme emergency') | (
-            df['ht_specific_symptoms'] == 'coughing and irritiable'))
+        serious_symptoms = (df['is_alive']) & ((df['t2dm_specific_symptoms'] == 'extreme emergency') | (
+            df['t2dm_specific_symptoms'] == 'coughing and irritiable'))
 
         seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
         for i in df.index[serious_symptoms]:
@@ -388,7 +400,7 @@ class HTDeathEvent(Event, IndividualScopeEventMixin):   # TODO: remove afterward
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'ht_current_status'] == 'C':
+        if df.at[person_id, 't2dm_current_status'] == 'C':
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='HT')
             self.sim.schedule_event(death, self.sim.date)
