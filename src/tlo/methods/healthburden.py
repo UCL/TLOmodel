@@ -151,9 +151,6 @@ class HealthBurden(Module):
         """
         This helper function will decompose a period of years of lost life into time-spent in each age group in each
         calendar year
-        :param date_of_birth:
-        :param date_of_death:
-        :param upper_age_limit:
         :return: a dataframe (X) of the person-time (in years) spent by age-group and time-period
         """
 
