@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+from pathlib import Path
 
 import pytest
 
@@ -19,7 +20,7 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    resourcefilepath = os.path.join(os.path.dirname(__file__), '..', 'resources')
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)

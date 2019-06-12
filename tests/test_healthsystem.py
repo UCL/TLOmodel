@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import pytest
 
@@ -7,7 +8,7 @@ from tlo import Date, Simulation
 from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
 
 try:
-    resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 except NameError:
     # running interactively
     resourcefilepath = 'resources'

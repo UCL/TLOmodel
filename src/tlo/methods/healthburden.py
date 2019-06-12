@@ -3,7 +3,7 @@ This Module runs the counting of DALYS
 """
 
 import logging
-import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -40,7 +40,7 @@ class HealthBurden(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        p['DALY_Weight_Database'] = pd.read_csv(os.path.join(self.resourcefilepath, 'ResourceFile_DALY_Weights.csv'))
+        p['DALY_Weight_Database'] = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_DALY_Weights.csv')
         p['Age_Limit_For_YLL'] = 70.0  # Assumption that deaths younger than 70y incur years of lost life
 
     def initialise_population(self, population):
