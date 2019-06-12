@@ -9,8 +9,8 @@ It allocates health care workers ('officers') to one of the three Facility Level
 
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # CHAI DATA SET:
 workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\

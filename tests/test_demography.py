@@ -1,6 +1,6 @@
+import logging
 import os
 import time
-import logging
 
 import pytest
 
@@ -19,9 +19,7 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
-    # TODO (ASIF?): will this work on all systems? (I am trying to point to real resource folder, not the one inside tests)
-
+    resourcefilepath = os.path.join(os.path.dirname(__file__), '..', 'resources')
     sim = Simulation(start_date=start_date)
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(core_module)

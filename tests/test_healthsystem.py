@@ -1,13 +1,10 @@
-import pytest
-import datetime
 import logging
 import os
 
-import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, healthburden
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
 
 try:
     resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
@@ -199,4 +196,3 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
     assert 'Consumables' in output['tlo.methods.healthsystem']
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']>0).any()
 """
-
