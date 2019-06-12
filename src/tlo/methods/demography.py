@@ -188,7 +188,7 @@ class Demography(Module):
         pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
-        df.is_alive: pd.Series = True
+        df.is_alive.values[:] = True
 
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
