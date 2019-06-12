@@ -82,16 +82,16 @@ class HealthBurden(Module):
         self.YearsLifeLost = self.YearsLifeLost.add_prefix('YLL_')
         self.YearsLivedWithDisability = self.YearsLivedWithDisability.add_prefix('YLD_')
 
-        DALYS = self.YearsLifeLost.join(self.YearsLivedWithDisability)
+        dalys = self.YearsLifeLost.join(self.YearsLivedWithDisability)
 
         # Dump the DALYS dateframe to the log this dataframe to the log
 
         # 1) Turn multi-index into regular columns
-        DALYS = DALYS.reset_index()
+        dalys = dalys.reset_index()
 
         # 2) Go line-by-line and dump to the log
-        for line_num in range(len(DALYS)):
-            line_as_dict = DALYS.loc[line_num].to_dict()
+        for line_num in range(len(dalys)):
+            line_as_dict = dalys.loc[line_num].to_dict()
             year = line_as_dict.pop('year')
             year_as_date = pd.Timestamp(year=year, month=12, day=31)  # log output for the year on 31st December
             logger.info('%s|DALYS|%s', year_as_date, line_as_dict)
@@ -171,12 +171,12 @@ class HealthBurden(Module):
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
 
-        X = pd.DataFrame(df.groupby(by=['year', 'age_range'])['days'].count())
-        X['person_years'] = (X['days'] / 365).clip(lower=0.0, upper=1.0)
+        period = pd.DataFrame(df.groupby(by=['year', 'age_range'])['days'].count())
+        period['person_years'] = (period['days'] / 365).clip(lower=0.0, upper=1.0)
 
-        X = X.drop(columns=['days'], axis=1)
+        period = period.drop(columns=['days'], axis=1)
 
-        return X
+        return period
 
 
 class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
@@ -251,29 +251,29 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
             df.loc[df.is_alive, ['sex', 'age_range']], left_index=True, right_index=True, how='left')
 
         # Sum of daly_weight, by sex and age
-        Disability_Monthly_Summary = pd.DataFrame(
+        disability_monthly_summary = pd.DataFrame(
             disease_specific_daly_values_this_month.groupby(['sex', 'age_range']).sum().fillna(0))
 
         # Add the year into the multi-index
-        Disability_Monthly_Summary['year'] = self.sim.date.year
-        Disability_Monthly_Summary.set_index('year', append=True, inplace=True)
-        Disability_Monthly_Summary = Disability_Monthly_Summary.reorder_levels(['sex', 'age_range', 'year'])
+        disability_monthly_summary['year'] = self.sim.date.year
+        disability_monthly_summary.set_index('year', append=True, inplace=True)
+        disability_monthly_summary = disability_monthly_summary.reorder_levels(['sex', 'age_range', 'year'])
 
         # 4) Add the monthly summary to the overall datafrom for YearsLivedWithDisability
 
-        dalys_to_add = Disability_Monthly_Summary.sum().sum()     # for checking
+        dalys_to_add = disability_monthly_summary.sum().sum()     # for checking
         dalys_current = self.module.YearsLivedWithDisability.sum().sum()
 
         # This will add columns that are not otherwise present and add values to columns where they are
-        X = self.module.YearsLivedWithDisability.combine(
-            Disability_Monthly_Summary,
+        combined = self.module.YearsLivedWithDisability.combine(
+            disability_monthly_summary,
             fill_value=0.0,
             func=np.add,
             overwrite=False)
 
         # merge into a dataframe with the correct multi-index (the multindex from combine is subtly different)
         self.module.YearsLivedWithDisability = pd.DataFrame(index=self.module.multi_index).merge(
-            X, left_index=True, right_index=True, how='left')
+            combined, left_index=True, right_index=True, how='left')
 
         # check multi-index is in check and that the addition of DALYS has worked
         assert self.module.YearsLivedWithDisability.index.equals(self.module.multi_index)
