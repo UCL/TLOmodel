@@ -243,7 +243,7 @@ class HealthSystem(Module):
         # 2) Check topen, tclose and priority
 
         # If there is no specified tclose time then set this is after the end of the simulation
-        if (tclose is None):
+        if tclose is None:
             tclose = self.sim.end_date + DateOffset(days=1)
 
         # Check topen is not in the past
@@ -258,7 +258,7 @@ class HealthSystem(Module):
             allowed = False
         elif self.service_availability[0] == '*':   # it's the overall wild-card, do anything
             allowed = True
-        elif (hsi_event.TREATMENT_ID in self.service_availability):
+        elif hsi_event.TREATMENT_ID in self.service_availability:
             allowed = True
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
@@ -360,7 +360,7 @@ class HealthSystem(Module):
         keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
         values = np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
-        return (blank_footprint)
+        return blank_footprint
 
     def get_blank_cons_footprint(self):
         """
@@ -372,7 +372,7 @@ class HealthSystem(Module):
             'Intervention_Package_Code': [],
             'Item_Code': []
         }
-        return (blank_footprint)
+        return blank_footprint
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
@@ -461,7 +461,7 @@ class HealthSystem(Module):
                                                              'Time_Taken']].copy().reset_index(drop=True)
                     time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
-            if ((len(time_requested) > 0) or (self.ignore_appt_constraints)):
+            if len(time_requested) > 0 or self.ignore_appt_constraints:
                 # (If the data-frame of time-requested is empty, it means that the appointments is not possible
                 # at that type of facility. So we check that time_requested is not empty before progressing.)
                 # We also also allow the request to progress if we are ignoring appt_constraints

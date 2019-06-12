@@ -457,10 +457,8 @@ for o in officer_types_table['Officer_Type_Code'].values:
 
         if officer_types is not False:  # (i.e. such an appointment at such a a facility is possible)
 
-            if (o in officer_types):
-                FacLevel_By_Officer.loc[
-                    (FacLevel_By_Officer.index == o),
-                    fac_level] = True
+            if o in officer_types:
+                FacLevel_By_Officer.loc[(FacLevel_By_Officer.index == o), fac_level] = True
 
 # We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are\
 #  apparently not called by any appointment type
