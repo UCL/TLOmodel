@@ -25,9 +25,6 @@ def parse_line(line):
     :param line: the full line from log file
     :return: a dictionary with parsed line
     """
-
-    print(line)
-
     parts = line.split('|')
     if len(parts) != 5:
         return None
