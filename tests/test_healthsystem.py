@@ -27,11 +27,13 @@ popsize = 10
 def disable_logging():
     logging.disable(logging.INFO)
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
+
 
 def test_run_with_healthsystem_no_interventions_defined():
     sim = Simulation(start_date=start_date)
@@ -86,7 +88,7 @@ def test_run_with_healthsystem_interventions_off():
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    assert sim.modules['HealthSystem'].hsi_event_queue_counter==0
+    assert sim.modules['HealthSystem'].hsi_event_queue_counter == 0
     check_dtypes(sim)
 
 
@@ -110,6 +112,7 @@ def test_run_with_healthsystem_interventions_on():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
 
 # TODO: Following tests do not work. Logging not working (file handler issue?) inside pytests?
 """

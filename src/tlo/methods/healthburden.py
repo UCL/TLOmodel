@@ -29,7 +29,6 @@ class HealthBurden(Module):
         self.YearsLifeLost = None
         self.YearsLivedWithDisability = None
 
-
     PARAMETERS = {
         'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
 
