@@ -40,8 +40,7 @@ def test_run_with_healthsystem_no_interventions_defined():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
     # Run the simulation and flush the logger
@@ -57,8 +56,7 @@ def test_run_with_healthsystem_and_healthburden():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
 
@@ -78,8 +76,8 @@ def test_run_with_healthsystem_interventions_off():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -101,8 +99,8 @@ def test_run_with_healthsystem_interventions_on():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -129,10 +127,9 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=service_availability,
-                                  capabilities_coefficient = 0.0))  # this line effectively removes capabilities of HS
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient = 0.0))  # this line effectively removes capabilities of HS
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -168,11 +165,10 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=service_availability,
-                                  capabilities_coefficient = 0.0,  # this line effectively remove capabilities of HS
-                                  ignore_appt_constraints = True))  # ... but this line says ignore any constraints!
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient = 0.0,  # this line effectively remove capabilities of HS
+                                           ignore_appt_constraints = True))  # ... but this line says ignore any constraints!
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
