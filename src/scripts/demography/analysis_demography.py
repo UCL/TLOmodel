@@ -19,7 +19,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = os.path.join('resources', 'Demography_WorkingFile_Complete.xlsx')
+resourcefile_demography = os.path.join('.', 'resources')
 
 
 # %% Run the Simulation
@@ -42,7 +42,7 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefile_demography))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
