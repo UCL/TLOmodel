@@ -1,7 +1,7 @@
 import logging
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -129,7 +129,8 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient = 0.0))  # this line effectively removes capabilities of HS
+                                           # this effectively removes capabilities of HS:
+                                           capabilities_coefficient=0.0))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -167,8 +168,10 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient = 0.0,  # this line effectively remove capabilities of HS
-                                           ignore_appt_constraints = True))  # ... but this line says ignore any constraints!
+                                           # this effectively remove capabilities of HS:
+                                           capabilities_coefficient=0.0,
+                                           # ... but this says ignore any constraints:
+                                           ignore_appt_constraints=True))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -189,4 +192,3 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
     # TODO: these assertions fail
     # assert 'Consumables' in output['tlo.methods.healthsystem']
     # assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']>0).any()
-
