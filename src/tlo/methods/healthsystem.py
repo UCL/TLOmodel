@@ -1,6 +1,6 @@
 import heapq as hp
 import logging
-import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -105,31 +105,31 @@ class HealthSystem(Module):
     def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Officer_Types_Table.csv'
         )
 
         self.parameters['Daily_Capabilities'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Daily_Capabilities.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv'
         )
 
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
         )
 
         self.parameters['Appt_Time_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
         )
 
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Master_Facilities_List.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv'
         )
 
         self.parameters['Facilities_For_Each_District'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
         )
 
         self.parameters['Consumables'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Consumables.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv'
         )
 
         self.parameters['Consumables_Cost_List'] = (self.parameters['Consumables'][['Item_Code', 'Unit_Cost']]) \

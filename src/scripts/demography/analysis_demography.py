@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = os.path.join('.', 'resources')
+resourcefile_demography = Path('./resources')
 
 
 # %% Run the Simulation
