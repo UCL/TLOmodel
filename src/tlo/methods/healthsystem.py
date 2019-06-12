@@ -266,7 +266,7 @@ class HealthSystem(Module):
             # check to see if anything provided given any wildcards
             for s in self.service_availability:
                 if '*' in s:
-                    stub = self.service_availability.split('*')[0]
+                    stub = s.split('*')[0]
                     if hsi_event.TREATMENT_ID.startswith(stub):
                         allowed = True
                         break
