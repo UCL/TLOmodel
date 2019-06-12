@@ -21,7 +21,7 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability=['*'],     # must be a list of treatment_ids to allow; an entry can be '*' or []
+                 service_availability=None,     # must be a list of treatment_ids to allow
                  ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
                  ignore_cons_constraints=False,  # remove constraints to do with consumables availability
                  ignore_priority=False,  # do not use the priroity information in HSI event to schedule
@@ -34,8 +34,11 @@ class HealthSystem(Module):
         self.ignore_priority = ignore_priority
 
         # Check that the service_availability list is specified correctly
-        assert type(service_availability) is list
-        self.service_availability = service_availability
+        if service_availability is None:
+            self.service_availability = ['*']
+        else:
+            assert type(service_availability) is list
+            self.service_availability = service_availability
 
         # Check that the capabilities coefficident is correct
         assert capabilities_coefficient >= 0
