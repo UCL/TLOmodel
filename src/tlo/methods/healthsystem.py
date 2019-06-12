@@ -565,13 +565,13 @@ class HealthSystem(Module):
                                                                 on='Item_Code',
                                                                 left_index=True
                                                                 )
-            TotalCost = (
+            total_cost = (
                 consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
 
             # Enter to the log
             log_consumables = consumables_used.to_dict()
             log_consumables['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-            log_consumables['Total_Cost'] = TotalCost
+            log_consumables['Total_Cost'] = total_cost
             log_consumables['Person_ID'] = hsi_event.target
 
             logger.info('%s|Consumables|%s',
@@ -636,16 +636,16 @@ class HealthSystem(Module):
         # Log the current state of resource use
 
         # groupby Facility_ID: index of X is Facility_ID
-        X = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
+        summary = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
 
-        if X['Total_Minutes_Per_Day'].sum() > 0:
-            overall_useage = 1 - (X['Minutes_Remaining_Today'].sum() / X['Total_Minutes_Per_Day'].sum())
+        if summary['Total_Minutes_Per_Day'].sum() > 0:
+            overall_useage = 1 - (summary['Minutes_Remaining_Today'].sum() / summary['Total_Minutes_Per_Day'].sum())
         else:
             overall_useage = 0.0  # in the case of there being no capabilities and nan arising
 
-        X['Fraction_Time_Used'] = 1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
-        X['Fraction_Time_Used'] = X['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
-        X['Fraction_Time_Used'] = X['Fraction_Time_Used'].fillna(0.0)
+        summary['Fraction_Time_Used'] = 1 - (summary['Minutes_Remaining_Today'] / summary['Total_Minutes_Per_Day'])
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].fillna(0.0)
 
         # To change so that log includes the facility names:
         # Merge in Facilty_Name and drop everything else
@@ -656,18 +656,18 @@ class HealthSystem(Module):
         # X = X['Fraction_Time_Used']
 
         # Get just the series of Fraction_Time_Used in each facility, indexed by the Facility_ID
-        X = X['Fraction_Time_Used']
+        summary = summary['Fraction_Time_Used']
 
         logger.debug('-------------------------------------------------')
         logger.debug('Current State of Health Facilities Appts:')
-        print_table = X.to_string().splitlines()
+        print_table = summary.to_string().splitlines()
         for line in print_table:
             logger.debug(line)
         logger.debug('-------------------------------------------------')
 
         log_capacity = dict()
         log_capacity['Frac_Time_Used_Overall'] = overall_useage
-        log_capacity['Frac_Time_Used_By_Facility_Name'] = X.to_dict()
+        log_capacity['Frac_Time_Used_By_Facility_Name'] = summary.to_dict()
 
         logger.info('%s|Capacity|%s',
                     self.sim.date,
