@@ -33,6 +33,8 @@ class HealthSystem(Module):
         self.ignore_cons_constraints = ignore_cons_constraints
         self.ignore_priority = ignore_priority
 
+        self.Facility_Levels = None
+
         # Check that the service_availability list is specified correctly
         if service_availability is None:
             self.service_availability = ['*']

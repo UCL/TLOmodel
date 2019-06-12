@@ -45,6 +45,8 @@ class Simulation:
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
 
+        self.end_date = None
+
         # TODO: allow override of logging
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.DEBUG)

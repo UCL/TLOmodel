@@ -24,6 +24,12 @@ class HealthBurden(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+        # instance variables
+        self.multi_index = None
+        self.YearsLifeLost = None
+        self.YearsLivedWithDisability = None
+
+
     PARAMETERS = {
         'DALY_Weight_Database': Property(Types.DATA_FRAME, 'DALY Weight Database from GBD'),
 
