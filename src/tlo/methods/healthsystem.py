@@ -1,9 +1,9 @@
+import heapq as hp
 import logging
 import os
 
-import pandas as pd
 import numpy as np
-import heapq as hp
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -636,7 +636,8 @@ class HealthSystem(Module):
         # Log the current state of resource use
 
         # groupby Facility_ID: index of X is Facility_ID
-        summary = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
+        summary = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day',
+                                                               'Minutes_Remaining_Today']].sum()
 
         if summary['Total_Minutes_Per_Day'].sum() > 0:
             overall_useage = 1 - (summary['Minutes_Remaining_Today'].sum() / summary['Total_Minutes_Per_Day'].sum())

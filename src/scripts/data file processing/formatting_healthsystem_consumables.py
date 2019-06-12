@@ -6,8 +6,8 @@ The file is provided by Mathias Arnold and derives from the EHP work.
 
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # EHP Consumables list
 workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\

@@ -1,12 +1,10 @@
-import pytest
-import datetime
 import logging
 import os
 
-import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, healthburden
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
 
 resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
 start_date = Date(2010, 1, 1)
@@ -67,4 +65,3 @@ def test_run_with_healthsystem_and_healthburden_intvs_on():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-
