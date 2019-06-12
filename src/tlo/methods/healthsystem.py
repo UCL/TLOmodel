@@ -174,7 +174,7 @@ class HealthSystem(Module):
         In order for a disease module to use the functionality of the health system it must be registered
         This list is also used to alert other disease modules when a health system interaction occurs
 
-        :param new_disease_modules: The pointer to the disease module
+        :param new_disease_module: The pointer to the disease module
         """
         assert new_disease_module.name not in self.registered_disease_modules, (
             'A module named {} has already been registered'.format(new_disease_module.name))
