@@ -15,3 +15,4 @@ This will install the software in 'editable' mode, so any changes you make to th
 After the initial install, each time you wish to use the model simply activate the environment::
 
     source activate tlo
+
