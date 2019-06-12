@@ -11,9 +11,11 @@ start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 50
 
+
 @pytest.fixture(autouse=True)
 def disable_logging():
     logging.disable(logging.INFO)
+
 
 @pytest.fixture(scope='module')
 def simulation():
@@ -30,6 +32,7 @@ def simulation():
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
+
 
 def test_dypes(simulation):
     # check types of columns

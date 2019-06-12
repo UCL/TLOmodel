@@ -21,6 +21,7 @@ popsize = 10
 def disable_logging():
     logging.disable(logging.INFO)
 
+
 def check_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
