@@ -21,7 +21,7 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability='*',  # '*' or list of treatment_ids to allow
+                 service_availability=['*'],     # must be a list of treatment_ids to allow; an entry can be '*' or []
                  ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
                  ignore_cons_constraints=False,  # remove constraints to do with consumables availability
                  ignore_priority=False,  # do not use the priroity information in HSI event to schedule
@@ -34,7 +34,7 @@ class HealthSystem(Module):
         self.ignore_priority = ignore_priority
 
         # Check that the service_availability list is specified correctly
-        assert (service_availability == '*') or (type(service_availability) == list)
+        assert type(service_availability) is list
         self.service_availability = service_availability
 
         # Check that the capabilities coefficident is correct
@@ -198,7 +198,6 @@ class HealthSystem(Module):
         # Correctly formatted footprint
         assert 'APPT_FOOTPRINT' in dir(hsi_event)
         assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        list(hsi_event.APPT_FOOTPRINT.values())
 
         # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
         assert all(
@@ -250,9 +249,9 @@ class HealthSystem(Module):
 
         # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed = False
-        if (self.service_availability == []):
+        if not self.service_availability:   # it's an empty list
             allowed = False
-        elif (self.service_availability == '*') or (self.service_availability[0] == '*'):
+        elif self.service_availability[0] == '*':   # it's the overall wild-card, do anything
             allowed = True
         elif (hsi_event.TREATMENT_ID in self.service_availability):
             allowed = True
@@ -260,9 +259,9 @@ class HealthSystem(Module):
             allowed = True  # (if no treatment_id it can pass)
         else:
             # check to see if anything provided given any wildcards
-            for s in range(len(self.service_availability)):
-                if '*' in self.service_availability[s]:
-                    stub = self.service_availability[s].split('*')[0]
+            for s in self.service_availability:
+                if '*' in s:
+                    stub = self.service_availability.split('*')[0]
                     if hsi_event.TREATMENT_ID.startswith(stub):
                         allowed = True
                         break
@@ -307,7 +306,7 @@ class HealthSystem(Module):
         :param hsi_event: the health system interaction event
         """
 
-        if hsi_event.ALERT_OTHER_DISEASES == []:
+        if not hsi_event.ALERT_OTHER_DISEASES:  # it's an empty list
             # There are no disease modules to alert, so do nothing
             pass
 
@@ -631,6 +630,7 @@ class HealthSystem(Module):
 
         # Log the current state of resource use
 
+        # groupby Facility_ID: index of X is Facility_ID
         X = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
 
         if X['Total_Minutes_Per_Day'].sum() > 0:
@@ -638,15 +638,20 @@ class HealthSystem(Module):
         else:
             overall_useage = 0.0  # in the case of there being no capabilities and nan arising
 
-        X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
-                    left_index=True, right_on='Facility_ID')
         X['Fraction_Time_Used'] = 1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
         X['Fraction_Time_Used'] = X['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
         X['Fraction_Time_Used'] = X['Fraction_Time_Used'].fillna(0.0)
 
-        X = X[['Facility_Name', 'Fraction_Time_Used']]
-        X.index = X['Facility_Name']
-        X = X.drop(columns='Facility_Name')
+        # To change so that log includes the facility names:
+        # Merge in Facilty_Name and drop everything else
+        # X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
+        #              left_index=True, right_on='Facility_ID')
+        # X.index = X['Facility_Name']
+        # X = X.drop(columns='Facility_Name')
+        # X = X['Fraction_Time_Used']
+
+        # Get just the series of Fraction_Time_Used in each facility, indexed by the Facility_ID
+        X = X['Fraction_Time_Used']
 
         logger.debug('-------------------------------------------------')
         logger.debug('Current State of Health Facilities Appts:')
@@ -714,18 +719,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # Pop the next event off the heapq
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
-            # Read the tuple:
+            # Read the tuple and assemble into a dict 'next_event'
             # Pos 0: priority,
             # Pos 1: topen,
             # Pos 2: hsi_event_queue_counter,
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            next_event = dict({
+            next_event = {
                 'priority': next_event_tuple[0],
                 'topen': next_event_tuple[1],
                 'tclose': next_event_tuple[3],
-                'object': next_event_tuple[4]})
+                'object': next_event_tuple[4]}
 
             event = next_event['object']
 
@@ -773,5 +778,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
 
-        # TODO: @Asif, this is the way I could see to make the heapq deliver the desired effects...
-        # ... But it seems inefficient to keep loading up the 'hold-over' list. If there another way?
+        """
+        Possible alternative is to empty the current HSI_EVENT_QUEUE, either processing the event or adding to the list
+         hold_over. Then at the end of the loop, set self.module.HSI_EVENT_QUEUE = hp.heapify(hold_over)
+        """

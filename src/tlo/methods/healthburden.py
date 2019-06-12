@@ -67,7 +67,7 @@ class HealthBurden(Module):
     def on_birth(self, mother_id, child_id):
         pass
 
-    def on_end_of_simulation(self):
+    def on_simulation_end(self):
         logger.debug('This is being called at the end of the simulation. Time to output to the logs....')
 
         # Label and concantenate YLL and YLD dataframes
