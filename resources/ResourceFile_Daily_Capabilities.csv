@@ -1,0 +1,579 @@
+,Facility_ID,Officer_Type_Code,Total_Minutes_Per_Day,District,Facility_Level,Region,Facility_Name,Officer_Type
+0,0,E01,20434.45650924045,Chitipa,0,Northern,Facility_Level_0_Chitipa,DCSA
+1,1,C01,200.39753593429157,Chitipa,1,Northern,Facility_Level_1_Chitipa,Mental Health Staff
+2,1,D02,2605.167967145791,Chitipa,1,Northern,Facility_Level_1_Chitipa,Dental Therapist
+3,1,L01,191.6845995893224,Chitipa,1,Northern,Facility_Level_1_Chitipa,Lab Officer
+4,1,L02,2962.398357289528,Chitipa,1,Northern,Facility_Level_1_Chitipa,Lab Technician
+5,1,L03,2300.215195071869,Chitipa,1,Northern,Facility_Level_1_Chitipa,Lab Assistant
+6,1,M01,753.6492813141683,Chitipa,1,Northern,Facility_Level_1_Chitipa,Medical Officer / Specialist
+7,1,M02,13597.489938398363,Chitipa,1,Northern,Facility_Level_1_Chitipa,Clinical Officer / Technician
+8,1,M03,5497.429158110886,Chitipa,1,Northern,Facility_Level_1_Chitipa,Med. Assistant
+9,1,N01,1647.901437371663,Chitipa,1,Northern,Facility_Level_1_Chitipa,Nurse Officer
+10,1,N02,44334.061601642796,Chitipa,1,Northern,Facility_Level_1_Chitipa,Nurse Midwife Technician
+11,1,P01,190.7811088295688,Chitipa,1,Northern,Facility_Level_1_Chitipa,Pharmacist
+12,1,P02,3434.0599589322396,Chitipa,1,Northern,Facility_Level_1_Chitipa,Pharm Technician
+13,1,P03,1717.0299794661196,Chitipa,1,Northern,Facility_Level_1_Chitipa,Pharm Assistant
+14,1,R01,618.4607802874743,Chitipa,1,Northern,Facility_Level_1_Chitipa,Radiographer
+15,1,R02,987.4661190965094,Chitipa,1,Northern,Facility_Level_1_Chitipa,Radiography Technician
+16,1,T01,200.39753593429157,Chitipa,1,Northern,Facility_Level_1_Chitipa,Nutrition Staff
+17,2,E01,20434.45650924045,Karonga,0,Northern,Facility_Level_0_Karonga,DCSA
+18,3,C01,200.39753593429157,Karonga,1,Northern,Facility_Level_1_Karonga,Mental Health Staff
+19,3,D02,4007.9507186858327,Karonga,1,Northern,Facility_Level_1_Karonga,Dental Therapist
+20,3,L01,191.6845995893224,Karonga,1,Northern,Facility_Level_1_Karonga,Lab Officer
+21,3,L02,4344.85092402464,Karonga,1,Northern,Facility_Level_1_Karonga,Lab Technician
+22,3,L03,3763.9885010266935,Karonga,1,Northern,Facility_Level_1_Karonga,Lab Assistant
+23,3,M01,753.6492813141683,Karonga,1,Northern,Facility_Level_1_Karonga,Medical Officer / Specialist
+24,3,M02,15817.488295687892,Karonga,1,Northern,Facility_Level_1_Karonga,Clinical Officer / Technician
+25,3,M03,7421.529363449701,Karonga,1,Northern,Facility_Level_1_Karonga,Med. Assistant
+26,3,N01,1701.0595482546198,Karonga,1,Northern,Facility_Level_1_Karonga,Nurse Officer
+27,3,N02,61436.71457905582,Karonga,1,Northern,Facility_Level_1_Karonga,Nurse Midwife Technician
+28,3,P01,190.7811088295688,Karonga,1,Northern,Facility_Level_1_Karonga,Pharmacist
+29,3,P02,4769.52772073922,Karonga,1,Northern,Facility_Level_1_Karonga,Pharm Technician
+30,3,P03,3052.497741273102,Karonga,1,Northern,Facility_Level_1_Karonga,Pharm Assistant
+31,3,R01,618.4607802874743,Karonga,1,Northern,Facility_Level_1_Karonga,Radiographer
+32,3,R02,1777.4390143737169,Karonga,1,Northern,Facility_Level_1_Karonga,Radiography Technician
+33,3,T01,200.39753593429157,Karonga,1,Northern,Facility_Level_1_Karonga,Nutrition Staff
+34,4,E01,10189.836221765945,Nkhata Bay,0,Northern,Facility_Level_0_Nkhata Bay,DCSA
+35,5,D02,2605.167967145791,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Dental Therapist
+36,5,L01,191.6845995893224,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Lab Officer
+37,5,L02,2567.4119096509244,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Lab Technician
+38,5,L03,2509.3256673511296,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Lab Assistant
+39,5,M01,334.95523613963036,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Medical Officer / Specialist
+40,5,M02,9157.493223819305,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Clinical Officer / Technician
+41,5,M03,4397.943326488707,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Med. Assistant
+42,5,N01,850.5297741273099,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Nurse Officer
+43,5,N02,38190.390143737146,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Nurse Midwife Technician
+44,5,P02,2861.716632443533,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Pharm Technician
+45,5,P03,2098.5921971252574,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Pharm Assistant
+46,5,R01,206.15359342915812,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Radiographer
+47,5,R02,592.4796714579056,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Radiography Technician
+48,5,T01,200.39753593429157,Nkhata Bay,1,Northern,Facility_Level_1_Nkhata Bay,Nutrition Staff
+49,6,E01,20434.45650924045,Rumphi,0,Northern,Facility_Level_0_Rumphi,DCSA
+50,7,C01,400.79507186858314,Rumphi,1,Northern,Facility_Level_1_Rumphi,Mental Health Staff
+51,7,D02,4208.348254620124,Rumphi,1,Northern,Facility_Level_1_Rumphi,Dental Therapist
+52,7,L01,191.6845995893224,Rumphi,1,Northern,Facility_Level_1_Rumphi,Lab Officer
+53,7,L02,4344.85092402464,Rumphi,1,Northern,Facility_Level_1_Rumphi,Lab Technician
+54,7,L03,4391.319917864475,Rumphi,1,Northern,Facility_Level_1_Rumphi,Lab Assistant
+55,7,M01,921.1268993839835,Rumphi,1,Northern,Facility_Level_1_Rumphi,Medical Officer / Specialist
+56,7,M02,17482.487063655037,Rumphi,1,Northern,Facility_Level_1_Rumphi,Clinical Officer / Technician
+57,7,M03,8383.579466119108,Rumphi,1,Northern,Facility_Level_1_Rumphi,Med. Assistant
+58,7,N01,2020.008213552361,Rumphi,1,Northern,Facility_Level_1_Rumphi,Nurse Officer
+59,7,N02,67912.47638603735,Rumphi,1,Northern,Facility_Level_1_Rumphi,Nurse Midwife Technician
+60,7,P01,381.5622176591376,Rumphi,1,Northern,Facility_Level_1_Rumphi,Pharmacist
+61,7,P02,4960.3088295687885,Rumphi,1,Northern,Facility_Level_1_Rumphi,Pharm Technician
+62,7,P03,3243.2788501026707,Rumphi,1,Northern,Facility_Level_1_Rumphi,Pharm Assistant
+63,7,R01,618.4607802874743,Rumphi,1,Northern,Facility_Level_1_Rumphi,Radiographer
+64,7,R02,789.9728952772075,Rumphi,1,Northern,Facility_Level_1_Rumphi,Radiography Technician
+65,7,T01,1001.9876796714578,Rumphi,1,Northern,Facility_Level_1_Rumphi,Nutrition Staff
+66,8,E01,10189.836221765945,Mzimba,0,Northern,Facility_Level_0_Mzimba,DCSA
+67,9,C01,8817.491581108823,Mzimba,1,Northern,Facility_Level_1_Mzimba,Mental Health Staff
+68,9,D02,5009.938398357289,Mzimba,1,Northern,Facility_Level_1_Mzimba,Dental Therapist
+69,9,L02,5134.823819301846,Mzimba,1,Northern,Facility_Level_1_Mzimba,Lab Technician
+70,9,L03,4809.540862422997,Mzimba,1,Northern,Facility_Level_1_Mzimba,Lab Assistant
+71,9,M01,921.1268993839835,Mzimba,1,Northern,Facility_Level_1_Mzimba,Medical Officer / Specialist
+72,9,M02,19008.735934291588,Mzimba,1,Northern,Facility_Level_1_Mzimba,Clinical Officer / Technician
+73,9,M03,8108.7080082135635,Mzimba,1,Northern,Facility_Level_1_Mzimba,Med. Assistant
+74,9,N01,1701.0595482546198,Mzimba,1,Northern,Facility_Level_1_Mzimba,Nurse Officer
+75,9,N02,70735.24435318306,Mzimba,1,Northern,Facility_Level_1_Mzimba,Nurse Midwife Technician
+76,9,P01,381.5622176591376,Mzimba,1,Northern,Facility_Level_1_Mzimba,Pharmacist
+77,9,P02,5151.089938398357,Mzimba,1,Northern,Facility_Level_1_Mzimba,Pharm Technician
+78,9,P03,3243.2788501026707,Mzimba,1,Northern,Facility_Level_1_Mzimba,Pharm Assistant
+79,9,R01,1030.7679671457906,Mzimba,1,Northern,Facility_Level_1_Mzimba,Radiographer
+80,9,R02,789.9728952772075,Mzimba,1,Northern,Facility_Level_1_Mzimba,Radiography Technician
+81,9,T01,400.79507186858314,Mzimba,1,Northern,Facility_Level_1_Mzimba,Nutrition Staff
+82,10,E01,10189.836221765945,Likoma,0,Northern,Facility_Level_0_Likoma,DCSA
+83,11,D02,2605.167967145791,Likoma,1,Northern,Facility_Level_1_Likoma,Dental Therapist
+84,11,L01,191.6845995893224,Likoma,1,Northern,Facility_Level_1_Likoma,Lab Officer
+85,11,L02,2567.4119096509244,Likoma,1,Northern,Facility_Level_1_Likoma,Lab Technician
+86,11,L03,2509.3256673511296,Likoma,1,Northern,Facility_Level_1_Likoma,Lab Assistant
+87,11,M01,334.95523613963036,Likoma,1,Northern,Facility_Level_1_Likoma,Medical Officer / Specialist
+88,11,M02,9157.493223819305,Likoma,1,Northern,Facility_Level_1_Likoma,Clinical Officer / Technician
+89,11,M03,4397.943326488707,Likoma,1,Northern,Facility_Level_1_Likoma,Med. Assistant
+90,11,N01,850.5297741273099,Likoma,1,Northern,Facility_Level_1_Likoma,Nurse Officer
+91,11,N02,38190.390143737146,Likoma,1,Northern,Facility_Level_1_Likoma,Nurse Midwife Technician
+92,11,P02,2861.716632443533,Likoma,1,Northern,Facility_Level_1_Likoma,Pharm Technician
+93,11,P03,2098.5921971252574,Likoma,1,Northern,Facility_Level_1_Likoma,Pharm Assistant
+94,11,R01,206.15359342915812,Likoma,1,Northern,Facility_Level_1_Likoma,Radiographer
+95,11,R02,592.4796714579056,Likoma,1,Northern,Facility_Level_1_Likoma,Radiography Technician
+96,11,T01,200.39753593429157,Likoma,1,Northern,Facility_Level_1_Likoma,Nutrition Staff
+97,12,E01,10189.836221765945,Mzuzu City,0,Northern,Facility_Level_0_Mzuzu City,DCSA
+98,13,C01,8817.491581108823,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Mental Health Staff
+99,13,D02,5009.938398357289,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Dental Therapist
+100,13,L02,5134.823819301846,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Lab Technician
+101,13,L03,4809.540862422997,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Lab Assistant
+102,13,M01,921.1268993839835,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Medical Officer / Specialist
+103,13,M02,19008.735934291588,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Clinical Officer / Technician
+104,13,M03,8108.7080082135635,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Med. Assistant
+105,13,N01,1701.0595482546198,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Nurse Officer
+106,13,N02,70735.24435318306,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Nurse Midwife Technician
+107,13,P01,381.5622176591376,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Pharmacist
+108,13,P02,5151.089938398357,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Pharm Technician
+109,13,P03,3243.2788501026707,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Pharm Assistant
+110,13,R01,1030.7679671457906,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Radiographer
+111,13,R02,789.9728952772075,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Radiography Technician
+112,13,T01,400.79507186858314,Mzuzu City,1,Northern,Facility_Level_1_Mzuzu City,Nutrition Staff
+113,14,E01,20434.45650924045,Kasungu,0,Central,Facility_Level_0_Kasungu,DCSA
+114,15,C01,400.79507186858314,Kasungu,1,Central,Facility_Level_1_Kasungu,Mental Health Staff
+115,15,D02,5811.528542094454,Kasungu,1,Central,Facility_Level_1_Kasungu,Dental Therapist
+116,15,L01,191.6845995893224,Kasungu,1,Central,Facility_Level_1_Kasungu,Lab Officer
+117,15,L02,6122.289938398353,Kasungu,1,Central,Facility_Level_1_Kasungu,Lab Technician
+118,15,L03,5645.982751540039,Kasungu,1,Central,Facility_Level_1_Kasungu,Lab Assistant
+119,15,M01,921.1268993839835,Kasungu,1,Central,Facility_Level_1_Kasungu,Medical Officer / Specialist
+120,15,M02,19424.985626283375,Kasungu,1,Central,Facility_Level_1_Kasungu,Clinical Officer / Technician
+121,15,M03,9620.50102669406,Kasungu,1,Central,Facility_Level_1_Kasungu,Med. Assistant
+122,15,N01,1754.2176591375767,Kasungu,1,Central,Facility_Level_1_Kasungu,Nurse Officer
+123,15,N02,86675.58110882946,Kasungu,1,Central,Facility_Level_1_Kasungu,Nurse Midwife Technician
+124,15,P01,190.7811088295688,Kasungu,1,Central,Facility_Level_1_Kasungu,Pharmacist
+125,15,P02,6677.338809034904,Kasungu,1,Central,Facility_Level_1_Kasungu,Pharm Technician
+126,15,P03,4578.746611909652,Kasungu,1,Central,Facility_Level_1_Kasungu,Pharm Assistant
+127,15,R01,1030.7679671457906,Kasungu,1,Central,Facility_Level_1_Kasungu,Radiographer
+128,15,R02,1579.945790554415,Kasungu,1,Central,Facility_Level_1_Kasungu,Radiography Technician
+129,15,T01,601.1926078028747,Kasungu,1,Central,Facility_Level_1_Kasungu,Nutrition Staff
+130,16,E01,20434.45650924045,Nkhotakota,0,Central,Facility_Level_0_Nkhotakota,DCSA
+131,17,C01,601.1926078028747,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Mental Health Staff
+132,17,D02,4208.348254620124,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Dental Therapist
+133,17,L01,191.6845995893224,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Lab Officer
+134,17,L02,4344.85092402464,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Lab Technician
+135,17,L03,3973.098973305954,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Lab Assistant
+136,17,M01,1088.6045174537987,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Medical Officer / Specialist
+137,17,M02,18592.4862422998,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Clinical Officer / Technician
+138,17,M03,8108.7080082135635,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Med. Assistant
+139,17,N01,2073.166324435318,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Nurse Officer
+140,17,N02,65753.88911704357,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Nurse Midwife Technician
+141,17,P01,381.5622176591376,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Pharmacist
+142,17,P02,4960.3088295687885,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Pharm Technician
+143,17,P03,2861.716632443533,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Pharm Assistant
+144,17,R01,1030.7679671457906,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Radiographer
+145,17,R02,1777.4390143737169,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Radiography Technician
+146,17,T01,601.1926078028747,Nkhotakota,1,Central,Facility_Level_1_Nkhotakota,Nutrition Staff
+147,18,E01,20434.45650924045,Ntchisi,0,Central,Facility_Level_0_Ntchisi,DCSA
+148,19,D02,2805.5655030800826,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Dental Therapist
+149,19,L01,191.6845995893224,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Lab Officer
+150,19,L02,3159.89158110883,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Lab Technician
+151,19,L03,2927.546611909651,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Lab Assistant
+152,19,M01,586.1716632443531,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Medical Officer / Specialist
+153,19,M02,13181.240246406576,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Clinical Officer / Technician
+154,19,M03,6047.172073921976,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Med. Assistant
+155,19,N01,1647.901437371663,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Nurse Officer
+156,19,N02,46492.64887063667,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Nurse Midwife Technician
+157,19,P01,190.7811088295688,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Pharmacist
+158,19,P02,3624.8410677618085,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Pharm Technician
+159,19,P03,2098.5921971252574,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Pharm Assistant
+160,19,R01,206.15359342915812,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Radiographer
+161,19,R02,789.9728952772075,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Radiography Technician
+162,19,T01,200.39753593429157,Ntchisi,1,Central,Facility_Level_1_Ntchisi,Nutrition Staff
+163,20,E01,20434.45650924045,Dowa,0,Central,Facility_Level_0_Dowa,DCSA
+164,21,C01,601.1926078028747,Dowa,1,Central,Facility_Level_1_Dowa,Mental Health Staff
+165,21,D02,4609.143326488706,Dowa,1,Central,Facility_Level_1_Dowa,Dental Therapist
+166,21,L01,191.6845995893224,Dowa,1,Central,Facility_Level_1_Dowa,Lab Officer
+167,21,L02,4739.837371663243,Dowa,1,Central,Facility_Level_1_Dowa,Lab Technician
+168,21,L03,4391.319917864475,Dowa,1,Central,Facility_Level_1_Dowa,Lab Assistant
+169,21,M01,1088.6045174537987,Dowa,1,Central,Facility_Level_1_Dowa,Medical Officer / Specialist
+170,21,M02,18592.4862422998,Dowa,1,Central,Facility_Level_1_Dowa,Clinical Officer / Technician
+171,21,M03,8658.450924024653,Dowa,1,Central,Facility_Level_1_Dowa,Med. Assistant
+172,21,N01,2073.166324435318,Dowa,1,Central,Facility_Level_1_Dowa,Nurse Officer
+173,21,N02,72229.65092402491,Dowa,1,Central,Facility_Level_1_Dowa,Nurse Midwife Technician
+174,21,P01,381.5622176591376,Dowa,1,Central,Facility_Level_1_Dowa,Pharmacist
+175,21,P02,5341.871047227925,Dowa,1,Central,Facility_Level_1_Dowa,Pharm Technician
+176,21,P03,3243.2788501026707,Dowa,1,Central,Facility_Level_1_Dowa,Pharm Assistant
+177,21,R01,1030.7679671457906,Dowa,1,Central,Facility_Level_1_Dowa,Radiographer
+178,21,R02,1382.4525667351131,Dowa,1,Central,Facility_Level_1_Dowa,Radiography Technician
+179,21,T01,601.1926078028747,Dowa,1,Central,Facility_Level_1_Dowa,Nutrition Staff
+180,22,E01,20434.45650924045,Salima,0,Central,Facility_Level_0_Salima,DCSA
+181,23,D02,3607.1556468172494,Salima,1,Central,Facility_Level_1_Salima,Dental Therapist
+182,23,L01,191.6845995893224,Salima,1,Central,Facility_Level_1_Salima,Lab Officer
+183,23,L02,3949.8644763860375,Salima,1,Central,Facility_Level_1_Salima,Lab Technician
+184,23,L03,3554.878028747433,Salima,1,Central,Facility_Level_1_Salima,Lab Assistant
+185,23,M01,586.1716632443531,Salima,1,Central,Facility_Level_1_Salima,Medical Officer / Specialist
+186,23,M02,14568.739219712532,Salima,1,Central,Facility_Level_1_Salima,Clinical Officer / Technician
+187,23,M03,6322.043531827521,Salima,1,Central,Facility_Level_1_Salima,Med. Assistant
+188,23,N01,1647.901437371663,Salima,1,Central,Facility_Level_1_Salima,Nurse Officer
+189,23,N02,53300.501026694285,Salima,1,Central,Facility_Level_1_Salima,Nurse Midwife Technician
+190,23,P01,190.7811088295688,Salima,1,Central,Facility_Level_1_Salima,Pharmacist
+191,23,P02,4387.965503080083,Salima,1,Central,Facility_Level_1_Salima,Pharm Technician
+192,23,P03,2289.3733059548263,Salima,1,Central,Facility_Level_1_Salima,Pharm Assistant
+193,23,R01,206.15359342915812,Salima,1,Central,Facility_Level_1_Salima,Radiographer
+194,23,R02,789.9728952772075,Salima,1,Central,Facility_Level_1_Salima,Radiography Technician
+195,23,T01,200.39753593429157,Salima,1,Central,Facility_Level_1_Salima,Nutrition Staff
+196,24,E01,10299.404353182785,Lilongwe,0,Central,Facility_Level_0_Lilongwe,DCSA
+197,25,C01,8015.901437371657,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Mental Health Staff
+198,25,D02,6412.721149897327,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Dental Therapist
+199,25,L02,7307.249281314162,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Lab Technician
+200,25,L03,6064.203696098561,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Lab Assistant
+201,25,M01,1423.5597535934287,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Medical Officer / Specialist
+202,25,M02,21644.983983572904,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Clinical Officer / Technician
+203,25,M03,12644.087063655055,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Med. Assistant
+204,25,N01,1860.5338809034904,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Nurse Officer
+205,25,N02,90660.66529774106,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Nurse Midwife Technician
+206,25,P01,381.5622176591376,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Pharmacist
+207,25,P02,6868.119917864473,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Pharm Technician
+208,25,P03,4769.52772073922,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Pharm Assistant
+209,25,R01,1649.2287474332647,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Radiographer
+210,25,R02,987.4661190965094,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Radiography Technician
+211,25,T01,801.5901437371663,Lilongwe,1,Central,Facility_Level_1_Lilongwe,Nutrition Staff
+212,26,E01,20434.45650924045,Mchinji,0,Central,Facility_Level_0_Mchinji,DCSA
+213,27,C01,601.1926078028747,Mchinji,1,Central,Facility_Level_1_Mchinji,Mental Health Staff
+214,27,D02,4408.745790554415,Mchinji,1,Central,Facility_Level_1_Mchinji,Dental Therapist
+215,27,L01,191.6845995893224,Mchinji,1,Central,Facility_Level_1_Mchinji,Lab Officer
+216,27,L02,4739.837371663243,Mchinji,1,Central,Facility_Level_1_Mchinji,Lab Technician
+217,27,L03,3763.9885010266935,Mchinji,1,Central,Facility_Level_1_Mchinji,Lab Assistant
+218,27,M01,1088.6045174537987,Mchinji,1,Central,Facility_Level_1_Mchinji,Medical Officer / Specialist
+219,27,M02,17898.736755646823,Mchinji,1,Central,Facility_Level_1_Mchinji,Clinical Officer / Technician
+220,27,M03,7009.222176591384,Mchinji,1,Central,Facility_Level_1_Mchinji,Med. Assistant
+221,27,N01,1754.2176591375767,Mchinji,1,Central,Facility_Level_1_Mchinji,Nurse Officer
+222,27,N02,69074.79260780323,Mchinji,1,Central,Facility_Level_1_Mchinji,Nurse Midwife Technician
+223,27,P01,190.7811088295688,Mchinji,1,Central,Facility_Level_1_Mchinji,Pharmacist
+224,27,P02,5151.089938398357,Mchinji,1,Central,Facility_Level_1_Mchinji,Pharm Technician
+225,27,P03,3243.2788501026707,Mchinji,1,Central,Facility_Level_1_Mchinji,Pharm Assistant
+226,27,R01,1443.0751540041067,Mchinji,1,Central,Facility_Level_1_Mchinji,Radiographer
+227,27,R02,1777.4390143737169,Mchinji,1,Central,Facility_Level_1_Mchinji,Radiography Technician
+228,27,T01,200.39753593429157,Mchinji,1,Central,Facility_Level_1_Mchinji,Nutrition Staff
+229,28,E01,20434.45650924045,Dedza,0,Central,Facility_Level_0_Dedza,DCSA
+230,29,C01,601.1926078028747,Dedza,1,Central,Facility_Level_1_Dedza,Mental Health Staff
+231,29,D02,5611.1310061601625,Dedza,1,Central,Facility_Level_1_Dedza,Dental Therapist
+232,29,L01,191.6845995893224,Dedza,1,Central,Facility_Level_1_Dedza,Lab Officer
+233,29,L02,5727.30349075975,Dedza,1,Central,Facility_Level_1_Dedza,Lab Technician
+234,29,L03,5227.761806981518,Dedza,1,Central,Facility_Level_1_Dedza,Lab Assistant
+235,29,M01,1088.6045174537987,Dedza,1,Central,Facility_Level_1_Dedza,Medical Officer / Specialist
+236,29,M02,20118.735112936352,Dedza,1,Central,Facility_Level_1_Dedza,Clinical Officer / Technician
+237,29,M03,8383.579466119108,Dedza,1,Central,Facility_Level_1_Dedza,Med. Assistant
+238,29,N01,2020.008213552361,Dedza,1,Central,Facility_Level_1_Dedza,Nurse Officer
+239,29,N02,78041.23203285433,Dedza,1,Central,Facility_Level_1_Dedza,Nurse Midwife Technician
+240,29,P01,381.5622176591376,Dedza,1,Central,Facility_Level_1_Dedza,Pharmacist
+241,29,P02,6295.776591375768,Dedza,1,Central,Facility_Level_1_Dedza,Pharm Technician
+242,29,P03,2861.716632443533,Dedza,1,Central,Facility_Level_1_Dedza,Pharm Assistant
+243,29,R01,1030.7679671457906,Dedza,1,Central,Facility_Level_1_Dedza,Radiographer
+244,29,R02,987.4661190965094,Dedza,1,Central,Facility_Level_1_Dedza,Radiography Technician
+245,29,T01,200.39753593429157,Dedza,1,Central,Facility_Level_1_Dedza,Nutrition Staff
+246,30,E01,20434.45650924045,Ntcheu,0,Central,Facility_Level_0_Ntcheu,DCSA
+247,31,C01,400.79507186858314,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Mental Health Staff
+248,31,D02,6613.118685831619,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Dental Therapist
+249,31,L01,191.6845995893224,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Lab Officer
+250,31,L02,6912.262833675559,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Lab Technician
+251,31,L03,6482.424640657082,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Lab Assistant
+252,31,M01,921.1268993839835,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Medical Officer / Specialist
+253,31,M02,21228.734291581117,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Clinical Officer / Technician
+254,31,M03,9070.75811088297,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Med. Assistant
+255,31,N01,1754.2176591375767,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Nurse Officer
+256,31,N02,71067.33470225903,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Nurse Midwife Technician
+257,31,P01,190.7811088295688,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Pharmacist
+258,31,P02,7249.68213552361,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Pharm Technician
+259,31,P03,3434.0599589322396,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Pharm Assistant
+260,31,R01,1030.7679671457906,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Radiographer
+261,31,R02,1184.9593429158112,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Radiography Technician
+262,31,T01,200.39753593429157,Ntcheu,1,Central,Facility_Level_1_Ntcheu,Nutrition Staff
+263,32,E01,10299.404353182785,Lilongwe City,0,Central,Facility_Level_0_Lilongwe City,DCSA
+264,33,C01,8015.901437371657,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Mental Health Staff
+265,33,D02,6412.721149897327,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Dental Therapist
+266,33,L02,7307.249281314162,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Lab Technician
+267,33,L03,6064.203696098561,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Lab Assistant
+268,33,M01,1423.5597535934287,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Medical Officer / Specialist
+269,33,M02,21644.983983572904,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Clinical Officer / Technician
+270,33,M03,12644.087063655055,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Med. Assistant
+271,33,N01,1860.5338809034904,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Nurse Officer
+272,33,N02,90660.66529774106,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Nurse Midwife Technician
+273,33,P01,381.5622176591376,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Pharmacist
+274,33,P02,6868.119917864473,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Pharm Technician
+275,33,P03,4769.52772073922,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Pharm Assistant
+276,33,R01,1649.2287474332647,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Radiographer
+277,33,R02,987.4661190965094,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Radiography Technician
+278,33,T01,801.5901437371663,Lilongwe City,1,Central,Facility_Level_1_Lilongwe City,Nutrition Staff
+279,34,E01,20434.45650924045,Mangochi,0,Southern,Facility_Level_0_Mangochi,DCSA
+280,35,C01,601.1926078028747,Mangochi,1,Southern,Facility_Level_1_Mangochi,Mental Health Staff
+281,35,D02,7815.503901437366,Mangochi,1,Southern,Facility_Level_1_Mangochi,Dental Therapist
+282,35,L01,191.6845995893224,Mangochi,1,Southern,Facility_Level_1_Mangochi,Lab Officer
+283,35,L02,8097.222176591367,Mangochi,1,Southern,Facility_Level_1_Mangochi,Lab Technician
+284,35,L03,7318.8665297741245,Mangochi,1,Southern,Facility_Level_1_Mangochi,Lab Assistant
+285,35,M01,1088.6045174537987,Mangochi,1,Southern,Facility_Level_1_Mangochi,Medical Officer / Specialist
+286,35,M02,24003.732238193028,Mangochi,1,Southern,Facility_Level_1_Mangochi,Clinical Officer / Technician
+287,35,M03,9620.50102669406,Mangochi,1,Southern,Facility_Level_1_Mangochi,Med. Assistant
+288,35,N01,1913.6919917864473,Mangochi,1,Southern,Facility_Level_1_Mangochi,Nurse Officer
+289,35,N02,99959.19507186812,Mangochi,1,Southern,Facility_Level_1_Mangochi,Nurse Midwife Technician
+290,35,P01,190.7811088295688,Mangochi,1,Southern,Facility_Level_1_Mangochi,Pharmacist
+291,35,P02,8394.368788501022,Mangochi,1,Southern,Facility_Level_1_Mangochi,Pharm Technician
+292,35,P03,4578.746611909652,Mangochi,1,Southern,Facility_Level_1_Mangochi,Pharm Assistant
+293,35,R01,1443.0751540041067,Mangochi,1,Southern,Facility_Level_1_Mangochi,Radiographer
+294,35,R02,2172.4254620123206,Mangochi,1,Southern,Facility_Level_1_Mangochi,Radiography Technician
+295,35,T01,200.39753593429157,Mangochi,1,Southern,Facility_Level_1_Mangochi,Nutrition Staff
+296,36,E01,20434.45650924045,Machinga,0,Southern,Facility_Level_0_Machinga,DCSA
+297,37,D02,3607.1556468172494,Machinga,1,Southern,Facility_Level_1_Machinga,Dental Therapist
+298,37,L01,191.6845995893224,Machinga,1,Southern,Facility_Level_1_Machinga,Lab Officer
+299,37,L02,3949.8644763860375,Machinga,1,Southern,Facility_Level_1_Machinga,Lab Technician
+300,37,L03,3973.098973305954,Machinga,1,Southern,Facility_Level_1_Machinga,Lab Assistant
+301,37,M01,586.1716632443531,Machinga,1,Southern,Facility_Level_1_Machinga,Medical Officer / Specialist
+302,37,M02,15401.238603696105,Machinga,1,Southern,Facility_Level_1_Machinga,Clinical Officer / Technician
+303,37,M03,6322.043531827521,Machinga,1,Southern,Facility_Level_1_Machinga,Med. Assistant
+304,37,N01,1647.901437371663,Machinga,1,Southern,Facility_Level_1_Machinga,Nurse Officer
+305,37,N02,54296.77207392223,Machinga,1,Southern,Facility_Level_1_Machinga,Nurse Midwife Technician
+306,37,P01,190.7811088295688,Machinga,1,Southern,Facility_Level_1_Machinga,Pharmacist
+307,37,P02,4387.965503080083,Machinga,1,Southern,Facility_Level_1_Machinga,Pharm Technician
+308,37,P03,2670.935523613964,Machinga,1,Southern,Facility_Level_1_Machinga,Pharm Assistant
+309,37,R01,206.15359342915812,Machinga,1,Southern,Facility_Level_1_Machinga,Radiographer
+310,37,R02,789.9728952772075,Machinga,1,Southern,Facility_Level_1_Machinga,Radiography Technician
+311,37,T01,1001.9876796714578,Machinga,1,Southern,Facility_Level_1_Machinga,Nutrition Staff
+312,38,E01,10189.836221765945,Zomba,0,Southern,Facility_Level_0_Zomba,DCSA
+313,39,C01,601.1926078028747,Zomba,1,Southern,Facility_Level_1_Zomba,Mental Health Staff
+314,39,D02,3607.1556468172494,Zomba,1,Southern,Facility_Level_1_Zomba,Dental Therapist
+315,39,L01,383.3691991786448,Zomba,1,Southern,Facility_Level_1_Zomba,Lab Officer
+316,39,L02,4542.344147843942,Zomba,1,Southern,Facility_Level_1_Zomba,Lab Technician
+317,39,L03,3136.6570841889115,Zomba,1,Southern,Facility_Level_1_Zomba,Lab Assistant
+318,39,M01,5275.544969199182,Zomba,1,Southern,Facility_Level_1_Zomba,Medical Officer / Specialist
+319,39,M02,15401.238603696105,Zomba,1,Southern,Facility_Level_1_Zomba,Clinical Officer / Technician
+320,39,M03,5909.736344969204,Zomba,1,Southern,Facility_Level_1_Zomba,Med. Assistant
+321,39,N01,4784.2299794661185,Zomba,1,Southern,Facility_Level_1_Zomba,Nurse Officer
+322,39,N02,69572.92813141718,Zomba,1,Southern,Facility_Level_1_Zomba,Nurse Midwife Technician
+323,39,P01,1335.4677618069818,Zomba,1,Southern,Facility_Level_1_Zomba,Pharmacist
+324,39,P02,4197.184394250515,Zomba,1,Southern,Facility_Level_1_Zomba,Pharm Technician
+325,39,P03,1717.0299794661196,Zomba,1,Southern,Facility_Level_1_Zomba,Pharm Assistant
+326,39,R01,1030.7679671457906,Zomba,1,Southern,Facility_Level_1_Zomba,Radiographer
+327,39,R02,1579.945790554415,Zomba,1,Southern,Facility_Level_1_Zomba,Radiography Technician
+328,39,T01,200.39753593429157,Zomba,1,Southern,Facility_Level_1_Zomba,Nutrition Staff
+329,40,E01,20434.45650924045,Chiradzulu,0,Southern,Facility_Level_0_Chiradzulu,DCSA
+330,41,C01,400.79507186858314,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Mental Health Staff
+331,41,D02,3406.7581108829577,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Dental Therapist
+332,41,L01,191.6845995893224,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Lab Officer
+333,41,L02,4147.357700205339,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Lab Technician
+334,41,L03,3136.6570841889115,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Lab Assistant
+335,41,M01,921.1268993839835,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Medical Officer / Specialist
+336,41,M02,15401.238603696105,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Clinical Officer / Technician
+337,41,M03,7558.965092402474,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Med. Assistant
+338,41,N01,2020.008213552361,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Nurse Officer
+339,41,N02,57617.67556468204,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Nurse Midwife Technician
+340,41,P01,381.5622176591376,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Pharmacist
+341,41,P02,4197.184394250515,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Pharm Technician
+342,41,P03,2289.3733059548263,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Pharm Assistant
+343,41,R01,618.4607802874743,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Radiographer
+344,41,R02,789.9728952772075,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Radiography Technician
+345,41,T01,200.39753593429157,Chiradzulu,1,Southern,Facility_Level_1_Chiradzulu,Nutrition Staff
+346,42,E01,10189.836221765945,Blantyre,0,Southern,Facility_Level_0_Blantyre,DCSA
+347,43,C01,200.39753593429157,Blantyre,1,Southern,Facility_Level_1_Blantyre,Mental Health Staff
+348,43,D02,3005.9630390143743,Blantyre,1,Southern,Facility_Level_1_Blantyre,Dental Therapist
+349,43,L02,3159.89158110883,Blantyre,1,Southern,Facility_Level_1_Blantyre,Lab Technician
+350,43,L03,2927.546611909651,Blantyre,1,Southern,Facility_Level_1_Blantyre,Lab Assistant
+351,43,M01,418.69404517453796,Blantyre,1,Southern,Facility_Level_1_Blantyre,Medical Officer / Specialist
+352,43,M02,10267.49240246407,Blantyre,1,Southern,Facility_Level_1_Blantyre,Clinical Officer / Technician
+353,43,M03,5222.5577002053415,Blantyre,1,Southern,Facility_Level_1_Blantyre,Med. Assistant
+354,43,N01,1010.0041067761805,Blantyre,1,Southern,Facility_Level_1_Blantyre,Nurse Officer
+355,43,N02,39684.79671457906,Blantyre,1,Southern,Facility_Level_1_Blantyre,Nurse Midwife Technician
+356,43,P01,190.7811088295688,Blantyre,1,Southern,Facility_Level_1_Blantyre,Pharmacist
+357,43,P02,3052.497741273102,Blantyre,1,Southern,Facility_Level_1_Blantyre,Pharm Technician
+358,43,P03,2480.154414784395,Blantyre,1,Southern,Facility_Level_1_Blantyre,Pharm Assistant
+359,43,R01,206.15359342915812,Blantyre,1,Southern,Facility_Level_1_Blantyre,Radiographer
+360,43,R02,394.98644763860375,Blantyre,1,Southern,Facility_Level_1_Blantyre,Radiography Technician
+361,44,E01,20434.45650924045,Mwanza,0,Southern,Facility_Level_0_Mwanza,DCSA
+362,45,D02,1202.3852156057494,Mwanza,1,Southern,Facility_Level_1_Mwanza,Dental Therapist
+363,45,L01,191.6845995893224,Mwanza,1,Southern,Facility_Level_1_Mwanza,Lab Officer
+364,45,L02,1579.945790554415,Mwanza,1,Southern,Facility_Level_1_Mwanza,Lab Technician
+365,45,L03,1045.552361396304,Mwanza,1,Southern,Facility_Level_1_Mwanza,Lab Assistant
+366,45,M01,586.1716632443531,Mwanza,1,Southern,Facility_Level_1_Mwanza,Medical Officer / Specialist
+367,45,M02,10544.99219712526,Mwanza,1,Southern,Facility_Level_1_Mwanza,Clinical Officer / Technician
+368,45,M03,4397.943326488707,Mwanza,1,Southern,Facility_Level_1_Mwanza,Med. Assistant
+369,45,N01,1647.901437371663,Mwanza,1,Southern,Facility_Level_1_Mwanza,Nurse Officer
+370,45,N02,28061.63449691983,Mwanza,1,Southern,Facility_Level_1_Mwanza,Nurse Midwife Technician
+371,45,P01,190.7811088295688,Mwanza,1,Southern,Facility_Level_1_Mwanza,Pharmacist
+372,45,P02,2098.5921971252574,Mwanza,1,Southern,Facility_Level_1_Mwanza,Pharm Technician
+373,45,P03,953.905544147844,Mwanza,1,Southern,Facility_Level_1_Mwanza,Pharm Assistant
+374,45,R01,206.15359342915812,Mwanza,1,Southern,Facility_Level_1_Mwanza,Radiographer
+375,45,R02,789.9728952772075,Mwanza,1,Southern,Facility_Level_1_Mwanza,Radiography Technician
+376,45,T01,200.39753593429157,Mwanza,1,Southern,Facility_Level_1_Mwanza,Nutrition Staff
+377,46,E01,20434.45650924045,Thyolo,0,Southern,Facility_Level_0_Thyolo,DCSA
+378,47,C01,601.1926078028747,Thyolo,1,Southern,Facility_Level_1_Thyolo,Mental Health Staff
+379,47,D02,4809.540862422998,Thyolo,1,Southern,Facility_Level_1_Thyolo,Dental Therapist
+380,47,L01,191.6845995893224,Thyolo,1,Southern,Facility_Level_1_Thyolo,Lab Officer
+381,47,L02,5134.823819301846,Thyolo,1,Southern,Facility_Level_1_Thyolo,Lab Technician
+382,47,L03,4600.430390143736,Thyolo,1,Southern,Facility_Level_1_Thyolo,Lab Assistant
+383,47,M01,1088.6045174537987,Thyolo,1,Southern,Facility_Level_1_Thyolo,Medical Officer / Specialist
+384,47,M02,19008.735934291588,Thyolo,1,Southern,Facility_Level_1_Thyolo,Clinical Officer / Technician
+385,47,M03,8108.7080082135635,Thyolo,1,Southern,Facility_Level_1_Thyolo,Med. Assistant
+386,47,N01,2073.166324435318,Thyolo,1,Southern,Facility_Level_1_Thyolo,Nurse Officer
+387,47,N02,71565.47022587298,Thyolo,1,Southern,Facility_Level_1_Thyolo,Nurse Midwife Technician
+388,47,P01,381.5622176591376,Thyolo,1,Southern,Facility_Level_1_Thyolo,Pharmacist
+389,47,P02,5532.652156057494,Thyolo,1,Southern,Facility_Level_1_Thyolo,Pharm Technician
+390,47,P03,2861.716632443533,Thyolo,1,Southern,Facility_Level_1_Thyolo,Pharm Assistant
+391,47,R01,1030.7679671457906,Thyolo,1,Southern,Facility_Level_1_Thyolo,Radiographer
+392,47,R02,987.4661190965094,Thyolo,1,Southern,Facility_Level_1_Thyolo,Radiography Technician
+393,47,T01,601.1926078028747,Thyolo,1,Southern,Facility_Level_1_Thyolo,Nutrition Staff
+394,48,E01,20434.45650924045,Mulanje,0,Southern,Facility_Level_0_Mulanje,DCSA
+395,49,C01,400.79507186858314,Mulanje,1,Southern,Facility_Level_1_Mulanje,Mental Health Staff
+396,49,D02,5009.938398357289,Mulanje,1,Southern,Facility_Level_1_Mulanje,Dental Therapist
+397,49,L01,191.6845995893224,Mulanje,1,Southern,Facility_Level_1_Mulanje,Lab Officer
+398,49,L02,5727.30349075975,Mulanje,1,Southern,Facility_Level_1_Mulanje,Lab Technician
+399,49,L03,4600.430390143736,Mulanje,1,Southern,Facility_Level_1_Mulanje,Lab Assistant
+400,49,M01,921.1268993839835,Mulanje,1,Southern,Facility_Level_1_Mulanje,Medical Officer / Specialist
+401,49,M02,17898.736755646823,Mulanje,1,Southern,Facility_Level_1_Mulanje,Clinical Officer / Technician
+402,49,M03,9208.193839835743,Mulanje,1,Southern,Facility_Level_1_Mulanje,Med. Assistant
+403,49,N01,1860.5338809034904,Mulanje,1,Southern,Facility_Level_1_Mulanje,Nurse Officer
+404,49,N02,76712.87063655046,Mulanje,1,Southern,Facility_Level_1_Mulanje,Nurse Midwife Technician
+405,49,P01,381.5622176591376,Mulanje,1,Southern,Facility_Level_1_Mulanje,Pharmacist
+406,49,P02,5723.433264887062,Mulanje,1,Southern,Facility_Level_1_Mulanje,Pharm Technician
+407,49,P03,3243.2788501026707,Mulanje,1,Southern,Facility_Level_1_Mulanje,Pharm Assistant
+408,49,R01,618.4607802874743,Mulanje,1,Southern,Facility_Level_1_Mulanje,Radiographer
+409,49,R02,789.9728952772075,Mulanje,1,Southern,Facility_Level_1_Mulanje,Radiography Technician
+410,49,T01,200.39753593429157,Mulanje,1,Southern,Facility_Level_1_Mulanje,Nutrition Staff
+411,50,E01,20434.45650924045,Phalombe,0,Southern,Facility_Level_0_Phalombe,DCSA
+412,51,C01,400.79507186858314,Phalombe,1,Southern,Facility_Level_1_Phalombe,Mental Health Staff
+413,51,D02,3406.7581108829577,Phalombe,1,Southern,Facility_Level_1_Phalombe,Dental Therapist
+414,51,L01,191.6845995893224,Phalombe,1,Southern,Facility_Level_1_Phalombe,Lab Officer
+415,51,L02,4147.357700205339,Phalombe,1,Southern,Facility_Level_1_Phalombe,Lab Technician
+416,51,L03,3136.6570841889115,Phalombe,1,Southern,Facility_Level_1_Phalombe,Lab Assistant
+417,51,M01,921.1268993839835,Phalombe,1,Southern,Facility_Level_1_Phalombe,Medical Officer / Specialist
+418,51,M02,15678.738398357296,Phalombe,1,Southern,Facility_Level_1_Phalombe,Clinical Officer / Technician
+419,51,M03,7009.222176591384,Phalombe,1,Southern,Facility_Level_1_Phalombe,Med. Assistant
+420,51,N01,2020.008213552361,Phalombe,1,Southern,Facility_Level_1_Phalombe,Nurse Officer
+421,51,N02,54462.81724846022,Phalombe,1,Southern,Facility_Level_1_Phalombe,Nurse Midwife Technician
+422,51,P01,381.5622176591376,Phalombe,1,Southern,Facility_Level_1_Phalombe,Pharmacist
+423,51,P02,3815.6221765913774,Phalombe,1,Southern,Facility_Level_1_Phalombe,Pharm Technician
+424,51,P03,1907.8110882956885,Phalombe,1,Southern,Facility_Level_1_Phalombe,Pharm Assistant
+425,51,R01,618.4607802874743,Phalombe,1,Southern,Facility_Level_1_Phalombe,Radiographer
+426,51,R02,789.9728952772075,Phalombe,1,Southern,Facility_Level_1_Phalombe,Radiography Technician
+427,51,T01,200.39753593429157,Phalombe,1,Southern,Facility_Level_1_Phalombe,Nutrition Staff
+428,52,E01,20434.45650924045,Chikwawa,0,Southern,Facility_Level_0_Chikwawa,DCSA
+429,53,C01,400.79507186858314,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Mental Health Staff
+430,53,D02,4007.9507186858327,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Dental Therapist
+431,53,L01,191.6845995893224,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Lab Officer
+432,53,L02,4147.357700205339,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Lab Technician
+433,53,L03,3973.098973305954,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Lab Assistant
+434,53,M01,921.1268993839835,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Medical Officer / Specialist
+435,53,M02,16788.73757700206,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Clinical Officer / Technician
+436,53,M03,8383.579466119108,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Med. Assistant
+437,53,N01,2020.008213552361,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Nurse Officer
+438,53,N02,65421.79876796759,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Nurse Midwife Technician
+439,53,P01,381.5622176591376,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Pharmacist
+440,53,P02,4769.52772073922,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Pharm Technician
+441,53,P03,3052.497741273102,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Pharm Assistant
+442,53,R01,618.4607802874743,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Radiographer
+443,53,R02,1184.9593429158112,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Radiography Technician
+444,53,T01,601.1926078028747,Chikwawa,1,Southern,Facility_Level_1_Chikwawa,Nutrition Staff
+445,54,E01,20434.45650924045,Nsanje,0,Southern,Facility_Level_0_Nsanje,DCSA
+446,55,C01,601.1926078028747,Nsanje,1,Southern,Facility_Level_1_Nsanje,Mental Health Staff
+447,55,D02,4007.9507186858327,Nsanje,1,Southern,Facility_Level_1_Nsanje,Dental Therapist
+448,55,L01,191.6845995893224,Nsanje,1,Southern,Facility_Level_1_Nsanje,Lab Officer
+449,55,L02,4739.837371663243,Nsanje,1,Southern,Facility_Level_1_Nsanje,Lab Technician
+450,55,L03,3345.767556468172,Nsanje,1,Southern,Facility_Level_1_Nsanje,Lab Assistant
+451,55,M01,1088.6045174537987,Nsanje,1,Southern,Facility_Level_1_Nsanje,Medical Officer / Specialist
+452,55,M02,17482.487063655037,Nsanje,1,Southern,Facility_Level_1_Nsanje,Clinical Officer / Technician
+453,55,M03,7833.836550308019,Nsanje,1,Southern,Facility_Level_1_Nsanje,Med. Assistant
+454,55,N01,2073.166324435318,Nsanje,1,Southern,Facility_Level_1_Nsanje,Nurse Officer
+455,55,N02,63927.39219712568,Nsanje,1,Southern,Facility_Level_1_Nsanje,Nurse Midwife Technician
+456,55,P01,381.5622176591376,Nsanje,1,Southern,Facility_Level_1_Nsanje,Pharmacist
+457,55,P02,4769.52772073922,Nsanje,1,Southern,Facility_Level_1_Nsanje,Pharm Technician
+458,55,P03,2670.935523613964,Nsanje,1,Southern,Facility_Level_1_Nsanje,Pharm Assistant
+459,55,R01,1030.7679671457906,Nsanje,1,Southern,Facility_Level_1_Nsanje,Radiographer
+460,55,R02,987.4661190965094,Nsanje,1,Southern,Facility_Level_1_Nsanje,Radiography Technician
+461,55,T01,200.39753593429157,Nsanje,1,Southern,Facility_Level_1_Nsanje,Nutrition Staff
+462,56,E01,20434.45650924045,Balaka,0,Southern,Facility_Level_0_Balaka,DCSA
+463,57,D02,3406.7581108829577,Balaka,1,Southern,Facility_Level_1_Balaka,Dental Therapist
+464,57,L01,191.6845995893224,Balaka,1,Southern,Facility_Level_1_Balaka,Lab Officer
+465,57,L02,3752.3712525667356,Balaka,1,Southern,Facility_Level_1_Balaka,Lab Technician
+466,57,L03,3554.878028747433,Balaka,1,Southern,Facility_Level_1_Balaka,Lab Assistant
+467,57,M01,586.1716632443531,Balaka,1,Southern,Facility_Level_1_Balaka,Medical Officer / Specialist
+468,57,M02,14291.23942505134,Balaka,1,Southern,Facility_Level_1_Balaka,Clinical Officer / Technician
+469,57,M03,6047.172073921976,Balaka,1,Southern,Facility_Level_1_Balaka,Med. Assistant
+470,57,N01,1647.901437371663,Balaka,1,Southern,Facility_Level_1_Balaka,Nurse Officer
+471,57,N02,50643.778234086436,Balaka,1,Southern,Facility_Level_1_Balaka,Nurse Midwife Technician
+472,57,P01,190.7811088295688,Balaka,1,Southern,Facility_Level_1_Balaka,Pharmacist
+473,57,P02,4197.184394250515,Balaka,1,Southern,Facility_Level_1_Balaka,Pharm Technician
+474,57,P03,2098.5921971252574,Balaka,1,Southern,Facility_Level_1_Balaka,Pharm Assistant
+475,57,R01,206.15359342915812,Balaka,1,Southern,Facility_Level_1_Balaka,Radiographer
+476,57,R02,789.9728952772075,Balaka,1,Southern,Facility_Level_1_Balaka,Radiography Technician
+477,57,T01,200.39753593429157,Balaka,1,Southern,Facility_Level_1_Balaka,Nutrition Staff
+478,58,E01,20434.45650924045,Neno,0,Southern,Facility_Level_0_Neno,DCSA
+479,59,D02,2605.167967145791,Neno,1,Southern,Facility_Level_1_Neno,Dental Therapist
+480,59,L01,191.6845995893224,Neno,1,Southern,Facility_Level_1_Neno,Lab Officer
+481,59,L02,2962.398357289528,Neno,1,Southern,Facility_Level_1_Neno,Lab Technician
+482,59,L03,2509.3256673511296,Neno,1,Southern,Facility_Level_1_Neno,Lab Assistant
+483,59,M01,586.1716632443531,Neno,1,Southern,Facility_Level_1_Neno,Medical Officer / Specialist
+484,59,M02,13042.49034907598,Neno,1,Southern,Facility_Level_1_Neno,Clinical Officer / Technician
+485,59,M03,5222.5577002053415,Neno,1,Southern,Facility_Level_1_Neno,Med. Assistant
+486,59,N01,1647.901437371663,Neno,1,Southern,Facility_Level_1_Neno,Nurse Officer
+487,59,N02,40681.067761807004,Neno,1,Southern,Facility_Level_1_Neno,Nurse Midwife Technician
+488,59,P01,190.7811088295688,Neno,1,Southern,Facility_Level_1_Neno,Pharmacist
+489,59,P02,3052.497741273102,Neno,1,Southern,Facility_Level_1_Neno,Pharm Technician
+490,59,P03,1526.2488706365507,Neno,1,Southern,Facility_Level_1_Neno,Pharm Assistant
+491,59,R01,206.15359342915812,Neno,1,Southern,Facility_Level_1_Neno,Radiographer
+492,59,R02,1184.9593429158112,Neno,1,Southern,Facility_Level_1_Neno,Radiography Technician
+493,59,T01,200.39753593429157,Neno,1,Southern,Facility_Level_1_Neno,Nutrition Staff
+494,60,E01,10189.836221765945,Zomba City,0,Southern,Facility_Level_0_Zomba City,DCSA
+495,61,C01,601.1926078028747,Zomba City,1,Southern,Facility_Level_1_Zomba City,Mental Health Staff
+496,61,D02,3607.1556468172494,Zomba City,1,Southern,Facility_Level_1_Zomba City,Dental Therapist
+497,61,L01,383.3691991786448,Zomba City,1,Southern,Facility_Level_1_Zomba City,Lab Officer
+498,61,L02,4542.344147843942,Zomba City,1,Southern,Facility_Level_1_Zomba City,Lab Technician
+499,61,L03,3136.6570841889115,Zomba City,1,Southern,Facility_Level_1_Zomba City,Lab Assistant
+500,61,M01,5275.544969199182,Zomba City,1,Southern,Facility_Level_1_Zomba City,Medical Officer / Specialist
+501,61,M02,15401.238603696105,Zomba City,1,Southern,Facility_Level_1_Zomba City,Clinical Officer / Technician
+502,61,M03,5909.736344969204,Zomba City,1,Southern,Facility_Level_1_Zomba City,Med. Assistant
+503,61,N01,4784.2299794661185,Zomba City,1,Southern,Facility_Level_1_Zomba City,Nurse Officer
+504,61,N02,69572.92813141718,Zomba City,1,Southern,Facility_Level_1_Zomba City,Nurse Midwife Technician
+505,61,P01,1335.4677618069818,Zomba City,1,Southern,Facility_Level_1_Zomba City,Pharmacist
+506,61,P02,4197.184394250515,Zomba City,1,Southern,Facility_Level_1_Zomba City,Pharm Technician
+507,61,P03,1717.0299794661196,Zomba City,1,Southern,Facility_Level_1_Zomba City,Pharm Assistant
+508,61,R01,1030.7679671457906,Zomba City,1,Southern,Facility_Level_1_Zomba City,Radiographer
+509,61,R02,1579.945790554415,Zomba City,1,Southern,Facility_Level_1_Zomba City,Radiography Technician
+510,61,T01,200.39753593429157,Zomba City,1,Southern,Facility_Level_1_Zomba City,Nutrition Staff
+511,62,E01,10189.836221765945,Blantyre City,0,Southern,Facility_Level_0_Blantyre City,DCSA
+512,63,C01,200.39753593429157,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Mental Health Staff
+513,63,D02,3005.9630390143743,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Dental Therapist
+514,63,L02,3159.89158110883,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Lab Technician
+515,63,L03,2927.546611909651,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Lab Assistant
+516,63,M01,418.69404517453796,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Medical Officer / Specialist
+517,63,M02,10267.49240246407,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Clinical Officer / Technician
+518,63,M03,5222.5577002053415,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Med. Assistant
+519,63,N01,1010.0041067761805,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Nurse Officer
+520,63,N02,39684.79671457906,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Nurse Midwife Technician
+521,63,P01,190.7811088295688,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Pharmacist
+522,63,P02,3052.497741273102,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Pharm Technician
+523,63,P03,2480.154414784395,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Pharm Assistant
+524,63,R01,206.15359342915812,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Radiographer
+525,63,R02,394.98644763860375,Blantyre City,1,Southern,Facility_Level_1_Blantyre City,Radiography Technician
+526,64,D01,6813.51622176591,,2,Northern,Referral Hospital_Northern,Dental Officer
+527,64,D02,1001.9876796714578,,2,Northern,Referral Hospital_Northern,Dental Therapist
+528,64,L01,575.0537987679672,,2,Northern,Referral Hospital_Northern,Lab Officer
+529,64,L02,1777.4390143737169,,2,Northern,Referral Hospital_Northern,Lab Technician
+530,64,M01,9295.00780287474,,2,Northern,Referral Hospital_Northern,Medical Officer / Specialist
+531,64,M02,7769.99425051335,,2,Northern,Referral Hospital_Northern,Clinical Officer / Technician
+532,64,M03,549.7429158110883,,2,Northern,Referral Hospital_Northern,Med. Assistant
+533,64,N01,7123.18685831622,,2,Northern,Referral Hospital_Northern,Nurse Officer
+534,64,N02,45330.33264887074,,2,Northern,Referral Hospital_Northern,Nurse Midwife Technician
+535,64,P01,2289.3733059548263,,2,Northern,Referral Hospital_Northern,Pharmacist
+536,64,P02,1526.2488706365507,,2,Northern,Referral Hospital_Northern,Pharm Technician
+537,64,R01,1030.7679671457906,,2,Northern,Referral Hospital_Northern,Radiographer
+538,64,R02,1974.9322381930187,,2,Northern,Referral Hospital_Northern,Radiography Technician
+539,64,T01,200.39753593429157,,2,Northern,Referral Hospital_Northern,Nutrition Staff
+540,65,D01,6813.51622176591,,2,Central,Referral Hospital_Central,Dental Officer
+541,65,D02,1001.9876796714578,,2,Central,Referral Hospital_Central,Dental Therapist
+542,65,L01,575.0537987679672,,2,Central,Referral Hospital_Central,Lab Officer
+543,65,L02,1777.4390143737169,,2,Central,Referral Hospital_Central,Lab Technician
+544,65,M01,9462.485420944553,,2,Central,Referral Hospital_Central,Medical Officer / Specialist
+545,65,M02,7769.99425051335,,2,Central,Referral Hospital_Central,Clinical Officer / Technician
+546,65,M03,549.7429158110883,,2,Central,Referral Hospital_Central,Med. Assistant
+547,65,N01,5634.759753593428,,2,Central,Referral Hospital_Central,Nurse Officer
+548,65,N02,49979.597535934474,,2,Central,Referral Hospital_Central,Nurse Midwife Technician
+549,65,P01,2289.3733059548263,,2,Central,Referral Hospital_Central,Pharmacist
+550,65,P02,1526.2488706365507,,2,Central,Referral Hospital_Central,Pharm Technician
+551,65,R01,1236.9215605749487,,2,Central,Referral Hospital_Central,Radiographer
+552,65,R02,1974.9322381930187,,2,Central,Referral Hospital_Central,Radiography Technician
+553,65,T01,200.39753593429157,,2,Central,Referral Hospital_Central,Nutrition Staff
+554,66,D01,6813.51622176591,,2,Southern,Referral Hospital_Southern,Dental Officer
+555,66,D02,1001.9876796714578,,2,Southern,Referral Hospital_Southern,Dental Therapist
+556,66,L01,575.0537987679672,,2,Southern,Referral Hospital_Southern,Lab Officer
+557,66,L02,1777.4390143737169,,2,Southern,Referral Hospital_Southern,Lab Technician
+558,66,M01,10048.6570841889,,2,Southern,Referral Hospital_Southern,Medical Officer / Specialist
+559,66,M02,10406.242299794665,,2,Southern,Referral Hospital_Southern,Clinical Officer / Technician
+560,66,M03,549.7429158110883,,2,Southern,Referral Hospital_Southern,Med. Assistant
+561,66,N01,5581.601642710471,,2,Southern,Referral Hospital_Southern,Nurse Officer
+562,66,N02,50145.642710472464,,2,Southern,Referral Hospital_Southern,Nurse Midwife Technician
+563,66,P01,2289.3733059548263,,2,Southern,Referral Hospital_Southern,Pharmacist
+564,66,P02,1526.2488706365507,,2,Southern,Referral Hospital_Southern,Pharm Technician
+565,66,R01,1236.9215605749487,,2,Southern,Referral Hospital_Southern,Radiographer
+566,66,R02,1974.9322381930187,,2,Southern,Referral Hospital_Southern,Radiography Technician
+567,66,T01,200.39753593429157,,2,Southern,Referral Hospital_Southern,Nutrition Staff
+568,67,C01,6011.926078028745,,3,,National Hospital,Mental Health Staff
+569,67,L01,8242.437782340869,,3,,National Hospital,Lab Officer
+570,67,L02,11257.11375770019,,3,,National Hospital,Lab Technician
+571,67,L03,209.1104722792608,,3,,National Hospital,Lab Assistant
+572,67,M01,921.1268993839835,,3,,National Hospital,Medical Officer / Specialist
+573,67,M02,971.2492813141687,,3,,National Hospital,Clinical Officer / Technician
+574,67,N01,159.47433264887067,,3,,National Hospital,Nurse Officer
+575,67,P01,763.1244353182752,,3,,National Hospital,Pharmacist
+576,67,P02,1335.4677618069818,,3,,National Hospital,Pharm Technician
+577,67,P03,572.3433264887065,,3,,National Hospital,Pharm Assistant
