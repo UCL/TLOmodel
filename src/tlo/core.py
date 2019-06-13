@@ -31,6 +31,7 @@ class Types(Enum):
     LIST = auto()
     SERIES = auto()
     DATA_FRAME = auto()
+    STRING = auto()
 
 
 class Specifiable:
@@ -40,12 +41,13 @@ class Specifiable:
     PANDAS_TYPE_MAP = {
         Types.DATE: 'datetime64[ns]',
         Types.BOOL: bool,
-        Types.INT: int,
+        Types.INT: 'int64',
         Types.REAL: float,
         Types.CATEGORICAL: 'category',
         Types.LIST: object,
         Types.SERIES: object,
         Types.DATA_FRAME: object,
+        Types.STRING: object
     }
 
     """Map our Types to Python types."""
@@ -58,6 +60,7 @@ class Specifiable:
         Types.LIST: list,
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
+        Types.STRING: object
     }
 
     def __init__(self, type_, description):
