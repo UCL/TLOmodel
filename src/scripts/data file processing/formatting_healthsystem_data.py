@@ -9,8 +9,12 @@ It allocates health care workers ('officers') to one of the three Facility Level
 
 """
 
+import numpy as np
+import pandas as pd
+
 # CHAI DATA SET:
-workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-healthsystem/chai ehp resource use data/ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
+workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-healthsystem/chai ehp resource use data/ORIGINAL_Optimization model import_Malawi_20180315 v10.xlsx'
 
 # OUTPUT RESOURCE_FILES TO:
 resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
@@ -18,10 +22,6 @@ resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 # ----------
 # ----------
 # ----------
-
-import pandas as pd
-import numpy as np
-
 # ----------
 
 # Import all of the 'CurrentStaff' sheet
@@ -96,7 +96,7 @@ staffing_table.loc[staffing_table['District_Or_Hospital'] == 'ZCH', 'District_Or
 staffing_table = pd.DataFrame(staffing_table.groupby(by=['District_Or_Hospital']).sum()).reset_index()
 
 # The following districts are not in the CHAI data because they are included within other districts.
-# For now, we will say thay the division beween these cities and the wide district (in which they are included) is equal.
+# For now, we will say thay the division beween these cities and the wide district (in which they are included) is equal
 
 # Add in Likoma (part Nkhata Bay)
 # Add in Lilongwe City (part of Lilongwe)
@@ -132,10 +132,10 @@ for i in np.arange(0, len(split_districts)):
     staffing_table = staffing_table.append(record).reset_index(drop=True)
 
     # take staff away from the super district
-    staffing_table.loc[staffing_table['District_Or_Hospital'] == super_district, cols] = staffing_table.loc[
-                                                                                             staffing_table[
-                                                                                                 'District_Or_Hospital'] == super_district, cols] - \
-                                                                                         record.loc[cols]
+    staffing_table.loc[staffing_table['District_Or_Hospital'] == super_district, cols] =\
+        staffing_table.loc[
+            staffing_table[
+                'District_Or_Hospital'] == super_district, cols] - record.loc[cols]
 
 # Confirm the merging will be perfect:
 pop = pd.read_csv(resourcefilepath + 'ResourceFile_District_Population_Data.csv')
@@ -214,12 +214,12 @@ for d in pop_districts:
 for r in pop_regions:
     mfl = mfl.append(pd.DataFrame({
         'Facility_Level': Facility_Levels[2], 'District': None, 'Region': r
-    },index=[0]), ignore_index=True, sort=True)
+    }, index=[0]), ignore_index=True, sort=True)
 
 # Add in the National Hosital, one for whole country
 mfl = mfl.append(pd.DataFrame({
     'Facility_Level': Facility_Levels[3], 'District': None, 'Region': None
-},index=[0]), ignore_index=True, sort=True)
+}, index=[0]), ignore_index=True, sort=True)
 
 # Create the Facility_ID
 mfl.loc[:, 'Facility_ID'] = mfl.index
@@ -266,7 +266,7 @@ facilities_by_district.to_csv(resourcefilepath + 'ResourceFile_Facilities_For_Ea
 sheet = pd.read_excel(workingfile, sheet_name='Time_Base', header=None)
 
 # get rid of the junky rows
-trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27],]
+trimmed = sheet.loc[[7, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23, 24, 26, 27], ]
 data_import = pd.DataFrame(data=trimmed.iloc[1:, 2:].values, columns=trimmed.iloc[0, 2:], index=trimmed.iloc[1:, 1])
 
 data_import = data_import.dropna(axis='columns', how='all')  # get rid of the 'spacer' columns
@@ -276,7 +276,8 @@ data_import = data_import.fillna(0)
 data_import = data_import.drop(columns=data_import.columns[data_import.sum() == 0])
 
 # We note that the DCSA (CHW) never has a time requirement and that no appointments can be serviced at the HealthPost.
-# We remedy this by inserting a new type of appoitment, which only the DCSA can service, and the time taken is 10 minutes.
+# We remedy this by inserting a new type of appoitment, which only the DCSA can service, \
+# and the time taken is 10 minutes.
 new_appt_for_CHW = pd.Series(index=data_import.index,
                              name='E01_ConWithDCSA',
                              # New appointment type is a consultation with the DCSA (community health worker)
@@ -327,9 +328,9 @@ appt_types_table = pd.DataFrame(data={'Appt_Type_Code': retained_appt_type_code}
 
 # Fill in the missing information about the appointment type that was added above
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Cat'] = \
-new_appt_for_CHW.name.split('_')[1]
+    new_appt_for_CHW.name.split('_')[1]
 appt_types_table.loc[appt_types_table['Appt_Type_Code'] == new_appt_for_CHW.name.split('_')[1], 'Appt_Type'] = \
-new_appt_for_CHW.name.split('_')[1]
+    new_appt_for_CHW.name.split('_')[1]
 
 # drop the merge check column
 appt_types_table.drop(columns='_merge', inplace=True)
@@ -341,17 +342,21 @@ appt_types_table.to_csv(resourcefilepath + 'ResourceFile_Appt_Types_Table.csv')
 # ----------
 
 # Now, Make the ApptTimeTable
-# (Table that gives for each appointtment, when occuring in each appt_type at each facility type, the time of each type of officer required
+# (Table that gives for each appointtment, when occuring in each appt_type at each facility type, the time of each \
+# type of officer required
 
 # The sheet gives the % of appointments that require a particular type of officer and the time taken if it does
 # So, turn that into an Expectation of the time taken for each type of officer (multiplying together)
 
-# This sheet distinguished between different types of facility in terms of the time taken by appointments occuring at each.
-# But the CHAI data do not distinguish how many officers work at each different type of facility; only the level (0,1,2,3)
+# This sheet distinguished between different types of facility in terms of the time taken by appointments occuring \
+# at each.
+# But the CHAI data do not distinguish how many officers work at each different type of facility; only the level\
+# (0,1,2,3)
 # Therefore, we will map these to the facility level that have been defined.
-# NB. In doing this, we::
-#                       - ignore the distinction made here between time taken at urban and rural health centres, and just use the rural.
-#                       - assume that the time taken for all appointments at the district level is modelled by that for the average of "District, Community, and Health Centre" types
+# NB. In doing this, we:
+#  - ignore the distinction made here between time taken at urban and rural health centres, and just use the rural.
+#  - assume that the time taken for all appointments at the district level is modelled by that for the average of \
+#       "District, Community, and Health Centre" types
 
 
 # CHAI: Central_Hospital ---> our "Referral Hospital" (level = 2) and "National Hospital" (level = 3)
@@ -370,18 +375,19 @@ Urban_HealthCentre_ExpecTime = data_import.loc['UrbHC'] * data_import.loc['UrbHC
 Rural_HealthCentre_ExpecTime = data_import.loc['RurHC'] * data_import.loc['RurHC_Per']
 HealthPost_ExpecTime = data_import.loc['HP'] * data_import.loc['HP_Per']
 
-Av_DistrictLevel_ExpectTime = (
-                               District_Hospital_ExpecTime + Community_Hospital_ExpecTime + Urban_HealthCentre_ExpecTime + Rural_HealthCentre_ExpecTime) / 4
+Av_DistrictLevel_ExpectTime = (District_Hospital_ExpecTime
+                               + Community_Hospital_ExpecTime
+                               + Urban_HealthCentre_ExpecTime
+                               + Rural_HealthCentre_ExpecTime) / 4
 
 X = pd.DataFrame({
-    '3': Central_Hospital_ExpecTime,        # (our "National Hospital" at national level)
-    '2': Central_Hospital_ExpecTime,        # (our "Referral Hospital" at region level)
-    '1': Av_DistrictLevel_ExpectTime,      # (our "District-level facilities" within the district)
-    '0': HealthPost_ExpecTime               # (our "Community Health Station" at local level)
+    '3': Central_Hospital_ExpecTime,  # (our "National Hospital" at national level)
+    '2': Central_Hospital_ExpecTime,  # (our "Referral Hospital" at region level)
+    '1': Av_DistrictLevel_ExpectTime,  # (our "District-level facilities" within the district)
+    '0': HealthPost_ExpecTime  # (our "Community Health Station" at local level)
 })
 
 assert set(X.columns.astype(int)) == set(Facility_Levels)
-
 
 # split out the index into appointment type and officer type
 labels = pd.Series(X.index, index=X.index).str.split(pat='_', expand=True)
@@ -391,7 +397,7 @@ ApptTimeTable = pd.melt(Y, id_vars=['Officer_Type_Code', 'Appt_Type_Code'],
                         var_name='Facility_Level', value_name='Time_Taken')
 
 # Confirm that Facility_Level is an int
-ApptTimeTable['Facility_Level']=ApptTimeTable['Facility_Level'].astype(int)
+ApptTimeTable['Facility_Level'] = ApptTimeTable['Facility_Level'].astype(int)
 
 # Merge in Officer_Type
 ApptTimeTable = ApptTimeTable.merge(officer_types_table, on='Officer_Type_Code')
@@ -437,9 +443,9 @@ for a in appt_types_table['Appt_Type_Code'].values:
                  'Officer_Type_Codes': need_officer_types
                  }, ignore_index=True)
 
-
 # Turn this into the the set of staff that are required for each type of appointment
-FacLevel_By_Officer = pd.DataFrame(columns=pd.unique(Facility_Levels), index=officer_types_table['Officer_Type_Code'].values)
+FacLevel_By_Officer = pd.DataFrame(columns=pd.unique(Facility_Levels),
+                                   index=officer_types_table['Officer_Type_Code'].values)
 FacLevel_By_Officer = FacLevel_By_Officer.fillna(False)
 
 for o in officer_types_table['Officer_Type_Code'].values:
@@ -449,20 +455,19 @@ for o in officer_types_table['Officer_Type_Code'].values:
         fac_level = Officers_Need_For_Appt.loc[i].Facility_Level
         officer_types = Officers_Need_For_Appt.loc[i].Officer_Type_Codes
 
-        if officer_types != False:
+        if officer_types is not False:  # (i.e. such an appointment at such a a facility is possible)
 
-            if (o in officer_types):
-                FacLevel_By_Officer.loc[
-                    (FacLevel_By_Officer.index == o),
-                    fac_level] = True
+            if o in officer_types:
+                FacLevel_By_Officer.loc[(FacLevel_By_Officer.index == o), fac_level] = True
 
-# We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are apparently not called by any appointment type
+# We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are\
+#  apparently not called by any appointment type
 
 # Assign that the Nutrition Staff will go to the Referral and National Hospitals
-FacLevel_By_Officer.loc['T01', [2,3]] = True
+FacLevel_By_Officer.loc['T01', [2, 3]] = True
 
 # Assign that the Sonographer will go to the Referral and National Hospitals
-FacLevel_By_Officer.loc['R03', [2,3]] = True
+FacLevel_By_Officer.loc['R03', [2, 3]] = True
 
 # Assign that the Radiotherapist will go to the National Hospital
 FacLevel_By_Officer.loc['R04', 3] = True
@@ -481,43 +486,43 @@ assert (FacLevel_By_Officer.sum(axis=1) > 0).all()
 facility_assignment = pd.DataFrame(index=staff_list.index, columns=['Staff_ID', 'Facility_ID'])
 facility_assignment['Staff_ID'] = staff_list['Staff_ID']
 
-
 # Loop through each staff member and allocate them to
 for staffmember in staff_list.index:
 
     if (staff_list.Is_DistrictLevel[staffmember]) & (staff_list.Officer_Type_Code[staffmember] == 'E01'):
         # This staff member must be at level = 0 in that district
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==0) & (mfl['District']==staff_list.District_Or_Hospital[staffmember]) , 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 0) & (
+            mfl['District'] == staff_list.District_Or_Hospital[staffmember]), 'Facility_ID'].values[0]
 
     elif staff_list.Is_DistrictLevel[staffmember]:
         # This staff member must be at level 1 in that district
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==1) & (mfl['District']==staff_list.District_Or_Hospital[staffmember]) , 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 1) & (
+            mfl['District'] == staff_list.District_Or_Hospital[staffmember]), 'Facility_ID'].values[0]
 
-    elif (~staff_list.Is_DistrictLevel[staffmember]) & (staff_list.District_Or_Hospital[staffmember]=='National Hospital'):
+    elif (~staff_list.Is_DistrictLevel[staffmember]) & (
+            staff_list.District_Or_Hospital[staffmember] == 'National Hospital'):
         # This staff member must be at the National Hospital
-        chosen_facility = mfl.loc[mfl['Facility_Name']=='National Hospital','Facility_ID'].values[0]
+        chosen_facility = mfl.loc[mfl['Facility_Name'] == 'National Hospital', 'Facility_ID'].values[0]
 
     else:
         # This staff member must be at one of the regional hospital
-        hosp_name= staff_list.District_Or_Hospital[staffmember]
+        hosp_name = staff_list.District_Or_Hospital[staffmember]
         region = hosp_name.split('_')[1]
 
-        chosen_facility = mfl.loc[(mfl['Facility_Level']==2) & (mfl['Region']==region), 'Facility_ID'].values[0]
+        chosen_facility = mfl.loc[(mfl['Facility_Level'] == 2) & (mfl['Region'] == region), 'Facility_ID'].values[0]
 
-
-    facility_assignment.loc[facility_assignment['Staff_ID']==staffmember,'Facility_ID']= chosen_facility
-
+    facility_assignment.loc[facility_assignment['Staff_ID'] == staffmember, 'Facility_ID'] = chosen_facility
 
 # Do some checks
 assert ~ (pd.isnull(facility_assignment).any().any())
 
-
 # -----------------
 # -----------------
 # -----------------
 
-# Check that every appointment that can be raised by someone in any district is going to be possible to be met by at least one of their facilities
-# (if staff numbers (if >0) were not a limiting factor: ie. just checking the distribution of the officer types between the facilities)
+# Check that every appointment that can be raised by someone in any district is going to be possible to be met by at\
+#  least one of their facilities (if staff numbers (if >0) were not a limiting factor: ie. just checking the \
+# distribution of the officer types between the facilities)
 
 for d in pop_districts:
 
@@ -597,7 +602,8 @@ patient_facing_time = pd.DataFrame(
 # -----------------
 
 
-# --- Create final table of daily time available at each facilty by officer type: Facility_ID, Facility_Type, Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day
+# --- Create final table of daily time available at each facilty by officer type: Facility_ID, Facility_Type, \
+# Facility_Level, Officer_Type, Officer_Typpe_Code, Total Average Minutes Per Day
 
 # merge in officer type
 X = staff_list.merge(facility_assignment, on='Staff_ID', how='left')
@@ -607,7 +613,8 @@ X = X.drop(columns=['District_Or_Hospital', 'Is_DistrictLevel'])
 X = X.merge(patient_facing_time, on='Officer_Type_Code', how='left')
 X = X.drop(columns=['Working_Days_Per_Year', 'Hours_Per_Day'])
 
-# Now collapse across the staff_ID in order to give a summary per facility type and officer type: summing av minutes per day
+# Now collapse across the staff_ID in order to give a summary per facility type and officer type: \
+#   summing av minutes per day
 Y = pd.DataFrame(X.groupby(['Facility_ID', 'Officer_Type_Code'])[['Av_Minutes_Per_Day']].sum()).reset_index()
 Y = Y.rename(columns={'Av_Minutes_Per_Day': 'Total_Minutes_Per_Day'})
 
@@ -618,10 +625,6 @@ Y = Y.merge(mfl, on='Facility_ID', how='left')
 Y = Y.merge(officer_types_table, on='Officer_Type_Code', how='left')
 
 # Last checks: every facility has at least one person in
-assert (( Y.groupby('Facility_ID')['Facility_Level'].count() ) > 0 ).all()
+assert ((Y.groupby('Facility_ID')['Facility_Level'].count()) > 0).all()
 
 Y.to_csv(resourcefilepath + 'ResourceFile_Daily_Capabilities.csv')
-
-# -----------------
-# -----------------
-# -----------------

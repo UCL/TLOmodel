@@ -2,11 +2,9 @@ import datetime
 import logging
 import os
 
-import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, mockitis, hypertension, t2dm, qaly, chronicsyndrome
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
@@ -17,10 +15,10 @@ outputpath = ''
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources/'
+resourcefilepath = 'resources'
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+start_date = Date(year=2010, month=1, day=1)
+end_date = Date(year=2015, month=12, day=31)
 popsize = 50
 
 # Establish the simulation object
@@ -36,22 +34,21 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # ----- Control over the types of intervention that can occur -----
-# Make a list that contains the treatment_id that will be allowed.
-# (This can be set to 'all' or 'none'; and it will allow any treatment_id that begins with a stub)
-service_availability = list(['Mockitis*', 'ChronicSyndrome*', 'Hypertension*', 'Type2Diabetes*'])
+# Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
+# '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
+service_availability = ['*']
+
 # -----------------------------------------------------------------
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=service_availability))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
-sim.register(hypertension.HT())
-sim.register(t2dm.T2DM())
 sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
