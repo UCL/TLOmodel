@@ -2,11 +2,11 @@ import datetime
 import logging
 import os
 
-import pandas as pd
-
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, qaly
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+
+# [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
 # Where will output go
 outputpath = ''
@@ -15,11 +15,11 @@ outputpath = ''
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources/'
+resourcefilepath = 'resources'
 
-start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+start_date = Date(year=2010, month=1, day=1)
+end_date = Date(year=2015, month=12, day=31)
+popsize = 50
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -34,21 +34,19 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
-# make a dataframe that contains the switches for which interventions are allowed or not allowed
-# during this run. NB. These must use the exact 'registered strings' that the disease modules allow
+# ----- Control over the types of intervention that can occur -----
+# Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
+# '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
+service_availability = ['*']
 
-service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Mockitis_Treatment', True]
-service_availability.loc[1] = ['ChronicSyndrome_Treatment', True]
-service_availability['Service']=service_availability['Service'].astype('object')
-service_availability['Available']=service_availability['Available'].astype('bool')
+# -----------------------------------------------------------------
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=service_availability))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
@@ -58,7 +56,6 @@ sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
-
 
 # %% read the results
 output = parse_log_file(logfile)

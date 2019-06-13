@@ -3,10 +3,11 @@ The core demography module and its associated events.
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
+
 import logging
 import math
-import os
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,7 @@ def make_age_range_lookup():
     """Returns a dictionary mapping age (in years) to age range
     i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
     """
+
     def chunks(items, n):
         """Takes a list and divides it into parts of size n"""
         for index in range(0, len(items), n):
@@ -66,6 +68,7 @@ class Demography(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = make_age_range_lookup()
 
     # We should have 21 age range categories
@@ -78,9 +81,9 @@ class Demography(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'Village_District_Region_Data': Parameter(Types.DATA_FRAME,
-                                                  'Census data on the number of persons in '
-                                                  'residence in each district')
+        'district_and_region_data': Parameter(Types.DATA_FRAME,
+                                              'Census data on the number of persons in '
+                                              'residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -112,7 +115,6 @@ class Demography(Module):
 
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'village_of_residence': Property(Types.STRING, 'The village in which the person is resident')
     }
 
     def read_parameters(self, data_folder):
@@ -121,8 +123,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'ResourceFile_DemographicData.xlsx'),
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
                                  sheet_name=None)
 
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
@@ -137,16 +138,15 @@ class Demography(Module):
             age_high = row.age_to
             if age_high == 99:
                 age_high = MAX_AGE
-            for age_years in range(row.age_from, age_high+1):
+            for age_years in range(row.age_from, age_high + 1):
                 ms_new.append(row._replace(age_from=age_years))
         ms_new = pd.DataFrame(ms_new)
         ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
         self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
         self.parameters['fraction_of_births_male'] = 0.5
 
-        self.parameters['Village_District_Region_Data'] = \
-            pd.read_csv(os.path.join(self.resourcefilepath,
-                                     'ResourceFile_PopBreakdownbyVillage.csv'))
+        self.parameters['district_and_region_data'] = \
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -164,7 +164,7 @@ class Demography(Module):
         # get a subset of the rows from the interpolated population worksheet
         intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
 
-        # get the probability of occurrance for each sex+age range in the population
+        # get the probability of occurrence for each sex+age range in the population
         intpop['probability'] = intpop.value / intpop.value.sum()
 
         # calculate the month range interval for age ranges which are exactly 1 year
@@ -184,7 +184,7 @@ class Demography(Module):
         pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
-        df.is_alive: pd.Series = True
+        df.is_alive.values[:] = True
 
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
@@ -193,28 +193,20 @@ class Demography(Module):
         # we can't use np.nan because that casts the series into a float
         df.loc[df.is_alive, 'mother_id'] = -1
 
+        # Assign district and region of residence
+        district_info = self.parameters['district_and_region_data']
+        prob_in_district = district_info['District Total'] / district_info['District Total'].sum()
 
-        # Assign village, district and region of residence
-        region_info = self.parameters['Village_District_Region_Data']
-        prob_in_village = region_info['Population']/region_info['Population'].sum()
-        village_indx = self.rng.choice(region_info.index, size=df.is_alive.sum(), p=prob_in_village)
+        assigned_district = district_info.loc[
+            self.rng.choice(np.arange(0, len(prob_in_district)), size=df.is_alive.sum(), p=prob_in_district),
+            ['District', 'Region']].copy().reset_index(drop=True)
 
-        def get_mapping(list_of_words: pd.Series):
-            return {v: k for k, v in enumerate(list_of_words.unique())}
-
-        region_info['Region_ID'] = region_info['Region'].map(get_mapping(region_info['Region']))
-        region_info['District_ID'] = region_info['District'].map(get_mapping(region_info['District']))
-        region_info['Village_ID'] = region_info['Village'].map(get_mapping(region_info['Village']))
-
-        df.loc[df.is_alive, 'region_of_residence'] = region_info.loc[village_indx, 'Region'].values
-        df.loc[df.is_alive, 'district_of_residence'] = region_info.loc[village_indx, 'District'].values
-        df.loc[df.is_alive, 'village_of_residence'] = region_info.loc[village_indx, 'Village'].values
+        df.loc[df.is_alive, 'region_of_residence'] = assigned_district['Region']
+        df.loc[df.is_alive, 'district_of_residence'] = assigned_district['District']
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
-        assert (not pd.isnull(df['village_of_residence']).any())
-
 
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
@@ -245,11 +237,11 @@ class Demography(Module):
                            sim.date + DateOffset(days=1))
 
         # check all population to determine if pregnancy should be triggered (repeats every month)
-        sim.schedule_event(PregnancyPoll(self), sim.date+DateOffset(months=1))
+        sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
 
         # check all population to determine if person should die (from causes other than those
         # explicitly modelled) (repeats every month)
-        sim.schedule_event(OtherDeathPoll(self), sim.date+DateOffset(months=1))
+        sim.schedule_event(OtherDeathPoll(self), sim.date + DateOffset(months=1))
 
         # Launch the repeating event that will store statistics about the population structure
         sim.schedule_event(DemographyLoggingEvent(self), sim.date + DateOffset(days=0))
@@ -285,7 +277,6 @@ class Demography(Module):
         # Child's residence is inherited from the mother
         df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
-        df.at[child_id, 'village_of_residence'] = df.at[mother_id, 'village_of_residence']
 
         # Log the birth:
         logger.info('%s|on_birth|%s',
@@ -302,6 +293,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
     This event updates the age_exact_years, age_years and age_range columns for the population based
     on the current simulation date
     """
+
     def __init__(self, module, age_range_lookup):
         super().__init__(module, frequency=DateOffset(days=1))
         self.age_range_lookup = age_range_lookup
@@ -434,7 +426,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of mortality rates for this year.
         # confirms that we go to the five year period that we are in, not the exact year.
-        fallbackyear = int(math.floor(self.sim.date.year/5)*5)
+        fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
         mort_sched = mort_sched.loc[mort_sched.year == fallbackyear, ['age_years', 'sex', 'value']].copy()
 
@@ -470,6 +462,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
     """
     Performs the Death operation on an individual and logs it.
     """
+
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
         self.cause = cause
@@ -498,6 +491,15 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
                         'cause': self.cause,
                         'person_id': individual_id
                     })
+
+        # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
+        if 'HealthBurden' in self.sim.modules.keys():
+            date_of_birth = df.at[individual_id, 'date_of_birth']
+            sex = df.at[individual_id, 'sex']
+            label = self.module.name + '_' + self.cause  # creates a label for these YLL of <ModuleName>_<CauseOfDeath>
+            self.sim.modules['HealthBurden'].report_live_years_lost(sex=sex,
+                                                                    date_of_birth=date_of_birth,
+                                                                    label=label)
 
 
 class DemographyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
