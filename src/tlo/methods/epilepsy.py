@@ -115,7 +115,7 @@ class Epilepsy(Module):
             dfd.loc['init_prop_antiepileptic_seiz_stat_2', 'value']
         self.parameters['init_prop_antiepileptic_seiz_stat_3'] = \
             dfd.loc['init_prop_antiepileptic_seiz_stat_3', 'value']
-        self.parameters['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value']
+        self.parameters['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value'] *10000
         self.parameters['rr_epilepsy_age_ge20'] = dfd.loc['rr_epilepsy_age_ge20', 'value']
         self.parameters['prop_inc_epilepsy_seiz_freq'] = dfd.loc['prop_inc_epilepsy_seiz_freq', 'value']
         self.parameters['rr_effectiveness_antiepileptics'] = dfd.loc['rr_effectiveness_antiepileptics', 'value']
@@ -124,7 +124,7 @@ class Epilepsy(Module):
         self.parameters['base_prob_3m_seiz_stat_none_freq'] = dfd.loc['base_prob_3m_seiz_stat_none_freq', 'value']
         self.parameters['base_prob_3m_seiz_stat_none_infreq'] = dfd.loc['base_prob_3m_seiz_stat_none_infreq', 'value']
         self.parameters['base_prob_3m_seiz_stat_infreq_none'] = dfd.loc['base_prob_3m_seiz_stat_infreq_none', 'value']
-        self.parameters['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']
+        self.parameters['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']  *1000
         self.parameters['rr_antiepileptic_seiz_infreq'] = dfd.loc['rr_antiepileptic_seiz_infreq', 'value']
         self.parameters['base_prob_3m_stop_antiepileptic'] = dfd.loc['base_prob_3m_stop_antiepileptic', 'value']
         self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
@@ -173,6 +173,9 @@ class Epilepsy(Module):
         df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
         df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
 
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -189,9 +192,6 @@ class Epilepsy(Module):
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # todo: amend this below when identifid data
         # Define the footprint for the intervention on the common resources
         footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
@@ -200,8 +200,6 @@ class Epilepsy(Module):
             'Doctor_Time': 15,
             'Electricity': False,
             'Water': False})
-
-        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
 
     def on_birth(self, mother_id, child_id):
@@ -237,24 +235,29 @@ class Epilepsy(Module):
 
         return pd.Series('1', index=df.index[df.is_alive])
 
-    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
 
-        #       logger.debug('This is epilepsy, being alerted about a health system interaction '
-        #                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+        logger.debug('This is Mockitis, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
 
         pass
 
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        #       logger.debug('This is epilepsy reporting my health values')
+        logger.debug('This is mockitis reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_series = df.ep_disability
+        dummy_series=pd.Series(data=0,index=df.index[df['is_alive']],name='Epilepsy')
 
-        return disability_series
+        return dummy_series  # returns the series
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -488,15 +491,22 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
         e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
-        e2 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
-        dfxx = pd.concat([e1, e2], axis=1)
-        dfxx.columns = ['start_antiep_this_period', 'e2']
+        # e2 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
+        # dfxx = pd.concat([e1, e2], axis=1)
+        # dfxx.columns = ['start_antiep_this_period', 'e2']
+        for person_id_to_start_treatment in e1.index:
+            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module,
+                                                      person_id=person_id_to_start_treatment)
+            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand()*30))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority = 2,
+                                                                topen = target_date,
+                                                                tclose = None)
+
 
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
-        for index in dfxx:
-            dfxx['gets_trt'] = self.sim.modules['HealthSystem'].query_access_to_service(index, TREATMENT_ID)
 
-        df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
+        # df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
@@ -616,7 +626,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         cum_deaths = (~df.is_alive).sum()
 
         #       logger.info('%s,%s,', self.sim.date, n_epi_death)
-
+        """
         logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
                     'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
                     'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
@@ -627,7 +637,43 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate, n_seiz_stat_1_3,
                     n_seiz_stat_2_3, n_antiep, n_alive
                     )
+        """
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
 
 
 
 
+
+
+
+
+class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is first appointment that someone has when they present to the healthcare system with the severe
+    symptoms of Mockitis.
+    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        logger.debug('This isEPIlepsy s, a first appointment for person %d',
+                     person_id)
+        print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')

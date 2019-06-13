@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, qaly, epilepsy
+from tlo.methods import demography, healthsystem, lifestyle, epilepsy, healthburden
 
 # Where will output go
 outputpath = ''
@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2019, 7, 1)
-popsize = 300000
+popsize = 100
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -27,27 +27,25 @@ sim = Simulation(start_date=start_date)
 # Establish the logger
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-if os.path.exists(logfile):
-    os.remove(logfile)
-fh = logging.FileHandler(logfile)
-fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-fh.setFormatter(fr)
-logging.getLogger().addHandler(fh)
+#if os.path.exists(logfile):
+#   os.remove(logfile)
+# fh = logging.FileHandler(logfile)
+#fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+# fh.setFormatter(fr)
+# logging.getLogger().addHandler(fh)
 
 logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
-service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Epilepsy', True]
-service_availability['Service'] = service_availability['Service'].astype('object')
-service_availability['Available'] = service_availability['Available'].astype('bool')
+service_availability = ['*']
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
 sim.register(lifestyle.Lifestyle())
 sim.register(epilepsy.Epilepsy())
 
