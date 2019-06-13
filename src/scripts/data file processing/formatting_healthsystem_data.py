@@ -9,8 +9,8 @@ It allocates health care workers ('officers') to one of the three Facility Level
 
 """
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # CHAI DATA SET:
 workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
@@ -457,10 +457,8 @@ for o in officer_types_table['Officer_Type_Code'].values:
 
         if officer_types is not False:  # (i.e. such an appointment at such a a facility is possible)
 
-            if (o in officer_types):
-                FacLevel_By_Officer.loc[
-                    (FacLevel_By_Officer.index == o),
-                    fac_level] = True
+            if o in officer_types:
+                FacLevel_By_Officer.loc[(FacLevel_By_Officer.index == o), fac_level] = True
 
 # We note that two officer_types ("T01: Nutrition Staff", "R03: Sonographer" and "RO4: Radiotherapy technican") are\
 #  apparently not called by any appointment type

@@ -1,9 +1,9 @@
-import logging
-import os
-
-import pandas as pd
-import numpy as np
 import heapq as hp
+import logging
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -21,10 +21,11 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability='*',          # '*' or list of treatment_ids to allow
-                 ignore_appt_constraints=False,     # remove constraints to do with officer numbers and time
-                 ignore_cons_constraints=False,     # remove constraints to do with consumables availability
-                 ignore_priority=False):            # do not use the priroity information in HSI event to schedule
+                 service_availability=None,     # must be a list of treatment_ids to allow
+                 ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
+                 ignore_cons_constraints=False,  # remove constraints to do with consumables availability
+                 ignore_priority=False,  # do not use the priroity information in HSI event to schedule
+                 capabilities_coefficient=1.0):  # multiplier for the capabailities of health officers
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -32,9 +33,19 @@ class HealthSystem(Module):
         self.ignore_cons_constraints = ignore_cons_constraints
         self.ignore_priority = ignore_priority
 
+        self.Facility_Levels = None
+
         # Check that the service_availability list is specified correctly
-        assert (service_availability == '*') or (type(service_availability) == list)
-        self.service_availability = service_availability
+        if service_availability is None:
+            self.service_availability = ['*']
+        else:
+            assert type(service_availability) is list
+            self.service_availability = service_availability
+
+        # Check that the capabilities coefficident is correct
+        assert capabilities_coefficient >= 0
+        assert type(capabilities_coefficient) is float
+        self.capabilities_coefficient = capabilities_coefficient
 
         # Define empty set of registered disease modules
         self.registered_disease_modules = {}
@@ -94,31 +105,31 @@ class HealthSystem(Module):
     def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Officer_Types_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Officer_Types_Table.csv'
         )
 
         self.parameters['Daily_Capabilities'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Daily_Capabilities.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv'
         )
 
         self.parameters['Appt_Types_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Types_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Appt_Types_Table.csv'
         )
 
         self.parameters['Appt_Time_Table'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Appt_Time_Table.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Appt_Time_Table.csv'
         )
 
         self.parameters['Master_Facilities_List'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Master_Facilities_List.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Master_Facilities_List.csv'
         )
 
         self.parameters['Facilities_For_Each_District'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Facilities_For_Each_District.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Facilities_For_Each_District.csv'
         )
 
         self.parameters['Consumables'] = pd.read_csv(
-            os.path.join(self.resourcefilepath, 'ResourceFile_Consumables.csv')
+            Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv'
         )
 
         self.parameters['Consumables_Cost_List'] = (self.parameters['Consumables'][['Item_Code', 'Unit_Cost']]) \
@@ -165,7 +176,7 @@ class HealthSystem(Module):
         In order for a disease module to use the functionality of the health system it must be registered
         This list is also used to alert other disease modules when a health system interaction occurs
 
-        :param new_disease_modules: The pointer to the disease module
+        :param new_disease_module: The pointer to the disease module
         """
         assert new_disease_module.name not in self.registered_disease_modules, (
             'A module named {} has already been registered'.format(new_disease_module.name))
@@ -192,7 +203,6 @@ class HealthSystem(Module):
         # Correctly formatted footprint
         assert 'APPT_FOOTPRINT' in dir(hsi_event)
         assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-        list(hsi_event.APPT_FOOTPRINT.values())
 
         # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
         assert all(
@@ -233,7 +243,7 @@ class HealthSystem(Module):
         # 2) Check topen, tclose and priority
 
         # If there is no specified tclose time then set this is after the end of the simulation
-        if (tclose is None):
+        if tclose is None:
             tclose = self.sim.end_date + DateOffset(days=1)
 
         # Check topen is not in the past
@@ -244,19 +254,19 @@ class HealthSystem(Module):
 
         # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed = False
-        if (self.service_availability == []):
+        if not self.service_availability:   # it's an empty list
             allowed = False
-        elif (self.service_availability == '*') or (self.service_availability[0] == '*'):
+        elif self.service_availability[0] == '*':   # it's the overall wild-card, do anything
             allowed = True
-        elif (hsi_event.TREATMENT_ID in self.service_availability):
+        elif hsi_event.TREATMENT_ID in self.service_availability:
             allowed = True
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
         else:
             # check to see if anything provided given any wildcards
-            for s in range(len(self.service_availability)):
-                if '*' in self.service_availability[s]:
-                    stub = self.service_availability[s].split('*')[0]
+            for s in self.service_availability:
+                if '*' in s:
+                    stub = s.split('*')[0]
                     if hsi_event.TREATMENT_ID.startswith(stub):
                         allowed = True
                         break
@@ -265,7 +275,7 @@ class HealthSystem(Module):
 
         # If ignoring the priority in scheduling, then over-write the provided priority information
         if self.ignore_priority:
-            priority = 0    # set all event to priority 0
+            priority = 0  # set all event to priority 0
         # This is where could attach a different priority score according to the treatment_id (and other things)
         # in order to examine the influence of the prioritisation score.
 
@@ -301,7 +311,7 @@ class HealthSystem(Module):
         :param hsi_event: the health system interaction event
         """
 
-        if hsi_event.ALERT_OTHER_DISEASES == []:
+        if not hsi_event.ALERT_OTHER_DISEASES:  # it's an empty list
             # There are no disease modules to alert, so do nothing
             pass
 
@@ -329,10 +339,14 @@ class HealthSystem(Module):
         """
         This will return a dataframe of the capabilities that the healthsystem has for today.
         Functions can go in here in the future that could expand the time available, simulating increasing efficiency.
-        (The concept of a productivitiy ratio raised by Martin Chalkley)
+        (The concept of a productivitiy ratio raised by Martin Chalkley). For now just have a single scaling value,
+        named capabilities_coefficient.
         """
 
         capabilities = self.parameters['Daily_Capabilities']
+
+        # apply the coefficient
+        capabilities['Total_Minutes_Per_Day'] = capabilities['Total_Minutes_Per_Day'] * self.capabilities_coefficient
 
         return capabilities
 
@@ -346,7 +360,7 @@ class HealthSystem(Module):
         keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
         values = np.zeros(len(keys))
         blank_footprint = dict(zip(keys, values))
-        return (blank_footprint)
+        return blank_footprint
 
     def get_blank_cons_footprint(self):
         """
@@ -358,7 +372,7 @@ class HealthSystem(Module):
             'Intervention_Package_Code': [],
             'Item_Code': []
         }
-        return (blank_footprint)
+        return blank_footprint
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
@@ -447,7 +461,7 @@ class HealthSystem(Module):
                                                              'Time_Taken']].copy().reset_index(drop=True)
                     time_requested = pd.concat([time_requested, time_req_for_this_appt])
 
-            if ((len(time_requested) > 0) or (self.ignore_appt_constraints)):
+            if len(time_requested) > 0 or self.ignore_appt_constraints:
                 # (If the data-frame of time-requested is empty, it means that the appointments is not possible
                 # at that type of facility. So we check that time_requested is not empty before progressing.)
                 # We also also allow the request to progress if we are ignoring appt_constraints
@@ -466,7 +480,7 @@ class HealthSystem(Module):
                 # Check if there are sufficient minutes available for each type of officer to satisfy
                 # the appt_footprint
                 if self.ignore_appt_constraints or (all(comparison['_merge'] == 'both') & all(
-                                    comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
+                                comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
                     # the appt_footprint can be accommodated by officers at this facility
                     can_do_appt_footprint = True
@@ -486,7 +500,7 @@ class HealthSystem(Module):
                     all_items_available_now = bool(
                         (prob_item_available > self.rng.rand(len(prob_item_available))).all())
 
-                    if self.ignore_appt_constraints or all_items_available_now:
+                    if self.ignore_cons_constraints or all_items_available_now:
                         can_do_cons_footprint = True
 
                     # -- Determine if the appt_footprint should be imposed:
@@ -511,15 +525,15 @@ class HealthSystem(Module):
                             new_mins_remaining = \
                                 old_mins_remaining - time_to_take_away
 
-                            assert (new_mins_remaining >= 0)
+                            assert (new_mins_remaining >= 0) or self.ignore_appt_constraints
 
-                        # update current_capabilities
-                        current_capabilities.loc[
-                            (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                            new_mins_remaining
+                            # update current_capabilities
+                            current_capabilities.loc[
+                                (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
+                                     'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                new_mins_remaining
 
-                    break  # cease looking at other facility_types if the need has been met
+                    break  # cease looking at other facility_types as the need has been met
 
         assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
 
@@ -551,13 +565,13 @@ class HealthSystem(Module):
                                                                 on='Item_Code',
                                                                 left_index=True
                                                                 )
-            TotalCost = (
+            total_cost = (
                 consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
 
             # Enter to the log
             log_consumables = consumables_used.to_dict()
             log_consumables['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-            log_consumables['Total_Cost'] = TotalCost
+            log_consumables['Total_Cost'] = total_cost
             log_consumables['Person_ID'] = hsi_event.target
 
             logger.info('%s|Consumables|%s',
@@ -621,25 +635,40 @@ class HealthSystem(Module):
 
         # Log the current state of resource use
 
-        X = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Remaining_Today']].sum()
-        overall_useage = 1 - (X['Minutes_Remaining_Today'].sum() / X['Total_Minutes_Per_Day'].sum())
-        X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
-                    left_index=True, right_on='Facility_ID')
-        X['Fraction_Time_Used'] = 1 - (X['Minutes_Remaining_Today'] / X['Total_Minutes_Per_Day'])
-        X = X[['Facility_Name', 'Fraction_Time_Used']]
-        X.index = X['Facility_Name']
-        X = X.drop(columns='Facility_Name')
+        # groupby Facility_ID: index of X is Facility_ID
+        summary = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day',
+                                                               'Minutes_Remaining_Today']].sum()
+
+        if summary['Total_Minutes_Per_Day'].sum() > 0:
+            overall_useage = 1 - (summary['Minutes_Remaining_Today'].sum() / summary['Total_Minutes_Per_Day'].sum())
+        else:
+            overall_useage = 0.0  # in the case of there being no capabilities and nan arising
+
+        summary['Fraction_Time_Used'] = 1 - (summary['Minutes_Remaining_Today'] / summary['Total_Minutes_Per_Day'])
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].fillna(0.0)
+
+        # To change so that log includes the facility names:
+        # Merge in Facilty_Name and drop everything else
+        # X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
+        #              left_index=True, right_on='Facility_ID')
+        # X.index = X['Facility_Name']
+        # X = X.drop(columns='Facility_Name')
+        # X = X['Fraction_Time_Used']
+
+        # Get just the series of Fraction_Time_Used in each facility, indexed by the Facility_ID
+        summary = summary['Fraction_Time_Used']
 
         logger.debug('-------------------------------------------------')
         logger.debug('Current State of Health Facilities Appts:')
-        print_table = X.to_string().splitlines()
+        print_table = summary.to_string().splitlines()
         for line in print_table:
             logger.debug(line)
         logger.debug('-------------------------------------------------')
 
         log_capacity = dict()
         log_capacity['Frac_Time_Used_Overall'] = overall_useage
-        log_capacity['Frac_Time_Used_By_Facility_Name'] = X.to_dict()
+        log_capacity['Frac_Time_Used_By_Facility_Name'] = summary.to_dict()
 
         logger.info('%s|Capacity|%s',
                     self.sim.date,
@@ -696,18 +725,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # Pop the next event off the heapq
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
 
-            # Read the tuple:
+            # Read the tuple and assemble into a dict 'next_event'
             # Pos 0: priority,
             # Pos 1: topen,
             # Pos 2: hsi_event_queue_counter,
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            next_event = dict({
+            next_event = {
                 'priority': next_event_tuple[0],
                 'topen': next_event_tuple[1],
                 'tclose': next_event_tuple[3],
-                'object': next_event_tuple[4]})
+                'object': next_event_tuple[4]}
 
             event = next_event['object']
 
@@ -755,5 +784,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
 
-        # TODO: @Asif, this is the way I could see to make the heapq deliver the desired effects...
-        # ... But it seems inefficient to keep loading up the 'hold-over' list. If there another way?
+        """
+        Possible alternative is to empty the current HSI_EVENT_QUEUE, either processing the event or adding to the list
+         hold_over. Then at the end of the loop, set self.module.HSI_EVENT_QUEUE = hp.heapify(hold_over)
+        """

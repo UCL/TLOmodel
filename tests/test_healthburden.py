@@ -1,14 +1,13 @@
-import pytest
-import datetime
 import logging
 import os
+from pathlib import Path
 
-import pandas as pd
+import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis, healthburden
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
 
-resourcefilepath = os.path.join(os.path.dirname(__file__), '../resources')
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
 popsize = 10
@@ -20,6 +19,7 @@ popsize = 10
 @pytest.fixture(autouse=True)
 def disable_logging():
     logging.disable(logging.INFO)
+
 
 def check_dtypes(simulation):
     # check types of columns
@@ -66,4 +66,3 @@ def test_run_with_healthsystem_and_healthburden_intvs_on():
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
-

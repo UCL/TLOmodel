@@ -6,8 +6,8 @@ population structure' worksheet within to initialise the age & sex distribution 
 
 import logging
 import math
-import os
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -121,8 +121,7 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'ResourceFile_DemographicData.xlsx'),
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
                                  sheet_name=None)
 
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
@@ -145,8 +144,7 @@ class Demography(Module):
         self.parameters['fraction_of_births_male'] = 0.5
 
         self.parameters['district_and_region_data'] = \
-            pd.read_csv(os.path.join(self.resourcefilepath,
-                                     'ResourceFile_District_Population_Data.csv'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -182,7 +180,7 @@ class Demography(Module):
         pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
         # The entire initial population is alive!
-        df.is_alive: pd.Series = True
+        df.is_alive.values[:] = True
 
         years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
         df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago

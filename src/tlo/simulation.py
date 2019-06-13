@@ -45,6 +45,8 @@ class Simulation:
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
 
+        self.end_date = None
+
         # TODO: allow override of logging
         handler = logging.StreamHandler(sys.stdout)
         handler.setLevel(logging.DEBUG)
@@ -100,15 +102,15 @@ class Simulation:
             module.initialise_simulation(self)
         while self.event_queue:
             event, date = self.event_queue.next_event()
-            if date >= end_date:    # TODO: Asif, I propose to remove the '=' here, so that events on end_date run.
+            if date >= end_date:
                 self.date = end_date
                 break
             self.fire_single_event(event, date)
 
-        # The simulation has ended. Call 'on_end_of_simulation' method at the end of simulation (if a module has it)
+        # The simulation has ended. Call 'on_simulation_end' method at the end of simulation (if a module has it)
         for module in self.modules.values():
             try:
-                module.on_end_of_simulation()
+                module.on_simulation_end()
             except AttributeError:
                 pass
 
