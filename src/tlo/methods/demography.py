@@ -375,7 +375,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                                                             cause='miscarriage event'), self.sim.date)
 
 
-            logger.debug('birth booked for: %s', date_of_birth) # EDIT
+#            logger.debug('birth booked for: %s', date_of_birth) # EDIT
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     """A one-off event in which a pregnant mother gives birth.

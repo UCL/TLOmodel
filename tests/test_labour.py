@@ -2,6 +2,7 @@ import logging
 import os
 
 import pytest
+from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.methods import demography, lifestyle, labour, eclampsia_treatment, caesarean_section, sepsis_treatment, \
@@ -25,7 +26,11 @@ def simulation():
                                        'resources',
                                        workbook_name)
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    sim = Simulation(start_date=start_date)
+    core_module = demography.Demography(resourcefilepath=resourcefilepath)
+
+    sim.register(core_module)
     sim.register(lifestyle.Lifestyle())
     sim.register(labour.Labour())
     sim.register(eclampsia_treatment.EclampsiaTreatment())
