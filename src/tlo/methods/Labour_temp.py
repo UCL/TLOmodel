@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, haemorrhage_treatment, Labour
+from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, haemorrhage_treatment, Labour_temp
 
 
 logger = logging.getLogger(__name__)
