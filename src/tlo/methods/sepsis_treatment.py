@@ -61,12 +61,12 @@ class SepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date)]
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date)]
 
         treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date)])
+                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
@@ -91,13 +91,13 @@ class PostPartumSepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date -
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date -
                                                                                       DateOffset(days=2))]
 
         treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.due_date == self.sim.date -
+                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date -
                                                                                       DateOffset(days=2))])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)

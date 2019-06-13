@@ -90,7 +90,6 @@ class Demography(Module):
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'due_date': Property(Types.DATE,'The predicted date of delivery for a newly pregnant woman'),
         'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
@@ -179,7 +178,7 @@ class Demography(Module):
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'due_date'] = pd.NaT
+        df.loc[df.is_alive, 'la_due_date'] = pd.NaT
 
         # TODO: Lifestyle module should look after contraception property
         df.loc[df.is_alive, 'contraception'] = 'not using'  # this will be ascribed by the lifestype module
@@ -231,7 +230,7 @@ class Demography(Module):
 
         df.at[child_id, 'mother_id'] = mother_id
         df.at[child_id, 'is_pregnant'] = False
-        df.at[child_id, 'due_date'] = pd.NaT
+        df.at[child_id, 'la_due_date'] = pd.NaT
         df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
 
         df.at[child_id, 'is_married'] = False
@@ -266,6 +265,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
+        age_in_days = population.sim.date - df.loc[df.is_alive, 'date_of_birth']
         age_in_days = population.sim.date - df.loc[df.is_alive, 'date_of_birth']
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
@@ -327,23 +327,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
         df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
-        newly_pregnant_ids = (df.index[df.date_of_last_pregnancy == self.sim.date])
-
-        conception = pd.Series(df.date_of_last_pregnancy, index=df.index[df.date_of_last_pregnancy == self.sim.date])
-        new_pregnancy_count = conception.count()
-
-        norm = self.sim.rng.normal(loc=37.2, scale=2.5, size=new_pregnancy_count)
-        norms = pd.Series(norm, index=newly_pregnant_ids)
-
-        # Assigning estimated due date based on gestational age at birth distribution
-
-        dfx = pd.concat([conception, norms], axis=1)
-        dfx.columns = (['conception', 'new_preg_gest'])
-        dfx['temp_due_date'] = dfx['conception'] + pd.to_timedelta(dfx['new_preg_gest'], unit='w')
-
-        df.loc[newly_pregnant_ids, 'due_date'] = dfx.temp_due_date
-
-        # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
+        # All newly pregnant women then move to the labour module where it will be determine if they experience an
+        # early pregnancy loss. If there is no miscarriage, labour and birth are scheduled
 
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
@@ -351,25 +336,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
                                                             cause='miscarriage event'), self.sim.date)
 
-            if df.at[female_id,'is_pregnant']:
-                    scheduled_labour_date = df.at[female_id, 'due_date']
-
-                    self.sim.schedule_event(labour.LabourEvent(self.sim.modules['Labour'], female_id, cause='labour'),
-                                            scheduled_labour_date)
-
-                    logger.debug('birth booked for: %s', df.due_date)
-
-                    self.sim.schedule_event(labour.BirthEvent(self.sim.modules['Labour'], female_id),
-                                            scheduled_labour_date + DateOffset(days=2))
-
-            # Here the woman's birth is scheduled after 2 days of labour
-
-            #        scheduled_birth_date = df.at[female_id, 'due_date'] + DateOffset(days=2)
-
-            #       self.sim.schedule_event(DelayedBirthEvent(self.module, female_id), scheduled_birth_date)
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     """A one-off event in which a pregnant mother gives birth.

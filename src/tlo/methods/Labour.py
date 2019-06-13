@@ -127,6 +127,7 @@ class Labour (Module):
 
     PROPERTIES = {
 
+        'la_due_date': Property(Types.DATE, 'The predicted date of delivery for a newly pregnant woman'),
         'la_labour': Property(Types.CATEGORICAL, 'not in labour, Term labour, Preterm Labour, Post term labour',
                               categories=['not_in_labour', 'term_labour', 'preterm_labour',
                                           'post_term_labour']),
@@ -162,7 +163,7 @@ class Labour (Module):
         params = self.parameters
 
         params['prob_pregnancy'] = 0.083  # Calculated from DHS 2010
-        params['prob_miscarriage'] = 0.189
+        params['prob_miscarriage'] = 0.05 #0.189
         params['rr_miscarriage_prevmiscarriage'] = 2.23
         params['rr_miscarriage_35'] = 4.02
         params['rr_miscarriage_3134'] = 2.13
@@ -280,7 +281,7 @@ class Labour (Module):
         dfx['due_date_mth'] = 39 - dfx['gestational_age']
         dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
-        df.loc[pregnant_idx, 'due_date'] = dfx.due_date
+        df.loc[pregnant_idx, 'la_due_date'] = dfx.due_date
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
@@ -353,15 +354,15 @@ class Labour (Module):
         random_draw2 = pd.Series(self.rng.choice(range(0, 3), p=[0.90, 0.07, 0.03], size=len(women_para2_idx)),
                                  index=women_para2_idx)
 
-        dfx = pd.concat([baseline_cs1, random_draw1], axis=1)
-        dfx.columns = ['baseline_cs1', 'random_draw1']
-        idx_prev_cs = dfx.index[dfx.baseline_cs1 < dfx.random_draw1]
-        df.loc[idx_prev_cs, 'la_previous_cs'] = dfx.random_draw1
+#        dfx = pd.concat([baseline_cs1, random_draw1], axis=1)
+#        dfx.columns = ['baseline_cs1', 'random_draw1']
+#        idx_prev_cs = dfx.index[dfx.baseline_cs1 < dfx.random_draw1]
+#        df.loc[idx_prev_cs, 'la_previous_cs'] = dfx.random_draw1
 
-        dfx = pd.concat([baseline_cs2, random_draw2], axis=1)
-        dfx.columns = ['baseline_cs2', 'random_draw2']
-        idx_prev_cs1 = dfx.index[dfx.baseline_cs2 < dfx.random_draw2]
-        df.loc[idx_prev_cs1, 'la_previous_cs'] = dfx.random_draw2
+#        dfx = pd.concat([baseline_cs2, random_draw2], axis=1)
+#        dfx.columns = ['baseline_cs2', 'random_draw2']
+#        idx_prev_cs1 = dfx.index[dfx.baseline_cs2 < dfx.random_draw2]
+#        df.loc[idx_prev_cs1, 'la_previous_cs'] = dfx.random_draw2
 
         # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
 
@@ -406,24 +407,24 @@ class Labour (Module):
 
         df = population.props
 
-        # Get and hold all women who are pregnant at baseline
         pregnant_baseline = df.index[(df.is_pregnant == True) & df.is_alive]
 
-        # Assess if any of the pregnant women at baseline have been pregnant for less than 28 weeks, if so schedule
-        # miscarriage event (applies cumulative risk of early pregnancy loss)
         for person in pregnant_baseline:
-            gestation_date = df.at[person, 'due_date'] - (df.at[person, 'date_of_last_pregnancy'])
-            gestation_weeks = gestation_date / np.timedelta64(1, 'W')
-            if gestation_weeks < 28:
-                self.sim.schedule_event(Labour.MiscarriageEvent(self.sim.modules['Labour'], person,
-                                                                cause='miscarriage event'), self.sim.date)
+            scheduled_labour_date = df.at[person, 'la_due_date']
+            labour = LabourEvent(self, individual_id=person, cause='Labour')
+            birth = BirthEvent(self, mother_id=person)
+            self.sim.schedule_event(labour, scheduled_labour_date)
+            self.sim.schedule_event(birth, scheduled_labour_date + DateOffset(days=2))
 
-        # Schedule all women to go through Labour on their due date
-        for person in pregnant_baseline:
-            if df.at[person, 'is_pregnant']:
-                scheduled_labour_date = df.at[person, 'due_date']
-                labour = LabourEvent(self, individual_id=person, cause='labour')
-                self.sim.schedule_event(labour, scheduled_labour_date)
+
+# Todo: confirm if it matters if people at baseline dont go through the miscarriage event.
+
+#        for person in pregnant_baseline:
+#            gestation_date = df.at[person, 'due_date'] - (df.at[person, 'date_of_last_pregnancy'])
+#            gestation_weeks = gestation_date / np.timedelta64(1, 'W')
+#            if gestation_weeks < 28:
+#                self.sim.schedule_event(Labour.MiscarriageEvent(self.sim.modules['Labour'], person,
+#                                                                cause='miscarriage event'), self.sim.date)
 
     def initialise_simulation(self, sim):
 
@@ -436,6 +437,7 @@ class Labour (Module):
 
         df = self.sim.population.props
 
+        df.at[child_id, 'la_due_date'] = pd.NaT
         df.at[child_id, 'la_labour'] = 'not_in_labour'
         df.at[child_id, 'la_gestation_at_labour'] = 0
         df.at[child_id, 'la_miscarriage'] = 0
@@ -470,53 +472,89 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
 
-    def apply(self, population):
+    def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
-        # All newly pregnant women are schedule to pass through this event
-        # Get and hold all the women who have been scheduled this event
-        poss_miscarriage_idx = df.index[(df.date_of_last_pregnancy == self.sim.date)]
+        if (df.at[individual_id, 'la_miscarriage'] >= 1) & (df.at[individual_id, 'age_years'] <= 30) & \
+            (df.at[individual_id, 'la_parity'] + df.at[individual_id, 'la_miscarriage'] <= 3):
+            rf1 = params['rr_miscarriage_prevmiscarriage']
+        else:
+            rf1 = 0
 
-        # Multiply the cumulative risk of pregnancy loss within the first 28 weeks by appropriate risk factors
-        eff_prob_miscarriage = pd.Series(params['prob_miscarriage'], index=poss_miscarriage_idx)
+        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
+            (df.at[individual_id, 'age_years'] <= 34):
+            rf2 = params['rr_miscarriage_3134']
+        else:
+            rf2 = 0
 
-        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
-                                          (df.la_miscarriage >= 1) & (df.la_parity + df.la_miscarriage <= 3) &
-                                          (df.age_years <= 30))] *= params['rr_miscarriage_prevmiscarriage']
+        if (df.at[individual_id,'la_miscarriage'] == 0) & (df.at[individual_id,'la_parity'] >= 4) & \
+            (df.at[individual_id, 'age_years'] <= 30):
+            rf3 = params['rr_miscarriage_grav4']
+        else:
+            rf3 = 0
 
-        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
-                                          (df.la_miscarriage == 0) & (df.age_years >= 31) & (df.age_years <= 34))]\
-            *= params['rr_miscarriage_3134']
-        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
-                                            (df.la_miscarriage == 0) & (df.age_years >= 35))]\
-            *= params['rr_miscarriage_35']
-        eff_prob_miscarriage.loc[(df.is_alive & (df.is_pregnant == True) & (df.la_labour == 'not_in_labour') &
-                                           (df.la_miscarriage == 0) & (df.la_parity >= 4) & (df.age_years <= 30))]\
-            *= params['rr_miscarriage_grav4']
+        riskfactors = rf1 + rf2 + rf3
 
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(poss_miscarriage_idx)),
-                                index=df.index[df.date_of_last_pregnancy == self.sim.date])
+        if riskfactors == 0:
+            eff_prob_miscarriage = params['prob_miscarriage']
+        else:
+            eff_prob_miscarriage = riskfactors * params['prob_miscarriage']
 
-        # Use a random draw to determine if this woman will experience a miscarriage
-        dfx = pd.concat([eff_prob_miscarriage, random_draw], axis=1)
-        dfx.columns = ['eff_prob_miscarriage', 'random_draw']
-        idx_miscarriage = dfx.index[dfx.eff_prob_miscarriage > dfx.random_draw]
+        random = self.sim.rng.random_sample(size=1)
+        if random < eff_prob_miscarriage:
+            df.at[individual_id, 'is_pregnant'] = False
+            df.at[individual_id, 'la_due_date'] = pd.NaT
+            df.at[individual_id, 'la_miscarriage_date'] = self.sim.date
+            df.at[individual_id, 'la_miscarriage'] = +1
+            self.sim.schedule_event(PostpartumLabourEvent(self.module, individual_id, cause='post miscarriage'), self.sim.date)
+        else:
+            self.sim.schedule_event(LabourScheduler(self.module, individual_id, cause='pregnancy'), self.sim.date)
 
-        # Now the pregnancy status is reset to False, the miscarriage is dated and the due date reset to prevent the
-        # woman going into labour
-        df.loc[idx_miscarriage, 'is_pregnant'] = False
-        df.loc[idx_miscarriage, 'la_miscarriage'] += 1
-        df.loc[idx_miscarriage, 'due_date'] = pd.NaT
-        df.loc[idx_miscarriage, 'la_miscarriage_date'] = self.sim.date
 
-        # Women who have had a miscarriage are then scheduled the PostPartum event to see if they experience
-        # associated complications
-        new_miscarriage_idx = df.index[(df.la_miscarriage_date == self.sim.date)]
-        for mother_id in new_miscarriage_idx:
-            self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id,
-                                                             cause='post miscarriage'), self.sim.date)
+class LabourScheduler (Event, IndividualScopeEventMixin):
+    """This event determines when newly pregnant women will going to labour based on risk factors for   """
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+        if (df.at[individual_id, 'age_years'] >= 15) & (df.at[individual_id, 'age_years'] <= 20):
+            rf1 = params['rr_ptl_age20']
+        else:
+            rf1 = 0
+        riskfactors = rf1
+        if riskfactors == 0:
+            eff_prob_ptl = params['prob_ptl']
+        else:
+            eff_prob_ptl = riskfactors * params['prob_ptl']
+
+        # todo: additional risk factors for ptl
+
+        random = self.sim.rng.random_sample(size=1)
+        if random < eff_prob_ptl:
+            random = np.random.randint(26, 36, size=1)
+            random = int(random)
+            df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                  pd.Timedelta(random, unit='W')
+            self.sim.schedule_event(labour.LabourEvent(self.module, individual_id, cause='labour'),
+                                    df.at[individual_id,'la_due_date'])
+            self.sim.schedule_event(labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
+                                    + DateOffset(days=2))
+        else:
+            random = np.random.randint(37, 44, size=1)
+            random = int(random)
+            df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] +\
+                                                  pd.Timedelta(random, unit='W')
+            self.sim.schedule_event(labour.LabourEvent(self.module, individual_id, cause='labour'),
+                                    df.at[individual_id,'la_due_date'])
+            self.sim.schedule_event(labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
+                                    + DateOffset(days=2))
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -534,18 +572,19 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 # ===================================== LABOUR STATE  ==================================================================
 
         # Calculates the gestational age at delivery for women who are going into labour
-        gestation_date = df.at[individual_id, 'due_date'] - (df.at[individual_id, 'date_of_last_pregnancy'])
+
+        gestation_date = df.at[individual_id, 'la_due_date'] - (df.at[individual_id, 'date_of_last_pregnancy'])
         gestation_weeks = gestation_date / np.timedelta64(1, 'W')
 
         # Using the gestational age at labour, women are allocated term, preterm or post term labour
         if df.at[individual_id, 'is_pregnant']:
             df.at[individual_id, 'la_gestation_at_labour'] = gestation_weeks
-            if df.at[individual_id, 'la_gestation_at_labour'] > 36 < 42:
+            if df.at[individual_id, 'la_gestation_at_labour'] > 36 & df.at[individual_id, 'la_gestation_at_labour'] < 42:
                 df.at[individual_id, 'la_labour'] = "term_labour"
 
             # TODO: apply risk factors for preterm birth
 
-            elif df.at[individual_id, 'la_gestation_at_labour'] > 27 < 37:
+            elif df.at[individual_id, 'la_gestation_at_labour'] > 27 & df.at[individual_id, 'la_gestation_at_labour']< 37:
                 df.at[individual_id, 'la_labour'] = "preterm_labour"
                 df.at[individual_id, 'la_previous_ptb'] = True
 
@@ -556,20 +595,20 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # Get and hold all women who are in labour at term
 
-        in_labour = df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True) & (df.la_labour == 'term_labour')]
+        in_labour = df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True) & (df.la_labour == 'term_labour')]
 
         # Calculate each woman's effective probability of her labour being obstructed based on risk factors
         eff_prob_plol = pd.Series(params['prob_pl_ol'], index=in_labour)
 
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
             params['rr_PL_OL_nuliparity']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
             params['rr_PL_OL_parity_3']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
                            (df.age_years < 20))] *= params['rr_PL_OL_age_less20']
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(in_labour)),
-                                index=df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True)
+                                index=df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True)
                                                & (df.la_labour == 'term_labour')])
 
         dfx = pd.concat([eff_prob_plol, random_draw], axis=1)
@@ -579,7 +618,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # Following this we determine if the woman will experience any further complications in labour
 
-        tl_women = df.index[(df.la_labour == 'term_labour') & (df.due_date == self.sim.date)]
+        tl_women = df.index[(df.la_labour == 'term_labour') & (df.la_due_date == self.sim.date)]
 
         eff_prob_eclamp = pd.Series(params['prob_an_eclampsia'], index=tl_women)
         eff_prob_aph = pd.Series(params['prob_an_aph'], index=tl_women)
@@ -588,19 +627,19 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # Apply likelihood of eclampsia based on risk factors
 
-        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.due_date == self.sim.date) &
+        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.la_due_date == self.sim.date) &
                              (df.la_parity == 0) & (df.age_years <= 29))] *= \
             params['rr_an_eclampsia_nullip']
-        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.due_date == self.sim.date) &
+        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.la_due_date == self.sim.date) &
                              (df.la_parity >= 1) & (df.age_years >= 35))] *= \
             params['rr_an_eclampsia_35']
-        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.due_date == self.sim.date) &
+        eff_prob_eclamp.loc[((df.la_labour == 'term_labour') & (df.la_due_date == self.sim.date) &
                              (df.la_parity >= 1) & (df.age_years >= 30) & (df.age_years <= 34))]\
             *= params['rr_an_eclampsia_30_34']
 
         # Apply likelihood of Antepartum haemorrhage based on risk factors factors
 
-        eff_prob_aph.loc[((df.la_labour == 'term_labour') & (df.due_date == self.sim.date) &
+        eff_prob_aph.loc[((df.la_labour == 'term_labour') & (df.la_due_date == self.sim.date) &
                           (df.li_ed_lev == 1))] *= params['rr_an_aph_noedu']
 
         # Todo: Uterine rupture risk factors
@@ -608,16 +647,16 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(tl_women)),
                                 index=df.index[(df.la_labour == 'term_labour') &
-                                               (df.due_date ==self.sim.date)])
+                                               (df.la_due_date ==self.sim.date)])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(tl_women)),
                                 index=df.index[(df.la_labour == 'term_labour') &
-                                               (df.due_date == self.sim.date)])
+                                               (df.la_due_date == self.sim.date)])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(tl_women)),
                                  index=df.index[(df.la_labour == 'term_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
         random_draw4 = pd.Series(self.sim.rng.random_sample(size=len(tl_women)),
                                  index=df.index[(df.la_labour == 'term_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_aph, random_draw2, eff_prob_sepsis, random_draw3,
                          eff_prob_ur, random_draw4],
@@ -661,19 +700,19 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # First it is determine if this woman's labour will be obstructed
         # Todo: impact of preterm labour on risk of obstructed labour
 
-        in_labour = df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True) &
+        in_labour = df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True) &
                              (df.la_labour == 'preterm_labour')]
         eff_prob_plol = pd.Series(params['prob_pl_ol'], index=in_labour)
 
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
                 params['rr_PL_OL_nuliparity']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
                 params['rr_PL_OL_parity_3']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
                                (df.age_years < 20))] *= params['rr_PL_OL_age_less20']
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(in_labour)),
-                                    index=df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True)
+                                    index=df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True)
                                                    & (df.la_labour == 'preterm_labour')])
 
         dfx = pd.concat([eff_prob_plol, random_draw], axis=1)
@@ -683,7 +722,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         #  TODO: Apply risk factors for complications in preterm labour
 
-        ptl_women = df.index[(df.la_labour == 'preterm_labour') & (df.due_date == self.sim.date)]
+        ptl_women = df.index[(df.la_labour == 'preterm_labour') & (df.la_due_date == self.sim.date)]
         eff_prob_eclamp = pd.Series(params['prob_an_eclampsia'], index=ptl_women)
         eff_prob_aph = pd.Series(params['prob_an_aph'], index=ptl_women)
         eff_prob_sepsis = pd.Series(params['prob_an_sepsis'], index=ptl_women)
@@ -691,16 +730,16 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(ptl_women)),
                                 index=df.index[(df.la_labour == 'preterm_labour') &
-                                               (df.due_date == self.sim.date)])
+                                               (df.la_due_date == self.sim.date)])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women)),
                                  index=df.index[(df.la_labour == 'preterm_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women)),
                                  index=df.index[(df.la_labour == 'preterm_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
         random_draw4 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women)),
                                  index=df.index[(df.la_labour == 'preterm_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_aph, random_draw2, eff_prob_sepsis, random_draw3,
                          eff_prob_ur, random_draw4],
@@ -721,19 +760,19 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # First it is determine if this woman's labour will be obstructed
         # Todo: impact of preterm labour on risk of obstructed labour
 
-        in_labour = df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True) &
+        in_labour = df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True) &
                              (df.la_labour == 'post_term_labour')]
         eff_prob_plol = pd.Series(params['prob_pl_ol'], index=in_labour)
 
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity == 0) & (df.age_years >= 21))] *= \
             params['rr_PL_OL_nuliparity']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 3) & (df.age_years >= 21))] *= \
             params['rr_PL_OL_parity_3']
-        eff_prob_plol.loc[((df.due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
+        eff_prob_plol.loc[((df.la_due_date == self.sim.date) & (df.la_parity >= 1) & (df.la_parity < 3) &
                            (df.age_years < 20))] *= params['rr_PL_OL_age_less20']
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(in_labour)),
-                                index=df.index[(df.due_date == self.sim.date) & (df.is_pregnant == True) &
+                                index=df.index[(df.la_due_date == self.sim.date) & (df.is_pregnant == True) &
                                                (df.la_labour == 'post_term_labour')])
 
         dfx = pd.concat([eff_prob_plol, random_draw], axis=1)
@@ -743,7 +782,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         #  TODO: Apply risk factors for complications in preterm labour
 
-        potl_women = df.index[(df.la_labour == 'post_term_labour') & (df.due_date == self.sim.date)]
+        potl_women = df.index[(df.la_labour == 'post_term_labour') & (df.la_due_date == self.sim.date)]
         eff_prob_eclamp = pd.Series(params['prob_an_eclampsia'], index=potl_women)
         eff_prob_aph = pd.Series(params['prob_an_aph'], index=potl_women)
         eff_prob_sepsis = pd.Series(params['prob_an_sepsis'], index=potl_women)
@@ -751,16 +790,16 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(potl_women)),
                                 index=df.index[(df.la_labour == 'post_term_labour') &
-                                               (df.due_date == self.sim.date)])
+                                               (df.la_due_date == self.sim.date)])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(potl_women)),
                                  index=df.index[(df.la_labour == 'post_term_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(potl_women)),
                                  index=df.index[(df.la_labour == 'post_term_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
         random_draw4 = pd.Series(self.sim.rng.random_sample(size=len(potl_women)),
                                  index=df.index[(df.la_labour == 'post_term_labour') &
-                                                (df.due_date == self.sim.date)])
+                                                (df.la_due_date == self.sim.date)])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_aph, random_draw2, eff_prob_sepsis, random_draw3,
                          eff_prob_ur, random_draw4],
@@ -826,7 +865,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 # ============================== POSTPARTUM COMPLICATIONS FOLLOWING TERM LABOUR =======================================
 
         tl_women_pn = df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))]
+                                    (df.la_due_date == self.sim.date - DateOffset(days=2))]
 
         eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=tl_women_pn)
         eff_prob_pph = pd.Series(params['prob_pn_pph'], index=tl_women_pn)
@@ -834,13 +873,13 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
                                     index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+                                    (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
                                      index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+                                    (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(tl_women_pn)),
                                      index=df.index[(df.la_labour == 'term_labour') & (df.is_alive == True)&
-                                    (df.due_date == self.sim.date - DateOffset(days=2))])
+                                    (df.la_due_date == self.sim.date - DateOffset(days=2))])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
                             axis=1)
@@ -865,7 +904,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
             # TODO: risk factors
         potl_women_pn = df.index[(df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                    (df.due_date == self.sim.date - DateOffset(days=2))]
+                                    (df.la_due_date == self.sim.date - DateOffset(days=2))]
 
         eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=potl_women_pn)
         eff_prob_pph = pd.Series(params['prob_pn_pph'], index=potl_women_pn)
@@ -874,15 +913,15 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
                                     index=df.index[
                                         (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                        (df.due_date == self.sim.date - DateOffset(days=2))])
+                                        (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
                                      index=df.index[
                                          (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+                                         (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(potl_women_pn)),
                                      index=df.index[
                                          (df.la_labour == 'post_term_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+                                         (df.la_due_date == self.sim.date - DateOffset(days=2))])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
                             axis=1)
@@ -899,7 +938,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 # ============================ POSTPARTUM COMPLICATIONS FOLLOWING PRETERM LABOUR =======================================
 
         ptl_women_pn = df.index[(df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                     (df.due_date == self.sim.date - DateOffset(days=2))]
+                                     (df.la_due_date == self.sim.date - DateOffset(days=2))]
 
         eff_prob_eclamp = pd.Series(params['prob_pn_eclampsia'], index=ptl_women_pn)
         eff_prob_pph = pd.Series(params['prob_pn_pph'], index=ptl_women_pn)
@@ -908,15 +947,15 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
                                     index=df.index[
                                         (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                        (df.due_date == self.sim.date - DateOffset(days=2))])
+                                        (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw2 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
                                      index=df.index[
                                          (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+                                         (df.la_due_date == self.sim.date - DateOffset(days=2))])
         random_draw3 = pd.Series(self.sim.rng.random_sample(size=len(ptl_women_pn)),
                                      index=df.index[
                                          (df.la_labour == 'preterm_labour') & (df.is_alive == True) &
-                                         (df.due_date == self.sim.date - DateOffset(days=2))])
+                                         (df.la_due_date == self.sim.date - DateOffset(days=2))])
 
         dfx = pd.concat([eff_prob_eclamp, random_draw, eff_prob_pph, random_draw2, eff_prob_sepsis, random_draw3],
                             axis=1)
@@ -992,10 +1031,10 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
         # TODO: review and restructure as needed
 
-        idx_eclamp = df.index[df.la_eclampsia & (df.due_date == self.sim.date)]
-        idx_aph = df.index[df.la_aph & (df.due_date == self.sim.date)]
-        idx_sepsis = df.index[df.la_sepsis & (df.due_date == self.sim.date)]
-        idx_ur = df.index[df.la_uterine_rupture & (df.due_date == self.sim.date)]
+        idx_eclamp = df.index[df.la_eclampsia & (df.la_due_date == self.sim.date)]
+        idx_aph = df.index[df.la_aph & (df.la_due_date == self.sim.date)]
+        idx_sepsis = df.index[df.la_sepsis & (df.la_due_date == self.sim.date)]
+        idx_ur = df.index[df.la_uterine_rupture & (df.la_due_date == self.sim.date)]
 
         for individual_id in idx_eclamp:
             random = self.sim.rng.random_sample()
@@ -1047,7 +1086,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
             # Schedule death for women who die in labour
 
-        maternal_death = df.index[(df.due_date == self.sim.date) & (df.la_labour == 'post_term_labour')
+        maternal_death = df.index[(df.la_due_date == self.sim.date) & (df.la_labour == 'post_term_labour')
                                   & (df.la_died_in_labour == True)]
 
         for individual_id in maternal_death:
@@ -1066,9 +1105,9 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        idx_eclamp = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_eclampsia]
-        idx_pph = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_pph]
-        idx_sepsis = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) & df.la_sepsis]
+        idx_eclamp = df.index[(df.la_due_date == self.sim.date - DateOffset(days=2)) & df.la_eclampsia]
+        idx_pph = df.index[(df.la_due_date == self.sim.date - DateOffset(days=2)) & df.la_pph]
+        idx_sepsis = df.index[(df.la_due_date == self.sim.date - DateOffset(days=2)) & df.la_sepsis]
 
         for individual_id in idx_eclamp:
             random = self.sim.rng.random_sample()
@@ -1085,7 +1124,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             if random < params['cfr_pn_sepsis']:
                 df.at[individual_id, 'la_died_in_labour'] = True
 
-        maternal_death = df.index[(df.due_date == self.sim.date - DateOffset(days=2)) &
+        maternal_death = df.index[(df.la_due_date == self.sim.date - DateOffset(days=2)) &
                                   (df.la_labour == 'preterm_labour') & (df.la_died_in_labour == True) &
                                   (df.is_alive == True)]
 
