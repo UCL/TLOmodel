@@ -98,14 +98,14 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
 
         # 1.)Get and hold all women who have had a eclamptic fit in labour
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date)]
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date)]
 
         # 2.)Apply the probability that first line treatment will stop/prevent seizures
 
         treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date)])
+                                index=df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date)])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)
         dfx.columns = ['treatment_effect', 'random_draw']
@@ -170,13 +170,13 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
 
         # 1.) Here the woman undergoes the same treatment cascade without any alternative delivery options
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.due_date == self.sim.date -
+        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date -
                                                                         DateOffset(days=2))]
 
         treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[(df.la_eclampsia == True) & (df.due_date == self.sim.date -
+                                index=df.index[(df.la_eclampsia == True) & (df.la_due_date == self.sim.date -
                                                                         DateOffset(days=2))])
 
         dfx = pd.concat([treatment_effect, random_draw], axis=1)

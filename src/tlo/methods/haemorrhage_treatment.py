@@ -142,7 +142,7 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
 
         # First get and hold all the women who are experiencing a post partum haemorrhage (excluding caesareans)
 
-        aph_pp_women = df.index[df.is_alive & df.la_pph & (df.due_date == self.sim.date - DateOffset(days=2))]
+        aph_pp_women = df.index[df.is_alive & df.la_pph & (df.la_due_date == self.sim.date - DateOffset(days=2))]
 
         # Then we determine the cause of the bleed based on the incidence
 
