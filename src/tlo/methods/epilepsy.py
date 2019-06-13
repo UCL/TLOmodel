@@ -10,7 +10,7 @@ import random
 # todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 # logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
