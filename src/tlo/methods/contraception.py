@@ -130,18 +130,18 @@ class Contraception(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        # check all females not using contraception to determine if contraception starts i.e. category should change from 'not_using' (repeats every month)
-        sim.schedule_event(Init1(self), sim.date + DateOffset(months=1))
+        # check all females not using contraception to determine if contraception starts i.e. category should change from 'not_using' (starts at month 0)
+        sim.schedule_event(Init1(self), sim.date + DateOffset(months=0))
 
-        # check all females using contraception to determine if contraception discontinues i.e. category should change to 'not_using' (repeats every month)
-        sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=1))
+        # check all females using contraception to determine if contraception discontinues i.e. category should change to 'not_using' (starts at month 0)
+        sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=0))
 
-        # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (repeats every month)
-        sim.schedule_event(Fail(self), sim.date + DateOffset(months=1))
+        # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (starts at month 0)
+        sim.schedule_event(Fail(self), sim.date + DateOffset(months=0))
 
-        # check all women after birth to determine subsequent contraception method (including not_using)
+        # check all women after birth to determine subsequent contraception method (including not_using) (starts at month 0)
         # This should only be called after birth, though should be repeated every month i.e. following new births every month
-        sim.schedule_event(Init2(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -171,7 +171,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
         self.age_low = 15
         self.age_high = 49
 
@@ -221,7 +221,7 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
         self.age_low = 15
         self.age_high = 49
 
@@ -282,7 +282,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
         self.age_low = 15
         self.age_high = 49
 
@@ -358,7 +358,7 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
         self.age_low = 15
         self.age_high = 49
 
