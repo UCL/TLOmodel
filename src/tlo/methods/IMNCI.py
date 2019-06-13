@@ -51,7 +51,7 @@ class HSI_Sick_Child_Seeks_Care_From_First_Level(Event, IndividualScopeEventMixi
         self.ALERT_OTHER_DISEASES = ['childhood_pneumonia', 'childhood_diarrhoea']
 
     def apply(self, person_id):
-        logger.debug('This is HSI_Sick_Child_Seeks_Care_From_HSA, a first appointment for person %d '
+        logger.debug('This is HSI_Sick_Child_Seeks_Care_From_First_Level, a first appointment for person %d '
                      'at the first level health facility', person_id)
 
         df = self.sim.population.props
@@ -60,8 +60,12 @@ class HSI_Sick_Child_Seeks_Care_From_First_Level(Event, IndividualScopeEventMixi
         # all_seeking_care_from_first level health facility_plus refered ones? =
         # df.index[all those seeking care in pneumonia, diarrhoea and malaria modules
         # and maybe also other modules??]
+
+        danger_sign_is_detected = df(person_id, 'pn_any_general_danger_sign' == True) and 'looked_for_unusually_sleepy_unconscious' == True
         # for child in all_seeking_care_from_1st_level_facility:
         if df.at[person_id, 'pn_any_general_danger_sign' == True]:
+            if danger_sign_is_detected:
+
             will_CHW_ask_about_fever = self.module.rng.rand() < 0.5
             will_CHW_ask_about_cough = self.module.rng.rand() < 0.5
 
@@ -80,3 +84,7 @@ class HSI_Sick_Child_Seeks_Care_From_First_Level(Event, IndividualScopeEventMixi
     #       -- child has bouth fever and cough
     # make a event for the treatment for this condition
     # HSI_Treatment_For_Fever_And_Cough
+
+# follow-up care ---------------------------
+
+# class follow_up_visit

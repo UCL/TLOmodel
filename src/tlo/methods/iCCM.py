@@ -47,6 +47,7 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Sick child presents for care'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [1]
         self.ALERT_OTHER_DISEASES = ['childhood_pneumonia', 'childhood_diarrhoea']
 
     def apply(self, person_id):
@@ -55,6 +56,29 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
         now = self.sim.date
+
+        # stepone : work out if the child has 'malaria'
+        has_malaria = df.atperson_id,'Malaria'[]
+        sens_dx_malaria= 0.9
+        spec_dx_malaria = 0.8
+        snes_dx_pneumo = 0.7
+        spec_dx_pneuo = 0.5
+
+        _ bad_CHW = send_dx_malria_good_CHW * 0.5*bad_CHW
+        -bdad_CHW = 0.2
+
+        good_CHW = self.rng.rand < prob_good_CHW
+
+        - will the child be diagonosed by the algogorith
+        correctly_diagnoed_malaria = has_malria and self.rng.rand<sens_dx_malaria
+        missed_diagnosed_malaria = has malria and not correctly_diagnoed
+        false_positive_diagnosed_malria = (not has_malaria and self.rng.rand<(1-spec_dx_malaria)
+
+        correxctly_dianogsed_pneo ...
+        correclty_fianoged _pneu
+
+
+
 
         # all_seeking_care_from_HSA = df.index[all those seeking care in pneumonia, diarrhoea and malaria modules
         # and maybe also other modules??]

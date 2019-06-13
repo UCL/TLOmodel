@@ -338,7 +338,7 @@ class ChildhoodPneumonia(Module):
         'pn_fast_breathing': Property(Types.BOOL, 'fast breathing from non-severe pneumonia'),
         'pn_chest_indrawing': Property(Types.BOOL, 'chest indrawing from severe pneumonia or very severe pneumonia'),
         'pn_any_general_danger_sign': Property(Types.BOOL, 'any danger sign - lethargic/uncounscious, not able to drink/breastfeed, convulsions and vomiting everything'),
-        'pn_stridor_in_calm_child': Property(Types.BOOL, 'stridor in calm child from very severe pneumonia'),
+        'pn_stridor_in_calm_child': Property(Types.BOOL, 'stridor in calm child from very severe pneumonia')
     }
 
     def read_parameters(self, data_folder):
@@ -449,7 +449,7 @@ class ChildhoodPneumonia(Module):
         df['pn_fast_breathing'] = False
 
         # --------------------------------------------------------------------------------------------------------
-        # ------------------------- ASSIGN VALUES OF ALRI - PNEUMONIA STATUS AT BASELINE -------------------------
+        # ------------------------- ASSIGN VALUES OF LRI - PNEUMONIA STATUS AT BASELINE --------------------------
         # --------------------------------------------------------------------------------------------------------
 
         under5_idx = df.index[(df.age_years < 5) & df.is_alive]
@@ -659,7 +659,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         pneumonia_symptoms = df.index[df.is_alive & (df.pn_cough == True) | (df.pn_difficult_breathing == True) |
                                       (df.pn_fast_breathing == True) | (df.pn_chest_indrawing == False)]
 
-        seeks_care = pd.Series(data=False, index=severe_pneumonia_symptoms)
+        seeks_care = pd.Series(data=False, index=pneumonia_symptoms)
         for individual in pneumonia_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
             seeks_care[individual] = self.module.rng.rand() < prob
@@ -704,7 +704,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
         # ------------------------------------------------------
-        # recovery from severe pneumonia
+        # recovery from severe pneumonia -----------------------
 
         after_progression_pneumonia_idx = df.index[df.is_alive &
                                                    (df.ri_pneumonia_status == 'pneumonia') & (df.age_years < 5)]
