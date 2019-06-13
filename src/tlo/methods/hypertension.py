@@ -81,6 +81,17 @@ class HT(Module):
         p = self.parameters
 
         # 2. Risk parameters
+
+        df = HT_risk.set_index('Parameter')
+        p['prob_HT_basic'] = df.at['prob_basic', 'Value']
+
+
+
+
+        p['prob_HT_basic'] = HT_risk.loc[HT_risk.Parameter == 'prob_basic', 'Value']
+
+
+
         p['prob_HT_basic']      = 1.0
         #p['prob_HTgivenWeight']     = pd.DataFrame(data={'prob_HTgivenWeight':
         #                              ['normal',
