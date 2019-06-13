@@ -127,7 +127,7 @@ class Demography(Module):
                                  sheet_name=None)
 
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
-        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
+        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']  # Have updated this so it is the same as the 'Age_spec fertility' sheet in ResourceFile_Contraception
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']

@@ -10,6 +10,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
+from pathlib import Path
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
 from tlo.methods.demography import Demography
@@ -26,9 +27,9 @@ class Contraception(Module):
     for conceptual diagram (lucid chart)
     """
 
-    def __init__(self, name=None, workbook_path=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.workbook_path = workbook_path
+        self.resourcefilepath = resourcefilepath
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
@@ -57,7 +58,7 @@ class Contraception(Module):
         # discontinuation, failure and switching rates
         # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
         # 'other traditional' includes lactational amenohroea (LAM), standard days method (SDM), 'other traditional method'
-        # Have replaced Age-spec fertility sheet in demography.xlsx (in this branch) with the one in contraception.xlsx
+        # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch) with the one in ResourceFile_Contraception.xlsx
         # (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
         'date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
     }
@@ -68,7 +69,8 @@ class Contraception(Module):
         baseline fertility rate, intitiation rates, discontinuation, failure and switching rates, and being on
         contraception or not, and being pregnant
         """
-        workbook = pd.read_excel(self.workbook_path, sheet_name=None)
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        #workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
         self.parameters['contraception_initiation1'] = workbook['irate1_']  # 'irate_1_' sheet created manually as a work around to address to do point on line 39
         # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
