@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, haemorrhage_treatment, labour
+from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, haemorrhage_treatment, Labour
 
 
 logger = logging.getLogger(__name__)
@@ -428,6 +428,7 @@ class Labour (Module):
 
     def initialise_simulation(self, sim):
 
+
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
@@ -542,18 +543,18 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
             random = int(random)
             df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                   pd.Timedelta(random, unit='W')
-            self.sim.schedule_event(labour.LabourEvent(self.module, individual_id, cause='labour'),
+            self.sim.schedule_event(Labour.LabourEvent(self.module, individual_id, cause='labour'),
                                     df.at[individual_id,'la_due_date'])
-            self.sim.schedule_event(labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
+            self.sim.schedule_event(Labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
                                     + DateOffset(days=2))
         else:
             random = np.random.randint(37, 44, size=1)
             random = int(random)
             df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] +\
                                                   pd.Timedelta(random, unit='W')
-            self.sim.schedule_event(labour.LabourEvent(self.module, individual_id, cause='labour'),
+            self.sim.schedule_event(Labour.LabourEvent(self.module, individual_id, cause='labour'),
                                     df.at[individual_id,'la_due_date'])
-            self.sim.schedule_event(labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
+            self.sim.schedule_event(Labour.BirthEvent(self.module, individual_id), df.at[individual_id,'la_due_date']
                                     + DateOffset(days=2))
 
 
@@ -836,8 +837,8 @@ class BirthEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1  # Parity includes still birth? will this run
 
-            self.sim.schedule_event(labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
-                                                                 cause='postpartum'), self.sim.date)
+            self.sim.schedule_event(Labour.PostpartumLabourEvent(self.module, mother_id, cause='post partum'),
+                                    self.sim.date)
 
         # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
         # stillbirth
