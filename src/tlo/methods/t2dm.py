@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Read in data
-file_path = 'resources/Method_T2DM.xlsx'
+file_path = 'resources/ResourceFile_Method_T2DM.xlsx'
 method_T2DM_data = pd.read_excel(file_path, sheet_name=None, header=0)
 T2DM_prevalence, T2DM_incidence, T2DM_treatment, T2DM_risk = method_T2DM_data['prevalence2018'], method_T2DM_data['incidence2018_plus'], \
                                             method_T2DM_data['treatment_parameters'], method_T2DM_data['parameters']
@@ -271,7 +271,7 @@ class T2DM(Module):
 
         p = self.parameters
 
-        health_values = df.loc[df.is_alive, 't2dm_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive, 'd2_specific_symptoms'].map({
             'none': 0,
             'mild retinopathy': p['qalywt_mild_retino'],
             'severe retinopathy': p['qalywt_severe_retino'],
