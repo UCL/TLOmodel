@@ -933,9 +933,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     n_received_trt_this_period_stage3, n_stage4_undiagnosed_oc, cum_deaths, n_alive, n_oc_death
                     )
 
-#       logger.debug('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
+        logger.debug('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[0].to_dict())
          
 
         
