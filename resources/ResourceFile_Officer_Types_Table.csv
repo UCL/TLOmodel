@@ -1,0 +1,22 @@
+,Officer_Type,Officer_Type_Code
+0,Medical Officer / Specialist,M01
+1,Clinical Officer / Technician,M02
+2,Med. Assistant,M03
+3,Nurse Officer,N01
+4,Nurse Midwife Technician,N02
+5,Pharmacist,P01
+6,Pharm Technician,P02
+7,Pharm Assistant,P03
+8,Lab Officer,L01
+9,Lab Technician,L02
+10,Lab Assistant,L03
+11,DCSA,E01
+12,Dental Officer,D01
+13,Dental Therapist,D02
+14,Dental Assistant,D03
+15,Mental Health Staff,C01
+16,Nutrition Staff,T01
+17,Radiographer,R01
+18,Radiography Technician,R02
+19,Sonographer,R03
+20,Radiotherapy Technician,R04
