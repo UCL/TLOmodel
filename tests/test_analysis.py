@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from tlo.analysis.utils import parse_log_file
 
@@ -6,9 +7,7 @@ example_log = 'example_log.txt'
 
 
 def test_parse_log():
-    log_file = os.path.join(os.path.dirname(__file__),
-                            'resources',
-                            example_log)
+    log_file = Path(os.path.dirname(__file__)) / 'resources' / example_log
 
     p = parse_log_file(log_file)
 

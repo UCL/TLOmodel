@@ -1,0 +1,52 @@
+,Appt_Type_Code,Appt_Cat,Appt_Type
+0,InpatientDays,GENERAL INPATIENT  AND OUTPATIENT CARE,Inpatient Admissions (Ongoing Monitoring)
+1,IPAdmission,GENERAL INPATIENT  AND OUTPATIENT CARE,Inpatient Admissions and Discharge Process
+2,Under5OPD,GENERAL INPATIENT  AND OUTPATIENT CARE,Under 5 Outpatient Visit
+3,Over5OPD,GENERAL INPATIENT  AND OUTPATIENT CARE,Over 5 Outpatient visit
+4,NormalDelivery,RMNCH,Normal Deliveries
+5,CompDelivery,RMNCH,Complicated Deliveries
+6,Csection,RMNCH,Caesarean Sections
+7,FamPlan,RMNCH,Family Planning
+8,AntenatalFirst,RMNCH,Antenatal Care - First Visit
+9,ANCSubsequent,RMNCH,Antenatal Care - Followup Visit
+10,EPI,RMNCH,EPI
+11,STI,RMNCH,STI
+12,GrowthMon,Nutrition,Growth Monitoring
+13,U5Malnutr,Nutrition,Treatment of U5 Severe Malnutirion
+14,AccidentsandEmerg,Misc,Accidents and Emergencies
+15,MajorSurg,Misc,Major Surgical Procedures
+16,MinorSurg,Misc,Minor Surgical Procedures
+17,TBNew,TB,TB Program - New Patient
+18,TBFollowUp,TB,TB Program - Follow-up Patient
+19,VCTNegative,HIV,Voluntary Counseling and Testing Program - For HIV-Negative
+20,VCTPositive,HIV,Voluntary Counseling and Testing Program - For HIV-Positive
+21,MaleCirc,HIV,Male Circumscisions
+22,NewAdult,HIV,HIV/AIDS Program - New Adult
+23,EstMedCom,HIV,HIV/AIDS Program - Established Medically Complex
+24,EstNonCom,HIV,HIV/AIDS Program - Established Non Medically Complex
+25,PMTCT,HIV,HIV/AIDS Program - PMTCT
+26,Peds,HIV,HIV/AIDS Program - Pediatric
+27,LabHaem,LABORATORY,Laboratory - Haematology
+28,LabPOC,LABORATORY,Laboratory - POC
+29,LabParasit,LABORATORY,Laboratory - Parasitology
+30,LabBiochem,LABORATORY,Laboratory - Biochemistry
+31,LabMicrobio,LABORATORY,Laboratory - Microbiology
+32,LabMolec,LABORATORY,Laboratory - Molecular
+33,LabTBMicro,LABORATORY,Laboratory - TB Microscopy
+34,LabSero,LABORATORY,Laboratory - Serology
+35,LabCyto,LABORATORY,Laboratory - Cytology
+36,LabHisto,LABORATORY,Laboratory - Histology
+37,LabTrans,LABORATORY,Laboratory - Blood Transfusion Lab Analysis
+38,Ultrasound,RADIOGRAPHY,Ultrasound
+39,Mammography,RADIOGRAPHY,Mammography
+40,MRI,RADIOGRAPHY,MRI
+41,Tomography,RADIOGRAPHY,Tomography
+42,Radiotherapy,RADIOGRAPHY,Radiotherapy
+43,DiagRadio,RADIOGRAPHY,Diagnostic Radiography Procedures
+44,DentAccidEmerg,DENTAL,Dental Accidents and Emergencies
+45,DentSurg,DENTAL,Dental Surgical Procedures
+46,DentalU5,DENTAL,Dental under 5 outpatient visits
+47,DentalO5,DENTAL,Dental over 5 outpatient visits
+48,MentOPD,Mental Health,Mental Health OPD
+49,MentClinic,Mental Health,Mental Health Clinic Visit
+50,ConWithDCSA,ConWithDCSA,ConWithDCSA
