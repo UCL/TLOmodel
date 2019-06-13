@@ -64,8 +64,8 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
         snes_dx_pneumo = 0.7
         spec_dx_pneuo = 0.5
 
-        _ bad_CHW = send_dx_malria_good_CHW * 0.5*bad_CHW
-        -bdad_CHW = 0.2
+        _bad_CHW = send_dx_malria_good_CHW * 0.5*bad_CHW
+        -bad_CHW = 0.2
 
         good_CHW = self.rng.rand < prob_good_CHW
 
@@ -74,10 +74,16 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
         missed_diagnosed_malaria = has malria and not correctly_diagnoed
         false_positive_diagnosed_malria = (not has_malaria and self.rng.rand<(1-spec_dx_malaria)
 
-        correxctly_dianogsed_pneo ...
-        correclty_fianoged _pneu
+        iCCM
+        correctly identified_fast breathing
+        correctly_diagnosed_pneumonia
+        correctly_identified_danger_signs
+        correctly_medication_given
 
 
+        IMCI
+        correctly_diagnosed_pneumon
+        correclty_fianoged _severe_pneu_OR_very_severe_diasease
 
 
         # all_seeking_care_from_HSA = df.index[all those seeking care in pneumonia, diarrhoea and malaria modules
