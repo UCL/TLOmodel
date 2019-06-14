@@ -94,39 +94,22 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # First get and hold all the women who are experiencing an antepartum haemorrhage
-        aph_women = df.index[df.is_alive & df.is_pregnant & df.la_aph]
+        # We determine the cause of the bleed based on the incidence
+        etiology = ['placenta previa', 'placental abruption']
+        probabilities = [0.67, 0.33]
+        random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
 
-        # Then we determine the cause of the bleed based on the incidence
+# =========================== TREATMENT OF PLACENTA PREVIA ========================================================
+        if random_choice == 'placenta previa':
+            women= df.index[df.is_alive] #dummy
+        # Primary treatment is delivery via caesarean section
+        # Blood transfusion for blood loss
+        else:
+            women= df.index[df.is_alive] #dummy
+        # First we deal with the management of bleeding
+        # Then we schedule safe delivery
 
-        etiology = ['placenta previa', 'placental abruption', 'unknown']
-        probabilities = [0.63, 0.30, 0.07]
-
-        random_choice = self.sim.rng.choice(etiology, size=len(aph_women), p=probabilities)
-        aph_df = pd.DataFrame(random_choice, index=aph_women)
-        aph_df.columns = ['aph_status']
-
-        # Get and hold the women experiencing APH by each cause
-
-        previa_idx = aph_df.index[(aph_df.aph_status == 'placenta previa')]
-        abruption_idx = aph_df.index[(aph_df.aph_status == 'placental abruption')]
-        unk_idx = aph_df.index[(aph_df.aph_status == 'unknown')]
-
-    # =========================== TREATMENT OF PLACENTA PREVIA ========================================================
-
-        for individual_id in previa_idx:
-            previa_idx = aph_df.index[(aph_df.aph_status == 'placenta previa')]
-
-    # Primary treatment is delivery via caesarean section
-    # Blood transfusion for blood loss
-
-    # ========================= TREATMENT OF PLACENTAL ABRUPTION ======================================================
-
-    # First we deal with the management of bleeding
-    # Then we schedule safe delivery
-
-
-    # todo: Should we have a uterine rupture event?
+# ========================= TREATMENT OF PLACENTAL ABRUPTION ======================================================
 
 class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
 
@@ -139,25 +122,6 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
-
-        # First get and hold all the women who are experiencing a post partum haemorrhage (excluding caesareans)
-
-        aph_pp_women = df.index[df.is_alive & df.la_pph & (df.la_due_date == self.sim.date - DateOffset(days=2))]
-
-        # Then we determine the cause of the bleed based on the incidence
-
-        etiology = ['uterine atony', 'retained placenta', 'unknown'] # These values will need to be confirmed
-        probabilities = [0.80, 0.10, 0.10]
-
-        random_choice = self.sim.rng.choice(etiology, size=len(aph_pp_women), p=probabilities)
-        pph_df = pd.DataFrame(random_choice, index=aph_pp_women)
-        pph_df.columns = ['pph_status']
-
-        # Get and hold the women experiencing PPH by each cause
-
-        atony_idx = pph_df.index[(pph_df.pph_status == 'uterine atony')]
-        retained_idx  = pph_df.index[(pph_df.pph_status == 'retained placenta')]
-        unk_idx = pph_df.index[(pph_df.pph_status == 'unknown')]
 
 
 class HaemorrhageTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):

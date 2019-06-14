@@ -94,66 +94,22 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # Todo: clarify with Asif if there is a better way of doing this in individual events
+        treatment_effect = params['prob_cure_mgso4']
+        random = self.sim.rng.random_sample()
+        if treatment_effect > random:
+            df.at[individual_id, 'la_eclampsia'] = False
+            df.at[individual_id, 'ect_treat_received'] = True
+            # todo: Here we will schedule an assisted vaginal delivery
 
-        # 1.)Get and hold all women who have had a eclamptic fit in labour
-
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date)]
-
-        # 2.)Apply the probability that first line treatment will stop/prevent seizures
-
-        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date)])
-
-        dfx = pd.concat([treatment_effect, random_draw], axis=1)
-        dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
-
-        # 2.) For those where treatment is successful reset eclampsia statment to false
-
-        df.loc[successful_treatment, 'la_eclampsia'] = False
-        df.loc[successful_treatment, 'ect_treat_received'] = True
-
-        # 3.) Get and hold all women whose seizures have stopped and schedule an assisted vaginal delivery as per
-        # guidelines
-
-    #   for individual_id in successful_treatment:
-    #      women=df.index[df.is_pregnant] # placeholder
-
-            # HERE SCHEDULE ASSISTED VAGINAL DELIVERY
-
-        # 4.) Get and hold all women whose seizures havent stopped and apply probability of second line treatment
-        # stopping seizures
-
-        second_treatment_effect = pd.Series(params['prob_cure_diazepam'], index=unsuccessful_treatment)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
-                                index=dfx.index[dfx.treatment_effect < dfx.random_draw])
-
-        dfx = pd.concat([second_treatment_effect, random_draw], axis=1)
-        dfx.columns = ['second_treatment_effect', 'random_draw']
-        successful_treatment_secondary = dfx.index[dfx.second_treatment_effect > dfx.random_draw]
-        unsuccessful_treatment_secondary = dfx.index[dfx.second_treatment_effect < dfx.random_draw]
-
-        df.loc[successful_treatment_secondary, 'la_eclampsia'] = False
-        df.loc[successful_treatment_secondary, 'ect_treat_received'] = True
-
-        # 5.) If suitable and seizures controlled schedule assisted vaginal delivery
-
-    #    for individual_id in successful_treatment_secondary:
-    #        women=df.index[df.is_pregnant] # placeholder
-
-        # 5.) If seizures not controlled schedule emergency caesarean section
-
-        for individual_id in unsuccessful_treatment_secondary:
-            women = df.index[df.is_pregnant]  # placeholder
-            # SCHEDULE CS
-
-        # Todo: Consider where death event will be scheduled
-        # Will need to calculate somehow the remaining liklihood of death and schedule it for those who meet criteria
+        elif treatment_effect < random:
+            secondary_treatment = params['prob_cure_diazepam']
+            random = self.sim.rng.random_sample()
+            if secondary_treatment > random:
+                df.at[individual_id, 'la_eclampsia'] = False
+                df.at[individual_id, 'ect_treat_received'] = True
+                # todo: Here we will schedule an assisted vaginal delivery
+            # elif secondary_treatment < random:
+            # Here we will schedule an emergency caesarean section  and consider how this women goes back to death event
 
 
 class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
@@ -168,44 +124,22 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # 1.) Here the woman undergoes the same treatment cascade without any alternative delivery options
+        treatment_effect = params['prob_cure_mgso4']
+        random = self.sim.rng.random_sample()
+        if treatment_effect > random:
+            df.at[individual_id, 'la_eclampsia'] = False
+            df.at[individual_id, 'ect_treat_received'] = True
+            #
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_eclampsia == True) & (df.la_due_date == self.sim.date -
-                                                                        DateOffset(days=2))]
-
-        treatment_effect = pd.Series(params['prob_cure_mgso4'], index=receiving_treatment_idx)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[(df.la_eclampsia == True) & (df.la_due_date == self.sim.date -
-                                                                        DateOffset(days=2))])
-
-        dfx = pd.concat([treatment_effect, random_draw], axis=1)
-        dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
-
-        df.loc[successful_treatment, 'la_eclampsia'] = False
-        df.loc[successful_treatment, 'ect_treat_received'] = True
-
-        second_treatment_effect = pd.Series(params['prob_cure_diazepam'], index=unsuccessful_treatment)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(unsuccessful_treatment)),
-                                index=dfx.index[dfx.treatment_effect > dfx.random_draw])
-
-        dfx = pd.concat([second_treatment_effect, random_draw], axis=1)
-        dfx.columns = ['second_treatment_effect', 'random_draw']
-        successful_treatment_secondary = dfx.index[dfx.second_treatment_effect > dfx.random_draw]
-        unsuccessful_treatment_secondary = dfx.index[dfx.second_treatment_effect < dfx.random_draw]
-
-        df.loc[successful_treatment_secondary, 'la_eclampsia'] = False
-        df.loc[successful_treatment_secondary, 'ect_treat_received'] = True
-
-        # Women for who treatment has failed are passed back to the Labour module, a case fatality ratio is applied
-
-        for individual_id in unsuccessful_treatment_secondary:
-            self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'],
-                                                                individual_id, cause='eclampsia'),
-                                    self.sim.date)
+        elif treatment_effect < random:
+            secondary_treatment = params['prob_cure_diazepam']
+            random = self.sim.rng.random_sample()
+            if secondary_treatment > random:
+                df.at[individual_id, 'la_eclampsia'] = False
+                df.at[individual_id, 'ect_treat_received'] = True
+            elif secondary_treatment < random:
+                self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'], individual_id,
+                                                                 cause='postpartum'), self.sim.date)
 
 
 class EclampsiaTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):

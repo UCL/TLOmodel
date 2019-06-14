@@ -370,7 +370,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
-
             self.sim.schedule_event(labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
                                                             cause='miscarriage event'), self.sim.date)
 
