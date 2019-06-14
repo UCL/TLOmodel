@@ -376,6 +376,8 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
 #            logger.debug('birth booked for: %s', date_of_birth) # EDIT
 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
     """A one-off event in which a pregnant mother gives birth.
     """
