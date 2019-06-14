@@ -28,6 +28,8 @@ class SepsisTreatment(Module):
     }
 
     PROPERTIES = {
+        'sep_treat_received': Property(Types.BOOL, 'dummy-has this woman received treatment')  # dummy property
+
     }
 
     def read_parameters(self, data_folder):
@@ -61,21 +63,13 @@ class SepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date)]
+        treatment_effect = params['prob_cure_antibiotics']
+        random = self.sim.rng.random_sample()
+        if treatment_effect > random:
+            df.at[individual_id, 'la_sepsis'] = False
+            df.at[individual_id, 'sep_treat_received'] = True
 
-        treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date)])
-
-        dfx = pd.concat([treatment_effect, random_draw], axis=1)
-        dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
-
-        df.loc[successful_treatment, 'la_sepsis'] = False
-
-        for individual_id in unsuccessful_treatment:
+        elif treatment_effect < random:
             self.sim.schedule_event(labour.LabourDeathEvent(self.sim.modules['Labour'],
                                                             individual_id, cause='sepsis'),
                                     self.sim.date)
@@ -91,25 +85,15 @@ class PostPartumSepsisTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        receiving_treatment_idx = df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date -
-                                                                                      DateOffset(days=2))]
+        treatment_effect = params['prob_cure_antibiotics']
+        random = self.sim.rng.random_sample()
+        if treatment_effect > random:
+            df.at[individual_id, 'la_sepsis'] = False
+            df.at[individual_id, 'sep_treat_received'] = True
 
-        treatment_effect = pd.Series(params['prob_cure_antibiotics'], index=receiving_treatment_idx)
-
-        random_draw = pd.Series(self.sim.rng.random_sample(size=len(receiving_treatment_idx)),
-                                index=df.index[df.is_alive & (df.la_sepsis == True) & (df.la_due_date == self.sim.date -
-                                                                                      DateOffset(days=2))])
-
-        dfx = pd.concat([treatment_effect, random_draw], axis=1)
-        dfx.columns = ['treatment_effect', 'random_draw']
-        successful_treatment = dfx.index[dfx.treatment_effect < dfx.random_draw]
-        unsuccessful_treatment = dfx.index[dfx.treatment_effect > dfx.random_draw]
-
-        df.loc[successful_treatment, 'la_sepsis'] = False
-
-        for individual_id in unsuccessful_treatment:
-            self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'],
-                                                                individual_id, cause='sepsis'),
+        elif treatment_effect < random:
+            self.sim.schedule_event(labour.LabourDeathEvent(self.sim.modules['Labour'],
+                                                            individual_id, cause='sepsis'),
                                     self.sim.date)
 
 
