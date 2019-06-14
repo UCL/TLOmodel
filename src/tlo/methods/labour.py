@@ -468,20 +468,25 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
         else:
             rf1 = 1
 
-        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
-            (df.at[individual_id, 'age_years'] <= 34):
-            rf2 = params['rr_miscarriage_3134']
+        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 35):
+            rf2 = params['rr_miscarriage_35']
         else:
             rf2 = 1
 
-        if (df.at[individual_id,'la_miscarriage'] == 0) & (df.at[individual_id,'la_parity'] >= 4) & \
-            (df.at[individual_id, 'age_years'] <= 30):
-            rf3 = params['rr_miscarriage_grav4']
+        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
+            (df.at[individual_id, 'age_years'] <= 34):
+            rf3 = params['rr_miscarriage_3134']
         else:
             rf3 = 1
 
+        if (df.at[individual_id,'la_miscarriage'] == 0) & (df.at[individual_id,'la_parity'] >= 4) & \
+            (df.at[individual_id, 'age_years'] <= 30):
+            rf4 = params['rr_miscarriage_grav4']
+        else:
+            rf4 = 1
+
         # Next we multiply the baseline rate of miscarriage by the product of the relative rates for any risk factors
-        riskfactors = rf1 * rf2 * rf3
+        riskfactors = rf1 * rf2 * rf3 * rf4
 
         if riskfactors == 1:
             eff_prob_miscarriage = params['prob_miscarriage']
