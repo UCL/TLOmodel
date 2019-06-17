@@ -4,10 +4,12 @@ Documentation: 04 - Methods Repository/Method_Child_RespiratoryInfection.xlsx
 """
 import logging
 
+import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.iCCM import HSI_Sick_Child_Seeks_Care_From_HSA
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,10 +22,6 @@ class ChildhoodPneumonia(Module):
          'initial prevalence of non-severe pneumonia, among children aged 2-11 months,'
          'HIV negative, no SAM, no exclusively breastfeeding or continued breastfeeding, '
          'no household handwashing practice, indoor air pollution'
-         ),
-        'rp_pneumonia_agelt2mo': Parameter
-        (Types.REAL,
-         'relative prevalence of non-severe pneumonia for age < 2 months'
          ),
         'rp_pneumonia_age12to23mo': Parameter
         (Types.REAL,
@@ -62,10 +60,6 @@ class ChildhoodPneumonia(Module):
          'baseline incidence of non-severe pneumonia, among children aged 2-11 months, '
          'HIV negative, no SAM, not exclusively breastfeeding or continued breatfeeding, '
          'no household handwashing, no indoor air pollution, wealth level 3'
-         ),
-        'rr_pneumonia_agelt2mo': Parameter
-        (Types.REAL,
-         'relative rate of non-severe pneumonia for age < 2 months'
          ),
         'rr_pneumonia_age12to23mo': Parameter
         (Types.REAL,
@@ -332,6 +326,7 @@ class ChildhoodPneumonia(Module):
         'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
         'continued_breastfeeding': Property(Types.BOOL, 'temporary property - continued breastfeeding 6mo-2years'),
         'ri_pneumonia_death': Property(Types.BOOL, 'death from pneumonia disease'),
+        'date_of_acquiring_pneumonia': Property(Types.DATE, 'date of acquiring pneumonia infection'),
         'pn_fever': Property(Types.BOOL, 'fever from non-severe pneumonia, severe pneumonia or very severe pneumonia'),
         'pn_cough': Property(Types.BOOL, 'cough from non-severe pneumonia, severe pneumonia or very severe pneumonia'),
         'pn_difficult_breathing': Property(Types.BOOL, 'difficult breathing from non-severe pneumonia, severe pneumonia or very severe pneumonia'),
@@ -347,7 +342,6 @@ class ChildhoodPneumonia(Module):
         p = self.parameters
 
         p['base_prev_pneumonia'] = 0.4
-        p['rp_pneumonia_agelt2mo'] = 1.2
         p['rp_pneumonia_age12to23mo'] = 0.8
         p['rp_pneumonia_age24to59mo'] = 0.5
         p['rp_pneumonia_HIV'] = 1.4
@@ -357,7 +351,6 @@ class ChildhoodPneumonia(Module):
         p['rp_pneumonia_HHhandwashing'] = 0.5
         p['rp_pneumonia_IAP'] = 1.1
         p['base_incidence_pneumonia'] = 0.5
-        p['rr_pneumonia_agelt2mo'] = 1.2
         p['rr_pneumonia_age12to23mo'] = 0.8
         p['rr_pneumonia_age24to59mo'] = 0.5
         p['rr_pneumonia_HIV'] = 1.4
@@ -447,6 +440,7 @@ class ChildhoodPneumonia(Module):
         df['pn_cough'] = False
         df['pn_difficult_breathing'] = False
         df['pn_fast_breathing'] = False
+        df['date_of_acquiring_pneumonia'] = pd.NaT
 
         # --------------------------------------------------------------------------------------------------------
         # ------------------------- ASSIGN VALUES OF LRI - PNEUMONIA STATUS AT BASELINE --------------------------
@@ -460,9 +454,7 @@ class ChildhoodPneumonia(Module):
         p_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[1], index=under5_idx)
         p_very_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[2], index=under5_idx)
 
-        # create probabilities of pneumonia for all age under 5
-        p_pneumonia_status.loc[
-            (df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_pneumonia_agelt2mo
+        # create probabilities of pneumonia for all age under
         p_pneumonia_status.loc[
             (df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] *= self.rp_pneumonia_age12to23mo
         p_pneumonia_status.loc[
@@ -560,21 +552,29 @@ class ChildhoodPneumonia(Module):
         sim.schedule_event(VerySeverePneumoniaEvent(self), sim.date + DateOffset(months=3))
 
         # add an event to log to screen
-        sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
-        sim.schedule_event(SeverePneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
+        # sim.schedule_event(PneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
+        # sim.schedule_event(SeverePneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
         # sim.schedule_event(VerySeverePneumoniaLoggingEvent(self), sim.date + DateOffset(months=3))
 
         # Register this disease module with the health system
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def on_birth(self, mother_id, child_id):
         pass
+
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+
+        logger.debug('This is Pneumonia, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
 
 
 class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(weeks=2))
+        super().__init__(module, frequency=DateOffset(months=3))
 
     def apply(self, population):
         """Apply this event to the population.
@@ -583,6 +583,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         m = self.module
         rng = m.rng
+
+        # 1. DO I NEED TO GET THOSE WHO ARE CURRENTLY WITH PNEUMONIA STATUS BEFORE NEXT STEP???
 
         # --------------------------------------------------------------------------------------------------------
         # UPDATING FOR CHILDREN UNDER 5 WITH CURRENT STATUS 'NONE' TO NON-SEVERE PNEUMONIA
@@ -593,8 +595,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                                               df.is_alive & (df.ri_pneumonia_status == 'none') & (
                                                   df.age_years < 5)])
 
-        eff_prob_ri_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'none') &
-                                  (df.age_exact_years < 0.1667)] *= m.rr_pneumonia_agelt2mo
         eff_prob_ri_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'none') &
                      (df.age_exact_years >= 1) & (df.age_exact_years < 2)] *= m.rr_pneumonia_age12to23mo
         eff_prob_ri_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'none') &
@@ -621,22 +621,43 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         dfx = pd.concat([eff_prob_ri_pneumonia, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_ri_pneumonia', 'random_draw_01']
-
         idx_incident_pneumonia = dfx.index[dfx.eff_prob_ri_pneumonia > dfx.random_draw_01]
-
         df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
 
-        # # # # # # # # # SYMPTOMS FROM NON-SEVERE PNEUMONIA # # # # # # # # #
+        for person_id in idx_incident_pneumonia:
+            random = np.random.randint(1, 30, size=1)
+            random = int(random)
+          #  random_time= pd.Timedelta(random, unit='D')
+            date_of_acquiring_pneum = self.sim.date + DateOffset(days=random)
 
+
+            df.at[person_id, 'date_of_acquiring_pneumonia'] = date_of_acquiring_pneum
+
+            if ['ri_pneumonia_status' == 'pneumonia']:
+                date_disease_progression = date_of_acquiring_pneum + DateOffset(days=5) + DateOffset(
+                    days=int((self.module.rng.rand() - 0.5) * 10))
+                event = Childhood_Ex_Death(self, person_id)
+                self.sim.schedule_event(event, date_of_death)
+
+            else:
+                date_of_recovery = date_of_getting_disease + DateOffset(days=14) + DateOffset(
+                    days=int((self.module.rng.rand() - 0.5) * 10))
+                df[person_id, 'date_of_recovery'] = date_of_recovery
+                df[person_id, 'ri_pneumonia_status'] = 'none'
+
+        # # # # # # # # # SYMPTOMS FROM NON-SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
+
+        pn_current_pneumonia_idx = df.index[df.is_alive & (df.age_exact_years > 0.1667) & (df.age_years < 5) &
+                                            (df.ri_pneumonia_status == 'pneumonia')]
         # fast breathing
-        pn_current_pneumonia_idx = df.index[df.is_alive & (df.age_years < 5) & (df.ri_pneumonia_status == 'pneumonia')]
         for individual in pn_current_pneumonia_idx:
             df.at[individual, 'pn_fast_breathing'] = True
 
         # cough
         eff_prob_cough = pd.Series(0.89, index=pn_current_pneumonia_idx)
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'pneumonia')])
+                                index=df.index[(df.age_exact_years > 0.1667) & (df.age_years < 5) & df.is_alive &
+                                               (df.ri_pneumonia_status == 'pneumonia')])
         dfx = pd.concat([eff_prob_cough, random_draw], axis=1)
         dfx.columns = ['eff_prob_cough', 'random number']
         idx_cough = dfx.index[dfx.eff_prob_cough > random_draw]
@@ -645,8 +666,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # difficult breathing
         eff_prob_difficult_breathing = pd.Series(0.89, index=pn_current_pneumonia_idx)
         random_draw = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
-                                index=df.index[
-                                    (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'pneumonia')])
+                                index=df.index[(df.age_exact_years > 0.1667) &
+                                               (df.age_years < 5) & df.is_alive & (df.ri_pneumonia_status == 'pneumonia')])
         dfx = pd.concat([eff_prob_difficult_breathing, random_draw], axis=1)
         dfx.columns = ['eff_prob_difficult_breathing', 'random number']
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
@@ -663,8 +684,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual in pneumonia_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
             seeks_care[individual] = self.module.rng.rand() < prob
-            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
-            self.sim.modules['HealthSystem'].schedule_event(event,
+            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module, person_id=individual)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(weeks=2)
@@ -678,8 +699,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                                                    index=df.index[df.is_alive & (df.ri_pneumonia_status == 'pneumonia')
                                                                   & (df.age_years < 5)])
 
-        eff_prob_prog_severe_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
-                                           (df.age_years < 5)] *= m.rr_progress_severe_pneum_agelt2mo
         eff_prob_prog_severe_pneumonia.loc[df.is_alive & (df.ri_pneumonia_status == 'pneumonia') &
                                            (df.age_exact_years >= 1) & (
                                                    df.age_exact_years < 2)] *= m.rr_progress_severe_pneum_age12to23mo
@@ -698,10 +717,13 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw_03 = pd.Series(rng.random_sample(size=len(pn_current_pneumonia_idx)),
                                    index=df.index[(df.age_years < 5) & df.is_alive &
                                                   (df.ri_pneumonia_status == 'pneumonia')])
+
         dfx = pd.concat([eff_prob_prog_severe_pneumonia, random_draw_03], axis=1)
         dfx.columns = ['eff_prob_prog_severe_pneumonia', 'random_draw_03']
         idx_ri_progress_severe_pneumonia = dfx.index[dfx.eff_prob_prog_severe_pneumonia > dfx.random_draw_03]
         df.loc[idx_ri_progress_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
+
+
 
         # ------------------------------------------------------
         # recovery from severe pneumonia -----------------------
@@ -767,7 +789,7 @@ class SeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'severe pneumonia'
 
-        # # # # # # # # # SYMPTOMS FROM SEVERE PNEUMONIA # # # # # # # # #
+        # # # # # # # # # SYMPTOMS FROM SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
 
         pn_current_severe_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
                                                (df.ri_pneumonia_status == 'severe pneumonia')]
@@ -912,7 +934,7 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_incident_severe_pneumonia, 'ri_pneumonia_status'] = 'very severe pneumonia'
 
-        # # # # # # # # # SYMPTOMS FROM VERY SEVERE PNEUMONIA # # # # # # # # #
+        # # # # # # # # # SYMPTOMS FROM VERY SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
 
         pn_current_very_sev_pneum_idx = df.index[df.is_alive & (df.age_years < 5) &
                                                (df.ri_pneumonia_status == 'very severe pneumonia')]
@@ -965,7 +987,7 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual in very_sev_pneum_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1) # what happens with multiple symptoms of different severity??
             seeks_care[individual] = self.module.rng.rand() < prob
-            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=individual)
+            event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['ICCM'], person_id=individual)
             self.sim.modules['HealthSystem'].schedule_event(event,
                                                             priority=2,
                                                             topen=self.sim.date,
@@ -981,8 +1003,11 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # submit this event to the health system scheduler
         # (the health system scheduler will do the rest....)
 
-        # ---------------------------- DEATH FROM VERY SEVERE PNEUMONIA DISEASE ---------------------------------------
 
+# class RecoveryPneumoniaDisease_Event(Event, IndividualScopeEventMixin):
+
+
+ # ---------------------------- DEATH FROM VERY SEVERE PNEUMONIA DISEASE ---------------------------------------
 
         eff_prob_death_pneumonia = \
             pd.Series(m.r_death_pneumonia,
@@ -1030,6 +1055,24 @@ class VerySeverePneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         if self.sim.date + DateOffset(weeks=2):
             df.loc[after_death_sev_pneumonia_idx, 'ri_pneumonia_status'] == 'none'
 
+
+''' class Childhood_Ex_Death(Event, IndividualScopeEventMixin):
+    """
+    This is the death event for childhood_ex
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        # Check that this person shiuold stlll die.....
+
+        if df.at[person_id, 'is_alive']: # check here that no treatment has yet been provided
+            # Fire the centralised death event:
+            death = InstantaneousDeath(self.module, person_id, cause='Childhood_Ex')
+            self.sim.schedule_event(death, self.sim.date)
 
 class PneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1106,5 +1149,5 @@ class SeverePneumoniaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # appt_footprint = unde5 classmethod *3 + dispensing
 # appt_consumables = ORS
 # levels at wich the appint can occur = 0
-# in the apply section of this event..... implmenet the effect of the drug
+# in the apply section of this event..... implmenet the effect of the drug '''
 

@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import pytest
 from tlo import Date, Simulation
@@ -19,13 +20,11 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
-    sim.register(healthsystem.HealthSystem())
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(childhood_pneumonia.ChildhoodPneumonia())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
