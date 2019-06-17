@@ -625,30 +625,27 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_pneumonia, 'ri_pneumonia_status'] = 'pneumonia'
 
         for person_id in idx_incident_pneumonia:
-            random = np.random.randint(1, 30, size=1)
-            random = int(random)
-          #  random_time= pd.Timedelta(random, unit='D')
-            date_of_acquiring_pneum = self.sim.date + DateOffset(days=random)
-
-
+            random_draw_days = np.random.randint(0, 90, size=1)
+            random_addition_days = pd.to_timedelta(random_draw_days, unit='D')
+            date_of_acquiring_pneum = self.sim.date + DateOffset(days=random_addition_days)
             df.at[person_id, 'date_of_acquiring_pneumonia'] = date_of_acquiring_pneum
 
-            if ['ri_pneumonia_status' == 'pneumonia']:
-                date_disease_progression = date_of_acquiring_pneum + DateOffset(days=5) + DateOffset(
-                    days=int((self.module.rng.rand() - 0.5) * 10))
-                event = Childhood_Ex_Death(self, person_id)
-                self.sim.schedule_event(event, date_of_death)
+            # if ['ri_pneumonia_status' == 'pneumonia']:
+                # date_disease_progression = date_of_acquiring_pneum + DateOffset(days=5) + DateOffset(
+                  #   days=int((self.module.rng.rand() - 0.5) * 10))
+                # event = Childhood_Ex_Death(self, person_id)
+                # self.sim.schedule_event(event, date_of_death)
 
-            else:
-                date_of_recovery = date_of_getting_disease + DateOffset(days=14) + DateOffset(
-                    days=int((self.module.rng.rand() - 0.5) * 10))
-                df[person_id, 'date_of_recovery'] = date_of_recovery
-                df[person_id, 'ri_pneumonia_status'] = 'none'
+            # else:
+                # date_of_recovery = date_of_getting_disease + DateOffset(days=14) + DateOffset(
+                    # days=int((self.module.rng.rand() - 0.5) * 10))
+                # df[person_id, 'date_of_recovery'] = date_of_recovery
+                # df[person_id, 'ri_pneumonia_status'] = 'none'
 
         # # # # # # # # # SYMPTOMS FROM NON-SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
 
         pn_current_pneumonia_idx = df.index[df.is_alive & (df.age_exact_years > 0.1667) & (df.age_years < 5) &
-                                            (df.ri_pneumonia_status == 'pneumonia')]
+                                            (df.ri_pneumonia_status == 'pneumonia')] # non-severe pneumonia only in 2-59 months
         # fast breathing
         for individual in pn_current_pneumonia_idx:
             df.at[individual, 'pn_fast_breathing'] = True
