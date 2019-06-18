@@ -1,65 +1,66 @@
+import datetime
 import logging
 import os
 
-import pytest
+import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, epilepsy
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography, healthsystem, lifestyle, epilepsy, healthburden
 
-workbook_name = 'demography.xlsx'
+# Where will output go
+outputpath = ''
+
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
+# The resource files
+resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
-popsize = 1
+end_date = Date(2011, 4, 1)
+popsize = 100000
+
+# Establish the simulation object
+sim = Simulation(start_date=start_date)
+
+# Establish the logger
+logfile = outputpath + 'LogFile' + datestamp + '.log'
+
+#if os.path.exists(logfile):
+#   os.remove(logfile)
+# fh = logging.FileHandler(logfile)
+#fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+# fh.setFormatter(fr)
+# logging.getLogger().addHandler(fh)
+
+logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+
+# make a dataframe that contains the switches for which interventions are allowed or not allowed
+# during this run. NB. These must use the exact 'registered strings' that the disease modules allow
+
+service_availability = ['*']
+
+# Register the appropriate modules
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
+sim.register(lifestyle.Lifestyle())
+sim.register(epilepsy.Epilepsy())
+
+# Run the simulation and flush the logger
+# sim.seed_rngs(0)
+sim.make_initial_population(n=popsize)
+sim.simulate(end_date=end_date)
+fh.flush()
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
+# %% read the results
+output = parse_log_file(logfile)
 
 
-@pytest.fixture(scope='module')
-def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
-    sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(epilepsy.Epilepsy())
-    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
-#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-#   sim.seed_rngs(1)
-    return sim
-
-
-def __check_properties(df):
-
- def test_make_initial_population(simulation):
-    simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_simulate(simulation):
-    simulation.simulate(end_date=end_date)
-
-
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_dypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    simulation = simulation()
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+# Load Model Results for n_suidides
+# df_outp = pd.read_csv(logfile)
+# df_outp.columns = ['date', 'n_suicides', 'u']
+# n_suicides = df_outp.n_suicides.sum()
