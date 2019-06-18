@@ -24,8 +24,8 @@ HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018']
 
 
 # TODO: Read in 95% CI from file?
-# TODO: Update weight to BMI AND ADAPT TO UPDATED CODE FOR WEIGHT!
-# TODO: Do we want to read in HT from file? To avoid hard coding? Or have a 'other/none' variable in DALY file?
+# TODO: Update weight to BMI AND ADAPT TO UPDATED CODE
+# TODO: Do we want to read in daly for HT from file? To avoid hard coding? Or have a 'other/none' variable in DALY file?
 
 class HT(Module):
     """
@@ -98,7 +98,7 @@ class HT(Module):
         df = HT_data.set_index('index')
         p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['m_all', 'value']], [df.at['f_all', 'value']]],
                                                 index = ['both sexes', 'male', 'female'],
-                                                columns = ['prevalence'])
+                                                columns = ['prevalence', 'min', 'max'])
 
 
     def initialise_population(self, population):
