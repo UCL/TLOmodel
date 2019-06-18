@@ -991,6 +991,85 @@ class PersistentDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         if self.sim.date + DateOffset(weeks=4):
             df.loc[after_death_persistent_diarrhoea_idx, 'ei_diarrhoea_status'] == 'none'
 
+        # ---------------------------------------- ASSIGN DEHYDRATION STATUS --------------------------------------
+
+        # for dysentery
+        under5_dysentery_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')]
+
+        eff_prob_some_dehydration_dysentery = pd.Series(0.5, index=under5_dysentery_idx)
+        eff_prob_severe_dehydration_dysentery = pd.Series(0.3, index=under5_dysentery_idx)
+        random_draw_a = pd.Series(self.sim.rng.random_sample(size=len(under5_dysentery_idx)),
+                                  index=df.index[(df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'dysentery')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_dysentery, eff_prob_severe_dehydration_dysentery, random_draw_a],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_dysentery', 'eff_prob_severe_dehydration_dysentery', 'random_draw_a']
+        dfx['no_dehydration_dysentery'] = \
+            1 - (dfx.eff_prob_some_dehydration_dysentery + dfx.eff_prob_severe_dehydration_dysentery)
+
+        idx_some_dehydration_dysentery = \
+            dfx.index[(dfx.random_draw_a > dfx.no_dehydration_dysentery) &
+                      (dfx.random_draw_a < (dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery))]
+        idx_severe_dehydration_dysentery = \
+            dfx.index[((dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery) < dfx.random_draw_a) &
+                      ((dfx.no_dehydration_dysentery + dfx.eff_prob_some_dehydration_dysentery +
+                                                     dfx.eff_prob_severe_dehydration_dysentery) > dfx.random_draw_a)]
+        df.loc[idx_some_dehydration_dysentery, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_dysentery, 'di_dehydration_status'] = 'severe dehydration'
+
+        # for acute watery diarrhoea
+        under5_acute_diarrhoea_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea')]
+
+        eff_prob_some_dehydration_acute_diarrhoea = pd.Series(0.5, index=under5_acute_diarrhoea_idx)
+        eff_prob_severe_dehydration_acute_diarrhoea = pd.Series(0.3, index=under5_acute_diarrhoea_idx)
+        random_draw_b = pd.Series(self.sim.rng.random_sample(size=len(under5_acute_diarrhoea_idx)),
+                                  index=df.index[
+                                      (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'acute watery diarrhoea')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_acute_diarrhoea, eff_prob_severe_dehydration_acute_diarrhoea, random_draw_b],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_acute_diarrhoea', 'eff_prob_severe_dehydration_acute_diarrhoea', 'random_draw_b']
+        dfx['no_dehydration_acute_diarrhoea'] = \
+            1 - (dfx.eff_prob_some_dehydration_acute_diarrhoea + dfx.eff_prob_severe_dehydration_acute_diarrhoea)
+
+        idx_some_dehydration_acute_diarrhoea = \
+            dfx.index[(dfx.random_draw_b > dfx.no_dehydration_acute_diarrhoea) &
+                      (dfx.random_draw_b < (dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea))]
+        idx_severe_dehydration_acute_diarrhoea = \
+            dfx.index[((dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea) < dfx.random_draw_b) &
+                      ((dfx.no_dehydration_acute_diarrhoea + dfx.eff_prob_some_dehydration_acute_diarrhoea +
+                        dfx.eff_prob_severe_dehydration_acute_diarrhoea) > dfx.random_draw_b)]
+        df.loc[idx_some_dehydration_acute_diarrhoea, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_acute_diarrhoea, 'di_dehydration_status'] = 'severe dehydration'
+
+        # for persistent diarrhoea
+        under5_persistent_diarrhoea_idx = df.index[
+            (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea')]
+
+        eff_prob_some_dehydration_persistent_diarrhoea = pd.Series(0.5, index=under5_persistent_diarrhoea_idx)
+        eff_prob_severe_dehydration_persistent_diarrhoea = pd.Series(0.3, index=under5_persistent_diarrhoea_idx)
+        random_draw_c = pd.Series(self.sim.rng.random_sample(size=len(under5_persistent_diarrhoea_idx)),
+                                  index=df.index[
+                                      (df.age_years < 5) & df.is_alive & (df.ei_diarrhoea_status == 'persistent diarrhoea')])
+
+        dfx = pd.concat([eff_prob_some_dehydration_persistent_diarrhoea, eff_prob_severe_dehydration_persistent_diarrhoea, random_draw_c],
+                        axis=1)
+        dfx.columns = ['eff_prob_some_dehydration_persistent_diarrhoea', 'eff_prob_severe_dehydration_persistent_diarrhoea', 'random_draw_c']
+        dfx['no_dehydration_persistent_diarrhoea'] = \
+            1 - (dfx.eff_prob_some_dehydration_persistent_diarrhoea + dfx.eff_prob_severe_dehydration_persistent_diarrhoea)
+
+        idx_some_dehydration_persistent_diarrhoea = \
+            dfx.index[(dfx.random_draw_c > dfx.no_dehydration_persistent_diarrhoea) &
+                      (dfx.random_draw_c < (dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea))]
+        idx_severe_dehydration_persistent_diarrhoea = \
+            dfx.index[((dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea) < dfx.random_draw_c) &
+                      ((dfx.no_dehydration_persistent_diarrhoea + dfx.eff_prob_some_dehydration_persistent_diarrhoea +
+                        dfx.eff_prob_severe_dehydration_persistent_diarrhoea) > dfx.random_draw_c)]
+        df.loc[idx_some_dehydration_persistent_diarrhoea, 'di_dehydration_status'] = 'some dehydration'
+        df.loc[idx_severe_dehydration_persistent_diarrhoea, 'di_dehydration_status'] = 'severe dehydration'
+
 
 class DysenteryLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
