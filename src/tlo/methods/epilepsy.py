@@ -10,7 +10,7 @@ import random
 # todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 # logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
@@ -130,7 +130,6 @@ class Epilepsy(Module):
         self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
         self.parameters['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -240,7 +239,7 @@ class Epilepsy(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
+        logger.debug('This is Epilepsy, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
         pass
@@ -251,11 +250,11 @@ class Epilepsy(Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is mockitis reporting my health values')
+        logger.debug('This is Epilepsy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        dummy_series=pd.Series(data=0,index=df.index[df['is_alive']],name='Epilepsy')
+        dummy_series=pd.Series(data=0, index=df.index[df['is_alive']], name='Epilepsy')
 
         return dummy_series  # returns the series
 
@@ -638,9 +637,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     n_seiz_stat_2_3, n_antiep, n_alive
                     )
         """
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[0].to_dict())
 
 
 
@@ -674,6 +673,6 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
-        logger.debug('This isEPIlepsy s, a first appointment for person %d',
+        logger.info('This is EPIlepsy %s, a first appointment for person %d',
                      person_id)
         print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
