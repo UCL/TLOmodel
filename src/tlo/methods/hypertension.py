@@ -98,7 +98,7 @@ class HT(Module):
         df = HT_data.set_index('index')
         p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['m_all', 'value']], [df.at['f_all', 'value']]],
                                                 index = ['both sexes', 'male', 'female'],
-                                                columns = ['prevalence', 'min', 'max'])
+                                                columns = ['prevalence'])
 
 
     def initialise_population(self, population):
