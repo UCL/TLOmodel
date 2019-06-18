@@ -19,7 +19,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 4, 1)
-popsize = 100000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -53,11 +53,11 @@ sim.register(epilepsy.Epilepsy())
 # sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
+# fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
 
 
 # Load Model Results for n_suidides

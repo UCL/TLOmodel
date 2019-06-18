@@ -168,9 +168,9 @@ class Epilepsy(Module):
 
         # disability
 
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.07
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -182,7 +182,7 @@ class Epilepsy(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
 
-        Here we add our three-monthly event to poll the population for depr starting
+        Here we add our three-monthly event to poll the population for epilepsy starting
         or stopping.
         """
         epilepsy_poll = EpilepsyEvent(self)
@@ -254,13 +254,13 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        dummy_series=pd.Series(data=0, index=df.index[df['is_alive']], name='Epilepsy')
+        dummy_series = pd.Series(data=0, index=df.index[df['is_alive']], name='Epilepsy')
 
         return dummy_series  # returns the series
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that actually changes individuals' depr status.
+    """The regular event that actually changes individuals' epilepsy status
 
     Regular events automatically reschedule themselves at a fixed frequency,
     and thus implement discrete timestep type behaviour. The frequency is
@@ -497,10 +497,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module,
                                                       person_id=person_id_to_start_treatment)
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand()*30))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority = 2,
-                                                                topen = target_date,
-                                                                tclose = None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2,
+                                                                topen=target_date,
+                                                                tclose=None)
 
 
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
@@ -551,9 +550,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
         seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.07
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.37
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.66
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
 
         # update ep_epi_death
 
