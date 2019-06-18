@@ -1,5 +1,5 @@
 """
-This is the method for hypertension
+This is the method for type 2 diabetes
 Developed by Mikaela Smit, October 2018
 
 """
@@ -19,8 +19,16 @@ logger.setLevel(logging.DEBUG)
 # Read in data
 file_path = 'resources/ResourceFile_Method_T2DM.xlsx'
 method_T2DM_data = pd.read_excel(file_path, sheet_name=None, header=0)
-T2DM_prevalence, T2DM_incidence, T2DM_treatment, T2DM_risk = method_T2DM_data['prevalence2018'], method_T2DM_data['incidence2018_plus'], \
-                                            method_T2DM_data['treatment_parameters'], method_T2DM_data['parameters']
+T2DM_prevalence, T2DM_incidence, T2DM_risk, T2DM_data = method_T2DM_data['prevalence2018'], method_T2DM_data['incidence2018_plus'], \
+                                                        method_T2DM_data['parameters'], method_T2DM_data['data']
+
+# TODO: Read in 95% CI from file?
+# TODO: Update weight to BMI AND ADAPT TO UPDATED CODE FOR WEIGHT!
+# TODO: Triple check that DALYs are correct
+# ToDO: Update complication, symptoms and QALYs in line with DALY file
+# TODO: how to handle symptoms and how specific to be - develop
+# TODO: What about Qaly for mild symptoms (urination, tiredness etc), nephrology, amputation, and NOTE: severe vision impairmenet and blindness same qaly so only one
+
 
 class T2DM(Module):
     """
@@ -37,9 +45,6 @@ class T2DM(Module):
     print("\n", "Type 2 Diabetes mellitus method is running", "\n")
 
     PARAMETERS = {
-        # ToDO: Update complication, symptoms and QALYs in line with DALY file
-        # TODO: how to handle symptoms and how specific to be - develop
-        # TODO: What about Qaly for mild symptoms (urination, tiredness etc), nephrology, amputation, and NOTE: severe vision impairmenet and blindness same qaly so only one
 
         # 1. Risk parameters
         'prob_T2DM_basic': Parameter(Types.REAL,               'Probability of T2DM given no pre-existing condition'),
@@ -90,25 +95,25 @@ class T2DM(Module):
         'd2_unified_symptom_code': Property(Types.CATEGORICAL,'Level of symptoms on the standardised scale (governing health-care seeking): '
                                                               '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
                                                                  categories=[0, 1, 2, 3, 4]),
-
     }
 
     def read_parameters(self, data_folder):
-        # TODO: Read in risks from file, test it 'holds' them in python
-        # TODO: update to data HR and variables here and above
 
-        # 1. Shortcut to parameters
         p = self.parameters
-
-        # 2. Risk parameters
-        p['prob_T2DM_basic']      = 1.0
-        p['prob_T2DMgivenWeight'] = 2.0
-        p['prob_T2DMgivenHT']     = 1.4
-        p['prob_T2DMgivenGD']     = 1.49
-        p['prob_T2DMgivenFamHis'] = 1.49
-        p['prob_death']           = 0.5
-
-        # 3. Health care parameter
+        df = T2DM_risk.set_index('parameter')
+        p['prob_T2DM_basic'] = df.at['prob_basic', 'value']
+        p['prob_T2DMgivenBMI'] = pd.DataFrame([[df.at['prob_d2givenbmi', 'value']]],
+                                            index=['overweight'],
+                                            columns=['risk'])
+        p['prob_T2DMgivenHT'] = df.at['prob_d2givenht', 'value']
+        p['prob_HTgivenFamHis'] = pd.DataFrame([[df.at['prob_d2givenfamhis', 'value']]],
+                                    index=['family history'],
+                                    columns=['risk'])
+        df = T2DM_data.set_index('index')
+        p['initial_prevalence'] = pd.DataFrame(
+                                    [[df.at['b_all', 'value']], [df.at['m_all', 'value']], [df.at['f_all', 'value']]],
+                                    index=['both sexes', 'male', 'female'],
+                                    columns=['prevalence'])
         p['prob_diag']          = 0.5
         p['prob_treat']         = 0.5
         p['prob_contr']         = 0.5
@@ -119,10 +124,12 @@ class T2DM(Module):
                                       'extreme emergency'],
                                       'probability': [0.25, 0.25, 0.25, 0.25]
                                     })
-        p['qalywt_mild_retino']   = self.sim.modules['QALY'].get_qaly_weight(967)
-        p['qalywt_severe_retino'] = self.sim.modules['QALY'].get_qaly_weight(977)
-        p['qalywt_uncomplicated'] = self.sim.modules['QALY'].get_qaly_weight(971)
-        p['qalywt_neuropathy']    = self.sim.modules['QALY'].get_qaly_weight(970)
+        #Get the DALY wieght that diabetes type 2 will us from the weight database
+        if 'HealthBurden' in self.sim.modules.keys():
+            p['qalywt_mild_retino']   = self.sim.modules['HealthBurden'].get_daly_weight(967)
+            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(977)
+            p['qalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
+            p['qalywt_neuropathy']    = self.sim.modules['HealthBurden'].get_daly_weight(970)
 
 
     def initialise_population(self, population):

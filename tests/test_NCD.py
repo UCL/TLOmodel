@@ -5,7 +5,7 @@ import os
 import pytest
 
 from tlo import Simulation, Date, Property
-from tlo.methods import demography, hypertension, highcholesterol, diabetes#, CVD
+from tlo.methods import demography, hypertension, t2dm#, CVD
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
@@ -22,16 +22,15 @@ def simulation():
     core_module = demography.Demography(workbook_path=demography_workbook)
     logging.getLogger('tlo.methods.demography').setLevel(logging.FATAL)
 
-    diabetes_module = diabetes.Diabetes()  # This will load method for diabetes
-    highcholesterol_module = highcholesterol.HC()         # This will load method for high cholesterol
+    diabetes_module = t2dm.T2DM()                         # This will load method for diabetes
     hypertension_module = hypertension.HT()               # This will load method for hypertension
 
 
 
     sim.register(core_module)
-    #sim.register(diabetes_module)  # This will register method for diabetes
-    #sim.register(highcholesterol_module)                  # This will register method for high cholesterol
-    sim.register(hypertension_module)                     # This will register method for hypertension
+    #sim.register(diabetes_module)                          # This will register method for diabetes
+    #sim.register(highcholesterol_module)                   # This will register method for high cholesterol
+    sim.register(hypertension_module)                       # This will register method for hypertension
 
 
 
