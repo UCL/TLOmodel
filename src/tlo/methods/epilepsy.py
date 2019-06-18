@@ -254,9 +254,12 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        dummy_series = pd.Series(data=0, index=df.index[df['is_alive']], name='Epilepsy')
+        disability_weights = pd.Series(data=df.ep_disability, index=df.index[df['is_alive']],
+                                 name='Epilepsy')
 
-        return dummy_series  # returns the series
+ #      print(dummy_series)
+        return disability_weights  # returns the series - currently this is reported 3 monthly so health burden will
+        # need to carry forward values monthly from the previous 3 month time point
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -490,9 +493,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
         e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
-        # e2 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
-        # dfxx = pd.concat([e1, e2], axis=1)
-        # dfxx.columns = ['start_antiep_this_period', 'e2']
+
         for person_id_to_start_treatment in e1.index:
             event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module,
                                                       person_id=person_id_to_start_treatment)
@@ -501,10 +502,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 topen=target_date,
                                                                 tclose=None)
 
-
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
 
-        # df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
+#       df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
