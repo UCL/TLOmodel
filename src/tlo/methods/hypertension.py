@@ -19,8 +19,13 @@ logger.setLevel(logging.DEBUG)
 # Read in data
 file_path = 'resources/ResourceFile_Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prevalence, HT_incidence, HT_treatment, HT_risk = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                                            method_ht_data['treatment_parameters'], method_ht_data['parameters']
+HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+                                                method_ht_data['parameters'], method_ht_data['data']
+
+
+# TODO: Read in 95% CI from file?
+# TODO: Update weight to BMI AND ADAPT TO UPDATED CODE FOR WEIGHT!
+# TODO: Do we want to read in HT from file? To avoid hard coding? Or have a 'other/none' variable in DALY file?
 
 class HT(Module):
     """
@@ -29,7 +34,7 @@ class HT(Module):
 
     - Declaration of TREATMENT_ID
     - Registration of the disease module
-    - Reading QALY weights and reporting qaly values related to this disease
+    - Reading DALY weights and reporting daly values related to this disease
     - Health care seeking
     - Running an "outreach" event
     """
@@ -37,11 +42,10 @@ class HT(Module):
     print("\n", "Hypertension method is running", "\n")
 
     PARAMETERS = {
-        # ToDO: Update QALYs - ask Tim and Alison. Put in CKD and CVD as per IHME?
 
         # 1. Risk parameters
         'prob_HT_basic': Parameter(Types.REAL,               'Probability of hypertension given no pre-existing condition or risk factors'),
-        'prob_HTgivenWeight': Parameter(Types.CATEGORICAL,   'Probability of getting hypertension given BMI'),
+        'prob_HTgivenBMI': Parameter(Types.CATEGORICAL,      'Probability of getting hypertension given BMI'),
         'prob_HTgivenDiab': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing diabetes'),
         'prob_HTgivenFamHis': Parameter(Types.CATEGORICAL,   'Probability of getting hypertension given family history'),
 
@@ -49,7 +53,8 @@ class HT(Module):
         'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'),
         'prob_treat': Parameter(Types.REAL,                  'Probability of being treated'),
         'prob_contr': Parameter(Types.REAL,                  'Probability achieving normal blood pressure levels on medication'),
-        'qalywt_mild_ht': Parameter(Types.REAL,              'QALY weighting for mild ht'),
+        'qalywt_ht': Parameter(Types.REAL,                   'DALY weighting for hypertension'),
+        'initial_prevalence': Parameter(Types.REAL,          'Initial prevalence as per STEP survey')
     }
 
     PROPERTIES = {
@@ -74,40 +79,26 @@ class HT(Module):
     }
 
     def read_parameters(self, data_folder):
-        # TODO: Read in risks from file, test it 'holds' them in python
-        # TODO: Update weight to BMI AND ADAPT TO UPDATED CODE FOR WEIGHT!
 
-        # 1. Shortcut to parameters
         p = self.parameters
-
-        # 2. Risk parameters
-
-        df = HT_risk.set_index('Parameter')
-        p['prob_HT_basic'] = df.at['prob_basic', 'Value']
-        p['prob_HTgivenWeight'] = df.at['prob_basic', 'Value']
-
-
-        p['prob_HT_basic']      = 1.0
-        #p['prob_HTgivenWeight']     = pd.DataFrame(data={'prob_HTgivenWeight':
-        #                              ['normal',
-        #                              'overweight',
-        #                              'obese',
-        #                              'morbidly obese'],
-        #                              'risk': [1, 1.66, 2.56, 4.7]
-        #                            })
-        p['prob_HTgivenWeight'] = pd.DataFrame([[1], [1.66]],
-                                               index = ['normal', 'overweight'],
+        df = HT_risk.set_index('parameter')
+        p['prob_HT_basic'] = df.at['prob_basic', 'value']
+        p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']], [df.at['prob_htgivenbmi', 'value3']]],
+                                               index = ['overweight', 'obese', 'morbidly obese'],
                                                columns = ['risk'])
-        p['prob_HTgivenDiab']   = 2.0
-        p['prob_HTgivenFamHis'] = pd.DataFrame([[1], [1.65], [2.4]],
-                                                index = ['none', 'one parent', 'two parents'],
+        p['prob_HTgivenDiab']   = df.at['prob_htgivendiabetes', 'value']
+        p['prob_HTgivenFamHis'] = pd.DataFrame([[df.at['prob_htgivenfamhis', 'value']], [df.at['prob_htgivenfamhis', 'value2']]],
+                                                index = ['one parent', 'two parents'],
                                                 columns = ['risk'])
 
-        # 3. Health care parameter
         p['prob_diag']          = 0.5
         p['prob_treat']         = 0.5
         p['prob_contr']         = 0.5
-        p['qalywt_mild_ht']     = 0.01 #TODO: addfress this and code removal below
+        p['qalywt_mild_ht']     = 0.0
+        df = HT_data.set_index('index')
+        p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['m_all', 'value']], [df.at['f_all', 'value']]],
+                                                index = ['both sexes', 'male', 'female'],
+                                                columns = ['prevalence'])
 
 
     def initialise_population(self, population):

@@ -7,6 +7,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis, hypertension, t2dm
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
+# TODO: adapt to NCD analysis
 
 # Where will output go
 outputpath = ''
