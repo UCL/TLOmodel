@@ -40,7 +40,10 @@ logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+             ignore_appt_constraints=True,
+             ignore_cons_constraints=True
+             ))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))
