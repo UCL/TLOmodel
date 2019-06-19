@@ -133,6 +133,10 @@ class Skeleton(Module):
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
+#
+#   These are the events which drive the simulation of the disease. It may be a regular event that updates
+#   the status of all the population of subsections of it at one time. There may also be a set of events
+#   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
 class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
@@ -164,6 +168,9 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
+#
+#   Put the logging events here. There should be a regular logger outputting current states of the
+#   population. There may also be a loggig event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
 
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -190,6 +197,8 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
+#
+#   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
