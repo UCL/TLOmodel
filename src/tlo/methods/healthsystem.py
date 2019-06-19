@@ -102,7 +102,7 @@ class HealthSystem(Module):
                      'The distance for each person to their nearest clinic (of any type)')
     }
 
-    def read_parameters(self):
+    def read_parameters(self, data_folder):
 
         self.parameters['Officer_Types_Table'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Officer_Types_Table.csv'

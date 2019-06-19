@@ -189,7 +189,6 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
     f.close()
 
     # check that there have been some HSI events (due to there being no capabilities)

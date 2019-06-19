@@ -47,15 +47,14 @@ class Skeleton(Module):
     }
 
     def __init__(self, name=None, resourcefilepath=None):
-
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-    def read_parameters(self):
+    def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-        Use: Path(self.resourcefilepath) / file_name
+        To access files use: Path(self.resourcefilepath) / file_name
         """
         pass
 
@@ -82,7 +81,6 @@ class Skeleton(Module):
 
         """
 
-
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -95,7 +93,6 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
-
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
@@ -107,7 +104,6 @@ class Skeleton(Module):
         # return pd.Series(index=df.index[df.is_alive],data=0.0)
 
         raise NotImplementedError
-
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -172,8 +168,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # Make some summary statitics
 
-
-        dict_to_output={
+        dict_to_output = {
             'Metric_One': 1.0,
             'Metric_Two': 2.0
         }
@@ -210,8 +205,8 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
         # Define the facilities at which this event can occur
         #   - this will find all the available facility levels
         the_accepted_facility_levels = \
-            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District'] \
-                               ['Facility_Level']))
+            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
+                           ['Facility_Level']))
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
@@ -223,5 +218,3 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         """ Do the action that take place in this health system interaction. """
         pass
-
-
