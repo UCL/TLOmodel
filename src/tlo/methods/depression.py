@@ -320,7 +320,6 @@ class Depression(Module):
             'Electricity': False,
             'Water': False})
 
-        self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -355,14 +354,17 @@ class Depression(Module):
 
         return pd.Series('1', index = df.index[df.is_alive])
 
-    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
 
-        #       logger.debug('This is epilepsy, being alerted about a health system interaction '
-        #                    'person %d triggered by %s : %s', person_id, cue_type, disease_specific)
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
 
+        logger.debug('This is Mockitis, being alerted about a health system interaction '
+                     'person %d for: %s', person_id, treatment_id)
         pass
 
-    def report_qaly_values(self):
+    def report_daly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
@@ -370,9 +372,9 @@ class Depression(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_series = df.de_disability
+        disability_series_for_alive_persons = df.loc[df['is_alive'],'de_disability']
 
-        return disability_series
+        return disability_series_for_alive_persons
 
 
 class DeprEvent(RegularEvent, PopulationScopeEventMixin):
@@ -499,7 +501,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
         for index in dfxx:
-            dfxx['gets_trt'] = self.sim.modules['HealthSystem'].query_access_to_service(index, TREATMENT_ID)
+            dfxx['gets_trt'] = True     # TODO: Not sure if this is neccessary now (was previously using query_access)
 
         df.loc[start_antidepr_this_period_idx, 'de_on_antidepr'] = dfxx['gets_trt']
 
