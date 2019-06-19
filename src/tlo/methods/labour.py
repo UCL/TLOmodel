@@ -145,8 +145,9 @@ class Labour (Module):
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
         'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
-        'la_delivery_mode': Property(Types.CATEGORICAL, 'Vaginal Delivery, Assisted Vaginal Delivery, Caesarean Section'
-                                     , categories=['VD', 'AVD', 'CS']),
+        'la_delivery_mode': Property(Types.CATEGORICAL, 'Vaginal Delivery, Assisted Vaginal Delivery,'
+                                                        'Emergency Caesarean Section, Elective Caesarean Section'
+                                     , categories=['VD', 'AVD', 'EmCS', 'ElCS']),
         'la_died_in_labour': Property(Types.BOOL, 'whether the woman has died during this labour')
     }
 
@@ -176,7 +177,10 @@ class Labour (Module):
         params['prob_an_eclampsia'] = 0.02
         params['prob_an_aph'] = 0.03 # 0.03
         params['prob_an_sepsis'] = 0.15
-        params['prob_an_ur'] = 0.06
+        params['prob_an_ur'] = 0.0009
+        params['rr_an_ur_grand_multip'] = 7.57
+        params['rr_an_ur_prevcs'] = 2.02
+        params['rr_an_ur_ref_ol'] = 23.65  # REVIEW "obstructed but not referred"
         params['rr_an_eclampsia_30_34'] = 1.4
         params['rr_an_eclampsia_35'] = 1.95
         params['rr_an_eclampsia_nullip'] = 2.04
@@ -604,6 +608,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ================================== COMPLICATIONS DURING LABOUR ====================================================
         # Todo: Discuss with Helen allot impact of gestation on complications of the mother
+        # Todo: Consider where to apply  labour care bundle (clean delivery, monitoring, AMTSL etc etc)
 
 # ===================================  OBSTRUCTED LABOUR =============================================================
 
@@ -630,6 +635,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         if random < eff_prob_ptl:
             df.at[individual_id,'la_obstructed_labour'] = True
 
+        # todo: consider applying here if we should calculate an incidence of wether this is obstruction late in labour
+        #  or they have been obstructed for a while
         # We then work through the next complications and assess if this woman will experience additional complications
 
 # ==================================== ECLAMPSIA ======================================================================
@@ -690,7 +697,26 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # Todo: include risk factors
 
-        riskfactors = 1 # rf1
+        if (df.at[individual_id, 'la_parity'] >= 5) & (df.at[individual_id, 'la_previous_cs'] == 0) & \
+            ~df.at[individual_id, 'la_obstructed_labour']:
+            rf1 = params['rr_an_ur_grand_multip']
+        else:
+            rf1 = 1
+
+        if (df.at[individual_id, 'la_parity'] < 5) & (df.at[individual_id, 'la_previous_cs'] >= 1) & \
+            ~df.at[individual_id, 'la_obstructed_labour']:
+            rf2 = params['rr_an_ur_prevcs']
+        else:
+            rf2 = 1
+
+        if (df.at[individual_id, 'la_parity'] < 5) & (df.at[individual_id, 'la_previous_cs'] == 0) & \
+            df.at[individual_id, 'la_obstructed_labour']:
+            rf3 = params['rr_an_ur_ref_ol']
+        else:
+            rf3 = 1
+
+        riskfactors = rf1 * rf2 * rf3
+
         eff_prob_aph = riskfactors * params['prob_an_ur']
         random = self.sim.rng.random_sample(size=1)
         if random < eff_prob_aph:

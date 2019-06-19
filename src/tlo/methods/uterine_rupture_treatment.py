@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class HaemorrhageTreatment(Module):
+class UterineRuptureTreatment(Module):
     """
     This module manages the medical and surgical treatment of maternal haemorrhage including antepartum haemorrhage
     (of all common etiologies) and primary and secondary post-partum haemorrhage
@@ -46,8 +46,9 @@ class HaemorrhageTreatment(Module):
         """
         params = self.parameters
 
-        params['prob_cure_blood_transfusion'] = 0.4  # dummy
-        params['prob_cure_hysterectomy'] = 0.9  # dummy
+        params['prob_cure_blood_transfusion'] = 0
+        params['prob_cure_uterine_repair'] = 0
+        params['prob_cure_hysterectomy'] = 0
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -94,25 +95,21 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         m = self
 
         # We determine the cause of the bleed based on the incidence
-        etiology = ['placenta praevia', 'placental abruption']
+        etiology = ['placenta previa', 'placental abruption']
         probabilities = [0.67, 0.33]
         random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
 
-# =========================== TREATMENT OF PLACENTA PRAEVIA ========================================================
-        if random_choice == 'placenta praevia':
-
-            women = df.index[df.is_alive] #dummy
-        # Blood transfusion for blood loss
-        # Maybe we apply curative effective of blood replacement and if that fails go to death event?
-        #
+# =========================== TREATMENT OF PLACENTA PREVIA ========================================================
+        if random_choice == 'placenta previa':
+            women= df.index[df.is_alive] #dummy
         # Primary treatment is delivery via caesarean section
+        # Blood transfusion for blood loss
         else:
-            women = df.index[df.is_alive] #dummy
+            women= df.index[df.is_alive] #dummy
         # First we deal with the management of bleeding
         # Then we schedule safe delivery
 
 # ========================= TREATMENT OF PLACENTAL ABRUPTION ======================================================
-
 
 class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
 
