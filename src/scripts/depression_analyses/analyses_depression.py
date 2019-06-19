@@ -58,8 +58,12 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
-# %%  Load Model Results for n_suidides
+# %%  Load Model Results for prop_ever_depr
 
-suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
+prop_ever_depr = pd.Series(
+    output['tlo.methods.depression']['summary_stats_per_3m']['prop_ever_depr'].values,
+    index=output['tlo.methods.depression']['summary_stats_per_3m']['date'])
+
+prop_ever_depr.plot()
 plt.show()
 

@@ -463,7 +463,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
                                              index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
-        rdandom_draw = pd.Series(self.module.rng.ranom_sample(size=len(depr_not_on_antidepr_idx)),
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
                                 index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
         dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
@@ -637,7 +637,7 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
 
         # Get the consumables required
         the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+        # TODO: Here adjust the cons footprint so that it includes antidepressant medication
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
@@ -654,13 +654,11 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
 
         # Check that the person is currently not on antidepressants
         # (not always true so commented out for now)
-
-        assert df.at[person_id, 'de_on_antidepr'] is False
+        # assert df.at[person_id, 'de_on_antidepr'] is False
 
 
         # Change the flag for this person
         df.at[person_id,'de_on_antidepr'] = True
-
 
 
 # ------------
@@ -678,7 +676,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # todo  checking for consistency of initial conditions and transitions....
+        # todo checking for consistency of initial conditions and transitions....
 
         # get some summary statistics
         df = population.props
