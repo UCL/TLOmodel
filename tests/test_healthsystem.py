@@ -37,6 +37,7 @@ def check_dtypes(simulation):
 
 def test_run_with_healthsystem_no_interventions_defined():
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -53,6 +54,7 @@ def test_run_with_healthsystem_no_interventions_defined():
 def test_run_with_healthsystem_and_healthburden():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -70,6 +72,7 @@ def test_run_with_healthsystem_and_healthburden():
 def test_run_with_healthsystem_interventions_off():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = []
@@ -93,6 +96,7 @@ def test_run_with_healthsystem_interventions_off():
 def test_run_with_healthsystem_interventions_on():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -121,7 +125,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-
+    sim.seed_rngs(0)
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
@@ -146,6 +150,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     f.close()
 
     # check that there have been no HSI events (due to there being no capabilities)
+    assert sim.modules['HealthSystem'].hsi_event_queue_counter == 0
     assert 'Appt' not in output['tlo.methods.healthsystem'], 'one'
     assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
@@ -160,6 +165,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -187,8 +193,4 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
     f.close()
 
     # check that there have been some HSI events (due to there being no capabilities)
-    assert 'Appt' in output['tlo.methods.healthsystem']
-
-    # TODO: these assertions fail
-    # assert 'Consumables' in output['tlo.methods.healthsystem']
-    # assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']>0).any()
+    assert sim.modules['HealthSystem'].hsi_event_queue_counter > 0
