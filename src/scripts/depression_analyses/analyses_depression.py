@@ -6,7 +6,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, qaly, depression
+from tlo.methods import demography, healthsystem, lifestyle, depression, healthburden
 
 # Where will output go
 outputpath = './src/scripts/depression_analyses/'
@@ -40,15 +40,12 @@ logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 # make a dataframe that contains the switches for which interventions are allowed or not allowed
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
-service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Depression', True]
-service_availability['Service'] = service_availability['Service'].astype('object')
-service_availability['Available'] = service_availability['Available'].astype('bool')
+service_availability = ['*']  # this will make everything available
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(depression.Depression())
 
