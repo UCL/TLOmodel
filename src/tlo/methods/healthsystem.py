@@ -56,7 +56,7 @@ class HealthSystem(Module):
 
         logger.info('----------------------------------------------------------------------')
         logger.info("Setting up the Health System With the Following Service Availability:")
-        logger.info(service_availability)
+        logger.info(self.service_availability)
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
