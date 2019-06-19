@@ -3,7 +3,8 @@ import logging
 import os
 
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import numpy as np
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, depression, healthburden
@@ -54,11 +55,8 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
+# %%  Load Model Results for n_suidides
 
-# %% Plot Population Size Over time:
-
-# Load Model Results for n_suidides
-# df_outp = pd.read_csv(logfile)
-# df_outp.columns = ['date', 'n_suicides', 'u']
-# n_suicides = df_outp.n_suicides.sum()
+suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
+plt.show()
 
