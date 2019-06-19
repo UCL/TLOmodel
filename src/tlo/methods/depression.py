@@ -596,6 +596,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
 # ------------
 # ------------
+
+
+
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -662,46 +665,4 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|summary_stats_per_3m|%s',
                     self.sim.date,
                     dict_for_output)
-
-
-
-        # logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-        #             '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
-        #             'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
-        #             '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
-        #             self.sim.date,
-        #             prop_depr,
-        #             prop_ever_depr,
-        #             prop_antidepr,
-        #             prop_antidepr_depr,
-        #             prop_antidepr_not_depr,
-        #             prop_antidepr_ever_depr,
-        #             prop_ge15_m_depr,
-        #             prop_ge15_f_depr,
-        #             prop_age_50_ever_depr,
-        #             prop_depr_ge45,
-        #             suicides_this_3m,
-        #             self_harm_events_this_3m)
-        #
-        #
-        #
-        # logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-        #             '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
-        #             'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
-        #             '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
-        #             self.sim.date,
-        #             prop_depr,
-        #             prop_ever_depr,
-        #             prop_antidepr,
-        #             prop_antidepr_depr,
-        #             prop_antidepr_not_depr,
-        #             prop_antidepr_ever_depr,
-        #             prop_ge15_m_depr,
-        #             prop_ge15_f_depr,
-        #             prop_age_50_ever_depr,
-        #             prop_depr_ge45,
-        #             suicides_this_3m,
-        #             self_harm_events_this_3m)
-
-
 
