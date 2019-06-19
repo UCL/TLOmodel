@@ -254,12 +254,18 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_weights = pd.Series(data=df.ep_disability, index=df.index[df['is_alive']],
-                                 name='Epilepsy')
+        # todo update this below
+        # todo get daly weight direct from document
+        # todo add more comments
+
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
+
+        disability_weights = pd.Series(data=df.loc['is_alive', 'ep_disability'], name='Epilepsy')
 
  #      print(dummy_series)
-        return disability_weights  # returns the series - currently this is reported 3 monthly so health burden will
-        # need to carry forward values monthly from the previous 3 month time point
+        return disability_weights
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):

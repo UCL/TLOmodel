@@ -463,7 +463,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
                                              index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
+        rdandom_draw = pd.Series(self.module.rng.ranom_sample(size=len(depr_not_on_antidepr_idx)),
                                 index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
         dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
@@ -472,6 +472,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_antidepr'] = False
         dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
 
+        # todo check if people on treatment can be placed again on a queue to start
 
         # get the indicies of persons who are going to present for care at somepoint in the next month
         start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
