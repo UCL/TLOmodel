@@ -357,6 +357,7 @@ class Depression(Module):
 
         disability_series_for_alive_persons = df.loc[df['is_alive'],'de_disability']
 
+        #TODO: let this report the DALY values for the last month (allowing for the fact that things may hvae happened since last DeprEvent
         return disability_series_for_alive_persons
 
 
@@ -714,7 +715,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
 
 
-        #TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
+        #TODO: Andrew - I've re-organsied this to make mroe readable (!), check that it's behaving as you wanted
         dict_for_output = {
             'prop_ever_depr': prop_ever_depr,
             'prop_antidepr': prop_antidepr,

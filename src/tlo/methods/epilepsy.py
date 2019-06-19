@@ -6,12 +6,13 @@ from tlo.methods import demography
 import numpy as np
 import pandas as pd
 import random
+from pathlib import Path
 
 # todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.CRITICAL)
+#l ogger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
 
@@ -90,8 +91,7 @@ class Epilepsy(Module):
             Types.REAL, 'disability weight for current 3 month period')
     }
 
-    # Declaration of how we will refer to any treatments that are related to this disease.
-    TREATMENT_ID = 'antiepileptic'
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -102,7 +102,9 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        dfd = pd.read_excel('./resources/ResourceFile_Epilepsy.xlsx',
+
+
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx',
                             sheet_name='parameter_values')
         dfd.set_index('parameter_name', inplace=True)
 
@@ -217,6 +219,7 @@ class Epilepsy(Module):
         df.at[child_id, 'ep_epi_death'] = False
         df.at[child_id, 'ep_disability'] = 0
 
+
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
@@ -233,6 +236,7 @@ class Epilepsy(Module):
 #       return df.loc[df.is_alive, 'ep_unified_symptom_code']
 
         return pd.Series('1', index=df.index[df.is_alive])
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -258,13 +262,12 @@ class Epilepsy(Module):
         # todo get daly weight direct from document
         # todo add more comments
 
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
+        # df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
+        # df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
+        # df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
 
-        disability_weights = pd.Series(data=df.loc['is_alive', 'ep_disability'], name='Epilepsy')
+        disability_weights = df.loc[df['is_alive'], 'ep_disability']
 
- #      print(dummy_series)
         return disability_weights
 
 
@@ -312,9 +315,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
-
-        # Declaration of how we will refer to any treatments that are related to this disease.
-        TREATMENT_ID = 'antiepileptic'
 
         # set ep_epi_death back to False after death
         df.loc[~df.is_alive, 'ep_epi_death'] = False
@@ -584,6 +584,44 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
                                     self.sim.date)
 
 
+
+
+
+
+class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is first appointment that someone has when they present to the healthcare system with the severe
+    symptoms of Mockitis.
+    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        logger.info('This is EPIlepsy %s, a first appointment for person %d',
+                     person_id)
+        print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+
+
+
+
+
+
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...
@@ -629,55 +667,52 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         cum_deaths = (~df.is_alive).sum()
 
-        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
-        """
-        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
-                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
-                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
-                    'cum_deaths|%s|epi_death_rate |%s|n_seiz_stat_1_3|%s|n_seiz_stat_2_3|%s|n_antiep|%s'
-                    '|n_alive|%s',
-                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
-                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
-                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate, n_seiz_stat_1_3,
-                    n_seiz_stat_2_3, n_antiep, n_alive
-                    )
-        """
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
+
+        # TODO: Can you define what these ouputs are in the comments [in the future, I think we need a systematic way of storing this beyond comments.]
+
+        dict_for_output = {
+            'prop_seiz_stat_0': prop_seiz_stat_0,
+            'prop_seiz_stat_1': prop_seiz_stat_1,
+            'prop_seiz_stat_2': prop_seiz_stat_2,
+            'prop_seiz_stat_3': prop_seiz_stat_3,
+            'prop_antiepilep_seiz_stat_0': prop_antiepilep_seiz_stat_0,
+            'prop_antiepilep_seiz_stat_1': prop_antiepilep_seiz_stat_1,
+            'prop_antiepilep_seiz_stat_2': prop_antiepilep_seiz_stat_2,
+            'prop_antiepilep_seiz_stat_3': prop_antiepilep_seiz_stat_3,
+            'n_epi_death': n_epi_death,
+            'cum_deaths': cum_deaths,
+            'epi_death_rate': epi_death_rate,
+            'n_seiz_stat_1_3': n_seiz_stat_1_3,
+            'n_seiz_stat_2_3': n_seiz_stat_2_3,
+            'n_antiep': n_antiep,
+            'n_alive': n_alive
+        }
+
+        logger.info('%s|summary_stats_per_3m|%s',
+                    self.sim.date,
+                    dict_for_output)
 
 
 
+#
+#         #
+#
+#         #       logger.info('%s,%s,', self.sim.date, n_epi_death)
+#         """
+#         logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
+#                     'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
+#                     'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
+#                     'cum_deaths|%s|epi_death_rate |%s|n_seiz_stat_1_3|%s|n_seiz_stat_2_3|%s|n_antiep|%s'
+#                     '|n_alive|%s',
+#                     self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
+#                     prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
+#                     prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate, n_seiz_stat_1_3,
+#                     n_seiz_stat_2_3, n_antiep, n_alive
+#                     )
+#         """
+# #       logger.info('%s|person_one|%s',
+# #                    self.sim.date,
+# #                    df.loc[0].to_dict())
+#
 
 
-
-
-
-class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-
-        logger.info('This is EPIlepsy %s, a first appointment for person %d',
-                     person_id)
-        print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
