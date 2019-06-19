@@ -474,6 +474,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         # get the indicies of persons who are going to present for care at somepoint in the next month
+        # TODO:  make sure that they are not already on anti-depressnts
         start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
 
         # generate the HSI Events whereby persons present for care and get antidepressants
@@ -651,11 +652,13 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
         # This is the property that repesents currently using antidepresants: de_on_antidepr
 
         # Check that the person is currently not on antidepressants
+        # (not always true so commented out for now)
+
         assert df.at[person_id, 'de_on_antidepr'] is False
+
 
         # Change the flag for this person
         df.at[person_id,'de_on_antidepr'] = True
-
 
 
 
