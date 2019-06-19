@@ -1,5 +1,6 @@
 """
 A skeleton template for disease methods.
+
 """
 import pandas as pd
 
@@ -24,7 +25,7 @@ class Skeleton(Module):
     * `initialise_simulation(sim)`
     * `on_birth(mother, child)` [If this is disease module]
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
-    *  report_daly_values() [If this is disease module]
+    *  `report_daly_values()` [If this is disease module]
 
     """
 
@@ -38,17 +39,23 @@ class Skeleton(Module):
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
+
+    # Note that all properties must have a two letter prefix that identifies them to this module.
+
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'Description of property a'),
+        'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
-    def read_parameters(self, data_folder):
+    def __init__(self, name=None, resourcefilepath=None):
+
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+    def read_parameters(self):
         """Read parameter values from file, if required.
-
-        Here we do nothing.
-
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
+        Use: Path(self.resourcefilepath) / file_name
         """
         pass
 
@@ -94,6 +101,10 @@ class Skeleton(Module):
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+
+        # To return a value of 0.0 (fully health) for everyone, use:
+        # df = self.sim.popultion.props
+        # return pd.Series(index=df.index[df.is_alive],data=0.0)
 
         raise NotImplementedError
 
