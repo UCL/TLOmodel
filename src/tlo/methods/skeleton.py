@@ -22,17 +22,10 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    * `on_birth(mother, child)` [If this is disease module]
+    * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
+    *  report_daly_values() [If this is disease module]
 
-    And, if the module represents a disease:
-    * It must register itself: self.sim.modules['HealthSystem'].register_disease_module(self)
-    * `query_symptoms_now(self)`
-    * `report_qaly_values(self)`
-    * `on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None)`
-
-    If this module represents a form of treatment:
-    * TREATMENT_ID: must be defined
-    * It must register the treatment: self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -78,18 +71,10 @@ class Skeleton(Module):
         It is a good place to add initial events to the event queue.
 
         If this is a disease module, register this disease module with the healthsystem:
-        e.g. self.sim.modules['HealthSystem'].register_disease_module(self)"
-
-        If this is an interveton module: register the footprints with the healthsystem:
-        e.g.    footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-                 'Name': self.TREATMENT_ID,
-                 'Nurse_Time': 5,
-                 'Doctor_Time': 10,
-                 'Electricity': False,
-                 'Water': False})
-             self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         """
+
 
         raise NotImplementedError
 
@@ -103,16 +88,6 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
-    def query_symptoms_now(self):
-        """
-        If this is a registered disease module, this is called by the HealthCareSeekingPoll in order to determine the
-        healthlevel of each person. It can be called at any time and must return a Series with length equal to the
-        number of persons alive and index matching sim.population.props. The entries encode the symptoms on the
-        following "unified symptom scale":
-        0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency
-        """
-
-        raise NotImplementedError
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
