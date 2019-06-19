@@ -2,7 +2,7 @@
 import logging
 from collections import defaultdict
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin, Event
 from tlo.methods import demography
 import numpy as np
 import pandas as pd
@@ -406,9 +406,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
-        # Declaration of how we will refer to any treatments that are related to this disease.
-        TREATMENT_ID = 'antidepressant'
-
+        #TODO: more comments on every step of this would be helpful
         df = population.props
 
         df['de_non_fatal_self_harm_event'] = False
@@ -456,6 +454,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice \
             ([0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2])
 
+
+
         # initiation of antidepressants
 
         depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
@@ -472,8 +472,27 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_antidepr'] = False
         dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
 
+
+        # get the indicies of persons who are going to present for care at somepoint in the next month
         start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
 
+        # generate the HSI Events whereby persons present for care and get antidepressants
+        for person_id in start_antidepr_this_period_idx:
+            # For this person, determine when they will seek care (uniform distibition [0,30]days from now)
+            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0,30)))
+
+            # For this person, create the HSI Event for their presentation for care
+            hsi_present_for_care = HSI_Depression_Present_For_Care_And_Start_Antidepressant(self.module,person_id)
+
+            # Enter this event to the HealthSystem
+            self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_present_for_care,
+                                                                priority=0,
+                                                                topen=date_seeking_care,
+                                                                tclose=None)
+
+
+        """
+        # TODO: This is Tim commenting out the old way of starting people and replacing it with the HSI 
         # create a df with one row per person needing to start treatment - this is only way I have
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
@@ -487,6 +506,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             dfxx['gets_trt'] = True     # TODO: Not sure if this is neccessary now (was previously using query_access)d
 
         df.loc[start_antidepr_this_period_idx, 'de_on_antidepr'] = dfxx['gets_trt']
+        """
+
+
 
         # defaulting from antidepressant use
 
@@ -560,9 +582,10 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                   & df.de_depr & df.is_alive])
 
         # disability
-
         depr_idx = df.index[df.is_alive & df.de_depr]
         df.loc[depr_idx, 'de_disability'] = 0.49
+
+
 
         # self harm and suicide
 
@@ -592,6 +615,48 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 #     # Declaration of how we will refer to any treatments that are related to this disease.
 #     TREATMENT_ID = ''
 #     Declare the HSI event
+
+
+class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+
+    It is appointment at which someone with depression presents for care at level 0 and is provided with
+    anti-depressants.
+
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+
+        # Get the consumables required
+        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        df = self.sim.population.props
+
+        # This is the property that repesents currently using antidepresants: de_on_antidepr
+
+        # Check that the person is currently not on antidepressants
+        assert df.at[person_id, 'de_on_antidepr'] is False
+
+        # Change the flag for this person
+        df.at[person_id,'de_on_antidepr'] = True
+
+
 
 
 # ------------
