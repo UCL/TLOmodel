@@ -193,14 +193,6 @@ class Depression(Module):
         self.parameters['prob_3m_selfharm_depr'] = dfd.loc['prob_3m_selfharm_depr', 'value']
 
     def initialise_population(self, population):
-        """
-        Set our property values for the initial population.
-
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
-        """
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
         df['de_depr'] = False
@@ -213,11 +205,14 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
 
+
 # todo - this to be removed when defined in other modules
         df['de_cc'] = False
         df['de_wealth'] = 4
 
         #  this below calls the age dataframe / call age.years to get age in years
+
+        # TODO: More comments on each of these steps would be very helpful
 
         age_ge15_idx = df.index[(df.age_years >= 15) & df.is_alive]
         cc_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
@@ -296,8 +291,11 @@ class Depression(Module):
         Here we add our three-monthly event to poll the population for depr starting
         or stopping.
         """
+
         depr_poll = DeprEvent(self)
         sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
+        #TODO: I think it would avoid duplicating code (the initialistion stuff?) and allow there to be events in the
+        # first 3 months of simulation if you have the DeprEvent running for first time on the first day of sim
 
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -645,34 +643,65 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antidepr_ever_depr = n_antidepr_ever_depr / n_ever_depr
         prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
 
-        """
-        logger.info('%s|de_depr|%s',
+
+        #TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
+        dict_for_output = {
+            'prop_ever_depr': prop_ever_depr,
+            'prop_antidepr': prop_antidepr,
+            'prop_antidepr_depr': prop_antidepr_depr,
+            'prop_antidepr_not_depr': prop_antidepr_not_depr,
+            'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
+            'prop_ge15_m_depr': prop_ge15_m_depr,
+            'prop_ge15_f_depr': prop_ge15_f_depr,
+            'prop_age_50_ever_depr': prop_age_50_ever_depr,
+            'prop_depr_ge45': prop_depr_ge45,
+            'suicides_this_3m': suicides_this_3m,
+            'self_harm_events_this_3m': self_harm_events_this_3m
+        }
+
+        logger.info('%s|summary_stats_per_3m|%s',
                     self.sim.date,
-                    df[df.is_alive].groupby('de_depr').size().to_dict())
-        """
+                    dict_for_output)
 
-#       logger.info('%s,%s,', self.sim.date, suicides_this_3m)
 
-        logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
-                    '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
-                    'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
-                    '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
-                    self.sim.date,
-                    prop_depr, prop_ever_depr, prop_antidepr, prop_antidepr_depr, prop_antidepr_not_depr,
-                    prop_antidepr_ever_depr, prop_ge15_m_depr, prop_ge15_f_depr,prop_age_50_ever_depr,
-                    prop_depr_ge45,
-                    suicides_this_3m, self_harm_events_this_3m)
 
-        """
-        logger.info('%s|de_ever_depr|%s',
-                    self.sim.date,
-                    df[df.is_alive].groupby(['sex', 'de_ever_depr']).size().to_dict())
-        """
-
-#       logger.debug('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
-
+        # logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
+        #             '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
+        #             'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
+        #             '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
+        #             self.sim.date,
+        #             prop_depr,
+        #             prop_ever_depr,
+        #             prop_antidepr,
+        #             prop_antidepr_depr,
+        #             prop_antidepr_not_depr,
+        #             prop_antidepr_ever_depr,
+        #             prop_ge15_m_depr,
+        #             prop_ge15_f_depr,
+        #             prop_age_50_ever_depr,
+        #             prop_depr_ge45,
+        #             suicides_this_3m,
+        #             self_harm_events_this_3m)
+        #
+        #
+        #
+        # logger.info('%s|p_depr|%s|prop_ever_depr|%s|prop_antidepr|%s|prop_antidepr_depr|%s|prop_antidepr_not_depr'
+        #             '|%s|prop_antidepr_ever_depr|%s|prop_ge15_m_depr|%s|'
+        #             'prop_ge15_f_depr|%s|prop_age_50_ever_depr|%s|prop_depr_ge45'
+        #             '|%s|suicides_this_3m|%s|self_harm_events_this_3m|%s',
+        #             self.sim.date,
+        #             prop_depr,
+        #             prop_ever_depr,
+        #             prop_antidepr,
+        #             prop_antidepr_depr,
+        #             prop_antidepr_not_depr,
+        #             prop_antidepr_ever_depr,
+        #             prop_ge15_m_depr,
+        #             prop_ge15_f_depr,
+        #             prop_age_50_ever_depr,
+        #             prop_depr_ge45,
+        #             suicides_this_3m,
+        #             self_harm_events_this_3m)
 
 
 
