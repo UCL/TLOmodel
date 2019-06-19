@@ -1,10 +1,16 @@
 """
 A skeleton template for disease methods.
 """
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
+from tlo.population import logger
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   MODULE DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------
 
 class Skeleton(Module):
     """
@@ -42,9 +48,6 @@ class Skeleton(Module):
     PROPERTIES = {
         'property_a': Property(Types.BOOL, 'Description of property a'),
     }
-
-    # Declaration of how we will refer to any treatments that are related to this disease.
-    TREATMENT_ID = ''
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -111,41 +114,28 @@ class Skeleton(Module):
 
         raise NotImplementedError
 
-    def report_qaly_values(self):
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+
+        raise NotImplementedError
+
+
+    def on_hsi_alert(self, person_id, treatment_id):
         """
-        If this is a registered disease module, this is called periodically by the QALY module in order to compute the
-        total 'Quality of Life' for all alive persons. Each disease module must return a Series with length equal to the
-        number of persons alive and index matching sim.population.props. The entries encode a QALY weight, between zero
-        and 1, which summarise the quality of life for that persons for the total of the past 12 months. Note that this
-        can be called at any time.
-
-        Disease modules should look-up the weights to use by calling QALY.get_qaly_weight(sequaluecode). The sequalue
-        code to use can be found in the ResourceFile_DALYWeights. ie. Find the appropriate sequalue in that file, and
-        then hard-code the sequale code in this call.
-        e.g. p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
         raise NotImplementedError
 
-    def on_healthsystem_interaction(self, person_id, cue_type=None, disease_specific=None):
-        """
-        If this is a registered disease module, this is called whenever there is any interaction between an individual
-        and the healthsystem. All disease modules are notified of all interactions with the healthsystem but can choose
-        if they will respond by looking at the arguments that are passed.
 
-        * cue_type: determines what has caused the interaction and can be "HealthCareSeekingPoll", "OutreachEvent",
-            "InitialDiseaseCall" or "FollowUp".
-        * disease_specific: determines if this interaction has been triggered by, or is otherwise intended to be,
-            specfifc to a particular disease. If will either take the value None or the name of the registered disease
-            module.
+# ---------------------------------------------------------------------------------------------------------
+#   DISEASE MODULE EVENTS
+# ---------------------------------------------------------------------------------------------------------
 
-
-        """
-        pass
-
-
-class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
+class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -170,3 +160,73 @@ class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """Produce a summary of the numbers of people with respect to the action of this module.
+        This is a regular event that can output current states of people or cumulative events since last logging event.
+        """
+
+        # run this event every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # Make some summary statitics
+
+
+        dict_to_output={
+            'Metric_One': 1.0,
+            'Metric_Two': 2.0
+        }
+
+        logger.info('%s|summary_12m|%s', self.sim.date, dict_to_output)
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   HEALTH SYSTEM INTERACTION EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
+    like this.
+    It must begin HSI_<Module_Name>_Description
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the call on resources of this treatment event: Time of Officers (Appointments)
+        #   - get an 'empty' footprint:
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        #   - update to reflect the appointments that are required
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the call on resources of this treatment event: Consumables
+        #   - get a blank consumables footprint
+        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        #   - update with any consumables that are needed. Look in ResourceFile_Consumables.csv
+
+        # Define the facilities at which this event can occur
+        #   - this will find all the available facility levels
+        the_accepted_facility_levels = \
+            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District'] \
+                               ['Facility_Level']))
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = the_accepted_facility_levels
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        """ Do the action that take place in this health system interaction. """
+        pass
+
+
