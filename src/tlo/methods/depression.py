@@ -7,7 +7,7 @@ from tlo.methods import demography
 import numpy as np
 import pandas as pd
 import random
-
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -144,20 +144,14 @@ class Depression(Module):
               Types.BOOL, 'whether has chronic condition')
     }
 
-    # Declaration of how we will refer to any treatments that are related to this disease.
-    TREATMENT_ID = 'antidepressant'
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
 
-        Here we just assign parameter values explicitly.
-
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
-        """
-
-        dfd = pd.read_excel('./resources/Method_Depression.xlsx',
+        dfd = pd.read_excel(
+                            Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx',
                             sheet_name='parameter_values')
+        # TODO: Note the rename!
+
         dfd.set_index('parameter_name', inplace=True)
 
         self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'] = \
@@ -310,15 +304,6 @@ class Depression(Module):
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
-
-        # todo: amend this below when identifid data
-        # Define the footprint for the intervention on the common resources
-        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-            'Name': Depression.TREATMENT_ID,
-            'Nurse_Time': 15,
-            'Doctor_Time': 15,
-            'Electricity': False,
-            'Water': False})
 
 
     def on_birth(self, mother_id, child_id):
@@ -501,7 +486,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
         for index in dfxx:
-            dfxx['gets_trt'] = True     # TODO: Not sure if this is neccessary now (was previously using query_access)
+            dfxx['gets_trt'] = True     # TODO: Not sure if this is neccessary now (was previously using query_access)d
 
         df.loc[start_antidepr_this_period_idx, 'de_on_antidepr'] = dfxx['gets_trt']
 
@@ -603,6 +588,16 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
                                     self.sim.date)
 
 
+
+# ------------
+# ------------
+#     # Declaration of how we will refer to any treatments that are related to this disease.
+#     TREATMENT_ID = ''
+#     Declare the HSI event
+
+
+# ------------
+# ------------
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """comments...

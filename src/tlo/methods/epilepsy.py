@@ -102,7 +102,7 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        dfd = pd.read_excel('./resources/Method_Epilepsy.xlsx',
+        dfd = pd.read_excel('./resources/ResourceFile_Epilepsy.xlsx',
                             sheet_name='parameter_values')
         dfd.set_index('parameter_name', inplace=True)
 
