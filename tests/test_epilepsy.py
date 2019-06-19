@@ -1,3 +1,7 @@
+#TODO: Asif will probably recommned more tests to check about basic behaviours
+
+"""
+
 import datetime
 import logging
 import os
@@ -64,3 +68,6 @@ output = parse_log_file(logfile)
 # df_outp = pd.read_csv(logfile)
 # df_outp.columns = ['date', 'n_suicides', 'u']
 # n_suicides = df_outp.n_suicides.sum()
+
+"""
+
