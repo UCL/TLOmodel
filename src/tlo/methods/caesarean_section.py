@@ -124,7 +124,10 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_eclampsia']:
             df.at[individual_id, 'la_eclampsia'] = False  # Assume eclampsia has stopped as placenta is delivered
-        # todo: for uterine rupture --> cs --> repair (fails) --> hysterctomy (so they need to pass back to UR event0
+        # todo: for uterine rupture --> cs --> repair (fails) --> hysterectomy (so they need to pass back to UR event0
+        # if df.at[individual_id,'la_uterine_rupture']:
+                #self.sim.schedule_event(uterine_rupture_treatment.UterineRuptureTreatment)
+
         # todo: if treatment is switch to false they still need to go through the death event? or do they?
 
         # We then schedule the postpartum caesarean event
@@ -145,24 +148,27 @@ class PostCaesareanSection(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # Todo: decide how to code in effect of upstream interventions that effect sepsis/PPH
+        # Todo: assume that abx and amtsl are given as part of CS care bundle and apply them to everyone who has a CS
+        #  (i.e. not as a separate consumable/hsi?)
         # Todo: consider property 'cs_indication' which we could use to link effects indication to pp outcomes
 
         # Risk factors?
         if df.at[individual_id, 'la_delivery_mode'] == 'EmCS':
-            eff_prob_pph = params['prob_pph_cs']
+            eff_prob_pph = params['prob_pph_cs'] * params['effectiveness_amtsl']
             random = self.sim.rng.random_sample(size=1)
             if random < eff_prob_pph:
                 df.at[individual_id, 'la_pph'] = True
 
         # Risk factors?
-            eff_prob_pph = params['prob_sepsis_cs']
+            eff_prob_pph = params['prob_sepsis_cs'] * params['effectiveness_abx']
             random = self.sim.rng.random_sample(size=1)
             if random < eff_prob_pph:
                 df.at[individual_id, 'la_sepsis'] = True
 
         # todo: difference in incidence of outcomes for elective vs emergency (i think this will be more important
         # for neonates)
+
+        # Next we schedule treatment for any complications that have arisen post-partum
 
 
 class CaesareanLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, labour
+from tlo.methods import demography, labour, caesarean_section
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -26,13 +26,29 @@ class HaemorrhageTreatment(Module):
     PARAMETERS = {
         'prob_cure_blood_transfusion': Parameter(
             Types.REAL, '...'),
-        'prob_cure_uterine_repair': Parameter(
-            Types.REAL, '...'),
+        'prob_cure_oxytocin': Parameter(
+            Types.REAL, 'probability of intravenous oxytocin arresting post-partum haemorrhage'),
+        'prob_cure_misoprostol': Parameter(
+            Types.REAL, 'probability of rectal misoprostol arresting post-partum haemorrhage'),
+        'prob_cure_uterine_massage': Parameter(
+            Types.REAL, 'probability of uterine massage arresting post-partum haemorrhage'),
+        'prob_cure_uterine_tamponade': Parameter(
+            Types.REAL, 'probability of uterine tamponade arresting post-partum haemorrhage'),
+        'prob_cure_uterine_ligation': Parameter(
+            Types.REAL, 'probability of laparotomy and uterine ligation arresting post-partum haemorrhage'),
+        'prob_cure_b_lych': Parameter(
+            Types.REAL, 'probability of laparotomy and B-lynch sutures arresting post-partum haemorrhage'),
         'prob_cure_hysterectomy': Parameter(
-            Types.REAL, '...'),
+            Types.REAL, 'probability of total hysterectomy arresting post-partum haemorrhage'),
+        'prob_cure_manual_removal': Parameter(
+            Types.REAL, 'probability of manual removal of retained products arresting a post partum haemorrhage'),
+
     }
 
     PROPERTIES = {
+
+        'hm_pph_treat_received': Property(Types.BOOL, 'dummy-has this woman received treatment'),  # dummy property
+        'hm_aph_treat_received': Property(Types.BOOL, 'dummy-has this woman received treatment')  # dummy property
 
     }
 
@@ -47,7 +63,14 @@ class HaemorrhageTreatment(Module):
         params = self.parameters
 
         params['prob_cure_blood_transfusion'] = 0.4  # dummy
-        params['prob_cure_hysterectomy'] = 0.9  # dummy
+        params['prob_cure_oxytocin'] = 0.5  # dummy
+        params['prob_cure_misoprostol'] = 0.3  # dummy
+        params['prob_cure_uterine_massage'] = 0.15  # dummy
+        params['prob_cure_uterine_tamponade'] = 0.6  # dummy
+        params['prob_cure_uterine_ligation'] = 0.8  # dummy
+        params['prob_cure_b_lych'] = 0.8  # dummy
+        params['prob_cure_hysterectomy'] = 0.95  # dummy
+        params['prob_cure_manual_removal'] = 0.75  # dummy
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -64,20 +87,20 @@ class HaemorrhageTreatment(Module):
         rng = m.rng
         params = self.parameters
 
+        df['hm_pph_treat_received'] = False
+        df['hm_aph_treat_received'] = False
+
+
     def initialise_simulation(self, sim):
 
         event = HaemorrhageTreatmentLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
-        """Initialise our properties for a newborn individual.
 
-        This is called by the simulation whenever a new person is born.
+        df = self.sim.population.props
 
-        :param mother_id: the mother for this child
-        :param child_id: the new child
-        """
-        pass
+        df.at[child_id, 'hm_pph_treat_received'] = False
 
 
 class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
@@ -93,25 +116,16 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # We determine the cause of the bleed based on the incidence
-        etiology = ['placenta praevia', 'placental abruption']
-        probabilities = [0.67, 0.33]
-        random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
+        # IS THIS NECESSARY IF THE TREATMENT IS THE SAME?
+        # etiology = ['placenta praevia', 'placental abruption']
+        # probabilities = [0.67, 0.33]
+        # random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
 
-# =========================== TREATMENT OF PLACENTA PRAEVIA ========================================================
-        if random_choice == 'placenta praevia':
-
-            women = df.index[df.is_alive] #dummy
-        # Blood transfusion for blood loss
-        # Maybe we apply curative effective of blood replacement and if that fails go to death event?
-        #
-        # Primary treatment is delivery via caesarean section
-        else:
-            women = df.index[df.is_alive] #dummy
-        # First we deal with the management of bleeding
-        # Then we schedule safe delivery
-
-# ========================= TREATMENT OF PLACENTAL ABRUPTION ======================================================
+        # Todo: How do we apply the impact of blood as a treatment for hemorrhage
+        df.at[individual_id, 'hm_aph_treat_received'] = True
+        self.sim.schedule_event(caesarean_section.EmergencyCaesareanSection(self.sim.modules['CaesareanSection'],
+                                                                                individual_id,
+                                                                            cause='emergency caesarean'),self.sim.date)
 
 
 class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
@@ -125,6 +139,56 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+
+        etiology = ['uterine atony', 'retained products']
+        probabilities = [0.67, 0.33]# dummy
+        random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
+        # Todo: also consider here if we should add a level of severity of PPH
+
+# ================================= TREATMENT CASCADE FOR ATONIC UTERUS ==============================================
+
+        if random_choice == 'uterine atony':
+            random = self.sim.rng.random_sample()
+            if params['prob_cure_oxytocin'] > random:
+                df.at[individual_id, 'la_pph'] = False
+                df.at[individual_id, 'hm_pph_treat_received'] = True
+            else:
+                random = self.sim.rng.random_sample()
+                if params['prob_cure_misoprostol'] > random:
+                    df.at[individual_id, 'la_pph'] = False
+                    df.at[individual_id, 'hm_pph_treat_received'] = True
+                else:
+                    random = self.sim.rng.random_sample()
+                    if params['prob_cure_uterine_massage'] > random:
+                        df.at[individual_id, 'la_pph'] = False
+                        df.at[individual_id, 'hm_pph_treat_received'] = True
+                        # Todo: consider the impact of oxy + miso + massage as ONE value
+                    else:
+                        random = self.sim.rng.random_sample()
+                        if params['prob_cure_uterine_ligation'] > random:
+                            df.at[individual_id, 'la_pph'] = False
+                            df.at[individual_id, 'hm_pph_treat_received'] = True
+                        else:
+                            random = self.sim.rng.random_sample()
+                            if params['prob_cure_b_lych'] > random:
+                                df.at[individual_id, 'la_pph'] = False
+                                df.at[individual_id, 'hm_pph_treat_received'] = True
+                            else:
+                                random = self.sim.rng.random_sample()
+                                # Todo: similarly consider bunching surgical interventions
+                                if params['prob_cure_hysterectomy'] > random:
+                                    df.at[individual_id, 'la_pph'] = False
+                                    df.at[individual_id, 'hm_pph_treat_received'] = True
+
+        # TODO: can we put a stop/break in the cascade dependent on availbility of consumables/staff time
+        # TODO: Again how to apply the effect of blood?
+
+# ================================= TREATMENT CASCADE FOR RETAINED PRODUCTS/PLACENTA ==================================
+
+        if random_choice == 'retained products':
+            random = self.sim.rng.random_sample()
+            if params['prob_cure_manual_removal'] > random:
+                df.at[individual_id, 'la_pph'] = False
 
 
 class HaemorrhageTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
