@@ -162,16 +162,16 @@ class Labour (Module):
         params = self.parameters
 
         params['prob_pregnancy'] = 0.083  # Calculated from DHS 2010
-        params['prob_miscarriage'] = 0.05 #0.189
+        params['prob_miscarriage'] = 0.053 #0.189
         params['rr_miscarriage_prevmiscarriage'] = 2.23
         params['rr_miscarriage_35'] = 4.02
         params['rr_miscarriage_3134'] = 2.13
-        params['rr_miscarriage_grav4'] = 1.63
+        params['rr_miscarriage_grav4'] = 0.49
         params['prob_pl_ol'] = 0.06
         params['rr_PL_OL_nuliparity'] = 1.8
         params['rr_PL_OL_parity_3'] = 0.8
         params['rr_PL_OL_age_less20'] = 1.3
-        params['prob_ptl'] = 0.18
+        params['prob_ptl'] = 0.05 #0.18
         params['rr_ptl_age20'] = 1.73
         params['rr_ptl_pptb'] = 2.13
         params['prob_an_eclampsia'] = 0.02
@@ -467,27 +467,29 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
 
         # First we identify if this woman has any risk factors for early pregnancy loss
         if (df.at[individual_id, 'la_miscarriage'] >= 1) & (df.at[individual_id, 'age_years'] <= 30) & \
-            (df.at[individual_id, 'la_parity'] + df.at[individual_id, 'la_miscarriage'] <= 3):
+            (df.at[individual_id,'la_parity'] < 1 > 3):
             rf1 = params['rr_miscarriage_prevmiscarriage']
         else:
             rf1 = 1
 
-        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 35):
+        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 35) & \
+            (df.at[individual_id,'la_parity'] < 1 > 3):
             rf2 = params['rr_miscarriage_35']
         else:
             rf2 = 1
 
         if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
-            (df.at[individual_id, 'age_years'] <= 34):
+            (df.at[individual_id, 'age_years'] <= 34) & (df.at[individual_id,'la_parity'] < 1 > 3):
             rf3 = params['rr_miscarriage_3134']
         else:
             rf3 = 1
 
-        if (df.at[individual_id,'la_miscarriage'] == 0) & (df.at[individual_id,'la_parity'] >= 4) & \
-            (df.at[individual_id, 'age_years'] <= 30):
+        if (df.at[individual_id, 'la_miscarriage'] == 0) & (df.at[individual_id, 'age_years'] <= 30) & \
+            (df.at[individual_id,'la_parity'] >= 1 <= 3):
             rf4 = params['rr_miscarriage_grav4']
         else:
             rf4 = 1
+
 
         # Next we multiply the baseline rate of miscarriage by the product of the relative rates for any risk factors
         riskfactors = rf1 * rf2 * rf3 * rf4
@@ -730,20 +732,20 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # Schedule treatment for women who develop eclampsia
         # Apply probability of treatment? Or wait for healthsystem
 
-        if df.at[individual_id,'la_eclampsia']:
-           self.sim.schedule_event(eclampsia_treatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
-                                                                                individual_id, cause='eclampsia'),
-                                    self.sim.date)
+#        if df.at[individual_id,'la_eclampsia']:
+#           self.sim.schedule_event(eclampsia_treatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
+#                                                                                individual_id, cause='eclampsia'),
+#                                    self.sim.date)
 
-        if df.at[individual_id,'la_sepsis']:
-            self.sim.schedule_event(sepsis_treatment.SepsisTreatmentEvent(self.sim.modules['SepsisTreatment'],
-                                                                                individual_id, cause='Sepsis'),
-                                    self.sim.date)
+#        if df.at[individual_id,'la_sepsis']:
+#            self.sim.schedule_event(sepsis_treatment.SepsisTreatmentEvent(self.sim.modules['SepsisTreatment'],
+#                                                                                individual_id, cause='Sepsis'),
+#                                    self.sim.date)
 
-#        for individual_id in idx_aph:
-#            self.sim.schedule_event(haemorrhage_treatment.AntepartumHaemorrhageTreatmentEvent
-#                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
-#                                     cause='antepartum haemorrhage'), self.sim.date)
+        if df.at[individual_id, 'la_aph']:
+           self.sim.schedule_event(haemorrhage_treatment.AntepartumHaemorrhageTreatmentEvent
+                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
+                                     cause='antepartum haemorrhage'), self.sim.date)
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):
@@ -831,6 +833,11 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         random = self.sim.rng.random_sample(size=1)
         if random < eff_prob_eclampsia:
             df.at[individual_id, 'la_eclampsia'] = True
+
+        if df.at[individual_id, 'la_pph']:
+           self.sim.schedule_event(haemorrhage_treatment.PostpartumHaemorrhageTreatmentEvent
+                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
+                                     cause='postpartum haemorrhage'), self.sim.date)
 
 #  =============================================== RESET LABOUR STATUS =================================================
 
