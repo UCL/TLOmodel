@@ -56,7 +56,7 @@ class male_circumcision(Module):
         """
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'Method_HIV.xlsx'), sheet_name=None)
+                                              'ResourceFile_HIV.xlsx'), sheet_name=None)
 
         params = self.parameters
         params['param_list'] = workbook['circumcision']
