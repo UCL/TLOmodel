@@ -23,7 +23,6 @@ class Labour (Module):
     """
     This module models labour and delivery and generates the properties for "complications" of delivery """
 
-
     PARAMETERS = {
 
         'prob_pregnancy': Parameter(
@@ -47,16 +46,6 @@ class Labour (Module):
         'rr_PL_OL_age_less20': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her age is less'
                         'than 20 years'),
-        'rr_PL_OL_baby>3.5g': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her baby weighs more than 3.5'
-                        'kilograms'),
-        'rr_PL_OL_baby<1.5g': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her baby weighs less than 1.5'
-                        'kilograms'),
-        'rr_PL_OL_bmi<18': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her BMI is less than 18'),
-        'rr_PL_OL_bmi>25': Parameter(
-            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her BMI is greater than 25'),
         'prob_ptl': Parameter (
             Types.REAL, 'probability of a woman entering labour at <37 weeks gestation'),
         'rr_ptl_age20': Parameter(
@@ -126,8 +115,9 @@ class Labour (Module):
     PROPERTIES = {
 
         'la_due_date': Property(Types.DATE, 'The predicted date of delivery for a newly pregnant woman'),
-        'la_labour': Property(Types.CATEGORICAL, 'not in labour, Term labour, Preterm Labour, Post term labour',
-                              categories=['not_in_labour', 'term_labour', 'preterm_labour',
+        'la_labour': Property(Types.CATEGORICAL, 'not in labour, Term labour, Early Preterm Labour, '
+                                                 'Late Preterm Labour, Post term labour',
+                              categories=['not_in_labour', 'term_labour', 'early_preterm_labour', 'late_preterm_labour'
                                           'post_term_labour']),
         'la_gestation_at_labour':Property(Types.INT, 'length of gestation in weeks at the point the woman enters '
                                                      'labour'),
@@ -172,7 +162,6 @@ class Labour (Module):
         params['rr_PL_OL_parity_3'] = 0.8
         params['rr_PL_OL_age_less20'] = 1.3
         params['prob_ptl'] = 0.05 #0.18
-        params['rr_ptl_age20'] = 1.73
         params['rr_ptl_pptb'] = 2.13
         params['prob_an_eclampsia'] = 0.02
         params['prob_an_aph'] = 0.03 # 0.03
@@ -366,15 +355,15 @@ class Labour (Module):
         random_draw2 = pd.Series(self.rng.choice(range(0, 3), p=[0.90, 0.07, 0.03], size=len(women_para2_idx)),
                                  index=women_para2_idx)
 
-#        dfx = pd.concat([baseline_cs1, random_draw1], axis=1)
-#        dfx.columns = ['baseline_cs1', 'random_draw1']
-#        idx_prev_cs = dfx.index[dfx.baseline_cs1 < dfx.random_draw1]
-#        df.loc[idx_prev_cs, 'la_previous_cs'] = dfx.random_draw1
+        dfx = pd.concat([baseline_cs1, random_draw1], axis=1)
+        dfx.columns = ['baseline_cs1', 'random_draw1']
+        idx_prev_cs = dfx.index[dfx.baseline_cs1 < dfx.random_draw1]
+        df.loc[idx_prev_cs, 'la_previous_cs'] = dfx.random_draw1
 
-#        dfx = pd.concat([baseline_cs2, random_draw2], axis=1)
-#        dfx.columns = ['baseline_cs2', 'random_draw2']
-#        idx_prev_cs1 = dfx.index[dfx.baseline_cs2 < dfx.random_draw2]
-#        df.loc[idx_prev_cs1, 'la_previous_cs'] = dfx.random_draw2
+        dfx = pd.concat([baseline_cs2, random_draw2], axis=1)
+        dfx.columns = ['baseline_cs2', 'random_draw2']
+        idx_prev_cs1 = dfx.index[dfx.baseline_cs2 < dfx.random_draw2]
+        df.loc[idx_prev_cs1, 'la_previous_cs'] = dfx.random_draw2
 
         # ------------------------------ ASSIGN PREVIOUS PTB AT BASELINE ----------------------------------------------
 
@@ -391,10 +380,10 @@ class Labour (Module):
         baseline_ptb_p2 = pd.Series(m.prob_ptl, index=women_para2_idx)
 
         # Multiply baseline probability of preterm birth by the relative risk of preterm birth in under 20s
-        baseline_ptb.loc[(df.is_alive & (df.sex == 'F') & (df.age_years >= 15) & (df.age_years <= 20))] *= \
-            params['rr_ptl_age20']
-        baseline_ptb_p2.loc[(df.is_alive & (df.sex == 'F') & (df.age_years >= 15) & (df.age_years <= 20))] *= \
-            params['rr_ptl_age20']
+#        baseline_ptb.loc[(df.is_alive & (df.sex == 'F') & (df.age_years >= 15) & (df.age_years <= 20))] *= \
+#            params['rr_ptl_age20']
+#        baseline_ptb_p2.loc[(df.is_alive & (df.sex == 'F') & (df.age_years >= 15) & (df.age_years <= 20))] *= \
+#            params['rr_ptl_age20']
 
         random_draw = pd.Series(rng.random_sample(size=len(women_para1_nocs_idx)),
                                 index=df.index[(df.age_years >= 15) & df.is_alive & (df.sex == 'F') &
@@ -419,8 +408,6 @@ class Labour (Module):
         event = LabourLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
-#        self.baseline_labour_scheduler(sim.population)
-
     def on_birth(self, mother_id, child_id):
 
         df = self.sim.population.props
@@ -443,8 +430,8 @@ class Labour (Module):
         df.at[child_id, 'la_delivery_mode'] = 'not_in_labour'
         df.at[child_id, 'la_died_in_labour'] = False
 
-        # Whenever a mother passes through the birth event, if the below property is set to True she has experienced an
-        # intrapartum still birth. The child is still generated for monitoring.
+        # If a mothers labour has resulted in a late term still birth her child is still generated by the simulation
+        # but is_alive is reset to false to allow for monitoring of still birth rates
         if df.at[mother_id, 'la_still_birth_this_delivery']:
             death = demography.InstantaneousDeath(self.sim.modules['Demography'], child_id,
                                                   cause='Intrapartum Stillbirth')
@@ -490,8 +477,8 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
         else:
             rf4 = 1
 
-
-        # Next we multiply the baseline rate of miscarriage by the product of the relative rates for any risk factors
+        # Next we multiply the baseline rate of miscarriage in the reference population who are absent of riskfactors
+        # by the product of the relative rates for any risk factors this mother may have
         riskfactors = rf1 * rf2 * rf3 * rf4
 
         if riskfactors == 1:
@@ -507,8 +494,8 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
             df.at[individual_id, 'la_miscarriage_date'] = self.sim.date
             df.at[individual_id, 'la_miscarriage'] = +1
 
-            # For women who have had a miscarriage we schedule to post miscarriage event to determine if they experience
-            # any complications
+            # For women who have had a miscarriage we schedule the post miscarriage event to determine if they
+            # experience any complications
             self.sim.schedule_event(PostMiscarriageEvent(self.module, individual_id, cause='post miscarriage'),
                                     self.sim.date)
             # And for women who do not have a miscarriage we move them to labour scheduler to determine at what
@@ -519,7 +506,7 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
 
 
 class LabourScheduler (Event, IndividualScopeEventMixin):
-    """This event determines when newly pregnant women will going to labour based on risk factors for   """
+    """This event determines when newly pregnant women will going to labour"""
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -530,41 +517,54 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         m = self
 
         # First we identify if this woman has any risk factors that predispose her to preterm labour
-        if (df.at[individual_id, 'age_years'] >= 15) & (df.at[individual_id, 'age_years'] <= 20):
-            rf1 = params['rr_ptl_age20']
+        if df.at[individual_id, 'la_previous_ptb']:
+            rf1 = params['rr_ptl_pptb']
         else:
             rf1 = 1
 
-        if (df.at[individual_id, 'age_years'] > 20) & (df.at[individual_id, 'la_previous_ptb'] == True):
-            rf2 = params['rr_ptl_pptb']
-        else:
-            rf2 = 1
+        # Next we multiply the baseline risk of preterm birth in the reference population who are absent of riskfactors
+        # by the product of the relative rates for any risk factors this mother may have
 
-        # Next we multiply the baseline rate of preterm labour by the product of the relative rates for any risk factors
-        riskfactors = rf1 * rf2
+        riskfactors = rf1
 
         if riskfactors == 1:
             eff_prob_ptl = params['prob_ptl']
         else:
             eff_prob_ptl = riskfactors * params['prob_ptl']
 
-        # todo: additional risk factors for ptl
+        # Todo: review any additional risk factors for preterm birth
 
-        # A random draw is used to determine if this woman will go into preterm labour and she is randomly allocated a
-        # gestation of between 26 and 36 weeks at which time she will be scheduled to go into labour
+        # A random draw is used to determine if this woman will go into early preterm labour and she is randomly
+        # allocated a gestation of between 24 and 33 weeks at which time she will be scheduled to go into labour
+
         random = self.sim.rng.random_sample(size=1)
         if random < eff_prob_ptl:
-            random = np.random.randint(26, 36, size=1)
-            random = int(random)
-            df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+            early_late = ['early', 'late']
+            # Here we apply the a probability that women will deliver early or late preterm
+            # Todo: discuss with Tim C how best to incorporate risk factors for early/late preterm
+            probabilities = [0.752, 0.248]
+            random_choice = self.sim.rng.choice(early_late, size=1, p=probabilities)
+            if random_choice == 'early':
+                random = np.random.randint(24, 33, size=1)
+                random = int(random)
+                df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                   pd.Timedelta(random, unit='W')
-            due_date = df.at[individual_id, 'la_due_date']
+                due_date = df.at[individual_id, 'la_due_date']
+            else:
+                random = np.random.randint(34, 37, size=1)
+                random = int(random)
+                df.at[individual_id, 'la_due_date'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                      pd.Timedelta(random, unit='W')
+                due_date = df.at[individual_id, 'la_due_date']
+
         # Labour is then scheduled on the newly generated due date along with the birth event 2 days after
             self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
             self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=2))
 
         # If the woman will not go into preterm labour she is allocated a due date of between 37 and 44 weeks following
         # conception
+
+        # Todo: Discuss with Tim C/Helen A benifit of post- term labour state and potential risk factors
         else:
             random = np.random.randint(37, 44, size=1)
             random = int(random)
@@ -589,7 +589,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================================== LABOUR STATE  ==================================================================
 
-        # Based on gestational age the woman in labour is allocated to either term, preterm or post term labour
+        # Based on gestational age the woman in labour is allocated to either term, earl/late preterm or post term
+        # labour
         gestation_date = df.at[individual_id, 'la_due_date'] - df.at[individual_id, 'date_of_last_pregnancy']
         gestation_weeks = gestation_date / np.timedelta64(1, 'W')
         gestation_weeks = int(gestation_weeks)
@@ -600,9 +601,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_gestation_at_labour'] < 42:
                 df.at[individual_id, 'la_labour'] = "term_labour"
 
-            elif df.at[individual_id, 'la_gestation_at_labour'] >= 26 and\
+            elif df.at[individual_id, 'la_gestation_at_labour'] >= 24 and\
+                df.at[individual_id, 'la_gestation_at_labour'] < 34:
+                df.at[individual_id, 'la_labour'] = "early_preterm_labour"
+                df.at[individual_id, 'la_previous_ptb'] = True
+
+            elif df.at[individual_id, 'la_gestation_at_labour'] >= 34 and\
                 df.at[individual_id, 'la_gestation_at_labour'] < 37:
-                df.at[individual_id, 'la_labour'] = "preterm_labour"
+                df.at[individual_id, 'la_labour'] = "late_preterm_labour"
                 df.at[individual_id, 'la_previous_ptb'] = True
 
             elif df.at[individual_id, 'la_gestation_at_labour'] > 41:
@@ -697,8 +703,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ====================================== UTERINE RUPTURE  =============================================================
 
-        # Todo: include risk factors
-
         if (df.at[individual_id, 'la_parity'] >= 5) & (df.at[individual_id, 'la_previous_cs'] == 0) & \
             ~df.at[individual_id, 'la_obstructed_labour']:
             rf1 = params['rr_an_ur_grand_multip']
@@ -729,8 +733,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # !~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~ DUMMY SCHEDULING !~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~!~
 
-        # Schedule treatment for women who develop eclampsia
-        # Apply probability of treatment? Or wait for healthsystem
+        # DUMMY CODE TO SWITCH ON/OFF SCHEDULING OF INTERVENTIONS PRIOR TO INTEGRATION WITH THE HEALTH SYSTEM
+
 
 #        if df.at[individual_id,'la_eclampsia']:
 #           self.sim.schedule_event(eclampsia_treatment.EclampsiaTreatmentEvent(self.sim.modules['EclampsiaTreatment'],
@@ -742,10 +746,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 #                                                                                individual_id, cause='Sepsis'),
 #                                    self.sim.date)
 
-        if df.at[individual_id, 'la_aph']:
-           self.sim.schedule_event(haemorrhage_treatment.AntepartumHaemorrhageTreatmentEvent
-                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
-                                     cause='antepartum haemorrhage'), self.sim.date)
+#        if df.at[individual_id, 'la_aph']:
+#           self.sim.schedule_event(haemorrhage_treatment.AntepartumHaemorrhageTreatmentEvent
+#                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
+#                                     cause='antepartum haemorrhage'), self.sim.date)
 
 
 class BirthEvent(Event, IndividualScopeEventMixin):
@@ -861,7 +865,7 @@ class PostMiscarriageEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # TODO: consider stage of pregnancy loss and its impact on liklihood of complications i.e retained product
+        # TODO: consider stage of pregnancy loss and its impact on likelihood of complications i.e retained product
 
         # As with the other complication events here we determine if this woman will experience any complications
         # following her miscarriage
@@ -870,7 +874,6 @@ class PostMiscarriageEvent(Event, IndividualScopeEventMixin):
         random = self.sim.rng.random_sample(size=1)
         if random < eff_prob_pph:
             df.at[individual_id, 'la_pph'] = True
-            random = self.sim.rng.random_sample()
 
         riskfactors = 1  # rf1
         eff_prob_pn_sepsis = riskfactors * params['prob_pn_sepsis']
@@ -898,6 +901,10 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         m = self
 
         # TODO: review and restructure as needed
+
+        # Currently we apply an untreated case fatality ratio (dummy values presently) who have experienced a
+        # complication
+        # Similarly we apply a risk of still birth associated with each complication
 
         if df.at[individual_id, 'la_eclampsia']:
             random = self.sim.rng.random_sample()
@@ -966,6 +973,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        # We apply the same structure as with the LabourDeathEvent to women who experience postpartum complications
         if df.at[individual_id, 'la_eclampsia']:
             random = self.sim.rng.random_sample()
             if random < params['cfr_pn_eclampsia']:
