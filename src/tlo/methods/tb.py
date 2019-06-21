@@ -102,7 +102,7 @@ class tb(Module):
     def read_parameters(self, data_folder):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'Method_TB.xlsx'), sheet_name=None)
+                                              'ResourceFile_TB.xlsx'), sheet_name=None)
 
         params = self.parameters
         params['param_list'] = workbook['parameters']

@@ -10,19 +10,19 @@ from tlo.methods import demography, lifestyle, hiv, hiv_hs, tb_hs_engagement, tb
 
 # for desktop
 # path_dem = '/Users/tmangal/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
-# path_tb = 'Q:/Thanzi la Onse/TB/Method_TB.xlsx'
+# path_tb = 'Q:/Thanzi la Onse/TB/ResourceFile_TB.xlsx'
 
 # York
-# path_hiv = 'Z:/Thanzi la Onse/HIV/Method_HIV.xlsx'
+# path_hiv = 'Z:/Thanzi la Onse/HIV/ResourceFile_HIV.xlsx'
 # path_dem = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'  # update for new demog file
 # path_hs = 'Z:/Thanzi la Onse/HIV/Method_ART.xlsx'
-# path_tb = 'Z:/Thanzi la Onse/TB/Method_TB.xlsx'
+# path_tb = 'Z:/Thanzi la Onse/TB/ResourceFile_TB.xlsx'
 
 # for laptop
 path_dem = '/Users/Tara/Dropbox/Thanzi la Onse/05 - Resources/Demographic data/Demography_WorkingFile_Complete.xlsx'
 # path_hs = '/Users/Tara/Documents/TLO/Method_ART.xlsx'
-# path_hiv = '/Users/Tara/Documents/TLO/Method_HIV.xlsx'
-# path_tb = '/Users/Tara/Documents/TLO/Method_TB.xlsx'
+# path_hiv = '/Users/Tara/Documents/TLO/ResourceFile_HIV.xlsx'
+# path_tb = '/Users/Tara/Documents/TLO/ResourceFile_TB.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 2, 1)

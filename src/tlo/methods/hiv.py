@@ -13,7 +13,6 @@ from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 
-# TODO: rename resource files as ResourceFile...
 # TODO: use two letter prefix for properties
 
 class hiv(Module):
@@ -28,8 +27,20 @@ class hiv(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'prob_infant_fast_progressor':
-            Parameter(Types.LIST, 'Probabilities that infants are fast or slow progressors'),
+
+        # baseline characteristics
+        'hiv_prev_2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
+        'child_hiv_prev2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
+        'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
+        'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
+        'art_coverage_adults': Parameter(Types.REAL, 'proportion of hiv+ adults on ART'),
+        'art_coverage_child': Parameter(Types.REAL, 'proportion of hiv+ children on ART'),
+        'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
+        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years'),
+
+        # natural history
+        'beta': Parameter(Types.REAL, 'transmission rate'),
         'exp_rate_mort_infant_fast_progressor':
             Parameter(Types.REAL, 'Exponential rate parameter for mortality in infants fast progressors'),
         'weibull_scale_mort_infant_slow_progressor':
@@ -38,20 +49,6 @@ class hiv(Module):
             Parameter(Types.REAL, 'Weibull shape parameter for mortality in infants slow progressors'),
         'weibull_shape_mort_adult':
             Parameter(Types.REAL, 'Weibull shape parameter for mortality in adults'),
-        'proportion_female_sex_workers':
-            Parameter(Types.REAL, 'proportion of women who engage in transactional sex'),
-        'rr_HIV_high_sexual_risk_fsw':
-            Parameter(Types.REAL, 'relative risk of acquiring HIV with female sex work'),
-        'beta':
-            Parameter(Types.REAL, 'transmission rate'),
-        'irr_hiv_f':
-            Parameter(Types.REAL, 'incidence rate ratio for females vs males'),
-        'rr_circumcision':
-            Parameter(Types.REAL, 'relative reduction in susceptibility due to circumcision'),
-        'rr_behaviour_change':
-            Parameter(Types.REAL, 'relative reduction in susceptibility due to behaviour modification'),
-        'rel_infectiousness_treated':
-            Parameter(Types.REAL, 'relative infectiousness in hiv+ on art'),
         'prob_mtct_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission'),
         'prob_mtct_treated':
@@ -60,80 +57,77 @@ class hiv(Module):
             Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during pregnancy'),
         'prob_mtct_incident_post':
             Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during pregnancy'),
-        'monthly_prob_mtct_breastfeeding_untreated':
+        'monthly_prob_mtct_bf_untreated':
             Parameter(Types.REAL, 'probability of mother to child transmission during breastfeeding'),
-        'monthly_prob_mtct_breastfeeding_treated':
+        'monthly_prob_mtct_bf_treated':
             Parameter(Types.REAL, 'probability of mother to child transmission, mother infected during breastfeeding'),
-        'fsw_transition':
-            Parameter(Types.REAL, 'probability of returning from sex work to low sexual risk'),
-        'or_rural':
-            Parameter(Types.REAL, 'odds ratio rural location'),
-        'or_windex_poorer':
-            Parameter(Types.REAL, 'odds ratio wealth level poorer'),
-        'or_windex_middle':
-            Parameter(Types.REAL, 'odds ratio wealth level middle'),
-        'or_windex_richer':
-            Parameter(Types.REAL, 'odds ratio wealth level richer'),
-        'or_windex_richest':
-            Parameter(Types.REAL, 'odds ratio wealth level richest'),
-        'or_sex_f':
-            Parameter(Types.REAL, 'odds ratio sex=female'),
-        'or_age_gp20':
-            Parameter(Types.REAL, 'odds ratio age 20-24'),
-        'or_age_gp25':
-            Parameter(Types.REAL, 'odds ratio age 25-29'),
-        'or_age_gp30':
-            Parameter(Types.REAL, 'odds ratio age 30-34'),
-        'or_age_gp35':
-            Parameter(Types.REAL, 'odds ratio age 35-39'),
-        'or_age_gp40':
-            Parameter(Types.REAL, 'odds ratio age 40-44'),
-        'or_age_gp45':
-            Parameter(Types.REAL, 'odds ratio age 45-49'),
-        'or_age_gp50':
-            Parameter(Types.REAL, 'odds ratio age 50+'),
-        'or_edlevel_primary':
-            Parameter(Types.REAL, 'odds ratio education primary'),
-        'or_edlevel_secondary':
-            Parameter(Types.REAL, 'odds ratio education secondary'),
-        'or_edlevel_higher':
-            Parameter(Types.REAL, 'odds ratio education higher'),
-        'hiv_prev_2010':
-            Parameter(Types.REAL, 'prevalence hiv in adults'),
-        'qalywt_early':
-            Parameter(Types.REAL, 'QALY weighting for early hiv infection'),
-        'qalywt_chronic':
-            Parameter(Types.REAL, 'QALY weighting for chronic hiv infection'),
-        'qalywt_aids':
-            Parameter(Types.REAL, 'QALY weighting for aids'),
-        'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years'),
-        'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
-        'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
-        'testing_prob_individual': Parameter(Types.REAL, 'probability of individual being tested after trigger event'),
 
-        'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
-                                          'relative increase in testing probability if high sexual risk'),
-        'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
-        'rr_testing_previously_negative': Parameter(Types.DATA_FRAME,
-                                                    'relative change in testing if previously negative versus never tested'),
-        'rr_testing_previously_positive': Parameter(Types.DATA_FRAME,
-                                                    'relative change in testing if previously positive versus never tested'),
-        'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
+        # behavioural parameters
+        'proportion_female_sex_workers':
+            Parameter(Types.REAL, 'proportion of women who engage in transactional sex'),
+        'fsw_transition': Parameter(Types.REAL, 'annual rate at which women leave sex work'),
 
-        'VL_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
+        # relative risk of HIV acquisition
+        'rr_fsw':
+            Parameter(Types.REAL, 'relative risk of hiv with female sex work'),
+        'rr_circumcision':
+            Parameter(Types.REAL, 'relative risk of hiv with circumcision'),
+        'rr_behaviour_change':
+            Parameter(Types.REAL, 'relative risk of hiv with behaviour modification'),
+        'rr_condom': Parameter(Types.REAL, 'relative risk hiv with condom use'),
+        'rr_rural':
+            Parameter(Types.REAL, 'relative risk of hiv in rural location'),
+        'rr_windex_poorer':
+            Parameter(Types.REAL, 'relative risk of hiv with wealth level poorer'),
+        'rr_windex_middle':
+            Parameter(Types.REAL, 'relative risk of hiv with wealth level middle'),
+        'rr_windex_richer':
+            Parameter(Types.REAL, 'relative risk of hiv with wealth level richer'),
+        'rr_windex_richest':
+            Parameter(Types.REAL, 'relative risk of hiv with wealth level richest'),
+        'rr_sex_f':
+            Parameter(Types.REAL, 'relative risk of hiv if female'),
+        'rr_age_gp20':
+            Parameter(Types.REAL, 'relative risk of hiv if age 20-24 compared with 15-19'),
+        'rr_age_gp25':
+            Parameter(Types.REAL, 'relative risk of hiv if age 25-29'),
+        'rr_age_gp30':
+            Parameter(Types.REAL, 'relative risk of hiv if age 30-34'),
+        'rr_age_gp35':
+            Parameter(Types.REAL, 'relative risk of hiv if age 35-39'),
+        'rr_age_gp40':
+            Parameter(Types.REAL, 'relative risk of hiv if age 40-44'),
+        'rr_age_gp45':
+            Parameter(Types.REAL, 'relative risk of hiv if age 45-49'),
+        'rr_age_gp50':
+            Parameter(Types.REAL, 'relative risk of hiv if age 50+'),
+        'rr_edlevel_primary':
+            Parameter(Types.REAL, 'relative risk of hiv with primary education'),
+        'rr_edlevel_secondary':
+            Parameter(Types.REAL, 'relative risk of hiv with secondary education'),
+        'rr_edlevel_higher':
+            Parameter(Types.REAL, 'relative risk of hiv with higher education'),
 
-        'median_time_symptoms_infant_slow_mths': Parameter(Types.REAL,
-                                                           'median time for slow progressing infants to become symptomatic'),
-        'median_time_aids_infant_slow_yrs': Parameter(Types.REAL,
-                                                      'median time for infants to develop aids - slow progressors'),
-        'median_time_aids_infant_fast_mths': Parameter(Types.REAL,
-                                                      'median time for infants to develop aids - fast progressors'),
-        'median_time_symptoms_adults_yrs': Parameter(Types.REAL,
-                                                     'median time for adults to develop symptoms'),
-        'median_time_aids_adults_yrs': Parameter(Types.REAL,
-                                                 'median time for adults to develop aids'),
+        # daly weights
+        'daly_wt_chronic':
+            Parameter(Types.REAL, 'DALY weights for chronic hiv infection'),
+        'daly_wt_aids':
+            Parameter(Types.REAL, 'DALY weights for aids'),
+
+        # health system interactions
+        'prob_high_to_low_art': Parameter(Types.REAL, 'prob of transitioning from good adherence to poor adherence'),
+        'prob_low_to_high_art': Parameter(Types.REAL, 'prob of transitioning from poor adherence to good adherence'),
+        'vl_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
+
+        # 'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
+        #                                   'relative increase in testing probability if high sexual risk'),
+        # 'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
+        # 'rr_testing_previously_negative': Parameter(Types.DATA_FRAME,
+        #                                             'relative change in testing if previously negative versus never tested'),
+        # 'rr_testing_previously_positive': Parameter(Types.DATA_FRAME,
+        #                                             'relative change in testing if previously positive versus never tested'),
+        # 'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
+
 
     }
 
@@ -141,32 +135,31 @@ class hiv(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'hiv_inf': Property(Types.BOOL, 'HIV status'),
-        'hiv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
-        'hiv_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
-        'hiv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
+        'hv_inf': Property(Types.BOOL, 'HIV status'),
+        'hv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
+        'hv_proj_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
+        'hv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
                                     categories=['low', 'sex_work']),
-        'hiv_mother_inf': Property(Types.BOOL, 'HIV status of mother'),
-        'hiv_mother_art': Property(Types.BOOL, 'ART status of mother'),
+        'hv_mother_inf_by_birth': Property(Types.BOOL, 'HIV status of mother'),
+        'hv_mother_art': Property(Types.BOOL, 'ART status of mother'),
 
-        # hiv specific symptoms are matched to the levels for qaly weights above - correct??
-        'hiv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
-                                          categories=['none', 'early', 'symptomatic', 'aids']),
-        'hiv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
+        'hv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
+                                          categories=['none', 'symptomatic', 'aids']),
+        'hv_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
                                              categories=[0, 1, 2, 3, 4]),
-        'hiv_date_symptomatic': Property(Types.DATE, 'Date becomes symptomatic'),
-        'hiv_date_aids': Property(Types.DATE, 'Date develops AIDS'),
+        'hv_proj_date_symptomatic': Property(Types.DATE, 'Date becomes symptomatic'),
+        'hv_proj_date_aids': Property(Types.DATE, 'Date develops AIDS'),
 
-        'hiv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
-        'hiv_date_tested': Property(Types.DATE, 'date of hiv test'),
-        'hiv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
-        'hiv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
-        'hiv_on_art': Property(Types.CATEGORICAL, 'art status', categories=[0, 1, 2]),
-        'hiv_date_art_start': Property(Types.DATE, 'date art started'),
-        'hiv_viral_load_test': Property(Types.DATE, 'date last viral load test'),
-        'hiv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
-        'hiv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
-        'hiv_fast_progressor': Property(Types.BOOL, 'infant fast progressor'),
+        'hv_ever_tested': Property(Types.BOOL, 'ever had a hiv test'),
+        'hv_date_tested': Property(Types.DATE, 'date of hiv test'),
+        'hv_number_tests': Property(Types.INT, 'number of hiv tests taken'),
+        'hv_diagnosed': Property(Types.BOOL, 'hiv+ and tested'),
+        'hv_on_art': Property(Types.CATEGORICAL, 'art status', categories=[0, 1, 2]),
+        'hv_date_art_start': Property(Types.DATE, 'date art started'),
+        'hv_viral_load': Property(Types.DATE, 'date last viral load test'),
+        'hv_on_cotrim': Property(Types.BOOL, 'on cotrimoxazole'),
+        'hv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
+        'hv_fast_progressor': Property(Types.BOOL, 'infant fast progressor'),
 
     }
 
@@ -176,13 +169,23 @@ class hiv(Module):
         """
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
-                                              'Method_HIV.xlsx'), sheet_name=None)
+                                              'ResourceFile_HIV.xlsx'), sheet_name=None)
         # print('workbook', workbook)
 
         params = self.parameters
         params['param_list'] = workbook['parameters']
 
         self.param_list.set_index("Parameter", inplace=True)
+
+        # baseline characteristics
+
+        # natural history
+
+        # behavioural parameters
+
+        # relative risk of HIV acquisition
+
+
 
         params['prob_infant_fast_progressor'] = \
             self.param_list.loc['prob_infant_fast_progressor'].values
@@ -200,8 +203,6 @@ class hiv(Module):
             self.param_list.loc['rr_HIV_high_sexual_risk_fsw', 'Value1']
         params['beta'] = \
             self.param_list.loc['beta', 'Value1']
-        params['irr_hiv_f'] = \
-            self.param_list.loc['irr_hiv_f', 'Value1']
         params['rr_circumcision'] = \
             self.param_list.loc['rr_circumcision', 'Value1']
         params['rr_behaviour_change'] = \
@@ -267,12 +268,6 @@ class hiv(Module):
 
         params['hiv_prev'] = workbook['prevalence']  # for child prevalence
 
-        # QALY weights
-        params['qalywt_early'] = self.sim.modules['QALY'].get_qaly_weight(22)  # Early HIV without anemia
-        params['qalywt_chronic'] = self.sim.modules['QALY'].get_qaly_weight(17)  # Symptomatic HIV without anemia
-        params['qalywt_aids'] = self.sim.modules['QALY'].get_qaly_weight(
-            19)  # AIDS without antiretroviral treatment without anemia
-
         params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
         params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
         params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
@@ -296,6 +291,11 @@ class hiv(Module):
         self.parameters['initial_art_coverage'] = workbook['coverage']
 
         self.parameters['VL_monitoring_times'] = workbook['VL_monitoring']
+
+        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        if 'HealthBurden' in self.sim.modules.keys():
+            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(17)  # Symptomatic HIV without anemia
+            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(19)  # AIDS without antiretroviral treatment without anemia
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
