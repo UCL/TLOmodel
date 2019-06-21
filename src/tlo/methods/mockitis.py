@@ -1,6 +1,3 @@
-"""
-A skeleton template for disease methods.
-"""
 import logging
 
 import numpy as np
@@ -11,19 +8,18 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class Mockitis(Module):
     """
     This is a dummy infectious disease.
     It demonstrates the following behaviours in respect of the healthsystem module:
-
-    - Declaration of TREATMENT_ID
-    - Registration of the disease module
-    - Reading QALY weights and reporting qaly values related to this disease
-    - Health care seeking
-    - Running an "outreach" event
+        - Registration of the disease module
+        - Reading DALY weights and reporting daly values related to this disease
+        - Health care seeking
+        - Usual HSI behaviour
+        - Restrictive requirements on the facility_level for the HSI_event
     """
 
     PARAMETERS = {
@@ -35,12 +31,12 @@ class Mockitis(Module):
             Types.REAL, 'Probability that a treatment is successful in curing the individual'),
         'initial_prevalence': Parameter(
             Types.REAL, 'Prevalence of the disease in the initial population'),
-        'qalywt_mild_sneezing': Parameter(
-            Types.REAL, 'QALY weighting for mild sneezing'),
-        'qalywt_coughing': Parameter(
-            Types.REAL, 'QALY weighting for coughing'),
-        'qalywt_advanced': Parameter(
-            Types.REAL, 'QALY weighting for extreme emergency')
+        'daly_wt_mild_sneezing': Parameter(
+            Types.REAL, 'DALY weight for mild sneezing'),
+        'daly_wt_coughing': Parameter(
+            Types.REAL, 'DALY weight for coughing'),
+        'daly_wt_advanced': Parameter(
+            Types.REAL, 'DALY weight for extreme emergency')
     }
 
     PROPERTIES = {
@@ -80,11 +76,11 @@ class Mockitis(Module):
                 'probability': [0.25, 0.25, 0.25, 0.25]
             })
 
-        # get the QALY values that this module will use from the weight database
-        # (these codes are just random!)
-        p['qalywt_mild_sneezing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_coughing'] = self.sim.modules['QALY'].get_qaly_weight(50)
-        p['qalywt_advanced'] = self.sim.modules['QALY'].get_qaly_weight(589)
+        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        if 'HealthBurden' in self.sim.modules.keys():
+            p['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+            p['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
+            p['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -128,8 +124,8 @@ class Mockitis(Module):
         # date of infection of infected individuals
         # sample years in the past
         infected_years_ago = self.rng.exponential(scale=5, size=infected_count)
+
         # pandas requires 'timedelta' type for date calculations
-        # TODO: timedelta calculations should always be in days
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
@@ -139,6 +135,9 @@ class Mockitis(Module):
         # set the properties of infected individuals
         df.loc[df.mi_is_infected, 'mi_date_infected'] = self.sim.date - infected_td_ago
         df.loc[df.mi_is_infected, 'mi_scheduled_date_death'] = self.sim.date + death_td_ahead
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
 
@@ -165,13 +164,6 @@ class Mockitis(Module):
         for person_id in people_who_will_die:
             self.sim.schedule_event(MockitisDeathEvent(self, person_id),
                                     df.at[person_id, 'mi_scheduled_date_death'])
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
-        # Schedule the outreach event...
-        # event = MockitisOutreachEvent(self, 'this_module_only')
-        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -221,7 +213,7 @@ class Mockitis(Module):
             df.at[child_id, 'mi_specific_symptoms'] = 'none'
             df.at[child_id, 'mi_unified_symptom_code'] = 0
 
-    def on_healthsystem_interaction(self, person_id, treatment_id):
+    def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
@@ -229,13 +221,13 @@ class Mockitis(Module):
         logger.debug('This is Mockitis, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
-
-        # logger.debug('This is mockitis reporting my health values')
+        logger.debug('This is mockitis reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -243,15 +235,16 @@ class Mockitis(Module):
 
         health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
             'none': 0,
-            'mild sneezing': p['qalywt_mild_sneezing'],
-            'coughing and irritable': p['qalywt_coughing'],
-            'extreme emergency': p['qalywt_advanced']
+            'mild sneezing': p['daly_wt_mild_sneezing'],
+            'coughing and irritable': p['daly_wt_coughing'],
+            'extreme emergency': p['daly_wt_advanced']
         })
-        return health_values.loc[df.is_alive]
+        health_values.name = 'Mockitis Symptoms'    # label the cause of this disability
+
+        return health_values.loc[df.is_alive]   # returns the series
 
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
-
     """
     This event is occurring regularly at one monthly intervals and controls the infection process
     and onset of symptoms of Mockitis.
@@ -301,7 +294,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
             # schedule death events for newly infected individuals
             for person_index in infected_idx:
-                death_event = MockitisDeathEvent(self, person_index)
+                death_event = MockitisDeathEvent(self.module, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
             # Determine if anyone with severe symptoms will seek care
@@ -314,16 +307,16 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                 seeks_care[i] = self.module.rng.rand() < prob
 
             if seeks_care.sum() > 0:
-                for person_index in seeks_care.index[seeks_care == True]:
+                for person_index in seeks_care.index[seeks_care is True]:
                     logger.debug(
                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
                         person_index)
                     event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-                    self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                    priority=2,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=2)
-                                                                    )
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                        priority=2,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(weeks=2)
+                                                                        )
             else:
                 logger.debug(
                     'This is MockitisEvent, There is  no one with new severe symptoms so no new healthcare seeking')
@@ -344,6 +337,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
         # Apply checks to ensure that this death should occur
         if df.at[person_id, 'mi_status'] == 'C':
+
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
             self.sim.schedule_event(death, self.sim.date)
@@ -354,7 +348,6 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 # Health System Interaction Events
 
 class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -374,24 +367,26 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
-
 
     def apply(self, person_id):
 
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
+        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
+                     person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
 
         if df.at[person_id, 'age_years'] >= 15:
             logger.debug(
-                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
+                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
+                there should now be treatment for person %d',
                 person_id)
             event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
         else:
             logger.debug(
@@ -400,10 +395,10 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
             date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=date_turns_15,
-                                                            tclose=date_turns_15 + DateOffset(months=12))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=2,
+                                                                topen=date_turns_15,
+                                                                tclose=date_turns_15 + DateOffset(months=12))
 
 
 class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
@@ -422,18 +417,19 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
+                                                  'Intervention_Pkg'] ==
+                                              'First line treatment for new TB cases for adults',
+                                              'Intervention_Pkg_Code'])[0]
         pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
+                                                  'Intervention_Pkg'] ==
+                                              'MDR notification among previously treated patients',
+                                              'Intervention_Pkg_Code'])[0]
 
         item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
@@ -445,6 +441,7 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -467,26 +464,25 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         # Create a follow-up appointment
         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
 
-        logger.debug('....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-                     person_id, target_date_for_followup_appt)
+        logger.debug(
+            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
+            person_id, target_date_for_followup_appt)
 
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
         # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2)
-        )
-
-
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
+                                                            priority=2,
+                                                            topen=target_date_for_followup_appt,
+                                                            tclose=target_date_for_followup_appt + DateOffset(weeks=2)
+                                                            )
 
 
 class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
-    It is appointment at which treatment for mockitiis is monitored.
+    It is appointment at which treatment for mockitis is monitored.
     (In practise, nothing happens!)
 
     """
@@ -499,18 +495,19 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
+                                                  'Intervention_Pkg'] ==
+                                              'First line treatment for new TB cases for adults',
+                                              'Intervention_Pkg_Code'])[0]
         pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
+                                                  'Intervention_Pkg'] ==
+                                              'MDR notification among previously treated patients',
+                                              'Intervention_Pkg_Code'])[0]
 
         item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
@@ -522,10 +519,10 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
-
         # There is a follow-up appoint happening now but it has no real effect!
 
         # Create the next follow-up appointment....
@@ -538,15 +535,13 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
 
         # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2))
-
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
+                                                            priority=2,
+                                                            topen=target_date_for_followup_appt,
+                                                            tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
 
 # ---------------------------------------------------------------------------------
-
 
 
 class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):

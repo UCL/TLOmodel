@@ -43,10 +43,8 @@ class Skeleton(Module):
         'property_a': Property(Types.BOOL, 'Description of property a'),
     }
 
-
     # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = ''
-
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -101,7 +99,6 @@ class Skeleton(Module):
         :param child_id: the new child
         """
         raise NotImplementedError
-
 
     def query_symptoms_now(self):
         """
