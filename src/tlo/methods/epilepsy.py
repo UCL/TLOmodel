@@ -258,14 +258,14 @@ class Epilepsy(Module):
         # todo get daly weight direct from document
         # todo add more comments
 
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
+#       df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
+#       df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
+#       df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
 
-        disability_weights = pd.Series(data=df.loc['is_alive', 'ep_disability'], name='Epilepsy')
+        disability_series_for_alive_persons = df.loc[df['is_alive'],'ep_disability']
 
- #      print(dummy_series)
-        return disability_weights
+        return disability_series_for_alive_persons
+
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
