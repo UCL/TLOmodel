@@ -7,7 +7,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, labour
+from tlo.methods import demography, labour, caesarean_section
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -94,22 +94,31 @@ class EclampsiaTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        # We first apply the probability that first line treatment (IV Magnesium Sulfate) will prevent additional
+        # ecalamptic seizures
         treatment_effect = params['prob_cure_mgso4']
         random = self.sim.rng.random_sample()
         if treatment_effect > random:
             df.at[individual_id, 'la_eclampsia'] = False
             df.at[individual_id, 'ect_treat_received'] = True
+        # Following successful treatment of seizures women will be scheduled to undergo assisted vaginal delivery
             # todo: Here we will schedule an assisted vaginal delivery
 
+        # If first line treatment is unsuccessful, second line (IV Diazepam)is attempted
         elif treatment_effect < random:
             secondary_treatment = params['prob_cure_diazepam']
             random = self.sim.rng.random_sample()
             if secondary_treatment > random:
                 df.at[individual_id, 'la_eclampsia'] = False
                 df.at[individual_id, 'ect_treat_received'] = True
-                # todo: Here we will schedule an assisted vaginal delivery
-            # elif secondary_treatment < random:
-            # Here we will schedule an emergency caesarean section  and consider how this women goes back to death event
+        # Following successful treatment of seizures women will be scheduled to undergo assisted vaginal delivery
+
+        # Following unsuccessful treatment of seizures the woman will undergo an emergency caesarean section
+            elif secondary_treatment < random:
+                self.sim.schedule_event(
+                    caesarean_section.EmergencyCaesareanSection(self.sim.modules['CaesareanSection'],
+                                                                individual_id,
+                                                                cause='emergency caesarean'), self.sim.date)
 
 
 class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
@@ -124,6 +133,7 @@ class EclampsiaTreatmentEventPostPartum(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        # Women who experience post partum eclampsia will undergo medical management of their seizures
         treatment_effect = params['prob_cure_mgso4']
         random = self.sim.rng.random_sample()
         if treatment_effect > random:

@@ -39,7 +39,8 @@ class NewbornOutcomes(Module):
     }
 
     PROPERTIES = {
-        'nb_preterm': Property(Types.BOOL, 'this child has been born preterm'),
+        'nb_early_preterm': Property(Types.BOOL, 'this child has been born early preterm (24-33 weeks gestation)'),
+        'nb_late_preterm': Property(Types.BOOL, 'this child has been born late preterm (34-36 weeks gestation)'),
         'nb_congenital_anomaly': Property(Types.BOOL, 'this child has been born with a congenital anomaly'),
         'nb_neonatal_sepsis': Property(Types.BOOL, 'this child has developed neonatal sepsis following birth'),
         'nb_neonatal_enchep': Property(Types.BOOL, 'this child has developed neonatal encephalopathy secondary to '
@@ -67,7 +68,8 @@ class NewbornOutcomes(Module):
         m = self
         rng = m.rng
 
-        df['nb_preterm'] = False
+        df['nb_early_preterm'] = False
+        df['nb_late_preterm'] = False
         df['nb_congenital_anomaly'] = False
         df['nb_neonatal_sepsis'] = False
         df['nb_neonatal_enchep'] = False
@@ -89,10 +91,12 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_ptb_comps'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
 
-        # Newborns delivered at less than 37 weeks are given the preterm property
-
-        if df.at[mother_id, 'la_labour'] == 'preterm_labour':
-            df.at[child_id, 'nb_preterm'] = True
+        # Newborns delivered at less than 37 weeks are allocated as either late or early preterm based on the
+        # gestation at labour
+        if df.at[mother_id, 'la_labour'] == 'early_preterm_labour':
+            df.at[child_id, 'nb_early_preterm'] = True
+        elif df.at[mother_id, 'la_labour'] == 'late_preterm_labour':
+            df.at[child_id, 'nb_late_preterm'] = True
         else:
             df.at[child_id, 'nb_preterm'] = False
 
@@ -114,7 +118,11 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
     # =================================== COMPLICATIONS IN PRETERM INFANTS ============================================
 
-        if df.at[individual_id, 'nb_preterm']:
+        # First we determine if newborns delivered preterm will develop any complications
+        # Todo: Determine how likelihood of complications other than "preterm birth complications" are impacted by
+        #  gestational age at delivery
+
+        if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id,'nb_late_preterm']:
             rf1 = 1
             riskfactors = rf1
             eff_prob_cba = riskfactors * params['prob_cba']
@@ -143,7 +151,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             if random < eff_prob_ptbc:
                 df.at[individual_id, 'nb_ptb_comps'] = True
 
-        if ~df.at[individual_id, 'nb_preterm']:
+        if ~df.at[individual_id, 'nb_early_preterm'] & ~df.at[individual_id, 'nb_late_preterm']:
             rf1 = 1
             riskfactors = rf1
             eff_prob_cba = riskfactors * params['prob_cba']
@@ -165,8 +173,10 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             if random < eff_prob_enchep:
                 df.at[individual_id, 'nb_neonatal_enchep'] = True
 
-        if ~df.at[individual_id, 'nb_neonatal_enchep'] or ~df.at[individual_id, 'nb_neonatal_sepsis'] or \
-            ~df.at[individual_id, 'nb_congenital_anomaly'] or ~df.at[individual_id, 'nb_ptb_comps']:
+        # Currently we schedule all newborns who have experienced any of the above complications to go through the
+        # NewbornDeathEvent
+        if df.at[individual_id, 'nb_neonatal_enchep'] or df.at[individual_id, 'nb_neonatal_sepsis'] or \
+            df.at[individual_id, 'nb_congenital_anomaly'] or df.at[individual_id, 'nb_ptb_comps']:
             self.sim.schedule_event(newborn_outcomes.NewbornDeathEvent(self.module, individual_id,
                                                                        cause='neonatal compilications')
                                                       ,self.sim.date)
@@ -205,6 +215,9 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             random = self.sim.rng.random_sample()
             if random > params['cfr_ptb_comps']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
+
+        # Schedule the death of any newborns who have died from their complications, whilst cause of death is recorded
+        # as "neonatal complications" we will have contributory factors recorded as the properties of newborns
 
         if df.at[individual_id, 'nb_death_after_birth']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,

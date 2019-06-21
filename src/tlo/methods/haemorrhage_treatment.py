@@ -116,12 +116,15 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # IS THIS NECESSARY IF THE TREATMENT IS THE SAME?
-        # etiology = ['placenta praevia', 'placental abruption']
-        # probabilities = [0.67, 0.33]
-        # random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
+        # Currently assuming the cause of APH in labour to be due to either placenta praevia or placental abruption the
+        # primary treatment (as per malawian guidelines) is blood replacement and caesarean delivery
 
         # Todo: How do we apply the impact of blood as a treatment for hemorrhage
+        # Todo: need to consider the impact of etiology on bleeding within CS? and potential additional interventions?
+        #  may be too granular
+
+        # Women who experience APH are therefore shceduled for an emergency Caesarean section
+        # Todo: A/w linking with health system
         df.at[individual_id, 'hm_aph_treat_received'] = True
         self.sim.schedule_event(caesarean_section.EmergencyCaesareanSection(self.sim.modules['CaesareanSection'],
                                                                                 individual_id,
@@ -140,6 +143,7 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        # First we use a probability weighted random draw to determine the underlying etiology of this womans PPH
         etiology = ['uterine atony', 'retained products']
         probabilities = [0.67, 0.33]# dummy
         random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
@@ -147,6 +151,11 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
 
 # ================================= TREATMENT CASCADE FOR ATONIC UTERUS ==============================================
 
+        # Here we use a treatment cascade adapted from Malawian Obs/Gynae guidlines
+        # Todo: refine/confirm structure and flow of cascade with Expert
+
+        # Women who are bleeding due to atonic uterus first undergo medical management, oxytocin IV, misoprostol PR
+        # and uterine massage in an attempt to stop bleeding
         if random_choice == 'uterine atony':
             random = self.sim.rng.random_sample()
             if params['prob_cure_oxytocin'] > random:
@@ -162,7 +171,9 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
                     if params['prob_cure_uterine_massage'] > random:
                         df.at[individual_id, 'la_pph'] = False
                         df.at[individual_id, 'hm_pph_treat_received'] = True
-                        # Todo: consider the impact of oxy + miso + massage as ONE value
+                        # Todo: consider the impact of oxy + miso + massage as ONE value, Discuss with expert
+
+        # In bleeding refractory to medical management women then undergo surgical management of bleed
                     else:
                         random = self.sim.rng.random_sample()
                         if params['prob_cure_uterine_ligation'] > random:
@@ -180,15 +191,21 @@ class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
                                     df.at[individual_id, 'la_pph'] = False
                                     df.at[individual_id, 'hm_pph_treat_received'] = True
 
+        # TODO: consider where to house property recording infertility secondary to hysterectomy
         # TODO: can we put a stop/break in the cascade dependent on availbility of consumables/staff time
         # TODO: Again how to apply the effect of blood?
 
 # ================================= TREATMENT CASCADE FOR RETAINED PRODUCTS/PLACENTA ==================================
 
+        # If a woman is bleeding due to retained products of conception treatment is applied here
         if random_choice == 'retained products':
             random = self.sim.rng.random_sample()
             if params['prob_cure_manual_removal'] > random:
                 df.at[individual_id, 'la_pph'] = False
+
+        if df.at[individual_id,'la_pph']:
+            self.sim.schedule_event(labour.PostPartumDeathEvent(self.sim.modules['Labour'], individual_id,
+                                                                cause='post partum haemorrhage'), self.sim.date)
 
 
 class HaemorrhageTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
