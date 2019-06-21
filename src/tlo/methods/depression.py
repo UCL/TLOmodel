@@ -10,7 +10,7 @@ import random
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.INFO)
 #logger.setLevel(logging.INFO)
 
 
@@ -294,8 +294,11 @@ class Depression(Module):
 
         depr_poll = DeprEvent(self)
         sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
-        #TODO: I think it would avoid duplicating code (the initialistion stuff?) and allow there to be events in the
+        #TODO: Tim: I think it would avoid duplicating code (the initialistion stuff?) and allow there to be events in the
         # first 3 months of simulation if you have the DeprEvent running for first time on the first day of sim
+        # Andrew: the code for the initialisation is quite different really and uses different parameter
+        # values.  As part of the initialisation I could add some scheduled health care seeking events
+        # for the next three months as is done below
 
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -343,15 +346,15 @@ class Depression(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
+        logger.debug('This is Depression, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
         pass
 
     def report_daly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
+        # the past month
 
-        #       logger.debug('This is epilepsy reporting my health values')
+        #       logger.debug('This is Depression reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -472,10 +475,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_antidepr'] = False
         dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
 
-        # todo check if people on treatment can be placed again on a queue to start
+        # get the indicies of persons who are going to present for care at somepoint in the next 3 months
 
-        # get the indicies of persons who are going to present for care at somepoint in the next month
-        # TODO:  make sure that they are not already on anti-depressnts
         start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
 
         # generate the HSI Events whereby persons present for care and get antidepressants
