@@ -88,10 +88,11 @@ class ElectiveCaesareanSection(Event, IndividualScopeEventMixin):
         m = self
 
         # First we register that this birth is occurring due to an elective caesarean
-        df.at[individual_id, 'la_delivery_mode'] = 'ElCS'  # this property may not be needed
+        df.at[individual_id, 'la_delivery_mode'] = 'ElCS'
         logger.debug('@@@@ A Delivery is now occuring via elective caesarean section, to mother %s', individual_id)
         df.at[individual_id, 'la_previous_cs'] = +1
 
+        # We schedule the post caesarean event which determines if this woman experiences any associated complications
         self.sim.schedule_event(PostCaesareanSection(self.module, individual_id, cause='post caesarean'),
                             self.sim.date)
 
@@ -110,7 +111,7 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
         m = self
 
         # First we register that this birth is occurring due to an emergency caesarean
-        df.at[individual_id, 'la_delivery_mode'] = 'EmCS'         # this property may not be needed
+        df.at[individual_id, 'la_delivery_mode'] = 'EmCS'
         logger.debug('@@@@ A Delivery is now occuring via emergency caesarean section, to mother %s', individual_id)
         df.at[individual_id, 'la_previous_cs'] = +1
 
@@ -120,7 +121,7 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_aph']:
             df.at[individual_id, 'la_aph'] = False  # Placental bleeding cannot continue now placenta is delivered
-            # todo: aph is a risk factor for PPH, how to convey this
+            # todo: determine how to link APH in labour as a risk for PPH following CS
 
         if df.at[individual_id, 'la_eclampsia']:
             df.at[individual_id, 'la_eclampsia'] = False  # Assume eclampsia has stopped as placenta is delivered
