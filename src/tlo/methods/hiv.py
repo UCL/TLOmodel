@@ -13,6 +13,8 @@ from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 
+# TODO: rename resource files as ResourceFile...
+# TODO: use two letter prefix for properties
 
 class hiv(Module):
     """
@@ -859,6 +861,7 @@ class hiv(Module):
         df = self.sim.population.props
         now = self.sim.date
 
+        # TODO: apply circumcision property to 15% of male infants
         # default settings
         df.at[child_id, 'hiv_inf'] = False
         df.at[child_id, 'hiv_date_inf'] = pd.NaT
@@ -955,6 +958,9 @@ class hiv(Module):
         # ----------------------------------- PMTCT -----------------------------------
         # TODO: check difference between HIV/AIDS, PMTCT and PMTCT. Both have code 90
         # first contact is testing, then schedule treatment / prophylaxis as needed
+        # TODO: first contact will be full PMTCT care
+        # then if child infected, schedule ART
+        # TODO: create PMTCT HSI event
         if df.at[child_id, 'hiv_mother_inf'] and not df.at[child_id, 'hiv_diagnosed']:
             event = HSI_Hiv_InfantScreening(self, person_id=child_id)
             self.sim.modules['HealthSystem'].schedule_event(event,
@@ -1346,7 +1352,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
     """
-
+# TODO: change to EID
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1492,7 +1498,7 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Infant_Prophylaxis'
+        self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ALERT_OTHER_DISEASES = []
@@ -1565,7 +1571,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Infant_Treatment_Initiation'
+        self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ALERT_OTHER_DISEASES = []
@@ -1663,7 +1669,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Treatment_Initiation'
+        self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ALERT_OTHER_DISEASES = []
