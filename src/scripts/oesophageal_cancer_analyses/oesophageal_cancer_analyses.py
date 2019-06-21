@@ -3,13 +3,14 @@ import logging
 import os
 
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import numpy as np
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, qaly, oesophageal_cancer
+from tlo.methods import demography, healthsystem, lifestyle, oesophageal_cancer, healthburden
 
 # Where will output go
-outputpath = ''
+outputpath = './src/scripts/oesophageal_cancer_analyses/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -19,7 +20,7 @@ resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 100
+popsize = 1
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -34,35 +35,21 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.Oesophageal_Cancer').setLevel(logging.DEBUG)
 
-# make a dataframe that contains the switches for which interventions are allowed or not allowed
-# during this run. NB. These must use the exact 'registered strings' that the disease modules allow
-
-service_availability = pd.DataFrame(data=[], columns=['Service', 'Available'])
-service_availability.loc[0] = ['Oesophageal cancer', True]
-service_availability['Service'] = service_availability['Service'].astype('object')
-service_availability['Available'] = service_availability['Available'].astype('bool')
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,service_availability=service_availability))
-sim.register(qaly.QALY(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+             ignore_appt_constraints=True,
+             ignore_cons_constraints=True
+             ))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(oesophageal_cancer.Oesophageal_Cancer())
+sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
 # sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
-
-
-# %% read the results
-# output = parse_log_file(logfile)
-
-
-# Load Model Results for n_suidides
-# df_outp = pd.read_csv(logfile)
-# df_outp.columns = ['date', 'n_suicides', 'u']
-# n_suicides = df_outp.n_suicides.sum()
