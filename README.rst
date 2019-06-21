@@ -15,7 +15,7 @@ Thanzi la Onse Epidemiology Model
 
 This is the main software framework for epidemiology and health system modelling in the Thanzi la Onse project.
 
-See https://www.york.ac.uk/igdc/research/thanzi-la-onse/ for more about the project.
+See https://thanzi.org for more about the project.
 
 Installation
 ============
@@ -74,3 +74,4 @@ Note, to combine test coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
+

@@ -8,7 +8,8 @@ NB. There are some issues with the merge, but this will be resolved new data giv
 
 import pandas as pd
 
-workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-demography/village-district-breakdown/Census Data and Health System Data.xlsx'
+workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/village-district-breakdown/Census Data and Health System Data.xlsx'
 
 resourcefilepath = '/Users/tbh03/PycharmProjects/TLOmodel/resources/'
 

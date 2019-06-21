@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,7 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = 'P:/Documents/TLO/Demography_WorkingFile_Complete.xlsx'
+resourcefile_demography = Path('./resources')
 
 
 # %% Run the Simulation
@@ -42,7 +43,7 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefile_demography))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -50,10 +51,8 @@ sim.simulate(end_date=end_date)
 # this will make sure that the logging file is complete
 fh.flush()
 
-
 # %% read the results
 output = parse_log_file(logfile)
-
 
 # %% Plot Population Size Over time:
 
@@ -71,7 +70,6 @@ Data_Years = Data.groupby(by='year')['year'].mean()
 Data_Years = pd.to_datetime(Data_Years, format='%Y')
 Data_Pop_Normalised = 100 * Data_Pop / np.asarray(Data_Pop[(Data_Years == Date(2010, 1, 1))])
 
-
 plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
 plt.plot(Data_Years, Data_Pop_Normalised)
 plt.title("Population Size")
@@ -82,7 +80,6 @@ plt.legend(['Model', 'Data'])
 plt.savefig(outputpath + 'PopSize' + datestamp + '.pdf')
 
 plt.show()
-
 
 # %% Population Pyramid in 2015
 
@@ -215,7 +212,6 @@ fig.subplots_adjust(wspace=0.09)
 plt.savefig(outputpath + 'PopPyramid_ModelVsData' + datestamp + '.pdf')
 plt.show()
 
-
 # %% Plots births ....
 
 births_df = output['tlo.methods.demography']['on_birth']
@@ -225,7 +221,6 @@ plt.xlabel('Year')
 plt.ylabel('Age of Mother')
 plt.savefig(outputpath + 'Births' + datestamp + '.pdf')
 plt.show()
-
 
 # %% Plots deaths ...
 

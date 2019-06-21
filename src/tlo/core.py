@@ -32,7 +32,7 @@ class Types(Enum):
     LIST = auto()
     SERIES = auto()
     DATA_FRAME = auto()
-    STRING= auto()
+    STRING = auto()
 
 
 class Specifiable:
