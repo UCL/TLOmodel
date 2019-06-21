@@ -6,6 +6,7 @@ from tlo.methods import demography
 import numpy as np
 import pandas as pd
 import random
+from pathlib import Path
 
 # todo: code specific clinic visits
 
@@ -102,8 +103,10 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        dfd = pd.read_excel('./resources/ResourceFile_Epilepsy.xlsx',
+        dfd = pd.read_excel(
+                            Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx',
                             sheet_name='parameter_values')
+
         dfd.set_index('parameter_name', inplace=True)
 
         self.parameters['init_epil_seiz_status'] = \
