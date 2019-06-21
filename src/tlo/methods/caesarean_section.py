@@ -125,9 +125,6 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'la_eclampsia']:
             df.at[individual_id, 'la_eclampsia'] = False  # Assume eclampsia has stopped as placenta is delivered
-        # todo: for uterine rupture --> cs --> repair (fails) --> hysterectomy (so they need to pass back to UR event0
-        # if df.at[individual_id,'la_uterine_rupture']:
-                #self.sim.schedule_event(uterine_rupture_treatment.UterineRuptureTreatment)
 
         # todo: if treatment is switch to false they still need to go through the death event? or do they?
 
@@ -135,6 +132,10 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
         self.sim.schedule_event(PostCaesareanSection(self.module, individual_id, cause='post caesarean'),
                                 self.sim.date)
 
+        # todo: for uterine rupture --> cs --> repair (fails) --> hysterectomy (so they need to pass back to UR event0
+   #     if df.at[individual_id,'la_uterine_rupture']:
+   #             self.sim.schedule_event(uterine_rupture_treatment.UterineRuptureTreatment)
+   #
 
 class PostCaesareanSection(Event, IndividualScopeEventMixin):
 

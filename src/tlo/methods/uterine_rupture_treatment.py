@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, labour
+from tlo.methods import demography, labour, caesarean_section
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,8 +19,7 @@ logger.setLevel(logging.DEBUG)
 
 class UterineRuptureTreatment(Module):
     """
-    This module manages the medical and surgical treatment of maternal haemorrhage including antepartum haemorrhage
-    (of all common etiologies) and primary and secondary post-partum haemorrhage
+    This module manages the surgical treatment of uterine rupture
     """
 
     PARAMETERS = {
@@ -46,7 +45,6 @@ class UterineRuptureTreatment(Module):
         """
         params = self.parameters
 
-        params['prob_cure_blood_transfusion'] = 0
         params['prob_cure_uterine_repair'] = 0
         params['prob_cure_hysterectomy'] = 0
 
@@ -67,7 +65,7 @@ class UterineRuptureTreatment(Module):
 
     def initialise_simulation(self, sim):
 
-        event = HaemorrhageTreatmentLoggingEvent(self)
+        event = UterineRuptureTreatmentLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
@@ -81,7 +79,7 @@ class UterineRuptureTreatment(Module):
         pass
 
 
-class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
+class UterineRuptureTreatmentEvent(Event, IndividualScopeEventMixin):
     """handles the medical and surgical treatment of postpartum haemorrhage
     """
 
@@ -94,37 +92,28 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # We determine the cause of the bleed based on the incidence
-        etiology = ['placenta previa', 'placental abruption']
-        probabilities = [0.67, 0.33]
-        random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
+        # First we deliver the baby by caesarean (but without moving to CS event)
+        df.at[individual_id, 'la_delivery_mode'] = 'EmCS'
+        logger.debug('@@@@ A Delivery is now occuring via emergency caesarean section, to mother %s', individual_id)
+        df.at[individual_id, 'la_previous_cs'] = +1
 
-# =========================== TREATMENT OF PLACENTA PREVIA ========================================================
-        if random_choice == 'placenta previa':
-            women= df.index[df.is_alive] #dummy
-        # Primary treatment is delivery via caesarean section
-        # Blood transfusion for blood loss
+        # Todo: consider how to incorporate the impact of bleeding
+        # Next we determine if the uterus can be repaired surgically
+        random = self.sim.rng.random_sample()
+        if params['prob_cure_uterine_repair'] > random:
+            df.at[individual_id, 'la_uterine_rupture'] = False
+
+        # In the instance of failed surgical repair, the woman undergoes a hysterectomy
         else:
-            women= df.index[df.is_alive] #dummy
-        # First we deal with the management of bleeding
-        # Then we schedule safe delivery
+            random = self.sim.rng.random_sample()
+            if params['prob_cure_hysterectomy'] > random:
+                df.at[individual_id, 'la_uterine_rupture'] = False
 
-# ========================= TREATMENT OF PLACENTAL ABRUPTION ======================================================
-
-class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
-
-    """handles the medical and surgical treatment of postpartum haemorrhage """
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
+        # Todo: Should the woman move to post CS event if the UR is not repaired or UR death event?
+#        if df.at[individual_id,'la_uterine_rupture']:
 
 
-class HaemorrhageTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class UterineRuptureTreatmentLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
     def __init__(self, module):
         """schedule logging to repeat every 3 months
