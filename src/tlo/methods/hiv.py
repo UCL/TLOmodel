@@ -33,8 +33,7 @@ class hiv(Module):
         'child_hiv_prev2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
         'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
         'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
-        'art_coverage_adults': Parameter(Types.REAL, 'proportion of hiv+ adults on ART'),
-        'art_coverage_child': Parameter(Types.REAL, 'proportion of hiv+ children on ART'),
+        'initial_art_coverage': Parameter(Types.INT, 'coverage of ART at baseline'),
         'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
         'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
         'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years'),
@@ -135,12 +134,12 @@ class hiv(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'hv_inf': Property(Types.BOOL, 'HIV status'),
-        'hv_date_inf': Property(Types.DATE, 'Date acquired HIV infection'),
+        'hv_inf': Property(Types.BOOL, 'hiv status'),
+        'hv_date_inf': Property(Types.DATE, 'Date acquired hiv infection'),
         'hv_proj_date_death': Property(Types.DATE, 'Projected time of AIDS death if untreated'),
         'hv_sexual_risk': Property(Types.CATEGORICAL, 'Sexual risk groups',
                                     categories=['low', 'sex_work']),
-        'hv_mother_inf_by_birth': Property(Types.BOOL, 'HIV status of mother'),
+        'hv_mother_inf_by_birth': Property(Types.BOOL, 'hiv status of mother'),
         'hv_mother_art': Property(Types.BOOL, 'ART status of mother'),
 
         'hv_specific_symptoms': Property(Types.CATEGORICAL, 'Level of symptoms for hiv',
@@ -174,21 +173,28 @@ class hiv(Module):
 
         params = self.parameters
         params['param_list'] = workbook['parameters']
-
         self.param_list.set_index("Parameter", inplace=True)
 
         # baseline characteristics
+        params['hiv_prev_2010'] = \
+            self.param_list.loc['hiv_prev_2010', 'Value1']
+        params['child_hiv_prev2010'] = \
+            self.param_list.loc['child_hiv_prev2010', 'Value1']
+        params['testing_coverage_male'] = \
+            self.param_list.loc['testing_coverage_male', 'Value1']
+        params['testing_coverage_female'] = \
+            self.param_list.loc['testing_coverage_female', 'Value1']
+        params['initial_art_coverage'] = workbook['coverage']
+        params['vls_m'] = \
+            self.param_list.loc['vls_m', 'Value1']
+        params['vls_f'] = \
+            self.param_list.loc['vls_f', 'Value1']
+        params['vls_child'] = \
+            self.param_list.loc['vls_child', 'Value1']
 
         # natural history
-
-        # behavioural parameters
-
-        # relative risk of HIV acquisition
-
-
-
-        params['prob_infant_fast_progressor'] = \
-            self.param_list.loc['prob_infant_fast_progressor'].values
+        params['beta'] = \
+            self.param_list.loc['beta', 'Value1']
         params['exp_rate_mort_infant_fast_progressor'] = \
             self.param_list.loc['exp_rate_mort_infant_fast_progressor', 'Value1']
         params['weibull_scale_mort_infant_slow_progressor'] = \
@@ -197,18 +203,6 @@ class hiv(Module):
             self.param_list.loc['weibull_shape_mort_infant_slow_progressor', 'Value1']
         params['weibull_shape_mort_adult'] = \
             self.param_list.loc['weibull_shape_mort_adult', 'Value1']
-        params['proportion_female_sex_workers'] = \
-            self.param_list.loc['proportion_female_sex_workers', 'Value1']
-        params['rr_HIV_high_sexual_risk_fsw'] = \
-            self.param_list.loc['rr_HIV_high_sexual_risk_fsw', 'Value1']
-        params['beta'] = \
-            self.param_list.loc['beta', 'Value1']
-        params['rr_circumcision'] = \
-            self.param_list.loc['rr_circumcision', 'Value1']
-        params['rr_behaviour_change'] = \
-            self.param_list.loc['rr_behaviour_change', 'Value1']
-        params['rel_infectiousness_treated'] = \
-            self.param_list.loc['rel_infectiousness_treated', 'Value1']
         params['prob_mtct_untreated'] = \
             self.param_list.loc['prob_mtct_untreated', 'Value1']
         params['prob_mtct_treated'] = \
@@ -217,85 +211,71 @@ class hiv(Module):
             self.param_list.loc['prob_mtct_incident_preg', 'Value1']
         params['prob_mtct_incident_post'] = \
             self.param_list.loc['prob_mtct_incident_post', 'Value1']
-        params['monthly_prob_mtct_breastfeeding_untreated'] = \
-            self.param_list.loc['monthly_prob_mtct_breastfeeding_untreated', 'Value1']
-        params['monthly_prob_mtct_breastfeeding_treated'] = \
-            self.param_list.loc['monthly_prob_mtct_breastfeeding_treated', 'Value1']
+        params['monthly_prob_mtct_bf_untreated'] = \
+            self.param_list.loc['monthly_prob_mtct_bf_untreated', 'Value1']
+        params['monthly_prob_mtct_bf_treated'] = \
+            self.param_list.loc['monthly_prob_mtct_bf_treated', 'Value1']
+
+        # behavioural parameters
+        params['proportion_female_sex_workers'] = \
+            self.param_list.loc['proportion_female_sex_workers', 'Value1']
         params['fsw_transition'] = \
             self.param_list.loc['fsw_transition', 'Value1']
-        params['hiv_prev_2010'] = \
-            self.param_list.loc['hiv_prev_2010', 'Value1']
-        # OR for risk of infection, change to RR
-        params['or_rural'] = \
-            self.param_list.loc['or_rural', 'Value1']
-        params['or_windex_poorer'] = \
-            self.param_list.loc['or_windex_poorer', 'Value1']
-        params['or_windex_middle'] = \
-            self.param_list.loc['or_windex_middle', 'Value1']
-        params['or_windex_richer'] = \
-            self.param_list.loc['or_windex_richer', 'Value1']
-        params['or_windex_richest'] = \
-            self.param_list.loc['or_windex_richest', 'Value1']
-        params['or_sex_f'] = \
-            self.param_list.loc['or_sex_f', 'Value1']
-        params['or_age_gp20'] = \
-            self.param_list.loc['or_age_gp20', 'Value1']
-        params['or_age_gp25'] = \
-            self.param_list.loc['or_age_gp25', 'Value1']
-        params['or_age_gp30'] = \
-            self.param_list.loc['or_age_gp30', 'Value1']
-        params['or_age_gp35'] = \
-            self.param_list.loc['or_age_gp35', 'Value1']
-        params['or_age_gp40'] = \
-            self.param_list.loc['or_age_gp40', 'Value1']
-        params['or_age_gp45'] = \
-            self.param_list.loc['or_age_gp45', 'Value1']
-        params['or_age_gp50'] = \
-            self.param_list.loc['or_age_gp50', 'Value1']
-        params['or_edlevel_primary'] = \
-            self.param_list.loc['or_edlevel_primary', 'Value1']
-        params['or_edlevel_secondary'] = \
-            self.param_list.loc['or_edlevel_secondary', 'Value1']
-        params['or_edlevel_higher'] = \
-            self.param_list.loc['or_edlevel_higher', 'Value1']
-        params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
-        params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
-        params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
 
-        # if self.beta_calib:
-        #     params['beta'] = float(self.beta_calib)
-        # print('beta', params['beta'])
+        # relative risk of HIV acquisition
+        params['rr_fsw'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_circumcision'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_behaviour_change'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_condom'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_rural'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_windex_poorer'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_windex_middle'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_windex_richer'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_windex_richest'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_sex_f'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp20'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp25'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp30'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp35'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp40'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp45'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_age_gp50'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_edlevel_primary'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_edlevel_secondary'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['rr_edlevel_higher'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
 
-        params['hiv_prev'] = workbook['prevalence']  # for child prevalence
-
-        params['testing_coverage_male'] = self.param_list.loc['testing_coverage_male_2010', 'Value1']
-        params['testing_coverage_female'] = self.param_list.loc['testing_coverage_female_2010', 'Value1']
-        params['testing_prob_individual'] = self.param_list.loc['testing_prob_individual', 'Value1']  # dummy value
-
-        params['rr_testing_high_risk'] = self.param_list.loc['rr_testing_high_risk', 'Value1']
-        params['rr_testing_female'] = self.param_list.loc['rr_testing_female', 'Value1']
-        params['rr_testing_previously_negative'] = self.param_list.loc['rr_testing_previously_negative', 'Value1']
-        params['rr_testing_previously_positive'] = self.param_list.loc['rr_testing_previously_positive', 'Value1']
-        params['rr_testing_age25'] = self.param_list.loc['rr_testing_age25', 'Value1']
-        params['vls_m'] = self.param_list.loc['vls_m', 'Value1']
-        params['vls_f'] = self.param_list.loc['vls_f', 'Value1']
-        params['vls_child'] = self.param_list.loc['vls_child', 'Value1']
-
-        params['median_time_symptoms_infant_slow_mths'] = self.param_list.loc[
-            'median_time_symptoms_infant_slow_mths'].values
-        params['median_time_aids_infant_slow_yrs'] = self.param_list.loc['median_time_aids_infant_slow_yrs'].values
-        params['median_time_aids_infant_fast_mths'] = self.param_list.loc['median_time_aids_infant_fast_mths'].values
-        params['median_time_symptoms_adults_yrs'] = self.param_list.loc['median_time_symptoms_adults_yrs'].values
-        params['median_time_aids_adults_yrs'] = self.param_list.loc['median_time_aids_adults_yrs'].values
-
-        self.parameters['initial_art_coverage'] = workbook['coverage']
-
-        self.parameters['VL_monitoring_times'] = workbook['VL_monitoring']
-
+        # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(17)  # Symptomatic HIV without anemia
             params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(19)  # AIDS without antiretroviral treatment without anemia
+
+        # health system interactions
+        params['prob_high_to_low_art'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['prob_low_to_high_art'] = \
+            self.param_list.loc['fsw_transition', 'Value1']
+        params['vl_monitoring_times'] = workbook['VL_monitoring']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
