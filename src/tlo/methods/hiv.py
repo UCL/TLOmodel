@@ -224,45 +224,45 @@ class hiv(Module):
 
         # relative risk of HIV acquisition
         params['rr_fsw'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_fsw', 'Value1']
         params['rr_circumcision'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_circumcision', 'Value1']
         params['rr_behaviour_change'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_behaviour_change', 'Value1']
         params['rr_condom'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_condom', 'Value1']
         params['rr_rural'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_rural', 'Value1']
         params['rr_windex_poorer'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_windex_poorer', 'Value1']
         params['rr_windex_middle'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_windex_middle', 'Value1']
         params['rr_windex_richer'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_windex_richer', 'Value1']
         params['rr_windex_richest'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_windex_richest', 'Value1']
         params['rr_sex_f'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_sex_f', 'Value1']
         params['rr_age_gp20'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp20', 'Value1']
         params['rr_age_gp25'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp25', 'Value1']
         params['rr_age_gp30'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp30', 'Value1']
         params['rr_age_gp35'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp35', 'Value1']
         params['rr_age_gp40'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp40', 'Value1']
         params['rr_age_gp45'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp45', 'Value1']
         params['rr_age_gp50'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_age_gp50', 'Value1']
         params['rr_edlevel_primary'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_edlevel_primary', 'Value1']
         params['rr_edlevel_secondary'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_edlevel_secondary', 'Value1']
         params['rr_edlevel_higher'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['rr_edlevel_higher', 'Value1']
 
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -272,9 +272,9 @@ class hiv(Module):
 
         # health system interactions
         params['prob_high_to_low_art'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['prob_high_to_low_art', 'Value1']
         params['prob_low_to_high_art'] = \
-            self.param_list.loc['fsw_transition', 'Value1']
+            self.param_list.loc['prob_low_to_high_art', 'Value1']
         params['vl_monitoring_times'] = workbook['VL_monitoring']
 
     def initialise_population(self, population):
@@ -282,29 +282,29 @@ class hiv(Module):
         """
         df = population.props
 
-        df['hiv_inf'] = False
-        df['hiv_date_inf'] = pd.NaT
-        df['hiv_date_death'] = pd.NaT
-        df['hiv_sexual_risk'].values[:] = 'low'
-        df['hiv_mother_inf'] = False
+        df['hv_inf'] = False
+        df['hv_date_inf'] = pd.NaT
+        df['hv_proj_date_death'] = pd.NaT
+        df['hv_sexual_risk'].values[:] = 'low'
+        df['hv_mother_inf_by_birth'] = False
         df['hiv_mother_art'] = False
 
-        df['hiv_specific_symptoms'] = 'none'
-        df['hiv_unified_symptom_code'].values[:] = 0
+        df['hv_specific_symptoms'] = 'none'
+        df['hv_unified_symptom_code'].values[:] = 0
 
-        df['hiv_date_symptomatic'] = pd.NaT
-        df['hiv_date_aids'] = pd.NaT
+        df['hv_proj_date_symptomatic'] = pd.NaT
+        df['hv_proj_date_aids'] = pd.NaT
 
-        df['hiv_ever_tested'] = False  # default: no individuals tested
-        df['hiv_date_tested'] = pd.NaT
-        df['hiv_number_tests'] = 0
-        df['hiv_diagnosed'] = False
-        df['hiv_on_art'].values[:] = 0
-        df['hiv_date_art_start'] = pd.NaT
-        df['hiv_viral_load_test'] = pd.NaT
-        df['hiv_on_cotrim'] = False
-        df['hiv_date_cotrim'] = pd.NaT
-        df['hiv_fast_progressor'] = False
+        df['hv_ever_tested'] = False  # default: no individuals tested
+        df['hv_date_tested'] = pd.NaT
+        df['hv_number_tests'] = 0
+        df['hv_diagnosed'] = False
+        df['hv_on_art'].values[:] = 0
+        df['hv_date_art_start'] = pd.NaT
+        df['hv_viral_load_test'] = pd.NaT
+        df['hv_on_cotrim'] = False
+        df['hv_date_cotrim'] = pd.NaT
+        df['hv_fast_progressor'] = False
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -326,17 +326,17 @@ class hiv(Module):
         """
         df = population.props
 
-        fsw = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49))].sample(
+        fsw = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat != 2)].sample(
             frac=self.parameters['proportion_female_sex_workers']).index
 
-        df.loc[fsw, 'hiv_sexual_risk'] = 'sex_work'
+        df.loc[fsw, 'hv_sexual_risk'] = 'sex_work'
 
     def baseline_prevalence(self, population):
         """
         assign baseline hiv prevalence
         """
 
-        # odds ratios from Wingston's analysis dropbox Data-MDHS
+        # rr from Wingston's analysis dropbox Data-MDHS
         now = self.sim.date
         df = population.props
         params = self.parameters
@@ -348,21 +348,24 @@ class hiv(Module):
         # only for 15-54
         risk_hiv = pd.Series(0, index=df.index)
         risk_hiv.loc[df.is_alive & df.age_years.between(15, 55)] = 1  # applied to all adults
-        risk_hiv.loc[(df.sex == 'F')] *= params['or_sex_f']
-        risk_hiv.loc[df.age_years.between(20, 24)] *= params['or_age_gp20']
-        risk_hiv.loc[df.age_years.between(25, 29)] *= params['or_age_gp25']
-        risk_hiv.loc[df.age_years.between(30, 34)] *= params['or_age_gp30']
-        risk_hiv.loc[df.age_years.between(35, 39)] *= params['or_age_gp35']
-        risk_hiv.loc[df.age_years.between(40, 44)] *= params['or_age_gp40']
-        risk_hiv.loc[df.age_years.between(45, 50)] *= params['or_age_gp45']
-        risk_hiv.loc[(df.age_years >= 50)] *= params['or_age_gp50']
-        risk_hiv.loc[~df.li_urban] *= params['or_rural']
-        risk_hiv.loc[(df.li_wealth == '2')] *= params['or_windex_poorer']
-        risk_hiv.loc[(df.li_wealth == '3')] *= params['or_windex_middle']
-        risk_hiv.loc[(df.li_wealth == '4')] *= params['or_windex_richer']
-        risk_hiv.loc[(df.li_wealth == '5')] *= params['or_windex_richest']
-        risk_hiv.loc[(df.li_ed_lev == '2')] *= params['or_edlevel_primary']
-        risk_hiv.loc[(df.li_ed_lev == '3')] *= params['or_edlevel_secondary']  # li_ed_lev=3 secondary and higher
+        risk_hiv.loc[(df.hv_sexual_risk == 'sex_work')] *= params['rr_fsw']
+        risk_hiv.loc[df.mc_is_circumcised] *= params['rr_circumcision']
+        # risk_hiv.loc[(df.contraception == 'condom')] *= params['rr_condom']
+        risk_hiv.loc[~df.li_urban] *= params['rr_rural']
+        risk_hiv.loc[(df.li_wealth == '2')] *= params['rr_windex_poorer']
+        risk_hiv.loc[(df.li_wealth == '3')] *= params['rr_windex_middle']
+        risk_hiv.loc[(df.li_wealth == '4')] *= params['rr_windex_richer']
+        risk_hiv.loc[(df.li_wealth == '5')] *= params['rr_windex_richest']
+        risk_hiv.loc[(df.sex == 'F')] *= params['rr_sex_f']
+        risk_hiv.loc[df.age_years.between(20, 24)] *= params['rr_age_gp20']
+        risk_hiv.loc[df.age_years.between(25, 29)] *= params['rr_age_gp25']
+        risk_hiv.loc[df.age_years.between(30, 34)] *= params['rr_age_gp30']
+        risk_hiv.loc[df.age_years.between(35, 39)] *= params['rr_age_gp35']
+        risk_hiv.loc[df.age_years.between(40, 44)] *= params['rr_age_gp40']
+        risk_hiv.loc[df.age_years.between(45, 50)] *= params['rr_age_gp45']
+        risk_hiv.loc[(df.age_years >= 50)] *= params['rr_age_gp50']
+        risk_hiv.loc[(df.li_ed_lev == '2')] *= params['rr_edlevel_primary']
+        risk_hiv.loc[(df.li_ed_lev == '3')] *= params['rr_edlevel_secondary']  # li_ed_lev=3 secondary and higher
 
         # sample 10% prev, weight the likelihood of being sampled by the relative risk
         eligible = df.index[df.is_alive & df.age_years.between(15, 55)]
@@ -374,17 +377,36 @@ class hiv(Module):
         # print('infected_idx', infected_idx)
         # test = infected_idx.isnull().sum()  # sum number of nan
         # print("number of nan: ", test)
-        df.loc[infected_idx, 'hiv_inf'] = True
+        df.loc[infected_idx, 'hv_inf'] = True
 
-        # for time since infection use a reverse weibull distribution
-        # this is scaled by current age - should be scaled by age at infection!!
-        # hold the index of all adults with hiv
+
+
+
+
+
+        # for time since infection use prob of incident inf 2000-2010
+
         inf_adult = df.index[df.is_alive & df.hiv_inf & (df.age_years >= 15)]
+
+        # random draw with year array and prob array
         times = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(inf_adult)) * \
                 np.exp(self.log_scale(df.loc[inf_adult, 'age_years']))
 
         time_inf = pd.to_timedelta(times * 365.25, unit='d')
-        df.loc[inf_adult, 'hiv_date_inf'] = now - time_inf
+        df.loc[inf_adult, 'hv_date_inf'] = now - time_inf
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # ----------------------------------- CHILD HIV -----------------------------------
 
