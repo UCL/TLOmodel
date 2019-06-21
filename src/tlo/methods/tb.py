@@ -1388,7 +1388,7 @@ class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
 class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that kills people.
     """
-
+    # TODO: if HIV+, cause of death should be HIV as hiv/tb deaths are counted in hiv data
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
