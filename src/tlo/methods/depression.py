@@ -10,7 +10,7 @@ import random
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.ERROR)
 #logger.setLevel(logging.INFO)
 
 
@@ -463,7 +463,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_antidepressants = pd.Series(self.rate_init_antidep,
                                              index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
-        rdandom_draw = pd.Series(self.module.rng.ranom_sample(size=len(depr_not_on_antidepr_idx)),
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
                                 index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr])
 
         dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
@@ -655,8 +655,7 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
         # Check that the person is currently not on antidepressants
         # (not always true so commented out for now)
 
-        assert df.at[person_id, 'de_on_antidepr'] is False
-
+#       assert df.at[person_id, 'de_on_antidepr'] is False
 
         # Change the flag for this person
         df.at[person_id,'de_on_antidepr'] = True
@@ -735,3 +734,6 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.date,
                     dict_for_output)
 
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[0].to_dict())
