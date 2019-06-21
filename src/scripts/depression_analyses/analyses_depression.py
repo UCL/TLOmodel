@@ -19,7 +19,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -56,10 +56,10 @@ fh.flush()
 
 
 # %% read the results
-output = parse_log_file(logfile)
+# output = parse_log_file(logfile)
 
 # %%  Load Model Results for n_suidides
 
-suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
-plt.show()
+# suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
+# plt.show()
 

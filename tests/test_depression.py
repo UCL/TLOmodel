@@ -1,39 +1,56 @@
+import datetime
 import logging
+import os
 
-import pytest
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography, healthsystem, lifestyle, depression, healthburden
 
-from tlo import Simulation, Date
-from tlo.methods import demography, depression
-from tlo.test import random_birth
+# Where will output go
+outputpath = './src/scripts/depression_analyses/'
 
-path = 'C:/Users/Andrew Phillips/Dropbox/Thanzi la Onse/05 - Resources\Demographic data\Demography_WorkingFile_Complete.xlsx'
-# Edit this path so it points to your own copy of the Demography.xlsx file
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
+# The resource files
+resourcefilepath = './resources/'
+
 start_date = Date(2010, 1, 1)
-# if end_date = Date(2010, 1, 1) then population.props are the baseline values
 end_date = Date(2015, 1, 1)
 popsize = 10000
 
+# Establish the simulation object
+sim = Simulation(start_date=start_date)
 
-@pytest.fixture
-def simulation():
-    sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(workbook_path=path)
-    depression_module = depression.Depression()
-    sim.register(core_module)
-    sim.register(depression_module)
+# Establish the logger
+logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+if os.path.exists(logfile):
+    os.remove(logfile)
+fh = logging.FileHandler(logfile)
+fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+fh.setFormatter(fr)
+logging.getLogger().addHandler(fh)
 
-    return sim
-
-
-def test_depression_simulation(simulation):
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 
 
-if __name__ == '__main__':
-    simulation = simulation()
-    test_depression_simulation(simulation)
+# Register the appropriate modules
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+             ignore_appt_constraints=True,
+             ignore_cons_constraints=True
+             ))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
+sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
+# Run the simulation and flush the logger
+# sim.seed_rngs(0)
+sim.make_initial_population(n=popsize)
+sim.simulate(end_date=end_date)
+fh.flush()
 
