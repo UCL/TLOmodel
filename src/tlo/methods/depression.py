@@ -377,7 +377,7 @@ class Depression(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_series_for_alive_persons = df.loc[df['is_alive'],'de_disability']
+        disability_series_for_alive_persons = df.loc[df['is_alive'], 'de_disability']
 
         return disability_series_for_alive_persons
 
@@ -419,6 +419,10 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
         self.rr_suicide_depr_f = module.parameters['rr_suicide_depr_f']
         self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
+        self.daly_wt_moderate_episode_major_depressive_disorder = \
+            module.parameters['daly_wt_moderate_episode_major_depressive_disorder']
+        self.daly_wt_severe_episode_major_depressive_disorder = \
+            module.parameters['daly_wt_severe_episode_major_depressive_disorder']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -585,7 +589,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # disability
         depr_idx = df.index[df.is_alive & df.de_depr]
-        df.loc[depr_idx, 'de_disability'] = 0.49
+
+        # note this a call made about which disability weight to map to the "moderate/severe" depression defined in the model
+        df.loc[depr_idx, 'de_disability'] = self.daly_wt_moderate_episode_major_depressive_disorder
 
         # self harm and suicide
 
