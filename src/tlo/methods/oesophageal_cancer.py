@@ -497,6 +497,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for people aged over 20 with current status 'none'
 
+        # create indexes of subgroups of people with no current oes cancer
         ca_oes_current_none_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20)]
         ca_oes_current_none_f_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
                                            (df.sex == 'F')]
@@ -505,26 +506,33 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_current_none_ex_alc_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
                                            df.li_ex_alc]
 
+        # create series of the parameter r_low_grade_dysplasia_none which is the probability of low grade dysplasia for
+        # men, age20, no excess alcohol, no tobacco
         eff_prob_low_grade_dysp = pd.Series(m.r_low_grade_dysplasia_none,
                                     index=df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20)])
-
+        # update this "effective" probability by multiplyng by the rate ratio being female for the females
         eff_prob_low_grade_dysp.loc[ca_oes_current_none_f_idx] *= m.rr_low_grade_dysplasia_none_female
+        # update this "effective" probability by multiplyng by the rate ratio being a tobacco user for the tobacco users
         eff_prob_low_grade_dysp.loc[ca_oes_current_none_tob_idx] *= m.rr_low_grade_dysplasia_none_tobacco
+        # as above for excess alcohol users
         eff_prob_low_grade_dysp.loc[ca_oes_current_none_ex_alc_idx] *= m.rr_low_grade_dysplasia_none_ex_alc
-
+        # create series which is rate ratio to be applied for each persons age - rate rate by age is continuous
         p_oes_dys_can_age_muliplier = pd.Series(m.rr_low_grade_dysplasia_none_per_year_older ** (df.age_years - 20),
                                                 index=ca_oes_current_none_idx)
-
+        # create a random draw for each in the data frame of all aged > 20 without oes cancer
         random_draw = pd.Series(rng.random_sample(size=len(ca_oes_current_none_idx)),
                                    index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == 'none')])
-
+        # create a temporary dataframe with the effective probability, the age multiplier and the random draw
         dfx = pd.concat([eff_prob_low_grade_dysp, p_oes_dys_can_age_muliplier, random_draw], axis=1)
         dfx.columns = ['eff_prob_low_grade_dysp', 'p_oes_dys_can_age_muliplier', 'random_draw']
+        # update the effective probability so it now includes the effect of age
         dfx.eff_prob_low_grade_dysp *= p_oes_dys_can_age_muliplier
+        # based on the random draw determine who develops low grade dysplasia in this update
         idx_incident_low_grade_dysp = dfx.index[dfx.eff_prob_low_grade_dysp > dfx.random_draw]
         df.loc[idx_incident_low_grade_dysp, 'ca_oesophagus'] = 'low_grade_dysplasia'
 
         # updating for people aged over 20 with current status 'low grade dysplasia'
+        # this uses a very similar approach to that described in detail above
 
         ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
                                                      (df.age_years >= 20)]
@@ -545,6 +553,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_high_grade_dysp, 'ca_oesophagus'] = 'high_grade_dysplasia'
 
         # updating for people aged over 20 with current status 'high grade dysplasia'
+        # this uses a very similar approach to that described in detail above
 
         ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
                                                      (df.age_years >= 20)]
@@ -565,6 +574,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_stage1, 'ca_oesophagus'] = 'stage1'
 
         # updating for people aged over 20 with current status stage 1 oes cancer
+        # this uses a very similar approach to that described in detail above
 
         ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
                                              (df.age_years >= 20)]
@@ -586,6 +596,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_stage2, 'ca_oesophagus'] = 'stage2'
 
         # updating for people aged over 20 with current status stage 2 oes cancer
+        # this uses a very similar approach to that described in detail above
 
         ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
                                              (df.age_years >= 20)]
@@ -607,6 +618,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_incident_stage3, 'ca_oesophagus'] = 'stage3'
 
         # updating for people aged over 20 with current status stage 3 oes cancer
+        # this uses a very similar approach to that described in detail above
 
         ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
                                              (df.age_years >= 20)]
@@ -629,20 +641,26 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
 
-        # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation for diagnosis ?)
+        # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
+        # todo: for diagnosis
 
         df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
 
         # update diagnosis status for undiagnosed people with low grade dysplasia
 
+        # create index of people with undiagnosed low grade dysplasia
         ca_oes_current_low_grade_dysp_not_diag_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
             (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
+        # create series which is the probability of them being diagnosed, based on probability of being
+        # diagnosed if in stage 1 and the rate ratio for diagnosis if have low grade dysplasis rather than
+        # stage 1 (remember "stage" 1 is the third stage (low grade dysplasia, high grade dysplasia, stage 1, etc)
         eff_prob_diag = pd.Series(m.r_diagnosis_stage1 * m.rr_diagnosis_low_grade_dysp,
                                   index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
                                                  (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed])
         random_draw = rng.random_sample(size=len(ca_oes_current_low_grade_dysp_not_diag_idx))
         df.loc[ca_oes_current_low_grade_dysp_not_diag_idx, 'ca_oesophagus_diagnosed'] = (random_draw < eff_prob_diag)
+        # based on a random draw from a uniform 0,1 determine if diagnosis occurs this period
         df.loc[ca_oes_current_low_grade_dysp_not_diag_idx, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] \
             = (random_draw < eff_prob_diag)
 
