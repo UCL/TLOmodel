@@ -295,10 +295,13 @@ class Oesophageal_Cancer(Module):
         stage3_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
         stage4_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
 
+        # create a series of random uniform(0,1) for those with low grade dys (m. is self.)
         random_draw = pd.Series(rng.random_sample(size=len(low_grade_dys_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')])
+        # allocate who is diagnosed this period based on random draw and parameter with prop diagnosed
         df.loc[low_grade_dys_idx, 'ca_oesophagus_diagnosed'] = \
             random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[0]
+        # now do as above for each oesophageal cancer stage
         random_draw = pd.Series(rng.random_sample(size=len(high_grade_dys_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')])
         df.loc[high_grade_dys_idx, 'ca_oesophagus_diagnosed'] = \
@@ -322,6 +325,7 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
 
+        # create indexes for people in each stage
         low_grade_dys_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
                                             & df.ca_oesophagus_diagnosed]
         high_grade_dys_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
@@ -334,18 +338,23 @@ class Oesophageal_Cancer(Module):
                                             & df.ca_oesophagus_diagnosed]
         stage4_oes_can_diagnosed_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')
                                             & df.ca_oesophagus_diagnosed]
-
+        # for those with low grade dysplasia, create a series with random uniform(0,1)
         random_draw = pd.Series(rng.random_sample(size=len(low_grade_dys_diagnosed_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')
                                                & df.ca_oesophagus_diagnosed])
+        # create series with initial proportion with low grade dysplasia, based on parameter
         p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[0], index=df.index[df.is_alive &
                                             (df.ca_oesophagus == 'low_grade_dysplasia')
                                             & df.ca_oesophagus_diagnosed])
+        # create a temporary dataframe dfx that has columns probability of treatment and random draw
         dfx = pd.concat([p_treatment, random_draw], axis=1)
         dfx.columns = ['p_treatment', 'random_draw']
+        # create an index for those who are diagnosed and set ca_oesophagus_curative_treatment to
+        # low_grade_dysplasia
         idx_low_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
         df.loc[idx_low_grade_dysplasia_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
 
+        # do as above for high grade dysplasia
         random_draw = pd.Series(rng.random_sample(size=len(high_grade_dys_diagnosed_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')
                                                & df.ca_oesophagus_diagnosed])
@@ -355,8 +364,9 @@ class Oesophageal_Cancer(Module):
         dfx = pd.concat([p_treatment, random_draw], axis=1)
         dfx.columns = ['p_treatment', 'random_draw']
         idx_high_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_high_grade_dysplasia_treatment, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
+        df.loc[idx_high_grade_dysplasia_treatment, 'ca_oesophagus_curative_treatment'] = 'high_grade_dysplasia'
 
+        # do as above for stage1 oes cancer
         random_draw = pd.Series(rng.random_sample(size=len(stage1_oes_can_diagnosed_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'stage1')
                                                & df.ca_oesophagus_diagnosed])
@@ -368,6 +378,7 @@ class Oesophageal_Cancer(Module):
         idx_stage1_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
         df.loc[idx_stage1_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage1'
 
+        # do as above for stage2 oes cancer
         random_draw = pd.Series(rng.random_sample(size=len(stage2_oes_can_diagnosed_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'stage2')
                                                & df.ca_oesophagus_diagnosed])
@@ -379,6 +390,7 @@ class Oesophageal_Cancer(Module):
         idx_stage2_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
         df.loc[idx_stage2_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage2'
 
+        # do as above for stage3 oes cancer
         random_draw = pd.Series(rng.random_sample(size=len(stage3_oes_can_diagnosed_idx)),
                                 index=df.index[df.is_alive & (df.ca_oesophagus == 'stage3')
                                                & df.ca_oesophagus_diagnosed])
@@ -390,20 +402,10 @@ class Oesophageal_Cancer(Module):
         idx_stage3_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
         df.loc[idx_stage3_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage3'
 
-        random_draw = pd.Series(rng.random_sample(size=len(stage4_oes_can_diagnosed_idx)),
-                                index=df.index[df.is_alive & (df.ca_oesophagus == 'stage4')
-                                               & df.ca_oesophagus_diagnosed])
-        p_treatment = pd.Series(m.init_prop_treatment_status_oes_cancer[5], index=df.index[df.is_alive &
-                                            (df.ca_oesophagus == 'stage4')
-                                            & df.ca_oesophagus_diagnosed])
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ['p_treatment', 'random_draw']
-        idx_stage4_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_stage4_oes_can_treatment, 'ca_oesophagus_curative_treatment'] = 'stage4'
-
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
+        # start simulation immediately - so above values are updated immediately
         event = OesCancerEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
 
@@ -432,10 +434,12 @@ class Oesophageal_Cancer(Module):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
         # And report it on the unified symptomology scale
-        #       logger.debug("This is Epilepsy being asked to report unified symptomology")
-
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
+
+        # todo: currently diagnosis can just occur at some point - need to create properties for
+        # todo: symptoms such as dysphagia and then symptoms that are caused by later stage cancers
+        # todo: and let these determine presentation to the health system (and hence diagnosis)
 
         return pd.Series('1', index=df.index[df.is_alive])
 
@@ -452,7 +456,7 @@ class Oesophageal_Cancer(Module):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past month
 
-        #       logger.debug('This is Depression reporting my health values')
+        #       logger.debug('This is Oesophageal Cancer reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -491,7 +495,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
-        # updating for peopl aged over 20 with current status 'none'
+        # updating for people aged over 20 with current status 'none'
 
         ca_oes_current_none_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20)]
         ca_oes_current_none_f_idx = df.index[df.is_alive & (df.ca_oesophagus == 'none') & (df.age_years >= 20) &
