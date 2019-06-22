@@ -1,65 +1,56 @@
+import datetime
 import logging
 import os
+from pathlib import Path
 
-import pytest
-
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, oesophageal_cancer
+from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography, healthsystem, lifestyle, oesophageal_cancer, healthburden
 
-workbook_name = 'demography.xlsx'
+# Where will output go
+outputpath = './src/scripts/oesophageal_cancer_analyses/'
+
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+
+# The resource files
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 1
+end_date = Date(2015, 1, 1)
+popsize = 10000
+
+# Establish the simulation object
+sim = Simulation(start_date=start_date)
+
+# Establish the logger
+# logfile = outputpath + 'LogFile' + datestamp + '.log'
+
+# if os.path.exists(logfile):
+#    os.remove(logfile)
+# fh = logging.FileHandler(logfile)
+# fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+# fh.setFormatter(fr)
+# logging.getLogger().addHandler(fh)
+
+# logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 
 
-@pytest.fixture(autouse=True)
-def disable_logging():
-    logging.disable(logging.INFO)
+# Register the appropriate modules
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+             ignore_appt_constraints=True,
+             ignore_cons_constraints=True
+             ))
+sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
+sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
-
-@pytest.fixture(scope='module')
-def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
-    sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(oesophageal_cancer.Oesophageal_Cancer())
-    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
-#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-#   sim.seed_rngs(1)
-    return sim
-
-
-def __check_properties(df):
-
- def test_make_initial_population(simulation):
-    simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_simulate(simulation):
-    simulation.simulate(end_date=end_date)
-
-
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_dypes(simulation):
-    # check types of columns
-    df = simulation.population.props
-    orig = simulation.population.new_row
-    assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    simulation = simulation()
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+# Run the simulation and flush the logger
+# sim.seed_rngs(0)
+sim.make_initial_population(n=popsize)
+sim.simulate(end_date=end_date)
+fh.flush()
