@@ -76,7 +76,33 @@ class Epilepsy(Module):
         'base_prob_3m_epi_death': Parameter(
             Types.REAL,
             'base probability per 3 months of epilepsy death'),
-     }
+        # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
+        'daly_wt_epilepsy_severe': Parameter(Types.REAL, 'disability weight for severe epilepsy'
+                                                               'controlled phase - code 860'),
+        'daly_wt_epilepsy_less_severe': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
+                                                              'controlled phase - code 861'),
+        'daly_wt_epilepsy_seizure_free': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
+                                                              'controlled phase - code 862'),
+
+    }
+
+    """
+
+    860,Severe epilepsy,"Epilepsy, seizures >= once a month","has sudden seizures one or more times 
+    each month, with violent muscle contractions and stiffness, loss of consciousness, and loss of 
+    urine or bowel control. Between seizures the person has memory loss and difficulty concentrating.
+    ",0.552,0.375,0.71
+    
+    861,Less severe epilepsy,"Epilepsy, seizures 1-11 per year","has sudden seizures two to five times 
+    a year, with violent muscle contractions and stiffness, loss of consciousness, and loss of urine 
+    or bowel control.",0.263,0.173,0.367
+        
+    862,"Seizure-free, treated epilepsy",Generic uncomplicated disease: worry and daily medication,
+    has a chronic disease that requires medication every day and causes some worry but minimal 
+    interference with daily activities.,0.049,0.031,0.072
+    
+    """
+
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
@@ -133,6 +159,16 @@ class Epilepsy(Module):
         self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
         self.parameters['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
 
+        if 'HealthBurden' in self.sim.modules.keys():
+            # get the DALY weight - 860-862 are the sequale codes for epilepsy
+            self.parameters['daly_wt_epilepsy_severe'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=860)
+            self.parameters['daly_wt_epilepsy_less_severe'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=861)
+            self.parameters['daly_wt_epilepsy_seizure_free'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=862)
+
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -169,12 +205,6 @@ class Epilepsy(Module):
         random_draw = self.rng.random_sample(size=len(seiz_stat_3_idx))
         df.loc[seiz_stat_3_idx, 'ep_antiep'] = (random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_3'])
 
-        # disability
-
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
-
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
@@ -193,16 +223,6 @@ class Epilepsy(Module):
 
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
-
-        # todo: amend this below when identifid data
-        # Define the footprint for the intervention on the common resources
-        footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-            'Name': Epilepsy.TREATMENT_ID,
-            'Nurse_Time': 15,
-            'Doctor_Time': 15,
-            'Electricity': False,
-            'Water': False})
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -257,15 +277,7 @@ class Epilepsy(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        # todo update this below
-        # todo get daly weight direct from document
-        # todo add more comments
-
-#       df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
-#       df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
-#       df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
-
-        disability_series_for_alive_persons = df.loc[df['is_alive'],'ep_disability']
+        disability_series_for_alive_persons = df.loc[df['is_alive'], 'ep_disability']
 
         return disability_series_for_alive_persons
 
@@ -304,6 +316,9 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.base_prob_3m_stop_antiepileptic = module.parameters['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = module.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq']
         self.base_prob_3m_epi_death = module.parameters['base_prob_3m_epi_death']
+        self.daly_wt_epilepsy_severe = module.parameters['daly_wt_epilepsy_severe']
+        self.daly_wt_epilepsy_less_severe = module.parameters['daly_wt_epilepsy_less_severe']
+        self.daly_wt_epilepsy_seizure_free = module.parameters['daly_wt_epilepsy_seizure_free']
 
 
     def apply(self, population):
@@ -559,9 +574,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
         seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
-        df.loc[seiz_stat_1_idx, 'ep_disability'] = 0.049
-        df.loc[seiz_stat_2_idx, 'ep_disability'] = 0.263
-        df.loc[seiz_stat_3_idx, 'ep_disability'] = 0.552
+        # note disability weights from gbd do not map fully onto epilepsy states in model - could re-visit
+        # this proposed mapping below
+        df.loc[seiz_stat_1_idx, 'ep_disability'] = self.daly_wt_epilepsy_seizure_free
+        df.loc[seiz_stat_2_idx, 'ep_disability'] = self.daly_wt_epilepsy_less_severe
+        df.loc[seiz_stat_3_idx, 'ep_disability'] = self.daly_wt_epilepsy_severe
 
         # update ep_epi_death
 
@@ -681,6 +698,4 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
-        logger.info('This is EPIlepsy %s, a first appointment for person %d',
-                     person_id)
         print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
