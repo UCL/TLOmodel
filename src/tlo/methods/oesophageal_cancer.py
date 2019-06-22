@@ -24,6 +24,7 @@ class Oesophageal_Cancer(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
+    # todo: consider adding palliative care ;
 
     PARAMETERS = {
         'r_low_grade_dysplasia_none': Parameter(Types.REAL, 'probabilty per 3 months of incident low grade '
