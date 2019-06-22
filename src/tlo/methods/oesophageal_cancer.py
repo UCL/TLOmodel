@@ -153,7 +153,8 @@ class Oesophageal_Cancer(Module):
 
         p = self.parameters
 
-        dfd = pd.read_excel('./resources/Method_Oesophageal_Cancer.xlsx',
+        dfd = pd.read_excel(
+                            Path(self.resourcefilepath) / 'ResourceFile_Oesophageal_Cancer.xlsx',
                             sheet_name='parameter_values')
         dfd.set_index('parameter_name', inplace=True)
 
@@ -404,7 +405,7 @@ class Oesophageal_Cancer(Module):
         """Add lifestyle events to the simulation
         """
         event = OesCancerEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=3))
+        sim.schedule_event(event, sim.date + DateOffset(months=0))
 
         event = OesCancerLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
