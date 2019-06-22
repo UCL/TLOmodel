@@ -82,7 +82,7 @@ class Epilepsy(Module):
         'daly_wt_epilepsy_less_severe': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
                                                               'controlled phase - code 861'),
         'daly_wt_epilepsy_seizure_free': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
-                                                              'controlled phase - code 862'),
+                                                              'controlled phase - code 862')
 
     }
 
@@ -219,7 +219,7 @@ class Epilepsy(Module):
         or stopping.
         """
         epilepsy_poll = EpilepsyEvent(self)
-        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=3))
+        sim.schedule_event(epilepsy_poll, sim.date + DateOffset(months=0))
 
         event = EpilepsyLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))

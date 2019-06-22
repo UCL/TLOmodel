@@ -117,7 +117,23 @@ class Depression(Module):
         'prob_3m_selfharm_depr': Parameter(
             Types.REAL,
             'rate of non-fatal self harm in (currently depressed)'),
+        # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
+        'daly_wt_severe_episode_major_depressive_disorder': Parameter(Types.REAL, 'daly_wt_severe_major_depressive_disorder'
+                                                                          ' - code 932'),
+        'daly_wt_moderate_episode_major_depressive_disorder': Parameter(Types.REAL, 'daly_wt_moderate_episode_major_depressive_disorder '
+                                                                                    '- code 933')
         }
+
+    """
+        above is extracted from this below, which comes from daly weight file
+    
+        932,"Major depressive disorder, severe episode","has overwhelming, constant sadness and cannot function in daily life. The person sometimes loses touch with reality and wants to harm or kill himself (or herself).",0.658,0.477,0.807
+        933,"Major depressive disorder, moderate episode","has constant sadness and has lost interest in usual activities. The person has some difficulty in daily life, sleeps badly, has trouble concentrating, and sometimes thinks about harming himself (or herself).",0.396,0.267,0.531
+        935,"Major depressive disorder, mild episode","feels persistent sadness and has lost interest in usual activities. The person sometimes sleeps badly, feels tired, or has trouble concentrating but still manages to function in daily life with extra effort.",0.145,0.099,0.209
+        943,Severe anxiety disorders,"Anxiety disorders, severe","constantly feels very anxious and worried, which makes it difficult to concentrate, remember things and sleep. The person has lost pleasure in life and thinks about suicide. ",0.523,0.362,0.677
+        942,Moderate anxiety disorders,"Anxiety disorders, moderate","feels anxious and worried, which makes it difficult to concentrate, remember things, and sleep. The person tires easily and finds it difficult to perform daily activities.",0.133,0.091,0.186
+        944,Mild anxiety disorders,"Anxiety disorders, mild","feels mildly anxious and worried, which makes it slightly difficult to concentrate, remember things, and sleep. The person tires easily but is able to perform daily activities.",0.03,0.018,0.046     
+    """
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
@@ -191,6 +207,14 @@ class Depression(Module):
         self.parameters['prob_3m_suicide_depr_m'] = dfd.loc['prob_3m_suicide_depr_m', 'value']
         self.parameters['rr_suicide_depr_f'] = dfd.loc['rr_suicide_depr_f', 'value']
         self.parameters['prob_3m_selfharm_depr'] = dfd.loc['prob_3m_selfharm_depr', 'value']
+
+        if 'HealthBurden' in self.sim.modules.keys():
+            # get the DALY weight - 932 and 933 are the sequale codes for epilepsy
+            self.parameters['daly_wt_severe_episode_major_depressive_disorder'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=932)
+            self.parameters['daly_wt_moderate_episode_major_depressive_disorder'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=933)
+
 
     def initialise_population(self, population):
 
@@ -293,12 +317,7 @@ class Depression(Module):
         """
 
         depr_poll = DeprEvent(self)
-        sim.schedule_event(depr_poll, sim.date + DateOffset(months=3))
-        #TODO: Tim: I think it would avoid duplicating code (the initialistion stuff?) and allow there to be events in the
-        # first 3 months of simulation if you have the DeprEvent running for first time on the first day of sim
-        # Andrew: the code for the initialisation is quite different really and uses different parameter
-        # values.  As part of the initialisation I could add some scheduled health care seeking events
-        # for the next three months as is done below
+        sim.schedule_event(depr_poll, sim.date + DateOffset(months=0))
 
         event = DepressionLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=0))
@@ -493,26 +512,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 topen=date_seeking_care,
                                                                 tclose=None)
 
-
-        """
-        # TODO: This is Tim commenting out the old way of starting people and replacing it with the HSI 
-        # create a df with one row per person needing to start treatment - this is only way I have
-        # managed to get query access to service code to work properly here (should be possible to remove
-        # relevant rows from dfx rather than create dfxx
-        e1 = pd.Series(True, index=dfx.index[dfx.x_antidepr])
-        e2 = pd.Series(True, index=dfx.index[dfx.x_antidepr])
-        dfxx = pd.concat([e1, e2], axis=1)
-        dfxx.columns = ['start_antidepr_this_period', 'e2']
-
-        # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
-        for index in dfxx:
-            dfxx['gets_trt'] = True     # TODO: Not sure if this is neccessary now (was previously using query_access)d
-
-        df.loc[start_antidepr_this_period_idx, 'de_on_antidepr'] = dfxx['gets_trt']
-        """
-
-
-
         # defaulting from antidepressant use
 
         on_antidepr_currently_depr_idx = df.index[df.is_alive & df.de_depr & df.de_on_antidepr]
@@ -588,8 +587,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         depr_idx = df.index[df.is_alive & df.de_depr]
         df.loc[depr_idx, 'de_disability'] = 0.49
 
-
-
         # self harm and suicide
 
         random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
@@ -612,9 +609,6 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
                                     self.sim.date)
 
 
-
-# ------------
-# ------------
 #     # Declaration of how we will refer to any treatments that are related to this disease.
 #     TREATMENT_ID = ''
 #     Declare the HSI event
@@ -660,12 +654,6 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
 
         # Change the flag for this person
         df.at[person_id,'de_on_antidepr'] = True
-
-
-
-# ------------
-# ------------
-
 
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
