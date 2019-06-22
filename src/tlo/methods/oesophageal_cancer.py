@@ -665,6 +665,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with high grade dysplasia
+        # uses the same approach as above
 
         ca_oes_current_high_grade_dysp_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
@@ -677,6 +678,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 1 oes cancer
+        # uses the same approach as above
 
         ca_oes_current_stage1_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1') &
                                                       (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
@@ -689,6 +691,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 2 oes cancer
+        # uses the same approach as above
 
         ca_oes_current_stage2_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
@@ -701,6 +704,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 3 oes cancer
+        # uses the same approach as above
 
         ca_oes_current_stage3_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
@@ -713,6 +717,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             = (random_draw < eff_prob_diag)
 
         # update diagnosis status for undiagnosed people with stage 4 oes cancer
+        # uses the same approach as above
 
         ca_oes_current_stage4_not_diag_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4') &
                                                           (df.age_years >= 20) & ~df.ca_oesophagus_diagnosed]
@@ -727,7 +732,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
-
+        # this uses the approach descibed in detail above for updating diagosis status
         ca_oes_diag_low_grade_dysp_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia') &
             (df.age_years >= 20) & df.ca_oesophagus_diagnosed & (df.ca_oesophagus_curative_treatment == 'never')]
@@ -760,6 +765,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with high grade dysplasia w
+        # this follows the same approach as above
 
         ca_oes_diag_high_grade_dysp_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia') &
@@ -778,6 +784,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[requested_treatment_high_grade_dysplasia_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # generate the HSI Events whereby persons present for care and get treatment_high_grade_dysplasia
+        # this follows the same approach as above
 
         for person_id in requested_treatment_high_grade_dysplasia_idx:
             # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
@@ -793,6 +800,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 1
+        # this follows the same approach as above
 
         ca_oes_diag_stage1_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'stage1') &
@@ -811,6 +819,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[requested_treatment_stage1_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # generate the HSI Events whereby persons present for care and get treatment atsge 1
+        # this follows the same approach as above
 
         for person_id in requested_treatment_stage1_idx:
             # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
@@ -826,6 +835,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 2
+        # this follows the same approach as above
 
         ca_oes_diag_stage2_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'stage2') &
@@ -844,6 +854,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[requested_treatment_stage2_idx, 'ca_oesophagus_curative_treatment_requested'] = True
 
         # generate the HSI Events whereby persons present for care and get treatment for stage 2 oes cancer
+        # this follows the same approach as above
 
         for person_id in requested_treatment_stage2_idx:
             # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
@@ -859,6 +870,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None)
 
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 3
+        # this follows the same approach as above
 
         ca_oes_diag_stage3_not_treated_idx = df.index[
             df.is_alive & (df.ca_oesophagus == 'stage3') &
@@ -893,6 +905,26 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DISABLITY -----------------------------------------------------------
 
+        """
+        547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
+        medication, has a chronic disease that requires medication every day and causes some
+        worry but minimal interference with daily activities., 0.049, 0.031, 0.072
+
+        548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers, 
+        end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong 
+        medication to avoid constant pain. The person has no appetite, feels nauseous, and needs 
+        to spend most of the day in bed.", 0.54, 0.377, 0.687
+
+        549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme 
+        fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
+        
+        550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and 
+        primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193, 
+        0.399
+        """
+
+        # todo: map these to stages and whether diagnosed and read in from file
+
         ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasa')]
         ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasa')]
         ca_oes_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')]
@@ -900,7 +932,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
         ca_oes_stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
 
-        # todo - review - salomon et al does not give disability by stage
         df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.01
         df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.01
         df.loc[ca_oes_stage1_idx, 'ca_disability'] = 0.20
