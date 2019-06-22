@@ -116,10 +116,37 @@ class Oesophageal_Cancer(Module):
                                            'relative prevalence at baseline of oesophageal dysplasia/cancer '),
         'init_prop_diagnosed_oes_cancer_by_stage': Parameter(Types.LIST, 'initial proportions of people with'
                                                                          'oesophageal dysplasia/cancer diagnosed'),
-
         'init_prop_treatment_status_oes_cancer': Parameter(Types.LIST,'initial proportions of people with'
                                                                      'oesophageal dysplasia/cancer treated'),
+        # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
+        'daly_wt_oes_cancer_controlled': Parameter(Types.REAL, 'disability weight for oesophageal cancer '
+                                                               'controlled phase - code 547'),
+        'daly_wt_oes_cancer_terminal': Parameter(Types.REAL, 'disability weight for oesophageal cancer '
+                                                               'terminal - code 548'),
+        'daly_wt_oes_cancer_metastatic': Parameter(Types.REAL, 'disability weight for oesophageal cancer '
+                                                               'metastatic - code 549'),
+        'daly_wt_oes_cancer_primary_therapy': Parameter(Types.REAL, 'disability weight for oesophageal cancer '
+                                                               'primary therapy - code 550')
     }
+
+    """
+    547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
+    medication, has a chronic disease that requires medication every day and causes some
+    worry but minimal interference with daily activities., 0.049, 0.031, 0.072
+
+    548, Terminal phase of esophageal cancer, "Terminal phase, with medication (for cancers, 
+    end-stage kidney/liver disease)", "has lost a lot of weight and regularly uses strong 
+    medication to avoid constant pain. The person has no appetite, feels nauseous, and needs 
+    to spend most of the day in bed.", 0.54, 0.377, 0.687
+
+    549, Metastatic phase of esophageal cancer, "Cancer, metastatic", "has severe pain, extreme 
+    fatigue, weight loss and high anxiety.", 0.451, 0.307, 0.6
+
+    550, Diagnosis and primary therapy phase of esophageal cancer, "Cancer, diagnosis and 
+    primary therapy ", "has pain, nausea, fatigue, weight loss and high anxiety.", 0.288, 0.193, 
+    0.399
+    """
+
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
@@ -149,8 +176,9 @@ class Oesophageal_Cancer(Module):
     TREATMENT_ID = 'attempted curative treatment for oesophageal cancer'
 
     def read_parameters(self, data_folder):
-        """Setup parameters used by the module
+        """Setup parameters used by the module, now including disability weights
         """
+
 
         p = self.parameters
 
@@ -205,6 +233,17 @@ class Oesophageal_Cancer(Module):
             dfd.loc['init_prop_treatment_status_oes_cancer', 'value4'],
             dfd.loc['init_prop_treatment_status_oes_cancer', 'value5'],
             dfd.loc['init_prop_treatment_status_oes_cancer', 'value6']]
+
+        if 'HealthBurden' in self.sim.modules.keys():
+            # get the DALY weight - 547-550 are the sequale codes for oesophageal cancer
+            self.parameters['daly_wt_oes_cancer_controlled'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=547)
+            self.parameters['daly_wt_oes_cancer_terminal'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=548)
+            self.parameters['daly_wt_oes_cancer_metastatic'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=549)
+            self.parameters['daly_wt_oes_cancer_primary_therapy'] = \
+                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=550)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -924,8 +963,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         0.399
         """
 
-        # todo: map these to stages and whether diagnosed and read in from file
-
+        # assume disability does not depend on whether diagnosed but may want to change in future
         ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasa')]
         ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasa')]
         ca_oes_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')]
@@ -933,12 +971,16 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
         ca_oes_stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage4')]
 
+        # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
+        # todo: choices below at some point
+
         df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.01
         df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.01
-        df.loc[ca_oes_stage1_idx, 'ca_disability'] = 0.20
-        df.loc[ca_oes_stage2_idx, 'ca_disability'] = 0.30
-        df.loc[ca_oes_stage3_idx, 'ca_disability'] = 0.40
-        df.loc[ca_oes_stage4_idx, 'ca_disability'] = 0.51
+        df.loc[ca_oes_stage1_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
+        df.loc[ca_oes_stage2_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
+        df.loc[ca_oes_stage3_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
+        df.loc[ca_oes_stage4_idx, 'ca_disability'] = (m.daly_wt_oes_cancer_metastatic +
+                                                      m.daly_wt_oes_cancer_terminal)/2
 
 
     # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------

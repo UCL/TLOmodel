@@ -20,8 +20,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 10000
+end_date = Date(2011, 1, 1)
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -53,4 +53,4 @@ sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefile
 # sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
+# fh.flush()
