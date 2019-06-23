@@ -964,8 +964,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         # assume disability does not depend on whether diagnosed but may want to change in future
-        ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasa')]
-        ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasa')]
+        ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'low_grade_dysplasia')]
+        ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == 'high_grade_dysplasia')]
         ca_oes_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage1')]
         ca_oes_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage2')]
         ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == 'stage3')]
@@ -977,8 +977,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
         # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
 
-        df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
-        df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
+        df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.01
+        df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.01
         df.loc[ca_oes_stage1_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
         df.loc[ca_oes_stage2_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
         df.loc[ca_oes_stage3_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
