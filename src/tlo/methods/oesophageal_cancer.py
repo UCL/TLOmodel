@@ -530,7 +530,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # set ca_oesophageal_cancer_death back to False after death
         df['ca_oesophageal_cancer_death'] = False
         df['ca_disability'] = 0
-        df['ca_oesophagus_curative_treatment_requested'] = False
+#       df['ca_oesophagus_curative_treatment_requested'] = False
         df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
 
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
@@ -974,14 +974,15 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
         # todo: choices below at some point
 
-        df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = 0.01
-        df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = 0.01
+        # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
+        # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
+
+        df.loc[ca_oes_low_grade_dysplasia_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
+        df.loc[ca_oes_high_grade_dysplasia_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
         df.loc[ca_oes_stage1_idx, 'ca_disability'] = m.daly_wt_oes_cancer_controlled
         df.loc[ca_oes_stage2_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
         df.loc[ca_oes_stage3_idx, 'ca_disability'] = m.daly_wt_oes_cancer_primary_therapy
-        df.loc[ca_oes_stage4_idx, 'ca_disability'] = (m.daly_wt_oes_cancer_metastatic +
-                                                      m.daly_wt_oes_cancer_terminal)/2
-
+        df.loc[ca_oes_stage4_idx, 'ca_disability'] = m.daly_wt_oes_cancer_metastatic
 
     # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
 
