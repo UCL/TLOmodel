@@ -33,10 +33,10 @@ class hiv(Module):
         'child_hiv_prev2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
         'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
         'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
-        'initial_art_coverage': Parameter(Types.INT, 'coverage of ART at baseline'),
-        'vls_m': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_f': Parameter(Types.INT, 'rates of viral load suppression males'),
-        'vls_child': Parameter(Types.INT, 'rates of viral load suppression in children 0-14 years'),
+        'initial_art_coverage': Parameter(Types.REAL, 'coverage of ART at baseline'),
+        'vls_m': Parameter(Types.REAL, 'rates of viral load suppression males'),
+        'vls_f': Parameter(Types.REAL, 'rates of viral load suppression males'),
+        'vls_child': Parameter(Types.REAL, 'rates of viral load suppression in children 0-14 years'),
 
         # natural history
         'beta': Parameter(Types.REAL, 'transmission rate'),
@@ -782,7 +782,7 @@ class hiv(Module):
         # TODO: create PMTCT HSI event
         if df.at[child_id, 'hv_mother_inf'] and not df.at[child_id, 'hv_diagnosed']:
             event = HSI_Hiv_InfantScreening(self, person_id=child_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=1,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(weeks=4)
@@ -801,7 +801,7 @@ class hiv(Module):
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
-            self.sim.modules['HealthSystem'].schedule_event(piggy_back_dx_at_appt,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                             priority=0,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -822,6 +822,7 @@ class hiv(Module):
             'symp': params['daly_wt_chronic'],
             'aids': params['daly_wt_aids']
         })
+        health_values.name = 'hiv Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]
 
@@ -1016,7 +1017,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
                     'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
                 event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(event,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
@@ -1050,7 +1051,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
                     'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
                 event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(event,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=3,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
@@ -1073,7 +1074,7 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
             # make the outreach event
             outreach_event_for_individual = HSI_Hiv_OutreachIndividual(self.module, person_id=person_id)
 
-            self.sim.modules['HealthSystem'].schedule_event(outreach_event_for_individual,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
                                                             priority=1,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(weeks=12))
@@ -1115,6 +1116,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1140,7 +1142,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
             treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
             # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_event(treatment,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -1194,7 +1196,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
             treatment = HSI_Hiv_StartInfantTreatment(self.module, person_id=person_id)
 
             # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_event(treatment,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -1207,7 +1209,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
             treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
 
             # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_event(treatment,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -1264,7 +1266,7 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
             treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
             # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_event(treatment,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
                                                             priority=2,
                                                             topen=self.sim.date,
                                                             tclose=None)
@@ -1410,7 +1412,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         # Request the health system to have this follow-up appointment
         for i in range(0, len(times)):
             followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
-            self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                             priority=2,
                                                             topen=followup_appt_date,
                                                             tclose=followup_appt_date + DateOffset(weeks=2)
@@ -1427,7 +1429,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
         # Request the health system to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                         priority=2,
                                                         topen=date_repeat_prescription,
                                                         tclose=date_repeat_prescription + DateOffset(weeks=2)
@@ -1529,7 +1531,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
             # Request the health system to have this follow-up appointment
             for i in range(0, len(times)):
                 followup_appt_date = self.sim.date + DateOffset(months=times.time_months[i])
-                self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                                 priority=2,
                                                                 topen=followup_appt_date,
                                                                 tclose=followup_appt_date + DateOffset(weeks=2)
@@ -1547,7 +1549,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
             followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
             # Request the health system to have this follow-up appointment
-            self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+            self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                             priority=2,
                                                             topen=date_repeat_prescription,
                                                             tclose=date_repeat_prescription + DateOffset(weeks=2)
@@ -1633,7 +1635,7 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
         followup_appt = HSI_Hiv_RepeatPrescription(self.module, person_id=person_id)
 
         # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
                                                         priority=2,
                                                         topen=date_repeat_prescription,
                                                         tclose=date_repeat_prescription + DateOffset(weeks=2)
@@ -1759,10 +1761,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(0, 14))]) / len(
             df[df.is_alive & (df.age_years.between(0, 14))])
 
+        # get deaths from demography logging, cause = hiv
+
         # deaths, this shows the deaths scheduled for this year, including those postponed due to ART
-        date_aids_death = df.loc[df.hv_inf & df.is_alive, 'hv_date_death']
-        year_aids_death = date_aids_death.dt.year
-        sch_deaths = sum(1 for x in year_aids_death if int(x) == now.year)
+        # date_aids_death = df.loc[df.hv_inf & df.is_alive, 'hv_proj_date_death']
+        # year_aids_death = date_aids_death.dt.year
+        # sch_deaths = sum(1 for x in year_aids_death if int(x) == now.year)
 
         # on treatment, adults + children, good + poor adherence
         art = df.loc[(df.hv_on_art == 2) | (df.hv_on_art == 1), 'is_alive'].sum()
@@ -1774,6 +1778,6 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'hiv_prev_child': child_prev,
                         'hiv_new_infections_adult': adult_new_inf,
                         'hiv_new_infections_child': child_new_inf,
-                        'hiv_scheduled_deaths': sch_deaths,
+                        # 'hiv_scheduled_deaths': sch_deaths,
                         'hiv_on_art': art
                     })

@@ -134,19 +134,21 @@ class male_circumcision(Module):
     #     logger.debug('This is male circumcision, being alerted about a health system interaction '
     #                  'person %d for: %s', person_id, treatment_id)
 
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        # logger.debug('This is mockitis reporting my health values')
+        logger.debug('This is circumcision reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        p = self.parameters
-
         health_values = df.loc[df.is_alive, 'mc_specific_symptoms'].map({
-            'none': 0
+            'none': 0.01
         })
+        health_values.name = 'circumcision Symptoms'    # label the cause of this disability
+
         return health_values.loc[df.is_alive]
 
 

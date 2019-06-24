@@ -62,6 +62,12 @@ class tb(Module):
             Parameter(Types.REAL, 'QALY weighting for active tb'),
         'qalywt_active_hiv':
             Parameter(Types.REAL, 'QALY weighting for active tb and hiv coinfection'),
+
+        # daly weights
+        'daly_wt_chronic':
+            Parameter(Types.REAL, 'DALY weights for chronic hiv infection'),
+        'daly_wt_aids':
+            Parameter(Types.REAL, 'DALY weights for aids'),
     }
 
     PROPERTIES = {
@@ -138,6 +144,13 @@ class tb(Module):
 
         params['prop_smear_positive'] = 0.8
         params['prop_smear_positive_hiv'] = 0.5
+        # TODO: update
+        # daly weights
+        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+        if 'HealthBurden' in self.sim.modules.keys():
+            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(17)  # Symptomatic HIV without anemia
+            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(19)  # AIDS without antiretroviral treatment without anemia
+
 
         # params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
         # params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
@@ -324,6 +337,26 @@ class tb(Module):
     #     health_values.loc[coinfected] = params['qalywt_active_hiv']
     #
     #     return health_values.loc[df.is_alive]
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+        # TODO: add co-infection hiv/tb
+        logger.debug('This is tb reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        params = self.parameters
+
+        health_values = df.loc[df.is_alive, 'hv_specific_symptoms'].map({
+            'none': 0,
+            'symp': params['daly_wt_chronic'],
+            'aids': params['daly_wt_aids']
+        })
+        health_values.name = 'tb Symptoms'    # label the cause of this disability
+
+        return health_values.loc[df.is_alive]
+
 
 
 # ---------------------------------------------------------------------------
