@@ -1176,6 +1176,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_TestingInfant'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1241,6 +1242,7 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1301,6 +1303,7 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1374,6 +1377,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1472,6 +1476,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1584,6 +1589,7 @@ class HSI_Hiv_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1623,6 +1629,7 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Hiv_Treatment'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
