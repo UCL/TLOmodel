@@ -40,7 +40,7 @@ service_availability = ['*']
 
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.qaly').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.healthburden').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.WARNING)

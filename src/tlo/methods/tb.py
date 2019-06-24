@@ -139,9 +139,9 @@ class tb(Module):
         params['prop_smear_positive'] = 0.8
         params['prop_smear_positive_hiv'] = 0.5
 
-        params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
-        params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
-        params['qalywt_active_hiv'] = self.sim.modules['QALY'].get_qaly_weight(7)
+        # params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
+        # params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
+        # params['qalywt_active_hiv'] = self.sim.modules['QALY'].get_qaly_weight(7)
         # Drug-susceptible, Multidrug-resistant and Extensively drug-resistant tb all have the same DALY weights
 
     def initialise_population(self, population):
@@ -292,30 +292,38 @@ class tb(Module):
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
 
     # TODO: complete this
-    def on_healthsystem_interaction(self, person_id, treatment_id):
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
 
-        logger.debug('This is tb, being alerted about a health system interaction '
+        logger.debug('This is TB, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    def report_qaly_values(self):
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
-        # the past year
-
-        logger.debug('This is tb reporting my health values')
-
-        df = self.sim.population.props  # shortcut to population properties dataframe
-        params = self.parameters
-
-        health_values = df.loc[df.is_alive, 'tb_specific_symptoms'].map({
-            'none': 0,
-            'latent': params['qalywt_latent'],
-            'active': params['qalywt_active']
-        })
-
-        coinfected = df[(df.tb_specific_symptoms == 'active') & df.is_alive & df.hiv_inf].index
-        health_values.loc[coinfected] = params['qalywt_active_hiv']
-
-        return health_values.loc[df.is_alive]
+    # def on_healthsystem_interaction(self, person_id, treatment_id):
+    #
+    #     logger.debug('This is tb, being alerted about a health system interaction '
+    #                  'person %d for: %s', person_id, treatment_id)
+    #
+    # def report_qaly_values(self):
+    #     # This must send back a dataframe that reports on the HealthStates for all individuals over
+    #     # the past year
+    #
+    #     logger.debug('This is tb reporting my health values')
+    #
+    #     df = self.sim.population.props  # shortcut to population properties dataframe
+    #     params = self.parameters
+    #
+    #     health_values = df.loc[df.is_alive, 'tb_specific_symptoms'].map({
+    #         'none': 0,
+    #         'latent': params['qalywt_latent'],
+    #         'active': params['qalywt_active']
+    #     })
+    #
+    #     coinfected = df[(df.tb_specific_symptoms == 'active') & df.is_alive & df.hiv_inf].index
+    #     health_values.loc[coinfected] = params['qalywt_active_hiv']
+    #
+    #     return health_values.loc[df.is_alive]
 
 
 # ---------------------------------------------------------------------------
