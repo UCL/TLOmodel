@@ -111,6 +111,7 @@ class male_circumcision(Module):
         """Initialise our properties for a newborn individual.
         """
         df = self.sim.population.props
+        # TODO: apply circumcision property to 15% of male infants
 
         df.at[child_id, 'mc_is_circumcised'] = False
         df.at[child_id, 'mc_date_circumcised'] = pd.NaT
