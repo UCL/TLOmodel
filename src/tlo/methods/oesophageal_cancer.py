@@ -1025,8 +1025,8 @@ class HSIoStartTreatmentLowGradeOesDysplasia(Event, IndividualScopeEventMixin):
 
         df = self.sim.population.props
 
-        df.ca_oesophagus_curative_treatment[person_id] = 'low_grade_dysplasia'
-        df.ca_date_treatment_oesophageal_cancer[person_id] = self.sim.date
+        df.at[person_id, 'ca_oesophagus_curative_treatment'] = 'low_grade_dysplasia'
+        df.at[person_id, 'ca_date_treatment_oesophageal_cancer'] = self.sim.date
 
 
 class HSIoStartTreatmentHighGradeOesDysplasia(Event, IndividualScopeEventMixin):
@@ -1051,8 +1051,8 @@ class HSIoStartTreatmentHighGradeOesDysplasia(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        df.ca_oesophagus_curative_treatment[person_id] = 'high_grade_dysplasia'
-        df.ca_date_treatment_oesophageal_cancer[person_id] = self.sim.date
+        df.at[person_id, 'ca_oesophagus_curative_treatment'] = 'high_grade_dysplasia'
+        df.at[person_id, 'ca_date_treatment_oesophageal_cancer'] = self.sim.date
 
 
 class HSIoStartTreatmentStage1OesCancer(Event, IndividualScopeEventMixin):
@@ -1077,8 +1077,8 @@ class HSIoStartTreatmentStage1OesCancer(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        df.ca_oesophagus_curative_treatment[person_id] = 'stage1'
-        df.ca_date_treatment_oesophageal_cancer[person_id] = self.sim.date
+        df.at[person_id, 'ca_oesophagus_curative_treatment'] = 'stage1'
+        df.at[person_id, 'ca_date_treatment_oesophageal_cancer'] = self.sim.date
 
 
 class HSIoStartTreatmentStage2OesCancer(Event, IndividualScopeEventMixin):
@@ -1103,8 +1103,8 @@ class HSIoStartTreatmentStage2OesCancer(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        df.ca_oesophagus_curative_treatment[person_id] = 'stage2'
-        df.ca_date_treatment_oesophageal_cancer[person_id] = self.sim.date
+        df.at[person_id, 'ca_oesophagus_curative_treatment'] = 'stage2'
+        df.at[person_id, 'ca_date_treatment_oesophageal_cancer'] = self.sim.date
 
 
 class HSIoStartTreatmentStage3OesCancer(Event, IndividualScopeEventMixin):
@@ -1129,8 +1129,10 @@ class HSIoStartTreatmentStage3OesCancer(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        df.ca_oesophagus_curative_treatment[person_id] = 'stage3'
-        df.ca_date_treatment_oesophageal_cancer[person_id] = self.sim.date
+
+        df.at[person_id, 'ca_oesophagus_curative_treatment'] = 'stage3'
+        df.at[person_id, 'ca_date_treatment_oesophageal_cancer'] = self.sim.date
+
 
 class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
