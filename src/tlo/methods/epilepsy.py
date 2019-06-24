@@ -698,4 +698,7 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
+        df = self.sim.population.props
+
+        df.at[person_id,'ep_antiep'] = True
         print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
