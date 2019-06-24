@@ -5,18 +5,20 @@ Developed by Mikaela Smit, October 2018
 """
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Read in data
+#TODO: move this to the parameter section
+#TODO: change file path
 file_path = 'resources/ResourceFile_Method_HT.xlsx'
 method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
 HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
@@ -26,6 +28,7 @@ HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018']
 # TODO: Read in 95% CI from file?
 # TODO: Update weight to BMI AND ADAPT TO UPDATED CODE
 # TODO: Do we want to read in daly for HT from file? To avoid hard coding? Or have a 'other/none' variable in DALY file?
+# TODO: change qaly to daly
 
 class HT(Module):
     """
