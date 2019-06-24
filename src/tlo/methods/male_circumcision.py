@@ -118,13 +118,21 @@ class male_circumcision(Module):
         df.at[child_id, 'mc_specific_symptoms'] = 'none'
         df.at[child_id, 'mc_unified_symptom_code'] = 0
 
-    def on_healthsystem_interaction(self, person_id, treatment_id):
+    def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is male circumcision, being alerted about a health system interaction '
+        logger.debug('This is circumcision, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
+
+    # def on_healthsystem_interaction(self, person_id, treatment_id):
+    #     """
+    #     This is called whenever there is an HSI event commissioned by one of the other disease modules.
+    #     """
+    #
+    #     logger.debug('This is male circumcision, being alerted about a health system interaction '
+    #                  'person %d for: %s', person_id, treatment_id)
 
     def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
