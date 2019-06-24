@@ -157,16 +157,16 @@ class Labour (Module):
         params['rr_miscarriage_35'] = 4.02
         params['rr_miscarriage_3134'] = 2.13
         params['rr_miscarriage_grav4'] = 0.49
-        params['prob_pl_ol'] = 0.06
-        params['rr_PL_OL_nuliparity'] = 1.8
-        params['rr_PL_OL_parity_3'] = 0.8
+        params['prob_pl_ol'] = 0.058
+        params['rr_PL_OL_nuliparity'] = 1.47
+        params['rr_PL_OL_para1'] = 1.57
         params['rr_PL_OL_age_less20'] = 1.3
-        params['prob_ptl'] = 0.05 #0.18
+        params['prob_ptl'] = 0.09
         params['rr_ptl_pptb'] = 2.13
-        params['prob_an_eclampsia'] = 0.02
-        params['prob_an_aph'] = 0.03 # 0.03
-        params['prob_an_sepsis'] = 0.15
-        params['prob_an_ur'] = 0.0009
+        params['prob_an_eclampsia'] = 0.01
+        params['prob_an_aph'] = 0.012
+        params['prob_an_sepsis'] = 0.005
+        params['prob_an_ur'] = 0.001
         params['rr_an_ur_grand_multip'] = 7.57
         params['rr_an_ur_prevcs'] = 2.02
         params['rr_an_ur_ref_ol'] = 23.65  # REVIEW "obstructed but not referred"
@@ -175,26 +175,26 @@ class Labour (Module):
         params['rr_an_eclampsia_nullip'] = 2.04
         params['rr_an_sepsis_anc_4'] = 0.5
         params['rr_an_aph_noedu'] = 1.72
-        params['cfr_aph'] = 0.05
-        params['cfr_eclampsia'] = 0.03
-        params['cfr_sepsis'] = 0.05
-        params['cfr_uterine_rupture'] = 0.045
-        params['prob_still_birth_aph'] = 0.35
+        params['cfr_aph'] = 0.02
+        params['cfr_eclampsia'] = 0.184
+        params['cfr_sepsis'] = 0.33
+        params['cfr_uterine_rupture'] = 0.345
+        params['prob_still_birth_aph'] = 0.38
         params['prob_still_birth_aph_md'] = 0.90
         params['prob_still_birth_sepsis'] = 0.25
         params['prob_still_birth_sepsis_md'] = 0.90
-        params['prob_still_birth_ur'] = 0.75
-        params['prob_still_birth_ur_md'] = 0.90
-        params['prob_still_birth_eclampsia'] = 0.55
+        params['prob_still_birth_ur'] = 0.93
+        params['prob_still_birth_ur_md'] = 0.98
+        params['prob_still_birth_eclampsia'] = 0.03
         params['prob_still_birth_eclampsia_md'] = 0.90
         params['prob_pn_eclampsia'] = 0.01
-        params['prob_pn_pph'] = 0.01
+        params['prob_pn_pph'] = 0.03
         params['prob_pn_sepsis'] = 0.05
         params['prob_sa_pph'] = 0.12
         params['prob_sa_sepsis'] = 0.20
-        params['cfr_pn_pph'] = 0.03
-        params['cfr_pn_eclampsia'] = 0.05
-        params['cfr_pn_sepsis'] = 0.04
+        params['cfr_pn_pph'] = 0.1
+        params['cfr_pn_eclampsia'] = 0.184
+        params['cfr_pn_sepsis'] = 0.33
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -627,12 +627,12 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         else:
             rf1 = 1
 
-        if (df.at[individual_id,'la_parity']  >= 3) & (df.at[individual_id,'age_years'] >= 21):
-            rf2 = params['rr_PL_OL_parity_3']
+        if (df.at[individual_id,'la_parity'] == 1) & (df.at[individual_id,'age_years'] >= 21):
+            rf2 = params['rr_PL_OL_para1']
         else:
             rf2 = 1
 
-        if (df.at[individual_id,'la_parity'] >= 1) & (df.at[individual_id,'la_parity'] < 3) & (df.at[individual_id, 'age_years'] < 20):
+        if (df.at[individual_id,'la_parity'] > 1) & (df.at[individual_id,'la_parity'] < 3) & (df.at[individual_id, 'age_years'] < 20):
             rf3 = params['rr_PL_OL_age_less20']
         else:
             rf3 = 1
@@ -645,6 +645,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # todo: consider applying here if we should calculate an incidence of wether this is obstruction late in labour
         #  or they have been obstructed for a while
+        # Todo: Case fatality/ stillbirth for untreated obstructed labour
         # We then work through the next complications and assess if this woman will experience additional complications
 
 # ==================================== ECLAMPSIA ======================================================================
@@ -959,6 +960,15 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_died_in_labour']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
+
+            # Todo: consider double logging (here and demography)
+            # Log the maternal death
+            logger.info('%s|maternal_death|%s', self.sim.date,
+                        {
+                            'age': df.at[individual_id, 'age_years'],
+                            'cause': self.cause,
+                            'person_id': individual_id
+                        })
 
 
 class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
