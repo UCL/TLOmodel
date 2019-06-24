@@ -227,6 +227,7 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Circumcision'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1,2,3]   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):

@@ -989,6 +989,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = ['hiv']
 
     def apply(self, person_id):
@@ -1101,6 +1102,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_XpertTest'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1212,6 +1214,7 @@ class HSI_Tb_StartTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_TreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1259,6 +1262,7 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_MdrTreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']   # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
