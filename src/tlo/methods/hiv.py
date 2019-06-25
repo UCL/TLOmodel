@@ -32,6 +32,7 @@ class hiv(Module):
 
         # baseline characteristics
         'hiv_prev_2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
+        'time_inf':Parameter(Types.REAL, 'prob of time since infection for baseline adult pop'),
         'child_hiv_prev2010': Parameter(Types.REAL, 'adult hiv prevalence in 2010'),
         'testing_coverage_male': Parameter(Types.REAL, 'proportion of adult male population tested'),
         'testing_coverage_female': Parameter(Types.REAL, 'proportion of adult female population tested'),
@@ -177,6 +178,7 @@ class hiv(Module):
         params['hiv_prev'] = workbook['prevalence']
         params['hiv_prev_2010'] = \
             self.param_list.loc['hiv_prev_2010', 'Value1']
+        params['time_inf'] = workbook['timeSinceInf2010']
         params['child_hiv_prev2010'] = \
             self.param_list.loc['child_hiv_prev2010', 'Value1']
         params['testing_coverage_male'] = \
@@ -380,15 +382,12 @@ class hiv(Module):
         df.loc[infected_idx, 'hv_inf'] = True
 
         # for time since infection use prob of incident inf 2000-2010
-
         inf_adult = df.index[df.is_alive & df.hv_inf & (df.age_years >= 15)]
 
-        # random draw with year array and prob array
-        times = self.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(inf_adult)) * \
-                np.exp(self.log_scale(df.loc[inf_adult, 'age_years']))
+        year_inf = self.rng.choice(self.time_inf['year'], size=len(inf_adult), replace=True,
+                                       p=self.time_inf['scaled_prob'])
 
-        time_inf = pd.to_timedelta(times * 365.25, unit='d')
-        df.loc[inf_adult, 'hv_date_inf'] = now - time_inf
+        df.loc[inf_adult, 'hv_date_inf'] = now - pd.to_timedelta(year_inf, unit='y')
 
         # ----------------------------------- CHILD HIV -----------------------------------
 
