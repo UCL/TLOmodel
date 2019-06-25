@@ -79,8 +79,8 @@ class male_circumcision(Module):
 
         # 2. baseline prevalence of circumcisions
         circum = self.rng.choice([True, False], size=len(uncircum),
-                                  p=[init_circumcision,
-                                     1 - init_circumcision])
+                                 p=[init_circumcision,
+                                    1 - init_circumcision])
 
         # print('circum', circum.sum())
 
@@ -136,7 +136,7 @@ class male_circumcision(Module):
         health_values = df.loc[df.is_alive, 'mc_specific_symptoms'].map({
             'none': 0
         })
-        health_values.name = 'circumcision symptoms'    # label the cause of this disability
+        health_values.name = 'circumcision symptoms'  # label the cause of this disability
 
         return health_values.loc[df.is_alive]
 
@@ -169,10 +169,10 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
                     person_index)
                 event = HSI_Circumcision_PresentsForCare(self.module, person_id=person_index)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=4)
-                                                                )
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=4)
+                                                                    )
         else:
             logger.debug(
                 'This is CircumcisionEvent, There is  no one with new severe symptoms so no new healthcare seeking')
@@ -226,7 +226,6 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-
         df = population.props
 
         circumcised_total = len(df.index[df.is_alive & (df.age_years >= 15) & df.mc_is_circumcised & (df.sex == 'M')])
