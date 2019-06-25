@@ -119,6 +119,7 @@ class hiv(Module):
         # health system interactions
         'prob_high_to_low_art': Parameter(Types.REAL, 'prob of transitioning from good adherence to poor adherence'),
         'prob_low_to_high_art': Parameter(Types.REAL, 'prob of transitioning from poor adherence to good adherence'),
+        'prob_off_art': Parameter(Types.REAL, 'prob of transitioning off ART'),
         'vl_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
 
         # 'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
@@ -278,6 +279,8 @@ class hiv(Module):
             self.param_list.loc['prob_high_to_low_art', 'Value1']
         params['prob_low_to_high_art'] = \
             self.param_list.loc['prob_low_to_high_art', 'Value1']
+        params['prob_off_art'] = \
+            self.param_list.loc['prob_off_art', 'Value1']
         params['vl_monitoring_times'] = workbook['VL_monitoring']
 
     def initialise_population(self, population):
@@ -677,6 +680,7 @@ class hiv(Module):
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(ArtGoodToPoorAdherenceEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(ArtPoorToGoodAdherenceEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TransitionOffArtEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         # sim.schedule_event(HivOutreachEvent(self), sim.date + DateOffset(months=12))
 
@@ -1743,6 +1747,25 @@ class ArtPoorToGoodAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                 frac=params['prob_low_to_high_art']).index
 
             df.loc[good, 'hv_on_art'] = 2
+
+
+class TransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
+    """ apply risk of stopping ART
+    this is likely to vary by good/poor adherence along with personal characteristics
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
+
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
+
+        if len(df[df.is_alive & (df.hv_on_art != 0)]) > 1:
+            off_art = df[df.is_alive & (df.hv_on_art == 2)].sample(
+                frac=params['prob_off_art']).index
+
+            df.loc[off_art, 'hv_on_art'] = 0
 
 
 # TODO: include hiv testing event as regular event for those not triggered by symptom change
