@@ -621,7 +621,7 @@ class hiv(Module):
         time_death = (df.loc[infants, 'hv_proj_date_death'] - now).dt.days  # returns days
         chronic = time_death < (2 * 365.25)
         idx = infants[chronic]
-        df.loc[idx, 'hv_specific_symptoms'] = 'chronic'
+        df.loc[idx, 'hv_specific_symptoms'] = 'symp'
         df.loc[idx, 'hv_unified_symptom_code'] = 2
 
         # if <1 year from scheduled death = aids
@@ -645,7 +645,7 @@ class hiv(Module):
                 df.hv_specific_symptoms == 'none') & (
                 df.hv_on_art != 2)]
 
-        df.hv_proj_date_symp = df.hv_proj_date_death[idx] - DateOffset(days=732.5)
+        df.loc[idx, 'hv_proj_date_symp'] = df.loc[idx, 'hv_proj_date_death'] - DateOffset(days=732.5)
 
         # schedule the symptom update event for each person
         for person_index in idx:
@@ -661,7 +661,7 @@ class hiv(Module):
                 df.hv_specific_symptoms != 'aids') & (
                 df.hv_on_art != 2)]
 
-        df.hv_proj_date_aids = df.hv_proj_date_death[idx] - DateOffset(days=365.25)
+        df.loc[idx, 'hv_proj_date_aids'] = df.loc[idx, 'hv_proj_date_death'] - DateOffset(days=365.25)
 
         # schedule the symptom update event for each person
         for person_index in idx:
@@ -675,7 +675,8 @@ class hiv(Module):
         """
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(ArtAdherenceTransitionEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(ArtGoodToPoorAdherenceEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(ArtPoorToGoodAdherenceEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         # sim.schedule_event(HivOutreachEvent(self), sim.date + DateOffset(months=12))
 
@@ -911,7 +912,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(death, time_death)  # schedule the death
 
         # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-        df.hv_proj_date_symp = df.hv_proj_date_death[newly_infected_index] - DateOffset(days=732.5)
+        df.loc[newly_infected_index, 'hv_proj_date_symp'] = df.loc[newly_infected_index, 'hv_proj_date_death'] - DateOffset(days=732.5)
 
         # schedule the symptom update event for each person
         for person_index in newly_infected_index:
@@ -922,7 +923,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(symp_event, df.at[person_index, 'hv_proj_date_symp'])
 
         # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-        df.hv_proj_date_aids = df.hv_proj_date_death[newly_infected_index] - DateOffset(days=365.25)
+        df.loc[newly_infected_index, 'hv_proj_date_aids'] = df.loc[newly_infected_index, 'hv_proj_date_death'] - DateOffset(days=365.25)
 
         # schedule the symptom update event for each person
         for person_index in newly_infected_index:
@@ -987,7 +988,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(death, time_death)  # schedule the death
 
             # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
-            df.hv_proj_date_symp = df.hv_proj_date_death[new_inf] - DateOffset(days=732.5)
+            df.loc[new_inf, 'hv_proj_date_symp'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(days=732.5)
 
             # schedule the symptom update event for each person
             for person_index in new_inf:
@@ -995,7 +996,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(symp_event, df.at[person_index, 'hv_proj_date_symp'])
 
             # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
-            df.hv_proj_date_aids = df.hv_proj_date_death[new_inf] - DateOffset(days=365.25)
+            df.loc[new_inf, 'hv_proj_date_aids'] = df.loc[new_inf, 'hv_proj_date_death'] - DateOffset(days=365.25)
 
             # schedule the symptom update event for each person
             for person_index in new_inf:
@@ -1658,8 +1659,8 @@ class HSI_Hiv_RepeatPrescription(Event, IndividualScopeEventMixin):
                                                             )
 
 
-class ArtAdherenceTransitionEvent(RegularEvent, PopulationScopeEventMixin):
-    """ apply risk of transitioning between good/poor ART adherence
+class ArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
+    """ apply risk of transitioning from good to poor ART adherence
     """
 
     def __init__(self, module):
@@ -1676,6 +1677,56 @@ class ArtAdherenceTransitionEvent(RegularEvent, PopulationScopeEventMixin):
                 frac=params['prob_high_to_low_art']).index
 
             df.loc[poor, 'hv_on_art'] = 1
+
+            # ----------------------------------- RESCHEDULE DEATH -----------------------------------
+            # if now poor adherence, re-schedule death and symptom onset as if not on treatment
+            if len(poor):
+                for person in poor:
+                    if df.at[person, 'age_years'] < 3:
+                        time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                                               size=1) * params[
+                                              'weibull_scale_mort_infant_slow_progressor']
+                        time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
+                        df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
+                    else:
+                        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
+                                                          size=1) * \
+                                     np.exp(self.module.log_scale(df.at[person, 'age_years']))
+                        death_date = pd.to_timedelta(death_date * 365.25, unit='d')
+
+                        df.at[person, 'hv_proj_date_death'] = self.sim.date + death_date
+
+                    # schedule the death event
+                    death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
+                    time_death = df.at[person, 'hv_proj_date_death']
+                    self.sim.schedule_event(death, time_death)  # schedule the death
+
+                    # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
+                    if df.at[person, 'hv_specific_symptoms'] == 'none':
+                        df.at[person, 'hv_proj_date_symp'] = df.at[person, 'hv_proj_date_death'] - DateOffset(days=732.5)
+
+                        # schedule the symptom update event for each person
+                        symp_event = HivSymptomaticEvent(self, person)
+                        if df.at[person, 'hv_proj_date_symp'] < self.sim.date:
+                            df.at[person, 'hv_proj_date_symp'] = self.sim.date + DateOffset(days=1)
+                        print('symp_date', df.at[person, 'hv_proj_date_symp'])
+                        self.sim.schedule_event(symp_event, df.at[person, 'hv_proj_date_symp'])
+
+                    # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
+                    if df.at[person, 'hv_specific_symptoms'] != 'aids':
+                        df.at[person, 'hv_proj_date_aids'] = df.at[person, 'hv_proj_date_death'] - DateOffset(days=365.25)
+
+                    # schedule the symptom update event for each person
+                        aids_event = HivAidsEvent(self, person)
+                        if df.at[person, 'hv_proj_date_aids'] < self.sim.date:
+                            df.at[person, 'hv_proj_date_aids'] = self.sim.date + DateOffset(days=1)
+                        print('aids_date', df.at[person, 'hv_proj_date_aids'])
+                        self.sim.schedule_event(aids_event, df.at[person, 'hv_proj_date_aids'])
+
+
+
+
+
 
             # transition from poor adherence to good adherence
             # currently placeholder value=0 for all ages until data arrives
