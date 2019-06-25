@@ -51,7 +51,6 @@ sim.register(caesarean_section.CaesareanSection())
 sim.register(sepsis_treatment.SepsisTreatment())
 sim.register(newborn_outcomes.NewbornOutcomes())
 sim.register(haemorrhage_treatment.HaemorrhageTreatment())
-
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -68,15 +67,19 @@ deaths_df = output['tlo.methods.labour']['maternal_death']
 
 plt.plot_date(deaths_df['date'], deaths_df['age'])
 plt.xlabel('Year')
-plt.ylabel('Age at Death') #This should just be number of deaths
+plt.ylabel('Age at Death')  # This should just be number of deaths
 plt.savefig(outputpath + 'MaternalDeaths' + datestamp + '.pdf')
 plt.show()
 
 
 # %% Plot Still Births  Over time:
 
+# How to select still birth output
 
 # %% Plot Maternal Mortality Ratio Over time:
+
+# do we need to calculate this before or after?
+MMR_df = output['tlo.methods.labour']['maternal_death']
 
 
 # %% Plot Maternal Still Birth Ratio Over time:

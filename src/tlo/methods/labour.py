@@ -437,6 +437,15 @@ class Labour (Module):
                                                   cause='Intrapartum Stillbirth')
             self.sim.schedule_event(death, self.sim.date)
 
+            # Log the still birth
+            logger.info('%s|still_birth|%s', self.sim.date,
+                        {
+                            'age': df.at[child_id, 'age_years'],
+                           # 'cause': self.cause,
+                            'person_id': child_id,
+                            'mother_id': mother_id
+                        })
+
             # This property is then reset in case of future pregnancies/stillbirths
             df.loc[mother_id, 'la_still_birth_this_delivery'] = False
 
@@ -729,6 +738,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         if random < eff_prob_aph:
             df.at[individual_id, 'la_uterine_rupture'] = True
 
+        # For women who experience a complication we determine their risk of death in the LabourDeathEvent
+        if df.at[individual_id, 'la_uterine_rupture'] or df.at[individual_id, 'la_aph'] or \
+            df.at[individual_id, 'la_sepsis'] or df.at[individual_id, 'la_eclampsia']:
+            self.sim.schedule_event(LabourDeathEvent(self.module, individual_id, cause='labour'), self.sim.date)
+
         # Todo: CONSIDER IF WE NEED TO MOVE THROUGH PRETERM/POST TERM LABOUR COMPLICATIONS OR IF THEY WILL JUST BE A
         #  RISK FACTOR/PROTECTION FOR THE COMPLICATIONS
 
@@ -839,10 +853,17 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
         if random < eff_prob_eclampsia:
             df.at[individual_id, 'la_eclampsia'] = True
 
-        if df.at[individual_id, 'la_pph']:
-           self.sim.schedule_event(haemorrhage_treatment.PostpartumHaemorrhageTreatmentEvent
-                                    (self.sim.modules['HaemorrhageTreatment'], individual_id,
-                                     cause='postpartum haemorrhage'), self.sim.date)
+
+
+        # if df.at[individual_id, 'la_pph']:
+        #   self.sim.schedule_event(haemorrhage_treatment.PostpartumHaemorrhageTreatmentEvent
+        #                            (self.sim.modules['HaemorrhageTreatment'], individual_id,
+        #                             cause='postpartum haemorrhage'), self.sim.date)
+
+            # For women who experience a complication we determine their risk of death in the LabourDeathEvent
+        if df.at[individual_id, 'la_eclampsia'] or df.at[individual_id, 'la_pph'] or \
+                df.at[individual_id, 'la_sepsis']:
+                self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id, cause='labour'), self.sim.date)
 
 #  =============================================== RESET LABOUR STATUS =================================================
 
@@ -966,7 +987,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             logger.info('%s|maternal_death|%s', self.sim.date,
                         {
                             'age': df.at[individual_id, 'age_years'],
-                            'cause': self.cause,
+                            # 'cause': self.cause,
                             'person_id': individual_id
                         })
 
