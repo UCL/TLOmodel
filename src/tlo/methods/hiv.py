@@ -1701,7 +1701,7 @@ class ArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                     time_death = df.at[person, 'hv_proj_date_death']
                     self.sim.schedule_event(death, time_death)  # schedule the death
 
-                    # ----------------------------------- PROGRESSION TO SYMPTOMATIC -----------------------------------
+                    # ----------------------------------- RESCHEDULE PROGRESSION TO SYMPTOMATIC -----------------------------------
                     if df.at[person, 'hv_specific_symptoms'] == 'none':
                         df.at[person, 'hv_proj_date_symp'] = df.at[person, 'hv_proj_date_death'] - DateOffset(days=732.5)
 
@@ -1712,7 +1712,7 @@ class ArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                         print('symp_date', df.at[person, 'hv_proj_date_symp'])
                         self.sim.schedule_event(symp_event, df.at[person, 'hv_proj_date_symp'])
 
-                    # ----------------------------------- PROGRESSION TO AIDS -----------------------------------
+                    # ----------------------------------- RESCHEDULE PROGRESSION TO AIDS -----------------------------------
                     if df.at[person, 'hv_specific_symptoms'] != 'aids':
                         df.at[person, 'hv_proj_date_aids'] = df.at[person, 'hv_proj_date_death'] - DateOffset(days=365.25)
 
@@ -1724,19 +1724,25 @@ class ArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                         self.sim.schedule_event(aids_event, df.at[person, 'hv_proj_date_aids'])
 
 
+class ArtPoorToGoodAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
+    """ apply risk of transitioning from poor to good ART adherence
+    """
 
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=12))  # every 12 months
 
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
 
+        # transition from poor adherence to good adherence
+        # currently placeholder value=0 for all ages until data arrives
+        # this is probably going to be driven by symptoms worsening
+        if len(df[df.is_alive & (df.hv_on_art == 1)]) > 1:
+            good = df[df.is_alive & (df.hv_on_art == 2)].sample(
+                frac=params['prob_low_to_high_art']).index
 
-            # transition from poor adherence to good adherence
-            # currently placeholder value=0 for all ages until data arrives
-            # this is probably going to be driven by symptoms worsening
-            # excludes people who have just switched to poor adherence
-            if len(df[df.is_alive & (df.hv_on_art == 1)]) > 1:
-                good = df[df.is_alive & (df.hv_on_art == 2) & (df.index not in poor)].sample(
-                    frac=params['prob_low_to_high_art']).index
-
-                df.loc[good, 'hv_on_art'] = 2
+            df.loc[good, 'hv_on_art'] = 2
 
 
 # TODO: include hiv testing event as regular event for those not triggered by symptom change
