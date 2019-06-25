@@ -148,9 +148,10 @@ class tb(Module):
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(17)  # Symptomatic HIV without anemia
-            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(19)  # AIDS without antiretroviral treatment without anemia
-
+            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                17)  # Symptomatic HIV without anemia
+            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                19)  # AIDS without antiretroviral treatment without anemia
 
         # params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
         # params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
@@ -353,10 +354,9 @@ class tb(Module):
             'symp': params['daly_wt_chronic'],
             'aids': params['daly_wt_aids']
         })
-        health_values.name = 'tb Symptoms'    # label the cause of this disability
+        health_values.name = 'tb Symptoms'  # label the cause of this disability
 
         return health_values.loc[df.is_alive]
-
 
 
 # ---------------------------------------------------------------------------
@@ -943,7 +943,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.sim.rng.random_sample(size=len(df))
 
         self_cure = df[df['tb_inf'].str.contains('active_mdr') & df.is_alive & (
-                df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
+            df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
         df.loc[self_cure, 'tb_inf'] = 'latent_mdr_secondary'
         df.loc[self_cure, 'tb_specific_symptoms'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
@@ -1340,6 +1340,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
         df.loc[person_id, 'tb_specific_symptoms'] = 'latent'
         df.loc[person_id, 'tb_unified_symptom_code'] = 1
 
+
 #
 # ---------------------------------------------------------------------------
 #   IPT
@@ -1433,6 +1434,7 @@ class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
 class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that kills people.
     """
+
     # TODO: if HIV+, cause of death should be HIV as hiv/tb deaths are counted in hiv data
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -1447,11 +1449,11 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         mortality_rate = pd.Series(0, index=df.index)
 
         mortality_rate.loc[df['tb_inf'].str.contains('active') & ~df.hv_inf & (
-                               ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
+            ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
             'monthly_prob_tb_mortality']
 
         mortality_rate.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-                               ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
+            ~df.tb_on_treatment | ~df.tb_treated_mdr)] = params[
             'monthly_prob_tb_mortality_hiv']
         # print('mort_rate: ', mortality_rate)
 
@@ -1495,16 +1497,16 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         active_total = active_susc + active_mdr
 
         ad_prev = len(df[df['tb_inf'].str.contains('active') & df.is_alive & (
-                             df.age_years >= 15)]) / len(df[df.is_alive & (df.age_years >= 15)])
+            df.age_years >= 15)]) / len(df[df.is_alive & (df.age_years >= 15)])
 
         child_prev = len(df[df['tb_inf'].str.contains('active') & df.is_alive & (
-                                df.age_years < 15)]) / len(df[df.is_alive & (df.age_years < 15)])
+            df.age_years < 15)]) / len(df[df.is_alive & (df.age_years < 15)])
 
         ad_prev_latent = len(df[df['tb_inf'].str.contains('latent') & df.is_alive & (
-                                    df.age_years >= 15)]) / len(df[df.is_alive & (df.age_years >= 15)])
+            df.age_years >= 15)]) / len(df[df.is_alive & (df.age_years >= 15)])
 
         child_prev_latent = len(df[df['tb_inf'].str.contains('latent') & df.is_alive & (
-                                       df.age_years < 15)]) / len(df[df.is_alive & (df.age_years < 15)])
+            df.age_years < 15)]) / len(df[df.is_alive & (df.age_years < 15)])
 
         logger.info('%s|summary|%s', now,
                     {
