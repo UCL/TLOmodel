@@ -10,7 +10,8 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
+from tlo.methods import demography, labour, lifestyle, haemorrhage_treatment, caesarean_section, eclampsia_treatment,\
+    sepsis_treatment, newborn_outcomes
 
 # Where will output go - by default, wherever this script is run
 outputpath = ''
@@ -26,7 +27,7 @@ resourcefile_demography = Path('./resources')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 # add file handler for the purpose of logging
@@ -44,6 +45,13 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefile_demography))
+sim.register(lifestyle.Lifestyle())
+sim.register(labour.Labour())
+sim.register(eclampsia_treatment.EclampsiaTreatment())
+sim.register(caesarean_section.CaesareanSection())
+sim.register(sepsis_treatment.SepsisTreatment())
+sim.register(newborn_outcomes.NewbornOutcomes())
+sim.register(haemorrhage_treatment.HaemorrhageTreatment())
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)

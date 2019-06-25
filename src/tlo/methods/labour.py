@@ -11,7 +11,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, haemorrhage_treatment
+from tlo.methods import demography, lifestyle,eclampsia_treatment, sepsis_treatment, haemorrhage_treatment
 
 
 logger = logging.getLogger(__name__)
@@ -683,7 +683,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ============================================ APH ====================================================================
 
-        if df.at[individual_id, 'li_ed_lev'] == 0:
+        if df.at[individual_id, 'li_ed_lev'] == 1:
                 rf1 = params['rr_an_aph_noedu']
 
         else:
@@ -1050,6 +1050,13 @@ class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause='complication of miscarriage'),
                                         self.sim.date)
+
+                logger.info('%s|maternal_death|%s', self.sim.date,
+                        {
+                            'age': df.at[individual_id, 'age_years'],
+                            # 'cause': self.cause,
+                            'person_id': individual_id
+                        })
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, newborn_outcomes, eclampsia_treatment, haemorrhage_treatment, \
+from tlo.methods import demography, labour, lifestyle, newborn_outcomes, eclampsia_treatment, haemorrhage_treatment, \
     sepsis_treatment, caesarean_section
 
 # Where will output go - by default, wherever this script is run
@@ -27,7 +27,7 @@ resourcefile_demography = Path('./resources')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 1000
 
 # add file handler for the purpose of logging
@@ -45,6 +45,7 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefile_demography))
+sim.register(lifestyle.Lifestyle())
 sim.register(labour.Labour())
 sim.register(eclampsia_treatment.EclampsiaTreatment())
 sim.register(caesarean_section.CaesareanSection())
@@ -61,15 +62,24 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
-# %% Plot Maternal Deaths Over time:
+# %% Plot Total Maternal Deaths Over time:
+
+# https://stackoverflow.com/questions/38792122/how-to-group-and-count-rows-by-month-and-year-using-pandas
 
 deaths_df = output['tlo.methods.labour']['maternal_death']
+deaths_df['date'] = pd.to_datetime(deaths_df['date'], errors='coerce')
+# deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.to_period('Y')
+# total_per_year=len(
 
-plt.plot_date(deaths_df['date'], deaths_df['age'])
-plt.xlabel('Year')
-plt.ylabel('Age at Death')  # This should just be number of deaths
-plt.savefig(outputpath + 'MaternalDeaths' + datestamp + '.pdf')
-plt.show()
+# This below line doesnt do anything
+deaths_df.groupby([deaths_df['date'].dt.year.rename('year'), deaths_df['date'].dt.month.rename('month')]).agg({'count'})
+
+
+# plt.bar(deaths_df['year'], deaths_df['age'],) # Now a bar chart
+# plt.xlabel('Year')
+# plt.ylabel('Total Deaths per Year')  # This should just be number of deaths
+# plt.savefig(outputpath + 'MaternalDeaths' + datestamp + '.pdf')
+# plt.show()
 
 
 # %% Plot Still Births  Over time:
