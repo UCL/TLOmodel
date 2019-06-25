@@ -682,15 +682,15 @@ class hiv(Module):
         sim.schedule_event(HivArtPoorToGoodAdherenceEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivTransitionOffArtEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
-        # sim.schedule_event(HivOutreachEvent(self), sim.date + DateOffset(months=12))
-
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # Schedule the outreach event...
-        # self.sim.schedule_event(HivOutreachEvent(self), self.sim.date + DateOffset(months=1))
+        # Schedule the event that will launch the Outreach event
+        outreach_event = HivLaunchOutreachEvent(self)
+        self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
+
         df = sim.population.props
         inf = df.index[df.is_alive & df.hv_inf & (df.hv_on_art != 2)]
 
@@ -1077,6 +1077,10 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
 
 
 class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
+    """
+    this is voluntary testing and counselling
+    It will now submit the individual HSI events that occur when each individual is met.
+    """
 
     def __init__(self, module):
         super().__init__(module)
@@ -1084,14 +1088,16 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
 
+        # TODO: here we can add testing patterns from quarterly reports
         # Find the person_ids who are going to get the outreach
-        gets_outreach = df.index[(df['is_alive']) & (df['sex'] == 'F') & (df.age_years.between(15, 49))]
+        # open to any adults not currently on ART
+        gets_outreach = df.index[(df['is_alive']) & (df['hv_on_art'] != 0) & (df.age_years.between(15, 80))]
         for person_id in gets_outreach:
             # make the outreach event
             outreach_event_for_individual = HSI_Hiv_OutreachIndividual(self.module, person_id=person_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
-                                                                priority=1,
+                                                                priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=12))
 
@@ -1159,7 +1165,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
 
             # Request the health system to start treatment
             self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=2,
+                                                                priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
@@ -1286,7 +1292,7 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
 
             # Request the health system to start treatment
             self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=2,
+                                                                priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
