@@ -48,9 +48,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+sim.register(hypertension.HT(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
-sim.register(hypertension.HT())
 sim.register(t2dm.T2DM())
 sim.register(chronicsyndrome.ChronicSyndrome())
 
