@@ -222,7 +222,7 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        self.repeat = 6
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
