@@ -53,7 +53,7 @@ sim.register(lifestyle.Lifestyle())
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
-sim.register(hiv_behaviour_change.BehaviourChange())
+# sim.register(hiv_behaviour_change.BehaviourChange())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
