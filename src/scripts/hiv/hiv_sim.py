@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import numpy
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -17,7 +18,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2019, 1, 1)
 popsize = 2000
 
 # Establish the simulation object
@@ -41,9 +42,9 @@ service_availability = ['*']
 logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.healthburden').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.hiv').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.INFO)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -53,15 +54,14 @@ sim.register(lifestyle.Lifestyle())
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
-# sim.register(hiv_behaviour_change.BehaviourChange())
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
-fh.close()
+# fh.close()
 
 
-# # %% read the results
-# output = parse_log_file(logfile)
+# %% read the results
+output = parse_log_file(logfile)
