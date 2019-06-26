@@ -127,6 +127,10 @@ data_pop_pyramid= df.groupby(['year','agegrp','sex'])['pop'].sum().reset_index()
 
 # Join the model and the data together for ease of plotting
 combo = data_pop_pyramid.merge(model_pop_pyramind,on=['agegrp','year','sex'],how='inner',suffixes=('_data','_model'))
+
+# give the right order of the agegrp cateogorical variable
+combo['agegrp'] = combo['agegrp'].astype('category')
+combo['agegrp'].cat.reorder_categories(pd.unique(list(age_grp_lookup.values())), inplace=True)
 combo = combo.sort_values(by = ['year','sex','agegrp']).reset_index(drop=True)
 
 # Add in a scaled population size (within a particular year) so that its percentage in that age/sex grp
