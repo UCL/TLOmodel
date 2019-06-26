@@ -689,6 +689,10 @@ class hiv(Module):
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
+        # Schedule the event that will launch the Behaviour change event
+        behav_change_event = HivLaunchBehavChangeEvent(self)
+        self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+
         df = sim.population.props
         inf = df.index[df.is_alive & df.hv_inf & (df.hv_on_art != 2)]
 
@@ -1139,7 +1143,7 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=12))
 
-        # schedule next behav change event
+        # schedule next behav change launch event
         behav_change_event = HivLaunchBehavChangeEvent(self)
         self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
 
@@ -1290,6 +1294,7 @@ class HSI_Hiv_BehaviourChange(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint, doesn't require any clinic time
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ConWithDCSA'] = 1  # This doesn't require any appt time, but throws error if blank
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -1696,7 +1701,7 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'TDF + FTC + EFV(co - formulation)', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
