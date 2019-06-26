@@ -147,34 +147,50 @@ combo.loc[combo['year']==2030,'pop_model_sc'] /=  combo.loc[combo['year']==2030,
 # TODO: new plots
 
 
+
 # Traditional Populaiton Pyramid: Model Only
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-age_grp_labels = np.unique(list(age_grp_lookup.values()))
-axes[0][0].barh(combo.loc[(combo['year']==2015) & (combo['sex']=='F'),['agegrp']].values,
-                combo.loc[(combo['year']==2015) & (combo['sex']=='F'),['pop_model_sc']].values,
-                align='center', color='red', zorder=10)
+age_grp_labels = pd.unique(list(age_grp_lookup.values()))
+combo.loc[(combo['year']==2015) & (combo['sex']=='F'),['pop_model_sc']].plot.barh(
+                                                                            ax=axes[0][0],
+                                                                            align='center',
+                                                                            color='red',
+                                                                            zorder=10)
 axes[0][0].set(title='Women, 2015')
 
-axes[0][1].barh(combo.loc[(combo['year']==2015) & (combo['sex']=='M'),['agegrp']].values,
-                combo.loc[(combo['year']==2015) & (combo['sex']=='M'),['pop_model_sc']].values,
-                align='center', color='blue', zorder=10)
+
+
+combo.loc[(combo['year']==2015) & (combo['sex']=='M'),['pop_model_sc']].plot.barh(
+                                                                            ax=axes[0][1],
+                                                                            align='center',
+                                                                            color='blue',
+                                                                            zorder=10)
 axes[0][1].set(title='Men, 2015')
 
-axes[1][0].barh(combo.loc[(combo['year']==2030) & (combo['sex']=='F'),['agegrp']].values,
-                combo.loc[(combo['year']==2030) & (combo['sex']=='F'),['pop_model_sc']].values,
-                align='center', color='red', zorder=10)
+
+combo.loc[(combo['year']==2030) & (combo['sex']=='F'),['pop_model_sc']].plot.barh(
+                                                                            ax=axes[1][0],
+                                                                            align='center',
+                                                                            color='red',
+                                                                            zorder=10)
 axes[1][0].set(title='Women, 2030')
 
-axes[1][1].barh(combo.loc[(combo['year']==2030) & (combo['sex']=='M'),['agegrp']].values,
-                combo.loc[(combo['year']==2030) & (combo['sex']=='M'),['pop_model_sc']].values,
-                align='center', color='blue', zorder=10)
+
+
+combo.loc[(combo['year']==2030) & (combo['sex']=='M'),['pop_model_sc']].plot.barh(
+                                                                            ax=axes[1][1],
+                                                                            align='center',
+                                                                            color='blue',
+                                                                            zorder=10)
 axes[1][1].set(title='Men, 2030')
 
+
+
 axes[0][0].invert_xaxis()
-axes[0][0].set(yticklabels=age_grp_labels)
+axes[0][0].set(yticks=np.arange(len(age_grp_labels))[::2], yticklabels=age_grp_labels[::2])
 axes[0][0].yaxis.tick_right()
 axes[1][0].invert_xaxis()
-axes[1][0].set(yticklabels=age_grp_labels)
+axes[1][0].set(yticks=np.arange(len(age_grp_labels))[::2], yticklabels=age_grp_labels[::2])
 axes[1][0].yaxis.tick_right()
 
 for ax in axes.flat:
@@ -187,25 +203,27 @@ plt.savefig(outputpath + 'PopPyramidModelOnly' + datestamp + '.pdf')
 plt.show()
 
 
-# Model Vs Data Pop Pyramid
 
+# Model Vs Data Pop Pyramid
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
-y = np.arange(len(Age_Group_Labels))
-axes[0][0].plot(y, ModelOutput_Women_2015_trimmed / ModelOutput_Women_2015_trimmed.sum())
-axes[0][0].plot(y, Data_Women_2015 / Data_Women_2015.sum())
+xticks=[0, 5, 10, 15, 20]
+xticklabels=age_grp_labels[xticks]
+
+combo.loc[(combo['year']==2015) & (combo['sex']=='F'),['pop_model_sc','pop_data_sc']].reset_index(drop=True).plot(ax=axes[0][0])
 axes[0][0].set(title='Women, 2015')
-axes[0][0].legend(['Model', 'Data'])
-axes[0][1].plot(y, ModelOutput_Men_2015_trimmed / ModelOutput_Men_2015_trimmed.sum())
-axes[0][1].plot(y, Data_Men_2015.flatten() / Data_Men_2015.flatten().sum())
+axes[0][0].set(xticks=xticks,xticklabels=xticklabels)
+
+combo.loc[(combo['year']==2015) & (combo['sex']=='M'),['pop_model_sc','pop_data_sc']].reset_index(drop=True).plot(ax=axes[0][1])
 axes[0][1].set(title='Men, 2015')
-axes[1][0].plot(y, ModelOutput_Women_2045_trimmed / ModelOutput_Women_2045_trimmed.sum())
-axes[1][0].plot(y, Data_Women_2045.flatten() / Data_Women_2045.flatten().sum())
-axes[1][0].set(title='Women, 2045')
-axes[1][1].plot(y, ModelOutput_Men_2045_trimmed / ModelOutput_Men_2045_trimmed.sum())
-axes[1][1].plot(y, Data_Men_2045.flatten() / Data_Men_2045.flatten().sum())
-axes[1][1].set(title='Men, 2045')
-axes[1][0].set(xticks=y, xticklabels=Age_Group_Labels)
-axes[1][1].set(xticks=y, xticklabels=Age_Group_Labels)
+axes[0][1].set(xticks=xticks,xticklabels=xticklabels)
+
+combo.loc[(combo['year']==2030) & (combo['sex']=='F'),['pop_model_sc','pop_data_sc']].reset_index(drop=True).plot(ax=axes[1][0])
+axes[1][0].set(title='Women, 2015')
+axes[1][0].set(xticks=xticks,xticklabels=xticklabels)
+
+combo.loc[(combo['year']==2030) & (combo['sex']=='M'),['pop_model_sc','pop_data_sc']].reset_index(drop=True).plot(ax=axes[1][1])
+axes[1][1].set(title='Men, 2030')
+axes[1][1].set(xticks=xticks,xticklabels=xticklabels)
 
 for ax in axes.flat:
     ax.margins(0.03)
@@ -215,6 +233,8 @@ fig.tight_layout()
 fig.subplots_adjust(wspace=0.09)
 plt.savefig(outputpath + 'PopPyramid_ModelVsData' + datestamp + '.pdf')
 plt.show()
+
+
 
 # %% Plots births ....
 
