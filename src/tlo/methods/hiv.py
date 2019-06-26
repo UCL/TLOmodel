@@ -1150,6 +1150,7 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Health system interactions
 # ---------------------------------------------------------------------------
+# TODO: add PrEP
 
 class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
     """
