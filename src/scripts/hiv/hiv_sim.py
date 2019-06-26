@@ -1,12 +1,12 @@
 import datetime
 import logging
 import os
-import numpy
+import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthsystem, lifestyle, healthburden, hiv, \
-    male_circumcision, hiv_behaviour_change, tb
+    male_circumcision, tb
 
 # Where will output go
 outputpath = './src/scripts/outputLogs/'
@@ -39,9 +39,9 @@ logging.getLogger().addHandler(fh)
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ['*']
 
-logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.demography').setLevel(logging.INFO)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.healthburden').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.healthburden').setLevel(logging.INFO)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.INFO)
@@ -64,4 +64,20 @@ fh.flush()
 
 
 # %% read the results
+import datetime
+import pandas as pd
+from tlo.analysis.utils import parse_log_file
+import matplotlib.pyplot as plt
+
+outputpath = './src/scripts/outputLogs/'
+
+# date-stamp to label log files and any other outputs
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+logfile = outputpath + 'LogFile' + datestamp + '.log'
 output = parse_log_file(logfile)
+
+deaths_df = output['tlo.methods.demography']['death']
+deaths_df['date'] = pd.to_datetime(deaths_df['date'])
+deaths_df['year'] = deaths_df['date'].dt.year
+death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
+
