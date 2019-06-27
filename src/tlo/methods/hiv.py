@@ -119,6 +119,7 @@ class hiv(Module):
         'prob_low_to_high_art': Parameter(Types.REAL, 'prob of transitioning from poor adherence to good adherence'),
         'prob_off_art': Parameter(Types.REAL, 'prob of transitioning off ART'),
         'vl_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
+        'fsw_prep': Parameter(Types.REAL, 'prob of fsw receiving PrEP'),
 
         # 'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
         #                                   'relative increase in testing probability if high sexual risk'),
@@ -279,6 +280,8 @@ class hiv(Module):
         params['prob_off_art'] = \
             self.param_list.loc['prob_off_art', 'Value1']
         params['vl_monitoring_times'] = workbook['VL_monitoring']
+        params['fsw_prep'] = \
+            self.param_list.loc['fsw_prep', 'Value1']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -692,6 +695,10 @@ class hiv(Module):
         # Schedule the event that will launch the Behaviour change event
         behav_change_event = HivLaunchBehavChangeEvent(self)
         self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+
+        # Schedule the event that will launch the PrEP event (2018 onwards)
+        prep_event = HivLaunchPrepEvent(self)
+        self.sim.schedule_event(prep_event, self.sim.date + DateOffset(years=8))
 
         df = sim.population.props
         inf = df.index[df.is_alive & df.hv_inf & (df.hv_on_art != 2)]
@@ -1147,6 +1154,38 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
         behav_change_event = HivLaunchBehavChangeEvent(self)
         self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
 
+
+class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
+    """
+    this is all behaviour change interventions that will reduce risk of HIV
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        # Find the person_ids who are going to get prep
+        # open to fsw
+        gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
+            frac=params['fsw_prep']).index
+
+        for person_id in gets_prep:
+            # make the outreach event
+            prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(prep_event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=12))
+
+        # schedule next prep launch event
+        next_prep_event = HivLaunchPrepEvent(self)
+        self.sim.schedule_event(next_prep_event, self.sim.date + DateOffset(months=12))
+
+
 # ---------------------------------------------------------------------------
 #   Health system interactions
 # ---------------------------------------------------------------------------
@@ -1233,7 +1272,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         item_code1 = \
             pd.unique(consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
         item_code2 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+            pd.unique(consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
         item_code3 = pd.unique(consumables.loc[consumables['Items'] == 'HIV EIA Elisa test', 'Item_Code'])[0]
 
         the_cons_footprint = {
@@ -1391,6 +1430,71 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
+
+
+class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
+                0]
+        item_code1 = pd.unique(consumables.loc[consumables[
+                                                   'Items'] == 'Tenofovir(TDF) / Emtricitabine(FTC), tablet, 300 / 200 mg', 'Item_Code'])[
+            0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': [item_code1]
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_Prep'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            'This is HSI_Hiv_Prep, giving a test and PrEP for person %d', person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'hv_ever_tested'] = True
+        df.at[person_id, 'hv_date_tested'] = self.sim.date
+        df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
+
+        # if hiv+ schedule treatment
+        if df.at[person_id, 'hv_inf']:
+            df.at[person_id, 'hv_diagnosed'] = True
+
+            # request treatment
+            logger.debug(
+                '....This is HSI_Hiv_Prep: scheduling hiv treatment for person %d on date %s',
+                person_id, self.sim.date)
+
+            treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+            # Request the health system to start treatment
+            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+        # if HIV-, give ARVs and assume good adherence
+        else:
+            df.at[person_id, 'hv_on_art'] = 2
+
 
 
 class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
