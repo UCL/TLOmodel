@@ -677,6 +677,10 @@ class hiv(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         """
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
         sim.schedule_event(HivEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivMtctEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivArtGoodToPoorAdherenceEvent(self), sim.date + DateOffset(months=12))
@@ -684,9 +688,6 @@ class hiv(Module):
         sim.schedule_event(HivTransitionOffArtEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
-
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
@@ -703,7 +704,7 @@ class hiv(Module):
         df = sim.population.props
         inf = df.index[df.is_alive & df.hv_inf & (df.hv_on_art != 2)]
 
-        # schedule the death event
+        # schedule the death events
         for person in inf:
             death_event = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
             self.sim.schedule_event(death_event, df.at[person, 'hv_proj_date_death'])  # schedule the death
@@ -1000,7 +1001,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
 
             # schedule the death event
             for person in new_inf:
-                death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
+                death = HivDeathEvent(self.module, individual_id=person, cause='hiv')  # make that death event
                 time_death = df.loc[person, 'hv_proj_date_death']
                 self.sim.schedule_event(death, time_death)  # schedule the death
 
@@ -1165,21 +1166,23 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        params = self.module.parameters
+        # params = self.module.parameters  # this is causing errors from 2011 onwards
+        params = self.sim.modules['hiv'].parameters
 
         # Find the person_ids who are going to get prep
-        # open to fsw
-        gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
-            frac=params['fsw_prep']).index
+        # open to fsw only
+        if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 10:
+            gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
+                frac=params['fsw_prep']).index
 
-        for person_id in gets_prep:
-            # make the outreach event
-            prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
+            for person_id in gets_prep:
+                # make the outreach event
+                prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(prep_event,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=12))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(prep_event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=12))
 
         # schedule next prep launch event
         next_prep_event = HivLaunchPrepEvent(self)
@@ -1912,7 +1915,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + death_date
 
                     # schedule the death event
-                    death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
+                    death = HivDeathEvent(self.module, individual_id=person, cause='hiv')  # make that death event
                     time_death = df.at[person, 'hv_proj_date_death']
                     self.sim.schedule_event(death, time_death)  # schedule the death
 
@@ -2002,7 +2005,7 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + death_date
 
                     # schedule the death event
-                    death = HivDeathEvent(self, individual_id=person, cause='hiv')  # make that death event
+                    death = HivDeathEvent(self.module, individual_id=person, cause='hiv')  # make that death event
                     time_death = df.at[person, 'hv_proj_date_death']
                     self.sim.schedule_event(death, time_death)  # schedule the death
 
