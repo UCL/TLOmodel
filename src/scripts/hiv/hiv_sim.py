@@ -85,3 +85,7 @@ deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
 
+
+#TODO: Maybe add some graphs here to demonstrate the results? For example....
+# %% Demonstrate the HIV epidemic and it's impact on the population
+
