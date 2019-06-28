@@ -9,7 +9,10 @@ from tlo.methods import demography, healthsystem, lifestyle, healthburden, hiv, 
     male_circumcision, tb
 
 # Where will output go
-outputpath = './src/scripts/outputLogs/'
+# outputpath = './src/scripts/outputLogs/'
+#TODO; NB that outputlogs is not a part of the directory structure in the git repo, so address here will fail.
+outputpath = ''
+
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -69,7 +72,8 @@ import pandas as pd
 from tlo.analysis.utils import parse_log_file
 import matplotlib.pyplot as plt
 
-outputpath = './src/scripts/outputLogs/'
+# outputpath = './src/scripts/outputLogs/'
+# TODO: I am removing the redef of outputpath (see above)
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
