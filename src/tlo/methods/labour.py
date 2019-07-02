@@ -438,13 +438,11 @@ class Labour (Module):
             self.sim.schedule_event(death, self.sim.date)
 
             # Log the still birth
+            logger.debug('@@@@ A Still Birth has occured, to mother %s', mother_id)
             logger.info('%s|still_birth|%s', self.sim.date,
-                        {
-                            'age': df.at[child_id, 'age_years'],
-                           # 'cause': self.cause,
+                        {'age': df.at[child_id, 'age_years'],
                             'person_id': child_id,
-                            'mother_id': mother_id
-                        })
+                            'mother_id': mother_id})
 
             # This property is then reset in case of future pregnancies/stillbirths
             df.loc[mother_id, 'la_still_birth_this_delivery'] = False
@@ -985,11 +983,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             # Todo: consider double logging (here and demography)
             # Log the maternal death
             logger.info('%s|maternal_death|%s', self.sim.date,
-                        {
-                            'age': df.at[individual_id, 'age_years'],
-                            # 'cause': self.cause,
-                            'person_id': individual_id
-                        })
+                        { 'age': df.at[individual_id, 'age_years'],
+                            'person_id': individual_id })
 
 
 class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
@@ -1023,6 +1018,9 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_died_in_labour']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
+            logger.info('%s|maternal_death|%s', self.sim.date,
+                        {'age': df.at[individual_id, 'age_years'],
+                            'person_id': individual_id})
 
 
 class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
@@ -1054,7 +1052,6 @@ class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
                 logger.info('%s|maternal_death|%s', self.sim.date,
                         {
                             'age': df.at[individual_id, 'age_years'],
-                            # 'cause': self.cause,
                             'person_id': individual_id
                         })
 

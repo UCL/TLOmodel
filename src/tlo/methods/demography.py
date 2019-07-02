@@ -283,9 +283,18 @@ class Demography(Module):
         df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
-        # Log the birth:
+        # Log all births (live and still):
         logger.info('%s|on_birth|%s',
-                    self.sim.date,
+                        self.sim.date,
+                    {
+                        'mother': mother_id,
+                        'child': child_id,
+                        'mother_age': df.at[mother_id, 'age_years']
+                    })
+        # Log only live births:
+        if ~df.at[child_id,'la_still_birth_this_delivery']:
+            logger.info('%s|live_births|%s',
+                        self.sim.date,
                     {
                         'mother': mother_id,
                         'child': child_id,
