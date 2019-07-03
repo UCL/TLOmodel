@@ -212,6 +212,7 @@ class Labour (Module):
         params = self.parameters
 
     # ----------------------------------------- DEFAULTS ---------------------------------------------------------------
+        #TODO: Make Null for Males?
 
         df['la_labour'] = 'not_in_labour'
         df['la_gestation_at_labour'] = 0
@@ -265,6 +266,7 @@ class Labour (Module):
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
         dfx['gestational_age'] = (39 - 39 * dfx.random_draw)
+#TODO: give the units: gestational_age_in_weeks
 
         # Use this gestational age to calculate when the woman's baby was conceived
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age'], unit='w')
@@ -403,6 +405,8 @@ class Labour (Module):
         idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
         df.loc[idx_prev_ptb, 'la_previous_ptb'] = True
 
+#TODO: Would be useful to do test (in py_tests) to ensure that the corelation of these characters at baseline is as expected.
+
     def initialise_simulation(self, sim):
 
         event = LabourLoggingEvent(self)
@@ -417,7 +421,7 @@ class Labour (Module):
         df.at[child_id, 'la_gestation_at_labour'] = 0
         df.at[child_id, 'la_miscarriage'] = 0
         df.at[child_id, 'la_miscarriage_date'] = pd.NaT
-        df.at[child_id, 'la_still_birth_this_delivery'] = False
+        df.at[child_id, 'la_still_birth_this_delivery'] = False   #TODO: labelling "this" is confusing for a property (last?)
         df.at[child_id, 'la_parity'] = 0
         df.at[child_id, 'la_previous_cs'] = 0
         df.at[child_id, 'la_previous_ptb'] = False
@@ -450,6 +454,10 @@ class Labour (Module):
 
 class MiscarriageEvent(Event, IndividualScopeEventMixin):
     """On conception event that applies a cumulative risk of early pregnancy loss to women """
+    #TODO: I think this is named very confusingly. Commenting on what each function is doing would be helpful too
+
+    #TODO: FYI, this and other 'checks' wouldn't need to be an event; could just be a function call: get_pregnant_ends_in_miscarriage(person_id) from the demog module
+    #
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -505,6 +513,8 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
             # experience any complications
             self.sim.schedule_event(PostMiscarriageEvent(self.module, individual_id, cause='post miscarriage'),
                                     self.sim.date)
+            #TODO; do you want all misscarrigaes to occur on the same date as conception?
+
             # And for women who do not have a miscarriage we move them to labour scheduler to determine at what
             # gestation they will go into labour
         else:
@@ -514,6 +524,7 @@ class MiscarriageEvent(Event, IndividualScopeEventMixin):
 
 class LabourScheduler (Event, IndividualScopeEventMixin):
     """This event determines when newly pregnant women will going to labour"""
+    #TOD: Claridfy that its only new prenangnt women whose pregnancy will end in labour and not misscarriage
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -567,6 +578,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         # Labour is then scheduled on the newly generated due date along with the birth event 2 days after
             self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
             self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=2))
+            # TODO: These two lines are repeated below, so better that they be outside of the if clause
 
         # If the woman will not go into preterm labour she is allocated a due date of between 37 and 44 weeks following
         # conception
@@ -580,6 +592,8 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
             due_date= df.at[individual_id, 'la_due_date']
             self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
             self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=2))
+            # ToDO; why not have the labour event schedule the birht event?
+
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -607,11 +621,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             if df.at[individual_id, 'la_gestation_at_labour'] >= 37 and\
                 df.at[individual_id, 'la_gestation_at_labour'] < 42:
                 df.at[individual_id, 'la_labour'] = "term_labour"
+                #TODO: something like this might be easier to read:  37 <= df.at[individual_id, 'la_gestation_at_labour'] < 42
 
             elif df.at[individual_id, 'la_gestation_at_labour'] >= 24 and\
                 df.at[individual_id, 'la_gestation_at_labour'] < 34:
                 df.at[individual_id, 'la_labour'] = "early_preterm_labour"
                 df.at[individual_id, 'la_previous_ptb'] = True
+                #TODO: I am noticing that the property names might be a bit inconsistent? (someimtes _this_ somethng "last", sometimes nothing"
+
 
             elif df.at[individual_id, 'la_gestation_at_labour'] >= 34 and\
                 df.at[individual_id, 'la_gestation_at_labour'] < 37:
@@ -643,6 +660,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             rf3 = params['rr_PL_OL_age_less20']
         else:
             rf3 = 1
+
+        # TODO: this formulation of the risk factors (which is used very often) might be more readble as: p_outcome = p_baseeline * (has_rf1*rr1) * (has_rf2*rr2)
+
 
         riskfactors = rf1*rf2*rf3
         eff_prob_ptl= riskfactors * params['prob_pl_ol']
@@ -679,7 +699,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         if random < eff_prob_eclampsia:
             df.at[individual_id, 'la_eclampsia'] = True
 
+            # TODo: These assignments don't seem to be used...?
+
 # ============================================ APH ====================================================================
+        #TODO; spell out APH!?!
 
         if df.at[individual_id, 'li_ed_lev'] == 1:
                 rf1 = params['rr_an_aph_noedu']

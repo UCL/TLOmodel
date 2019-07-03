@@ -180,7 +180,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(newborn_outcomes.NewbornDeathEvent(self.module, individual_id,
                                                                        cause='neonatal compilications')
                                                       ,self.sim.date)
-
+            #TODO is hte passing of 'clause' requied here? is any other cause ever used? The event itself already seems "cause specific"?
 
 class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
@@ -223,6 +223,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
 
+        #TODO: just confirm that you want all the deaths to happen on the same of birth
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""

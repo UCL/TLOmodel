@@ -90,11 +90,14 @@ class HaemorrhageTreatment(Module):
         df['hm_pph_treat_received'] = False
         df['hm_aph_treat_received'] = False
 
+        # TODO: Not clear if important to save this information to the population props dataframe? (is it used?)
 
     def initialise_simulation(self, sim):
 
         event = HaemorrhageTreatmentLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
+
+        #TODO: maybe don't need a regular logging event for the provision of a treatment?
 
     def on_birth(self, mother_id, child_id):
 
@@ -132,6 +135,9 @@ class AntepartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
 
 
 class PostpartumHaemorrhageTreatmentEvent(Event, IndividualScopeEventMixin):
+
+    #TODO: THIS IS NOT BEING USED???
+
 
     """handles the medical and surgical treatment of postpartum haemorrhage """
 
