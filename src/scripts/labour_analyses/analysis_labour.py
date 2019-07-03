@@ -56,6 +56,8 @@ sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
+#TODO; Need to think about integration with HealthBurden capture (DALY weights)
+
 # this will make sure that the logging file is complete
 fh.flush()
 

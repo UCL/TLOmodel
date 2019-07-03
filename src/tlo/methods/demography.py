@@ -377,6 +377,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         # All newly pregnant women then move to the labour module where it will be determine if they experience an
         # early pregnancy loss. If there is no miscarriage, labour and birth are scheduled
 
+#TODO:How!?!?
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
             self.sim.schedule_event(labour.MiscarriageEvent(self.sim.modules['Labour'], female_id,
