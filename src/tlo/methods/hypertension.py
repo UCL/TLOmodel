@@ -5,16 +5,23 @@ Developed by Mikaela Smit, October 2018
 """
 
 import logging
-from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+# Read in data
+file_path = 'resources/ResourceFile_Method_HT.xlsx'
+method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
+HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+                                                method_ht_data['parameters'], method_ht_data['data']
+
 
 # TODO: Read in 95% CI from file?
 # TODO: Update weight to BMI AND ADAPT TO UPDATED CODE
@@ -34,16 +41,6 @@ class HT(Module):
 
     print("\n", "Hypertension method is running", "\n")
 
-    def __init__(self, name=None,
-                 resourcefilepath=None):                     # This will ensure the correct file path for resource files
-
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
-        logger.info('------------------------------')
-        logger.info("Hypertension Module is running")
-        logger.info('------------------------------')
-
     PARAMETERS = {
 
         # 1. Risk parameters
@@ -53,17 +50,11 @@ class HT(Module):
         'prob_HTgivenFamHis': Parameter(Types.CATEGORICAL,   'Probability of getting hypertension given family history'),
 
         # 2. Health care parameters
-        'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'), # TODO: remove all this section later
+        'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'),
         'prob_treat': Parameter(Types.REAL,                  'Probability of being treated'),
         'prob_contr': Parameter(Types.REAL,                  'Probability achieving normal blood pressure levels on medication'),
-        'dalywt_ht': Parameter(Types.REAL,                   'DALY weighting for hypertension'),
-        'initial_prevalence': Parameter(Types.REAL,          'Initial prevalence as per STEP survey'),
-
-        # 3. Data from Excel
-        'HT_prevalence': Parameter(Types.REAL,               'Prevalence parameters for hypertension'),
-        'HT_incidence': Parameter(Types.REAL,                'Incidence parameter for hypertension'),
-        'HT_risk': Parameter(Types.REAL,                     'Risk parameters for hypertension'),
-        'HT_data': Parameter(Types.REAL,                     'Prevalence data for hypertension')
+        'qalywt_ht': Parameter(Types.REAL,                   'DALY weighting for hypertension'),
+        'initial_prevalence': Parameter(Types.REAL,          'Initial prevalence as per STEP survey')
     }
 
     PROPERTIES = {
@@ -74,7 +65,7 @@ class HT(Module):
         'ht_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
                                                                categories=['N', 'C', 'P']),
 
-        # 2. Health care properties                           # TODO: remove all this later
+        # 2. Health care properties
         'ht_diag_date': Property(Types.DATE,                  'Date of latest hypertension diagnosis'),
         'ht_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
@@ -84,48 +75,33 @@ class HT(Module):
         'ht_contr_date': Property(Types.DATE,                 'Date of latest hypertension control'),
         'ht_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
-        'ht_specific_symptoms': Property(Types.CATEGORICAL,   'Status: N=none', categories=['N'])
+        'ht_specific_symptoms': Property(Types.CATEGORICAL,  'Status: N=none', categories=['N'])
     }
 
     def read_parameters(self, data_folder):
 
         p = self.parameters
-
-        # This section will read in the relevant data for this module
-        file_path = Path(self.resourcefilepath)/ 'ResourceFile_Method_HT.xlsx'
-        method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-        HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'],\
-                                                        method_ht_data['incidence2018_plus'],\
-                                                        method_ht_data['parameters'], method_ht_data['data']
-
-        p['HT_prevalence'] = HT_prevalence
-        p['HT_incidence']  = HT_incidence
-        p['HT_risk']       = HT_risk
-        p['HT_data']       = HT_data
-
-
-        df = HT_risk.set_index('parameter')
-        p['prob_HT_basic'] = df.at['prob_basic', 'value']
-        p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']], [df.at['prob_htgivenbmi', 'value3']]],
+        df2 = HT_risk.set_index('parameter')
+        p['prob_HT_basic'] = df2.at['prob_basic', 'value']
+        p['prob_HTgivenBMI'] = pd.DataFrame([[df2.at['prob_htgivenbmi', 'value']], [df2.at['prob_htgivenbmi', 'value2']], [df2.at['prob_htgivenbmi', 'value3']]],
                                                index = ['overweight', 'obese', 'morbidly obese'],
                                                columns = ['risk'])
-        p['prob_HTgivenDiab']   = df.at['prob_htgivendiabetes', 'value']
-        p['prob_HTgivenFamHis'] = pd.DataFrame([[df.at['prob_htgivenfamhis', 'value']], [df.at['prob_htgivenfamhis', 'value2']]],
+        p['prob_HTgivenDiab']   = df2.at['prob_htgivendiabetes', 'value']
+        p['prob_HTgivenFamHis'] = pd.DataFrame([[df2.at['prob_htgivenfamhis', 'value']], [df2.at['prob_htgivenfamhis', 'value2']]],
                                                 index = ['one parent', 'two parents'],
                                                 columns = ['risk'])
 
         p['prob_diag']          = 0.5
         p['prob_treat']         = 0.5
         p['prob_contr']         = 0.5
-        p['dalywt_mild_ht']     = 0.0
-
-        df = HT_data.set_index('index')
-        p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['m_all', 'value']], [df.at['f_all', 'value']]],
+        p['qalywt_mild_ht']     = 0.0
+        df2 = HT_data.set_index('index')
+        p['initial_prevalence'] = pd.DataFrame([[df2.at['b_all', 'value']], [df2.at['m_all', 'value']], [df2.at['f_all', 'value']]],
                                                 index = ['both sexes', 'male', 'female'],
                                                 columns = ['prevalence'])
 
 
-    def initialise_population(self, population, HT_prevalence=None):
+    def initialise_population(self, population):
         """Set our property values for the initial population.
 
         This method is called by the simulation when creating the initial population, and is
@@ -137,7 +113,6 @@ class HT(Module):
 
         # 1. Define key variables
         df = population.props                               # Shortcut to the data frame storing individual data
-        df2 = self.parameters[HT_prevalence]
 
         # 2. Disease and health care properties
         df.loc[df.is_alive,'ht_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
@@ -160,9 +135,10 @@ class HT(Module):
 
         # ToDO: Re-add this later after testing HT alone
         # 3.1 First get relative risk for hypertension
-        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(df2.HT_prevalence, left_on=['age_years'], right_on=['age'],
+        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
                                                                       how='left')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenWeight.loc['overweight']['risk']
+        a=self.prob_HTgivenBMI.loc['overweight']['risk']
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
         # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updated
 
@@ -244,7 +220,7 @@ class HT(Module):
 
 
 
-    def report_daly_values(self):
+    def report_qaly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
@@ -270,7 +246,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1)) # TODO: change time scale if needed
         self.prob_HT_basic = module.parameters['prob_HT_basic']
-        self.prob_HTgivenWeight = module.parameters['prob_HTgivenWeight']
+        self.prob_HTgivenWeight = module.parameters['prob_HTgivenBMI']
         self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
         self.prob_HTgivenFamHis = module.parameters['prob_HTgivenFamHis']
         self.prob_treat = module.parameters['prob_treat']
@@ -305,7 +281,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
                                             left_on=['age_years'], right_on=['age'], how='left').set_index(
                                             'person')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenWeight.loc['overweight']['risk']
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
         # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updatedassert len(currently_ht_no) == len(ht_prob)
         ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
