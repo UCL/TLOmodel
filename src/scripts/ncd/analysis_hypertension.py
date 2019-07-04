@@ -39,7 +39,7 @@ logging.getLogger().addHandler(fh)
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
-service_availability = ['HT*']
+service_availability = ['*']
 
 # -----------------------------------------------------------------
 
