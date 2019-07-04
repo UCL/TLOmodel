@@ -8,6 +8,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -126,11 +127,11 @@ class HT(Module):
 
         # 3. Assign prevalence as per data
         alive_count = df.is_alive.sum()
-        adults_count_overall = len(df[(df.is_alive) & (df.age_exact_years > 24) & (df.age_exact_years < 66)])
-        adults_count_25to35 = len(df[(df.is_alive) & (df.age_exact_years > 24) & (df.age_exact_years < 36)])
-        adults_count_35to45 = len(df[(df.is_alive) & (df.age_exact_years > 34) & (df.age_exact_years < 46)])
-        adults_count_45to55 = len(df[(df.is_alive) & (df.age_exact_years > 44) & (df.age_exact_years < 56)])
-        adults_count_55to65 = len(df[(df.is_alive) & (df.age_exact_years > 54) & (df.age_exact_years < 66)])
+        adults_count_overall = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 65)])
+        adults_count_25to35 = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 35)])
+        adults_count_35to45 = len(df[(df.is_alive) & (df.age_years > 34) & (df.age_years < 45)])
+        adults_count_45to55 = len(df[(df.is_alive) & (df.age_years > 44) & (df.age_years < 55)])
+        adults_count_55to65 = len(df[(df.is_alive) & (df.age_years > 54) & (df.age_years < 65)])
 
         # 3.1 First get relative risk for hypertension
         ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
@@ -142,14 +143,16 @@ class HT(Module):
         assert alive_count == len(ht_prob)
         ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
+        #random_numbers[df.age_years < 18] = 0
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
+        
 
         # 3.2. Calculate prevalence
-        count = df.ht_current_status.sum()
-        count_25to35 = len(df[(df.ht_current_status) & (df.age_exact_years > 24) & (df.age_exact_years < 36)])
-        count_35to45 = len(df[(df.ht_current_status) & (df.age_exact_years > 34) & (df.age_exact_years < 46)])
-        count_45to55 = len(df[(df.ht_current_status) & (df.age_exact_years > 44) & (df.age_exact_years < 56)])
-        count_55to65 = len(df[(df.ht_current_status) & (df.age_exact_years > 54) & (df.age_exact_years < 66)])
+        count = len(df[(df.ht_current_status) & (df.age_years > 24) & (df.age_years < 65)])
+        count_25to35 = len(df[(df.ht_current_status) & (df.age_years > 24) & (df.age_years < 35)])
+        count_35to45 = len(df[(df.ht_current_status) & (df.age_years > 34) & (df.age_years < 45)])
+        count_45to55 = len(df[(df.ht_current_status) & (df.age_years > 44) & (df.age_years < 55)])
+        count_55to65 = len(df[(df.ht_current_status) & (df.age_years > 54) & (df.age_years < 65)])
         prevalence_overall = (count / adults_count_overall) * 100
         prevalence_25to35 = (count_25to35 / adults_count_25to35) *100
         prevalence_35to45 = (count_35to45 / adults_count_35to45) *100
@@ -169,6 +172,7 @@ class HT(Module):
               "\n", "Data: ", df)
        # logger.debug('Prevalent hypertension has been assigned '       #TODO: log properly overall and age-spec prev.
        #              'model %d data: %s', prevalence, df)
+
 
 
         # 4. Set relevant properties of those with prevalent hypertension
