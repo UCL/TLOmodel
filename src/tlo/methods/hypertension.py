@@ -198,7 +198,7 @@ class HT(Module):
         sim.schedule_event(event, sim.date + DateOffset(years=1))
 
         # 2. Add an event to log to screen
-        sim.schedule_event(HypLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3. Add shortcut to the data frame
         df = sim.population.props
@@ -327,7 +327,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_Hyp_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+class HSI_HT_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
 
     """
     This is a Health System Interaction Event.
@@ -380,7 +380,7 @@ class HSI_Hyp_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin
                                                             tclose=date_turns_15 + DateOffset(months=12))
 
 
-class HSI_Hyp_StartTreatment(Event, IndividualScopeEventMixin):
+class HSI_HT_StartTreatment(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -456,7 +456,7 @@ class HSI_Hyp_StartTreatment(Event, IndividualScopeEventMixin):
 
 
 
-class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
+class HSI_HT_TreatmentMonitoring(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -523,7 +523,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
 
 
-class HypLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'mockitis status'
         """
