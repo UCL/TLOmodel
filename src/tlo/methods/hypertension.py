@@ -73,7 +73,6 @@ class HT(Module):
         'ht_contr_date': Property(Types.DATE,                 'Date of latest hypertension control'),
         'ht_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
                                                                categories=['N', 'C', 'P']),
-        'ht_specific_symptoms': Property(Types.CATEGORICAL,  'Status: N=none', categories=['N'])
     }
 
     def read_parameters(self, data_folder):
@@ -145,7 +144,7 @@ class HT(Module):
         random_numbers = self.rng.random_sample(size=alive_count)
         #random_numbers[df.age_years < 18] = 0
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)
-        
+
 
         # 3.2. Calculate prevalence
         count = len(df[(df.ht_current_status) & (df.age_years > 24) & (df.age_years < 65)])
@@ -161,7 +160,7 @@ class HT(Module):
 
 
         # 3.1 Log prevalence compared to data
-        df = self.parameters['initial_prevalence']
+        df2 = self.parameters['initial_prevalence']
         print("\n", "Prevalent hypertension has been assigned"
               "\n", "MODEL: ",
               "\n", "Overall: ", prevalence_overall, "%",
@@ -169,19 +168,20 @@ class HT(Module):
               "\n", "35 to 45: ", prevalence_35to45, "%",
               "\n", "45 to 55: ", prevalence_45to55, "%",
               "\n", "55 to 65: ", prevalence_55to65, "%",
-              "\n", "Data: ", df)
+              "\n", "Data: ", df2)
+
        # logger.debug('Prevalent hypertension has been assigned '       #TODO: log properly overall and age-spec prev.
-       #              'model %d data: %s', prevalence, df)
+       #              'model %d data: %s', prevalence, df2)
 
 
 
         # 4. Set relevant properties of those with prevalent hypertension
-        ht_years_ago = 1
-        infected_td_ago = pd.to_timedelta(ht_years_ago * 365.25, unit='d')
-        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
+        ht_years_ago = np.array([1] * count)
+        infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
+        df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
-        print("\n", "Population has been initialised, hypertension prevalent cases have been assigned.  ")
+        print("\n", "Population has been initialised, hypertension prevalent cases h'ave been assigned.  ")
 
 
     def initialise_simulation(self, sim):
@@ -195,10 +195,10 @@ class HT(Module):
 
         # 1. Add  basic event
         event = HTEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1)) # ToDo: need to update this to adjust to time used for this method
+        sim.schedule_event(event, sim.date + DateOffset(years=1))
 
         # 2. Add an event to log to screen
-        sim.schedule_event(HypLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(HypLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 3. Add shortcut to the data frame
         df = sim.population.props
@@ -230,7 +230,6 @@ class HT(Module):
         df.at[child_id, 'ht_diag_status'] = 'N'                 # Default setting: no one is treated
         df.at[child_id, 'ht_contr_date'] = pd.NaT               # Default setting: no one is controlled
         df.at[child_id, 'ht_contr_status'] = 'N'                # Default setting: no one is controlled
-        df.at[child_id, 'ht_specific_symptoms'] = 'N'           # TODO: remove this later
 
     def on_healthsystem_interaction(self, person_id, treatment_id):
         """
@@ -266,7 +265,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1)) # TODO: change time scale if needed
+        super().__init__(module, frequency=DateOffset(years=1))
         self.prob_HT_basic = module.parameters['prob_HT_basic']
         self.prob_HTgivenBMI = module.parameters['prob_HTgivenBMI']
         self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
