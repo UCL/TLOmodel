@@ -4,7 +4,7 @@ import os
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis, hypertension #, t2dm
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis, hypertension#, t2dm
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 # TODO: adapt to NCD analysis
@@ -49,7 +49,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-#sim.register(mockitis.Mockitis())
+sim.register(mockitis.Mockitis())
 sim.register(hypertension.HT())
 #sim.register(t2dm.T2DM())
 sim.register(chronicsyndrome.ChronicSyndrome())

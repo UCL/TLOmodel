@@ -181,6 +181,11 @@ class HT(Module):
         df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
+        # Register this disease module with the health system
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
+
+
+
         print("\n", "Population has been initialised, hypertension prevalent cases h'ave been assigned.  ")
 
 
@@ -203,12 +208,10 @@ class HT(Module):
         # 3. Add shortcut to the data frame
         df = sim.population.props
 
-        # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
-
         # Schedule the outreach event... # ToDo: need to test this with HT!
-        # event = HypOutreachEvent(self, 'this_module_only')
-        # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
+        outreach_event = HT_LaunchOutreachEvent(self)
+        self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=24))
+
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -254,6 +257,8 @@ class HT(Module):
         health_values = df.loc[df.is_alive, 'ht_specific_symptoms'].map({
             'N': 0,
         })
+        health_values.name = 'HT Symptoms'  # label the cause of this disability
+
         return health_values.loc[df.is_alive]
 
 
@@ -261,7 +266,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
     """
     This event is occurring regularly at one monthly intervals and controls the infection process
-    and onset of symptoms of Mockitis.
+    and onset of symptoms of Hypertension.
     """
 
     def __init__(self, module):
@@ -323,201 +328,258 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
               "\n", "Prevalence of HYPERTENSION is: ", prevalence, "%", "\n")
 
 
+class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
+    """
+    This is the event that is run by Hypertension and it is the Outreach Event.
+    It will now submit the individual HSI events that occur when each individual is met.
+    (i.e. Any large campaign is composed of many individual outreach events).
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+        df = self.sim.population.props
+
+        # Find the person_ids who are going to get the outreach
+        gets_outreach = df.index[(df['is_alive']) & (df['sex'] == 'F')]
+        for person_id in gets_outreach:
+            # make the outreach event (let this disease module be alerted about it, and also Mockitis)
+            outreach_event_for_individual = HSI_HT_Outreach_Individual(self.module, person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_HT_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-
+class HSI_HT_Outreach_Individual(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+
+    This event can be used to simulate the occurrence of an 'outreach' intervention.
+
+    NB. This needs to be created and run for each individual that benefits from the outreach campaign.
+
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        logger.debug('Outreach event being created.')
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hyp_PresentsForCareWithSevereSymptoms'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        # (These are blank when created; but these should be filled-in by the module that calls it)
+        self.TREATMENT_ID = 'HT_Outreach_Individual'
+        self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        self.APPT_FOOTPRINT['ConWithDCSA'] = 0.5  # outreach event takes small amount of time for DCSA
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ALERT_OTHER_DISEASES = []
-
-
-    def apply(self, person_id):
-
-        logger.debug('This is HSI_Hyp_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
-
-        df = self.sim.population.props  # shortcut to the dataframe
-
-        if df.at[person_id, 'age_years'] >= 15:
-            logger.debug(
-                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
-                person_id)
-            event = HSI_Hyp_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
-
-        else:
-            logger.debug(
-                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
-                person_id)
-
-            date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-            event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=date_turns_15,
-                                                            tclose=date_turns_15 + DateOffset(months=12))
-
-
-class HSI_HT_StartTreatment(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is inititaed.
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
-
-        item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-        logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
-        df = self.sim.population.props
-        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
-
-        if treatmentworks:
-            df.at[person_id, 'mi_is_infected'] = False
-            df.at[person_id, 'mi_status'] = 'P'
-
-            # (in this we nullify the death event that has been scheduled.)
-            df.at[person_id, 'mi_scheduled_date_death'] = pd.NaT
-
-            df.at[person_id, 'mi_date_cure'] = self.sim.date
-            df.at[person_id, 'mi_specific_symptoms'] = 'none'
-            df.at[person_id, 'mi_unified_symptom_code'] = 0
-            pass
-
-        # Create a follow-up appointment
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug('....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-                     person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2)
-        )
-
-
-
-
-class HSI_HT_TreatmentMonitoring(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is monitored.
-    (In practise, nothing happens!)
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
-
-        item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # Can occur at any facility level
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
+        logger.debug('Outreach event running now for person: %s', person_id)
 
-        # There is a follow-up appoint happening now but it has no real effect!
-
-        # Create the next follow-up appointment....
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+        # Do here whatever happens during an outreach event with an individual
+        pass
 
 
+
+# class HSI_HT_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+#
+#     """
+#     This is a Health System Interaction Event.
+#     It is first appointment that someone has when they present to the healthcare system with the severe
+#     symptoms of Hypertension.
+#     If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+#     If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         # Get a blank footprint and then edit to define call on resources of this treatment event
+#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+#         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+#
+#         # Define the necessary information for an HSI
+#         self.TREATMENT_ID = 'HT_PresentsForCareWithSevereSymptoms'
+#         self.APPT_FOOTPRINT = the_appt_footprint
+#         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+#         self.ALERT_OTHER_DISEASES = []
+#
+#
+#     def apply(self, person_id):
+#
+#         logger.debug('This is HSI_HT_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
+#
+#         df = self.sim.population.props  # shortcut to the dataframe
+#
+#         if df.at[person_id, 'age_years'] >= 15:
+#             logger.debug(
+#                 '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
+#                 person_id)
+#             event = HSI_HT_StartTreatment(self.module, person_id=person_id)
+#             self.sim.modules['HealthSystem'].schedule_event(event,
+#                                                             priority=2,
+#                                                             topen=self.sim.date,
+#                                                             tclose=None)
+#
+#         else:
+#             logger.debug(
+#                 '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
+#                 person_id)
+#
+#             date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
+#             event = HSI_HT_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
+#             self.sim.modules['HealthSystem'].schedule_event(event,
+#                                                             priority=2,
+#                                                             topen=date_turns_15,
+#                                                             tclose=date_turns_15 + DateOffset(months=12))
+#
+
+# #class HSI_HT_StartTreatment(Event, IndividualScopeEventMixin):
+#     """
+#     This is a Health System Interaction Event.
+#
+#     It is appointment at which treatment for hypertension is inititaed.
+#
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         # Get a blank footprint and then edit to define call on resources of this treatment event
+#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+#         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+#         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
+#
+#
+#         # Get the consumables required
+#         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+#         pkg_code1 = pd.unique(consumables.loc[consumables[
+#                                                   'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
+#             0]
+#         pkg_code2 = pd.unique(consumables.loc[consumables[
+#                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
+#             0]
+#
+#         item_code1 = \
+#         pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+#         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
+#
+#         the_cons_footprint = {
+#             'Intervention_Package_Code': [pkg_code1, pkg_code2],
+#             'Item_Code': [item_code1, item_code2]
+#         }
+#
+#         # Define the necessary information for an HSI
+#         self.TREATMENT_ID = 'HT_Treatment_Initiation'
+#         self.APPT_FOOTPRINT = the_appt_footprint
+#         self.CONS_FOOTPRINT = the_cons_footprint
+#         self.ALERT_OTHER_DISEASES = []
+#
+#     def apply(self, person_id):
+#         logger.debug('This is HSI_HT_StartTreatment: initiating treatent for person %d', person_id)
+#         df = self.sim.population.props
+#         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
+#
+#         if treatmentworks:
+#             df.at[person_id, 'mi_is_infected'] = False
+#             df.at[person_id, 'mi_status'] = 'P'
+#
+#             # (in this we nullify the death event that has been scheduled.)
+#             df.at[person_id, 'mi_scheduled_date_death'] = pd.NaT
+#
+#             df.at[person_id, 'mi_date_cure'] = self.sim.date
+#             df.at[person_id, 'mi_specific_symptoms'] = 'none'
+#             df.at[person_id, 'mi_unified_symptom_code'] = 0
+#             pass
+#
+#         # Create a follow-up appointment
+#         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+#
+#         logger.debug('....This is HSI_HT_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
+#                      person_id, target_date_for_followup_appt)
+#
+#         followup_appt = HSI_HT_TreatmentMonitoring(self.module, person_id=person_id)
+#
+#         # Request the heathsystem to have this follow-up appointment
+#         self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+#                                                         priority=2,
+#                                                         topen=target_date_for_followup_appt,
+#                                                         tclose=target_date_for_followup_appt + DateOffset(weeks=2)
+#         )
+#
+#
+#
+#
+# class HSI_HT_TreatmentMonitoring(Event, IndividualScopeEventMixin):
+#     """
+#     This is a Health System Interaction Event.
+#
+#     It is appointment at which treatment for hypertension is monitored.
+#     (In practise, nothing happens!)
+#
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         # Get a blank footprint and then edit to define call on resources of this treatment event
+#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+#         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+#         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
+#
+#
+#         # Get the consumables required
+#         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+#         pkg_code1 = pd.unique(consumables.loc[consumables[
+#                                                   'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
+#             0]
+#         pkg_code2 = pd.unique(consumables.loc[consumables[
+#                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
+#             0]
+#
+#         item_code1 = \
+#         pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+#         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
+#
+#         the_cons_footprint = {
+#             'Intervention_Package_Code': [pkg_code1, pkg_code2],
+#             'Item_Code': [item_code1, item_code2]
+#         }
+#
+#         # Define the necessary information for an HSI
+#         self.TREATMENT_ID = 'HT_TreatmentMonitoring'
+#         self.APPT_FOOTPRINT = the_appt_footprint
+#         self.CONS_FOOTPRINT = the_cons_footprint
+#         self.ALERT_OTHER_DISEASES = ['*']
+#
+#     def apply(self, person_id):
+#
+#         # There is a follow-up appoint happening now but it has no real effect!
+#
+#         # Create the next follow-up appointment....
+#         target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
+#
+#         logger.debug(
+#             '....This is HSI_HT_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
+#             person_id, target_date_for_followup_appt)
+#
+#         followup_appt = HSI_HT_TreatmentMonitoring(self.module, person_id=person_id)
+#
+#         # Request the heathsystem to have this follow-up appointment
+#         self.sim.modules['HealthSystem'].schedule_event(followup_appt,
+#                                                         priority=2,
+#                                                         topen=target_date_for_followup_appt,
+#                                                         tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+#
+#
 
 # ---------------------------------------------------------------------------------
 
@@ -525,7 +587,7 @@ class HSI_HT_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
 class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """Produce a summmary of the numbers of people with respect to their 'mockitis status'
+        """Produce a summmary of the numbers of people with respect to their 'hypertension status'
         """
         # run this event every month
         self.repeat = 6
