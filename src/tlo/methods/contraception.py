@@ -443,7 +443,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # get the population dataframe
 
         # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (df.co_contraception=='not_using')
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)
@@ -459,10 +459,10 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                                               how='inner').set_index('person')
         assert len(females) == len_before_merge
 
-        # flipping the coin to determine if this woman will become pregnant
+        # flipping the coin to determine if this woman will become pregnant (basefert_dhs is in the Excel sheet)
         newly_pregnant = (self.module.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
 
-        # the imported number is a yearly proportion. So adjust the rate according
+        # the imported number is a yearly proportion. So adjust the rate accordingly
         # to the frequency with which the event is recurring
         # TODO: this should be linked to the self.frequency value
 
