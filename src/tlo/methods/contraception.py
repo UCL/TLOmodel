@@ -474,7 +474,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
         for female_id in newly_pregnant_ids:
-            logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
+            logger.info('%s|female %d pregnant at age: %d', self.sim.date, female_id, females.at[female_id, 'age_years'])
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             date_of_birth = self.sim.date + DateOffset(months=9,
@@ -484,7 +484,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
                                     date_of_birth)
 
-            logger.debug('birth booked for: %s', date_of_birth)
+            logger.info('birth booked for: %s', date_of_birth)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -509,7 +509,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         :param mother_id: the person the event happens to, i.e. the mother giving birth
         """
 
-        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
+        logger.info('%s|@@@@ A Birth is now occuring, to mother %s', self.sim.date, mother_id)
 
         df = self.sim.population.props
 
