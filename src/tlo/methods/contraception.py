@@ -1,7 +1,7 @@
 """
-Contraception module covering baseline contraception methods use, failure (pregnancy),
+Contraception module covering baseline fertility, contraception methods use, failure (pregnancy),
 Switching contraceptive methods, and discontiuation rates by age
-please see Dropbox/Thanzi la Onse/05 - Resources/Programming Notes/Contraception-Pregnancy.pdf
+please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Pregnancy.pdf
 for conceptual diagram
 """
 import logging
@@ -12,7 +12,7 @@ import pandas as pd
 
 from pathlib import Path
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
+from tlo.events import Event, PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
 from tlo.methods.demography import Demography
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,6 @@ class Contraception(Module):
     # and longer description.
     PARAMETERS = {
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
-        # TODO: fertlity schedule (baseline fertlity) is currently in demography should it only be here in contraception?
         'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'),
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2_'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
@@ -61,6 +60,9 @@ class Contraception(Module):
         # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch) with the one in ResourceFile_Contraception.xlsx
         # (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
         'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
+        'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
+        'date_of_last_pregnancy': Property(Types.DATE,
+                                           'Date of the last pregnancy of this individual'),
     }
 
     def read_parameters(self, data_folder):
@@ -75,6 +77,7 @@ class Contraception(Module):
         self.parameters['contraception_initiation1'] = workbook['irate1_']  # 'irate_1_' sheet created manually as a work around to address to do point on line 39
         # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_initiation2'] = workbook['irate2_']
+        # TODO: add switching
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
         self.parameters['contraception_discontinuation'] = workbook['Discontinuation']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
@@ -97,6 +100,8 @@ class Contraception(Module):
         """
         df = population.props
         fertility = self.parameters['fertility_schedule']
+
+        df.loc[df.is_alive, 'co_contraception'] = 'not_using'
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
@@ -147,6 +152,9 @@ class Contraception(Module):
         # This should only be called after birth, though should be repeated every month i.e. following new births every month
         sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
 
+        # check all population to determine if pregnancy should be triggered (repeats every month)
+        sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -157,7 +165,15 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-         # Log the birth:
+        df.at[child_id, 'mother_id'] = mother_id
+        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
+        df.at[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'co_contraception'] = 'not_using'
+
+        # Reset the mother's is_pregnant status showing that she is no longer pregnant
+        df.at[mother_id, 'is_pregnant'] = False
+
+        # Log the birth:
         logger.info('%s|on_birth|%s',
                     self.sim.date,
                     {
@@ -191,7 +207,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
                                  df.is_alive &
                                  df.age_years.between(self.age_low, self.age_high) &
                                  ~df.is_pregnant &
-                                 (df.contraception == 'not_using')]
+                                 (df.co_contraception == 'not_using')]
 
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_initiation1']
@@ -237,7 +253,7 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.contraception != 'not_using')]
+        using_idx = df.index[(df.co_contraception != 'not_using')]
 
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_discontinuation']
@@ -255,9 +271,10 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
         probabilities = df_new.loc[using_idx, ['co_contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
+        probabilities['not_using'] = 'not_using'
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
         probabilities['1-prob'] = 1-probabilities['prob']
-        probabilities['not_using'] = 'not_using'
+
 
         # apply the probabilities of discontinuation for each contraception method
         # to series which has index of all currently using
@@ -298,7 +315,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.contraception != 'not_using')]
+        using_idx = df.index[(df.co_contraception != 'not_using')]
 
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_failure']
@@ -404,4 +421,99 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
                                     'woman_index': woman_id,
                                     'co_contraception': df.at[woman_id, 'co_contraception']
                                 })
+
+
+class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event looks across each woman in the population to determine who will become pregnant
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+
+        logger.debug('Checking to see if anyone should become pregnant....')
+
+        if self.sim.date > Date(2035, 1, 1):
+            logger.debug('Now after 2035')
+
+        df = population.props  # get the population dataframe
+
+        # get the subset of women from the population dataframe and relevant characteristics
+        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
+        females = df.loc[subset, ['contraception', 'age_years']]
+
+        # load the fertility schedule (imported datasheet from excel workbook)
+        fertility_schedule = self.module.parameters['fertility_schedule']
+
+        # --------
+
+        # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
+        len_before_merge = len(females)
+        females = females.reset_index().merge(fertility_schedule,
+                                              left_on=['age_years'], #TimC: got rid of 'contraception' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
+                                              right_on=['age'], #TimC: got rid of 'cmeth' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
+                                              how='inner').set_index('person')
+        assert len(females) == len_before_merge
+
+        # flipping the coin to determine if this woman will become pregnant
+        newly_pregnant = (self.module.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
+
+        # the imported number is a yearly proportion. So adjust the rate according
+        # to the frequency with which the event is recurring
+        # TODO: this should be linked to the self.frequency value
+
+        newly_pregnant_ids = females.index[newly_pregnant]
+
+        # updating the pregancy status for that women
+        df.loc[newly_pregnant_ids, 'is_pregnant'] = True
+        df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
+
+        # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
+        for female_id in newly_pregnant_ids:
+            logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
+
+            # schedule the birth event for this woman (9 months plus/minus 2 wks)
+            date_of_birth = self.sim.date + DateOffset(months=9,
+                                                       weeks=-2 + 4 * self.module.rng.random_sample())
+
+            # Schedule the Birth
+            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
+                                    date_of_birth)
+
+            logger.debug('birth booked for: %s', date_of_birth)
+
+
+class DelayedBirthEvent(Event, IndividualScopeEventMixin):
+    """A one-off event in which a pregnant mother gives birth.
+    """
+
+    def __init__(self, module, mother_id):
+        """Create a new birth event.
+
+        We need to pass the person this event happens to to the base class constructor
+        using super(). We also pass the module that created this event, so that random
+        number generators can be scoped per-module.
+
+        :param module: the module that created this event
+        :param mother_id: the person giving birth
+        """
+        super().__init__(module, person_id=mother_id)
+
+    def apply(self, mother_id):
+        """Apply this event to the given person.
+        Assuming the person is still alive, we ask the simulation to create a new offspring.
+        :param mother_id: the person the event happens to, i.e. the mother giving birth
+        """
+
+        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
+
+        df = self.sim.population.props
+
+        # If the mother is alive and still pregnant
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
+            self.sim.do_birth(mother_id)
 
