@@ -50,7 +50,7 @@ class Contraception(Module):
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
+        'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
                                   categories=['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
                                               'female_sterilization', 'other_modern', 'periodic_abstinence',
                                               'withdrawal', 'other_traditional']),
@@ -60,7 +60,7 @@ class Contraception(Module):
         # 'other traditional' includes lactational amenohroea (LAM), standard days method (SDM), 'other traditional method'
         # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch) with the one in ResourceFile_Contraception.xlsx
         # (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
-        'date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
+        'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
     }
 
     def read_parameters(self, data_folder):
@@ -84,7 +84,9 @@ class Contraception(Module):
         #self.parameters['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
         #self.parameters['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
         # TODO: to decide whether to have the above 3 parameters fixed (given model is deterministic) or with uncertainty (move toward a probabilistic model)
-        self.parameters['r_fail_under25'] = 1.7 # From Guttmacher analysis
+        self.parameters['r_fail_under25'] = 2.2 # From Guttmacher analysis
+        # - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -114,7 +116,7 @@ class Contraception(Module):
 
             her_method=self.rng.choice(her_op,p=her_p/her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
 
-            df.loc[woman,'contraception']=her_method
+            df.loc[woman,'co_contraception']=her_method
 
 
         # TODO: need to do it without above for loop:
@@ -122,7 +124,7 @@ class Contraception(Module):
         #categories = ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
         #              'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional']
         #random_choice = self.rng.choice(categories, size=len(df), p=probabilities['p_list'])
-        #df.loc[females1549, 'contraception'].values[:] = random_choice
+        #df.loc[females1549, 'co_contraception'].values[:] = random_choice
 
 
     def initialise_simulation(self, sim):
@@ -203,7 +205,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
 
         # only update those starting on contraception
         now_using_idx = not_using_idx[sampled_method != 'not_using']
-        df.loc[now_using_idx, 'contraception'] = sampled_method[now_using_idx]
+        df.loc[now_using_idx, 'co_contraception'] = sampled_method[now_using_idx]
 
         # output some logging if any start contraception
         if len(now_using_idx):
@@ -212,7 +214,7 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
                             self.sim.date,
                             {
                                 'woman_index': woman_id,
-                                'contraception': df.at[woman_id, 'contraception']
+                                'co_contraception': df.at[woman_id, 'co_contraception']
                             })
 
 
@@ -250,10 +252,10 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
                                                                                            'periodic_abstinence',
                                                                                            'withdrawal',
                                                                                            'other_traditional']].tolist()
-        probabilities = df_new.loc[using_idx, ['contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+        probabilities = df_new.loc[using_idx, ['co_contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
-        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
+        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['not_using'] = 'not_using'
 
@@ -262,18 +264,18 @@ class Discontinue(RegularEvent, PopulationScopeEventMixin):
         # need to use a for loop to loop through each method
         for woman in using_idx:
             her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
-            her_op = np.asarray(probabilities.loc[woman,['not_using', 'contraception']])
+            her_op = np.asarray(probabilities.loc[woman,['not_using', 'co_contraception']])
 
             her_method = rng.choice(her_op,p=her_p)
 
-            df.loc[woman,'contraception']=her_method
+            df.loc[woman,'co_contraception']=her_method
             # output some logging if any stop contraception
             if her_method == 'not_using':
                 logger.info('%s|stop_contraception|%s',
                                 self.sim.date,
                                 {
                                     'woman_index': woman,
-                                    'contraception': df.at[woman, 'contraception']
+                                    'co_contraception': df.at[woman, 'co_contraception']
                                 })
 
 
@@ -311,10 +313,10 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                                                                            'periodic_abstinence',
                                                                                            'withdrawal',
                                                                                            'other_traditional']].tolist()
-        probabilities = df_new.loc[using_idx, ['age_years','is_pregnant','contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+        probabilities = df_new.loc[using_idx, ['age_years','is_pregnant','co_contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
-        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['contraception'])
+        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
         #probabilities['prob'] = probabilities['prob'] + (m.parameters['r_fail_cons'] + (m.parameters['r_fail_age']*probabilities['age_years']) + (m.parameters['r_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
         under25 = probabilities.index[probabilities.age_years.between(15, 25)]
         probabilities.loc[under25, 'prob'] = probabilities['prob'] * m.parameters['r_fail_under25']  # apply increased risk of failure to under 25s
@@ -328,7 +330,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
         # need to use a for loop to loop through each method
         for woman in using_idx:
             her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
-            her_op = np.asarray(probabilities.loc[woman,['preg', 'contraception']])
+            her_op = np.asarray(probabilities.loc[woman,['preg', 'co_contraception']])
 
             her_method = rng.choice(her_op,p=her_p)
             if her_method == 'preg':
@@ -336,7 +338,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                 df.loc[woman, 'date_of_last_pregnancy'] = self.sim.date
                 df.loc[woman, 'preg'] = 'new_unintented_preg'   # as these are contraceptive failures these pregnancies are unintended
                 # schedule the birth event for each newly pregnant woman (9 months plus/minus 2 wks)
-                df.loc[woman, 'date_of_childbirth'] = self.sim.date + DateOffset(months=9,
+                df.loc[woman, 'co_date_of_childbirth'] = self.sim.date + DateOffset(months=9,
                                                            weeks=-2 + 4 * rng.random_sample())
                 # Schedule the Birth
                 # TODO: not working: despite importing Demography I get the error: AttributeError: type object 'Demography' has no attribute 'DelayedBirthEvent'
@@ -349,7 +351,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                 {
                                     'woman_index': woman,
                                     'Preg': df.at[woman, 'is_pregnant'],
-                                    'birth booked for': df.at[woman, 'date_of_childbirth']
+                                    'birth booked for': df.at[woman, 'co_date_of_childbirth']
                                 })
 
 
@@ -384,15 +386,15 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
         # get the indices of the women from the population with the relevant characterisitcs
         # those who have just given birth within the last month
         # the if statement below is to keep it running if there are no births within the last month
-        if df[((df.date_of_childbirth < self.sim.date) & (df.date_of_childbirth > self.sim.date - DateOffset(months=1)))].empty == True:
+        if df[((df.co_date_of_childbirth < self.sim.date) & (df.co_date_of_childbirth > self.sim.date - DateOffset(months=1)))].empty == True:
             pass
         else:
-            birth_idx = df.index[((df.date_of_childbirth < self.sim.date) & (df.date_of_childbirth > self.sim.date - DateOffset(months=1)))]
+            birth_idx = df.index[((df.co_date_of_childbirth < self.sim.date) & (df.co_date_of_childbirth > self.sim.date - DateOffset(months=1)))]
             # sample contraceptive method for everyone just given birth
             sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(birth_idx), replace=True),
                                    index=birth_idx)
             # update contraception method for all women who have just given birth
-            df.loc[birth_idx, 'contraception'] = sampled_method[birth_idx]
+            df.loc[birth_idx, 'co_contraception'] = sampled_method[birth_idx]
             # output some logging if any post-birth contraception
             if len(birth_idx):
                 for woman_id in birth_idx:
@@ -400,6 +402,6 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
                                 self.sim.date,
                                 {
                                     'woman_index': woman_id,
-                                    'contraception': df.at[woman_id, 'contraception']
+                                    'co_contraception': df.at[woman_id, 'co_contraception']
                                 })
 
