@@ -37,12 +37,15 @@ class Contraception(Module):
         'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age_spec fertility'),
         'contraception_initiation1': Parameter(Types.DATA_FRAME, 'irate1_'),
         'contraception_initiation2': Parameter(Types.DATA_FRAME, 'irate2_'),
+        'contraception_switching': Parameter(Types.DATA_FRAME, 'Switching'),
+        'contraception_switching_matrix': Parameter(Types.DATA_FRAME, 'switching_matrix'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
         'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
-        #'r_fail_age': Parameter(Types.REAL, 'change in drate (failure) per year of age increase'),
-        #'r_fail_age_sq': Parameter(Types.REAL, 'change in drate (failure) per year of age squared increase'),
-        #'r_fail_cons': Parameter(Types.REAL, 'drate (failure) at age zero - constant term from regression'),
-        'r_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
+        # TODO: allow different discontinuation rates by age e.g. as per regression coefficients below (or Fracpoly regression in 'Discontinuation by age' worksheet?
+        #'r_discontinue_age': Parameter(Types.REAL, 'change in drate per year of age increase'),
+        #'r_discontinue_age_sq': Parameter(Types.REAL, 'change in drate per year of age squared increase'),
+        #'r_discontinue_cons': Parameter(Types.REAL, 'drate at age zero - constant term from regression'),
+        'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -74,21 +77,32 @@ class Contraception(Module):
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
         #workbook = pd.read_excel(self.workbook_path, sheet_name=None)
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
+
         self.parameters['contraception_initiation1'] = workbook['irate1_']  # 'irate_1_' sheet created manually as a work around to address to do point on line 39
         # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
+
         self.parameters['contraception_initiation2'] = workbook['irate2_']
-        # TODO: add switching
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
+
+        self.parameters['contraception_switching'] = workbook['Switching']
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+
+        self.parameters['contraception_switching_matrix'] = workbook['switching_matrix']
+        # this Excel sheet is from contraception switching matrix output from line 144 of 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+
         self.parameters['contraception_discontinuation'] = workbook['Discontinuation']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+
         self.parameters['contraception_failure'] = workbook['Failure']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'discontinuation & switching rates_age.do' Stata analysis of DHS contraception calendar data
-        #self.parameters['r_fail_age'] = np.random.normal(loc=0.0049588, scale=0.0006043, size=1)   # from Stata analysis Step 3.5 of discontinuation & switching rates_age_30apr2019.do
-        #self.parameters['r_fail_age_sq'] = np.random.normal(loc=-0.000073, scale=0.00000986, size=1)    # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Fail event
-        #self.parameters['r_fail_cons'] = np.random.normal(loc=-0.018882, scale=0.0089585, size=1)  # should constant term have uncertainty too or be fixed?
-        # TODO: to decide whether to have the above 3 parameters fixed (given model is deterministic) or with uncertainty (move toward a probabilistic model)
-        self.parameters['r_fail_under25'] = 2.2 # From Guttmacher analysis
-        # - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+
+        self.parameters['rr_fail_under25'] = 2.2
+        # From Guttmacher analysis - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
+
+        # TODO: allow different discontinuation rates by age e.g. as per regression coefficients below (or Fracpoly regression in 'Discontinuation by age' worksheet?
+        # self.parameters['rr_discontinue_age'] = 0.0049588  # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do
+        # self.parameters['rr_discontinue_age_sq'] = -0.000073   # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Discontinue event
+        # self.parameters['rr_discontinue_cons'] = -0.018882 # should constant term have uncertainty too or be fixed?
 
 
     def initialise_population(self, population):
@@ -144,6 +158,9 @@ class Contraception(Module):
 
         # check all females using contraception to determine if contraception discontinues i.e. category should change to 'not_using' (starts at month 0)
         sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=0))
+
+        # check all females using contraception to determine if contraception Switches i.e. category should change from any method to a new method (not including 'not_using') (starts at month 0)
+        sim.schedule_event(Switch(self), sim.date + DateOffset(months=0))
 
         # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (starts at month 0)
         sim.schedule_event(Fail(self), sim.date + DateOffset(months=0))
@@ -232,6 +249,78 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
                                 'woman_index': woman_id,
                                 'co_contraception': df.at[woman_id, 'co_contraception']
                             })
+
+
+class Switch(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event looks across all women who are using a contraception method to determine if they switch to another
+     method according to switching_rate, and then for those that switch directs towards a new method according to
+     switching_matrix
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+        logger.debug('Checking to see if anyone should switch contraception methods')
+
+        df = population.props  # get the population dataframe
+        m = self.module
+        rng = self.module.rng
+
+        # get the indices of the women from the population with the relevant characterisitcs
+        using_idx = df.index[(df.co_contraception != 'not_using')]
+
+        # prepare the probabilities for Switch by method (i.e. any switch - different probability for each method)
+        c_worksheet = m.parameters['contraception_switching']
+
+        # add the probabilities and copy to each row of the sim population (population dataframe)
+        df_new = pd.concat([df, c_worksheet], axis=1)
+        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                   'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[0, ['pill', 'IUD', 'injections',
+                                                                                           'implant', 'male_condom',
+                                                                                           'female_sterilization',
+                                                                                           'other_modern',
+                                                                                           'periodic_abstinence',
+                                                                                           'withdrawal',
+                                                                                           'other_traditional']].tolist()
+        probabilities = df_new.loc[using_idx, ['co_contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                                 'withdrawal', 'other_traditional']]
+
+        # prepare the switching matrix to determine which method the woman switches on to:
+        switch = m.parameters['contraception_switching_matrix']
+        #switch_from = switch.loc['pill':'other_traditional']    # row labels for switch from in switching matrix
+        #switch_to = switch.loc[:, 'pill':'other_traditional']  # column labels for switch to in switching matrix
+        #probabilities['switch_from'] = switch_from.lookup(switch_from.index, probabilities['co_contraception'])
+
+        #probabilities['switch_from'] = switch.lookup('switchfrom', probabilities['co_contraception'])
+        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
+        probabilities['1-prob'] = 1-probabilities['prob']
+        probabilities['switch'] = 'switch'
+
+        # apply the probabilities of switching for each contraception method
+        # to series which has index of all currently using
+        # need to use a for loop to loop through each method
+        for woman in using_idx:
+            her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
+            her_op = np.asarray(probabilities.loc[woman,['switch', 'co_contraception']])
+
+            her_method = rng.choice(her_op,p=her_p)
+
+            # output some logging if any contraception switching
+            if her_method == 'switch':
+                df.loc[woman, 'switch'] = 'switch'
+                #df.loc[woman, 'co_contraception'] = New Method # add code to lookup switchto method from switching matrix
+
+                logger.info('%s|switch_contraception|%s',
+                                self.sim.date,
+                                {
+                                    'woman_index': woman,
+                                    'co_contraception': df.at[woman, 'co_contraception']
+                                })
 
 
 class Discontinue(RegularEvent, PopulationScopeEventMixin):
@@ -334,11 +423,11 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
-        #probabilities['prob'] = probabilities['prob'] + (m.parameters['r_fail_cons'] + (m.parameters['r_fail_age']*probabilities['age_years']) + (m.parameters['r_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
+        #probabilities['prob'] = probabilities['prob'] + (m.parameters['rr_fail_cons'] + (m.parameters['rr_fail_age']*probabilities['age_years']) + (m.parameters['rr_fail_age_sq']*probabilities['age_years']))    # modify failure probabilities by age according to newly added regression parameters
         under25 = probabilities.index[probabilities.age_years.between(15, 25)]
-        probabilities.loc[under25, 'prob'] = probabilities['prob'] * m.parameters['r_fail_under25']  # apply increased risk of failure to under 25s
+        probabilities.loc[under25, 'prob'] = probabilities['prob'] * m.parameters['rr_fail_under25']  # apply increased risk of failure to under 25s
         #if probabilities['age_years'] <= 25:
-        #    probabilities['prob'] = probabilities['prob'] * m.parameters['r_fail_under25']  # apply increased risk of failure to under 25s
+        #    probabilities['prob'] = probabilities['prob'] * m.parameters['rr_fail_under25']  # apply increased risk of failure to under 25s
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['preg'] = 'preg'
 
@@ -358,9 +447,9 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                 df.loc[woman, 'co_date_of_childbirth'] = self.sim.date + DateOffset(months=9,
                                                            weeks=-2 + 4 * rng.random_sample())
                 # Schedule the Birth
-                # TODO: not working: despite importing Demography I get the error: AttributeError: type object 'Demography' has no attribute 'DelayedBirthEvent'
-                # self.sim.schedule_event(Demography.DelayedBirthEvent(self.sim.modules['Demography'], woman),
-                #                    date_of_birth)
+                scheduled_birth_date = df.at[woman, 'co_date_of_childbirth']
+                birth = DelayedBirthEvent(self, mother_id=woman)
+                self.sim.schedule_event(birth, scheduled_birth_date)
 
                 # output some logging if any pregnancy (contraception failure)
                 logger.info('%s|fail_contraception|%s',
