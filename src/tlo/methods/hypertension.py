@@ -152,6 +152,7 @@ class HT(Module):
         assert adults_count_overall == adults_count_25to35 + adults_count_35to45 + adults_count_45to55 + adults_count_55to65
 
         # Count adults with hypertension by age group
+        count_all=len(df[(df.is_alive) & (df.ht_current_status)])
         count = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 24) & (df.age_years < 65)])
         count_25to35 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 24) & (df.age_years < 35)])
         count_35to45 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 34) & (df.age_years < 45)])
@@ -184,7 +185,7 @@ class HT(Module):
 
 
         # 4. Set relevant properties of those with prevalent hypertension
-        ht_years_ago = np.array([1] * count)
+        ht_years_ago = np.array([1] * count_all)
         infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
         df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
@@ -378,7 +379,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         print("\n", "Pause to check incidence - REMOVE LATER", "\n")
 
-  
+
 
 
 class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
@@ -437,63 +438,75 @@ class HSI_HT_Outreach_Individual(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug('Outreach event running now for person: %s', person_id)
 
-        # Do here whatever happens during an outreach event with an individual
+        df = self.sim.population.props
+
+        # Find the person_ids who are going to get the outreach
+        if df.at[person_id, 'ht_current_status']:
+            if df.at[person_id, 'is_alive']:
+
+                referral_event_for_individual = HSI_HT_Refer_Individual(self.module, person_id=person_id)
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(referral_event_for_individual,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
         pass
 
 
 
-# class HSI_HT_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-#
-#     """
-#     This is a Health System Interaction Event.
-#     It is first appointment that someone has when they present to the healthcare system with the severe
-#     symptoms of Hypertension.
-#     If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-#     If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#         # Get a blank footprint and then edit to define call on resources of this treatment event
-#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-#
-#         # Define the necessary information for an HSI
-#         self.TREATMENT_ID = 'HT_PresentsForCareWithSevereSymptoms'
-#         self.APPT_FOOTPRINT = the_appt_footprint
-#         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-#         self.ALERT_OTHER_DISEASES = []
-#
-#
-#     def apply(self, person_id):
-#
-#         logger.debug('This is HSI_HT_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
-#
-#         df = self.sim.population.props  # shortcut to the dataframe
-#
-#         if df.at[person_id, 'age_years'] >= 15:
-#             logger.debug(
-#                 '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
-#                 person_id)
-#             event = HSI_HT_StartTreatment(self.module, person_id=person_id)
-#             self.sim.modules['HealthSystem'].schedule_event(event,
-#                                                             priority=2,
-#                                                             topen=self.sim.date,
-#                                                             tclose=None)
-#
-#         else:
-#             logger.debug(
-#                 '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
-#                 person_id)
-#
-#             date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-#             event = HSI_HT_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-#             self.sim.modules['HealthSystem'].schedule_event(event,
-#                                                             priority=2,
-#                                                             topen=date_turns_15,
-#                                                             tclose=date_turns_15 + DateOffset(months=12))
-#
+class HSI_HT_Refer_Individual(Event, IndividualScopeEventMixin):
+
+    """
+    This is a Health System Interaction Event.
+    It is first appointment that someone has when they present to the healthcare system with the severe
+    symptoms of Hypertension.
+    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
+    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'HSI_HT_Refer_Individual'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ALERT_OTHER_DISEASES = []
+
+
+    def apply(self, person_id):
+
+        logger.debug('This is HSI_HT_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
+
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        if df.at[person_id, 'age_years'] >= 15:
+            logger.debug(
+                '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
+                person_id)
+            event = HSI_HT_Refer_Individual(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=2,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
+        else:
+            logger.debug(
+                '...This is HSI_HT_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
+                person_id)
+
+            date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
+            event = HSI_HT_Refer_Individual(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_event(event,
+                                                            priority=2,
+                                                            topen=date_turns_15,
+                                                            tclose=date_turns_15 + DateOffset(months=12))
+
 
 # #class HSI_HT_StartTreatment(Event, IndividualScopeEventMixin):
 #     """
