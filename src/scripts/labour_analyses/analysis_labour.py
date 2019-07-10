@@ -27,7 +27,7 @@ resourcefile_demography = Path('./resources')
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 10000
 
 # add file handler for the purpose of logging

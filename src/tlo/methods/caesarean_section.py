@@ -137,6 +137,7 @@ class EmergencyCaesareanSection(Event, IndividualScopeEventMixin):
    #             self.sim.schedule_event(uterine_rupture_treatment.UterineRuptureTreatment)
    #
 
+
 class PostCaesareanSection(Event, IndividualScopeEventMixin):
 
     """Event handling deliveries for women requiring an emergency caesarean section for any indication

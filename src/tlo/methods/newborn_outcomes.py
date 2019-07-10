@@ -225,6 +225,7 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
         #TODO: just confirm that you want all the deaths to happen on the same of birth
 
+
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
     def __init__(self, module):

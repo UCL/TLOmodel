@@ -45,8 +45,8 @@ class UterineRuptureTreatment(Module):
         """
         params = self.parameters
 
-        params['prob_cure_uterine_repair'] = 0
-        params['prob_cure_hysterectomy'] = 0
+        params['prob_cure_uterine_repair'] = 1
+        params['prob_cure_hysterectomy'] = 1
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
