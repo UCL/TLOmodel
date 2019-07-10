@@ -71,6 +71,8 @@ class HaemorrhageTreatment(Module):
         params['prob_cure_b_lych'] = 0.8  # dummy
         params['prob_cure_hysterectomy'] = 0.95  # dummy
         params['prob_cure_manual_removal'] = 0.75  # dummy
+        params['prob_cure_uterine_repair'] = 0
+        params['prob_cure_hysterectomy'] = 0
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
