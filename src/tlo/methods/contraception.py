@@ -649,7 +649,7 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|pregnancy|%s', self.sim.date,
                     {
                         'total': sum(pregnancy_count),
-                        #'pregnant': pregnancy_count['True'],
-                        #'not_pregnant': pregnancy_count['False']
+                        'pregnant': str(np.count_nonzero(pregnancy_count.values)),
+                        'not_pregnant': str(sum(pregnancy_count.values == False))
                     })
 
