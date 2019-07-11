@@ -172,6 +172,9 @@ class Contraception(Module):
         # check all population to determine if pregnancy should be triggered (repeats every month)
         sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
 
+        # Launch the repeating event that will store statistics about the population structure
+        sim.schedule_event(ContraceptionLoggingEvent(self), sim.date + DateOffset(days=0))
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -605,4 +608,45 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         # If the mother is alive and still pregnant
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
+
+
+class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """Logs output for analysis_contraception
+        """
+        # run this event every 12 months (every year)
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+        self.age_low = 15
+        self.age_high = 49
+
+    def apply(self, population):
+        df = population.props
+
+        contraception_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby('co_contraception').size()
+
+        logger.info('%s|contraception|%s',
+                    self.sim.date,
+                    {
+                        'total': sum(contraception_count),
+                        'not_using': contraception_count['not_using'],
+                        'pill': contraception_count['pill'],
+                        'injections': contraception_count['injections'],
+                        'implant': contraception_count['implant'],
+                        'male_condom': contraception_count['male_condom'],
+                        'female_sterilization': contraception_count['female_sterilization'],
+                        'other_modern': contraception_count['other_modern'],
+                        'periodic_abstinence': contraception_count['periodic_abstinence'],
+                        'withdrawal': contraception_count['withdrawal'],
+                        'other_traditional': contraception_count['other_traditional']
+                    })
+
+        pregnancy_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby('is_pregnant').size()
+
+        logger.info('%s|pregnancy|%s', self.sim.date,
+                    {
+                        'total': sum(pregnancy_count),
+                        #'pregnant': pregnancy_count['True'],
+                        #'not_pregnant': pregnancy_count['False']
+                    })
 
