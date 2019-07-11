@@ -280,7 +280,7 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
         # prepare the probabilities for Switch by method (i.e. any switch - different probability for each method)
         c_worksheet = m.parameters['contraception_switching']
 
-        # add the probabilities and copy to each row of the sim population (population dataframe)
+        # add the probabilities of Switching and copy to each row of the sim population (population dataframe)
         df_new = pd.concat([df, c_worksheet], axis=1)
         df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
                    'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[0, ['pill', 'IUD', 'injections',
@@ -293,17 +293,18 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
         probabilities = df_new.loc[using_idx, ['co_contraception','pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
                                                  'withdrawal', 'other_traditional']]
-
-        # prepare the switching matrix to determine which method the woman switches on to:
-        switch = m.parameters['contraception_switching_matrix']
-        #switch_from = switch.loc['pill':'other_traditional']    # row labels for switch from in switching matrix
-        #switch_to = switch.loc[:, 'pill':'other_traditional']  # column labels for switch to in switching matrix
-        #probabilities['switch_from'] = switch_from.lookup(switch_from.index, probabilities['co_contraception'])
-
-        #probabilities['switch_from'] = switch.lookup('switchfrom', probabilities['co_contraception'])
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
         probabilities['1-prob'] = 1-probabilities['prob']
         probabilities['switch'] = 'switch'
+
+        # prepare the switching matrix to determine which method the woman switches on to:
+        # We have a lookup table of probabilities:
+        switch = m.parameters['contraception_switching_matrix']
+        switch = switch.set_index('switchfrom')
+        # We add a column for the probability distribution of switchto as a list (as used by numpy `choice`)
+        switch['prob_list'] = switch.apply(lambda x: x[1:].tolist(), axis=1)
+        # We then make a lookup dictionary for quick access to each list:
+        switch_pdf_lookup = switch.prob_list.to_dict()
 
         # apply the probabilities of switching for each contraception method
         # to series which has index of all currently using
@@ -317,6 +318,12 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
             # output some logging if any contraception switching
             if her_method == 'switch':
                 df.loc[woman, 'switch'] = 'switch'
+                # We want to perform a random draw for method to switchto based on their co_contraception method:
+                df.loc[woman, 'co_contraception'].apply(
+                    lambda x: np.random.choice(['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                                'withdrawal', 'other_traditional'], p=switch_pdf_lookup[x.switchfrom]),
+                                                axis=1).astype('category')
                 #df.loc[woman, 'co_contraception'] = New Method # add code to lookup switchto method from switching matrix
 
                 logger.info('%s|switch_contraception|%s',
@@ -644,12 +651,12 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'other_traditional': contraception_count['other_traditional']
                     })
 
-        pregnancy_count = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].groupby('is_pregnant').size()
+        preg_counts = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts()
 
         logger.info('%s|pregnancy|%s', self.sim.date,
                     {
-                        'total': sum(pregnancy_count),
-                        'pregnant': str(np.count_nonzero(pregnancy_count.values)),
-                        'not_pregnant': str(sum(pregnancy_count.values == False))
+                        'total': sum(preg_counts),
+                        #'pregnant': preg_counts[True],
+                        #'not_pregnant': preg_counts[False]
                     })
 
