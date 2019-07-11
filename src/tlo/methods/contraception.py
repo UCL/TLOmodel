@@ -461,7 +461,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                                 {
                                     'woman_index': woman,
                                     'Preg': df.at[woman, 'is_pregnant'],
-                                    'birth booked for': df.at[woman, 'co_date_of_childbirth']
+                                    'birth booked for': str(df.at[woman, 'co_date_of_childbirth'])
                                 })
 
 
@@ -508,7 +508,7 @@ class Init2(RegularEvent, PopulationScopeEventMixin):
             # output some logging if any post-birth contraception
             if len(birth_idx):
                 for woman_id in birth_idx:
-                    logger.info('%s|post-birth_contraception|%s',
+                    logger.info('%s|post_birth_contraception|%s',
                                 self.sim.date,
                                 {
                                     'woman_index': woman_id,
