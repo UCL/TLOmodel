@@ -46,6 +46,7 @@ class Contraception(Module):
         #'r_discontinue_age_sq': Parameter(Types.REAL, 'change in drate per year of age squared increase'),
         #'r_discontinue_cons': Parameter(Types.REAL, 'drate at age zero - constant term from regression'),
         'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
+        # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -630,7 +631,9 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     {
                         'total': sum(contraception_count),
                         'not_using': contraception_count['not_using'],
+                        'using': sum(contraception_count)-contraception_count['not_using'],
                         'pill': contraception_count['pill'],
+                        'IUD': contraception_count['IUD'],
                         'injections': contraception_count['injections'],
                         'implant': contraception_count['implant'],
                         'male_condom': contraception_count['male_condom'],
