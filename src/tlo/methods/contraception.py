@@ -302,18 +302,8 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
 
         # Get probabilities of switching to each method of contraception by co_contraception method
         #       and merge the probabilities into each row in sim population
-        df_switch = probabilities.merge(switch, left_on=['co_contraception'], right_on=['switchfrom'], how='left')
-        df_switch['pill'] = 'pill'
-        df_switch['IUD'] = 'IUD'
-        df_switch['injections'] = 'injections'
-        df_switch['implant'] = 'implant'
-        df_switch['injections'] = 'injections'
-        df_switch['male_condom'] = 'male_condom'
-        df_switch['female_sterilization'] = 'female_sterilization'
-        df_switch['other_modern'] = 'other_modern'
-        df_switch['periodic_abstinence'] = 'periodic_abstinence'
-        df_switch['withdrawal'] =  'withdrawal'
-        df_switch['other_traditional'] = 'other_traditional'
+        df_switch = probabilities.merge(switch, left_on=['co_contraception'], right_on=['switchfrom'], how='left').set_index(probabilities.index)
+        #df_switch = df_switch.set_index(probabilities.index)
 
         # apply the probabilities of switching for each contraception method to series which has index of all
         # currently using (not including female sterilization as can't switch from this)
@@ -337,19 +327,14 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
 
                 # apply probabilities of switching to each contraception type to sim population
                 #for woman2 in using_idx:
-                df_switch = df_switch.reindex(using_idx)
                 her_p2 = np.asarray(df_switch.loc[woman, ['pill_y', 'IUD_y', 'injections_y', 'implant_y',
                                                              'male_condom_y', 'female_sterilization_y',
                                                              'other_modern_y', 'periodic_abstinence_y', 'withdrawal_y',
                                                              'other_traditional_y']], dtype='float64')
-                    #her_p2 = np.asarray(df_switch.loc[woman, ['pill_y', 'IUD_y', 'injections_y', 'implant_y',
-                    #                                         'male_condom_y', 'female_sterilization_y',
-                    #                                         'other_modern_y', 'periodic_abstinence_y', 'withdrawal_y',
-                    #                                         'other_traditional_y']], dtype='float64')
 
-                her_op2 = np.asarray(df_switch.loc[woman, ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                her_op2 = np.asarray(['pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                  'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                                 'withdrawal', 'other_traditional']])
+                                                 'withdrawal', 'other_traditional'])
 
                 her_method2 = rng.choice(her_op2, p=her_p2)
 
