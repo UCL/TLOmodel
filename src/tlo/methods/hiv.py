@@ -2168,3 +2168,23 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'hiv_viral_supp_child': prop_vir_sup_child,
                         'prop_behav_change': prop_behav
                     })
+
+        # if you groupby both sex and age_range, you weirdly lose categories where size==0, so
+        # get the counts separately
+        m_adult_prev = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
+        f_adult_prev = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
+
+        logger.info('%s|adult_prev_m|%s', self.sim.date,
+                    m_adult_prev.to_dict())
+
+        logger.info('%s|adult_prev_f|%s', self.sim.date,
+                    f_adult_prev.to_dict())
+
+        m_child_prev = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
+        f_child_prev = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
+
+        logger.info('%s|child_prev_m|%s', self.sim.date,
+                    m_child_prev.to_dict())
+
+        logger.info('%s|child_prev_f|%s', self.sim.date,
+                    f_child_prev.to_dict())
