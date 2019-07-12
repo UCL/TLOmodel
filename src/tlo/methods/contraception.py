@@ -666,11 +666,13 @@ class ContraceptionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         preg_counts = df[df.is_alive & df.age_years.between(self.age_low, self.age_high)].is_pregnant.value_counts()
+        is_preg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & df.is_pregnant).sum()
+        is_notpreg_count = (df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant).sum()
 
         logger.info('%s|pregnancy|%s', self.sim.date,
                     {
                         'total': sum(preg_counts),
-                        #'pregnant': preg_counts[True],
-                        #'not_pregnant': preg_counts[False]
+                        'pregnant': is_preg_count,
+                        'not_pregnant': is_notpreg_count
                     })
 
