@@ -5,7 +5,7 @@ A skeleton template for disease methods.
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.population import logger
 
 
