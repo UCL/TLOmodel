@@ -104,7 +104,7 @@ class Contraception(Module):
         # self.parameters['rr_discontinue_age'] = 0.0049588  # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do
         # self.parameters['rr_discontinue_age_sq'] = -0.000073   # to generate parameter with uncertainty; loc is mean (coefficient from regression) and scale is SD (Standard Error), size 1 means just a single draw for use in Discontinue event
         # self.parameters['rr_discontinue_cons'] = -0.018882 # should constant term have uncertainty too or be fixed?
-
+        # TODO: allow for different initiation rates by age given declining population on contraception over time
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -275,7 +275,7 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.co_contraception != 'not_using')]
+        using_idx = df.index[(df.co_contraception !='not_using') & (df.co_contraception !='female_sterilization')]
 
         # prepare the probabilities for Switch by method (i.e. any switch - different probability for each method)
         c_worksheet = m.parameters['contraception_switching']
@@ -295,19 +295,28 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
                                                  'withdrawal', 'other_traditional']]
         probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
         probabilities['1-prob'] = 1-probabilities['prob']
-        probabilities['switch'] = 'switch'
+        probabilities['switch'] = 'switch'  # for flagging those who switch from a method below
 
         # prepare the switching matrix to determine which method the woman switches on to:
-        # We have a lookup table of probabilities:
         switch = m.parameters['contraception_switching_matrix']
-        switch = switch.set_index('switchfrom')
-        # We add a column for the probability distribution of switchto as a list (as used by numpy `choice`)
-        switch['prob_list'] = switch.apply(lambda x: x[1:].tolist(), axis=1)
-        # We then make a lookup dictionary for quick access to each list:
-        switch_pdf_lookup = switch.prob_list.to_dict()
 
-        # apply the probabilities of switching for each contraception method
-        # to series which has index of all currently using
+        # Get probabilities of switching to each method of contraception by co_contraception method
+        #       and merge the probabilities into each row in sim population
+        df_switch = probabilities.merge(switch, left_on=['co_contraception'], right_on=['switchfrom'], how='left')
+        df_switch['pill'] = 'pill'
+        df_switch['IUD'] = 'IUD'
+        df_switch['injections'] = 'injections'
+        df_switch['implant'] = 'implant'
+        df_switch['injections'] = 'injections'
+        df_switch['male_condom'] = 'male_condom'
+        df_switch['female_sterilization'] = 'female_sterilization'
+        df_switch['other_modern'] = 'other_modern'
+        df_switch['periodic_abstinence'] = 'periodic_abstinence'
+        df_switch['withdrawal'] =  'withdrawal'
+        df_switch['other_traditional'] = 'other_traditional'
+
+        # apply the probabilities of switching for each contraception method to series which has index of all
+        # currently using (not including female sterilization as can't switch from this)
         # need to use a for loop to loop through each method
         for woman in using_idx:
             her_p = np.asarray(probabilities.loc[woman,['prob','1-prob']], dtype='float64')
@@ -315,23 +324,44 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
 
             her_method = rng.choice(her_op,p=her_p)
 
-            # output some logging if any contraception switching
+            # Switch to new method according to switching matrix probs for current method if chosen to switch:
             if her_method == 'switch':
-                df.loc[woman, 'switch'] = 'switch'
-                # We want to perform a random draw for method to switchto based on their co_contraception method:
-                df.loc[woman, 'co_contraception'].apply(
-                    lambda x: np.random.choice(['pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                                'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                                'withdrawal', 'other_traditional'], p=switch_pdf_lookup[x.switchfrom]),
-                                                axis=1).astype('category')
-                #df.loc[woman, 'co_contraception'] = New Method # add code to lookup switchto method from switching matrix
 
-                logger.info('%s|switch_contraception|%s',
-                                self.sim.date,
-                                {
-                                    'woman_index': woman,
-                                    'co_contraception': df.at[woman, 'co_contraception']
-                                })
+                # output some logging for contraception switch to new method
+                logger.info('%s|switchfrom_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                                'contraception switched from': df.at[woman, 'co_contraception']
+                            })
+
+                # apply probabilities of switching to each contraception type to sim population
+                #for woman2 in using_idx:
+                df_switch = df_switch.reindex(using_idx)
+                her_p2 = np.asarray(df_switch.loc[woman, ['pill_y', 'IUD_y', 'injections_y', 'implant_y',
+                                                             'male_condom_y', 'female_sterilization_y',
+                                                             'other_modern_y', 'periodic_abstinence_y', 'withdrawal_y',
+                                                             'other_traditional_y']], dtype='float64')
+                    #her_p2 = np.asarray(df_switch.loc[woman, ['pill_y', 'IUD_y', 'injections_y', 'implant_y',
+                    #                                         'male_condom_y', 'female_sterilization_y',
+                    #                                         'other_modern_y', 'periodic_abstinence_y', 'withdrawal_y',
+                    #                                         'other_traditional_y']], dtype='float64')
+
+                her_op2 = np.asarray(df_switch.loc[woman, ['pill', 'IUD', 'injections', 'implant', 'male_condom',
+                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
+                                                 'withdrawal', 'other_traditional']])
+
+                her_method2 = rng.choice(her_op2, p=her_p2)
+
+                df.loc[woman, 'co_contraception'] = her_method2
+
+                # output some logging for contraception switch to new method
+                logger.info('%s|switchto_contraception|%s',
+                            self.sim.date,
+                            {
+                                'woman_index': woman,
+                                'contraception switched to': df.at[woman, 'co_contraception']
+                            })
 
 
 class Discontinue(RegularEvent, PopulationScopeEventMixin):
