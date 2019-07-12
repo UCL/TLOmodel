@@ -301,9 +301,8 @@ class Switch(RegularEvent, PopulationScopeEventMixin):
         switch = m.parameters['contraception_switching_matrix']
 
         # Get probabilities of switching to each method of contraception by co_contraception method
-        #       and merge the probabilities into each row in sim population
+        #       and merge the probabilities into each row in sim population - note set_index is needed to keep index
         df_switch = probabilities.merge(switch, left_on=['co_contraception'], right_on=['switchfrom'], how='left').set_index(probabilities.index)
-        #df_switch = df_switch.set_index(probabilities.index)
 
         # apply the probabilities of switching for each contraception method to series which has index of all
         # currently using (not including female sterilization as can't switch from this)
