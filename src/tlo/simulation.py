@@ -66,7 +66,7 @@ class Simulation:
                 'A module named {} has already been registered'.format(module.name))
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')  # TODO: Use a proper data_folder
+            module.read_parameters('')  # TODO: Use a proper data_folder - or remove the 'data_folder' as not used
 
     def seed_rngs(self, seed):
         """Seed all random number generators with the given seed.
