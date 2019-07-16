@@ -33,7 +33,7 @@ def test_run(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row

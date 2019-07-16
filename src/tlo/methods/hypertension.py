@@ -130,7 +130,7 @@ class HT(Module):
         # 3.1 First get relative risk for hypertension
         ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
                                                                       how='left')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
+        # df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
         # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updated
 
@@ -140,6 +140,10 @@ class HT(Module):
         #random_numbers[df.age_years < 18] = 0
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)   #TODO: Asif, there may an error here! E.g. prob of HTN is 0.97 for older age group (excel)/but only 25% have HTN when code has run
 
+
+        random_numbers = self.rng.random_sample(size=alive_count)
+        over_55=df.loc[df['age_years']>20].index
+        random_numbers[over_55].mean()
 
         # 3.2. Calculate prevalence
         # Count adults in different age groups
@@ -333,6 +337,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         random_numbers = rng.random_sample(size=len(ht_prob))
         now_hypertensive = (ht_prob > random_numbers)
         ht_idx = currently_ht_no[now_hypertensive]
+
 
          # 3.3 If newly hypertensive
         df.loc[ht_idx, 'ht_current_status'] = True
