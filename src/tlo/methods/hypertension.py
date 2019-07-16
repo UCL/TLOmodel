@@ -137,13 +137,25 @@ class HT(Module):
         assert alive_count == len(ht_prob)
         ht_prob = ht_prob * df.loc[df.is_alive, 'ht_risk']
         random_numbers = self.rng.random_sample(size=alive_count)
-        #random_numbers[df.age_years < 18] = 0
+        random_numbers = self.rng.random_sample(size=alive_count)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_prob)   #TODO: Asif, there may an error here! E.g. prob of HTN is 0.97 for older age group (excel)/but only 25% have HTN when code has run
 
 
-        random_numbers = self.rng.random_sample(size=alive_count)
-        over_55=df.loc[df['age_years']>20].index
-        random_numbers[over_55].mean()
+        # Check random numbers      #TODO: CHECK WITH TIM and remove later
+        over_18=df.loc[df['age_years'] > 17].index
+        a = random_numbers[over_18].mean()
+
+        over_25_35 = df.index[df.age_years > 24 & (df.age_years < 35)]
+        b = random_numbers[over_25_35].mean()
+
+        over_35_45 = df.index[df.age_years > 34 & (df.age_years < 45)]
+        c = random_numbers[over_35_45].mean()
+
+        over_45_55 = df.index[df.age_years > 44 & (df.age_years < 55)]
+        d = random_numbers[over_45_55].mean()
+
+        over_55 = df.loc[df['age_years'] > 55].index
+        e = random_numbers[over_55].mean()
 
         # 3.2. Calculate prevalence
         # Count adults in different age groups
@@ -194,12 +206,12 @@ class HT(Module):
         df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
-        # Register this disease module with the health system
+        # Register this disease module with the health system       #TODO: CHECK WITH TIM
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
 
 
-        print("\n", "Population has been initialised, hypertension prevalent cases h'ave been assigned.  ")
+        print("\n", "Population has been initialised, hypertension prevalent cases have been assigned.  ")
 
 
     def initialise_simulation(self, sim):
@@ -305,6 +317,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         # 2. Get (and hold) index of people with and w/o hypertension
         currently_ht_yes = df[df.ht_current_status & df.is_alive].index
         currently_ht_no = df[~df.ht_current_status & df.is_alive].index
+        age_index = df.loc[currently_ht_no, ['age_years']]
         alive_count = df.is_alive.sum()
 
         assert alive_count == len(currently_ht_yes) + len(currently_ht_no)
@@ -330,13 +343,38 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
                                             left_on=['age_years'], right_on=['age'], how='left').set_index(
                                             'person')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
+        #df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
         # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updatedassert len(currently_ht_no) == len(ht_prob)
         ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
         random_numbers = rng.random_sample(size=len(ht_prob))
         now_hypertensive = (ht_prob > random_numbers)
         ht_idx = currently_ht_no[now_hypertensive]
+
+        # Check random numbers      #TODO: CHECK WITH TIM and remove later
+        random_numbers_df = random_numbers, index = currently_ht_no
+        aaa = pd.DataFrame(data=random_numbers, index=currently_ht_no, columns=['nr'])
+
+        over_18 = age_index.index[age_index.age_years > 17]
+        a = aaa.loc[over_18]
+        a = a.mean()
+
+        over_25_35 = age_index.index[age_index.age_years > 24 & (age_index.age_years < 35)]
+        b = aaa.loc[over_25_35]
+        b = a.mean()
+
+
+        over_35_45 = age_index.index[age_index.age_years > 34 & (age_index.age_years < 45)]
+        c = aaa.loc[over_35_45]
+        c = a.mean()
+
+        over_45_55 = age_index.index[age_index.age_years > 44 & (age_index.age_years < 55)]
+        d = aaa.loc[over_45_55]
+        d = a.mean()
+
+        over_55 = age_index.loc[age_index['age_years'] > 55].index
+        e = aaa.loc[over_55]
+        e = a.mean()
 
 
          # 3.3 If newly hypertensive

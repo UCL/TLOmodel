@@ -20,7 +20,7 @@ resourcefilepath = 'resources'
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2015, month=12, day=31)
-popsize = 100000
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -55,7 +55,7 @@ sim.register(hypertension.HT())
 #sim.register(chronicsyndrome.ChronicSyndrome())
 
 # Run the simulation and flush the logger
-sim.seed_rngs(8)
+sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
