@@ -207,7 +207,7 @@ class HT(Module):
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
         # Register this disease module with the health system       #TODO: CHECK WITH TIM
-        # self.sim.modules['HealthSystem'].register_disease_module(self)
+        #self.sim.modules['HealthSystem'].register_disease_module(self)
 
 
 
@@ -235,7 +235,7 @@ class HT(Module):
 
         # Schedule the outreach event... # ToDo: need to test this with HT!
         outreach_event = HT_LaunchOutreachEvent(self)
-        self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=24))
+        self.sim.schedule_event(outreach_event, self.sim.date)
 
 
     def on_birth(self, mother_id, child_id):
@@ -267,9 +267,13 @@ class HT(Module):
         logger.debug('This is Hypertension, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+        pass
 
-
-    def report_qaly_values(self):
+    def report_daly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
@@ -440,6 +444,8 @@ class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 
         # Find the person_ids who are going to get the outreach
         gets_outreach = df.index[(df['is_alive']) & (df['sex'] == 'F')]
+        # self.sim.rng.choice(gets_outreach,2)
+
         for person_id in gets_outreach:
             # make the outreach event (let this disease module be alerted about it, and also Mockitis)
             outreach_event_for_individual = HSI_HT_Outreach_Individual(self.module, person_id=person_id)
