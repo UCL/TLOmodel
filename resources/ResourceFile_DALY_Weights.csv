@@ -1,4 +1,5 @@
 TLO_Sequela_Code,Sequela,Health state name,Health state lay description,disability weight,lower,uppper
+
 0,Drug-susceptible tuberculosis,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
 1,Multidrug-resistant tuberculosis without extensive drug resistance ,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
 2,Extensively drug-resistant tuberculosis,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
