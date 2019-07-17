@@ -148,15 +148,30 @@ class tb(Module):
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_chronic'] = self.sim.modules['HealthBurden'].get_daly_weight(
-                17)  # Symptomatic HIV without anemia
-            params['daly_wt_aids'] = self.sim.modules['HealthBurden'].get_daly_weight(
-                19)  # AIDS without antiretroviral treatment without anemia
-
-        # params['qalywt_latent'] = self.sim.modules['QALY'].get_qaly_weight(3)
-        # params['qalywt_active'] = self.sim.modules['QALY'].get_qaly_weight(0)
-        # params['qalywt_active_hiv'] = self.sim.modules['QALY'].get_qaly_weight(7)
-        # Drug-susceptible, Multidrug-resistant and Extensively drug-resistant tb all have the same DALY weights
+            params['daly_wt_susc_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                0)  # Drug-susecptible tuberculosis, not HIV infected
+            params['daly_wt_resistant_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                1)  # multidrug-resistant tuberculosis, not HIV infected
+            params['daly_wt_latent_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                3)  # Drug-susecptible latent tuberculosis, not HIV infected
+            params['daly_wt_susc_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                4)  # Drug-susecptible Tuberculosis, HIV infected and anemia, severe
+            params['daly_wt_susc_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                5)  # Drug-susecptible Tuberculosis, HIV infected and anemia, moderate
+            params['daly_wt_susc_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                6)  # Drug-susecptible Tuberculosis, HIV infected and anemia, mild
+            params['daly_wt_susc_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                7)  # Drug-susecptible Tuberculosis, HIV infected
+            params['daly_wt_resistant_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                8)  # Multidrug resistant Tuberculosis, HIV infected and anemia, severe
+            params['daly_wt_resistant_tb_hiv'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                9)  # Multidrug resistant Tuberculosis, HIV infected
+            params['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                10)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
+            params['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                11)  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
+            params['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
+                12)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
