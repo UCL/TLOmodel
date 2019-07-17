@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.methods import demography, lifestyle, labour, eclampsia_treatment, caesarean_section, sepsis_treatment, \
-    newborn_outcomes, haemorrhage_treatment, healthburden, healthsystem
+    newborn_outcomes, haemorrhage_treatment, healthburden, healthsystem, SandBox
 
 workbook_name = 'demography.xlsx'
 
@@ -35,6 +35,7 @@ def simulation():
     sim.register(core_module)
     sim.register(lifestyle.Lifestyle())
     sim.register(labour.Labour())
+    sim.register(SandBox.SandBox())
     sim.register(eclampsia_treatment.EclampsiaTreatment())
     sim.register(caesarean_section.CaesareanSection())
     sim.register(sepsis_treatment.SepsisTreatment())
