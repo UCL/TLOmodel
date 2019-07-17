@@ -850,7 +850,6 @@ class hiv(Module):
 # ---------------------------------------------------------------------------
 #   hiv infection event
 # ---------------------------------------------------------------------------
-# TODO: scatter these events across the year
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
     """ hiv infection event - adults only
     """
@@ -863,6 +862,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
         now = self.sim.date
+        rng: np.random.RandomState = self.module.rng
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
@@ -898,21 +898,32 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         assert (prob_inf < 1)
 
         #  sample using the prob_inf scaled by relative susceptibility
-        newly_infected_index = df.index[(self.sim.rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
+        newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
         # print('newly_infected_index', newly_infected_index)
 
-        df.loc[newly_infected_index, 'hv_inf'] = True
-        df.loc[newly_infected_index, 'hv_date_inf'] = now
-        df.loc[newly_infected_index, 'hv_specific_symptoms'] = 'none'  # all start at early
-        df.loc[newly_infected_index, 'hv_unified_symptom_code'] = 0
+        # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
+        # random draw of days 0-365
+        random_day = rng.choice(list(range(0, 365)), size=len(newly_infected_index), p=(1 / 365))
+        # convert days into years
+        random_year = pd.to_timedelta(random_day, unit='y')
+        # add to current date
+        df.loc[newly_infected_index, 'hv_date_inf'] = now + random_year
+
+        # ----------------------------------- SCHEDULE INFECTION STATUS CHANGE ON INFECTION DATE -----------------------------------
+
+        # schedule the symptom update event for each person
+        for person_index in newly_infected_index:
+            inf_event = HivInfectionEvent(self, person_index)
+            self.sim.schedule_event(inf_event, df.at[person_index, 'hv_date_inf'])
+
 
         # ----------------------------------- TIME OF DEATH -----------------------------------
-        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
+        death_date = rng.weibull(a=params['weibull_shape_mort_adult'], size=len(newly_infected_index)) * \
                      np.exp(self.module.log_scale(df.loc[newly_infected_index, 'age_years']))
         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
 
         death_date = pd.Series(death_date).dt.floor("S")  # remove microseconds
-        df.loc[newly_infected_index, 'hv_proj_date_death'] = now + death_date
+        df.loc[newly_infected_index, 'hv_proj_date_death'] = df.loc[newly_infected_index, 'hv_date_inf'] + death_date
 
         death_dates = df.hv_proj_date_death[newly_infected_index]
 
@@ -1025,6 +1036,20 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Symptom update events
 # ---------------------------------------------------------------------------
+class HivInfectionEvent(Event, IndividualScopeEventMixin):
+    """ change symptom level and determine whether person will seek care on symptom change
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        df.at[person_id, 'hv_inf'] = True
+        df.at[person_id, 'hv_specific_symptoms'] = 'none'  # all start at none
+        df.at[person_id, 'hv_unified_symptom_code'] = 0
+
 
 class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
     """ change symptom level and determine whether person will seek care on symptom change

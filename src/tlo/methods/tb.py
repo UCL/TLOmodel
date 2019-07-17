@@ -56,18 +56,27 @@ class tb(Module):
         'prop_smear_positive': Parameter(Types.REAL, 'proportion of TB cases smear positive'),
         'prop_smear_positive_hiv': Parameter(Types.REAL, 'proportion of HIV/TB cases smear positive'),
 
-        'qalywt_latent':
-            Parameter(Types.REAL, 'QALY weighting for latent tb'),
-        'qalywt_active':
-            Parameter(Types.REAL, 'QALY weighting for active tb'),
-        'qalywt_active_hiv':
-            Parameter(Types.REAL, 'QALY weighting for active tb and hiv coinfection'),
-
-        # daly weights
-        'daly_wt_chronic':
-            Parameter(Types.REAL, 'DALY weights for chronic hiv infection'),
-        'daly_wt_aids':
-            Parameter(Types.REAL, 'DALY weights for aids'),
+        # daly weights, no daly weight for latent tb
+        'daly_wt_susc_tb':
+            Parameter(Types.REAL, 'Drug-susecptible tuberculosis, not HIV infected'),
+        'daly_wt_resistant_tb':
+            Parameter(Types.REAL, 'multidrug-resistant tuberculosis, not HIV infected'),
+        'daly_wt_susc_tb_hiv_severe_anaemia':
+            Parameter(Types.REAL, '# Drug-susecptible Tuberculosis, HIV infected and anemia, severe'),
+        'daly_wt_susc_tb_hiv_moderate_anaemia':
+            Parameter(Types.REAL, 'Drug-susecptible Tuberculosis, HIV infected and anemia, moderate'),
+        'daly_wt_susc_tb_hiv_mild_anaemia':
+            Parameter(Types.REAL, 'Drug-susecptible Tuberculosis, HIV infected and anemia, mild'),
+        'daly_wt_susc_tb_hiv':
+            Parameter(Types.REAL, 'Drug-susecptible Tuberculosis, HIV infected'),
+        'daly_wt_resistant_tb_hiv_severe_anaemia':
+            Parameter(Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected and anemia, severe'),
+        'daly_wt_resistant_tb_hiv':
+            Parameter(Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected'),
+        'daly_wt_resistant_tb_hiv_moderate_anaemia':
+            Parameter(Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected and anemia, moderate'),
+        'daly_wt_resistant_tb_hiv_mild_anaemia':
+            Parameter(Types.REAL, 'Multidrug resistant Tuberculosis, HIV infected and anemia, mild'),
     }
 
     PROPERTIES = {
@@ -144,16 +153,13 @@ class tb(Module):
 
         params['prop_smear_positive'] = 0.8
         params['prop_smear_positive_hiv'] = 0.5
-        # TODO: update
-        # daly weights
-        # get the DALY weight that this module will use from the weight database (these codes are just random!)
+
+        # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_susc_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 0)  # Drug-susecptible tuberculosis, not HIV infected
             params['daly_wt_resistant_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 1)  # multidrug-resistant tuberculosis, not HIV infected
-            params['daly_wt_latent_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
-                3)  # Drug-susecptible latent tuberculosis, not HIV infected
             params['daly_wt_susc_tb_hiv_severe_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 4)  # Drug-susecptible Tuberculosis, HIV infected and anemia, severe
             params['daly_wt_susc_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
@@ -170,8 +176,7 @@ class tb(Module):
                 10)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
             params['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 11)  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
-            params['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
-                12)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
+
 
 # TODO check malawi clinical guidelines to treatments available
     def initialise_population(self, population):
@@ -203,8 +208,8 @@ class tb(Module):
         df['tb_on_treatment'] = False
         df['tb_date_treated'] = pd.NaT
         df['tb_treatment_failure'] = False
-        df['tb_treatedMDR'] = False
-        df['tb_date_treatedMDR'] = pd.NaT
+        df['tb_treated_mdr'] = False
+        df['tb_date_treated_mdr'] = pd.NaT
         df['tb_request_mdr_regimen'] = False
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
@@ -277,7 +282,7 @@ class tb(Module):
         sim.schedule_event(TbMdrActiveEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=12))
 
-        sim.schedule_event(TbIpvHivEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbIptHivEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
 
@@ -289,7 +294,6 @@ class tb(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-    # TODO: check all properties match list above
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
         """
@@ -315,8 +319,8 @@ class tb(Module):
         df.at[child_id, 'tb_on_treatment'] = False
         df.at[child_id, 'tb_date_treated'] = pd.NaT
         df.at[child_id, 'tb_treatment_failure'] = False
-        df.at[child_id, 'tb_treatedMDR'] = False
-        df.at[child_id, 'tb_date_treatedMDR'] = pd.NaT
+        df.at[child_id, 'tb_treated_mdr'] = False
+        df.at[child_id, 'tb_date_treated_mdr'] = pd.NaT
         df.at[child_id, 'tb_request_mdr_regimen'] = False
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
@@ -330,30 +334,19 @@ class tb(Module):
         logger.debug('This is TB, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    # def on_healthsystem_interaction(self, person_id, treatment_id):
-    #
-    #     logger.debug('This is tb, being alerted about a health system interaction '
-    #                  'person %d for: %s', person_id, treatment_id)
-    #
-    # def report_qaly_values(self):
-    #     # This must send back a dataframe that reports on the HealthStates for all individuals over
-    #     # the past year
-    #
-    #     logger.debug('This is tb reporting my health values')
-    #
-    #     df = self.sim.population.props  # shortcut to population properties dataframe
-    #     params = self.parameters
-    #
-    #     health_values = df.loc[df.is_alive, 'tb_specific_symptoms'].map({
-    #         'none': 0,
-    #         'latent': params['qalywt_latent'],
-    #         'active': params['qalywt_active']
-    #     })
-    #
-    #     coinfected = df[(df.tb_specific_symptoms == 'active') & df.is_alive & df.hiv_inf].index
-    #     health_values.loc[coinfected] = params['qalywt_active_hiv']
-    #
-    #     return health_values.loc[df.is_alive]
+        if treatment_id == 'Tb_screening':
+            piggy_back_dx_at_appt = HSI_TbScreening(self, person_id)
+            piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
+
+            # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
+            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+
+            self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
@@ -973,7 +966,65 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 #   Testing
 # ---------------------------------------------------------------------------
 
-#
+class HSI_TbScreening(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    It is the screening event that occurs before a sputum smear test or xpert is offered
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 0.5  # This requires a few minutes of an outpatient appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Tb_Testing'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = []
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = ['hiv']
+
+    def apply(self, person_id):
+        logger.debug('This is HSI_TbScreening, a screening appointment for person %d', person_id)
+
+        df = self.sim.population.props
+        params = self.module.parameters
+        now = self.sim.date
+
+        # check across all disease modules if patient has: cough, fever, night sweat, weight loss
+        if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not (df.at[person_id, 'hv_inf']):
+            logger.debug("This is HSI_Tb_SputumTest scheduling xpert test for person %d", person_id)
+
+            test = HSI_Tb_SputumTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_event(test,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
+        elif (df.at[person_id, 'tb_specific_symptoms'] == 'active') and (df.at[person_id, 'hv_inf']):
+            logger.debug("This is HSI_Tb_SputumTest scheduling xpert test for person %d", person_id)
+
+            test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_event(test,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+
+        # if any of the above conditions are present, label as presumptive tb case and request appropriate test
+        # hiv-negative -> smear sputum
+
+        # hiv-positive -> xpert in 50% of cases or smear sputum
+
+
+
+
+
 # class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 #     """
 #     This is a Health System Interaction Event.
@@ -1421,7 +1472,7 @@ class TbIptEndEvent(Event, IndividualScopeEventMixin):
 
 
 # TODO: check what prop of hiv+ are on ipt and for how long
-class TbIpvHivEvent(RegularEvent, PopulationScopeEventMixin):
+class TbIptHivEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that offers ipt to hiv+ adolescents/adults
     """
 
