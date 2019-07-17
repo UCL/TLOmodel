@@ -42,11 +42,11 @@ logging.getLogger().addHandler(fh)
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ['*']
 
-logging.getLogger('tlo.methods.demography').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.healthburden').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.healthburden').setLevel(logging.WARNING)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-logging.getLogger('tlo.methods.tb').setLevel(logging.WARNING)
+logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
 logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.INFO)
 
 # Register the appropriate modules

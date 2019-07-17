@@ -899,13 +899,13 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
 
         #  sample using the prob_inf scaled by relative susceptibility
         newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
-        # print('newly_infected_index', newly_infected_index)
+        print('newly_infected_index', newly_infected_index)
 
         # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
         # random draw of days 0-365
-        random_day = rng.choice(list(range(0, 365)), size=len(newly_infected_index), p=(1 / 365))
+        random_day = rng.choice(list(range(0, 365)), size=len(newly_infected_index), replace=True, p=[(1 / 365)] * 365)
         # convert days into years
-        random_year = pd.to_timedelta(random_day, unit='y')
+        random_year = pd.to_timedelta(random_day, unit='d')
         # add to current date
         df.loc[newly_infected_index, 'hv_date_inf'] = now + random_year
 
@@ -2200,6 +2200,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         m_adult_prev = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
         f_adult_prev = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
 
+        # TODO divide by pop size to get prevalence
         logger.info('%s|adult_prev_m|%s', self.sim.date,
                     m_adult_prev.to_dict())
 
