@@ -173,6 +173,7 @@ class tb(Module):
             params['daly_wt_resistant_tb_hiv_moderate_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 12)  # Multidrug resistant Tuberculosis, HIV infected and anemia, moderate
 
+# TODO check malawi clinical guidelines to treatments available
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
