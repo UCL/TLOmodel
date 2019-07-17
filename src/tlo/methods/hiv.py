@@ -850,7 +850,7 @@ class hiv(Module):
 # ---------------------------------------------------------------------------
 #   hiv infection event
 # ---------------------------------------------------------------------------
-
+# TODO: scatter these events across the year
 class HivEvent(RegularEvent, PopulationScopeEventMixin):
     """ hiv infection event - adults only
     """
@@ -2110,6 +2110,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
+# todo: hiv prevalence amongst sex workers
     def apply(self, population):
         # get some summary statistics
         df = population.props
