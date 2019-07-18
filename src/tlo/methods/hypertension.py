@@ -45,7 +45,7 @@ class HT(Module):
         'prob_HT_basic': Parameter(Types.REAL,               'Probability of hypertension given no pre-existing condition or risk factors'),
         'prob_HTgivenBMI': Parameter(Types.CATEGORICAL,      'Probability of getting hypertension given BMI'),
         'prob_HTgivenDiab': Parameter(Types.REAL,            'Probability of getting hypertension given pre-existing diabetes'),
-        'prob_HTgivenFamHis': Parameter(Types.CATEGORICAL,   'Probability of getting hypertension given family history'),
+        #'prob_HTgivenFamHis': Parameter(Types.CATEGORICAL,   'Probability of getting hypertension given family history'),
 
         # 2. Health care parameters
         'prob_diag': Parameter(Types.REAL,                   'Probability of being diagnosed'),
@@ -84,9 +84,9 @@ class HT(Module):
                                                index = ['overweight', 'obese', 'morbidly obese'],
                                                columns = ['risk'])
         p['prob_HTgivenDiab']   = df.at['prob_htgivendiabetes', 'value']
-        p['prob_HTgivenFamHis'] = pd.DataFrame([[df.at['prob_htgivenfamhis', 'value']], [df.at['prob_htgivenfamhis', 'value2']]],
-                                                index = ['one parent', 'two parents'],
-                                                columns = ['risk'])
+        #p['prob_HTgivenFamHis'] = pd.DataFrame([[df.at['prob_htgivenfamhis', 'value']], [df.at['prob_htgivenfamhis', 'value2']]],
+        #                                        index = ['one parent', 'two parents'],
+        #                                        columns = ['risk'])
 
         p['prob_diag']          = 0.5
         p['prob_treat']         = 0.5
@@ -130,8 +130,8 @@ class HT(Module):
         # 3.1 First get relative risk for hypertension
         ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'], right_on=['age'],
                                                                       how='left')['probability']
-        # df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
-        # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
+        df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updated
 
         assert alive_count == len(ht_prob)
@@ -142,6 +142,7 @@ class HT(Module):
 
 
         # Check random numbers      #TODO: CHECK WITH TIM and remove later
+        print("\n", "Lets generate the random number check for hypertension")
         over_18=df.loc[df['age_years'] > 17].index
         a = random_numbers[over_18].mean()
 
@@ -156,6 +157,13 @@ class HT(Module):
 
         over_55 = df.loc[df['age_years'] > 55].index
         e = random_numbers[over_55].mean()
+
+        print("\n", "Lets generate the random number check for hypertension: ",
+              "\n", "A: ", a,
+              "\n", "B: ", b,
+              "\n", "C: ", c,
+              "\n", "D: ", d,
+              "\n", "e: ", e, "\n")
 
         # 3.2. Calculate prevalence
         # Count adults in different age groups
@@ -228,14 +236,14 @@ class HT(Module):
         sim.schedule_event(event, sim.date + DateOffset(years=1))
 
         # 2. Add an event to log to screen
-        sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(years=4))
+        #sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(years=4))
 
         # 3. Add shortcut to the data frame
         df = sim.population.props
 
         # Schedule the outreach event... # ToDo: need to test this with HT!
-        outreach_event = HT_LaunchOutreachEvent(self)
-        self.sim.schedule_event(outreach_event, self.sim.date)
+        #outreach_event = HT_LaunchOutreachEvent(self)
+        #self.sim.schedule_event(outreach_event, self.sim.date+36)
 
 
     def on_birth(self, mother_id, child_id):
@@ -303,7 +311,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         self.prob_HT_basic = module.parameters['prob_HT_basic']
         self.prob_HTgivenBMI = module.parameters['prob_HTgivenBMI']
         self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
-        self.prob_HTgivenFamHis = module.parameters['prob_HTgivenFamHis']
+        #self.prob_HTgivenFamHis = module.parameters['prob_HTgivenFamHis']
         self.prob_treat = module.parameters['prob_treat']
 
         # ToDO: need to add code from original if it bugs.
@@ -347,8 +355,8 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         ht_prob = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(HT_incidence,
                                             left_on=['age_years'], right_on=['age'], how='left').set_index(
                                             'person')['probability']
-        #df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
-        # df.loc[df.is_alive & df.diab_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
+        df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] = self.prob_HTgivenDiab    # TODO: update once diabetes is active and test it's linking
         # df.loc[df.is_alive & df.hc_current_status, 'ht_risk'] = self.prob_HTgivenHC        # TODO: update code to check mum and father - check other code. Check father against male prevalence of HT and make that time updatedassert len(currently_ht_no) == len(ht_prob)
         ht_prob = ht_prob * df.loc[currently_ht_no, 'ht_risk']
         random_numbers = rng.random_sample(size=len(ht_prob))
@@ -356,7 +364,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         ht_idx = currently_ht_no[now_hypertensive]
 
         # Check random numbers      #TODO: CHECK WITH TIM and remove later
-        random_numbers_df = random_numbers, index = currently_ht_no
+        #random_numbers_df = random_numbers, index = currently_ht_no
         aaa = pd.DataFrame(data=random_numbers, index=currently_ht_no, columns=['nr'])
 
         over_18 = age_index.index[age_index.age_years > 17]
@@ -379,6 +387,13 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         over_55 = age_index.loc[age_index['age_years'] > 55].index
         e = aaa.loc[over_55]
         e = a.mean()
+
+        print("\n", "Lets generate the random number check for incidence of hypertension: ",
+              "\n", "A: ", a,
+              "\n", "B: ", b,
+              "\n", "C: ", c,
+              "\n", "D: ", d,
+              "\n", "e: ", e, "\n")
 
 
          # 3.3 If newly hypertensive
@@ -712,24 +727,24 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
-        proportion_infected = infected_total / len(df)
+        # infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
+        # proportion_infected = infected_total / len(df)
+        #
+        # mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
+        #                    self.sim.date - DateOffset(months=self.repeat))
+        # infected_in_last_month = mask.sum()
+        # mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
+        # cured_in_last_month = mask.sum()
+        #
+        # counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
+        # counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
+        #
+        # logger.info('%s|summary|%s', self.sim.date,
+        #             {
+        #                 'TotalInf': infected_total,
+        #                 'PropInf': proportion_infected,
+        #                 'PrevMonth': infected_in_last_month,
+        #                 'Cured': cured_in_last_month,
+        #             })
 
-        mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
-                           self.sim.date - DateOffset(months=self.repeat))
-        infected_in_last_month = mask.sum()
-        mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
-        cured_in_last_month = mask.sum()
-
-        counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
-
-        logger.info('%s|summary|%s', self.sim.date,
-                    {
-                        'TotalInf': infected_total,
-                        'PropInf': proportion_infected,
-                        'PrevMonth': infected_in_last_month,
-                        'Cured': cured_in_last_month,
-                    })
-
-        logger.info('%s|status_counts|%s', self.sim.date, counts)
+        #logger.info('%s|status_counts|%s', self.sim.date, counts)
