@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2031, 1, 1)  # so last full year of simulation will be 2030
-popsize = 1000
+popsize = 10
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
