@@ -21,7 +21,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = './resources/'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 2000
 
 # Establish the simulation object
@@ -76,15 +76,15 @@ import matplotlib.pyplot as plt
 # TODO: I am removing the redef of outputpath (see above)
 
 # date-stamp to label log files and any other outputs
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + 'LogFile' + datestamp + '.log'
-output = parse_log_file(logfile)
-
-deaths_df = output['tlo.methods.demography']['death']
-deaths_df['date'] = pd.to_datetime(deaths_df['date'])
-deaths_df['year'] = deaths_df['date'].dt.year
-death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
-
+# datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+# logfile = outputpath + 'LogFile' + datestamp + '.log'
+# output = parse_log_file(logfile)
+#
+# deaths_df = output['tlo.methods.demography']['death']
+# deaths_df['date'] = pd.to_datetime(deaths_df['date'])
+# deaths_df['year'] = deaths_df['date'].dt.year
+# death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
+#
 
 #TODO: Maybe add some graphs here to demonstrate the results? For example....
 # %% Demonstrate the HIV epidemic and it's impact on the population
