@@ -358,7 +358,7 @@ class T2DMEvent(RegularEvent, PopulationScopeEventMixin):
     """
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1)) # TODO: change time scale if needed
+        super().__init__(module, frequency=DateOffset(years=1)) # TODO: change time scale if needed
         self.prob_T2DM_basic = module.parameters['prob_T2DM_basic']
         #self.prob_T2DMgivenWeight = module.parameters['prob_T2DMgivenWeight']
         #self.prob_T2DMgivenHT = module.parameters['prob_T2DMgivenHT']

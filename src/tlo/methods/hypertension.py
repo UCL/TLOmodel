@@ -430,7 +430,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         # 3.1 Log prevalence compared to data
         df2 = self.module.parameters['initial_prevalence']
         print("\n", "New cases of hypertension have been assigned. The time is: ", self.sim.date,
-              "\n", "Prevalent hypertension has been assigned"
+              "\n", "Incident hypertension has been assigned"
               "\n", "MODEL: ",
               "\n", "both sexes: ", prevalence_overall, "%",
               "\n", "25 to 35:   ", prevalence_25to35, "%",
