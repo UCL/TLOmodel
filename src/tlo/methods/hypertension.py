@@ -37,7 +37,7 @@ class HT(Module):
     - Running an "outreach" event
     """
 
-    print("\n", "Hypertension method is running.  ", "\n")
+    logger.debug("Hypertension method is running.  ")
 
     PARAMETERS = {
         # 1. Risk parameters
@@ -50,6 +50,7 @@ class HT(Module):
         'prob_treat': Parameter(Types.REAL, 'Probability of being treated'),
         'prob_contr': Parameter(Types.REAL, 'Probability achieving control on medication'),
         'dalywt_ht': Parameter(Types.REAL, 'DALY weighting for hypertension'),
+        'inital_prevalence':Parameter(Types.REAL, 'Prevalence of hypertension as per data')
     }
 
     PROPERTIES = {
@@ -73,6 +74,8 @@ class HT(Module):
     }
 
     def read_parameters(self, data_folder):
+        logger.debug("Hypertension method: reading in parameters.  ")
+
         p = self.parameters
         df = HT_risk.set_index('parameter')
         p['prob_HT_basic'] = df.at['prob_basic', 'value']
@@ -90,8 +93,10 @@ class HT(Module):
                                                 [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']],
                                                 [df.at['b_55_65', 'value']]],
                                                index=['both sexes', '25 to 35', '35 to 45', '45 to 55', '55 to 65'],
-                                               columns=['prevalence'])
+                                               columns=['prevalence'])  #ToDo: Add 95% CI
         p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+
+        logger.debug("Hypertension method: finished reading in parameters.  ")
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -102,6 +107,8 @@ class HT(Module):
 
         :param population: the population of individuals
         """
+
+        logger.debug("Hypertension method: initialising population.  ")
 
         # 1. Define key variables
         df = population.props  # Shortcut to the data frame storing individual data
@@ -202,7 +209,7 @@ class HT(Module):
         # Register this disease module with the health system       #TODO: CHECK WITH TIM
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        print("\n", "Population has been initialised, prevalent hypertension cases have been assigned.  ")
+        logger.debug("Hypertension method: finished initialising population.  ")
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -212,6 +219,8 @@ class HT(Module):
         It is a good place to add initial events to the event queue.
         """
 
+        logger.debug("Hypertension method: initialising simulation.  ")
+
         # 1. Add  basic event
         event = HTEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(years=1))
@@ -219,12 +228,11 @@ class HT(Module):
         # 2. Add an event to log to screen
         # sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(years=4))
 
-        # 3. Add shortcut to the data frame
-        df = sim.population.props
-
-        # Schedule the outreach event... # ToDo: need to test this with HT!
+        # 3. Schedule the outreach event... # ToDo: need to test this with HT!
         # outreach_event = HT_LaunchOutreachEvent(self)
         # self.sim.schedule_event(outreach_event, self.sim.date+36)
+
+        logger.debug("Hypertension method: finished initialising simulation.  ")
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -235,19 +243,23 @@ class HT(Module):
         :param child_id: the ID for the new child
         """
 
-        df = self.sim.population.props
-        df.at[child_id, 'ht_risk'] = 1.0  # Default setting: no risk given pre-existing conditions
-        df.at[child_id, 'ht_current_status'] = False  # Default setting: no one has hypertension
-        df.at[child_id, 'ht_historic_status'] = 'N'  # Default setting: no one has hypertension
-        df.at[child_id, 'ht_date'] = pd.NaT  # Default setting: no one has hypertension
-        df.at[child_id, 'ht_diag_date'] = pd.NaT  # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_status'] = 'N'  # Default setting: no one is diagnosed
-        df.at[child_id, 'ht_diag_date'] = pd.NaT  # Default setting: no one is treated
-        df.at[child_id, 'ht_diag_status'] = 'N'  # Default setting: no one is treated
-        df.at[child_id, 'ht_contr_date'] = pd.NaT  # Default setting: no one is controlled
-        df.at[child_id, 'ht_contr_status'] = 'N'  # Default setting: no one is controlled
+        logger.debug("Hypertension method: on birth is being defined.  ")
 
-    def on_healthsystem_interaction(self, person_id, treatment_id):
+        df = self.sim.population.props
+        df.at[child_id, 'ht_risk'] = 1.0  # Default: no risk given pre-existing conditions
+        df.at[child_id, 'ht_current_status'] = False  # Default: no one has hypertension
+        df.at[child_id, 'ht_historic_status'] = 'N'  # Default: no one has hypertension
+        df.at[child_id, 'ht_date'] = pd.NaT  # Default: no one has hypertension
+        df.at[child_id, 'ht_diag_date'] = pd.NaT  # Default: no one is diagnosed
+        df.at[child_id, 'ht_diag_status'] = 'N'  # Default: no one is diagnosed
+        df.at[child_id, 'ht_diag_date'] = pd.NaT  # Default: no one is treated
+        df.at[child_id, 'ht_diag_status'] = 'N'  # Default: no one is treated
+        df.at[child_id, 'ht_contr_date'] = pd.NaT  # Default: no one is controlled
+        df.at[child_id, 'ht_contr_status'] = 'N'  # Default: no one is controlled
+
+        logger.debug("Hypertension method: finished defining on birth.  ")
+
+    def on_healthsystem_interaction(self, person_id, treatment_id): #TODO: update
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
@@ -255,13 +267,13 @@ class HT(Module):
         logger.debug('This is Hypertension, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    def on_hsi_alert(self, person_id, treatment_id):
+    def on_hsi_alert(self, person_id, treatment_id):    #TODO: update
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
         pass
 
-    def report_daly_values(self):
+    def report_daly_values(self):   #TODO: update
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
@@ -281,8 +293,7 @@ class HT(Module):
 
 class HTEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This event is occurring regularly at one monthly intervals and controls the infection process
-    and onset of symptoms of Hypertension.
+    This event is occurring regularly at annual intervals and controls the disease process of Hypertension.
     """
 
     def __init__(self, module):
@@ -290,8 +301,11 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         self.prob_HT_basic = module.parameters['prob_HT_basic']
         self.prob_HTgivenBMI = module.parameters['prob_HTgivenBMI']
         self.prob_HTgivenDiab = module.parameters['prob_HTgivenDiab']
-        # self.prob_HTgivenFamHis = module.parameters['prob_HTgivenFamHis']
+
+        self.prob_diag = module.parameters['prob_diag']
         self.prob_treat = module.parameters['prob_treat']
+        self.prob_contr = module.parameters['prob_contr']
+        self.dalywt_ht = module.parameters['dalywt_ht']
 
         # ToDO: need to add code from original if it bugs.
 
