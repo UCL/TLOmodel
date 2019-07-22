@@ -74,68 +74,6 @@ class SandBox(Module):
        #  birth_history['due_date'] = 7
       #  for idx_prev_cs
 
-    pkg_code_pph = pd.unique(consumables.loc[consumables[
-                                                      'Intervention_Pkg'] ==
-                                                  'Treatment of postpartum hemorrhage',
-                                                  'Intervention_Pkg_Code'])[0]
-
-    pkg_code_induction = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'Induction of labour (beyond 41 weeks)',
-                                                   'Intervention_Pkg_Code'])[0]
-
-    item_code_aph1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-    item_code_aph2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
-    item_code_aph3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
-    item_code_aph4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-                                               'Item_Code'])[0]
-    item_code_aph5 = pd.unique(consumables.loc[consumables['Items'] == 'Gloves, surgeon’s, latex, disposable,'
-                                                                       ' sterile, pair', 'Item_Code'])[0]
-
-    pkg_code_sepsis = pd.unique(consumables.loc[consumables[
-                                                    'Intervention_Pkg'] ==
-                                                'Maternal sepsis case management',
-                                                'Intervention_Pkg_Code'])[0]
-
-    pkg_code_eclampsia = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'Management of eclampsia',
-                                                   'Intervention_Pkg_Code'])[0]
-
-    pkg_code_obstructed_labour = pd.unique(consumables.loc[consumables[
-                                                               'Intervention_Pkg'] ==
-                                                           'Management of obstructed labour',
-                                                           'Intervention_Pkg_Code'])[0]
-
-    # TODO: FINALISE PKG_CODES (SEE NOTES_
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
