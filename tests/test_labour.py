@@ -12,7 +12,7 @@ workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 1000
+popsize = 100
 
 
 @pytest.fixture(autouse=True)
@@ -35,7 +35,7 @@ def simulation():
     sim.register(core_module)
     sim.register(lifestyle.Lifestyle())
     sim.register(labour.Labour())
-    sim.register(SandBox.SandBox())
+#    sim.register(SandBox.SandBox())
     sim.register(eclampsia_treatment.EclampsiaTreatment())
     sim.register(caesarean_section.CaesareanSection())
     sim.register(sepsis_treatment.SepsisTreatment())

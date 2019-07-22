@@ -85,6 +85,8 @@ class NewbornOutcomes(Module):
 
         df = self.sim.population.props
 
+        df.at[child_id,'nb_early_preterm'] = False
+        df.at[child_id, 'nb_late_preterm'] = False
         df.at[child_id, 'nb_congenital_anomaly'] = False
         df.at[child_id, 'nb_neonatal_sepsis'] = False
         df.at[child_id, 'nb_neonatal_enchep'] = False
@@ -98,7 +100,8 @@ class NewbornOutcomes(Module):
         elif df.at[mother_id, 'la_labour'] == 'late_preterm_labour':
             df.at[child_id, 'nb_late_preterm'] = True
         else:
-            df.at[child_id, 'nb_preterm'] = False
+            df.at[child_id, 'nb_early_preterm'] = False
+            df.at[child_id, 'nb_late_preterm'] = False
 
         if df.at[child_id, 'is_alive'] & ~df.at[mother_id, 'la_still_birth_this_delivery']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
