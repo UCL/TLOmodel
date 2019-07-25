@@ -2196,11 +2196,13 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # prop on treatment, adults
         art = len(df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years >= 15)])
-        adult_art = art / len(df[df.is_alive & df.hv_inf & (df.age_years >= 15)])
+        denom = len(df[df.is_alive & df.hv_inf & (df.age_years >= 15)])
+        adult_art = art / denom if denom else 0
 
         # on treatment, adults, virally suppressed
-        art_vs = df.loc[(df.hv_on_art == 2) & (df.age_years >= 15), 'is_alive'].sum()
-        prop_vir_sup_adult = art_vs / art
+        # art_vs = df.loc[(df.hv_on_art == 2) & (df.age_years >= 15), 'is_alive'].sum()
+        art_vs = (df.is_alive & (df.hv_on_art == 2) & (df.age_years >= 15)).sum()
+        prop_vir_sup_adult = art_vs / art if art else 0
 
         # prop on treatment, children
         c_art = len(df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years < 15)])
