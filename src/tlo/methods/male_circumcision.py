@@ -1,10 +1,9 @@
 """
 Male circumcision
 """
-import os
 import logging
+import os
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -163,7 +162,7 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
             seeks_care[i] = self.module.rng.rand() < prob_circum
 
         if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care == True]:
+            for person_index in seeks_care.index[seeks_care]:
                 logger.debug(
                     'This is CircumcisionEvent, scheduling Circumcision_PresentsForCare for person %d',
                     person_index)
@@ -232,7 +231,7 @@ class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         proportion_circumcised = circumcised_total / len(
             df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')])
 
-        mask = (df['mc_date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
+        # mask = (df['mc_date_circumcised'] > self.sim.date - DateOffset(months=self.repeat))
 
         logger.info('%s|summary|%s', self.sim.date,
                     {

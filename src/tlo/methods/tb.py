@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -151,8 +151,7 @@ class tb(Module):
         params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value1']
         params['prob_treatment_success'] = self.param_list.loc['prob_treatment_success', 'value1']
 
-        params['Active_tb_prob'], params['Latent_tb_prob'] = workbook['Active_TB_prob'], \
-                                                             workbook['Latent_TB_prob']
+        params['Active_tb_prob'], params['Latent_tb_prob'] = workbook['Active_TB_prob'], workbook['Latent_TB_prob']
 
         params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value1']
         params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value1']
@@ -433,8 +432,10 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         repeat_case = repeat_infected[repeat_infected].index
-        df.loc[
-            repeat_case, 'tb_inf'] = 'latent_susc_secondary'  # unchanged status, high risk of relapse as if just recovered
+
+        # unchanged status, high risk of relapse as if just recovered
+        df.loc[repeat_case, 'tb_inf'] = 'latent_susc_secondary'
+
         df.loc[repeat_case, 'tb_date_latent'] = now
         df.loc[repeat_case, 'tb_specific_symptoms'] = 'latent'
         df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
@@ -730,8 +731,10 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         repeat_case = repeat_infected[repeat_infected].index
-        df.loc[
-            repeat_case, 'tb_inf'] = 'latent_mdr_secondary'  # unchanged status, high risk of relapse as if just recovered
+
+        # unchanged status, high risk of relapse as if just recovered
+        df.loc[repeat_case, 'tb_inf'] = 'latent_mdr_secondary'
+
         df.loc[repeat_case, 'tb_date_latent'] = now
         df.loc[repeat_case, 'tb_specific_symptoms'] = 'latent'
         df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
@@ -993,8 +996,8 @@ class HSI_TbScreening(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_TbScreening, a screening appointment for person %d', person_id)
 
         df = self.sim.population.props
-        params = self.module.parameters
-        now = self.sim.date
+        # params = self.module.parameters
+        # now = self.sim.date
 
         # check across all disease modules if patient has: cough, fever, night sweat, weight loss
         # if any of the above conditions are present, label as presumptive tb case and request appropriate test
@@ -1069,8 +1072,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         # ----------------------------------- OUTCOME OF TEST -----------------------------------
 
         # active tb, hiv-negative
-        if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not df.at[
-            person_id, 'hv_inf']:
+        if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not df.at[person_id, 'hv_inf']:
             diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
                                                                       (1 - params['prop_smear_positive'])])
             if diagnosed:
@@ -1103,8 +1105,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-            df.at[person_id, 'age_years'] < 15):
+        if (df.at[person_id, 'tb_diagnosed'] & (
+            df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
+             df.at[person_id, 'age_years'] < 15)):
             # request child treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1114,8 +1117,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date + DateOffset(days=1),
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-            df.at[person_id, 'age_years'] >= 15):
+        if (df.at[person_id, 'tb_diagnosed'] & (
+            df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
+             df.at[person_id, 'age_years'] >= 15)):
             # request adult treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1125,8 +1129,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date + DateOffset(days=1),
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-            df.at[person_id, 'age_years'] < 15):
+        if (df.at[person_id, 'tb_diagnosed'] & (
+            df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
+             df.at[person_id, 'age_years'] < 15)):
             # request child retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentChild for person %d", person_id)
 
@@ -1136,8 +1141,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date + DateOffset(days=1),
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-            df.at[person_id, 'age_years'] >= 15):
+        if (df.at[person_id, 'tb_diagnosed'] & (
+            df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
+             df.at[person_id, 'age_years'] >= 15)):
             # request adult retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentAdult for person %d", person_id)
 
@@ -1153,12 +1159,13 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
             # randomly sample from <5 yr olds, match by district
             district = df.at[person_id, 'district_of_residence']
 
-            if len(df.index[(
-                                df.age_years <= 5) & ~df.ever_tb & ~df.ever_tb_mdr & df.is_alive & df.district_of_residence == district] > 5):
-                ipt_sample = df[(
-                                    df.age_years <= 5) & ~df.ever_tb & ~df.ever_tb_mdr & df.is_alive & df.district_of_residence == district].sample(
-                    n=5,
-                    replace=False).index
+            if len(df.index[(df.age_years <= 5) & ~df.ever_tb & ~df.ever_tb_mdr &
+                            df.is_alive & df.district_of_residence == district] > 5):
+                ipt_sample = df[(df.age_years <= 5) &
+                                ~df.ever_tb &
+                                ~df.ever_tb_mdr &
+                                df.is_alive &
+                                df.district_of_residence == district].sample(n=5, replace=False).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1232,10 +1239,16 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
             # randomly sample from <5 yr olds
             district = df.at[person_id, 'district_of_residence']
 
-            if len(df.index[(
-                                df.age_years <= 5) & ~df.ever_tb & ~df.ever_tb_mdr & df.is_alive & df.district_of_residence == district] > 5):
-                ipt_sample = df[(
-                                    df.age_years <= 5) & ~df.ever_tb & ~df.ever_tb_mdr & df.is_alive & df.district_of_residence == district].sample(
+            if len(df.index[(df.age_years <= 5) &
+                            ~df.ever_tb &
+                            ~df.ever_tb_mdr &
+                            df.is_alive &
+                            df.district_of_residence == district] > 5):
+                ipt_sample = df[(df.age_years <= 5) &
+                                ~df.ever_tb &
+                                ~df.ever_tb_mdr &
+                                df.is_alive &
+                                df.district_of_residence == district].sample(
                     n=5,
                     replace=False).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
@@ -1261,8 +1274,9 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                                 tclose=None)
 
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-            df.at[person_id, 'age_years'] < 15):
+        if (df.at[person_id, 'tb_diagnosed'] &
+            (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
+                df.at[person_id, 'age_years'] < 15)):
             # request child treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1272,8 +1286,9 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-            df.at[person_id, 'age_years'] >= 15):
+        if (df.at[person_id, 'tb_diagnosed'] &
+            (df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1283,8 +1298,9 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-            df.at[person_id, 'age_years'] < 15):
+        if (df.at[person_id, 'tb_diagnosed'] &
+            (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
+                df.at[person_id, 'age_years'] < 15)):
             # request child retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1294,8 +1310,9 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
-        if df.at[person_id, 'tb_diagnosed'] & (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-            df.at[person_id, 'age_years'] >= 15):
+        if (df.at[person_id, 'tb_diagnosed'] &
+            (df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1663,11 +1680,10 @@ class HSI_Tb_FollowUp(Event, IndividualScopeEventMixin):
         # nothing needs to happen here, just log the appt
         logger.debug("Follow up appt for tb case %d", person_id)
 
-
-
 # ---------------------------------------------------------------------------
 #   Cure
 # ---------------------------------------------------------------------------
+
 
 class TbCureEvent(Event, IndividualScopeEventMixin):
 
