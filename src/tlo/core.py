@@ -9,7 +9,6 @@ from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
-from numpy.random.mtrand import RandomState
 
 
 class Types(Enum):
@@ -162,7 +161,6 @@ class Module:
     `sim`
         The simulation this module is part of, once registered.
     """
-    rng: RandomState
 
     # Subclasses may declare this dictionary to specify module-level parameters.
     # We give an empty definition here as default.

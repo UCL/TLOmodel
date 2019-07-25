@@ -1,5 +1,4 @@
 TLO_Sequela_Code,Sequela,Health state name,Health state lay description,disability weight,lower,uppper
-
 0,Drug-susceptible tuberculosis,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
 1,Multidrug-resistant tuberculosis without extensive drug resistance ,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
 2,Extensively drug-resistant tuberculosis,"Tuberculosis, not HIV infected","has a persistent cough and fever, is short of breath, feels weak, and has lost a lot of weight.",0.333,0.224,0.454
@@ -8,17 +7,14 @@ TLO_Sequela_Code,Sequela,Health state name,Health state lay description,disabili
 5,Drug-susceptible HIV/AIDS - Tuberculosis with moderate anemia,"Tuberculosis, HIV infected and anemia, moderate",(combined DW),0.439,0.307,0.577
 6,Drug-susceptible HIV/AIDS - Tuberculosis with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
 7,Drug-susceptible HIV/AIDS - Tuberculosis without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
-
 8,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with severe anemia,"Tuberculosis, HIV infected and anemia, severe",(combined DW),0.495,0.353,0.64
 9,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
 10,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with moderate anemia,"Tuberculosis, HIV infected and anemia, moderate",(combined DW),0.439,0.307,0.577
 11,Multidrug-resistant HIV/AIDS - Tuberculosis without extensive drug resistance with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
-
 12,Extensively drug-resistant HIV/AIDS - Tuberculosis with mild anemia,"Tuberculosis, HIV infected and anemia, mild",(combined DW),0.411,0.278,0.551
 13,Extensively drug-resistant HIV/AIDS - Tuberculosis with severe anemia,"Tuberculosis, HIV infected and anemia, severe",(combined DW),0.495,0.353,0.64
 14,Extensively drug-resistant HIV/AIDS - Tuberculosis without anemia,"Tuberculosis, HIV infected","has a persistent cough and fever, shortness of breath, night sweats, weakness and fatigue and severe weight loss.",0.408,0.274,0.549
 15,Extensively drug-resistant HIV/AIDS - Tuberculosis with moderate anemia,"Tuberculosis, HIV infected and anemia, moderate",(combined DW),0.439,0.307,0.577
-
 16,Early HIV with severe anemia,"Anemia, severe; Generic uncomplicated disease anxiety",--,,,
 17,Symptomatic HIV without anemia,"HIV cases, symptomatic, pre-AIDS","has weight loss, fatigue, and frequent infections.",0.274,0.184,0.377
 18,Early HIV with mild anemia,"Anemia, mild; Generic uncomplicated disease anxiety",--,,,
@@ -35,7 +31,6 @@ TLO_Sequela_Code,Sequela,Health state name,Health state lay description,disabili
 29,AIDS without antiretroviral treatment with moderate anemia,"AIDS cases, not receiving ARV treatment and anemia, moderate",(combined DW),0.603,0.43,0.758
 30,AIDS without antiretroviral treatment with severe anemia,"AIDS cases, not receiving ARV treatment and anemia, severe",(combined DW),0.642,0.47,0.792
 31,Symptomatic HIV with mild anemia,"HIV cases, symptomatic, pre-AIDS and anemia, mild",(combined DW),0.277,0.189,0.379
-
 32,Mild diarrheal diseases,"Diarrhea, mild",has diarrhea three or more times a day with occasional discomfort in the belly.,0.074,0.049,0.104
 33,Guillain-Barré syndrome due to diarrheal diseases,Spinal cord lesion below neck level (treated),"is paralyzed from the waist down, cannot feel or move the legs and has difficulties with urine and bowel control. The person uses a wheelchair to move around.",0.296,0.198,0.414
 34,Severe diarrheal diseases,"Diarrhea, severe",has diarrhea three or more times a day with severe belly cramps. The person is very thirsty and feels nauseous and tired. ,0.247,0.164,0.348
