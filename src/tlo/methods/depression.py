@@ -163,8 +163,6 @@ class DepressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # calculate the effective probability of depression for not-depressed persons
         eff_prob_depression = pd.Series(params['base_3m_prob_depression'], index=p[~p.is_depressed].index)
-
-
         eff_prob_depression.loc[p.is_pregnant] *= params['rr_depression_pregnancy']
         eff_prob_depression.loc[~p.ever_depressed] *= params['rr_depression_prev_episode']
         eff_prob_depression.loc[p.date_of_birth.between(ago_20yr, ago_15yr)] *= params['rr_depression_age_15_20']

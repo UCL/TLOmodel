@@ -41,5 +41,5 @@ setup(
     keywords=[
         # eg: 'keyword1', 'keyword2', 'keyword3',
     ],
-    python_requires='>=3', install_requires=['pytest', 'pandas', 'numpy']
+    python_requires='>=3',
 )
