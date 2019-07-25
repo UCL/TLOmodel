@@ -67,8 +67,8 @@ class male_circumcision(Module):
 
         df['mc_is_circumcised'] = False  # default: no individuals circumcised
         df['mc_date_circumcised'] = pd.NaT  # default: not a time
-        df['mc_specific_symptoms'] = 'none'
-        df['mc_unified_symptom_code'] = 0
+        df['mc_specific_symptoms'].values[:] = 'none'
+        df['mc_unified_symptom_code'].values[:] = 0
 
         init_circumcision = self.circ_coverage.loc[self.circ_coverage.year == now, 'coverage'].values[0]
         # print('initial_circumcision', self.parameters['initial_circumcision'])

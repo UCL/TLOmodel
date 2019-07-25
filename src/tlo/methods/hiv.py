@@ -295,9 +295,9 @@ class hiv(Module):
         df['hv_proj_date_death'] = pd.NaT
         df['hv_sexual_risk'].values[:] = 'low'
         df['hv_mother_inf_by_birth'] = False
-        df['hv_mother_art'] = 0
+        df['hv_mother_art'].values[:] = 0
 
-        df['hv_specific_symptoms'] = 'none'
+        df['hv_specific_symptoms'].values[:] = 'none'
         df['hv_unified_symptom_code'].values[:] = 0
 
         df['hv_proj_date_symp'] = pd.NaT
@@ -309,7 +309,6 @@ class hiv(Module):
         df['hv_diagnosed'] = False
         df['hv_on_art'].values[:] = 0
         df['hv_date_art_start'] = pd.NaT
-        df['hv_viral_load_test'] = pd.NaT
         df['hv_on_cotrim'] = False
         df['hv_date_cotrim'] = pd.NaT
         df['hv_fast_progressor'] = False
@@ -738,7 +737,6 @@ class hiv(Module):
         df.at[child_id, 'hv_diagnosed'] = False
         df.at[child_id, 'hv_on_art'] = 0
         df.at[child_id, 'hv_date_art_start'] = pd.NaT
-        df.at[child_id, 'hv_viral_load_test'] = pd.NaT
         df.at[child_id, 'hv_on_cotrim'] = False
         df.at[child_id, 'hv_date_cotrim'] = pd.NaT
         df.at[child_id, 'hv_fast_progressor'] = False
