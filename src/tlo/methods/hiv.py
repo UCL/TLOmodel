@@ -12,6 +12,7 @@ from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, Individua
 from tlo.methods import demography, tb
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 # TODO: use two letter prefix for properties
