@@ -150,7 +150,6 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     f.close()
 
     # check that there have been no HSI events (due to there being no capabilities)
-    assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
 
 
