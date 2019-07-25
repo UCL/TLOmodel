@@ -1,24 +1,28 @@
 import datetime
 import logging
 import os
-import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, healthburden, hiv, \
-    male_circumcision, tb
+from tlo.methods import (
+    demography,
+    healthburden,
+    healthsystem,
+    hiv,
+    lifestyle,
+    male_circumcision,
+    tb,
+)
 
 # Where will output go
 # outputpath = './src/scripts/outputLogs/'
-#TODO; NB that outputlogs is not a part of the directory structure in the git repo, so address here will fail.
-outputpath = ''
-
+# TODO; NB that outputlogs is not a part of the directory structure in the git repo, so address here will fail.
+outputpath = ""
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = './resources/'
+resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -28,7 +32,7 @@ popsize = 2000
 sim = Simulation(start_date=start_date)
 
 # Establish the logger
-logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath + "LogFile" + datestamp + ".log"
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -40,14 +44,14 @@ logging.getLogger().addHandler(fh)
 # ----- Control over the types of intervention that can occur -----
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
-service_availability = ['*']
+service_availability = ["*"]
 
-logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.healthburden').setLevel(logging.WARNING)
-logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-logging.getLogger('tlo.methods.tb').setLevel(logging.INFO)
-logging.getLogger('tlo.methods.male_circumcision').setLevel(logging.INFO)
+logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
+logging.getLogger("tlo.methods.lifestyle").setLevel(logging.WARNING)
+logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
+logging.getLogger("tlo.methods.hiv").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.male_circumcision").setLevel(logging.INFO)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -67,10 +71,6 @@ fh.flush()
 
 
 # %% read the results
-import datetime
-import pandas as pd
-from tlo.analysis.utils import parse_log_file
-import matplotlib.pyplot as plt
 
 # outputpath = './src/scripts/outputLogs/'
 # TODO: I am removing the redef of outputpath (see above)
@@ -86,6 +86,5 @@ import matplotlib.pyplot as plt
 # death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
 #
 
-#TODO: Maybe add some graphs here to demonstrate the results? For example....
+# TODO: Maybe add some graphs here to demonstrate the results? For example....
 # %% Demonstrate the HIV epidemic and it's impact on the population
-
