@@ -1,14 +1,12 @@
 """
 Behavioural intervention for hiv prevention / reduction of transmission
+#  TODO: proportion counselled is greater than 1 by 2012
 """
-
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
-
-#  TODO: proportion counselled is greater than 1 by 2012
 
 class BehaviourChange(Module):
     """
@@ -48,8 +46,6 @@ class BehaviourChange(Module):
         params = self.parameters
         params['p_behaviour'] = 0.01
 
-
-
     def initialise_population(self, population):
         pass
 
@@ -66,7 +62,6 @@ class BehaviourChange(Module):
 
         # add an event to log to screen
         sim.schedule_event(BehaviourChangeLoggingEvent(self), sim.date + DateOffset(months=1))
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -121,7 +116,3 @@ class BehaviourChangeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.module.store['Time'].append(self.sim.date)
         self.module.store['Proportion_hiv_counselled'].append(proportion_exposed)
         self.module.store['Number_recently_counselled'].append(counselling_in_last_month)
-
-
-
-

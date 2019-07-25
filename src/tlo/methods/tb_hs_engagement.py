@@ -1,13 +1,11 @@
 """
-A skeleton template for disease methods.
+health system engagement for tuberculosis
 """
-import os
-
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin, RegularEvent, IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 
 class health_system_tb(Module):
@@ -168,7 +166,7 @@ class TbTestingEvent(RegularEvent, PopulationScopeEventMixin):
         for person in undiagnosed_idx:
             refer_xpert = tbXpertTest(self.module, individual_id=person)
             # TODO: take absolute value so no negatives
-            referral_time = abs(np.random.normal(loc=(2/12), scale=(0.5/12), size=1)) # in years
+            referral_time = abs(np.random.normal(loc=(2/12), scale=(0.5/12), size=1))  # in years
             referral_time_yrs = pd.to_timedelta(referral_time[0] * 365.25, unit='d')
             future_referral_time = now + referral_time_yrs
             # print('future_referral_time', now, referral_time_yrs, future_referral_time)
@@ -274,7 +272,6 @@ class tbTreatmentMDREvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[cure_idx, 'tb_inf'] = 'latent_susc'
 
 
-
 class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
     """ IPT to all paediatric contacts of a TB case - randomly select 5 children <5 yrs old
     """
@@ -283,7 +280,6 @@ class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        params = self.module.parameters
         now = self.sim.date
         df = population.props
 
@@ -300,7 +296,6 @@ class TbIPTEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: ending ipt
 
 
-
 class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
     """ IPT to all adults and adolescents with HIV
     """
@@ -309,7 +304,6 @@ class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-        params = self.module.parameters
         now = self.sim.date
         df = population.props
 
@@ -321,9 +315,6 @@ class TbExpandedIPTEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[ipt_sample, 'date_ipt'] = now
 
         # TODO: ending ipt
-
-
-
 
 
 class TbHealthSystemLoggingEvent(RegularEvent, PopulationScopeEventMixin):
