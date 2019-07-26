@@ -467,9 +467,6 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=individual_id)
         self.cause = cause
 
-    def apply(self, person_id):
-        df = self.sim.population.props
-
     def apply(self, individual_id):
         df = self.sim.population.props
 
