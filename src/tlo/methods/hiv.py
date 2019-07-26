@@ -1147,7 +1147,7 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
-
+# TODO: change to environmental process, affects whole pop hiv risk, not individual
 class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
     """
     this is all behaviour change interventions that will reduce risk of HIV
@@ -1161,19 +1161,19 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
 
         # Find the person_ids who are going to get the behaviour change intervention
         # open to any adults not currently infected
-        gets_outreach = df.index[(df['is_alive']) & ~df.hv_inf & (df.age_years.between(15, 80))]
-        for person_id in gets_outreach:
-            # make the outreach event
-            outreach_event_for_individual = HSI_Hiv_BehaviourChange(self.module, person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=12))
+        # gets_outreach = df.index[(df['is_alive']) & ~df.hv_inf & (df.age_years.between(15, 80))]
+        # for person_id in gets_outreach:
+        #     # make the outreach event
+        #     outreach_event_for_individual = HSI_Hiv_BehaviourChange(self.module, person_id=person_id)
+        #
+        #     self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
+        #                                                         priority=0,
+        #                                                         topen=self.sim.date,
+        #                                                         tclose=self.sim.date + DateOffset(weeks=12))
 
         # schedule next behav change launch event
-        behav_change_event = HivLaunchBehavChangeEvent(self)
-        self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+        # behav_change_event = HivLaunchBehavChangeEvent(self)
+        # self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
 
 
 class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
