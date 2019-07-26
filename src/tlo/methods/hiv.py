@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# TODO: use two letter prefix for properties
-
 class hiv(Module):
     """
     baseline hiv infection
