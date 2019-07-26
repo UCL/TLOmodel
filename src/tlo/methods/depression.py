@@ -232,7 +232,7 @@ class Depression(Module):
 
 # todo - this to be removed when defined in other modules
         df['de_cc'] = False
-        df['de_wealth'] = 4
+        df['de_wealth'].values[:] = 4
 
         #  this below calls the age dataframe / call age.years to get age in years
 
