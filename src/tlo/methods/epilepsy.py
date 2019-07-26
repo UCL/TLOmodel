@@ -12,7 +12,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.CRITICAL)
 
 class Epilepsy(Module):
 
@@ -701,4 +700,4 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         df.at[person_id,'ep_antiep'] = True
-        print('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
+        logger.debug('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
