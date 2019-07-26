@@ -1,119 +1,109 @@
-
 import logging
+from pathlib import Path
+
+import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
-import numpy as np
-import pandas as pd
-import random
-from pathlib import Path
 
 # todo: code specific clinic visits
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-class Epilepsy(Module):
 
+class Epilepsy(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
     # Module parameters
     PARAMETERS = {
-        'init_epil_seiz_status': Parameter(
-            Types.LIST,
-            'Proportions in each seizure status category at baseline'),
+        'init_epil_seiz_status': Parameter(Types.LIST, 'Proportions in each seizure status category at baseline'),
         'init_prop_antiepileptic_seiz_stat_1': Parameter(
-            Types.REAL,
-            'initial proportions on antiepileptic by if seizure status = 1'),
+            Types.REAL, 'initial proportions on antiepileptic by if seizure status = 1'
+        ),
         'init_prop_antiepileptic_seiz_stat_2': Parameter(
-            Types.REAL,
-            'initial proportions on antiepileptic by if seizure status = 2'),
+            Types.REAL, 'initial proportions on antiepileptic by if seizure status = 2'
+        ),
         'init_prop_antiepileptic_seiz_stat_3': Parameter(
-            Types.REAL,
-            'initial proportions on antiepileptic by if seizure status = 3'),
-        'base_3m_prob_epilepsy': Parameter(
-            Types.REAL,
-            'base probability of epilepsy per 3 month period if age < 20'),
-        'rr_epilepsy_age_ge20': Parameter(
-            Types.REAL,
-            'relative rate of epilepsy if age over 20'),
+            Types.REAL, 'initial proportions on antiepileptic by if seizure status = 3'
+        ),
+        'base_3m_prob_epilepsy': Parameter(Types.REAL, 'base probability of epilepsy per 3 month period if age < 20'),
+        'rr_epilepsy_age_ge20': Parameter(Types.REAL, 'relative rate of epilepsy if age over 20'),
         'prop_inc_epilepsy_seiz_freq': Parameter(
-            Types.REAL,
-            'proportion of incident epilepsy cases with frequent seizures'),
+            Types.REAL, 'proportion of incident epilepsy cases with frequent seizures'
+        ),
         'base_prob_3m_seiz_stat_freq_infreq': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status frequent if current infrequent'),
+            Types.REAL, 'base probability per 3 months of seizure status frequent if current infrequent'
+        ),
         'rr_effectiveness_antiepileptics': Parameter(
-            Types.REAL,
-            'relative rate of seizure status frequent if current infrequent if on antiepileptic'),
+            Types.REAL, 'relative rate of seizure status frequent if current infrequent if on antiepileptic'
+        ),
         'base_prob_3m_seiz_stat_infreq_freq': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status infrequent if current frequent'),
+            Types.REAL, 'base probability per 3 months of seizure status infrequent if current frequent'
+        ),
         'base_prob_3m_seiz_stat_infreq_none': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status infrequent if current nonenow'),
+            Types.REAL, 'base probability per 3 months of seizure status infrequent if current nonenow'
+        ),
         'base_prob_3m_seiz_stat_none_freq': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status nonenow if current frequent'),
+            Types.REAL, 'base probability per 3 months of seizure status nonenow if current frequent'
+        ),
         'base_prob_3m_seiz_stat_none_infreq': Parameter(
-            Types.REAL,
-            'base probability per 3 months of seizure status nonenow if current infrequent'),
+            Types.REAL, 'base probability per 3 months of seizure status nonenow if current infrequent'
+        ),
         'base_prob_3m_antiepileptic': Parameter(
-            Types.REAL,
-            'base probability per 3 months of starting antiepileptic, if frequent seizures'),
+            Types.REAL, 'base probability per 3 months of starting antiepileptic, if frequent seizures'
+        ),
         'rr_antiepileptic_seiz_infreq': Parameter(
-            Types.REAL,
-            'relative rate of starting antiepileptic if infrequent seizures'),
+            Types.REAL, 'relative rate of starting antiepileptic if infrequent seizures'
+        ),
         'base_prob_3m_stop_antiepileptic': Parameter(
-            Types.REAL,
-            'base probability per 3 months of stopping antiepileptic, if nonenow seizures'),
+            Types.REAL, 'base probability per 3 months of stopping antiepileptic, if nonenow seizures'
+        ),
         'rr_stop_antiepileptic_seiz_infreq_or_freq': Parameter(
-            Types.REAL,
-            'relative rate of stopping antiepileptic if infrequent or frequent seizures'),
-        'base_prob_3m_epi_death': Parameter(
-            Types.REAL,
-            'base probability per 3 months of epilepsy death'),
+            Types.REAL, 'relative rate of stopping antiepileptic if infrequent or frequent seizures'
+        ),
+        'base_prob_3m_epi_death': Parameter(Types.REAL, 'base probability per 3 months of epilepsy death'),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
-        'daly_wt_epilepsy_severe': Parameter(Types.REAL, 'disability weight for severe epilepsy'
-                                                               'controlled phase - code 860'),
-        'daly_wt_epilepsy_less_severe': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
-                                                              'controlled phase - code 861'),
-        'daly_wt_epilepsy_seizure_free': Parameter(Types.REAL, 'disability weight for less severe epilepsy'
-                                                              'controlled phase - code 862')
-
+        'daly_wt_epilepsy_severe': Parameter(
+            Types.REAL, 'disability weight for severe epilepsy' 'controlled phase - code 860'
+        ),
+        'daly_wt_epilepsy_less_severe': Parameter(
+            Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 861'
+        ),
+        'daly_wt_epilepsy_seizure_free': Parameter(
+            Types.REAL, 'disability weight for less severe epilepsy' 'controlled phase - code 862'
+        ),
     }
 
     """
-
-    860,Severe epilepsy,"Epilepsy, seizures >= once a month","has sudden seizures one or more times 
-    each month, with violent muscle contractions and stiffness, loss of consciousness, and loss of 
+    860,Severe epilepsy,'Epilepsy, seizures >= once a month','has sudden seizures one or more times
+    each month, with violent muscle contractions and stiffness, loss of consciousness, and loss of
     urine or bowel control. Between seizures the person has memory loss and difficulty concentrating.
-    ",0.552,0.375,0.71
-    
-    861,Less severe epilepsy,"Epilepsy, seizures 1-11 per year","has sudden seizures two to five times 
-    a year, with violent muscle contractions and stiffness, loss of consciousness, and loss of urine 
-    or bowel control.",0.263,0.173,0.367
-        
-    862,"Seizure-free, treated epilepsy",Generic uncomplicated disease: worry and daily medication,
-    has a chronic disease that requires medication every day and causes some worry but minimal 
-    interference with daily activities.,0.049,0.031,0.072
-    
-    """
+    ',0.552,0.375,0.71
 
+    861,Less severe epilepsy,'Epilepsy, seizures 1-11 per year','has sudden seizures two to five times
+    a year, with violent muscle contractions and stiffness, loss of consciousness, and loss of urine
+    or bowel control.',0.263,0.173,0.367
+
+    862,'Seizure-free, treated epilepsy',Generic uncomplicated disease: worry and daily medication,
+    has a chronic disease that requires medication every day and causes some worry but minimal
+    interference with daily activities.,0.049,0.031,0.072
+    """
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
-        'ep_seiz_stat': Property(Types.CATEGORICAL, '(0 = never epilepsy, 1 = previous seizures none now, '
-                                                    '2 = infrequent seizures, 3 = frequent seizures)',
-                                 categories=['0', '1', '2', '3']),
+        'ep_seiz_stat': Property(
+            Types.CATEGORICAL,
+            '(0 = never epilepsy, 1 = previous seizures none now, ' '2 = infrequent seizures, 3 = frequent seizures)',
+            categories=['0', '1', '2', '3'],
+        ),
         'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
         'ep_epi_death': Property(Types.BOOL, 'epilepsy death this 3 month period'),
-        'ep_unified_symptom_code': Property(Types.CATEGORICAL, '',
-                                            categories=['0', '1', '2', '3']),
-        'ep_disability': Property(
-            Types.REAL, 'disability weight for current 3 month period')
+        'ep_unified_symptom_code': Property(Types.CATEGORICAL, '', categories=['0', '1', '2', '3']),
+        'ep_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
@@ -128,45 +118,41 @@ class Epilepsy(Module):
           Typically modules would read a particular file within here.
         """
 
-        dfd = pd.read_excel(
-                            Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx',
-                            sheet_name='parameter_values')
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx', sheet_name='parameter_values')
 
         dfd.set_index('parameter_name', inplace=True)
 
-        self.parameters['init_epil_seiz_status'] = \
-            [dfd.loc['init_epil_seiz_status', 'value'], dfd.loc['init_epil_seiz_status', 'value2'],
-             dfd.loc['init_epil_seiz_status', 'value3'], dfd.loc['init_epil_seiz_status', 'value4']]
-        self.parameters['init_prop_antiepileptic_seiz_stat_1'] = \
-            dfd.loc['init_prop_antiepileptic_seiz_stat_1', 'value']
-        self.parameters['init_prop_antiepileptic_seiz_stat_2'] = \
-            dfd.loc['init_prop_antiepileptic_seiz_stat_2', 'value']
-        self.parameters['init_prop_antiepileptic_seiz_stat_3'] = \
-            dfd.loc['init_prop_antiepileptic_seiz_stat_3', 'value']
-        self.parameters['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value']
-        self.parameters['rr_epilepsy_age_ge20'] = dfd.loc['rr_epilepsy_age_ge20', 'value']
-        self.parameters['prop_inc_epilepsy_seiz_freq'] = dfd.loc['prop_inc_epilepsy_seiz_freq', 'value']
-        self.parameters['rr_effectiveness_antiepileptics'] = dfd.loc['rr_effectiveness_antiepileptics', 'value']
-        self.parameters['base_prob_3m_seiz_stat_freq_infreq'] = dfd.loc['base_prob_3m_seiz_stat_freq_infreq', 'value']
-        self.parameters['base_prob_3m_seiz_stat_infreq_freq'] = dfd.loc['base_prob_3m_seiz_stat_infreq_freq', 'value']
-        self.parameters['base_prob_3m_seiz_stat_none_freq'] = dfd.loc['base_prob_3m_seiz_stat_none_freq', 'value']
-        self.parameters['base_prob_3m_seiz_stat_none_infreq'] = dfd.loc['base_prob_3m_seiz_stat_none_infreq', 'value']
-        self.parameters['base_prob_3m_seiz_stat_infreq_none'] = dfd.loc['base_prob_3m_seiz_stat_infreq_none', 'value']
-        self.parameters['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']
-        self.parameters['rr_antiepileptic_seiz_infreq'] = dfd.loc['rr_antiepileptic_seiz_infreq', 'value']
-        self.parameters['base_prob_3m_stop_antiepileptic'] = dfd.loc['base_prob_3m_stop_antiepileptic', 'value']
-        self.parameters['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
-        self.parameters['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
+        p = self.parameters
+
+        p['init_epil_seiz_status'] = [
+            dfd.loc['init_epil_seiz_status', 'value'],
+            dfd.loc['init_epil_seiz_status', 'value2'],
+            dfd.loc['init_epil_seiz_status', 'value3'],
+            dfd.loc['init_epil_seiz_status', 'value4'],
+        ]
+        p['init_prop_antiepileptic_seiz_stat_1'] = dfd.loc['init_prop_antiepileptic_seiz_stat_1', 'value']
+        p['init_prop_antiepileptic_seiz_stat_2'] = dfd.loc['init_prop_antiepileptic_seiz_stat_2', 'value']
+        p['init_prop_antiepileptic_seiz_stat_3'] = dfd.loc['init_prop_antiepileptic_seiz_stat_3', 'value']
+        p['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value']
+        p['rr_epilepsy_age_ge20'] = dfd.loc['rr_epilepsy_age_ge20', 'value']
+        p['prop_inc_epilepsy_seiz_freq'] = dfd.loc['prop_inc_epilepsy_seiz_freq', 'value']
+        p['rr_effectiveness_antiepileptics'] = dfd.loc['rr_effectiveness_antiepileptics', 'value']
+        p['base_prob_3m_seiz_stat_freq_infreq'] = dfd.loc['base_prob_3m_seiz_stat_freq_infreq', 'value']
+        p['base_prob_3m_seiz_stat_infreq_freq'] = dfd.loc['base_prob_3m_seiz_stat_infreq_freq', 'value']
+        p['base_prob_3m_seiz_stat_none_freq'] = dfd.loc['base_prob_3m_seiz_stat_none_freq', 'value']
+        p['base_prob_3m_seiz_stat_none_infreq'] = dfd.loc['base_prob_3m_seiz_stat_none_infreq', 'value']
+        p['base_prob_3m_seiz_stat_infreq_none'] = dfd.loc['base_prob_3m_seiz_stat_infreq_none', 'value']
+        p['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']
+        p['rr_antiepileptic_seiz_infreq'] = dfd.loc['rr_antiepileptic_seiz_infreq', 'value']
+        p['base_prob_3m_stop_antiepileptic'] = dfd.loc['base_prob_3m_stop_antiepileptic', 'value']
+        p['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
+        p['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 860-862 are the sequale codes for epilepsy
-            self.parameters['daly_wt_epilepsy_severe'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=860)
-            self.parameters['daly_wt_epilepsy_less_severe'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=861)
-            self.parameters['daly_wt_epilepsy_seizure_free'] = \
-                self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=862)
-
+            p['daly_wt_epilepsy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=860)
+            p['daly_wt_epilepsy_less_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=861)
+            p['daly_wt_epilepsy_seizure_free'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=862)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -186,23 +172,24 @@ class Epilepsy(Module):
 
         # allocate initial ep_seiz_stat
         alive_idx = df.index[df.is_alive]
-        df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice(['0', '1', '2', '3'], size=len(alive_idx),
-                                                                   p=self.parameters['init_epil_seiz_status'])
+        df.loc[alive_idx, 'ep_seiz_stat'] = self.rng.choice(
+            ['0', '1', '2', '3'], size=len(alive_idx), p=self.parameters['init_epil_seiz_status']
+        )
 
         # allocate initial on antiepileptic seiz status 1
         seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
         random_draw = self.rng.random_sample(size=len(seiz_stat_1_idx))
-        df.loc[seiz_stat_1_idx, 'ep_antiep'] = (random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_1'])
+        df.loc[seiz_stat_1_idx, 'ep_antiep'] = random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_1']
 
         # allocate initial on antiepileptic seiz status 2
         seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
         random_draw = self.rng.random_sample(size=len(seiz_stat_2_idx))
-        df.loc[seiz_stat_2_idx, 'ep_antiep'] = (random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_2'])
+        df.loc[seiz_stat_2_idx, 'ep_antiep'] = random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_2']
 
         # allocate initial on antiepileptic seiz status 3
         seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
         random_draw = self.rng.random_sample(size=len(seiz_stat_3_idx))
-        df.loc[seiz_stat_3_idx, 'ep_antiep'] = (random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_3'])
+        df.loc[seiz_stat_3_idx, 'ep_antiep'] = random_draw < self.parameters['init_prop_antiepileptic_seiz_stat_3']
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -244,15 +231,15 @@ class Epilepsy(Module):
         # All modules refresh the symptomology of persons at this time
         # And report it on the unified symptomology scale
 
-#       logger.debug("This is Epilepsy being asked to report unified symptomology")
+        #       logger.debug('This is Epilepsy being asked to report unified symptomology')
 
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-#       df.loc[df.is_alive, 'ep_unified_symptom_code'] \
-#           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
+        #       df.loc[df.is_alive, 'ep_unified_symptom_code'] \
+        #           = df.loc[df.is_alive, 'ep_seiz_stat'].map({ 0 : 1,  1 : 1,  2 : 1,  3 : 1})
 
-#       return df.loc[df.is_alive, 'ep_unified_symptom_code']
+        #       return df.loc[df.is_alive, 'ep_unified_symptom_code']
 
         return pd.Series('1', index=df.index[df.is_alive])
 
@@ -261,8 +248,11 @@ class Epilepsy(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Epilepsy, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(
+            'This is Epilepsy, being alerted about a health system interaction person %d for: %s',
+            person_id,
+            treatment_id,
+        )
 
         pass
 
@@ -279,7 +269,6 @@ class Epilepsy(Module):
         disability_series_for_alive_persons = df.loc[df['is_alive'], 'ep_disability']
 
         return disability_series_for_alive_persons
-
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
@@ -319,7 +308,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         self.daly_wt_epilepsy_less_severe = module.parameters['daly_wt_epilepsy_less_severe']
         self.daly_wt_epilepsy_seizure_free = module.parameters['daly_wt_epilepsy_seizure_free']
 
-
     def apply(self, population):
         """Apply this event to the population.
 
@@ -331,7 +319,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # Declaration of how we will refer to any treatments that are related to this disease.
-        TREATMENT_ID = 'antiepileptic'
+        # TREATMENT_ID = 'antiepileptic'
 
         # set ep_epi_death back to False after death
         df.loc[~df.is_alive, 'ep_epi_death'] = False
@@ -342,33 +330,49 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0')]
         ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0') & (df.age_years >= 20)]
 
-        eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy,
-                                      index=df.index[df.is_alive & (df.ep_seiz_stat == '0')])
+        eff_prob_epilepsy = pd.Series(
+            self.base_3m_prob_epilepsy, index=df.index[df.is_alive & (df.ep_seiz_stat == '0')]
+        )
         eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '0')])
-        random_draw_02 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '0')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '0')],
+        )
+        random_draw_02 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '0')],
+        )
 
-        series_prop_inc_epilepsy_seiz_freq = pd.Series(self.prop_inc_epilepsy_seiz_freq,
-                                      index=df.index[df.is_alive & (df.ep_seiz_stat == '0')])
+        series_prop_inc_epilepsy_seiz_freq = pd.Series(
+            self.prop_inc_epilepsy_seiz_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '0')]
+        )
 
-        df_incident_epilepsy = pd.concat([eff_prob_epilepsy, random_draw_01, random_draw_02,
-                                          series_prop_inc_epilepsy_seiz_freq], axis=1)
-        df_incident_epilepsy.columns = ['eff_prob_epilepsy', 'random_draw_01', 'random_draw_02',
-                                        'prop_inc_epilepsy_seiz_freq']
+        df_incident_epilepsy = pd.concat(
+            [eff_prob_epilepsy, random_draw_01, random_draw_02, series_prop_inc_epilepsy_seiz_freq], axis=1
+        )
+        df_incident_epilepsy.columns = [
+            'eff_prob_epilepsy',
+            'random_draw_01',
+            'random_draw_02',
+            'prop_inc_epilepsy_seiz_freq',
+        ]
 
         df_incident_epilepsy['x_ep_seiz_stat'] = '0'
         df_incident_epilepsy['incident_epi_this_period'] = False
-        df_incident_epilepsy.loc[(df_incident_epilepsy.eff_prob_epilepsy > random_draw_01),
-                                 'incident_epi_this_period'] = True
-        df_incident_epilepsy.loc[(df_incident_epilepsy.eff_prob_epilepsy > random_draw_01) &
-                                 (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq > random_draw_02),
-                                 'x_ep_seiz_stat'] = '3'
-        df_incident_epilepsy.loc[(df_incident_epilepsy.eff_prob_epilepsy > random_draw_01) &
-                                 (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq < random_draw_02),
-                                 'x_ep_seiz_stat'] = '2'
+        df_incident_epilepsy.loc[
+            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01), 'incident_epi_this_period'
+        ] = True
+        df_incident_epilepsy.loc[
+            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01)
+            & (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq > random_draw_02),
+            'x_ep_seiz_stat',
+        ] = '3'
+        df_incident_epilepsy.loc[
+            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01)
+            & (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq < random_draw_02),
+            'x_ep_seiz_stat',
+        ] = '2'
 
         df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = df_incident_epilepsy['x_ep_seiz_stat']
 
@@ -377,22 +381,28 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
 
-        logger.info('%s|incidence_epilepsy|%s|n_incident_epilepsy|%s|n_alive|%s',
-                    self.sim.date, incidence_epilepsy, n_incident_epilepsy, n_alive
-                    )
+        logger.info(
+            '%s|incidence_epilepsy|%s|n_incident_epilepsy|%s|n_alive|%s',
+            self.sim.date,
+            incidence_epilepsy,
+            n_incident_epilepsy,
+            n_alive,
+        )
 
         # transition from ep_seiz_stat 1 to 2
 
         alive_seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
 
-        eff_prob_seiz_stat_2 = pd.Series(self.base_prob_3m_seiz_stat_infreq_none,
-                                      index=df.index[df.is_alive & (df.ep_seiz_stat == '1')])
+        eff_prob_seiz_stat_2 = pd.Series(
+            self.base_prob_3m_seiz_stat_infreq_none, index=df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_1_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '1')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_1_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '1')],
+        )
 
-        dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01],
-                        axis=1)
+        dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
 
         dfx['x_ep_seiz_stat'] = '1'
@@ -404,11 +414,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
 
-        eff_prob_seiz_stat_1 = pd.Series(self.base_prob_3m_seiz_stat_infreq_none,
-                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '2')])
+        eff_prob_seiz_stat_1 = pd.Series(
+            self.base_prob_3m_seiz_stat_infreq_none, index=df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '2')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '2')],
+        )
 
         dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_1', 'random_draw_01']
@@ -422,11 +435,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
 
-        eff_prob_seiz_stat_3 = pd.Series(self.base_prob_3m_seiz_stat_freq_infreq,
-                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '2')])
+        eff_prob_seiz_stat_3 = pd.Series(
+            self.base_prob_3m_seiz_stat_freq_infreq, index=df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '2')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '2')],
+        )
 
         dfx = pd.concat([eff_prob_seiz_stat_3, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_3', 'random_draw_01']
@@ -440,11 +456,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
-        eff_prob_seiz_stat_1 = pd.Series(self.base_prob_3m_seiz_stat_none_freq,
-                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+        eff_prob_seiz_stat_1 = pd.Series(
+            self.base_prob_3m_seiz_stat_none_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '3')],
+        )
 
         dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_1', 'random_draw_01']
@@ -458,11 +477,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
-        eff_prob_seiz_stat_2 = pd.Series(self.base_prob_3m_seiz_stat_infreq_freq,
-                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+        eff_prob_seiz_stat_2 = pd.Series(
+            self.base_prob_3m_seiz_stat_infreq_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '3')])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '3')],
+        )
 
         dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
@@ -477,12 +499,15 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
 
-        eff_prob_antiep = pd.Series(self.base_prob_3m_antiepileptic,
-                                    index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep])
+        eff_prob_antiep = pd.Series(
+            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
+        )
         eff_prob_antiep *= self.rr_antiepileptic_seiz_infreq
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep],
+        )
 
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_antiep', 'random_draw_01']
@@ -495,11 +520,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
 
-        eff_prob_antiep = pd.Series(self.base_prob_3m_antiepileptic,
-                                    index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep])
+        eff_prob_antiep = pd.Series(
+            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep],
+        )
 
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_antiep', 'random_draw_01']
@@ -510,7 +538,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # start on treatment if health system has capacity
 
-        start_antiep_this_period_idx = dfx.index[dfx.x_ep_antiep]
+        # start_antiep_this_period_idx = dfx.index[dfx.x_ep_antiep]
 
         # create a df with one row per person needing to start treatment - this is only way I have
         # managed to get query access to service code to work properly here (should be possible to remove
@@ -518,27 +546,28 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
 
         for person_id_to_start_treatment in e1.index:
-            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module,
-                                                      person_id=person_id_to_start_treatment)
-            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand()*30))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2,
-                                                                topen=target_date,
-                                                                tclose=None)
+            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
+            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
 
         # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
 
-#       df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
+        #       df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
 
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
 
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
 
-        eff_prob_stop_antiep = pd.Series(self.base_prob_3m_antiepileptic,
-                                    index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep])
+        eff_prob_stop_antiep = pd.Series(
+            self.base_prob_3m_antiepileptic,
+            index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep],
+        )
         eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_antiep_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_antiep_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep],
+        )
 
         dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_stop_antiep', 'random_draw_01']
@@ -552,12 +581,15 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
 
-        eff_prob_stop_antiep = pd.Series(self.base_prob_3m_antiepileptic,
-                                         index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep])
+        eff_prob_stop_antiep = pd.Series(
+            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+        )
         eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_1_antiep_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_1_antiep_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep],
+        )
 
         dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_stop_antiep', 'random_draw_01']
@@ -583,11 +615,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         alive_seiz_stat_2_or_3_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
 
-        eff_prob_epi_death = pd.Series(self.base_prob_3m_epi_death,
-                                       index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))])
+        eff_prob_epi_death = pd.Series(
+            self.base_prob_3m_epi_death, index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
+        )
 
-        random_draw_01 = pd.Series(self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_idx)),
-                                   index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))])
+        random_draw_01 = pd.Series(
+            self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_idx)),
+            index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))],
+        )
 
         dfx = pd.concat([eff_prob_epi_death, random_draw_01], axis=1)
         dfx.columns = ['eff_prob_epi_death', 'random_draw_01']
@@ -599,20 +634,18 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         death_this_period = df.index[df.ep_epi_death]
         for individual_id in death_this_period:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'),
-                                    self.sim.date)
+            self.sim.schedule_event(
+                demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'), self.sim.date
+            )
 
 
 class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
-        """comments...
-        """
         # run this event every 3 month
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-
         # get some summary statistics
         df = population.props
 
@@ -644,32 +677,28 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_antiepilep_seiz_stat_2 = n_antiepilep_seiz_stat_2 / n_seiz_stat_2
         prop_antiepilep_seiz_stat_3 = n_antiepilep_seiz_stat_3 / n_seiz_stat_3
 
-        epi_death_rate = (n_epi_death * 4 * 1000) / (n_seiz_stat_2 +n_seiz_stat_3)
+        epi_death_rate = (n_epi_death * 4 * 1000) / (n_seiz_stat_2 + n_seiz_stat_3)
 
         cum_deaths = (~df.is_alive).sum()
 
         #       logger.info('%s,%s,', self.sim.date, n_epi_death)
-        """
         logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
                     'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
                     'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
                     'cum_deaths|%s|epi_death_rate |%s|n_seiz_stat_1_3|%s|n_seiz_stat_2_3|%s|n_antiep|%s'
                     '|n_alive|%s',
-                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2, prop_seiz_stat_3,
-                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1, prop_antiepilep_seiz_stat_2,
-                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate, n_seiz_stat_1_3,
+                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2,
+                    prop_seiz_stat_3,
+                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1,
+                    prop_antiepilep_seiz_stat_2,
+                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate,
+                    n_seiz_stat_1_3,
                     n_seiz_stat_2_3, n_antiep, n_alive
                     )
-        """
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
 
-
-
-
-
-
+        #       logger.info('%s|person_one|%s',
+        #                    self.sim.date,
+        #                    df.loc[0].to_dict())
 
 
 class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
@@ -692,12 +721,12 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVELS = [0]  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
 
         df = self.sim.population.props
 
-        df.at[person_id,'ep_antiep'] = True
+        df.at[person_id, 'ep_antiep'] = True
         logger.debug('@@@@@@@@@@ STARTING TREATMENT FOR SOMEONE!!!!!!!')
