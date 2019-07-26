@@ -160,7 +160,6 @@ class Epilepsy(Module):
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         """
 
         df = population.props  # a shortcut to the data-frame storing data for individuals
@@ -247,27 +246,21 @@ class Epilepsy(Module):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-
         logger.debug(
             'This is Epilepsy, being alerted about a health system interaction person %d for: %s',
             person_id,
             treatment_id,
         )
 
-        pass
-
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-
         logger.debug('This is Epilepsy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-
         disability_series_for_alive_persons = df.loc[df['is_alive'], 'ep_disability']
-
         return disability_series_for_alive_persons
 
 
@@ -315,7 +308,6 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         :param population: the current population
         """
-
         df = population.props
 
         # Declaration of how we will refer to any treatments that are related to this disease.
