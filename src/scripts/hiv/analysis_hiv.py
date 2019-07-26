@@ -14,9 +14,7 @@ from tlo.methods import (
 )
 
 # Where will output go
-# outputpath = './src/scripts/outputLogs/'
-# TODO; NB that outputlogs is not a part of the directory structure in the git repo, so address here will fail.
-outputpath = ''
+outputpath = './src/scripts/hiv/'
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
