@@ -325,21 +325,21 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0') & (df.age_years >= 20)]
 
         eff_prob_epilepsy = pd.Series(
-            self.base_3m_prob_epilepsy, index=df.index[df.is_alive & (df.ep_seiz_stat == '0')]
+            self.base_3m_prob_epilepsy, index=alive_seiz_stat_0_idx
         )
         eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '0')],
+            index=alive_seiz_stat_0_idx
         )
         random_draw_02 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '0')],
+            index=alive_seiz_stat_0_idx
         )
 
         series_prop_inc_epilepsy_seiz_freq = pd.Series(
-            self.prop_inc_epilepsy_seiz_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '0')]
+            self.prop_inc_epilepsy_seiz_freq, index=alive_seiz_stat_0_idx
         )
 
         df_incident_epilepsy = pd.concat(
@@ -388,12 +388,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
 
         eff_prob_seiz_stat_2 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_none, index=df.index[df.is_alive & (df.ep_seiz_stat == '1')]
+            self.base_prob_3m_seiz_stat_infreq_none, index=alive_seiz_stat_1_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_1_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '1')],
+            index=alive_seiz_stat_1_idx
         )
 
         dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
@@ -409,12 +409,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
 
         eff_prob_seiz_stat_1 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_none, index=df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+            self.base_prob_3m_seiz_stat_infreq_none, index=alive_seiz_stat_2_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '2')],
+            index=alive_seiz_stat_2_idx
         )
 
         dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
@@ -427,15 +427,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # transition from ep_seiz_stat 2 to 3
 
-        alive_seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-
         eff_prob_seiz_stat_3 = pd.Series(
-            self.base_prob_3m_seiz_stat_freq_infreq, index=df.index[df.is_alive & (df.ep_seiz_stat == '2')]
+            self.base_prob_3m_seiz_stat_freq_infreq, index=alive_seiz_stat_2_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '2')],
+            index=alive_seiz_stat_2_idx
         )
 
         dfx = pd.concat([eff_prob_seiz_stat_3, random_draw_01], axis=1)
@@ -451,12 +449,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
 
         eff_prob_seiz_stat_1 = pd.Series(
-            self.base_prob_3m_seiz_stat_none_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+            self.base_prob_3m_seiz_stat_none_freq, index=alive_seiz_stat_3_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '3')],
+            index=alive_seiz_stat_3_idx
         )
 
         dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
@@ -469,15 +467,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # transition from ep_seiz_stat 3 to 2
 
-        alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-
         eff_prob_seiz_stat_2 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_freq, index=df.index[df.is_alive & (df.ep_seiz_stat == '3')]
+            self.base_prob_3m_seiz_stat_infreq_freq, index=alive_seiz_stat_3_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '3')],
+            index=alive_seiz_stat_3_idx
         )
 
         dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
@@ -494,13 +490,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
 
         eff_prob_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
+            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_2_not_antiep_idx
         )
         eff_prob_antiep *= self.rr_antiepileptic_seiz_infreq
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep],
+            index=alive_seiz_stat_2_not_antiep_idx
         )
 
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
@@ -515,12 +511,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
 
         eff_prob_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
+            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_3_not_antiep_idx
         )
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep],
+            index=alive_seiz_stat_3_not_antiep_idx
         )
 
         dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
@@ -554,13 +550,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_stop_antiep = pd.Series(
             self.base_prob_3m_antiepileptic,
-            index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep],
+            index=alive_seiz_stat_2_or_3_antiep_idx
         )
         eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_antiep_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep],
+            index=alive_seiz_stat_2_or_3_antiep_idx
         )
 
         dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
@@ -576,13 +572,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
 
         eff_prob_stop_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_1_antiep_idx
         )
         eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(alive_seiz_stat_1_antiep_idx)),
-            index=df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep],
+            index=alive_seiz_stat_1_antiep_idx
         )
 
         dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
