@@ -60,7 +60,8 @@ class Depression(Module):
         ),
         'base_3m_prob_depr': Parameter(
             Types.REAL,
-            'base probability of depression over a 3 month period if male, wealth123, no chronic condition, never previously depressed',
+            'base probability of depression over a 3 month period if male, wealth123, '
+            'no chronic condition, never previously depressed',
         ),
         'rr_depr_wealth45': Parameter(Types.REAL, 'Relative rate of depression when in wealth level 4 or 5'),
         'rr_depr_cc': Parameter(Types.REAL, 'Relative rate of depression associated with chronic disease'),
@@ -98,17 +99,6 @@ class Depression(Module):
             Types.REAL, 'daly_wt_moderate_episode_major_depressive_disorder ' '- code 933'
         ),
     }
-
-    """
-        above is extracted from this below, which comes from daly weight file
-    
-        932,"Major depressive disorder, severe episode","has overwhelming, constant sadness and cannot function in daily life. The person sometimes loses touch with reality and wants to harm or kill himself (or herself).",0.658,0.477,0.807
-        933,"Major depressive disorder, moderate episode","has constant sadness and has lost interest in usual activities. The person has some difficulty in daily life, sleeps badly, has trouble concentrating, and sometimes thinks about harming himself (or herself).",0.396,0.267,0.531
-        935,"Major depressive disorder, mild episode","feels persistent sadness and has lost interest in usual activities. The person sometimes sleeps badly, feels tired, or has trouble concentrating but still manages to function in daily life with extra effort.",0.145,0.099,0.209
-        943,Severe anxiety disorders,"Anxiety disorders, severe","constantly feels very anxious and worried, which makes it difficult to concentrate, remember things and sleep. The person has lost pleasure in life and thinks about suicide. ",0.523,0.362,0.677
-        942,Moderate anxiety disorders,"Anxiety disorders, moderate","feels anxious and worried, which makes it difficult to concentrate, remember things, and sleep. The person tires easily and finds it difficult to perform daily activities.",0.133,0.091,0.186
-        944,Mild anxiety disorders,"Anxiety disorders, mild","feels mildly anxious and worried, which makes it slightly difficult to concentrate, remember things, and sleep. The person tires easily but is able to perform daily activities.",0.03,0.018,0.046     
-    """
 
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
@@ -255,7 +245,8 @@ class Depression(Module):
         curr_depr_index = df.index[df.de_depr & df.is_alive]
         df.loc[curr_depr_index, 'de_ever_depr'] = True
 
-        # todo: find a way to use depr_resolution_rates parameter list for resol rates rather than list 0.2, 0.3, 0.5, 0.7, 0.95]
+        # todo: find a way to use depr_resolution_rates parameter list for resol rates rather than
+        # list 0.2, 0.3, 0.5, 0.7, 0.95]
 
         df.loc[curr_depr_index, 'de_prob_3m_resol_depression'] = np.random.choice(
             [0.2, 0.3, 0.5, 0.7, 0.95], size=len(curr_depr_index), p=[0.2, 0.2, 0.2, 0.2, 0.2]
@@ -339,7 +330,7 @@ class Depression(Module):
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
-        disability_series_for_alive_persons = df.loc[df['is_alive'], 'de_disability']
+        disability_series_for_alive_persons = df.loc[df.is_alive, 'de_disability']
 
         return disability_series_for_alive_persons
 
@@ -362,31 +353,30 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))
+        p = module.parameters
 
-        self.base_3m_prob_depr = module.parameters['base_3m_prob_depr']
-        self.rr_depr_wealth45 = module.parameters['rr_depr_wealth45']
-        self.rr_depr_cc = module.parameters['rr_depr_cc']
-        self.rr_depr_pregnancy = module.parameters['rr_depr_pregnancy']
-        self.rr_depr_female = module.parameters['rr_depr_female']
-        self.rr_depr_prev_epis = module.parameters['rr_depr_prev_epis']
-        self.rr_depr_on_antidepr = module.parameters['rr_depr_on_antidepr']
-        self.rr_depr_age1519 = module.parameters['rr_depr_age1519']
-        self.rr_depr_agege60 = module.parameters['rr_depr_agege60']
-        self.depr_resolution_rates = module.parameters['depr_resolution_rates']
-        self.rr_resol_depr_cc = module.parameters['rr_resol_depr_cc']
-        self.rr_resol_depr_on_antidepr = module.parameters['rr_resol_depr_on_antidepr']
-        self.rate_init_antidep = module.parameters['rate_init_antidep']
-        self.rate_stop_antidepr = module.parameters['rate_stop_antidepr']
-        self.rate_default_antidepr = module.parameters['rate_default_antidepr']
-        self.prob_3m_suicide_depr_m = module.parameters['prob_3m_suicide_depr_m']
-        self.rr_suicide_depr_f = module.parameters['rr_suicide_depr_f']
-        self.prob_3m_selfharm_depr = module.parameters['prob_3m_selfharm_depr']
-        self.daly_wt_moderate_episode_major_depressive_disorder = module.parameters[
-            'daly_wt_moderate_episode_major_depressive_disorder'
-        ]
-        self.daly_wt_severe_episode_major_depressive_disorder = module.parameters[
-            'daly_wt_severe_episode_major_depressive_disorder'
-        ]
+        self.base_3m_prob_depr = p['base_3m_prob_depr']
+        self.rr_depr_wealth45 = p['rr_depr_wealth45']
+        self.rr_depr_cc = p['rr_depr_cc']
+        self.rr_depr_pregnancy = p['rr_depr_pregnancy']
+        self.rr_depr_female = p['rr_depr_female']
+        self.rr_depr_prev_epis = p['rr_depr_prev_epis']
+        self.rr_depr_on_antidepr = p['rr_depr_on_antidepr']
+        self.rr_depr_age1519 = p['rr_depr_age1519']
+        self.rr_depr_agege60 = p['rr_depr_agege60']
+        self.depr_resolution_rates = p['depr_resolution_rates']
+        self.rr_resol_depr_cc = p['rr_resol_depr_cc']
+        self.rr_resol_depr_on_antidepr = p['rr_resol_depr_on_antidepr']
+        self.rate_init_antidep = p['rate_init_antidep']
+        self.rate_stop_antidepr = p['rate_stop_antidepr']
+        self.rate_default_antidepr = p['rate_default_antidepr']
+        self.prob_3m_suicide_depr_m = p['prob_3m_suicide_depr_m']
+        self.rr_suicide_depr_f = p['rr_suicide_depr_f']
+        self.prob_3m_selfharm_depr = p['prob_3m_selfharm_depr']
+        self.daly_wt_moderate_episode_major_depressive_disorder = p[
+            'daly_wt_moderate_episode_major_depressive_disorder']
+        self.daly_wt_severe_episode_major_depressive_disorder = p[
+            'daly_wt_severe_episode_major_depressive_disorder']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -569,7 +559,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         # disability
         depr_idx = df.index[df.is_alive & df.de_depr]
 
-        # note this a call made about which disability weight to map to the 'moderate/severe' depression defined in the model
+        # note this a call made about which disability weight to map to the 'moderate/severe'
+        # depression defined in the model
         df.loc[depr_idx, 'de_disability'] = self.daly_wt_moderate_episode_major_depressive_disorder
 
         # self harm and suicide
@@ -587,7 +578,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
         df.loc[curr_depr_idx, 'de_suicide'] = eff_prob_suicide > random_draw
 
-        suicide_idx = df.index[df.de_suicide]
+        # suicide_idx = df.index[df.de_suicide]
 
         death_this_period = df.index[df.de_suicide]
         for individual_id in death_this_period:
@@ -676,7 +667,7 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         suicides_this_3m = (df.de_suicide).sum()
         self_harm_events_this_3m = (df.de_non_fatal_self_harm_event).sum()
 
-        prop_depr = n_depr / n_ge15
+        # prop_depr = n_depr / n_ge15
         prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
         prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
         prop_depr_ge45 = n_depr_ge45 / n_ge45
