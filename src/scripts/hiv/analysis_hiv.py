@@ -123,6 +123,31 @@ plt.legend(['Other','HIV', 'TB'], loc='upper left')
 plt.show()
 
 
+# ------------------------------ PLOT HIV BY AGE ----------------------------------------------------
+hiv_df = output['tlo.methods.hiv']['adult_prev_m']
+hiv_df['date'] = pd.to_datetime(hiv_df['date'])
+hiv_df['year'] = hiv_df['date'].dt.year
+
+# select ages 15-55
+hiv_df2 = hiv_df.iloc[:,4:12]
+prev_df=pd.concat([hiv_df.loc[:, 'year'], hiv_df2], axis=1)
+
+plt.plot(prev_df.year, prev_df.iloc[:,1])
+plt.plot(prev_df.year, prev_df.iloc[:,2])
+plt.plot(prev_df.year, prev_df.iloc[:,3])
+plt.plot(prev_df.year, prev_df.iloc[:,4])
+
+plt.xlabel('Year')
+plt.ylabel('Prevalence')
+plt.title('HIV prevalence by age')
+
+# Create legend & Show graphic
+plt.legend(['15-19','20-24', '25-29'], loc='upper left')
+plt.show()
+
+
+
+
 
 # TODO: Maybe add some graphs here to demonstrate the results? For example....
 # %% Demonstrate the HIV epidemic and it's impact on the population
