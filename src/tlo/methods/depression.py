@@ -195,7 +195,7 @@ class Depression(Module):
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive]
 
-        eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=df.index[df.age_years >= 15])
+        eff_prob_depression = pd.Series(self.init_pr_depr_m_age1519_no_cc_wealth123, index=age_ge15_idx)
         eff_prob_depression.loc[cc_idx] *= self.init_rp_depr_cc
         eff_prob_depression.loc[age_2059_idx] *= self.init_rp_depr_age2059
         eff_prob_depression.loc[age_ge60_idx] *= self.init_rp_depr_agege60
@@ -209,10 +209,10 @@ class Depression(Module):
         f_index = df.index[(df.sex == 'F') & df.is_alive & (df.age_years >= 15)]
         m_index = df.index[(df.sex == 'M') & df.is_alive & (df.age_years >= 15)]
 
-        eff_prob_ever_depr = pd.Series(1, index=df.index[df.age_years >= 15])
+        eff_prob_ever_depr = pd.Series(1, index=age_ge15_idx)
 
-        eff_prob_ever_depr.loc[f_index] = df.age_years * self.init_rp_ever_depr_per_year_older_f
-        eff_prob_ever_depr.loc[m_index] = df.age_years * self.init_rp_ever_depr_per_year_older_m
+        eff_prob_ever_depr.loc[f_index] = df.loc[f_index, 'age_years'] * self.init_rp_ever_depr_per_year_older_f
+        eff_prob_ever_depr.loc[m_index] = df.loc[m_index, 'age_years'] * self.init_rp_ever_depr_per_year_older_m
 
         random_draw = self.rng.random_sample(size=len(age_ge15_idx))
         df.loc[age_ge15_idx, 'de_ever_depr'] = eff_prob_ever_depr > random_draw
@@ -299,6 +299,10 @@ class Depression(Module):
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
         df.at[child_id, 'de_disability'] = 0
 
+        # todo - this to be removed when defined in other modules
+        df.at[child_id, 'de_cc'] = False
+        df.at[child_id, 'de_wealth'] = 4
+
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
         # All modules refresh the symptomology of persons at this time
@@ -307,31 +311,25 @@ class Depression(Module):
 
         # Map the specific symptoms for this disease onto the unified coding scheme
         df = self.sim.population.props  # shortcut to population properties dataframe
-
         return pd.Series('1', index=df.index[df.is_alive])
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
-
         logger.debug(
             'This is Depression, being alerted about a health system interaction ' 'person %d for: %s',
             person_id,
             treatment_id,
         )
-        pass
 
     def report_daly_values(self):
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past month
-
         #       logger.debug('This is Depression reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
-
         disability_series_for_alive_persons = df.loc[df.is_alive, 'de_disability']
-
         return disability_series_for_alive_persons
 
 
@@ -406,7 +404,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         on_antidepr_idx = df.index[df.de_on_antidepr & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
 
         eff_prob_newly_depr = pd.Series(
-            self.base_3m_prob_depr, index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
+            self.base_3m_prob_depr, index=ge15_not_depr_idx
         )
         eff_prob_newly_depr.loc[cc_ge15_idx] *= self.rr_depr_cc
         eff_prob_newly_depr.loc[age_1519_idx] *= self.rr_depr_age1519
@@ -419,7 +417,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw_01 = pd.Series(
             self.module.rng.random_sample(size=len(ge15_not_depr_idx)),
-            index=df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive],
+            index=ge15_not_depr_idx
         )
 
         dfx = pd.concat([eff_prob_newly_depr, random_draw_01], axis=1)
@@ -445,12 +443,12 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
 
         eff_prob_antidepressants = pd.Series(
-            self.rate_init_antidep, index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
+            self.rate_init_antidep, index=depr_not_on_antidepr_idx
         )
 
         random_draw = pd.Series(
             self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
-            index=df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr],
+            index=depr_not_on_antidepr_idx
         )
 
         dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
@@ -481,12 +479,12 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         on_antidepr_currently_depr_idx = df.index[df.is_alive & df.de_depr & df.de_on_antidepr]
 
         eff_prob_default_antidepr = pd.Series(
-            self.rate_default_antidepr, index=df.index[df.is_alive & df.de_depr & df.de_on_antidepr]
+            self.rate_default_antidepr, index=on_antidepr_currently_depr_idx
         )
 
         random_draw = pd.Series(
             self.module.rng.random_sample(size=len(on_antidepr_currently_depr_idx)),
-            index=df.index[df.is_alive & df.de_depr & df.de_on_antidepr],
+            index=on_antidepr_currently_depr_idx
         )
 
         dfx = pd.concat([eff_prob_default_antidepr, random_draw], axis=1)
@@ -502,12 +500,12 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         on_antidepr_not_depr_idx = df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr]
 
         eff_prob_stop_antidepr = pd.Series(
-            self.rate_stop_antidepr, index=df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr]
+            self.rate_stop_antidepr, index=on_antidepr_not_depr_idx
         )
 
         random_draw = pd.Series(
             self.module.rng.random_sample(size=len(on_antidepr_not_depr_idx)),
-            index=df.index[df.is_alive & ~df.de_depr & df.de_on_antidepr],
+            index=on_antidepr_not_depr_idx
         )
 
         dfx = pd.concat([eff_prob_stop_antidepr, random_draw], axis=1)
@@ -531,7 +529,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
 
         random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(depr_idx)), index=df.index[df.de_depr & df.is_alive]
+            self.module.rng.random_sample(size=len(depr_idx)),
+            index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
         )
 
         dfx = pd.concat([eff_prob_depr_resolved, random_draw_01], axis=1)
@@ -695,7 +694,6 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
 
-
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
+        #       logger.info('%s|person_one|%s',
+        #                    self.sim.date,
+        #                    df.loc[0].to_dict())
