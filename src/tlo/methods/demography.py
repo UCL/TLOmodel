@@ -292,7 +292,7 @@ class Demography(Module):
                         'mother_age': df.at[mother_id, 'age_years']
                     })
         # Log only live births:
-        if ~df.at[child_id,'la_still_birth_this_delivery']:
+        if ~df.at[child_id,'la_still_birth_current_pregnancy']:
             logger.info('%s|live_births|%s',
                         self.sim.date,
                     {
@@ -382,59 +382,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
             self.sim.schedule_event(labour.CheckIfNewlyPregnantWomanWillMiscarry(self.sim.modules['Labour'], female_id,
                                                                                  cause='miscarriage event'), self.sim.date)
-
-
-#            logger.debug('birth booked for: %s', date_of_birth) # EDIT
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-class DelayedBirthEvent(Event, IndividualScopeEventMixin):
-    """A one-off event in which a pregnant mother gives birth.
-    """
-
-    def __init__(self, module, mother_id):
-        """Create a new birth event.
-
-        We need to pass the person this event happens to to the base class constructor
-        using super(). We also pass the module that created this event, so that random
-        number generators can be scoped per-module.
-
-        :param module: the module that created this event
-        :param mother_id: the person giving birth
-        """
-        super().__init__(module, person_id=mother_id)
-
-    def apply(self, mother_id):
-        """Apply this event to the given person.
-        Assuming the person is still alive, we ask the simulation to create a new offspring.
-        :param mother_id: the person the event happens to, i.e. the mother giving birth
-        """
-
-        logger.debug('@@@@ A Birth is now occuring, to mother %s', mother_id)
-
-        df = self.sim.population.props
-
-        # If the mother is alive and still pregnant
-        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
-            self.sim.do_birth(mother_id)
-            df.at[mother_id, 'la_parity'] += 1  # Parity includes still birth? will this run
-
-            self.sim.schedule_event(labour.PostpartumLabourEvent(self.sim.modules['Labour'], mother_id,
-                                                                 cause='postpartum'), self.sim.date)
-
-        # Need to schedule PostPartumCaesarean event for women who had a CS
-
-        # If the mother has died during childbirth the child is still generated with is_alive=false to monitor
-        # stillbirth
-
-        if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] == True & df.at[mother_id,
-                                                                                           'la_died_in_labour'] == True:
-            self.sim.do_birth(mother_id)
-
-        # Those women who survive labour move into the immediate postpartum period and are scheduled to enter to post-
-         # partum phase of labour where possible complications can act.
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!  currently DelayedBirthEvent has no function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):

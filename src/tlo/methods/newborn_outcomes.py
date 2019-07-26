@@ -7,7 +7,7 @@ import numpy as np
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
-from tlo.methods import demography, eclampsia_treatment, sepsis_treatment, labour, newborn_outcomes
+from tlo.methods import demography, labour, newborn_outcomes
 
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,8 @@ class NewbornOutcomes(Module):
     """
 
     PARAMETERS = {
+        'base_incidence_low_birth_weight': Parameter(
+            Types.REAL, 'baseline incidence of low birth weight for newborns'),
         'prob_cba': Parameter(
             Types.REAL, 'baseline probability of a child being born with a congenital anomaly'),
         'prob_neonatal_sepsis': Parameter(
@@ -28,6 +30,8 @@ class NewbornOutcomes(Module):
             Types.REAL, 'baseline probability of a child developing neonatal encephalopathy following delivery'),
         'prob_ptb_comps': Parameter(
             Types.REAL, 'baseline probability of a child developing complications associated with pre-term birth'),
+        'prob_low_birth_weight': Parameter(
+            Types.REAL, 'baseline probability of a child being born low birth weight'),
         'cfr_cba': Parameter(
             Types.REAL, 'case fatality rate for a newborn with a congenital birth anomaly'),
         'cfr_neonatal_sepsis': Parameter(
@@ -46,13 +50,16 @@ class NewbornOutcomes(Module):
         'nb_neonatal_enchep': Property(Types.BOOL, 'this child has developed neonatal encephalopathy secondary to '
                                                    'intrapartum related complications'),
         'nb_ptb_comps': Property(Types.BOOL, 'this child has developed complications associated with pre-term birth'),
+        'nb_low_birth_weight': Property(Types.BOOL, 'this child has been born weighing <= 2.5kg'),
         'nb_death_after_birth': Property(Types.BOOL, 'this child has died following complications after birth')
     }
+
 
     def read_parameters(self, data_folder):
 
         params = self.parameters
 
+        params['base_incidence_low_birth_weight'] = 0.12 #dummy
         params['prob_cba'] = 0.1  # DUMMY
         params['prob_neonatal_sepsis'] = 0.15  # DUMMY
         params['prob_neonatal_enceph'] = 0.16  # DUMMY
@@ -74,6 +81,7 @@ class NewbornOutcomes(Module):
         df['nb_neonatal_sepsis'] = False
         df['nb_neonatal_enchep'] = False
         df['nb_ptb_comps'] = False
+        df['nb_low_birth_weight'] = False
         df['nb_death_after_birth'] = False
 
     def initialise_simulation(self, sim):
@@ -84,6 +92,7 @@ class NewbornOutcomes(Module):
     def on_birth(self, mother_id, child_id):
 
         df = self.sim.population.props
+        mni = self.sim.modules['Labour'].mother_and_newborn_info
 
         df.at[child_id,'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
@@ -91,19 +100,22 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_neonatal_sepsis'] = False
         df.at[child_id, 'nb_neonatal_enchep'] = False
         df.at[child_id, 'nb_ptb_comps'] = False
+        df.at[child_id, 'nb_low_birth_weight'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
 
         # Newborns delivered at less than 37 weeks are allocated as either late or early preterm based on the
         # gestation at labour
-        if df.at[mother_id, 'la_labour'] == 'early_preterm_labour':
+        #if df.at[mother_id, 'la_labour'] == 'early_preterm_labour':
+        if mni[mother_id]['labour_state'] == 'EPTL':
             df.at[child_id, 'nb_early_preterm'] = True
-        elif df.at[mother_id, 'la_labour'] == 'late_preterm_labour':
+        #elif df.at[mother_id, 'la_labour'] == 'late_preterm_labour':
+        elif mni[mother_id]['labour_state']== 'LPTL':
             df.at[child_id, 'nb_late_preterm'] = True
         else:
             df.at[child_id, 'nb_early_preterm'] = False
             df.at[child_id, 'nb_late_preterm'] = False
 
-        if df.at[child_id, 'is_alive'] & ~df.at[mother_id, 'la_still_birth_this_delivery']:
+        if df.at[child_id, 'is_alive'] & ~mni[mother_id]['stillbirth_in_labour']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                             cause='newborn outcomes event'), self.sim.date)
 
@@ -111,13 +123,32 @@ class NewbornOutcomes(Module):
 class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
     """ This event determines if , following delivery, a newborn has experienced any complications """
-    def __init__(self, module, individual_id, cause):
+    def __init__(self, module, individual_id,cause):
         super().__init__(module, person_id=individual_id)
 
     def apply(self, individual_id):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+
+    # ===================================== LOW BIRTH-WEIGHT STATUS ==================================================
+        # Here we determine if a newly born neonate will be of low birth weight
+
+        # Birth order, mother weight, mother height, mother education and family wealth - Guassian coefficients-
+        # not risks.
+        rf1 = 1
+      #  rf2 = 1
+        risk_factors = rf1#'*rf2
+        eff_prob_lbw = risk_factors * params['base_incidence_low_birth_weight']
+        random = self.sim.rng.random_sample(size=1)
+        if random < eff_prob_lbw:
+            df.at[individual_id, 'nb_low_birth_weight'] = True
+
+    # ===================================== CONGENITAL ANOMALY ======================================================
+
+        # ?? Will we determine congential anomaly antenatally (there will be a risk associated with still birth) so we
+        # wouldnt need to apply a risk here because its predtermined
+
 
     # =================================== COMPLICATIONS IN PRETERM INFANTS ============================================
 
@@ -126,12 +157,6 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         #  gestational age at delivery
 
         if df.at[individual_id, 'nb_early_preterm'] or df.at[individual_id,'nb_late_preterm']:
-            rf1 = 1
-            riskfactors = rf1
-            eff_prob_cba = riskfactors * params['prob_cba']
-            random = self.sim.rng.random_sample(size=1)
-            if random < eff_prob_cba:
-                df.at[individual_id, 'nb_congenital_anomaly'] = True
 
             rf1 = 1
             riskfactors = rf1
@@ -155,12 +180,6 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'nb_ptb_comps'] = True
 
         if ~df.at[individual_id, 'nb_early_preterm'] & ~df.at[individual_id, 'nb_late_preterm']:
-            rf1 = 1
-            riskfactors = rf1
-            eff_prob_cba = riskfactors * params['prob_cba']
-            random = self.sim.rng.random_sample(size=1)
-            if random < eff_prob_cba:
-                df.at[individual_id, 'nb_congenital_anomaly'] = True
 
             rf1 = 1
             riskfactors = rf1
@@ -227,6 +246,12 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                                                                   cause="neonatal complications"), self.sim.date)
 
         #TODO: just confirm that you want all the deaths to happen on the same of birth
+
+
+
+
+
+
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
