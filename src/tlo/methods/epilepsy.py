@@ -166,7 +166,7 @@ class Epilepsy(Module):
         p = self.parameters
         rng = self.rng
 
-        df['ep_seiz_stat'] = '0'
+        df['ep_seiz_stat'].values[:] = '0'
         df['ep_antiep'] = False
         df['ep_epi_death'] = False
         df['ep_disability'] = 0
