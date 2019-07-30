@@ -1078,7 +1078,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
                 logger.info('This is LabourEvent scheduling a birth on date %s'
                              ' to mother %d',due_date, individual_id)
-                self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=2))
+                self.sim.schedule_event(BirthEvent(self.module, individual_id), due_date + DateOffset(days=3))
 
         # We schedule all women to move through the death event where those who have developed a complication that
         # hasn't been treated or treatment has failed will have a case fatality rate applied
@@ -1174,12 +1174,13 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['delivery_setting'] == 'FD':
                 mni[individual_id]['risk_sepsis'] = eff_prob_pn_sepsis
 
-            random = self.sim.rng.random_sample(size=1)
-            if random < eff_prob_pn_sepsis:
-                df.at[individual_id, 'la_sepsis'] = True
-                mni[individual_id]['sepsis'] = True
-                mni[individual_id]['timing_sepsis'] = 'PP'
-                logger.info('person %d is experiencing postpartum maternal sepsis in the community on date %s',
+            else:
+                random = self.sim.rng.random_sample(size=1)
+                if random < eff_prob_pn_sepsis:
+                    df.at[individual_id, 'la_sepsis'] = True
+                    mni[individual_id]['sepsis'] = True
+                    mni[individual_id]['timing_sepsis'] = 'PP'
+                    logger.info('person %d is experiencing postpartum maternal sepsis in the community on date %s',
                             individual_id, self.sim.date)
 
 # ============================================= RISK OF ECLAMPSIA ====================================================
@@ -1227,7 +1228,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
             self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id, cause='labour'), self.sim.date)
             logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s', individual_id,
-                         self.sim.date + DateOffset(days=2))  # Date offsetted to allow for interventions
+                         self.sim.date + DateOffset(days=3))  # Date offsetted to allow for interventions
 
 #  =============================================== RESET LABOUR STATUS =================================================
 
@@ -1505,7 +1506,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         self.TREATMENT_ID = 'Labour_Attends_For_Delivery'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
+        self.ACCEPTED_FACILITY_LEVELS = ['*'] # [1, 2, 3]  # check this?
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
