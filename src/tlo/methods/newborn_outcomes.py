@@ -11,7 +11,7 @@ from tlo.methods import demography, labour, newborn_outcomes
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 class NewbornOutcomes(Module):
@@ -246,12 +246,6 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                                                                   cause="neonatal complications"), self.sim.date)
 
         #TODO: just confirm that you want all the deaths to happen on the same of birth
-
-
-
-
-
-
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
