@@ -50,6 +50,8 @@ class NewbornOutcomes(Module):
         'nb_neonatal_enchep': Property(Types.BOOL, 'this child has developed neonatal encephalopathy secondary to '
                                                    'intrapartum related complications'),
         'nb_ptb_comps': Property(Types.BOOL, 'this child has developed complications associated with pre-term birth'),
+        # Should this maybe be categorical with all the potential complications
+
         'nb_low_birth_weight': Property(Types.BOOL, 'this child has been born weighing <= 2.5kg'),
         'nb_death_after_birth': Property(Types.BOOL, 'this child has died following complications after birth')
     }
@@ -118,7 +120,7 @@ class NewbornOutcomes(Module):
         if mni[mother_id]['labour_state'] == 'EPTL':
             df.at[child_id, 'nb_early_preterm'] = True
 
-        elif mni[mother_id]['labour_state']== 'LPTL':
+        elif mni[mother_id]['labour_state'] == 'LPTL':
             df.at[child_id, 'nb_late_preterm'] = True
         else:
             df.at[child_id, 'nb_early_preterm'] = False
@@ -133,19 +135,19 @@ class NewbornOutcomes(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is NewbornOutcomes, being alerted about a health system interaction '
+        logger.info('This is NewbornOutcomes, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
- #   def report_daly_values(self):
+#   def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-  #      logger.debug('This is NewbornOutcomes reporting my health values')
+#        logger.debug('This is NewbornOutcomes reporting my health values')
 
-   #     df = self.sim.population.props  # shortcut to population properties dataframe
-    #    p = self.parameters
+#        df = self.sim.population.props  # shortcut to population properties dataframe
+#        p = self.parameters
 
 #        health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
 #            'none': 0,
@@ -332,7 +334,8 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
 
     def apply(self, person_id):
 
-        logger.debug('This is HSI_NewbornOutcomes_ReceivesCareFollowingDelivery,'
+
+        logger.info('This is HSI_NewbornOutcomes_ReceivesCareFollowingDelivery,'
                      '  person %d is receiving care from a skilled birth attendant following their birth',
                      person_id)
 
