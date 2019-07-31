@@ -37,9 +37,8 @@ def simulation():
     sim.register(newborn_outcomes.NewbornOutcomes())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
-
-#    TODO: activate health burden when sorted out DALY module
 #    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
     sim.seed_rngs(1)

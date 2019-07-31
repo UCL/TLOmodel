@@ -53,7 +53,17 @@ class Labour (Module):
                         'than 20 years'),
         'prob_ptl': Parameter (
             Types.REAL, 'probability of a woman entering labour at <37 weeks gestation'),
-        'rr_ptl_pptb': Parameter(
+        'prob_early_ptb': Parameter(
+            Types.REAL, 'probability of a woman going into preterm labour between 28-33 weeks gestation'),
+        'rr_early_ptb_age<20': Parameter(
+            Types.REAL, 'relative risk of early preterm labour for women younger than 20'),
+        'rr_early_ptb_prev_ptb': Parameter(
+            Types.REAL, 'relative risk of early preterm labour for women who have previously delivered preterm'),
+        'rr_early_ptb_anaemia': Parameter(
+            Types.REAL, 'relative risk of preterm labour for suffering from anaemia'),
+        'prob_late_ptb': Parameter(
+            Types.REAL, 'probability of a woman going into preterm labour between 33-36 weeks gestation'),
+        'rr_late_ptb_prev_ptb': Parameter(
             Types.REAL, 'relative risk of preterm labour for women younger than 20'),
         'prob_potl': Parameter(
             Types.REAL, 'probability of a woman entering labour at >42 weeks gestation'),
@@ -77,6 +87,8 @@ class Labour (Module):
             Types.REAL, 'relative risk of antepartum haemorrhage for women with education of primary level or lower'),
         'rr_an_aph_pl_ol': Parameter(
             Types.REAL, 'relative risk of antepartum haemorrhage following obstructed labour'),
+        'cfr_obstructed_labour': Parameter(
+            Types.REAL, 'case fatality rate for obstructed labour'),
         'cfr_aph': Parameter(
             Types.REAL, 'case fatality rate for antepartum haemorrhage during labour'),
         'cfr_eclampsia': Parameter(
@@ -85,6 +97,10 @@ class Labour (Module):
             Types.REAL, 'case fatality rate for sepsis during labour'),
         'cfr_uterine_rupture': Parameter(
             Types.REAL, 'case fatality rate for uterine rupture in labour'),
+        'prob_still_birth_obstructed_labour': Parameter(
+            Types.REAL, 'probability of a still birth following obstructed labour where the mother survives'),
+        'prob_still_birth_obstructed_labour_md': Parameter(
+            Types.REAL, 'probability of a still birth following obstructed labour where the mother dies'),
         'prob_still_birth_aph': Parameter(
             Types.REAL, 'probability of a still birth following antepartum haemorrhage where the mother survives'),
         'prob_still_birth_aph_md': Parameter(
@@ -232,18 +248,24 @@ class Labour (Module):
         params['rr_miscarriage_35'] = 4.02
         params['rr_miscarriage_3134'] = 2.13
         params['rr_miscarriage_grav4'] = 0.49
-        params['prob_pl_ol'] = 1 # 0.058
+        params['prob_pl_ol'] =  0.058
         params['rr_PL_OL_nuliparity'] = 1.47
         params['rr_PL_OL_para1'] = 1.57
         params['rr_PL_OL_age_less20'] = 1.3
         params['prob_ptl'] = 0.09
+        params['prob_early_ptb'] = 0.011  # rough calc - should use 2014 global estimates?
+        params['rr_early_ptb_age<20'] = 1.73
+        params['rr_early_ptb_prev_ptb'] = 2.63
+        params['rr_early_ptb_anaemia'] = 1.95
+        params['prob_late_ptb'] = 0.11  # rough calc - should use 2014 global estimates?
+        params['rr_late_ptb_prev_ptb'] = 2.07
         params['rr_ptl_pptb'] = 2.13
         params['prob_potl'] = 0.032  # (incidence 32/1000 LBs)
-        params['prob_an_eclampsia'] = 1 #  0.01
-        params['prob_an_aph'] = 1 # 0.012
-        params['prob_an_sepsis'] =1 # 0.005
+        params['prob_an_eclampsia'] = 0.01
+        params['prob_an_aph'] = 0.012
+        params['prob_an_sepsis'] =0.005
         params['rr_an_sepsis_pl_ol'] = 3.4
-        params['prob_an_ur'] = 1 #0.001
+        params['prob_an_ur'] = 0.001
         params['rr_an_ur_grand_multip'] = 7.57
         params['rr_an_ur_prevcs'] = 2.02
         params['rr_an_ur_ref_ol'] = 23.65  # REVIEW "obstructed but not referred"
@@ -253,10 +275,13 @@ class Labour (Module):
         params['rr_an_sepsis_anc_4'] = 0.5
         params['rr_an_aph_noedu'] = 1.72
         params['rr_an_aph_pl_ol'] = 9.1
+        params['cfr_obstructed_labour'] = 0.02 # dummy
         params['cfr_aph'] = 0.02
         params['cfr_eclampsia'] = 0.184
         params['cfr_sepsis'] = 0.33
         params['cfr_uterine_rupture'] = 0.345
+        params['prob_still_obstructed_labour'] = 0.38  # dummy
+        params['prob_still_birth_obstructed_labour_md'] = 0.90  # dummy
         params['prob_still_birth_aph'] = 0.38
         params['prob_still_birth_aph_md'] = 0.90
         params['prob_still_birth_sepsis'] = 0.25
@@ -301,11 +326,11 @@ class Labour (Module):
         # Here we will include DALY weights if applicable...
 
         if 'HealthBurden' in self.sim.modules.keys():
-            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(339)
-            params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(338)
-            params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(340)
-            params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(347)
-            params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(348)
+            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
+            params['daly_wt_haemorrhage_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=338)
+            params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
+            params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=347)
+            params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
 
         # TODO: determine DALY weights for uterine rupture?
 
@@ -386,7 +411,7 @@ class Labour (Module):
         # or term labour
 
         # First we apply the risk of preterm birth to these women
-        non_term_women = dfx.index[dfx.gestational_age_in_weeks <36]
+        non_term_women = dfx.index[dfx.gestational_age_in_weeks < 36]
         eff_prob_ptl = pd.Series(params['prob_ptl'], index=non_term_women)
         random_draw = pd.Series(rng.random_sample(size=len(non_term_women)),
                                 index=non_term_women)
@@ -396,9 +421,11 @@ class Labour (Module):
         idx_ptb = dfx.index[dfx.eff_prob_ptl > dfx.random_draw]
         idx_no_ptb = dfx.index[dfx.eff_prob_ptl < dfx.random_draw]
 
+        # Todo: consider if we should apply risk factors to women at baseline (anaemia and age)
+
         # For those who will be preterm we then determine if this will be early (24-33 weeks) or late (34-36)
         random = pd.Series(self.rng.choice(('late', 'early'), p=[0.752, 0.248], size=len(idx_ptb)), index=idx_ptb)
-        conception=pd.Series(df.date_of_last_pregnancy, index=idx_ptb)
+        conception = pd.Series(df.date_of_last_pregnancy, index=idx_ptb)
         dfx = pd.concat((conception, random), axis=1)
         dfx.columns = ['conception', 'random']
 
@@ -614,28 +641,66 @@ class Labour (Module):
         logger.info('This is Labour, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    # TODO: carry on with this...
-
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
+        # TODO: Issues 1.) DALYS are hard coded 2.) how will monthly sum of DALYS work for labour comps
+
         logger.info('This is Labour reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
         p = self.parameters
 
-#        health_values = df.loc[df.is_alive, 'mi_specific_symptoms'].map({
-#            'none': 0,
-#            'mild sneezing': p['daly_wt_mild_sneezing'],
-#            'coughing and irritable': p['daly_wt_coughing'],
-#            'extreme emergency': p['daly_wt_advanced']
-#        })
-#        health_values.name = 'Mockitis Symptoms'    # label the cause of this disability
+        health_values_1 = df.loc[df.is_alive, 'la_obstructed_labour'].map(
+            {
+                False: 0,
+                True: 0.324  # self.parameters['daly_wt_obstructed_labour']
+            })
+        health_values_1.name = 'Obstructed Labour'
 
-#        return health_values.loc[df.is_alive]   # returns the series
+        health_values_2 = df.loc[df.is_alive, 'la_eclampsia'].map(
+            {
+                False: 0,
+                True: 0.5  # (dummy) self.parameters['daly_wt_eclampsia']
+            })
+        health_values_2.name = 'Eclampsia'
+
+        health_values_3 = df.loc[df.is_alive, 'la_sepsis'].map(
+            {
+                False: 0,
+                True: 0.133  # self.parameters['daly_wt_maternal_sepsis']
+            })
+        health_values_3.name = 'Maternal Sepsis'
+
+        health_values_4 = df.loc[df.is_alive, 'la_aph'].map(  # todo: consider severity
+            {
+                False: 0,
+                True: 0.324  # self.parameters['daly_wt_haemorrhage_severe']
+            })
+        health_values_4.name = 'Antepartum Haemorrhage'
+
+        health_values_5 = df.loc[df.is_alive, 'la_pph'].map( # todo: consider severity
+            {
+                False: 0,
+                True: 0.324 # self.parameters['daly_wt_haemorrhage_severe']
+            })
+        health_values_5.name = 'Postpartum Haemorrhage'
+
+        health_values_6 = df.loc[df.is_alive, 'la_uterine_rupture'].map(  # todo: consider severity
+            {
+                False: 0,
+                True: 0.5  # (dummy) self.parameters['daly_wt_haemorrhage_severe']
+            })
+        health_values_6.name = 'Uterine Rupture'
+
+        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
+                                      health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive],
+                                      health_values_5.loc[df.is_alive], health_values_6.loc[df.is_alive]], axis=1)
+
+        return health_values_df  # return the dataframe
 
 
 class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
@@ -650,6 +715,7 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
+        # todo: should we code in twins/triplets (risk factors for ptb, bleeding etc)- should be in DHS
         # First we identify if this woman has any risk factors for early pregnancy loss
 
         if (df.at[individual_id, 'la_total_miscarriages'] >= 1) & (df.at[individual_id, 'age_years'] <= 30) & \
@@ -689,10 +755,12 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
         random = self.sim.rng.random_sample(size=1)
         if random < eff_prob_miscarriage:
 
-            # If a newly pregnant woman will miscarry her pregnancy, a random date within 20 weeks of conception is
+            # If a newly pregnant woman will miscarry her pregnancy, a random date within 24 weeks of conception is
             # generated, the date of miscarriage is scheduled for this day
+            # Todo: N.b malawi date of viability is 28 weeks, we using 24 as cut off to allow for very PTB.
+
             random_draw = self.sim.rng.exponential(scale=0.5, size=1)  # todo: finalise scale (check correct)
-            random_days = pd.to_timedelta(random_draw[0] * 140, unit='d')
+            random_days = pd.to_timedelta(random_draw[0] * 168, unit='d')
             miscarriage_date = self.sim.date + random_days
             df.at[individual_id, 'la_date_most_recent_miscarriage'] = miscarriage_date
 
@@ -718,62 +786,65 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         params = self.module.parameters
         m = self
 
-        # First we identify if this woman has any risk factors that predispose her to preterm labour
-        if df.at[individual_id, 'la_has_previously_delivered_preterm']:
-            rf1 = params['rr_ptl_pptb']
+        # First we determine this woman's risk of early preterm birth based on independent risk factors
+        if ~df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] <20):
+            rf1 = params['rr_early_ptb_age<20']
         else:
             rf1 = 1
 
-        # TODO: risk factor: Persistent Malaria (peripheral slide positive at booking and at 28–32 weeks) OR 1.93
-        #  (to confirm with tara if this is modelled)
+        if df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] > 20):
+            rf2 = params['rr_early_ptb_prev_ptb']
+        else:
+            rf2 = 1
 
-        # Next we multiply the baseline risk of preterm birth in the reference population who are absent of riskfactors
-        # by the product of the relative rates for any risk factors this mother may have
+        # todo: include anaemia
+
+        riskfactors = rf1 * rf2
+        if riskfactors == 1:
+            eff_prob_early_ptb = params['prob_early_ptb']
+        else:
+            eff_prob_early_ptb = riskfactors * params['prob_early_ptb']
+
+        # Then we determine her risk of late preterm birth based on independant risk factors
+        if df.at[individual_id, 'la_has_previously_delivered_preterm']:
+            rf1 = params['rr_late_ptb_prev_ptb']
+        else:
+            rf1 = 1
+
+        # todo: include persistant malaria
 
         riskfactors = rf1
-
         if riskfactors == 1:
-            eff_prob_ptl = params['prob_ptl']
+            eff_prob_late_ptb = params['prob_late_ptb']
         else:
-            eff_prob_ptl = riskfactors * params['prob_ptl']
+            eff_prob_late_ptb = riskfactors * params['prob_late_ptb']
 
-        # A random draw is used to determine if this woman will go into early preterm labour and she is randomly
-        # allocated a gestation of between 24 and 33 weeks at which time she will be scheduled to go into labour
-
-        # TODO: Apply risk factors for lateness/earliness of PTB
-        # TODO: review 2 papers on preterm epi to confirm what we have here (3 cats vs 2 cats)
-
+        # We then use a random draw to determine if the woman will go into preterm labour and how early she will deliver
         random = self.sim.rng.random_sample(size=1)
-        if random < eff_prob_ptl:
-            early_late = ['early', 'late']
-            # Here we apply the a probability that women will deliver early or late preterm
-            probabilities = [0.752, 0.248]
-            random_choice = self.sim.rng.choice(early_late, size=1, p=probabilities)
-            if random_choice == 'early':
-                random = np.random.randint(24, 33, size=1)
-                random = int(random)
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                  pd.Timedelta(random, unit='W')
-                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
-            else:
-                random = np.random.randint(34, 36, size=1)
-                random = int(random)
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
-                                                      pd.Timedelta(random, unit='W')
-                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+        if (random < eff_prob_late_ptb) & (random > eff_prob_early_ptb):
+            random = np.random.randint(34, 36, size=1)
+            random = int(random)
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                                    pd.Timedelta(random, unit='W')
+            due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
-        # If the woman will not go into preterm labour she is allocated a due date of between 37 and 44 weeks following
-        # conception
+        elif random < eff_prob_early_ptb:
+            random = np.random.randint(24, 33, size=1)
+            random = int(random)
+            df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                                    pd.Timedelta(random, unit='W')
+            due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
-        elif random > eff_prob_ptl:
+        # For women who will deliver after term we apply a risk of post term birth
+        elif random > eff_prob_late_ptb:
             random = self.sim.rng.random_sample(size=1)
             if random < params['prob_potl']:
                 # Risk factors?!
                 random = np.random.randint(42, 44, size=1)
                 random = int(random)
-                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] +\
-                                                  pd.Timedelta(random, unit='W')
-                due_date= df.at[individual_id, 'la_due_date_current_pregnancy']
+                df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
+                                                                        pd.Timedelta(random, unit='W')
+                due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
             else:
                 random = np.random.randint(37, 41, size=1)
                 random = int(random)
@@ -945,8 +1016,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         logger.info('person %d has developed obstructed labour in the community on date %s',
                                     individual_id, self.sim.date)
 
-        # Todo: Case fatality/ stillbirth for untreated obstructed labour?
-        
+
         # We then work through the next complications and assess if this woman will experience additional complications
 
 # ==================================== ECLAMPSIA ======================================================================
@@ -1000,8 +1070,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 riskfactors = rf1 * rf2
                 eff_prob_aph = riskfactors * params['prob_an_aph']
 
-                # Todo: should we consider here determining what type of bleed they're having- evidence?
-                # Placental abruption is linked to maternal hypertension, eclampsia etc all increase risk
+                # Todo: a/w review of evidence to determine strength of association between risk factors and
+                #  praevia/abruption
 
                 if mni[individual_id]['delivery_setting'] == 'FD':
                     mni[individual_id]['risk_aph'] = eff_prob_aph
@@ -1016,7 +1086,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ==========================================  SEPSIS =================================================================
 
-        # Todo: Awaiting discussion around structure, to then include risk factors and causal factors
+        # Todo: We will include both obstetric and non obstetric sepsis, but will only apply here incidence on
+                #  obstetric sepsis and use properties fromt the other modules to determine non obstetric infection
 
                 if mni[individual_id]['labour_is_currently_obstructed']:
                     rf1 = params['rr_an_sepsis_pl_ol']
@@ -1038,7 +1109,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         logger.info('person %d is experiencing intrapartum maternal sepsis in the community on date %s',
                                     individual_id, self.sim.date)
 
- # ====================================== UTERINE RUPTURE  =============================================================
+# ====================================== UTERINE RUPTURE  =============================================================
 
                 if (df.at[individual_id, 'la_parity'] >= 5) & (df.at[individual_id, 'la_total_deliveries_by_cs'] == 0)\
                     & ~df.at[individual_id, 'la_obstructed_labour']:
@@ -1161,6 +1232,8 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     logger.info('person %d is experiencing a postpartum haemorrhage in the community on date %s',
                                 individual_id, self.sim.date)
 
+            #todo: include severity
+
 # ============================================= RISK OF SEPSIS =========================================================
 
             if mni[individual_id]['labour_has_previously_been_obstructed']:
@@ -1252,7 +1325,6 @@ class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEven
         m = self
 
         # TODO: consider stage of pregnancy loss and its impact on likelihood of complications i.e retained product
-        # TODO: should we start the mni at conception?- can then be accessed here
         # i.e. look up effects of incomplete miscarriage (apply incidence)
 
         df.at[individual_id, 'is_pregnant'] = False
@@ -1304,6 +1376,21 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
         # Similarly we apply a risk of still birth associated with each complication
 
         # if df.at[individual_id, 'la_eclampsia']:
+
+        if mni[individual_id]['labour_is_currently_obstructed']:
+            random = self.sim.rng.random_sample(size=1)
+            if random < params['cfr_obstructed_labour']:
+                mni[individual_id]['death_in_labour'] = True
+                random = self.sim.rng.random_sample()
+                if random < params['prob_still_birth_obstructed_labour_md']:
+                    df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
+                    mni[individual_id]['stillbirth_in_labour'] = True
+            else:
+                random = self.sim.rng.random_sample(size=1)
+                if random < params['prob_still_obstructed_labour']:
+                    df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
+                    mni[individual_id]['stillbirth_in_labour'] = True
+
         if mni[individual_id]['eclampsia'] & (mni[individual_id]['timing_eclampsia'] == 'IP'):
             random = self.sim.rng.random_sample(size=1)
             if random < params['cfr_eclampsia']:
@@ -1410,7 +1497,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 mni[individual_id]['death_postpartum'] = True
 
         # if df.at[individual_id, 'la_sepsis']:
-        if mni[individual_id]['sepsis']  & (mni[individual_id]['timing_sepsis'] == 'PP'):
+        if mni[individual_id]['sepsis'] & (mni[individual_id]['timing_sepsis'] == 'PP'):
             random = self.sim.rng.random_sample(size=1)
             if random < params['cfr_pn_sepsis']:
                 mni[individual_id]['death_postpartum'] = True
@@ -1503,10 +1590,10 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Attends_For_Delivery'
+        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*'] # [1, 2, 3]  # check this?
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1518,8 +1605,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
                      'at birth for person %d', person_id)
 
         # TODO: Who is attending this labour?- Will I determine this or will it link to capacity, need to apply effect
-        # TODO: worth storing WHERE (what level) health facility each womans last labour took place? this should store
-        #  in logging
 
     # Here we deal with interventions and scheduling for planned delivery such as induction/ elective CS
 
@@ -1562,8 +1647,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
     # Here, using the adjusted risks calculated following 'in-labour' interventions to determine which complications a
     # woman may experience and store those in the dataframe
-
-    # TODO: THIS IS NOT CURRENTLY SETTING COMPLICATIONS CORRECTLY
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ol']:
@@ -1673,7 +1756,7 @@ class HSI_Labour_ReceivesCareForObstructedLabour(Event, IndividualScopeEventMixi
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Receives_Care_For_Obstructed_Labour'
+        self.TREATMENT_ID = 'Labour_ReceivesCareForObstructedLabour'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
@@ -1744,7 +1827,7 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(Event, IndividualScopeEventMixin)
                 }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Receives_Care_For_Maternal_Sepsis'
+        self.TREATMENT_ID = 'Labour_ReceivesCareForMaternalSepsis'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
@@ -1793,7 +1876,7 @@ class HSI_Labour_ReceivesCareForEclampsia(Event, IndividualScopeEventMixin):
                 }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Receives_Care_For_Eclampsia'
+        self.TREATMENT_ID = 'Labour_ReceivesCareForEclampsia'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
@@ -1852,7 +1935,7 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(Event, IndividualScopeEventM
                 }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Receives_Care_For_Maternal_Haemorrhage'
+        self.TREATMENT_ID = 'Labour_ReceivesCareForMaternalHaemorrhage'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
@@ -1960,7 +2043,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(Event, IndividualScopeEventMixi
         }
 
     # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Attends_For_Postpartum_Care'
+        self.TREATMENT_ID = 'Labour_ReceivesCareForPostpartumPeriod'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
@@ -2013,7 +2096,7 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
         }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_Surgery_for_Labour_Complications'
+        self.TREATMENT_ID = 'Labour_ReferredForSurgicalCareInLabour'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [2, 3]  # check this?
