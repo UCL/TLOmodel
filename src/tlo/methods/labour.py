@@ -158,6 +158,9 @@ class Labour (Module):
             Types.REAL, 'relative risk of maternal sepsis following clean birth practices employed in a facility'),
         'rr_newborn_sepsis_clean_delivery': Parameter(
             Types.REAL, 'relative risk of newborn sepsis following clean birth practices employed in a facility'),
+        'rr_pph_amtsl': Parameter(
+            Types.REAL, 'relative risk of severe post partum haemorrhage following active management of the third '
+                        'stage of labour'),
         'prob_cure_antibiotics': Parameter(
             Types.REAL, 'Probability of sepsis resolving following the administration of antibiotics'),
         'prob_cure_mgso4': Parameter(
@@ -306,6 +309,7 @@ class Labour (Module):
 
         params['rr_maternal_sepsis_clean_delivery'] = 0.7  # dummy
         params['rr_newborn_sepsis_clean_delivery'] = 0.7 # dummy
+        params['rr_pph_amtsl'] = 0.34 # cochrane (for SEVERE pph)
         params['prob_cure_antibiotics'] = 0.5  # dummy
         params['prob_cure_mgso4'] = 0.57  # probability taken from RR of 0.43for additional seizures (vs diazepam alone)
         params['prob_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
@@ -1615,10 +1619,13 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         adjusted_maternal_sepsis_risk = mni[person_id]['risk_sepsis'] * \
                                        params['rr_maternal_sepsis_clean_delivery']
         mni[person_id]['risk_sepsis'] = adjusted_maternal_sepsis_risk
+        print(adjusted_maternal_sepsis_risk)
+
 
         adjusted_newborn_sepsis_risk = mni[person_id]['risk_newborn_sepsis'] * \
                                        params['rr_newborn_sepsis_clean_delivery']
         mni[person_id]['risk_newborn_sepsis'] = adjusted_newborn_sepsis_risk
+        print(adjusted_newborn_sepsis_risk)
 
 
     # =============================== MATERNAL/FETAL SURVEILLANCE ======================================================
@@ -1659,7 +1666,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_eclampsia']:
-            df.at[person_id, 'le_eclampsia'] = True
+            df.at[person_id, 'la_eclampsia'] = True
             mni[person_id]['eclampsia'] = True
             mni[person_id]['source_eclampsia'] = 'IP'
             logger.info('person %d is experiencing eclampsia in a health facility',
@@ -1676,7 +1683,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             df.at[person_id, 'la_sepsis'] = True
             mni[person_id]['sepsis'] = True
             mni[person_id]['source_sepsis'] = 'IP'
-            logger.info('person %d is experiencing an antepartum haemorrhage in a health facility',
+            logger.info('person %d has developed maternal sepsis in a health facility',
                         person_id)
 
         random = self.sim.rng.random_sample(size=1)
@@ -1693,7 +1700,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         if mni[person_id]['labour_is_currently_obstructed']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-                         'treatment for obstructed labour for person %d', person_id)
+                        'treatment for obstructed labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1706,7 +1713,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         if mni[person_id]['sepsis']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-                         'treatment for maternal sepsis during labour for person %d', person_id)
+                        'treatment for maternal sepsis during labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1719,7 +1726,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         if mni[person_id]['APH']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-                         'treatment for antepartum haemorrhage during labour for person %d', person_id)
+                        'treatment for antepartum haemorrhage during labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1731,7 +1738,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         if mni[person_id]['eclampsia']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-                         'treatment for eclampsia during labour for person %d', person_id)
+                        'treatment for eclampsia during labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForEclampsia(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -2121,12 +2128,76 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(Event, IndividualScopeEventMixi
         logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: Providing skilled attendance following birth '
                     'for person %d', person_id)
 
-    #  ACTIVE MANAGEMENT OF THE THIRD STAGE
-    # Cord care - YES is in treatment guidelines
-    # chlorhexidine
-    # start breast feeding?
+    #  =========================  ACTIVE MANAGEMENT OF THE THIRD STAGE  ===============================================
 
-        pass
+        # Here we apply a risk reduction of post partum bleeding following active management of the third stage of
+        # labour (additional oxytocin, uterine massage and controlled cord traction)
+
+        adjusted_maternal_pph_risk = mni[person_id]['risk_pph'] * params['rr_pph_amtsl']
+        mni[person_id]['risk_pph'] = adjusted_maternal_pph_risk
+        print(adjusted_maternal_pph_risk)
+
+    # ===============================  POSTPARTUM COMPLICATIONS ========================================================
+
+        # TODO: link eclampsia/sepsis diagnosis in SBA and PPC
+        random = self.sim.rng.random_sample(size=1)
+        if random < mni[person_id]['risk_eclampsia']:
+            df.at[person_id, 'la_eclampsia'] = True
+            mni[person_id]['eclampsia'] = True
+            mni[person_id]['source_eclampsia'] = 'PP'
+            logger.info('person %d is experiencing eclampsia in a health facility following birth',
+                        person_id)
+
+        if random < mni[person_id]['risk_pph']:
+            df.at[person_id, 'la_pph'] = True
+            mni[person_id]['PPH'] = True
+            logger.info('person %d is experiencing an postpartum haemorrhage in a health facility following birth',
+                        person_id)
+
+        random = self.sim.rng.random_sample(size=1)
+        if random < mni[person_id]['risk_sepsis']:
+            df.at[person_id, 'la_sepsis'] = True
+            mni[person_id]['sepsis'] = True
+            mni[person_id]['source_sepsis'] = 'PP'
+            logger.info('person %d has developed maternal sepsis in a health facility following delivery',
+                        person_id)
+
+    # =============================  SCHEDULING ADDITIONAL TREATMENT ==================================================
+
+        if mni[person_id]['sepsis']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for maternal sepsis during the postpartum period for person %d', person_id)
+
+            event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                        priority=0,
+                                                        topen=self.sim.date,
+                                                        tclose=self.sim.date + DateOffset(days=14)
+                                                        )
+
+
+        if mni[person_id]['PPH']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for antepartum haemorrhage during the postpartum period for person %d', person_id)
+
+            event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=14)
+                                                                    )
+
+        if mni[person_id]['eclampsia']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for eclampsia during the postpartum period for person %d', person_id)
+
+            event = HSI_Labour_ReceivesCareForEclampsia(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=14)
+                                                                    )
+
 
 class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixin):
     """
