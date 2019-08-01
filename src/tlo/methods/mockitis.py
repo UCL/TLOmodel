@@ -2,7 +2,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
@@ -377,7 +376,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
         df = self.sim.population.props  # shortcut to the dataframe
 
-        if df.at[person_id, 'age_years'] >= 15:
+        if df.at[person_id, 'gi_diarrhoea_status']:
             logger.debug(
                 '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
                 there should now be treatment for person %d',
