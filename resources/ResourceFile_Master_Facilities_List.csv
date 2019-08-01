@@ -1,0 +1,69 @@
+,District,Facility_Level,Region,Facility_ID,Facility_Name
+0,Chitipa,0,Northern,0,Facility_Level_0_Chitipa
+1,Chitipa,1,Northern,1,Facility_Level_1_Chitipa
+2,Karonga,0,Northern,2,Facility_Level_0_Karonga
+3,Karonga,1,Northern,3,Facility_Level_1_Karonga
+4,Nkhata Bay,0,Northern,4,Facility_Level_0_Nkhata Bay
+5,Nkhata Bay,1,Northern,5,Facility_Level_1_Nkhata Bay
+6,Rumphi,0,Northern,6,Facility_Level_0_Rumphi
+7,Rumphi,1,Northern,7,Facility_Level_1_Rumphi
+8,Mzimba,0,Northern,8,Facility_Level_0_Mzimba
+9,Mzimba,1,Northern,9,Facility_Level_1_Mzimba
+10,Likoma,0,Northern,10,Facility_Level_0_Likoma
+11,Likoma,1,Northern,11,Facility_Level_1_Likoma
+12,Mzuzu City,0,Northern,12,Facility_Level_0_Mzuzu City
+13,Mzuzu City,1,Northern,13,Facility_Level_1_Mzuzu City
+14,Kasungu,0,Central,14,Facility_Level_0_Kasungu
+15,Kasungu,1,Central,15,Facility_Level_1_Kasungu
+16,Nkhotakota,0,Central,16,Facility_Level_0_Nkhotakota
+17,Nkhotakota,1,Central,17,Facility_Level_1_Nkhotakota
+18,Ntchisi,0,Central,18,Facility_Level_0_Ntchisi
+19,Ntchisi,1,Central,19,Facility_Level_1_Ntchisi
+20,Dowa,0,Central,20,Facility_Level_0_Dowa
+21,Dowa,1,Central,21,Facility_Level_1_Dowa
+22,Salima,0,Central,22,Facility_Level_0_Salima
+23,Salima,1,Central,23,Facility_Level_1_Salima
+24,Lilongwe,0,Central,24,Facility_Level_0_Lilongwe
+25,Lilongwe,1,Central,25,Facility_Level_1_Lilongwe
+26,Mchinji,0,Central,26,Facility_Level_0_Mchinji
+27,Mchinji,1,Central,27,Facility_Level_1_Mchinji
+28,Dedza,0,Central,28,Facility_Level_0_Dedza
+29,Dedza,1,Central,29,Facility_Level_1_Dedza
+30,Ntcheu,0,Central,30,Facility_Level_0_Ntcheu
+31,Ntcheu,1,Central,31,Facility_Level_1_Ntcheu
+32,Lilongwe City,0,Central,32,Facility_Level_0_Lilongwe City
+33,Lilongwe City,1,Central,33,Facility_Level_1_Lilongwe City
+34,Mangochi,0,Southern,34,Facility_Level_0_Mangochi
+35,Mangochi,1,Southern,35,Facility_Level_1_Mangochi
+36,Machinga,0,Southern,36,Facility_Level_0_Machinga
+37,Machinga,1,Southern,37,Facility_Level_1_Machinga
+38,Zomba,0,Southern,38,Facility_Level_0_Zomba
+39,Zomba,1,Southern,39,Facility_Level_1_Zomba
+40,Chiradzulu,0,Southern,40,Facility_Level_0_Chiradzulu
+41,Chiradzulu,1,Southern,41,Facility_Level_1_Chiradzulu
+42,Blantyre,0,Southern,42,Facility_Level_0_Blantyre
+43,Blantyre,1,Southern,43,Facility_Level_1_Blantyre
+44,Mwanza,0,Southern,44,Facility_Level_0_Mwanza
+45,Mwanza,1,Southern,45,Facility_Level_1_Mwanza
+46,Thyolo,0,Southern,46,Facility_Level_0_Thyolo
+47,Thyolo,1,Southern,47,Facility_Level_1_Thyolo
+48,Mulanje,0,Southern,48,Facility_Level_0_Mulanje
+49,Mulanje,1,Southern,49,Facility_Level_1_Mulanje
+50,Phalombe,0,Southern,50,Facility_Level_0_Phalombe
+51,Phalombe,1,Southern,51,Facility_Level_1_Phalombe
+52,Chikwawa,0,Southern,52,Facility_Level_0_Chikwawa
+53,Chikwawa,1,Southern,53,Facility_Level_1_Chikwawa
+54,Nsanje,0,Southern,54,Facility_Level_0_Nsanje
+55,Nsanje,1,Southern,55,Facility_Level_1_Nsanje
+56,Balaka,0,Southern,56,Facility_Level_0_Balaka
+57,Balaka,1,Southern,57,Facility_Level_1_Balaka
+58,Neno,0,Southern,58,Facility_Level_0_Neno
+59,Neno,1,Southern,59,Facility_Level_1_Neno
+60,Zomba City,0,Southern,60,Facility_Level_0_Zomba City
+61,Zomba City,1,Southern,61,Facility_Level_1_Zomba City
+62,Blantyre City,0,Southern,62,Facility_Level_0_Blantyre City
+63,Blantyre City,1,Southern,63,Facility_Level_1_Blantyre City
+64,,2,Northern,64,Referral Hospital_Northern
+65,,2,Central,65,Referral Hospital_Central
+66,,2,Southern,66,Referral Hospital_Southern
+67,,3,,67,National Hospital
