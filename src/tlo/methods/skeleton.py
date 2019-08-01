@@ -1,9 +1,16 @@
 """
 A skeleton template for disease methods.
+
 """
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.population import logger
+
+# ---------------------------------------------------------------------------------------------------------
+#   MODULE DEFINITIONS
+# ---------------------------------------------------------------------------------------------------------
 
 
 class Skeleton(Module):
@@ -16,7 +23,10 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)`
+    * `on_birth(mother, child)` [If this is disease module]
+    * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
+    *  `report_daly_values()` [If this is disease module]
+
     """
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
@@ -29,17 +39,22 @@ class Skeleton(Module):
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
+
+    # Note that all properties must have a two letter prefix that identifies them to this module.
+
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'Description of property a'),
+        'sk_property_a': Property(Types.BOOL, 'Description of property a'),
     }
+
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
-        Here we do nothing.
-
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
+        To access files use: Path(self.resourcefilepath) / file_name
         """
         pass
 
@@ -60,7 +75,12 @@ class Skeleton(Module):
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
+
+        If this is a disease module, register this disease module with the healthsystem:
+        self.sim.modules['HealthSystem'].register_disease_module(self)
+
         """
+
         raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
@@ -73,8 +93,35 @@ class Skeleton(Module):
         """
         raise NotImplementedError
 
+    def report_daly_values(self):
+        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
+        # The names of the series of columns is taken to be the label of the cause of this disability.
+        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
+        # To return a value of 0.0 (fully health) for everyone, use:
+        # df = self.sim.popultion.props
+        # return pd.Series(index=df.index[df.is_alive],data=0.0)
+
+        raise NotImplementedError
+
+    def on_hsi_alert(self, person_id, treatment_id):
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+
+        raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   DISEASE MODULE EVENTS
+#
+#   These are the events which drive the simulation of the disease. It may be a regular event that updates
+#   the status of all the population of subsections of it at one time. There may also be a set of events
+#   that represent disease events for particular persons.
+# ---------------------------------------------------------------------------------------------------------
+
+class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -99,3 +146,75 @@ class SkeletonEvent(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
         raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   LOGGING EVENTS
+#
+#   Put the logging events here. There should be a regular logger outputting current states of the
+#   population. There may also be a loggig event that is driven by particular events.
+# ---------------------------------------------------------------------------------------------------------
+
+class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """Produce a summary of the numbers of people with respect to the action of this module.
+        This is a regular event that can output current states of people or cumulative events since last logging event.
+        """
+
+        # run this event every year
+        self.repeat = 12
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # Make some summary statitics
+
+        dict_to_output = {
+            'Metric_One': 1.0,
+            'Metric_Two': 2.0
+        }
+
+        logger.info('%s|summary_12m|%s', self.sim.date, dict_to_output)
+
+
+# ---------------------------------------------------------------------------------------------------------
+#   HEALTH SYSTEM INTERACTION EVENTS
+#
+#   Here are all the different Health System Interactions Events that this module will use.
+# ---------------------------------------------------------------------------------------------------------
+
+class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
+    """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
+    like this.
+    It must begin HSI_<Module_Name>_Description
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Define the call on resources of this treatment event: Time of Officers (Appointments)
+        #   - get an 'empty' footprint:
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        #   - update to reflect the appointments that are required
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the call on resources of this treatment event: Consumables
+        #   - get a blank consumables footprint
+        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        #   - update with any consumables that are needed. Look in ResourceFile_Consumables.csv
+
+        # Define the facilities at which this event can occur
+        #   - this will find all the available facility levels
+        the_accepted_facility_levels = \
+            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
+                           ['Facility_Level']))
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = the_accepted_facility_levels
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        """ Do the action that take place in this health system interaction. """
+        pass
