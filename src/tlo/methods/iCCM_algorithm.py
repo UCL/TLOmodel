@@ -1,12 +1,12 @@
 import logging
 
-from tlo import Module, Property, Types
+from tlo import Property, Parameter, Types
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-class iCCM(Module):
+class iCCM(Property, Parameter):
     PROPERTIES = {
         'correctly_identified_danger_signs': Property
         (Types.BOOL, 'HSA correctly identified at least one danger sign'
@@ -35,7 +35,7 @@ class iCCM(Module):
         'correctly_classified_diarrhoea_with_danger_sign': Property
         (Types.BOOL, 'HSA correctly classified as diarrhoea with danger sign or with signs of severe dehydration'
          ),
-        'correctly_classified_peristent_or_bloody_diarrhoea': Property
+        'correctly_classified_persistent_or_bloody_diarrhoea': Property
         (Types.BOOL, 'HSA correctly classified persistent diarrhoea or dysentery'
          ),
         'correctly_classified_diarrhoea': Property
@@ -48,21 +48,26 @@ class iCCM(Module):
         (Types.BOOL, 'HSA correctly classified fever for 7 days or more, no danger sign, positive RDT (malaria)'
          ),
         'correctly_classified_uncomplicated_malaria': Property
-        (Types.BOOL, 'HSA correctly classified fever for less than 7 days, no danger sign, positive RDT (uncomplicated malaria)'
+        (Types.BOOL, 'HSA correctly classified fever for less than 7 days, no danger sign, positive RDT'
+                     ' (uncomplicated malaria)'
          ),
         'correctly_classified_as_other_illness': Property
         (Types.BOOL,
          'HSA correctly classified fever, no danger sign, negative RDT (other illness)'
          ),
+        'referral_options': Property
+        (Types.CATEGORICAL,
+         'Referral decisions', categories=['refer immediately', 'refer to health facility', 'do not refer']),
         'correct_referral_decision': Property
         (Types.BOOL,
          'HSA made the correct referral decision based on the assessment and classification process'
          ),
-        'referral_options': Property
-        (Types.CATEGORICAL,
-         'Referral decisions', categories=['refer immediately', 'refer to health facility', 'do not refer']),
-
+        'correct_treatment_and_advice_given': Property
+        (Types.BOOL,
+         'HSA has given the correct treatment for the classified condition'
+         ),
     }
+
 
 """  
         # stepone : work out if the child has 'malaria'
