@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from pathlib import Path
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
@@ -19,7 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = 'resources/Demography_WorkingFile_Complete.xlsx'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 
 # %% Run the Simulation
@@ -42,10 +43,12 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(workbook_path=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
+
+
 
 # this will make sure that the logging file is complete
 fh.flush()

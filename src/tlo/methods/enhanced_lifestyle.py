@@ -1,16 +1,4 @@
 
-#   todo: create high_salt high_satfat high_sugar low_fruveg and make high_satfat
-#   todo: and high_sugar determinants of overwt - finalise decision with group whether to do this
-
-#   todo: make exercise and smoking determinants of overwt, remove urban and gender as direct determinants ?
-#   todo: finalise decision with group whether to do this
-
-#   todo: consider overweight as > 30 ?  integrate with weight in childhood and malnutrition
-
-#   note:  urban rural will be created externally so will be simply used here (with a different name) rather than
-#   note:  created and used
-
-
 """
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
