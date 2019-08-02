@@ -1,17 +1,15 @@
-import logging
-import os
 
 import logging
 import os
 
 import pytest
 from tlo import Date, Simulation
+from pathlib import Path
 from tlo.methods import demography, enhanced_lifestyle
 
-workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 10000
 
 
@@ -22,14 +20,11 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       workbook_name)
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(workbook_path=demography_workbook))
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle())
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
-#   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)
     return sim
 
