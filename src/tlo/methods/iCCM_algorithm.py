@@ -7,6 +7,9 @@ logger.setLevel(logging.DEBUG)
 
 
 class iCCM(Property, Parameter):
+    PARAMETER = {
+
+    }
     PROPERTIES = {
         'correctly_identified_danger_signs': Property
         (Types.BOOL, 'HSA correctly identified at least one danger sign'
@@ -68,6 +71,15 @@ class iCCM(Property, Parameter):
          ),
     }
 
+    def diarrhoea_diagnosis(self, person_id):
+        now = self.sim.date
+        df = population.props
+
+        # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
+        has_diarrhoea = df.at[person_id, 'gi_diarrhoea_status']
+        has_danger_signs = df.at[person_id, 'any_danger_signs']
+        has_some_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'some dehydration'
+        has_severe_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'severe dehydration'
 
 """  
         # stepone : work out if the child has 'malaria'
