@@ -31,10 +31,10 @@ class Lifestyle(Module):
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of'
-                                                                                           'BMI categories for urban men '
-                                                                                           'age 15-29 with not high sugar, '
-                                                                                           'not tobacco, '
+        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of '
+                                                                                           'bmi categories for urban '
+                                                                                           'men age 15-29 with not high'
+                                                                                           'sugar, not tobacco, '
                                                                                            'wealth level 1'),
         'init_or_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
         'init_or_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
@@ -97,7 +97,8 @@ class Lifestyle(Module):
         'init_p_no_access_handwashing': Parameter(Types.REAL,
                                                   'initial probability of no_access_handwashing given wealth 1'),
         'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
-                                                                                'access_handwashing per lower wealth level'),
+                                                                                'access_handwashing per lower wealth '
+                                                                                'level'),
 
         # ------------ parameters relating to updating of property values over time ------------------------
 
@@ -108,59 +109,27 @@ class Lifestyle(Module):
         'rr_higher_bmi_urban': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if '),
         'rr_higher_bmi_f': Parameter(Types.REAL, 'rate ratio for increase in bmi category for females'),
         'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
-        'rr_higher_bmi_agege50': Parameter(Types.REAL,
-                                       'rate ratio for increase in bmi category for age ge 50'),
+        'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
         'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
-        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher wealth'),
-        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar intake'),
+        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
+                                                                 'wealth'),
+        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
+                                                          'intake'),
         'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
-        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category given'
-                                                                'population advice/campaign on weight'),
+        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
+                                                                'given population advice/campaign on weight'),
         'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
-
-        r_high_salt_urban
-        rr_high_salt_rural
-        r_not_high_salt
-            rr_not_low_salt_pop_advice_salt
-        r_high_sugar
-            r_not_high_sugar
-        r_low_ex
-            r_not_low_ex
-        rr_not_low_ex_pop_advice_exercise
-            rr_low_ex_f
-        rr_low_ex_urban
-            r_tob
-        r_not_tob
-            rr_tob_f
-        rr_tob_age2039
-            rr_tob_agege40
-        rr_tob_wealth
-            rr_not_tob_pop_advice_tobacco
-        r_ex_alc
-            r_not_ex_alc
-        rr_ex_alc_f
-            rr_not_ex_alc_pop_advice_alcohol
-        r_mar
-            r_div_wid
-        r_stop_ed
-            rr_stop_ed_lower_wealth
-        p_ed_primary
-            or_ed_primary_higher_wealth
-        p_ed_secondary
-        or_ed_secondary_higher_wealth
-            r_improved_sanitation
-        r_clean_drinking_water
-            r_non_wood_burn_stove
-        r_access_handwashing
-
-
-
-
-
-
+        'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
+        'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
+        'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
+        'rr_not_high_salt_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt given'
+                                                                  'population advice/campaign on salt'),
+        'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
+        'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
-        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to '
-                                              'not low exercise'),
+        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'),
+        'rr_not_high_sugar_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
+                                                                   'population advice/campaign on sugar'),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
         'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
@@ -172,23 +141,18 @@ class Lifestyle(Module):
         'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tobacco using if female'),
         'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
                                                '(higher wealth level = lower wealth)'),
+        'rr_not_tob_pop_advice_tobacco': Parameter(Types.REAL, 'probability per 3 months of quitting tobacco given'
+                                                               'population advice/campaign on tobacco'),
         'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
                                           'excess alcohol'),
         'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
                                               'not excess alcohol'),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
+        'rr_not_tob_pop_advice_alc': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
+                                                           'population advice/campaign on alcohol'),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
         'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
                                            'amongst those married'),
-        'r_contrac': Parameter(Types.REAL, 'probability per 3 months of starting contraceptive if age 15-50'),
-        'r_contrac_int': Parameter(Types.REAL, 'probability per 3 months of interrupting or stopping contraception '
-                                               '(note current method of contraception is a different property'),
-        'r_con_from_1': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 1'),
-        'r_con_from_2': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 2'),
-        'r_con_from_3': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 3'),
-        'r_con_from_4': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 4'),
-        'r_con_from_5': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 5'),
-        'r_con_from_6': Parameter(Types.LIST, 'probabilities per 3 months of moving from contraception method 6'),
         'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
         'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
                                                          '1 lower wealth quintile'),
@@ -209,26 +173,17 @@ class Lifestyle(Module):
                                                       'no_access_handwashing true to false')
     }
 
-
-
-
-
-
-
-
-
-
-
-    # Next we declare the properties of individuals that this module provides.
+    # Properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_overwt': Property(Types.BOOL, 'currently overweight'),
-        'li_date_no_longer_overwt': Property(Types.DATE, 'li_date_no_longer_overwt'),
+        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
+        'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
+        'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
         'li_date_no_longer_low_ex': Property(Types.DATE, 'li_date_no_longer_low_ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_quit_tob': Property(Types.DATE, 'li_date_quit_tob'),
@@ -237,8 +192,6 @@ class Lifestyle(Module):
         'li_mar_stat': Property(Types.CATEGORICAL,
                                 'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
                                 categories=[1, 2, 3]),
-        'li_on_con': Property(Types.BOOL, 'on contraceptive'),
-        'li_con_t': Property(Types.CATEGORICAL, 'contraceptive type', categories=[1, 2, 3, 4, 5, 6]),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
         'li_unimproved_sanitation': Property(Types.BOOL, 'uninproved sanitation - anything other than own or '
@@ -249,106 +202,175 @@ class Lifestyle(Module):
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
     }
 
-    """
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
-        # TODO: Note the rename!
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LIfestyle_Enhanced.xlsx', sheet_name='parameter_values')
 
         dfd.set_index('parameter_name', inplace=True)
 
-        p['init_pr_depr_m_age1519_no_cc_wealth123'] = dfd.loc[
-            'init_pr_depr_m_age1519_no_cc_wealth123', 'value'
-        ]
-        p['init_rp_depr_f_not_rec_preg'] = dfd.loc['init_rp_depr_f_not_rec_preg', 'value']
-        p['init_rp_depr_f_rec_preg'] = dfd.loc['init_rp_depr_f_rec_preg', 'value']
-        p['init_rp_depr_age2059'] = dfd.loc['init_rp_depr_age2059', 'value']
-        p['init_rp_depr_agege60'] = dfd.loc['init_rp_depr_agege60', 'value']
-
-    """
+        p['init_p_urban'] = dfd.loc['init_p_urban', 'value1']
+        p['init_p_wealth_urban'] = \
+                    [dfd.loc['init_p_wealth_urban', 'value1'], dfd.loc['init_p_wealth_urban', 'value2'],
+                     dfd.loc['init_p_wealth_urban', 'value3'], dfd.loc['init_p_wealth_urban', 'value4'],
+                     dfd.loc['init_p_wealth_urban', 'value5']]
 
 
 
-    def read_parameters(self, data_folder):
-        """Setup parameters used by the lifestyle module
-        """
-        p = self.parameters
 
-        p['init_p_urban'] = 0.17
-        p['init_p_wealth_urban'] = [0.75, 0.16, 0.05, 0.02, 0.02]
-        p['init_p_wealth_rural'] = [0.11, 0.21, 0.22, 0.23, 0.23]
-        p['init_p_overwt_agelt15'] = 0.0
-        p['init_p_ex_alc_m'] = 0.15
-        p['init_p_ex_alc_f'] = 0.01
-        p['init_dist_mar_stat_age1520'] = [0.70, 0.30, 0.00]
-        p['init_dist_mar_stat_age2030'] = [0.15, 0.80, 0.05]
-        p['init_dist_mar_stat_age3040'] = [0.05, 0.70, 0.25]
-        p['init_dist_mar_stat_age4050'] = [0.03, 0.50, 0.47]
-        p['init_dist_mar_stat_age5060'] = [0.03, 0.30, 0.67]
-        p['init_dist_mar_stat_agege60'] = [0.03, 0.20, 0.77]
-        p['init_age2030_w5_some_ed'] = 0.97
-        p['init_rp_some_ed_age0513'] = 1.01
-        p['init_rp_some_ed_age1320'] = 1.00
-        p['init_rp_some_ed_age3040'] = 1.00
-        p['init_rp_some_ed_age4050'] = 0.99
-        p['init_rp_some_ed_age5060'] = 0.99
-        p['init_rp_some_ed_agege60'] = 0.98
-        p['init_rp_some_ed_per_higher_wealth'] = 1.005
-        p['init_prop_age2030_w5_some_ed_sec'] = 0.20
-        p['init_rp_some_ed_sec_age1320'] = 1.00
-        p['init_rp_some_ed_sec_age3040'] = 0.90
-        p['init_rp_some_ed_sec_age4050'] = 0.85
-        p['init_rp_some_ed_sec_age5060'] = 0.80
-        p['init_rp_some_ed_sec_agege60'] = 0.75
-        p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
-        p['init_p_unimproved_sanitation'] = 0.04
-        p['init_rp_unimproved_sanitation_rural'] = 4.5
-        p['init_p_no_clean_drinking_water'] = 0.017
-        p['init_rp_no_clean_drinking_water'] = 8.6
-        p['init_p_wood_burn_stove'] = 0.257
-        p['init_rp_wood_burn_stove'] = 3.6
-        p['init_p_no_access_handwashing'] = 0.478
-        p['init_rp_no_access_handwashing_per_lower_wealth'] = 1.06
-        p['r_urban'] = 0.002
-        p['r_rural'] = 0.0001
-        p['r_overwt'] = 0.0025
-        p['r_not_overwt'] = 0.001
-        p['rr_overwt_f'] = 0.8
-        p['rr_overwt_urban'] = 1.5
-        p['r_low_ex'] = 0.001
-        p['r_not_low_ex'] = 0.0001
-        p['rr_low_ex_f'] = 0.6
-        p['rr_low_ex_urban'] = 2.0
-        p['r_tob'] = 0.0004
-        p['r_not_tob'] = 0.000
-        p['rr_tob_f'] = 0.1
-        p['rr_tob_age2039'] = 1.2
-        p['rr_tob_agege40'] = 1.5
-        p['rr_tob_wealth'] = 1.3
-        p['r_ex_alc'] = 0.003
-        p['r_not_ex_alc'] = 0.000
-        p['rr_ex_alc_f'] = 0.07
-        p['r_mar'] = 0.03
-        p['r_div_wid'] = 0.01
-        p['r_contrac'] = 0.05
-        p['r_contrac_int'] = 0.1
-        p['r_con_from_1'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        p['r_con_from_2'] = [0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-        p['r_con_from_3'] = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
-        p['r_con_from_4'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
-        p['r_con_from_5'] = [0.0, 0.0, 0.0, 0.0, 1.0, 0.0]
-        p['r_con_from_6'] = [0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        p['r_stop_ed'] = 0.001
-        p['rr_stop_ed_lower_wealth'] = 1.5
-        p['p_ed_primary'] = 0.94
-        p['rp_ed_primary_higher_wealth'] = 1.01
-        p['p_ed_secondary'] = 0.20
-        p['rp_ed_secondary_higher_wealth'] = 1.45
-        p['r_improved_sanitation'] = 0.001  # place-holder very low rate
-        p['r_clean_drinking_water'] = 0.001  # place-holder very low rate
-        p['r_non_wood_burn_stove'] = 0.001   # place-holder very low rate
-        p['r_access_handwashing'] = 0.001     # place-holder very low rate
+        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of '
+                                                                                           'bmi categories for urban '
+                                                                                           'men age 15-29 with not high'
+                                                                                           'sugar, not tobacco, '
+                                                                                           'wealth level 1'),
+        'init_or_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
+        'init_or_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
+        'init_or_higher_bmi_high_sugar': Parameter(Types.REAL, 'odds ratio higher BMI if high sugar intake'),
+        'init_or_higher_bmi_age3049': Parameter(Types.REAL, 'odds ratio higher BMI if age 30-49'),
+        'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
+        'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
+        'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
+        'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
+        'init_p_high_salt_urban': Parameter(Types.REAL, 'initital proportion with high salt intake'),
+        'init_or_high_salt_rural': Parameter(Types.REAL, 'odds ratio high salt if rural'),
+        'init_p_ex_alc_m': Parameter(Types.REAL, 'initital proportion of men with excess alcohol use'),
+        'init_p_ex_alc_f': Parameter(Types.REAL, 'initital proportion of women with excess alcohol use'),
+        'init_dist_mar_stat_age1520': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
+        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
+        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
+        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
+        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
+        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
+        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
+                                                         'education at baseline'),
+        'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
+        'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
+        'init_or_some_ed_age2030': Parameter(Types.REAL, 'odds ratio of some education at baseline age 20-30'),
+        'init_or_some_ed_age3040': Parameter(Types.REAL, 'odds ratio of some education at baseline age 30-40'),
+        'init_or_some_ed_age4050': Parameter(Types.REAL, 'odds ratio of some education at baseline age 40-50'),
+        'init_or_some_ed_age5060': Parameter(Types.REAL, 'odds ratio of some education at baseline age 50-60'),
+        'init_or_some_ed_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of some education at baseline '
+                                                                   'per higher wealth level'),
+        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
+                                                      'proportion of low wealth aged 20-30 with some education who '
+                                                      'have secondary education at baseline'),
+        'init_or_some_ed_sec_age1320': Parameter(Types.REAL, 'odds ratio of secondary education age 13-20'),
+        'init_or_some_ed_sec_age3040': Parameter(Types.REAL, 'odds ratio of secondary education age 30-40'),
+        'init_or_some_ed_sec_age4050': Parameter(Types.REAL, 'odds ratio of secondary education age 40-50'),
+        'init_or_some_ed_sec_age5060': Parameter(Types.REAL, 'odds ratio of secondary education age 50-60'),
+        'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
+        'init_or_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of secondary education '
+                                                                       'per higher wealth level'),
+        'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
+                                                              'given urban'),
+        # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
+        #                                                     'true to false upon move from rural to urban'
+        'init_or_unimproved_sanitation_rural': Parameter(Types.REAL,
+                                                         'initial odds ratio of unimproved_sanitation if '
+                                                         'rural'),
+        'init_p_no_clean_drinking_water': Parameter(Types.REAL,
+                                                    'initial probability of no_clean_drinking_water given urban'),
+        # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
+        #                                                     'true to false upon move from rural to urban'
+        'init_or_no_clean_drinking_water_rural': Parameter(Types.REAL,
+                                                           'initial odds ratio of no clean drinking_water '
+                                                           'if rural'),
+        'init_p_wood_burn_stove': Parameter(Types.REAL,
+                                            'initial probability of wood_burn_stove given urban'),
+        # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
+        #                                                     'true to false upon move from rural to urban'
+        'init_or_wood_burn_stove_rural': Parameter(Types.REAL,
+                                                   'initial odds ratio of wood_burn_stove if rural'),
+        'init_p_no_access_handwashing': Parameter(Types.REAL,
+                                                  'initial probability of no_access_handwashing given wealth 1'),
+        'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
+                                                                                'access_handwashing per lower wealth '
+                                                                                'level'),
+
+        # ------------ parameters relating to updating of property values over time ------------------------
+
+        'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
+        'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
+        'r_higher_bmi': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if rural male age'
+                                              '15-29 not using tobacoo with wealth level 1 with not high sugar intake'),
+        'rr_higher_bmi_urban': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if '),
+        'rr_higher_bmi_f': Parameter(Types.REAL, 'rate ratio for increase in bmi category for females'),
+        'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
+        'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
+        'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
+        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
+                                                                 'wealth'),
+        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
+                                                          'intake'),
+        'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
+        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
+                                                                'given population advice/campaign on weight'),
+        'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
+        'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
+        'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
+        'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
+        'rr_not_high_salt_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt given'
+                                                                  'population advice/campaign on salt'),
+        'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
+        'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
+        'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
+        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'),
+        'rr_not_high_sugar_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
+                                                                   'population advice/campaign on sugar'),
+        'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
+        'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
+        'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
+                                       'tobacco if male age 15-19 wealth level 1'),
+        'r_not_tob': Parameter(Types.REAL, 'probability per 3 months of change from tobacco using to '
+                                           'not tobacco using'),
+        'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
+        'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
+        'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tobacco using if female'),
+        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
+                                               '(higher wealth level = lower wealth)'),
+        'rr_not_tob_pop_advice_tobacco': Parameter(Types.REAL, 'probability per 3 months of quitting tobacco given'
+                                                               'population advice/campaign on tobacco'),
+        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
+                                          'excess alcohol'),
+        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
+                                              'not excess alcohol'),
+        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
+        'rr_not_tob_pop_advice_alc': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
+                                                           'population advice/campaign on alcohol'),
+        'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
+        'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
+                                           'amongst those married'),
+        'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
+        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
+                                                         '1 lower wealth quintile'),
+        'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
+        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 '
+                                                             'higher wealth level'),
+        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 '
+                                                'if in primary education and wealth level 5'),
+        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
+                                                               'school per 1 higher wealth level'),
+        'r_improved_sanitation': Parameter(Types.REAL, 'probability per 3 months of change from '
+                                                       'unimproved_sanitation true to false'),
+        'r_clean_drinking_water': Parameter(Types.REAL, 'probability per 3 months of change from '
+                                                        'drinking_water true to false'),
+        'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
+                                                       'wood_burn_stove true to false'),
+        'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
+                                                      'no_access_handwashing true to false')
+
+
+
+
+
+
+
+
+
+
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -382,6 +404,14 @@ class Lifestyle(Module):
         df['li_date_acquire_clean_drinking_water'] = pd.NaT
         df['li_wood_burn_stove'] = True  # default: li_wood_burn_stove
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
+
+
+        # todo: odds bmi 1 x (1.1**2), odds bmi 2 x (1.1**1), odds bmi 3 x 1.1**0, odds bmi 4 x 1.1**(-1),
+        # todo: odds bmi 5 x 1.1**(-2) - then re-normalise to sum proportions to 1
+
+
+        # todo: express all rates per year and divide by 4 inside program
+
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
