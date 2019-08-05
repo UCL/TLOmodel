@@ -100,24 +100,26 @@ class Lifestyle(Module):
                                                                                 'access_handwashing per lower wealth level'),
 
         # ------------ parameters relating to updating of property values over time ------------------------
-    
 
-            r_urban
-            r_rural
-        r_higher_bmi
-            rr_higher_bmi_urban
-        rr_higher_bmi_f
-            rr_higher_bmi_age3049
-        rr_higher_bmi_agege50
-            rr_higher_bmi_tob
-        rr_higher_bmi_per_higher_wealth
-            rr_higher_bmi_high_sugar
-        r_lower_bmi
-            rr_lower_bmi_tob
-        rr_lower_bmi_pop_advice_weight
-            rr_lower_bmi_pop_advice_sugar
+        'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
+        'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
+        'r_higher_bmi': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if rural male age'
+                                              '15-29 not using tobacoo with wealth level 1 with not high sugar intake'),
+        'rr_higher_bmi_urban': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if '),
+        'rr_higher_bmi_f': Parameter(Types.REAL, 'rate ratio for increase in bmi category for females'),
+        'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
+        'rr_higher_bmi_agege50': Parameter(Types.REAL,
+                                       'rate ratio for increase in bmi category for age ge 50'),
+        'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
+        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher wealth'),
+        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar intake'),
+        'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
+        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category given'
+                                                                'population advice/campaign on weight'),
+        'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
+
         r_high_salt_urban
-            rr_high_salt_rural
+        rr_high_salt_rural
         r_not_high_salt
             rr_not_low_salt_pop_advice_salt
         r_high_sugar
@@ -153,14 +155,9 @@ class Lifestyle(Module):
 
 
 
-        'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
-        'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
-        'r_overwt': Parameter(Types.REAL, 'probability per 3 months of change from not overweight to '
-                                          'overweight if male'),
-        'r_not_overwt': Parameter(Types.REAL, 'probability per 3 months of change from overweight to '
-                                              'not overweight'),
-        'rr_overwt_f': Parameter(Types.REAL, 'risk ratio for becoming overweight if female rather than male'),
-        'rr_overwt_urban': Parameter(Types.REAL, 'risk ratio for becoming overweight if urban rather than rural'),
+
+
+
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to '
                                               'not low exercise'),
