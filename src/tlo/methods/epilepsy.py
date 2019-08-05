@@ -344,11 +344,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
 
         logger.info(
-            '%s|incidence_epilepsy|%s|n_incident_epilepsy|%s|n_alive|%s',
+            '%s|incidence_epilepsy|%s',
             self.sim.date,
-            incidence_epilepsy,
-            n_incident_epilepsy,
-            n_alive,
+            {
+                'incident_epilepsy': incidence_epilepsy,
+                'n_incident_epilepsy': n_incident_epilepsy,
+                'n_alive': n_alive
+            }
         )
 
         # transition from ep_seiz_stat 1 to 2
