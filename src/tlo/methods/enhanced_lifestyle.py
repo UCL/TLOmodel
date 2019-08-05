@@ -13,15 +13,127 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
+# todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that is coded.
+
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
     by urban/rural, wealth, tobacco usage etc.
     """
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
 
-        # -------- parameters relating to setting baseline values of property values -----------------------
+        # -------- list of parameters -----------------------------------------------------------------------------------
+
+        'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
+        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
+        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of'
+                                                                                           'BMI categories for urban men '
+                                                                                           'age 15-29 with not high sugar, '
+                                                                                           'not tobacco, '
+                                                                                           'wealth level 1'),
+        'init_rp_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
+        'init_rp_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
+        'init_rp_higher_bmi_high_sugar': Parameter(Types.REAL, 'odds ratio higher BMI if high sugar intake'),
+        'init_rp_higher_bmi_age3049': Parameter(Types.REAL, 'odds ratio higher BMI if age 30-49'),
+        'init_rp_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
+        'init_rp_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
+        'init_rp_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
+        'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
+
+
+    init_p_high_salt_urban
+    init_rp_high_salt_rural
+    init_p_ex_alc_m
+    init_p_ex_alc_f
+    init_dist_mar_stat_age1520
+    init_dist_mar_stat_age2030
+    init_dist_mar_stat_age3040
+    init_dist_mar_stat_age4050
+    init_dist_mar_stat_age5060
+    init_dist_mar_stat_agege60
+    init_age2030_w5_some_ed
+    init_rp_some_ed_age0513
+    init_rp_some_ed_age1320
+    init_rp_some_ed_age3040
+    init_rp_some_ed_age4050
+    init_rp_some_ed_age5060
+    init_rp_some_ed_agege60
+    init_rp_some_ed_per_higher_wealth
+    init_prop_age2030_w5_some_ed_sec
+    init_rp_some_ed_sec_age1320
+    init_rp_some_ed_sec_age3040
+    init_rp_some_ed_sec_age4050
+    init_rp_some_ed_sec_age5060
+    init_rp_some_ed_sec_agege60
+    init_rp_some_ed_sec_per_higher_wealth
+    init_p_unimproved_sanitation
+    init_rp_unimproved_sanitation_rural
+    init_p_no_clean_drinking_water
+    init_rp_no_clean_drinking_water
+    init_p_wood_burn_stove
+    init_rp_wood_burn_stove
+    init_p_no_access_handwashing
+    init_rp_no_access_handwashing_per_lower_wealth
+    r_urban
+    r_rural
+    r_higher_bmi
+    rr_higher_bmi_urban
+    rr_higher_bmi_f
+    rr_higher_bmi_age3049
+    rr_higher_bmi_agege50
+    rr_higher_bmi_tob
+    rr_higher_bmi_per_higher_wealth
+    rr_higher_bmi_high_sugar
+    r_lower_bmi
+    rr_lower_bmi_tob
+    rr_lower_bmi_pop_advice_weight
+    rr_lower_bmi_pop_advice_sugar
+    r_high_salt_urban
+    rr_high_salt_rural
+    r_not_high_salt
+    rr_not_low_salt_pop_advice_salt
+    r_high_sugar
+    r_not_high_sugar
+    r_low_ex
+    r_not_low_ex
+    rr_not_low_ex_pop_advice_exercise
+    rr_low_ex_f
+    rr_low_ex_urban
+    r_tob
+    r_not_tob
+    rr_tob_f
+    rr_tob_age2039
+    rr_tob_agege40
+    rr_tob_wealth
+    rr_not_tob_pop_advice_tobacco
+    r_ex_alc
+    r_not_ex_alc
+    rr_ex_alc_f
+    rr_not_ex_alc_pop_advice_alcohol
+    r_mar
+    r_div_wid
+    r_stop_ed
+    rr_stop_ed_lower_wealth
+    p_ed_primary
+    rp_ed_primary_higher_wealth
+    p_ed_secondary
+    rp_ed_secondary_higher_wealth
+    r_improved_sanitation
+    r_clean_drinking_water
+    r_non_wood_burn_stove
+    r_access_handwashing
+
+
+
+
+
+
+
 
         'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
                                                               'given urban'),
@@ -47,9 +159,8 @@ class Lifestyle(Module):
                                                   'initial probability of no_access_handwashing given wealth 1'),
         'init_rp_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial relative prevalence of no_'
                                                                                 'access_handwashing per lower wealth level'),
-        'init_p_urban': Parameter(Types.REAL, 'proportion urban at baseline'),
-        'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
-        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
+
+
         'init_dist_mar_stat_age1320': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
         'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
         'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
@@ -140,6 +251,16 @@ class Lifestyle(Module):
                                                       'no_access_handwashing true to false')
     }
 
+
+
+
+
+
+
+
+
+
+
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
@@ -169,6 +290,27 @@ class Lifestyle(Module):
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
     }
+
+    """
+
+    def read_parameters(self, data_folder):
+        p = self.parameters
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
+        # TODO: Note the rename!
+
+        dfd.set_index('parameter_name', inplace=True)
+
+        p['init_pr_depr_m_age1519_no_cc_wealth123'] = dfd.loc[
+            'init_pr_depr_m_age1519_no_cc_wealth123', 'value'
+        ]
+        p['init_rp_depr_f_not_rec_preg'] = dfd.loc['init_rp_depr_f_not_rec_preg', 'value']
+        p['init_rp_depr_f_rec_preg'] = dfd.loc['init_rp_depr_f_rec_preg', 'value']
+        p['init_rp_depr_age2059'] = dfd.loc['init_rp_depr_age2059', 'value']
+        p['init_rp_depr_agege60'] = dfd.loc['init_rp_depr_agege60', 'value']
+
+    """
+
+
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the lifestyle module
@@ -202,8 +344,6 @@ class Lifestyle(Module):
         p['init_rp_some_ed_sec_age5060'] = 0.80
         p['init_rp_some_ed_sec_agege60'] = 0.75
         p['init_rp_some_ed_sec_per_higher_wealth'] = 1.48
-        p['init_p_on_contrac'] = 0.30
-        p['init_dist_con_t'] = [0.17, 0.17, 0.17, 0.17, 0.17, 0.15]
         p['init_p_unimproved_sanitation'] = 0.04
         p['init_rp_unimproved_sanitation_rural'] = 4.5
         p['init_p_no_clean_drinking_water'] = 0.017
