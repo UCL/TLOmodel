@@ -254,29 +254,29 @@ class Lifestyle(Module):
         p['init_dist_mar_stat_agege60'] = [dfd.loc['init_dist_mar_stat_agege60', 'value1'],
                                            dfd.loc['init_dist_mar_stat_agege60', 'value2'],
                                            dfd.loc['init_dist_mar_stat_agege60', 'value3']]
-        p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1'],
-        p['init_or_some_ed_age0513'] = dfd.loc['init_or_some_ed_age0513', 'value1'],
-        p['init_or_some_ed_age1320'] = dfd.loc['init_or_some_ed_age1320', 'value1'],
-        p['init_or_some_ed_age2030'] = dfd.loc['init_or_some_ed_age2030', 'value1'],
-        p['init_or_some_ed_age3040'] = dfd.loc['init_or_some_ed_age3040', 'value1'],
-        p['init_or_some_ed_age4050'] = dfd.loc['init_or_some_ed_age4050', 'value1'],
-        p['init_or_some_ed_age5060'] = dfd.loc['init_or_some_ed_age5060', 'value1'],
-        p['init_or_some_ed_per_higher_wealth'] = dfd.loc['init_or_some_ed_per_higher_wealth', 'value1'],
-        p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1'],
-        p['init_or_some_ed_sec_age1320'] = dfd.loc['init_or_some_ed_sec_age1320', 'value1'],
-        p['init_or_some_ed_sec_age3040'] = dfd.loc['init_or_some_ed_sec_age3040', 'value1'],
-        p['init_or_some_ed_sec_age4050'] = dfd.loc['init_or_some_ed_sec_age4050', 'value1'],
-        p['init_or_some_ed_sec_age5060'] = dfd.loc['init_or_some_ed_sec_age5060', 'value1'],
-        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agegr60', 'value1'],
-        p['init_or_some_ed_sec_per_higher_wealth'] = dfd.loc['init_or_some_ed_sec_per_higher_wealth', 'value1'],
-        p['init_p_unimproved_sanitation'] = dfd.loc['init_p_unimproved_sanitation', 'value1'],
-        p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1'],
-        p['init_p_no_clean_drinking_water'] = dfd.loc['init_p_no_clean_drinking_water', 'value1'],
-        p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1'],
-        p['init_p_wood_burn_stove'] = dfd.loc['init_p_wood_burn_stove', 'value1'],
-        p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1'],
-        p['init_p_no_access_handwashing'] = dfd.loc['init_p_no_access_handwashing', 'value1'],
-        p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1'],
+        p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1']
+        p['init_or_some_ed_age0513'] = dfd.loc['init_or_some_ed_age0513', 'value1']
+        p['init_or_some_ed_age1320'] = dfd.loc['init_or_some_ed_age1320', 'value1']
+        p['init_or_some_ed_age2030'] = dfd.loc['init_or_some_ed_age2030', 'value1']
+        p['init_or_some_ed_age3040'] = dfd.loc['init_or_some_ed_age3040', 'value1']
+        p['init_or_some_ed_age4050'] = dfd.loc['init_or_some_ed_age4050', 'value1']
+        p['init_or_some_ed_age5060'] = dfd.loc['init_or_some_ed_age5060', 'value1']
+        p['init_or_some_ed_per_higher_wealth'] = dfd.loc['init_or_some_ed_per_higher_wealth', 'value1']
+        p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1']
+        p['init_or_some_ed_sec_age1320'] = dfd.loc['init_or_some_ed_sec_age1320', 'value1']
+        p['init_or_some_ed_sec_age3040'] = dfd.loc['init_or_some_ed_sec_age3040', 'value1']
+        p['init_or_some_ed_sec_age4050'] = dfd.loc['init_or_some_ed_sec_age4050', 'value1']
+        p['init_or_some_ed_sec_age5060'] = dfd.loc['init_or_some_ed_sec_age5060', 'value1']
+        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agegr60', 'value1']
+        p['init_or_some_ed_sec_per_higher_wealth'] = dfd.loc['init_or_some_ed_sec_per_higher_wealth', 'value1']
+        p['init_p_unimproved_sanitation'] = dfd.loc['init_p_unimproved_sanitation', 'value1']
+        p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1']
+        p['init_p_no_clean_drinking_water'] = dfd.loc['init_p_no_clean_drinking_water', 'value1']
+        p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1']
+        p['init_p_wood_burn_stove'] = dfd.loc['init_p_wood_burn_stove', 'value1']
+        p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1']
+        p['init_p_no_access_handwashing'] = dfd.loc['init_p_no_access_handwashing', 'value1']
+        p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1']
 
         p['r_urban'] = dfd.loc['r_urban', 'value1']
         p['r_rural'] = dfd.loc['r_rural', 'value1']
@@ -288,78 +288,42 @@ class Lifestyle(Module):
         p['rr_higher_bmi_tob'] = dfd.loc['rr_higher_bmi_tob', 'value1']
         p['rr_higher_bmi_per_higher_wealth'] = dfd.loc['rr_higher_bmi_per_higher_wealth', 'value1']
         p['rr_higher_bmi_high_sugar'] = dfd.loc['rr_higher_bmi_high_sugar', 'value1']
-
-
-
-
-        'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
-        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
-                                                                'given population advice/campaign on weight'),
-        'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
-        'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
-        'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
-        'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
-        'rr_not_high_salt_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt given'
-                                                                  'population advice/campaign on salt'),
-        'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
-        'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
-        'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
-        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'),
-        'rr_not_high_sugar_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
-                                                                   'population advice/campaign on sugar'),
-        'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
-        'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
-                                       'tobacco if male age 15-19 wealth level 1'),
-        'r_not_tob': Parameter(Types.REAL, 'probability per 3 months of change from tobacco using to '
-                                           'not tobacco using'),
-        'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
-        'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
-        'rr_tob_f': Parameter(Types.REAL, 'risk ratio for tobacco using if female'),
-        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
-                                               '(higher wealth level = lower wealth)'),
-        'rr_not_tob_pop_advice_tobacco': Parameter(Types.REAL, 'probability per 3 months of quitting tobacco given'
-                                                               'population advice/campaign on tobacco'),
-        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
-                                          'excess alcohol'),
-        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
-                                              'not excess alcohol'),
-        'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
-        'rr_not_tob_pop_advice_alc': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
-                                                           'population advice/campaign on alcohol'),
-        'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
-        'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
-                                           'amongst those married'),
-        'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
-        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
-                                                         '1 lower wealth quintile'),
-        'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
-        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 '
-                                                             'higher wealth level'),
-        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 '
-                                                'if in primary education and wealth level 5'),
-        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
-                                                               'school per 1 higher wealth level'),
-        'r_improved_sanitation': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'unimproved_sanitation true to false'),
-        'r_clean_drinking_water': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                        'drinking_water true to false'),
-        'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'wood_burn_stove true to false'),
-        'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                      'no_access_handwashing true to false')
-
-
-
-
-
-
-
-
-
-
-
-
+        p['r_lower_bmi'] = dfd.loc['r_lower_bmi', 'value1']
+        p['rr_lower_bmi_pop_advice_weight'] = dfd.loc['rr_lower_bmi_pop_advice_weight', 'value1']
+        p['rr_lower_bmi_tob'] = dfd.loc['rr_lower_bmi_tob', 'value1']
+        p['r_high_salt_urban'] = dfd.loc['r_high_salt_urban', 'value1']
+        p['rr_high_salt_rural'] = dfd.loc['rr_high_salt_rural', 'value1']
+        p['r_not_high_salt'] = dfd.loc['r_not_high_salt', 'value1']
+        p['rr_not_high_salt_pop_advice_salt'] = dfd.loc['rr_not_high_salt_pop_advice_salt', 'value1']
+        p['r_high_sugar'] = dfd.loc['r_high_sugar', 'value1']
+        p['r_not_high_sugar'] = dfd.loc['r_not_high_sugar', 'value1']
+        p['r_low_ex'] = dfd.loc['r_low_ex', 'value1']
+        p['r_not_low_ex'] = dfd.loc['r_not_low_ex', 'value1']
+        p['rr_not_high_sugar_pop_advice_salt'] = dfd.loc['rr_not_high_sugar_pop_advice_salt', 'value1']
+        p['rr_low_ex_f'] = dfd.loc['rr_low_ex_f', 'value1']
+        p['rr_low_ex_urban'] = dfd.loc['rr_low_ex_urban', 'value1']
+        p['r_tob'] = dfd.loc['r_tob', 'value1']
+        p['r_not_to'] = dfd.loc['r_not_tob', 'value1']
+        p['rr_tob_age2039'] = dfd.loc['rr_tob_age2039', 'value1']
+        p['rr_tob_agege40'] = dfd.loc['rr_tob_agege40', 'value1']
+        p['rr_tob_wealth'] = dfd.loc['rr_tob_wealth', 'value1']
+        p['rr_not_tob_pop_advice_tobacco'] = dfd.loc['rr_not_tob_pop_advice_tobacco', 'value1']
+        p['r_ex_alc'] = dfd.loc['r_ex_alc', 'value1']
+        p['r_not_ex_alc'] = dfd.loc['r_not_ex_alc', 'value1']
+        p['rr_ex_alc_f'] = dfd.loc['rr_ex_alc_f', 'value1']
+        p['rr_not_tob_pop_advice_alc'] = dfd.loc['rr_not_tob_pop_advice_alc', 'value1']
+        p['r_mar'] = dfd.loc['r_mar', 'value1']
+        p['r_div_wid'] = dfd.loc['r_div_wid', 'value1']
+        p['r_stop_ed'] = dfd.loc['r_stop_ed', 'value1']
+        p['rr_stop_ed_lower_wealth'] = dfd.loc['rr_stop_ed_lower_wealth', 'value1']
+        p['p_ed_primary'] = dfd.loc['p_ed_primary', 'value1']
+        p['rp_ed_primary_higher_wealth'] = dfd.loc['rp_ed_primary_higher_wealth', 'value1']
+        p['p_ed_secondary'] = dfd.loc['p_ed_secondary', 'value1']
+        p['rp_ed_secondary_higher_wealth'] = dfd.loc['rp_ed_secondary_higher_wealth', 'value1']
+        p['r_improved_sanitation'] = dfd.loc['r_improved_sanitation', 'value1']
+        p['r_clean_drinking_water'] = dfd.loc['r_clean_drinking_water', 'value1']
+        p['r_non_wood_burn_stove'] = dfd.loc['r_non_wood_burn_stove', 'value1']
+        p['r_access_handwashing'] = dfd.loc['r_access_handwashing', 'value1']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -371,36 +335,31 @@ class Lifestyle(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['li_urban'] = False  # default: all individuals rural
+        df['li_urban'] = False
         df['li_date_trans_to_urban'] = pd.NaT
-        df['li_wealth'].values[:] = 3  # default: all individuals wealth 3
-        df['li_overwt'] = False  # default: all not overwt
-        df['li_low_ex'] = False  # default all not low ex
-        df['li_tob'] = False  # default all not tob
-        df['li_ex_alc'] = False  # default all not ex alc
-        df['li_mar_stat'].values[:] = 1  # default: all individuals never married
-        df['li_on_con'] = False  # default: all not on contraceptives
-        # default: call contraceptive type 1, but when li_on_con = False this property becomes most
-        # recent contraceptive used
-        df['li_con_t'].values[:] = 1
-        df['li_in_ed'] = False   # default: not in education
-        df['li_ed_lev'].values[:] = 1   # default: education level = 1 - no education
-        df['li_unimproved_sanitation'] = True  # default: unimproved_sanitation
+        df['li_wealth'].values[:] = 3
+        df['li_bmi'].values[:] = 3
+        df['li_low_ex'] = False
+        df['li_tob'] = False
+        df['li_ex_alc'] = False
+        df['li_mar_stat'].values[:] = 1
+        df['li_in_ed'] = False
+        df['li_ed_lev'].values[:] = 1
+        df['li_unimproved_sanitation'] = True
         df['li_date_acquire_improved_sanitation'] = pd.NaT
-        df['li_no_access_handwashing'] = True  # default: no_access_handwashing
+        df['li_no_access_handwashing'] = True
         df['li_date_acquire_access_handwashing'] = pd.NaT
-        df['li_no_clean_drinking_water'] = True  # default: unimproved_sanitation
+        df['li_no_clean_drinking_water'] = True
         df['li_date_acquire_clean_drinking_water'] = pd.NaT
-        df['li_wood_burn_stove'] = True  # default: li_wood_burn_stove
+        df['li_wood_burn_stove'] = True
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
-
+        df['li_high_salt'] = False
+        df['li_high_sugar'] = False
 
         # todo: odds bmi 1 x (1.1**2), odds bmi 2 x (1.1**1), odds bmi 3 x 1.1**0, odds bmi 4 x 1.1**(-1),
         # todo: odds bmi 5 x 1.1**(-2) - then re-normalise to sum proportions to 1
 
-
         # todo: express all rates per year and divide by 4 inside program
-
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
