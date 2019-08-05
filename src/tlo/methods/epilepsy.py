@@ -97,7 +97,7 @@ class Epilepsy(Module):
     PROPERTIES = {
         'ep_seiz_stat': Property(
             Types.CATEGORICAL,
-            '(0 = never epilepsy, 1 = previous seizures none now, ' '2 = infrequent seizures, 3 = frequent seizures)',
+            '(0 = never epilepsy, 1 = previous seizures none now, 2 = infrequent seizures, 3 = frequent seizures)',
             categories=['0', '1', '2', '3'],
         ),
         'ep_antiep': Property(Types.BOOL, 'on antiepileptic'),
@@ -166,31 +166,25 @@ class Epilepsy(Module):
         p = self.parameters
         rng = self.rng
 
-        df['ep_seiz_stat'].values[:] = '0'
-        df['ep_antiep'] = False
-        df['ep_epi_death'] = False
-        df['ep_disability'] = 0
+        df.loc[df.is_alive, 'ep_seiz_stat'] = '0'
+        df.loc[df.is_alive, 'ep_antiep'] = False
+        df.loc[df.is_alive, 'ep_epi_death'] = False
+        df.loc[df.is_alive, 'ep_disability'] = 0
 
         # allocate initial ep_seiz_stat
-        alive_idx = df.index[df.is_alive]
-        df.loc[alive_idx, 'ep_seiz_stat'] = rng.choice(
-            ['0', '1', '2', '3'], size=len(alive_idx), p=p['init_epil_seiz_status']
+        df.loc[df.is_alive, 'ep_seiz_stat'] = rng.choice(
+            ['0', '1', '2', '3'], size=df.is_alive.sum(), p=p['init_epil_seiz_status']
         )
 
-        # allocate initial on antiepileptic seiz status 1
-        seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-        random_draw = rng.random_sample(size=len(seiz_stat_1_idx))
-        df.loc[seiz_stat_1_idx, 'ep_antiep'] = random_draw < p['init_prop_antiepileptic_seiz_stat_1']
+        def allocate_antiepileptic(status, probability):
+            mask = (df.is_alive & (df.ep_seiz_stat == status))
+            random_draw = rng.random_sample(size=mask.sum())
+            df.loc[mask, 'ep_antiep'] = random_draw < probability
 
-        # allocate initial on antiepileptic seiz status 2
-        seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-        random_draw = rng.random_sample(size=len(seiz_stat_2_idx))
-        df.loc[seiz_stat_2_idx, 'ep_antiep'] = random_draw < p['init_prop_antiepileptic_seiz_stat_2']
-
-        # allocate initial on antiepileptic seiz status 3
-        seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-        random_draw = rng.random_sample(size=len(seiz_stat_3_idx))
-        df.loc[seiz_stat_3_idx, 'ep_antiep'] = random_draw < p['init_prop_antiepileptic_seiz_stat_3']
+        # allocate initial on antiepileptic seiz status 1, 2 and 3
+        allocate_antiepileptic('1', p['init_prop_antiepileptic_seiz_stat_1'])
+        allocate_antiepileptic('2', p['init_prop_antiepileptic_seiz_stat_2'])
+        allocate_antiepileptic('3', p['init_prop_antiepileptic_seiz_stat_3'])
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -318,7 +312,7 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         # set ep_epi_death back to False after death
         df.loc[~df.is_alive & df.ep_epi_death, 'ep_epi_death'] = False
-        df['ep_disability'] = 0
+        df.loc[df.is_alive, 'ep_disability'] = 0
 
         # update ep_seiz_stat for people ep_seiz_stat = 0
         alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0')]
