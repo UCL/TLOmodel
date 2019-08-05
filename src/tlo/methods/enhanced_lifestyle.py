@@ -214,35 +214,49 @@ class Lifestyle(Module):
                     [dfd.loc['init_p_wealth_urban', 'value1'], dfd.loc['init_p_wealth_urban', 'value2'],
                      dfd.loc['init_p_wealth_urban', 'value3'], dfd.loc['init_p_wealth_urban', 'value4'],
                      dfd.loc['init_p_wealth_urban', 'value5']]
+        p['init_p_wealth_urban'] = \
+                    [dfd.loc['init_p_wealth_rural', 'value1'], dfd.loc['init_p_wealth_rural', 'value2'],
+                     dfd.loc['init_p_wealth_rural', 'value3'], dfd.loc['init_p_wealth_rural', 'value4'],
+                     dfd.loc['init_p_wealth_rural', 'value5']]
+        p['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1'] = \
+                    [dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value1'],
+                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value2'],
+                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value3'],
+                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value4'],
+                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value5']]
+        p['init_or_higher_bmi_f'] = dfd.loc['init_or_higher_bmi_f', 'value1']
+        p['init_or_higher_bmi_rural'] = dfd.loc['init_or_higher_bmi_rural', 'value1']
+        p['init_or_higher_bmi_high_sugar'] = dfd.loc['init_or_higher_bmi_high_sugar', 'value1']
+        p['init_or_higher_bmi_age3049'] = dfd.loc['init_or_higher_bmi_age3049', 'value1']
+        p['init_or_higher_bmi_agege50'] = dfd.loc['init_or_higher_bmi_agege50', 'value1']
+        p['init_or_higher_bmi_tob'] = dfd.loc['init_or_higher_bmi_tob', 'value1']
+        p['init_or_higher_bmi_per_higher_wealth'] = dfd.loc['init_or_higher_bmi_per_higher_wealth', 'value1']
+        p['init_p_high_sugar'] = dfd.loc['init_p_high_sugar', 'value1']
+        p['init_p_high_salt_urban'] = dfd.loc['init_p_high_salt_urban', 'value1'],
+        p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
+        p['init_p_ex_alc_m'] = dfd.loc['init_p_ex_alc_m', 'value1']
+        p['init_p_ex_alc_f'] = dfd.loc['init_p_ex_alc_f', 'value1']
+        p['init_dist_mar_stat_age1520'] = [dfd.loc['init_dist_mar_stat_age1520', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_age1520', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_age1520', 'value3']]
+        p['init_dist_mar_stat_age2030'] = [dfd.loc['init_dist_mar_stat_age2030', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_age2030', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_age2030', 'value3']]
+        p['init_dist_mar_stat_age3040'] = [dfd.loc['init_dist_mar_stat_age3040', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_age3040', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_age3040', 'value3']]
+        p['init_dist_mar_stat_age4050'] = [dfd.loc['init_dist_mar_stat_age4050', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_age4050', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_age4050', 'value3']]
+        p['init_dist_mar_stat_age5060'] = [dfd.loc['init_dist_mar_stat_age5060', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_age5060', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_age5060', 'value3']]
+        p['init_dist_mar_stat_agege60'] = [dfd.loc['init_dist_mar_stat_agege60', 'value1'],
+                                           dfd.loc['init_dist_mar_stat_agege60', 'value2'],
+                                           dfd.loc['init_dist_mar_stat_agege60', 'value3']]
 
 
-
-
-        'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of '
-                                                                                           'bmi categories for urban '
-                                                                                           'men age 15-29 with not high'
-                                                                                           'sugar, not tobacco, '
-                                                                                           'wealth level 1'),
-        'init_or_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
-        'init_or_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
-        'init_or_higher_bmi_high_sugar': Parameter(Types.REAL, 'odds ratio higher BMI if high sugar intake'),
-        'init_or_higher_bmi_age3049': Parameter(Types.REAL, 'odds ratio higher BMI if age 30-49'),
-        'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
-        'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
-        'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
-        'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
-        'init_p_high_salt_urban': Parameter(Types.REAL, 'initital proportion with high salt intake'),
-        'init_or_high_salt_rural': Parameter(Types.REAL, 'odds ratio high salt if rural'),
-        'init_p_ex_alc_m': Parameter(Types.REAL, 'initital proportion of men with excess alcohol use'),
-        'init_p_ex_alc_f': Parameter(Types.REAL, 'initital proportion of women with excess alcohol use'),
-        'init_dist_mar_stat_age1520': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
-        'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
-        'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
-        'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
-        'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
-        'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
-        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
+         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
                                                          'education at baseline'),
         'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
         'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
