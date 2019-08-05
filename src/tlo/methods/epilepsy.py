@@ -328,10 +328,10 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         random_draw_02 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
 
         seiz_stat_3 = epi_now & (series_prop_inc_epilepsy_seiz_freq > random_draw_02)
-        seiz_stat_3_idx = alive_seiz_stat_0_idx[seiz_stat_3].index
+        seiz_stat_3_idx = alive_seiz_stat_0_idx[seiz_stat_3]
 
         seiz_stat_2 = epi_now & (series_prop_inc_epilepsy_seiz_freq < random_draw_02)
-        seiz_stat_2_idx = alive_seiz_stat_0_idx[seiz_stat_2].index
+        seiz_stat_2_idx = alive_seiz_stat_0_idx[seiz_stat_2]
 
         df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = '0'  # default
         df.loc[alive_seiz_stat_0_idx, 'incident_epi_this_period'] = epi_now
@@ -353,107 +353,17 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             }
         )
 
-        # transition from ep_seiz_stat 1 to 2
+        def transition_seiz_stat(current_state, future_state, transition_probability):
+            in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)]
+            random_draw = self.module.rng.random_sample(size=len(in_current_state))
+            changing_state = in_current_state[transition_probability > random_draw]
+            df.loc[changing_state, 'ep_seiz_stat'] = future_state
 
-        alive_seiz_stat_1_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1')]
-
-        eff_prob_seiz_stat_2 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_none, index=alive_seiz_stat_1_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_1_idx)),
-            index=alive_seiz_stat_1_idx
-        )
-
-        dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
-
-        dfx['x_ep_seiz_stat'] = '1'
-        dfx.loc[(dfx.eff_prob_seiz_stat_2 > random_draw_01), 'x_ep_seiz_stat'] = '2'
-
-        df.loc[alive_seiz_stat_1_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
-
-        # transition from ep_seiz_stat 2 to 1
-
-        alive_seiz_stat_2_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2')]
-
-        eff_prob_seiz_stat_1 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_none, index=alive_seiz_stat_2_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-            index=alive_seiz_stat_2_idx
-        )
-
-        dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_seiz_stat_1', 'random_draw_01']
-
-        dfx['x_ep_seiz_stat'] = '2'
-        dfx.loc[(dfx.eff_prob_seiz_stat_1 > random_draw_01), 'x_ep_seiz_stat'] = '1'
-
-        df.loc[alive_seiz_stat_2_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
-
-        # transition from ep_seiz_stat 2 to 3
-
-        eff_prob_seiz_stat_3 = pd.Series(
-            self.base_prob_3m_seiz_stat_freq_infreq, index=alive_seiz_stat_2_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_2_idx)),
-            index=alive_seiz_stat_2_idx
-        )
-
-        dfx = pd.concat([eff_prob_seiz_stat_3, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_seiz_stat_3', 'random_draw_01']
-
-        dfx['x_ep_seiz_stat'] = '2'
-        dfx.loc[(dfx.eff_prob_seiz_stat_3 > random_draw_01), 'x_ep_seiz_stat'] = '3'
-
-        df.loc[alive_seiz_stat_2_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
-
-        # transition from ep_seiz_stat 3 to 1
-
-        alive_seiz_stat_3_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3')]
-
-        eff_prob_seiz_stat_1 = pd.Series(
-            self.base_prob_3m_seiz_stat_none_freq, index=alive_seiz_stat_3_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-            index=alive_seiz_stat_3_idx
-        )
-
-        dfx = pd.concat([eff_prob_seiz_stat_1, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_seiz_stat_1', 'random_draw_01']
-
-        dfx['x_ep_seiz_stat'] = '3'
-        dfx.loc[(dfx.eff_prob_seiz_stat_1 > random_draw_01), 'x_ep_seiz_stat'] = '1'
-
-        df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
-
-        # transition from ep_seiz_stat 3 to 2
-
-        eff_prob_seiz_stat_2 = pd.Series(
-            self.base_prob_3m_seiz_stat_infreq_freq, index=alive_seiz_stat_3_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_3_idx)),
-            index=alive_seiz_stat_3_idx
-        )
-
-        dfx = pd.concat([eff_prob_seiz_stat_2, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_seiz_stat_2', 'random_draw_01']
-
-        # x_ep_antiep is whether requests health system for treatment to start
-        dfx['x_ep_seiz_stat'] = '3'
-        dfx.loc[(dfx.eff_prob_seiz_stat_2 > random_draw_01), 'x_ep_seiz_stat'] = '2'
-
-        df.loc[alive_seiz_stat_3_idx, 'ep_seiz_stat'] = dfx['x_ep_seiz_stat']
+        transition_seiz_stat('1', '2', self.base_prob_3m_seiz_stat_infreq_none)
+        transition_seiz_stat('2', '1', self.base_prob_3m_seiz_stat_infreq_none)
+        transition_seiz_stat('2', '3', self.base_prob_3m_seiz_stat_freq_infreq)
+        transition_seiz_stat('3', '1', self.base_prob_3m_seiz_stat_none_freq)
+        transition_seiz_stat('3', '2', self.base_prob_3m_seiz_stat_infreq_freq)
 
         # update ep_antiep if ep_seiz_stat = 2
 
@@ -637,24 +547,24 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         cum_deaths = (~df.is_alive).sum()
 
-        #       logger.info('%s,%s,', self.sim.date, n_epi_death)
-        logger.info('%s|prop_seiz_stat_0|%s|prop_seiz_stat_1|%s|prop_seiz_stat_2|%s|'
-                    'prop_seiz_stat_3|%s|prop_antiepilep_seiz_stat_0|%s|prop_antiepilep_seiz_stat_1|%s|'
-                    'prop_antiepilep_seiz_stat_2|%s|prop_antiepilep_seiz_stat_3|%s|n_epi_death|%s|'
-                    'cum_deaths|%s|epi_death_rate |%s|n_seiz_stat_1_3|%s|n_seiz_stat_2_3|%s|n_antiep|%s'
-                    '|n_alive|%s',
-                    self.sim.date, prop_seiz_stat_0, prop_seiz_stat_1, prop_seiz_stat_2,
-                    prop_seiz_stat_3,
-                    prop_antiepilep_seiz_stat_0, prop_antiepilep_seiz_stat_1,
-                    prop_antiepilep_seiz_stat_2,
-                    prop_antiepilep_seiz_stat_3, n_epi_death, cum_deaths, epi_death_rate,
-                    n_seiz_stat_1_3,
-                    n_seiz_stat_2_3, n_antiep, n_alive
-                    )
-
-        #       logger.info('%s|person_one|%s',
-        #                    self.sim.date,
-        #                    df.loc[0].to_dict())
+        logger.info('%s|epilepsy_logging|%s',
+                    self.sim.date,
+                    {
+                        'prop_seiz_stat_0':  prop_seiz_stat_0,
+                        'prop_seiz_stat_1':  prop_seiz_stat_1,
+                        'prop_seiz_stat_2': prop_seiz_stat_2,
+                        'prop_seiz_stat_3': prop_seiz_stat_3,
+                        'prop_antiepilep_seiz_stat_0':  prop_antiepilep_seiz_stat_0,
+                        'prop_antiepilep_seiz_stat_1': prop_antiepilep_seiz_stat_1,
+                        'prop_antiepilep_seiz_stat_2': prop_antiepilep_seiz_stat_2,
+                        'prop_antiepilep_seiz_stat_3':  prop_antiepilep_seiz_stat_3,
+                        'n_epi_death':  n_epi_death,
+                        'cum_deaths':  cum_deaths,
+                        'epi_death_rate': epi_death_rate,
+                        'n_seiz_stat_1_3': n_seiz_stat_1_3,
+                        'n_seiz_stat_2_3':  n_seiz_stat_2_3,
+                        'n_antiep':  n_antiep,
+                    })
 
 
 class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
