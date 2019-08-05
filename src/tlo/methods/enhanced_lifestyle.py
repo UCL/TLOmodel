@@ -254,69 +254,44 @@ class Lifestyle(Module):
         p['init_dist_mar_stat_agege60'] = [dfd.loc['init_dist_mar_stat_agege60', 'value1'],
                                            dfd.loc['init_dist_mar_stat_agege60', 'value2'],
                                            dfd.loc['init_dist_mar_stat_agege60', 'value3']]
+        p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1'],
+        p['init_or_some_ed_age0513'] = dfd.loc['init_or_some_ed_age0513', 'value1'],
+        p['init_or_some_ed_age1320'] = dfd.loc['init_or_some_ed_age1320', 'value1'],
+        p['init_or_some_ed_age2030'] = dfd.loc['init_or_some_ed_age2030', 'value1'],
+        p['init_or_some_ed_age3040'] = dfd.loc['init_or_some_ed_age3040', 'value1'],
+        p['init_or_some_ed_age4050'] = dfd.loc['init_or_some_ed_age4050', 'value1'],
+        p['init_or_some_ed_age5060'] = dfd.loc['init_or_some_ed_age5060', 'value1'],
+        p['init_or_some_ed_per_higher_wealth'] = dfd.loc['init_or_some_ed_per_higher_wealth', 'value1'],
+        p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1'],
+        p['init_or_some_ed_sec_age1320'] = dfd.loc['init_or_some_ed_sec_age1320', 'value1'],
+        p['init_or_some_ed_sec_age3040'] = dfd.loc['init_or_some_ed_sec_age3040', 'value1'],
+        p['init_or_some_ed_sec_age4050'] = dfd.loc['init_or_some_ed_sec_age4050', 'value1'],
+        p['init_or_some_ed_sec_age5060'] = dfd.loc['init_or_some_ed_sec_age5060', 'value1'],
+        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agegr60', 'value1'],
+        p['init_or_some_ed_sec_per_higher_wealth'] = dfd.loc['init_or_some_ed_sec_per_higher_wealth', 'value1'],
+        p['init_p_unimproved_sanitation'] = dfd.loc['init_p_unimproved_sanitation', 'value1'],
+        p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1'],
+        p['init_p_no_clean_drinking_water'] = dfd.loc['init_p_no_clean_drinking_water', 'value1'],
+        p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1'],
+        p['init_p_wood_burn_stove'] = dfd.loc['init_p_wood_burn_stove', 'value1'],
+        p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1'],
+        p['init_p_no_access_handwashing'] = dfd.loc['init_p_no_access_handwashing', 'value1'],
+        p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1'],
+
+        p['r_urban'] = dfd.loc['r_urban', 'value1']
+        p['r_rural'] = dfd.loc['r_rural', 'value1']
+        p['r_higher_bmi'] = dfd.loc['r_higher_bmi', 'value1']
+        p['rr_higher_bmi_urban'] = dfd.loc['rr_higher_bmi_urban', 'value1']
+        p['rr_higher_bmi_f'] = dfd.loc['rr_higher_bmi_f', 'value1']
+        p['rr_higher_bmi_age3049'] = dfd.loc['rr_higher_bmi_age3049', 'value1']
+        p['rr_higher_bmi_agege50'] = dfd.loc['rr_higher_bmi_agege50', 'value1']
+        p['rr_higher_bmi_tob'] = dfd.loc['rr_higher_bmi_tob', 'value1']
+        p['rr_higher_bmi_per_higher_wealth'] = dfd.loc['rr_higher_bmi_per_higher_wealth', 'value1']
+        p['rr_higher_bmi_high_sugar'] = dfd.loc['rr_higher_bmi_high_sugar', 'value1']
 
 
-         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
-                                                         'education at baseline'),
-        'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
-        'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
-        'init_or_some_ed_age2030': Parameter(Types.REAL, 'odds ratio of some education at baseline age 20-30'),
-        'init_or_some_ed_age3040': Parameter(Types.REAL, 'odds ratio of some education at baseline age 30-40'),
-        'init_or_some_ed_age4050': Parameter(Types.REAL, 'odds ratio of some education at baseline age 40-50'),
-        'init_or_some_ed_age5060': Parameter(Types.REAL, 'odds ratio of some education at baseline age 50-60'),
-        'init_or_some_ed_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of some education at baseline '
-                                                                   'per higher wealth level'),
-        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
-                                                      'proportion of low wealth aged 20-30 with some education who '
-                                                      'have secondary education at baseline'),
-        'init_or_some_ed_sec_age1320': Parameter(Types.REAL, 'odds ratio of secondary education age 13-20'),
-        'init_or_some_ed_sec_age3040': Parameter(Types.REAL, 'odds ratio of secondary education age 30-40'),
-        'init_or_some_ed_sec_age4050': Parameter(Types.REAL, 'odds ratio of secondary education age 40-50'),
-        'init_or_some_ed_sec_age5060': Parameter(Types.REAL, 'odds ratio of secondary education age 50-60'),
-        'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
-        'init_or_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of secondary education '
-                                                                       'per higher wealth level'),
-        'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
-                                                              'given urban'),
-        # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
-        #                                                     'true to false upon move from rural to urban'
-        'init_or_unimproved_sanitation_rural': Parameter(Types.REAL,
-                                                         'initial odds ratio of unimproved_sanitation if '
-                                                         'rural'),
-        'init_p_no_clean_drinking_water': Parameter(Types.REAL,
-                                                    'initial probability of no_clean_drinking_water given urban'),
-        # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
-        #                                                     'true to false upon move from rural to urban'
-        'init_or_no_clean_drinking_water_rural': Parameter(Types.REAL,
-                                                           'initial odds ratio of no clean drinking_water '
-                                                           'if rural'),
-        'init_p_wood_burn_stove': Parameter(Types.REAL,
-                                            'initial probability of wood_burn_stove given urban'),
-        # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
-        #                                                     'true to false upon move from rural to urban'
-        'init_or_wood_burn_stove_rural': Parameter(Types.REAL,
-                                                   'initial odds ratio of wood_burn_stove if rural'),
-        'init_p_no_access_handwashing': Parameter(Types.REAL,
-                                                  'initial probability of no_access_handwashing given wealth 1'),
-        'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
-                                                                                'access_handwashing per lower wealth '
-                                                                                'level'),
 
-        # ------------ parameters relating to updating of property values over time ------------------------
 
-        'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
-        'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
-        'r_higher_bmi': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if rural male age'
-                                              '15-29 not using tobacoo with wealth level 1 with not high sugar intake'),
-        'rr_higher_bmi_urban': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if '),
-        'rr_higher_bmi_f': Parameter(Types.REAL, 'rate ratio for increase in bmi category for females'),
-        'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
-        'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
-        'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
-        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
-                                                                 'wealth'),
-        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
-                                                          'intake'),
         'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
         'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
                                                                 'given population advice/campaign on weight'),
