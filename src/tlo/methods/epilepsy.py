@@ -318,53 +318,27 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0')]
         ge20_seiz_stat_0_idx = df.index[df.is_alive & (df.ep_seiz_stat == '0') & (df.age_years >= 20)]
 
-        eff_prob_epilepsy = pd.Series(
-            self.base_3m_prob_epilepsy, index=alive_seiz_stat_0_idx
-        )
+        eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy, index=alive_seiz_stat_0_idx)
         eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
+        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
 
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-            index=alive_seiz_stat_0_idx
-        )
-        random_draw_02 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx)),
-            index=alive_seiz_stat_0_idx
-        )
+        epi_now = eff_prob_epilepsy > random_draw_01
 
-        series_prop_inc_epilepsy_seiz_freq = pd.Series(
-            self.prop_inc_epilepsy_seiz_freq, index=alive_seiz_stat_0_idx
-        )
+        series_prop_inc_epilepsy_seiz_freq = pd.Series(self.prop_inc_epilepsy_seiz_freq, index=alive_seiz_stat_0_idx)
+        random_draw_02 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
 
-        df_incident_epilepsy = pd.concat(
-            [eff_prob_epilepsy, random_draw_01, random_draw_02, series_prop_inc_epilepsy_seiz_freq], axis=1
-        )
-        df_incident_epilepsy.columns = [
-            'eff_prob_epilepsy',
-            'random_draw_01',
-            'random_draw_02',
-            'prop_inc_epilepsy_seiz_freq',
-        ]
+        seiz_stat_3 = epi_now & (series_prop_inc_epilepsy_seiz_freq > random_draw_02)
+        seiz_stat_3_idx = alive_seiz_stat_0_idx[seiz_stat_3].index
 
-        df_incident_epilepsy['x_ep_seiz_stat'] = '0'
-        df_incident_epilepsy['incident_epi_this_period'] = False
-        df_incident_epilepsy.loc[
-            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01), 'incident_epi_this_period'
-        ] = True
-        df_incident_epilepsy.loc[
-            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01)
-            & (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq > random_draw_02),
-            'x_ep_seiz_stat',
-        ] = '3'
-        df_incident_epilepsy.loc[
-            (df_incident_epilepsy.eff_prob_epilepsy > random_draw_01)
-            & (df_incident_epilepsy.prop_inc_epilepsy_seiz_freq < random_draw_02),
-            'x_ep_seiz_stat',
-        ] = '2'
+        seiz_stat_2 = epi_now & (series_prop_inc_epilepsy_seiz_freq < random_draw_02)
+        seiz_stat_2_idx = alive_seiz_stat_0_idx[seiz_stat_2].index
 
-        df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = df_incident_epilepsy['x_ep_seiz_stat']
+        df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = '0'  # default
+        df.loc[alive_seiz_stat_0_idx, 'incident_epi_this_period'] = epi_now
+        df.loc[seiz_stat_3_idx, 'ep_seiz_stat'] = '3'
+        df.loc[seiz_stat_2_idx, 'ep_seiz_stat'] = '2'
 
-        n_incident_epilepsy = df_incident_epilepsy.incident_epi_this_period.sum()
+        n_incident_epilepsy = epi_now.sum()
         n_alive = df.is_alive.sum()
 
         incidence_epilepsy = (n_incident_epilepsy * 4 * 100000) / n_alive
