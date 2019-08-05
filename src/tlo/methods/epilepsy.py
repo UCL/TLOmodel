@@ -320,21 +320,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
 
         eff_prob_epilepsy = pd.Series(self.base_3m_prob_epilepsy, index=alive_seiz_stat_0_idx)
         eff_prob_epilepsy.loc[ge20_seiz_stat_0_idx] *= self.rr_epilepsy_age_ge20
-        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
 
+        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
         epi_now = eff_prob_epilepsy > random_draw_01
 
-        series_prop_inc_epilepsy_seiz_freq = pd.Series(self.prop_inc_epilepsy_seiz_freq, index=alive_seiz_stat_0_idx)
         random_draw_02 = self.module.rng.random_sample(size=len(alive_seiz_stat_0_idx))
+        seiz_stat_3_idx = alive_seiz_stat_0_idx[epi_now & (self.prop_inc_epilepsy_seiz_freq > random_draw_02)]
+        seiz_stat_2_idx = alive_seiz_stat_0_idx[epi_now & (self.prop_inc_epilepsy_seiz_freq <= random_draw_02)]
 
-        seiz_stat_3 = epi_now & (series_prop_inc_epilepsy_seiz_freq > random_draw_02)
-        seiz_stat_3_idx = alive_seiz_stat_0_idx[seiz_stat_3]
-
-        seiz_stat_2 = epi_now & (series_prop_inc_epilepsy_seiz_freq < random_draw_02)
-        seiz_stat_2_idx = alive_seiz_stat_0_idx[seiz_stat_2]
-
-        df.loc[alive_seiz_stat_0_idx, 'ep_seiz_stat'] = '0'  # default
-        df.loc[alive_seiz_stat_0_idx, 'incident_epi_this_period'] = epi_now
         df.loc[seiz_stat_3_idx, 'ep_seiz_stat'] = '3'
         df.loc[seiz_stat_2_idx, 'ep_seiz_stat'] = '2'
 
