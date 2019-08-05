@@ -10,7 +10,6 @@ from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# logger.setLevel(logging.INFO)
 
 
 class Depression(Module):
@@ -387,9 +386,9 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: more comments on every step of this would be helpful
         df = population.props
 
-        df['de_non_fatal_self_harm_event'] = False
-        df['de_suicide'] = False
-        df['de_disability'] = 0
+        df.loc[df.is_alive, 'de_non_fatal_self_harm_event'] = False
+        df.loc[df.is_alive, 'de_suicide'] = False
+        df.loc[df.is_alive, 'de_disability'] = 0
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
@@ -415,55 +414,29 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_newly_depr.loc[ever_depr_idx] *= self.rr_depr_prev_epis
         eff_prob_newly_depr.loc[on_antidepr_idx] *= self.rr_depr_on_antidepr
 
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(ge15_not_depr_idx)),
-            index=ge15_not_depr_idx
-        )
+        newly_depr = eff_prob_newly_depr > self.module.rng.random_sample(size=len(ge15_not_depr_idx))
+        newly_depr_idx = newly_depr[newly_depr].index  # index where no_depressed is True
 
-        dfx = pd.concat([eff_prob_newly_depr, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_newly_depr', 'random_draw_01']
-
-        dfx['x_depr'] = False
-        dfx['x_date_init_most_rec_depr'] = pd.NaT
-
-        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_depr'] = True
-        dfx.loc[dfx['eff_prob_newly_depr'] > random_draw_01, 'x_date_init_most_rec_depr'] = self.sim.date
-
-        df.loc[ge15_not_depr_idx, 'de_depr'] = dfx['x_depr']
-        df.loc[ge15_not_depr_idx, 'de_date_init_most_rec_depr'] = dfx['x_date_init_most_rec_depr']
-
-        newly_depr_idx = df.index[df.de_date_init_most_rec_depr == self.sim.date]
-
+        df.loc[ge15_not_depr_idx, 'de_depr'] = newly_depr
+        df.loc[ge15_not_depr_idx, 'de_date_init_most_rec_depr'] = pd.NaT
+        df.loc[newly_depr_idx, 'de_date_init_most_rec_depr'] = self.sim.date
         df.loc[newly_depr_idx, 'de_prob_3m_resol_depression'] = np.random.choice(
             [0.2, 0.3, 0.5, 0.7, 0.95], size=len(newly_depr_idx), p=[0.2, 0.2, 0.2, 0.2, 0.2]
         )
 
         # initiation of antidepressants
-
         depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
 
-        eff_prob_antidepressants = pd.Series(
-            self.rate_init_antidep, index=depr_not_on_antidepr_idx
-        )
-
-        random_draw = pd.Series(
-            self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx)),
-            index=depr_not_on_antidepr_idx
-        )
-
-        dfx = pd.concat([eff_prob_antidepressants, random_draw], axis=1)
-        dfx.columns = ['eff_prob_antidepressants', 'random_draw']
-
-        dfx['x_antidepr'] = False
-        dfx.loc[dfx['eff_prob_antidepressants'] > random_draw, 'x_antidepr'] = True
+        eff_prob_antidepressants = pd.Series(self.rate_init_antidep, index=depr_not_on_antidepr_idx)
+        antidepr = eff_prob_antidepressants > self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx))
 
         # get the indicies of persons who are going to present for care at somepoint in the next 3 months
 
-        start_antidepr_this_period_idx = dfx.index[dfx.x_antidepr]
+        start_antidepr_this_period_idx = antidepr[antidepr].index
 
         # generate the HSI Events whereby persons present for care and get antidepressants
         for person_id in start_antidepr_this_period_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,30]days from now)
+            # For this person, determine when they will seek care (uniform distribition [0,30] days from now)
             date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 30)))
 
             # For this person, create the HSI Event for their presentation for care
@@ -478,22 +451,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         on_antidepr_currently_depr_idx = df.index[df.is_alive & df.de_depr & df.de_on_antidepr]
 
-        eff_prob_default_antidepr = pd.Series(
-            self.rate_default_antidepr, index=on_antidepr_currently_depr_idx
+        eff_prob_default_antidepr = pd.Series(self.rate_default_antidepr, index=on_antidepr_currently_depr_idx)
+        df.loc[on_antidepr_currently_depr_idx, 'de_on_antidepr'] = (
+            # note comparison is reversed here (less than)
+            eff_prob_default_antidepr < self.module.rng.random_sample(size=len(on_antidepr_currently_depr_idx))
         )
-
-        random_draw = pd.Series(
-            self.module.rng.random_sample(size=len(on_antidepr_currently_depr_idx)),
-            index=on_antidepr_currently_depr_idx
-        )
-
-        dfx = pd.concat([eff_prob_default_antidepr, random_draw], axis=1)
-        dfx.columns = ['eff_prob_default_antidepr', 'random_draw']
-
-        dfx['x_antidepr'] = True
-        dfx.loc[dfx['eff_prob_default_antidepr'] > random_draw, 'x_antidepr'] = False
-
-        df.loc[on_antidepr_currently_depr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
 
         # stopping of antidepressants when no longer depressed
 
@@ -503,50 +465,29 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             self.rate_stop_antidepr, index=on_antidepr_not_depr_idx
         )
 
-        random_draw = pd.Series(
-            self.module.rng.random_sample(size=len(on_antidepr_not_depr_idx)),
-            index=on_antidepr_not_depr_idx
+        df.loc[on_antidepr_not_depr_idx, 'de_on_antidepr'] = (
+            # note comparison is reversed here (less than)
+            eff_prob_stop_antidepr < self.module.rng.random_sample(size=len(on_antidepr_not_depr_idx))
         )
-
-        dfx = pd.concat([eff_prob_stop_antidepr, random_draw], axis=1)
-        dfx.columns = ['eff_prob_stop_antidepr', 'random_draw']
-
-        dfx['x_antidepr'] = True
-        dfx.loc[dfx['eff_prob_stop_antidepr'] > random_draw, 'x_antidepr'] = False
-
-        df.loc[on_antidepr_not_depr_idx, 'de_on_antidepr'] = dfx['x_antidepr']
 
         # resolution of depression
 
-        depr_idx = df.index[df.de_depr & df.is_alive]
+        depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
         cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
 
         eff_prob_depr_resolved = pd.Series(
-            df.de_prob_3m_resol_depression, index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
+            df.de_prob_3m_resol_depression, index=depr_idx
         )
         eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
 
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(depr_idx)),
-            index=df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
-        )
-
-        dfx = pd.concat([eff_prob_depr_resolved, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_depr_resolved', 'random_draw_01']
-
-        dfx['x_depr'] = True
-        dfx['x_date_depr_resolved'] = pd.NaT
-
-        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_depr'] = False
-        dfx.loc[dfx['eff_prob_depr_resolved'] > random_draw_01, 'x_date_depr_resolved'] = self.sim.date
-
-        df.loc[depr_idx, 'de_depr'] = dfx['x_depr']
-        df.loc[depr_idx, 'de_date_depr_resolved'] = dfx['x_date_depr_resolved']
-
-        depr_resolved_now_idx = df.index[df.de_date_depr_resolved == self.sim.date]
-        df.loc[depr_resolved_now_idx, 'de_prob_3m_resol_depression'] = 0
+        depr_resolved = eff_prob_depr_resolved < self.module.rng.random_sample(size=len(depr_idx))
+        depr_resolved_idx = depr_resolved[depr_resolved].index
+        df.loc[depr_idx, 'de_depr'] = depr_resolved
+        df.loc[depr_idx, 'de_date_depr_resolved'] = pd.NaT
+        df.loc[depr_resolved_idx, 'de_date_depr_resolved'] = self.sim.date
+        df.loc[depr_resolved_idx, 'de_prob_3m_resol_depression'] = 0
 
         curr_depr_idx = df.index[df.de_depr & df.is_alive & (df.age_years >= 15)]
         df.loc[curr_depr_idx, 'de_ever_depr'] = True
@@ -574,8 +515,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         )
         eff_prob_suicide.loc[curr_depr_f_idx] *= self.rr_suicide_depr_f
 
-        random_draw = self.module.rng.random_sample(size=len(curr_depr_idx))
-        df.loc[curr_depr_idx, 'de_suicide'] = eff_prob_suicide > random_draw
+        df.loc[curr_depr_idx, 'de_suicide'] = eff_prob_suicide > self.module.rng.random_sample(size=len(curr_depr_idx))
 
         # suicide_idx = df.index[df.de_suicide]
 
