@@ -81,6 +81,15 @@ class iCCM(Property, Parameter):
         has_some_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'some dehydration'
         has_severe_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'severe dehydration'
 
+    def pneumonia_diagnosis(self, person_id):
+        now = self.sim.date
+        df = population.props
+
+        # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
+        has_fast_breathing = df.at[person_id, 'gi_diarrhoea_status']
+        has_danger_signs = df.at[person_id, 'any_danger_signs']
+
+
 """  
         # stepone : work out if the child has 'malaria'
         has_malaria = df.atperson_id,'Malaria'[]

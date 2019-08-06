@@ -27,6 +27,7 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
 
@@ -85,9 +86,6 @@ class HSI_HSA_Diarrhoea_StartTreatment(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [pkg_code1, pkg_code2],
             'Item_Code': [item_code1, item_code2]
         }
-
-
-
 
     def apply(self, person_id):
         logger.debug('This is HSI_Sick_Child_Seeks_Care_From_HSA, a first appointment for person %d in the community',

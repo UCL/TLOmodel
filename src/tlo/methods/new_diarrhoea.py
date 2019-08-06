@@ -54,10 +54,10 @@ class NewDiarrhoea(Module):
         'rr_gi_diarrhoea_SAM':
             Parameter(Types.REAL, 'relative rate of diarrhoea for severe malnutrition'
                       ),
-        'rr_gi_diarrhoea_cont_breast':
+        'rr_gi_diarrhoea_excl_breast':
             Parameter(Types.REAL, 'relative rate of diarrhoea for exclusive breastfeeding upto 6 months'
                       ),
-        'rr_gi_diarrhoea_excl_breast':
+        'rr_gi_diarrhoea_cont_breast':
             Parameter(Types.REAL, 'relative rate of diarrhoea for continued breastfeeding 6 months to 2 years'
                       ),
         'rotavirus_AWD':
