@@ -35,7 +35,8 @@ def show_changes(sim, initial_state, final_state):
         subset=pd.IndexSlice[len1:])
 
 
-def transition_states(initial_df, state_column, prob_matrix, seed=None):
+def transition_states(initial_df: pd.DataFrame, state_column: str, prob_matrix: pd.DataFrame,
+                      seed: int = None) -> pd.Series:
     """Carrys out transitions on all states based on probability matrix
 
     This should carry out all state transitions for a specific state_column
@@ -72,8 +73,8 @@ def transition_states(initial_df, state_column, prob_matrix, seed=None):
         df.groupby(state_column).size().apply(lambda x: rng.random_sample(x)).to_frame('random_draw')
     )
     random_draw = (pd.melt(random_draw.random_draw.apply(pd.Series).reset_index(),
-                          id_vars=['state'],
-                          value_name='random_draw')
+                           id_vars=['state'],
+                           value_name='random_draw')
                    ).drop(['variable', 'state'], axis=1)
     df = pd.concat([df, random_draw], axis=1)
 
@@ -92,16 +93,15 @@ def transition_states(initial_df, state_column, prob_matrix, seed=None):
     for original_state in state_transitions.keys():
         changeable_states = df.loc[
             df.is_alive & (df[state_column] == original_state) & ~df.state_updated
-        ]
+            ]
         random_draw = changeable_states.loc[
             changeable_states[state_column] == original_state, 'random_draw'
         ]
-        for new_state in state_transitions[original_state]:
+        # Go through states in reverse so that the smaller probabilities are not overwritten
+        for new_state in reversed(state_transitions[original_state]):
             probability = summed_prob.loc[new_state, original_state]
             updating_state = changeable_states.index[probability > random_draw]
             df.loc[updating_state, state_column] = new_state
             df.loc[updating_state, 'state_updated'] = True
 
     return df[state_column]
-
-

@@ -74,7 +74,6 @@ def test_show_changes_same_size(mock_sim):
 
 class TestTransitionsStates:
     def setup(self):
-
         self.states = ['a', 'b', 'c', 'd']
 
         self.df = pd.DataFrame({'state': self.states * 1000,
@@ -91,12 +90,12 @@ class TestTransitionsStates:
         self.seed = 1234
 
         # repeat each state by the list of integers
-        nested_states = [
-            list(state * repeat) for state, repeat in zip(self.states, [894, 404, 1606, 1096])
+        nested_states = [                     # perfect ratio would be: 1000, 600, 1500, 900
+            list(state * repeat) for state, repeat in zip(self.states, [1024, 610, 1476, 890])
         ]
         self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                 'other_data_1': pd.Series(range(0, 4000)),
-                                 'is_alive': True})
+                                      'other_data_1': pd.Series(range(0, 4000)),
+                                      'is_alive': True})
 
     def test_all_alive(self):
         """Simple case, should change roughly to the probabilites given"""
