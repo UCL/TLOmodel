@@ -280,16 +280,16 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=3))
         p = module.parameters
 
-        self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy']
+        self.base_3m_prob_epilepsy = p['base_3m_prob_epilepsy']  # /3
         self.rr_epilepsy_age_ge20 = p['rr_epilepsy_age_ge20']
         self.prop_inc_epilepsy_seiz_freq = p['prop_inc_epilepsy_seiz_freq']
         self.base_prob_3m_seiz_stat_freq_infreq = p['base_prob_3m_seiz_stat_freq_infreq']
         self.rr_effectiveness_antiepileptics = p['rr_effectiveness_antiepileptics']
-        self.base_prob_3m_seiz_stat_infreq_freq = p['base_prob_3m_seiz_stat_infreq_freq']
-        self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq']
-        self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq']
-        self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none']
-        self.base_prob_3m_antiepileptic = p['base_prob_3m_antiepileptic']
+        self.base_prob_3m_seiz_stat_infreq_freq = p['base_prob_3m_seiz_stat_infreq_freq']  # / 3
+        self.base_prob_3m_seiz_stat_none_freq = p['base_prob_3m_seiz_stat_none_freq']  # / 3
+        self.base_prob_3m_seiz_stat_none_infreq = p['base_prob_3m_seiz_stat_none_infreq']  # / 3
+        self.base_prob_3m_seiz_stat_infreq_none = p['base_prob_3m_seiz_stat_infreq_none']  # / 3
+        self.base_prob_3m_antiepileptic = p['base_prob_3m_antiepileptic']  # /3
         self.rr_antiepileptic_seiz_infreq = p['rr_antiepileptic_seiz_infreq']
         self.base_prob_3m_stop_antiepileptic = p['base_prob_3m_stop_antiepileptic']
         self.rr_stop_antiepileptic_seiz_infreq_or_freq = p['rr_stop_antiepileptic_seiz_infreq_or_freq']
@@ -346,11 +346,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             }
         )
 
-        def transition_seiz_stat(current_state, future_state, transition_probability):
+        def transition_seiz_stat(current_state, new_state, transition_probability):
             in_current_state = df.index[df.is_alive & (df.ep_seiz_stat == current_state)]
             random_draw = self.module.rng.random_sample(size=len(in_current_state))
             changing_state = in_current_state[transition_probability > random_draw]
-            df.loc[changing_state, 'ep_seiz_stat'] = future_state
+            df.loc[changing_state, 'ep_seiz_stat'] = new_state
 
         transition_seiz_stat('1', '2', self.base_prob_3m_seiz_stat_infreq_none)
         transition_seiz_stat('2', '1', self.base_prob_3m_seiz_stat_infreq_none)
@@ -379,6 +379,15 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
+
+        # above can be:
+        alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
+        eff_prob_antiep = self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq
+        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx))
+        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = eff_prob_antiep > random_draw_01
+        now_on_antiep1 = alive_seiz_stat_2_not_antiep_idx[eff_prob_antiep > random_draw_01]
+
+
         # update ep_antiep if ep_seiz_stat = 3
 
         alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
@@ -399,6 +408,13 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         dfx['x_ep_antiep'] = False
         dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
 
+        # above can be:
+        alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
+        eff_prob_antiep = self.base_prob_3m_antiepileptic
+        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx))
+        df.loc[alive_seiz_stat_3_not_antiep_idx, 'ep_antiep'] = eff_prob_antiep > random_draw_01
+        now_on_antiep2 = alive_seiz_stat_3_not_antiep_idx[eff_prob_antiep > random_draw_01]
+
         # start on treatment if health system has capacity
 
         # start_antiep_this_period_idx = dfx.index[dfx.x_ep_antiep]
@@ -409,6 +425,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
 
         for person_id_to_start_treatment in e1.index:
+            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
+            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 91))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
+
+        for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
             event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
