@@ -21,19 +21,19 @@ class NewPneumonia(Module):
         (Types.LIST, 'incidence of pneumonia caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
          ),
         'base_incidence_pneumonia_by_rhinovirus': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by rhinovirus in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_hMPV': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by campylobacter spp in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by hMPV in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_parainfluenza': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by cryptosporidium in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by parainfluenza in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_streptococcus': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by adenovirus 40/41 in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by streptoccocus 40/41 in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_hib': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by hib in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_TB': Parameter
         (Types.LIST, 'incidence of pneumonia caused by TB in age groups 0-11, 12-23, 24-59 months'
@@ -42,10 +42,10 @@ class NewPneumonia(Module):
         (Types.LIST, 'incidence of pneumonia caused by Staphylococcus aureus in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_influenza': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by shigella spp in age groups 0-11, 12-23, 24-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by influenza in age groups 0-11, 12-23, 24-59 months'
          ),
         'base_incidence_pneumonia_by_jirovecii': Parameter
-        (Types.LIST, 'incidence of pneumonia caused by Respiratory Syncytial Virus in age groups 0-11, 12-59 months'
+        (Types.LIST, 'incidence of pneumonia caused by P. jirovecii in age groups 0-11, 12-59 months'
          ),
         'rr_ri_pneumonia_HHhandwashing': Parameter
         (Types.REAL, 'relative rate of pneumonia with household handwashing with soap'
@@ -203,7 +203,6 @@ class NewPneumonia(Module):
         p['rr_progress_very_sev_pneum_age24to59mo'] = 0.6
         p['rr_progress_very_sev_pneum_HIV'] = 1.2
         p['rr_progress_very_sev_pneum_SAM'] = 1.1
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -464,7 +463,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # NOTE: NON-SEVERE PNEUMONIA ONLY IN 2-59 MONTHS
         pn_current_pneumonia_idx = df.index[
-            df.is_alive & (df.age_exact_years > 0.1667) & (df.age_years < 5) & (df.ri_pneumonia_severity == 'pneumonia')]
+            df.is_alive & (df.age_exact_years > 0.1667) & (df.age_years < 5) &
+            (df.ri_pneumonia_severity == 'pneumonia') | (df.is_alive & (df.age_exact_years < 0.1667) &
+                                                         (df.ri_pneumonia_severity == 'severe pneumonia'))]
 
         # # # # # # # WHEN THEY GET THE DISEASE - DATE -----------------------------------------------------------
 
@@ -512,8 +513,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
             event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module, person_id=individual)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                topen=date_of_aquisition,
+                                                                tclose=date_of_aquisition + DateOffset(weeks=2)
                                                                 )
 
         # ---------------------------------------------------------------------------------------------------
@@ -548,6 +549,11 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         progress_severe_pneum = eff_prob_prog_severe_pneum > random_draw
         progress_severe_pneum_idx = eff_prob_prog_severe_pneum.index[progress_severe_pneum]
         df.loc[progress_severe_pneum_idx, 'ri_pneumonia_severity'] = 'severe pneumonia'
+
+        # date of progression to severe pneumonia for 2-59 months
+        random_draw_days = np.random.randint(0, 14, size=len(progress_severe_pneum_idx))
+        td = pd.to_timedelta(random_draw_days, unit='d')
+        date_prog_severe_pneum = date_of_aquisition + td
 
         # # # # # # # # # # # # # # # # # # SYMPTOMS FROM SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
 
@@ -602,8 +608,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                 event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=person_index)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    topen=date_prog_severe_pneum,
+                                                                    tclose=date_prog_severe_pneum + DateOffset(weeks=2)
                                                                     )
         else:
             logger.debug(
@@ -641,6 +647,11 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         progress_very_sev_pneum = eff_prob_prog_very_sev_pneum > random_draw
         progress_very_sev_pneum_idx = eff_prob_prog_very_sev_pneum.index[progress_very_sev_pneum]
         df.loc[progress_very_sev_pneum_idx, 'ri_pneumonia_severity'] = 'very severe pneumonia'
+
+        # date of progression to very severe pneumonia for 2-59 months
+        random_draw_days = np.random.randint(0, 7, size=len(progress_very_sev_pneum_idx))
+        td = pd.to_timedelta(random_draw_days, unit='d')
+        date_prog_very_sev_pneum = date_prog_severe_pneum + td
 
         # # # # # # # # # # # # # # # # # # SYMPTOMS FROM VERY SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
 
@@ -705,11 +716,12 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                 event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module['iCCM'], person_id=person_index)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    topen=date_prog_very_sev_pneum,
+                                                                    tclose=date_prog_very_sev_pneum + DateOffset(weeks=2)
                                                                     )
+        # if doesn't seek care, probability of death and probability of recovery
 
-        # schedule death events for newly infected individuals
+        # schedule death events for very severe pneumonia
         for child in pn_current_very_sev_pneum_idx:
             death_event = DeathFromPneumoniaDisease(self.module, person_id=child)
             self.sim.schedule_event(death_event, df.at[child, 'ri_scheduled_date_death'])
@@ -751,13 +763,13 @@ class DeathFromPneumoniaDisease(Event, IndividualScopeEventMixin):
             df.index[df.is_alive & (df.ri_pneumonia_severity == 'very severe pneumonia') & (df.age_years < 5)]
 
         random_draw = \
-            pd.Series(rng.random_sample(size=len(pn1_current_very_severe_pneumonia_idx)), index=
-            df.index[(df.age_years < 5) & df.is_alive & (df.ri_pneumonia_severity == 'very severe pneumonia')])
+            pd.Series(rng.random_sample(size=len(pn1_current_very_severe_pneumonia_idx)),
+                      index=df.index[(df.age_years < 5) & df.is_alive & (df.ri_pneumonia_severity == 'very severe pneumonia')])
         very_sev_pneum_death = eff_prob_death_pneumonia > random_draw
         very_sev_pneum_death_idx = eff_prob_death_pneumonia.index[very_sev_pneum_death]
 
         for individual_id in very_sev_pneum_death_idx:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'ChildhoodPneumonia'),
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'NewPneumonia'),
                                     self.sim.date)
         else:
             df.loc[pn1_current_very_severe_pneumonia_idx, 'ri_pneumonia_severity'] = 'none'
