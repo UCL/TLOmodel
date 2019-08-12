@@ -24,16 +24,18 @@ def simulation():
     demography_workbook = os.path.join(os.path.dirname(__file__),
                                        'resources',
                                        workbook_name)
+
     sim = Simulation(start_date=start_date)
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    core_module = demography.Demography(resourcefilepath=resourcefilepath)
 
+    core_module = demography.Demography(resourcefilepath=resourcefilepath)
     service_availability = ['*']
+    core2_module=labour.Labour(resourcefilepath=resourcefilepath)
 
     sim.register(core_module)
+    sim.register(core2_module)
     sim.register(lifestyle.Lifestyle())
-    sim.register(labour.Labour())
     sim.register(newborn_outcomes.NewbornOutcomes())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))

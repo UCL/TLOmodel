@@ -258,7 +258,7 @@ class Labour (Module):
         """
         params = self.parameters
 
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.csv',
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
                           sheet_name='parameter_values')
 
         dfd.set_index('parameter_name', inplace=True)
@@ -279,7 +279,7 @@ class Labour (Module):
         params['rr_PL_OL_age_less20'] = dfd.loc['rr_PL_OL_age_less20', 'value']
         params['prob_ptl'] = dfd.loc['prob_ptl', 'value']
         params['prob_early_ptb'] = dfd.loc['prob_early_ptb', 'value']  # rough calc - should use 2014 global estimates?
-        params['rr_early_ptb_age<20'] = dfd.loc['rr_early_ptb_age', 'value']
+        params['rr_early_ptb_age<20'] = dfd.loc['rr_early_ptb_age<20', 'value']
         params['rr_early_ptb_prev_ptb'] = dfd.loc['rr_early_ptb_prev_ptb', 'value']
         params['rr_early_ptb_anaemia'] = dfd.loc['rr_early_ptb_anaemia', 'value']
         params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value'] # rough calc - should use 2014 global estimates?
@@ -306,7 +306,7 @@ class Labour (Module):
         params['cfr_sepsis'] = dfd.loc['cfr_sepsis', 'value']
         params['cfr_uterine_rupture'] = dfd.loc['cfr_uterine_rupture', 'value']
         params['prob_still_obstructed_labour'] = dfd.loc['prob_still_obstructed_labour', 'value']  # dummy
-        params['prob_still_birth_obstructed_labour_md'] =dfd.loc['prob_still_birth_obstructed_labour_md', 'value']  # dummy
+        params['prob_still_birth_obstructed_labour_md'] = dfd.loc['prob_still_birth_obstructed_labour_md', 'value']  # dummy
         params['prob_still_birth_aph'] = dfd.loc['prob_still_birth_aph', 'value']
         params['prob_still_birth_aph_md'] =dfd.loc['prob_still_birth_aph_md', 'value']
         params['prob_still_birth_sepsis'] = dfd.loc['prob_still_birth_sepsis', 'value']
@@ -616,7 +616,6 @@ class Labour (Module):
         dfx.columns = ['baseline_ptb_p2', 'random_draw2']
         idx_prev_ptb = dfx.index[dfx.baseline_ptb_p2 > dfx.random_draw2]
         df.loc[idx_prev_ptb, 'la_has_previously_delivered_preterm'] = True
-
 
     def initialise_simulation(self, sim):
 
