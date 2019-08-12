@@ -865,6 +865,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta(random, unit='W')
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+                # TODO: should all of these women automatically go into labour- how will we account for induction
             else:
                 random = np.random.randint(37, 41, size=1)
                 random = int(random)
@@ -911,7 +912,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                               'risk_pp_eclampsia': params['prob_pp_eclampsia'],
                               'eclampsia_ip': False,  # True (T) or False (F)
                               'eclampsia_pp': False,  # True (T) or False (F)
-                              'timing_eclampsia': None,  # Intrapartum (IP) or Postpartum (PP)
                               'risk_ur': params['prob_uterine_rupture'],
                               'UR': False,   # True (T) or False (F)
                               'grade_of_UR':'X', # Partial (P) or Complete (C)
@@ -995,6 +995,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                                                                         topen=self.sim.date,
                                                                         tclose=self.sim.date + DateOffset (days=14)
                                                                         )  # DUMMY tclose --> change!
+
+                    # TODO: ISSUE- if woman wants to seek care but cant, her complications will not be allocated
+                    #  because she hasnt passed through the HSI. We need some logic that says- if seeking care, but not
+                    #  availble, deliver at home
+
                 elif random > prob:
                     mni[individual_id]['delivery_setting'] = 'HB'
                     logger.info(
