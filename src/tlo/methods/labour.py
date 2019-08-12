@@ -2,10 +2,10 @@
 A model of Labour and the Health System Interactions associated with Skilled Birth Attendance
 """
 import logging
-
+import os
 import pandas as pd
-
 import numpy as np
+from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -27,6 +27,12 @@ class Labour (Module):
     """
     This module models labour, delivery and the immediate postpartum period. It  generates the properties for a woman's
     obstetric history"""
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+#       super().__init__()
+        self.mother_and_newborn_info = dict()
 
     PARAMETERS = {
 
@@ -238,10 +244,9 @@ class Labour (Module):
 
     }
 
-    def __init__(self):
-        super().__init__()
-
-        self.mother_and_newborn_info = dict()
+#   def __init__(self):
+#        super().__init__()
+#        self.mother_and_newborn_info = dict()
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -253,92 +258,99 @@ class Labour (Module):
         """
         params = self.parameters
 
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.csv',
+                          sheet_name='parameter_values')
+
+        dfd.set_index('parameter_name', inplace=True)
+
         #  ===================================  NATURAL HISTORY PARAMETERS ============================================
 
         # TODO: rename so parameters reflect the actual measure being employed (incidence rates/prevelance etc)
-        # TODO: We should be feeding in parameters from Excel
-        params['prob_pregnancy'] = 0.083  # Calculated from DHS 2010
-        params['prob_miscarriage'] = 0.053
-        params['rr_miscarriage_prevmiscarriage'] = 2.23
-        params['rr_miscarriage_35'] = 4.02
-        params['rr_miscarriage_3134'] = 2.13
-        params['rr_miscarriage_grav4'] = 0.49
-        params['prob_pl_ol'] = 0.058
-        params['rr_PL_OL_nuliparity'] = 1.47
-        params['rr_PL_OL_para1'] = 1.57
-        params['rr_PL_OL_age_less20'] = 1.3
-        params['prob_ptl'] = 0.09
-        params['prob_early_ptb'] = 0.011  # rough calc - should use 2014 global estimates?
-        params['rr_early_ptb_age<20'] = 1.73
-        params['rr_early_ptb_prev_ptb'] = 2.63
-        params['rr_early_ptb_anaemia'] = 1.95
-        params['prob_late_ptb'] = 0.11  # rough calc - should use 2014 global estimates?
-        params['rr_late_ptb_prev_ptb'] = 2.07
-        params['rr_ptl_pptb'] = 2.13
-        params['prob_potl'] = 0.032  # (incidence 32/1000 LBs)
-        params['prob_ip_eclampsia'] = 0.01
-        params['prob_aph'] = 0.012
-        params['prob_ip_sepsis'] = 0.005
-        params['rr_ip_sepsis_pl_ol'] = 3.4
-        params['prob_uterine_rupture'] = 0.001
-        params['rr_ur_grand_multip'] = 7.57
-        params['rr_ur_prev_cs'] = 2.02
-        params['rr_ur_ref_ol'] = 23.65  # REVIEW "obstructed but not referred"
-        params['rr_ip_eclampsia_30_34'] = 1.4
-        params['rr_ip_eclampsia_35'] = 1.95
-        params['rr_ip_eclampsia_nullip'] = 2.04
-        params['rr_ip_sepsis_anc_4'] = 0.5
-        params['rr_ip_aph_noedu'] = 1.72
-        params['rr_aph_pl_ol'] = 9.1
-        params['cfr_obstructed_labour'] = 0.02 # dummy
-        params['cfr_aph'] = 0.02
-        params['cfr_eclampsia'] = 0.184
-        params['cfr_sepsis'] = 0.33
-        params['cfr_uterine_rupture'] = 0.345
-        params['prob_still_obstructed_labour'] = 0.38  # dummy
-        params['prob_still_birth_obstructed_labour_md'] = 0.90  # dummy
-        params['prob_still_birth_aph'] = 0.38
-        params['prob_still_birth_aph_md'] = 0.90
-        params['prob_still_birth_sepsis'] = 0.25
-        params['prob_still_birth_sepsis_md'] = 0.90
-        params['prob_still_birth_ur'] = 0.93
-        params['prob_still_birth_ur_md'] = 0.98
-        params['prob_still_birth_eclampsia'] = 0.03
-        params['prob_still_birth_eclampsia_md'] = 0.90
-        params['prob_pp_eclampsia'] = 0.01
-        params['prob_pph'] = 0.03
-        params['rr_pph_pl_ol'] = 5.0
-        params['prob_pp_sepsis'] = 0.05
-        params['prob_sa_pph'] = 0.12
-        params['prob_sa_sepsis'] = 0.20
-        params['cfr_pph'] = 0.1
-        params['cfr_pp_eclampsia'] = 0.184
-        params['cfr_pp_sepsis'] = 0.33
-        params['prob_neonatal_sepsis'] = 0.15
-        params['prob_neonatal_birth_asphyxia'] = 0.16
+
+        params['prob_pregnancy'] = dfd.loc['prob_pregnancy', 'value']
+        params['prob_miscarriage'] = dfd.loc['prob_miscarriage', 'value']
+        params['rr_miscarriage_prevmiscarriage'] = dfd.loc['rr_miscarriage_prevmiscarriage', 'value']
+        params['rr_miscarriage_35'] = dfd.loc['rr_miscarriage_35', 'value']
+        params['rr_miscarriage_3134'] = dfd.loc['rr_miscarriage_3134', 'value']
+        params['rr_miscarriage_grav4'] = dfd.loc['rr_miscarriage_grav4', 'value']
+        params['prob_pl_ol'] = dfd.loc['prob_pl_ol', 'value']
+        params['rr_PL_OL_nuliparity'] = dfd.loc['rr_PL_OL_nuliparity', 'value']
+        params['rr_PL_OL_para1'] = dfd.loc['rr_PL_OL_para1', 'value']
+        params['rr_PL_OL_age_less20'] = dfd.loc['rr_PL_OL_age_less20', 'value']
+        params['prob_ptl'] = dfd.loc['prob_ptl', 'value']
+        params['prob_early_ptb'] = dfd.loc['prob_early_ptb', 'value']  # rough calc - should use 2014 global estimates?
+        params['rr_early_ptb_age<20'] = dfd.loc['rr_early_ptb_age', 'value']
+        params['rr_early_ptb_prev_ptb'] = dfd.loc['rr_early_ptb_prev_ptb', 'value']
+        params['rr_early_ptb_anaemia'] = dfd.loc['rr_early_ptb_anaemia', 'value']
+        params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value'] # rough calc - should use 2014 global estimates?
+        params['rr_late_ptb_prev_ptb'] = dfd.loc['rr_late_ptb_prev_ptb', 'value']
+        params['rr_ptl_pptb'] = dfd.loc['rr_ptl_pptb', 'value']
+        params['prob_potl'] = dfd.loc['prob_potl', 'value']  # (incidence 32/1000 LBs)
+        params['prob_ip_eclampsia'] = dfd.loc['prob_ip_eclampsia', 'value']
+        params['prob_aph'] = dfd.loc['prob_aph', 'value']
+        params['prob_ip_sepsis'] = dfd.loc['prob_ip_sepsis', 'value']
+        params['rr_ip_sepsis_pl_ol'] = dfd.loc['rr_ip_sepsis_pl_ol', 'value']
+        params['prob_uterine_rupture'] = dfd.loc['prob_uterine_rupture', 'value']
+        params['rr_ur_grand_multip'] = dfd.loc['rr_ur_grand_multip', 'value']
+        params['rr_ur_prev_cs'] = dfd.loc['rr_ur_prev_cs', 'value']
+        params['rr_ur_ref_ol'] = dfd.loc['rr_ur_ref_ol', 'value'] # REVIEW "obstructed but not referred"
+        params['rr_ip_eclampsia_30_34'] = dfd.loc['rr_ip_eclampsia_30_34', 'value']
+        params['rr_ip_eclampsia_35'] = dfd.loc['rr_ip_eclampsia_35', 'value']
+        params['rr_ip_eclampsia_nullip'] = dfd.loc['rr_ip_eclampsia_nullip', 'value']
+        params['rr_ip_sepsis_anc_4'] = dfd.loc['rr_ip_sepsis_anc_4', 'value']
+        params['rr_ip_aph_noedu'] = dfd.loc['rr_ip_aph_noedu', 'value']
+        params['rr_aph_pl_ol'] = dfd.loc['rr_aph_pl_ol', 'value']
+        params['cfr_obstructed_labour'] = dfd.loc['cfr_obstructed_labour', 'value'] # dummy
+        params['cfr_aph'] = dfd.loc['cfr_aph', 'value']
+        params['cfr_eclampsia'] = dfd.loc['cfr_eclampsia', 'value']
+        params['cfr_sepsis'] = dfd.loc['cfr_sepsis', 'value']
+        params['cfr_uterine_rupture'] = dfd.loc['cfr_uterine_rupture', 'value']
+        params['prob_still_obstructed_labour'] = dfd.loc['prob_still_obstructed_labour', 'value']  # dummy
+        params['prob_still_birth_obstructed_labour_md'] =dfd.loc['prob_still_birth_obstructed_labour_md', 'value']  # dummy
+        params['prob_still_birth_aph'] = dfd.loc['prob_still_birth_aph', 'value']
+        params['prob_still_birth_aph_md'] =dfd.loc['prob_still_birth_aph_md', 'value']
+        params['prob_still_birth_sepsis'] = dfd.loc['prob_still_birth_sepsis', 'value']
+        params['prob_still_birth_sepsis_md'] = dfd.loc['prob_still_birth_sepsis_md', 'value']
+        params['prob_still_birth_ur'] = dfd.loc['prob_still_birth_ur', 'value']
+        params['prob_still_birth_ur_md'] = dfd.loc['prob_still_birth_ur_md', 'value']
+        params['prob_still_birth_eclampsia'] = dfd.loc['prob_still_birth_eclampsia', 'value']
+        params['prob_still_birth_eclampsia_md'] = dfd.loc['prob_still_birth_eclampsia_md', 'value']
+        params['prob_pp_eclampsia'] =dfd.loc['prob_pp_eclampsia', 'value']
+        params['prob_pph'] = dfd.loc['prob_pph', 'value']
+        params['rr_pph_pl_ol'] = dfd.loc['rr_pph_pl_ol', 'value']
+        params['prob_pp_sepsis'] = dfd.loc['prob_pp_sepsis', 'value']
+        params['prob_sa_pph'] = dfd.loc['prob_sa_pph', 'value']
+        params['prob_sa_sepsis'] = dfd.loc['prob_sa_sepsis', 'value']
+        params['cfr_pph'] = dfd.loc['cfr_pph', 'value']
+        params['cfr_pp_eclampsia'] = dfd.loc['cfr_pp_eclampsia', 'value']
+        params['cfr_pp_sepsis'] = dfd.loc['cfr_pp_sepsis', 'value']
+        params['prob_neonatal_sepsis'] = dfd.loc['prob_neonatal_sepsis', 'value']
+        params['prob_neonatal_birth_asphyxia'] = dfd.loc['prob_neonatal_birth_asphyxia', 'value']
 
         # ================================= TREATMENT PARAMETERS =====================================================
 
-        params['prob_successful_induction'] = 0.761  # norwegien study
-        params['rr_maternal_sepsis_clean_delivery'] = 0.7  # dummy
-        params['rr_newborn_sepsis_clean_delivery'] = 0.7 # dummy
-        params['rr_pph_amtsl'] = 0.34 # cochrane (for SEVERE pph)
-        params['prob_cure_antibiotics'] = 0.5  # dummy
-        params['prob_cure_mgso4'] = 0.57  # probability taken from RR of 0.43for additional seizures (vs diazepam alone)
-        params['prob_prevent_mgso4'] = 0.41  # Risk reduction of eclampsia in women who have pre-eclampsia
-        params['prob_cure_diazepam'] = 0.8
-        params['prob_cure_blood_transfusion'] = 0.4  # dummy
-        params['prob_cure_oxytocin'] = 0.5  # dummy
-        params['prob_cure_misoprostol'] = 0.3  # dummy
-        params['prob_cure_uterine_massage'] = 0.15  # dummy
-        params['prob_cure_uterine_tamponade'] = 0.6  # dummy
-        params['prob_cure_uterine_ligation'] = 0.8  # dummy
-        params['prob_cure_b_lych'] = 0.8  # dummy
-        params['prob_cure_hysterectomy'] = 0.95  # dummy
-        params['prob_cure_manual_removal'] = 0.75  # dummy
-        params['prob_cure_uterine_repair'] = 0.7  # dummy
-        params['prob_deliver_ventouse'] = 0.7  # dummy
-        params['prob_deliver_forceps'] = 0.7  # dummy
+        params['prob_successful_induction'] = dfd.loc['prob_successful_induction', 'value']  # norwegien study
+        params['rr_maternal_sepsis_clean_delivery'] = dfd.loc['rr_maternal_sepsis_clean_delivery', 'value']  # dummy
+        params['rr_newborn_sepsis_clean_delivery'] = dfd.loc['rr_newborn_sepsis_clean_delivery', 'value'] # dummy
+        params['rr_pph_amtsl'] = dfd.loc['rr_pph_amtsl', 'value']  # cochrane (for SEVERE pph)
+        params['prob_cure_antibiotics'] = dfd.loc['prob_cure_antibiotics', 'value']  # dummy
+        params['prob_cure_mgso4'] = dfd.loc['prob_cure_mgso4', 'value']
+        # probability taken from RR of 0.43for additional seizures (vs diazepam alone)
+        params['prob_prevent_mgso4'] = dfd.loc['prob_prevent_mgso4', 'value']
+        # Risk reduction of eclampsia in women who have pre-eclampsia
+        params['prob_cure_diazepam'] = dfd.loc['prob_cure_diazepam', 'value']
+        params['prob_cure_blood_transfusion'] = dfd.loc['prob_cure_blood_transfusion', 'value']  # dummy
+        params['prob_cure_oxytocin'] = dfd.loc['prob_cure_oxytocin', 'value'] # dummy
+        params['prob_cure_misoprostol'] = dfd.loc['prob_cure_misoprostol', 'value']  # dummy
+        params['prob_cure_uterine_massage'] = dfd.loc['prob_cure_uterine_massage', 'value']  # dummy
+        params['prob_cure_uterine_tamponade'] = dfd.loc['prob_cure_uterine_tamponade', 'value'] # dummy
+        params['prob_cure_uterine_ligation'] = dfd.loc['prob_cure_uterine_ligation', 'value'] # dummy
+        params['prob_cure_b_lych'] = dfd.loc['prob_cure_b_lych', 'value'] # dummy
+        params['prob_cure_hysterectomy'] = dfd.loc['prob_cure_hysterectomy', 'value']  # dummy
+        params['prob_cure_manual_removal'] = dfd.loc['prob_cure_manual_removal', 'value']  # dummy
+        params['prob_cure_uterine_repair'] = dfd.loc['prob_cure_uterine_repair', 'value']  # dummy
+        params['prob_deliver_ventouse'] = dfd.loc['prob_deliver_ventouse', 'value']  # dummy
+        params['prob_deliver_forceps'] = dfd.loc['prob_deliver_forceps', 'value']  # dummy
 
         # Here we will include DALY weights if applicable...
 
