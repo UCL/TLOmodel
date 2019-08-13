@@ -358,18 +358,21 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         transition_seiz_stat('3', '1', self.base_prob_3m_seiz_stat_none_freq)
         transition_seiz_stat('3', '2', self.base_prob_3m_seiz_stat_infreq_freq)
 
+        # save all individuals that are currently on anti-epileptics (seizure status: 2 & 3 or 1)
+        alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
+        alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
+
         # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
-        def update_ep_antiep(ep_seiz_stat, probability):
+        def start_antiep(ep_seiz_stat, probability):
             idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
             selected = probability > self.module.rng.random_sample(size=len(idx))
             df.loc[idx, 'ep_antiep'] = selected
             return idx[selected]
 
-        now_on_antiep1 = update_ep_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
-        now_on_antiep2 = update_ep_antiep('3', self.base_prob_3m_antiepileptic)
+        now_on_antiep1 = start_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
+        now_on_antiep2 = start_antiep('3', self.base_prob_3m_antiepileptic)
 
         # start on treatment if health system has capacity
-
         # create a df with one row per person needing to start treatment - this is only way I have
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
@@ -378,54 +381,12 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
 
-        # note that this line seems to apply to all in dfxx so had to restrict it to those needing to be treated
-
-        #       df.loc[start_antiep_this_period_idx, 'ep_on_antiep'] = dfxx['gets_trt']
-
         # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
+        def stop_antiep(indices, probability):
+            df.loc[indices, 'ep_antiep'] = probability > self.module.rng.random_sample(size=len(indices))
 
-        alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
-
-        eff_prob_stop_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic,
-            index=alive_seiz_stat_2_or_3_antiep_idx
-        )
-        eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_antiep_idx)),
-            index=alive_seiz_stat_2_or_3_antiep_idx
-        )
-
-        dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_stop_antiep', 'random_draw_01']
-
-        dfx['x_ep_antiep'] = True
-        dfx.loc[(dfx.eff_prob_stop_antiep > random_draw_01), 'x_ep_antiep'] = False
-
-        df.loc[alive_seiz_stat_2_or_3_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
-
-        # rate of stop ep_antiep if ep_seiz_stat = 1
-
-        alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
-
-        eff_prob_stop_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_1_antiep_idx
-        )
-        eff_prob_stop_antiep *= self.rr_stop_antiepileptic_seiz_infreq_or_freq
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_1_antiep_idx)),
-            index=alive_seiz_stat_1_antiep_idx
-        )
-
-        dfx = pd.concat([eff_prob_stop_antiep, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_stop_antiep', 'random_draw_01']
-
-        dfx['x_ep_antiep'] = True
-        dfx.loc[(dfx.eff_prob_stop_antiep > random_draw_01), 'x_ep_antiep'] = False
-
-        df.loc[alive_seiz_stat_1_antiep_idx, 'ep_antiep'] = dfx['x_ep_antiep']
+        stop_antiep(alive_seiz_stat_1_antiep_idx, self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
+        stop_antiep(alive_seiz_stat_2_or_3_antiep_idx, self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
 
         # disability
 
@@ -436,28 +397,11 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive & (df.ep_seiz_stat == '3'), 'ep_disability'] = self.daly_wt_epilepsy_severe
 
         # update ep_epi_death
-
         alive_seiz_stat_2_or_3_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3']))]
+        chosen = self.base_prob_3m_epi_death > self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_idx))
+        df.loc[alive_seiz_stat_2_or_3_idx, 'ep_epi_death'] = chosen
 
-        eff_prob_epi_death = pd.Series(
-            self.base_prob_3m_epi_death, index=alive_seiz_stat_2_or_3_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_2_or_3_idx)),
-            index=alive_seiz_stat_2_or_3_idx,
-        )
-
-        dfx = pd.concat([eff_prob_epi_death, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_epi_death', 'random_draw_01']
-
-        dfx['x_epi_death'] = False
-        dfx.loc[(dfx.eff_prob_epi_death > random_draw_01), 'x_epi_death'] = True
-
-        df.loc[alive_seiz_stat_2_or_3_idx, 'ep_epi_death'] = dfx['x_epi_death']
-
-        death_this_period = df.index[df.ep_epi_death]
-        for individual_id in death_this_period:
+        for individual_id in alive_seiz_stat_2_or_3_idx[chosen]:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(self.module, individual_id, 'Epilepsy'), self.sim.date
             )
