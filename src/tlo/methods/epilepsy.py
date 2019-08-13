@@ -358,77 +358,21 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         transition_seiz_stat('3', '1', self.base_prob_3m_seiz_stat_none_freq)
         transition_seiz_stat('3', '2', self.base_prob_3m_seiz_stat_infreq_freq)
 
-        # update ep_antiep if ep_seiz_stat = 2
+        # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
+        def update_ep_antiep(ep_seiz_stat, probability):
+            idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
+            selected = probability > self.module.rng.random_sample(size=len(idx))
+            df.loc[idx, 'ep_antiep'] = selected
+            return idx[selected]
 
-        alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
-
-        eff_prob_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_2_not_antiep_idx
-        )
-        eff_prob_antiep *= self.rr_antiepileptic_seiz_infreq
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx)),
-            index=alive_seiz_stat_2_not_antiep_idx
-        )
-
-        dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_antiep', 'random_draw_01']
-
-        # x_ep_antiep is whether requests health system for treatment to start
-        dfx['x_ep_antiep'] = False
-        dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
-
-
-        # above can be:
-        alive_seiz_stat_2_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '2') & ~df.ep_antiep]
-        eff_prob_antiep = self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq
-        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_2_not_antiep_idx))
-        df.loc[alive_seiz_stat_2_not_antiep_idx, 'ep_antiep'] = eff_prob_antiep > random_draw_01
-        now_on_antiep1 = alive_seiz_stat_2_not_antiep_idx[eff_prob_antiep > random_draw_01]
-
-
-        # update ep_antiep if ep_seiz_stat = 3
-
-        alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
-
-        eff_prob_antiep = pd.Series(
-            self.base_prob_3m_antiepileptic, index=alive_seiz_stat_3_not_antiep_idx
-        )
-
-        random_draw_01 = pd.Series(
-            self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx)),
-            index=alive_seiz_stat_3_not_antiep_idx
-        )
-
-        dfx = pd.concat([eff_prob_antiep, random_draw_01], axis=1)
-        dfx.columns = ['eff_prob_antiep', 'random_draw_01']
-
-        # x_ep_antiep is whether requests health system for treatment to start
-        dfx['x_ep_antiep'] = False
-        dfx.loc[(dfx.eff_prob_antiep > random_draw_01), 'x_ep_antiep'] = True
-
-        # above can be:
-        alive_seiz_stat_3_not_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '3') & ~df.ep_antiep]
-        eff_prob_antiep = self.base_prob_3m_antiepileptic
-        random_draw_01 = self.module.rng.random_sample(size=len(alive_seiz_stat_3_not_antiep_idx))
-        df.loc[alive_seiz_stat_3_not_antiep_idx, 'ep_antiep'] = eff_prob_antiep > random_draw_01
-        now_on_antiep2 = alive_seiz_stat_3_not_antiep_idx[eff_prob_antiep > random_draw_01]
+        now_on_antiep1 = update_ep_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
+        now_on_antiep2 = update_ep_antiep('3', self.base_prob_3m_antiepileptic)
 
         # start on treatment if health system has capacity
-
-        # start_antiep_this_period_idx = dfx.index[dfx.x_ep_antiep]
 
         # create a df with one row per person needing to start treatment - this is only way I have
         # managed to get query access to service code to work properly here (should be possible to remove
         # relevant rows from dfx rather than create dfxx
-        e1 = pd.Series(True, index=dfx.index[dfx.x_ep_antiep])
-
-        for person_id_to_start_treatment in e1.index:
-            event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
-            target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 91))
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
-
         for person_id_to_start_treatment in now_on_antiep1.append(now_on_antiep2):
             event = HSI_Epilepsy_Start_Anti_Epilpetic(self.module, person_id=person_id_to_start_treatment)
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
