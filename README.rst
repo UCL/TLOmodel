@@ -4,7 +4,7 @@ Overview
 
 .. start-badges
 
-.. image:: https://travis-ci.com/UCL/TLOmodel.svg?branch=master
+.. image:: https://api.travis-ci.com/UCL/TLOmodel.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.com/UCL/TLOmodel
 
