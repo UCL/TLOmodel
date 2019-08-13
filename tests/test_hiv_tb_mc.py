@@ -6,11 +6,11 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, depression, healthburden, healthsystem, lifestyle
+from tlo.methods import demography, healthsystem, hiv, lifestyle, male_circumcision, tb
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 10000
+popsize = 50
 
 
 @pytest.fixture(autouse=True)
@@ -22,17 +22,14 @@ def disable_logging():
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
-
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           ignore_appt_constraints=True,
-                                           ignore_cons_constraints=True))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-
-    sim.register(depression.Depression(resourcefilepath=resourcefilepath))
-
+                                           service_availability=["tb*"],
+                                           capabilities_coefficient=0.0))
+    sim.register(tb.tb(resourcefilepath=resourcefilepath))
+    sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
+    sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
     return sim
 
