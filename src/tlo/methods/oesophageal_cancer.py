@@ -255,14 +255,14 @@ class Oesophageal_Cancer(Module):
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
-        df['ca_oesophagus'] = 'none'
-        df['ca_oesophagus_diagnosed'] = False
-        df['ca_oesophagus_curative_treatment'] = 'never'
-        df['ca_oesophageal_cancer_death'] = False
-        df['ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
-        df['ca_disability'] = 0
-        df['ca_oesophagus_curative_treatment_requested'] = False
-        df['ca_date_treatment_oesophageal_cancer'] = pd.NaT
+        df.loc[df.is_alive, 'ca_oesophagus'] = 'none'
+        df.loc[df.is_alive, 'ca_oesophagus_diagnosed'] = False
+        df.loc[df.is_alive, 'ca_oesophagus_curative_treatment'] = 'never'
+        df.loc[df.is_alive, 'ca_oesophageal_cancer_death'] = False
+        df.loc[df.is_alive, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = False
+        df.loc[df.is_alive, 'ca_disability'] = 0
+        df.loc[df.is_alive, 'ca_oesophagus_curative_treatment_requested'] = False
+        df.loc[df.is_alive, 'ca_date_treatment_oesophageal_cancer'] = pd.NaT
 
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
 
@@ -1227,9 +1227,9 @@ class OesCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|person_one|%s',
                      self.sim.date,
                      df.loc[0].to_dict())
-         
 
 
-        
+
+
 
 
