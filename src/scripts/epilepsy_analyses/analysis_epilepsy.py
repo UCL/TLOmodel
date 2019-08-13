@@ -2,11 +2,12 @@ import datetime
 import logging
 import os
 
-import pandas as pd
 import matplotlib.pyplot as plt
+import pandas as pd
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, epilepsy, healthburden
+from tlo.methods import demography, epilepsy, healthburden, healthsystem, lifestyle
 
 # Where will output go
 outputpath = ''
@@ -28,7 +29,7 @@ sim = Simulation(start_date=start_date)
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
 if os.path.exists(logfile):
-  os.remove(logfile)
+    os.remove(logfile)
 fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
@@ -60,10 +61,9 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
-prop_seiz_stat_0= pd.Series(
+prop_seiz_stat_0 = pd.Series(
     output['tlo.methods.epilepsy']['summary_stats_per_3m']['prop_seiz_stat_0'].values,
     index=output['tlo.methods.epilepsy']['summary_stats_per_3m']['date'])
 
 prop_seiz_stat_0.plot()
 plt.show()
-

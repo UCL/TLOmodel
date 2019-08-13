@@ -2,12 +2,12 @@ import datetime
 import logging
 import os
 
-import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
+# import pandas as pd
+# import matplotlib.pyplot as plt
+# import numpy as np
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, depression, healthburden
+# from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography, depression, healthburden, healthsystem, lifestyle
 
 # Where will output go
 outputpath = './src/scripts/depression_analyses/'
@@ -41,9 +41,8 @@ logging.getLogger('tlo.methods.Depression').setLevel(logging.DEBUG)
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-             ignore_appt_constraints=True,
-             ignore_cons_constraints=True
-             ))
+                                       ignore_appt_constraints=True,
+                                       ignore_cons_constraints=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))
@@ -62,4 +61,3 @@ fh.flush()
 
 # suicides_per_3m = output['tlo.methods.depression']['summary_stats_per_3m']['suicides_this_3m']
 # plt.show()
-
