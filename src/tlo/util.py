@@ -59,6 +59,12 @@ def transition_states(intial_series: pd.Series, prob_matrix: pd.DataFrame,
         # group by current state, carry out random sample on group with probabilities
         # Think this was too optimistic, doesn't work
         df.groupby('state').pipe(lambda group: rng.choice(all_states, group.size(), p=group.min().values))
+    elif method == 'groups':
+        final_states = pd.Series()
+        df = pd.DataFrame(intial_series).groupby('state')
+        for state in all_states:
+            new_states = rng.choice(all_states, len(df.groups[state]), p=prob_matrix[state])
+            final_states = final_states.append(pd.Series(new_states, index=df.groups[state]))
     else:
         # create dict of starting state ids. state: ids
         initial_states = {key: intial_series[intial_series == key] for key in all_states}
@@ -101,6 +107,8 @@ def time_functions(func="transition_states"):
         states: pd.Series = transition_states(df["state"], prob_matrix, method='assign')
     elif func == "transition_states_pipe":
         states: pd.Series = transition_states(df["state"], prob_matrix, method='pipe')
+    elif func == "transition_states_groups":
+        states: pd.Series = transition_states(df["state"], prob_matrix, method='groups')
 
 
 if __name__ == '__main__':
@@ -111,6 +119,11 @@ if __name__ == '__main__':
     print(timed)
     print("assign")
     timed = timeit.timeit('time_functions("transition_states_assign")',
+                          setup='from __main__ import time_functions',
+                          number=100)
+    print(timed)
+    print("groups")
+    timed = timeit.timeit('time_functions("transition_states_groups")',
                           setup='from __main__ import time_functions',
                           number=100)
     print(timed)
