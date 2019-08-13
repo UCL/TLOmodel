@@ -1,5 +1,5 @@
 """This file contains helpful utility functions."""
-from collections import defaultdict
+import timeit  # remove after development
 
 import pandas as pd
 import numpy as np
@@ -35,8 +35,8 @@ def show_changes(sim, initial_state, final_state):
         subset=pd.IndexSlice[len1:])
 
 
-def transition_states(initial_df: pd.DataFrame, state_column: str, prob_matrix: pd.DataFrame,
-                      seed: int = None) -> pd.Series:
+def transition_states(intial_series: pd.Series, prob_matrix: pd.DataFrame,
+                      seed: int = None, method='assign') -> pd.Series:
     """Carrys out transitions on all states based on probability matrix
 
     This should carry out all state transitions for a specific state_column
@@ -44,64 +44,78 @@ def transition_states(initial_df: pd.DataFrame, state_column: str, prob_matrix: 
     Cumulative sum for these per original state, so the same random sample
     values can be used for all transitions from one state to every other
 
-    :param DataFrame initial_df: the initial dataframe
-    :param String state_column: the column to update for the probability matrix
+    :param Series intial_series: the initial state series
     :param DataFrame prob_matrix: DataFrame of state-transition probabilities
         columns are the original state, rows are the new state. values are the probabilities
     :param integer seed: should only be set during testing
     :return: Series with states changed according to probabilities
     """
-    # Create new object with just the state and is_alive column to avoid copying all of the data?
-    # Or is pandas sufficiently clever that it just links it even if you're doing it through
-    # function calls?
-    df = initial_df.loc[:, [state_column, 'is_alive']]
 
     rng = np.random.RandomState(seed)
-
-    # columns are original state, rows are the new state
     all_states = prob_matrix.columns.tolist()
+    if method == 'pipe':
+        # create df of current state, merge in probabilities
+        df = pd.DataFrame(intial_series).merge(prob_matrix, left_on='state', right_index=True)
+        # group by current state, carry out random sample on group with probabilities
+        # Think this was too optimistic, doesn't work
+        df.groupby('state').pipe(lambda group: rng.choice(all_states, group.size(), p=group.min().values))
+    else:
+        # create dict of starting state ids. state: ids
+        initial_states = {key: intial_series[intial_series == key] for key in all_states}
+        final_states = pd.Series()
+        # numpy random choice per current state
+        for state in all_states:
+            new_states = rng.choice(all_states, len(initial_states[state]), p=prob_matrix[state])
+            if method == 'loop':
+                # join using loop
+                initial_states[state].loc[:] = new_states
+                final_states = final_states.append(initial_states[state])
+            elif method == 'assign':
+                final_states = final_states.append(pd.Series(new_states, index=initial_states[state].index))
+    return final_states
+
+
+def time_functions(func="transition_states"):
+    states = ['a', 'b', 'c', 'd']
+    df = pd.DataFrame({'state': states * 10000,
+                       'other_data_1': range(0, 40000),
+                       'is_alive': True})
+
+    prob_matrix = pd.DataFrame(columns=states, index=states)
+    # key is original state, values are probability for new states
+    #                   A    B    C    D
+    prob_matrix['a'] = [0.9, 0.1, 0.0, 0.0]
+    prob_matrix['b'] = [0.1, 0.3, 0.6, 0.0]
+    prob_matrix['c'] = [0.0, 0.2, 0.6, 0.2]
+    prob_matrix['d'] = [0.0, 0.0, 0.3, 0.7]
+
+    all_states = prob_matrix.columns.tolist()
+    # columns are original state, rows are the new state
     prob_matrix.rename(
         index={row_num: col_name for row_num, col_name in
                zip(range(len(prob_matrix)), all_states)}
     )
-    summed_prob = prob_matrix.cumsum(axis=0)
+    if func == "transition_states_loop":
+        states: pd.Series = transition_states(df["state"], prob_matrix, method='loop')
+    elif func == "transition_states_assign":
+        states: pd.Series = transition_states(df["state"], prob_matrix, method='assign')
+    elif func == "transition_states_pipe":
+        states: pd.Series = transition_states(df["state"], prob_matrix, method='pipe')
 
-    # Couldn't find a way to apply random_sample directly into df so...
-    # I think because of bug in 0.23.1 which means you can't use kwags for apply? Upgrade?
-    # Random draw per state: series > dataframe > melted by state > merge into df
-    random_draw = pd.DataFrame(
-        df.groupby(state_column).size().apply(lambda x: rng.random_sample(x)).to_frame('random_draw')
-    )
-    random_draw = (pd.melt(random_draw.random_draw.apply(pd.Series).reset_index(),
-                           id_vars=['state'],
-                           value_name='random_draw')
-                   ).drop(['variable', 'state'], axis=1)
-    df = pd.concat([df, random_draw], axis=1)
 
-    # default state is that none of the states have been updated
-    df['state_updated'] = False
-
-    # Create dictionary of original states to new states
-    state_transitions = defaultdict(list)
-    for original_state in all_states:
-        for new_state in all_states:
-            if not np.isnan(summed_prob.loc[original_state, new_state]):
-                state_transitions[original_state].append(new_state)
-
-    # Update all transition states using the dictionary of productive transitions
-    # I feel like I shouldn't be looping but haven't worked out a better way
-    for original_state in state_transitions.keys():
-        changeable_states = df.loc[
-            df.is_alive & (df[state_column] == original_state) & ~df.state_updated
-            ]
-        random_draw = changeable_states.loc[
-            changeable_states[state_column] == original_state, 'random_draw'
-        ]
-        # Go through states in reverse so that the smaller probabilities are not overwritten
-        for new_state in reversed(state_transitions[original_state]):
-            probability = summed_prob.loc[new_state, original_state]
-            updating_state = changeable_states.index[probability > random_draw]
-            df.loc[updating_state, state_column] = new_state
-            df.loc[updating_state, 'state_updated'] = True
-
-    return df[state_column]
+if __name__ == '__main__':
+    print("loop")
+    timed = timeit.timeit('time_functions("transition_states_loop")',
+                          setup='from __main__ import time_functions',
+                          number=100)
+    print(timed)
+    print("assign")
+    timed = timeit.timeit('time_functions("transition_states_assign")',
+                          setup='from __main__ import time_functions',
+                          number=100)
+    print(timed)
+    print("pipe")
+    timed = timeit.timeit('time_functions("transition_states_pipe")',
+                          setup='from __main__ import time_functions',
+                          number=100)
+    print(timed)
