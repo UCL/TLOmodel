@@ -362,13 +362,14 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
         alive_seiz_stat_1_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat == '1') & df.ep_antiep]
         alive_seiz_stat_2_or_3_antiep_idx = df.index[df.is_alive & (df.ep_seiz_stat.isin(['2', '3'])) & df.ep_antiep]
 
-        # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
         def start_antiep(ep_seiz_stat, probability):
+            """start individuals with seiz status on antiep with given probability"""
             idx = df.index[df.is_alive & (df.ep_seiz_stat == ep_seiz_stat) & ~df.ep_antiep]
             selected = probability > self.module.rng.random_sample(size=len(idx))
             df.loc[idx, 'ep_antiep'] = selected
             return idx[selected]
 
+        # update ep_antiep if ep_seiz_stat = 2 & ep_seiz_stat = 3
         now_on_antiep1 = start_antiep('2', self.base_prob_3m_antiepileptic * self.rr_antiepileptic_seiz_infreq)
         now_on_antiep2 = start_antiep('3', self.base_prob_3m_antiepileptic)
 
@@ -381,12 +382,17 @@ class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
             target_date = self.sim.date + DateOffset(days=int(self.module.rng.rand() * 30))
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=2, topen=target_date, tclose=None)
 
-        # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
         def stop_antiep(indices, probability):
+            """stop individuals on antiep with given probability"""
             df.loc[indices, 'ep_antiep'] = probability > self.module.rng.random_sample(size=len(indices))
 
-        stop_antiep(alive_seiz_stat_1_antiep_idx, self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
-        stop_antiep(alive_seiz_stat_2_or_3_antiep_idx, self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
+        # rate of stop ep_antiep if ep_seiz_stat = 1
+        stop_antiep(alive_seiz_stat_1_antiep_idx,
+                    self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
+
+        # rate of stop ep_antiep if ep_seiz_stat = 2 or 3
+        stop_antiep(alive_seiz_stat_2_or_3_antiep_idx,
+                    self.base_prob_3m_antiepileptic * self.rr_stop_antiepileptic_seiz_infreq_or_freq)
 
         # disability
 
