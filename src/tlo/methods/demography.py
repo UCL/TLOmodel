@@ -304,7 +304,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-#       df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
 
