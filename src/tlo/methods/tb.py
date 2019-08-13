@@ -442,6 +442,129 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[repeat_case, 'tb_specific_symptoms'] = 'latent'
         df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
 
+        # -----------------------------------------------------------------------------------------------------
+        # PROGRESSION TO ACTIVE DISEASE
+
+        # ----------------------------------- ADULT PROGRESSORS TO ACTIVE DISEASE -----------------------------------
+
+        # if any newly infected latent cases, 14% become active directly, only for new infections
+        new_latent = df[
+            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+                df.age_years >= 15) & df.is_alive].sum()
+        # print(new_latent)
+
+        # some proportion schedule active now, else schedule active at random date
+        if new_latent.any():
+            fast_progression = df[
+                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & df.is_alive].sample(
+                frac=params['prop_fast_progressor']).index
+
+            # for each person determine if fast progressor and schedule onset of active disease
+            fast = pd.Series(data=False, index=df.loc[new_latent].index)
+
+            for i in df.index[new_latent]:
+                fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
+
+                if fast.sum() > 0:
+                    for person_id in fast.index[fast]:
+                        logger.debug(
+                            'This is TbEvent, scheduling active disease for fast progressing person %d on date %s',
+                            person_id, now)
+                        # schedule active disease now
+                        self.sim.schedule_event(TbActiveAdultEvent(self, person_id), now)
+
+                for person_id in fast.index[~fast]:
+                    # random draw of days 0-732
+                    random_date = rng.choice(list(range(0, 732)), size=len(new_latent), p=[(1 / 732)] * 732)
+                    # convert days into years
+                    sch_date = now + pd.to_timedelta(random_date, unit='d')
+
+                    logger.debug('This is TbEvent, scheduling active disease for slow progressing person %d on date %s',
+                                 person_id, sch_date)
+                    # schedule active disease later
+                    self.sim.schedule_event(TbActiveAdultEvent(self, person_id), sch_date)
+
+        # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
+
+
+class TbActiveAdultEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Onset of active TB for adult %d", person_id)
+
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        df.at[person_id, 'tb_inf'] = 'active_susc_new'
+
+        # # decide if pulmonary or extrapulmonary
+        # # depends on hiv status
+        # pulm = self.module.rng.rand() < params['prop_fast_progressor']
+        #
+        # df.loc[fast_progression, 'tb_inf'] = 'active_susc_new'
+        #     df.loc[fast_progression, 'tb_date_active'] = now
+        #     df.loc[fast_progression, 'tb_specific_symptoms'] = 'active_pulm'
+        #     df.loc[fast_progression, 'tb_unified_symptom_code'] = 2
+        #
+        #     # select proportion to become extrapulmonary TB
+        #     extrapulm = fast_progression.sample(
+        #         frac=(1 - params['prop_pulm'])).index
+        #     df.loc[extrapulm, 'tb_specific_symptoms'] = 'active_extra'
+        #     df.loc[extrapulm, 'tb_unified_symptom_code'] = 3
+        #
+        # # hiv-positive
+        # new_latent_hiv = df[
+        #     (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+        #         df.age_years >= 15) & df.hv_inf & df.is_alive].sum()
+        #
+        # if new_latent_hiv.any():
+        #     fast_progression = df[
+        #         (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & df.hv_inf & df.is_alive].sample(
+        #         frac=params['prop_fast_progressor']).index
+        #
+        #     df.loc[fast_progression, 'tb_inf'] = 'active_susc_new'
+        #     df.loc[fast_progression, 'tb_date_active'] = now
+        #     df.loc[fast_progression, 'tb_specific_symptoms'] = 'active_pulm'
+        #     df.loc[fast_progression, 'tb_unified_symptom_code'] = 2
+        #
+        #     # select proportion to become extrapulmonary TB
+        #     extrapulm = fast_progression.sample(
+        #         frac=(1 - params['prop_pulm_hiv'])).index
+        #     df.loc[extrapulm, 'tb_specific_symptoms'] = 'active_extra'
+        #     df.loc[extrapulm, 'tb_unified_symptom_code'] = 3
+
+        # TODO healthcare seeking for all new active cases
+
+
+class TbActiveChildEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Onset of active TB for child %d", person_id)
+
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        # TODO change to active disease
+        # TODO decide pulm vs extrapulm
+
+        # TODO healthcare seeking for all new active cases
+
+
+
+
+
+
+
+
+
+
+
 
 class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb progression from latent to active infection
@@ -458,20 +581,49 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         # ----------------------------------- FAST PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
-        # if any newly infected latent cases, 14% become active directly, only for primary infection
+        # if any newly infected latent cases, 14% become active directly, only for new infections
         new_latent = df[
-            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & df.is_alive].sum()
+            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+                df.age_years <= 15) & df.is_alive].sum()
+        new_latent_hiv = df[
+            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+                    df.age_years <= 15) & df.hv_inf & df.is_alive].sum()
         # print(new_latent)
 
+        # hiv-negative
         if new_latent.any():
             fast_progression = df[
-                (df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
+                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.hv_inf & df.is_alive].sample(
                 frac=params['prop_fast_progressor']).index
+
             df.loc[fast_progression, 'tb_inf'] = 'active_susc_new'
             df.loc[fast_progression, 'tb_date_active'] = now
-            df.loc[fast_progression, 'tb_ever_tb'] = True
             df.loc[fast_progression, 'tb_specific_symptoms'] = 'active_pulm'
             df.loc[fast_progression, 'tb_unified_symptom_code'] = 2
+
+            # select proportion to become extrapulmonary TB
+            extrapulm = fast_progression.sample(
+                frac=(1 - params['prop_pulm'])).index
+            df.loc[extrapulm, 'tb_specific_symptoms'] = 'active_extra'
+            df.loc[extrapulm, 'tb_unified_symptom_code'] = 3
+
+        # hiv-positive
+        if new_latent_hiv.any():
+            fast_progression = df[
+                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & df.hv_inf & df.is_alive].sample(
+                frac=params['prop_fast_progressor']).index
+
+            df.loc[fast_progression, 'tb_inf'] = 'active_susc_new'
+            df.loc[fast_progression, 'tb_date_active'] = now
+            df.loc[fast_progression, 'tb_specific_symptoms'] = 'active_pulm'
+            df.loc[fast_progression, 'tb_unified_symptom_code'] = 2
+
+            # select proportion to become extrapulmonary TB
+            extrapulm = fast_progression.sample(
+                frac=(1 - params['prop_pulm_hiv'])).index
+            df.loc[extrapulm, 'tb_specific_symptoms'] = 'active_extra'
+            df.loc[extrapulm, 'tb_unified_symptom_code'] = 3
+
 
             # ----------------------------------- FAST PROGRESSORS SEEKING CARE -----------------------------------
 
@@ -692,13 +844,14 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
-        active_hiv_neg = len(df[df['tb_inf'].str.contains('active_mdr_pulm') & ~df.hv_inf & df.is_alive])
 
-        active_hiv_pos = len(df[df['tb_inf'].str.contains('active_mdr_pulm') & df.hv_inf & df.is_alive])
+        # population at-risk = uninfected
+        active_hiv_neg = len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive])
+        active_hiv_pos = len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & df.is_alive])
 
-        # population at-risk = susceptible (new infection), latent_susc (new infection)
-
-        uninfected_total = len(df[(df.tb_inf == 'uninfected') | df['tb_inf'].str.contains('latent_susc') & df.is_alive])
+        uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
         force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
@@ -725,7 +878,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
         # pop at risk = latent_mdr_secondary, latent_susc (primary & secondary)
         at_risk = df[
-            (df.tb_inf == 'latent_mdr_secondary') | df['tb_inf'].str.contains('latent_susc') & df.is_alive].index
+            (df.tb_inf == 'latent_mdr_tx') | df['tb_inf'].str.contains('latent_susc') & df.is_alive].index
 
         #  no age/sex effect on risk of latent infection
         prob_tb_new = pd.Series(force_of_infection, index=at_risk)
