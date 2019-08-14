@@ -3,12 +3,13 @@ import logging
 import os
 from pathlib import Path
 
-import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthsystem, lifestyle, oesophageal_cancer, healthburden
+from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
 
 # Where will output go
 outputpath = './src/scripts/oesophageal_cancer_analyses/'
@@ -43,8 +44,7 @@ sim = Simulation(start_date=start_date)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
              ignore_appt_constraints=True,
-             ignore_cons_constraints=True
-             ))
+             ignore_cons_constraints=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
@@ -53,4 +53,5 @@ sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefile
 # sim.seed_rngs(0)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
-fh.flush()
+
+# fh.flush()
