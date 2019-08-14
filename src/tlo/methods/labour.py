@@ -3,6 +3,7 @@ A model of Labour and the Health System Interactions associated with Skilled Bir
 """
 import logging
 import os
+
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -13,7 +14,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import demography, healthsystem, healthburden
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 LOG_FILENAME = 'labour.log'
 logging.basicConfig(filename=LOG_FILENAME,
                             filemode='w',
@@ -788,7 +789,8 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
 
             # If a newly pregnant woman will miscarry her pregnancy, a random date within 24 weeks of conception is
             # generated, the date of miscarriage is scheduled for this day
-            # Todo: N.b malawi date of viability is 28 weeks, we using 24 as cut off to allow for very PTB.
+
+            # (N.b malawi date of viability is 28 weeks, we using 24 as cut off to allow for very PTB.)
 
             random_draw = self.sim.rng.exponential(scale=0.5, size=1)  # todo: finalise scale (check correct)
             random_days = pd.to_timedelta(random_draw[0] * 168, unit='d')
@@ -948,9 +950,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'la_due_date_current_pregnancy'] == pd.NaT:
             pass
             logger.info('This is LabourEvent, person %d has reached their previously allocated due date but is not '
-                        'entering labour at this time',
-                    individual_id) # this isnt that clear
-
+                        'entering labour at this time', individual_id)
 
         elif df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
             gestation_date = df.at[individual_id, 'la_due_date_current_pregnancy'] - df.at[individual_id,
@@ -1156,6 +1156,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['sepsis_ip'] = True
                         logger.info('person %d is experiencing intrapartum maternal sepsis in the community on date %s',
                                     individual_id, self.sim.date)
+                        # TODO modify newborn risk of sepsis for septic women
 
 # ====================================== UTERINE RUPTURE  =============================================================
 
@@ -1291,6 +1292,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
 # ============================================= RISK OF SEPSIS =========================================================
 
+            # todo: consider prolonged labour/PROMS/PPROMS as is a strong risk factor for both maternal and newborn sep
             if mni[individual_id]['labour_has_previously_been_obstructed']:
                 rf1 = params['rr_ip_sepsis_pl_ol'] # should we have differnt an/pn rates?
             else:
@@ -1719,7 +1721,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
         print('SBA working')
         logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
-                     'at birth for person %d on date %s', person_id, self.sim.date)
+                    'at birth for person %d on date %s', person_id, self.sim.date)
 
         # TODO: Who is attending this labour?- Will I determine this or will it link to capacity, need to apply effect
 
@@ -1730,16 +1732,14 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         # First we apply the estimated impact of clean birth practices on maternal and newborn risk of sepsis
 
         adjusted_maternal_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * \
-                                       params['rr_maternal_sepsis_clean_delivery']
+            params['rr_maternal_sepsis_clean_delivery']
         mni[person_id]['risk_ip_sepsis'] = adjusted_maternal_sepsis_risk
         print(adjusted_maternal_sepsis_risk)
 
-
         adjusted_newborn_sepsis_risk = mni[person_id]['risk_newborn_sepsis'] * \
-                                       params['rr_newborn_sepsis_clean_delivery']
+            params['rr_newborn_sepsis_clean_delivery']
         mni[person_id]['risk_newborn_sepsis'] = adjusted_newborn_sepsis_risk
         print(adjusted_newborn_sepsis_risk)
-
 
     # =============================== MATERNAL/FETAL SURVEILLANCE ======================================================
 
@@ -1791,6 +1791,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             mni[person_id]['source_sepsis'] = 'IP'
             logger.info('person %d has developed maternal sepsis in a health facility',
                         person_id)
+            # TODO modify newborn risk of sepsis for septic women
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ur']:

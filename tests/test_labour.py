@@ -31,12 +31,14 @@ def simulation():
 
     core_module = demography.Demography(resourcefilepath=resourcefilepath)
     service_availability = ['*']
-    core2_module=labour.Labour(resourcefilepath=resourcefilepath)
+    lab_module = labour.Labour(resourcefilepath=resourcefilepath)
+    nb_module = newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath)
 
     sim.register(core_module)
-    sim.register(core2_module)
+    sim.register(lab_module)
+    sim.register(nb_module)
+
     sim.register(lifestyle.Lifestyle())
-    sim.register(newborn_outcomes.NewbornOutcomes())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
 #    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
