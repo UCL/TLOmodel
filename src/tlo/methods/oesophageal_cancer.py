@@ -614,10 +614,9 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
-        random_draw = m.rng.random_sample(size=len(stage4_idx))
-        df.loc[stage4_idx, "ca_oesophageal_cancer_death"] = random_draw < m.r_death_oesoph_cancer
-        death_this_period = df.index[df.ca_oesophageal_cancer_death]
-        for individual_id in death_this_period:
+        selected_to_die = stage4_idx[m.r_death_oesoph_cancer > rng.random_sample(size=len(stage4_idx))]
+        df.loc[selected_to_die, "ca_oesophageal_cancer_death"] = True
+        for individual_id in selected_to_die:
             self.sim.schedule_event(
                 demography.InstantaneousDeath(self.module, individual_id, "Oesophageal_cancer"), self.sim.date
             )
