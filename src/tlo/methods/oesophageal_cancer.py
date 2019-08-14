@@ -452,7 +452,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         #       df['ca_oesophagus_curative_treatment_requested'] = False
         df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
 
-
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
 
         # create indexes of subgroups of people with different cancert statuses
@@ -493,10 +492,14 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                     df.li_ex_alc] *= m.rr_low_grade_dysplasia_none_ex_alc
 
         # create series which is rate ratio to be applied for each persons age - rate rate by age is continuous
-        eff_prob_low_grade_dysp *= (m.rr_low_grade_dysplasia_none_per_year_older ** (df.loc[ca_oes_current_none_idx, 'age_years'] - 20))
+        eff_prob_low_grade_dysp *= (
+            m.rr_low_grade_dysplasia_none_per_year_older ** (df.loc[ca_oes_current_none_idx, 'age_years'] - 20)
+        )
 
         # based on the random draw determine who develops low grade dysplasia in this update
-        selected = ca_oes_current_none_idx[eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp))]
+        selected = ca_oes_current_none_idx[
+            eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp))
+            ]
         df.loc[selected, "ca_oesophagus"] = "low_grade_dysplasia"
 
         # updating for people aged over 20 with current stage to next stage
@@ -512,20 +515,20 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[selected, 'ca_oesophagus'] = next_stage
 
         progress_stage(ca_oes_current_low_grade_dysp_idx,
-                        'low_grade_dysplasia', 'high_grade_dysplasia',
-                        m.r_high_grade_dysplasia_low_grade_dysp, m.rr_high_grade_dysp_undergone_curative_treatment)
+                       'low_grade_dysplasia', 'high_grade_dysplasia',
+                       m.r_high_grade_dysplasia_low_grade_dysp, m.rr_high_grade_dysp_undergone_curative_treatment)
         progress_stage(ca_oes_current_high_grade_dysp_idx,
-                        'high_grade_dysplasia', 'stage1',
-                        m.r_stage1_high_grade_dysp, m.rr_stage1_undergone_curative_treatment)
+                       'high_grade_dysplasia', 'stage1',
+                       m.r_stage1_high_grade_dysp, m.rr_stage1_undergone_curative_treatment)
         progress_stage(ca_oes_current_stage1_idx,
-                        'stage1', 'stage2',
-                        m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
+                       'stage1', 'stage2',
+                       m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
         progress_stage(ca_oes_current_stage2_idx,
-                        'stage2', 'stage3',
-                        m.r_stage3_stage2, m.rr_stage3_undergone_curative_treatment)
+                       'stage2', 'stage3',
+                       m.r_stage3_stage2, m.rr_stage3_undergone_curative_treatment)
         progress_stage(ca_oes_current_stage3_idx,
-                        'stage3', 'stage4',
-                        m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
+                       'stage3', 'stage4',
+                       m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
 
         # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
         # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
@@ -574,7 +577,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                 )
 
         update_curative_treatment('low_grade_dysplasia', m.r_curative_treatment_low_grade_dysp)
-        update_curative_treatment('high_grade_dysplasia', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp)
+        update_curative_treatment('high_grade_dysplasia',
+                                  m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp)
         update_curative_treatment('stage1', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage1)
         update_curative_treatment('stage2', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2)
         update_curative_treatment('stage3', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3)
