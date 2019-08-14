@@ -452,11 +452,18 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         #       df['ca_oesophagus_curative_treatment_requested'] = False
         df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
 
-        # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
-        # updating for people aged over 20 with current status 'none'
-        # create indexes of subgroups of people with no current oes cancer
-        ca_oes_current_none_idx = df.index[df.is_alive & (df.ca_oesophagus == "none") & (df.age_years >= 20)]
 
+        # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
+
+        # create indexes of subgroups of people with different cancert statuses
+        ca_oes_current_none_idx = df.index[df.is_alive &
+                                           (df.ca_oesophagus == "none") &
+                                           (df.age_years >= 20)]
+        ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive &
+                                                     (df.ca_oesophagus == "low_grade_dysplasia") &
+                                                     (df.age_years >= 20)]
+
+        # updating for people aged over 20 with current status 'none'
         # create series of the parameter r_low_grade_dysplasia_none which is the probability of low grade dysplasia for
         # men, age20, no excess alcohol, no tobacco
         eff_prob_low_grade_dysp = pd.Series(m.r_low_grade_dysplasia_none, index=ca_oes_current_none_idx)
@@ -487,30 +494,14 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
 
         # updating for people aged over 20 with current status 'low grade dysplasia'
         # this uses a very similar approach to that described in detail above
-        ca_oes_current_low_grade_dysp_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia") & (df.age_years >= 20)
-        ]
-        ca_oes_current_low_grade_dysp_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "low_grade_dysplasia")
-            & (df.age_years >= 20)
-            & (df.ca_oesophagus_curative_treatment == "low_grade_dysplasia")
-        ]
-        eff_prob_high_grade_dysp = pd.Series(
-            m.r_high_grade_dysplasia_low_grade_dysp,
-            index=df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia") & (df.age_years >= 20)],
-        )
-        eff_prob_high_grade_dysp.loc[
-            ca_oes_current_low_grade_dysp_treated_idx
-        ] *= m.rr_high_grade_dysp_undergone_curative_treatment
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_current_low_grade_dysp_idx)),
-            index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia")],
-        )
-        dfx = pd.concat([eff_prob_high_grade_dysp, random_draw], axis=1)
-        dfx.columns = ["eff_prob_high_grade_dysp", "random_draw"]
-        idx_incident_high_grade_dysp = dfx.index[dfx.eff_prob_high_grade_dysp > dfx.random_draw]
-        df.loc[idx_incident_high_grade_dysp, "ca_oesophagus"] = "high_grade_dysplasia"
+        eff_prob_high_grade_dysp = pd.Series(m.r_high_grade_dysplasia_low_grade_dysp, index=ca_oes_current_low_grade_dysp_idx)
+        eff_prob_high_grade_dysp.loc[df.is_alive &
+                                     (df.ca_oesophagus == "low_grade_dysplasia") &
+                                     (df.age_years >= 20) &
+                                     (df.ca_oesophagus_curative_treatment == "low_grade_dysplasia")
+                                     ] *= m.rr_high_grade_dysp_undergone_curative_treatment
+        df.loc[eff_prob_high_grade_dysp > rng.random_sample(size=len(eff_prob_high_grade_dysp)), 'ca_oesophagus'] = 'high_grade_dysplasia'
+
         # updating for people aged over 20 with current status 'high grade dysplasia'
         # this uses a very similar approach to that described in detail above
         ca_oes_current_high_grade_dysp_idx = df.index[
