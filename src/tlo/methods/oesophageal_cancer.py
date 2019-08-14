@@ -596,22 +596,22 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # 0.399
 
         # assume disability does not depend on whether diagnosed but may want to change in future
-        ca_oes_low_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia")]
-        ca_oes_high_grade_dysplasia_idx = df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia")]
-        ca_oes_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1")]
-        ca_oes_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2")]
-        ca_oes_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3")]
-        ca_oes_stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
         # todo: note these disability weights don't map fully to cancer stages - may need to re-visit these
         # todo: choices below at some point
         # todo: I think the m.daly_wt_oes_cancer_primary_therapy etc being read in are not being
         # todo: recognised as REAL - need to covert to REAL so can take linear combinations of them below
-        df.loc[ca_oes_low_grade_dysplasia_idx, "ca_disability"] = 0.01
-        df.loc[ca_oes_high_grade_dysplasia_idx, "ca_disability"] = 0.01
-        df.loc[ca_oes_stage1_idx, "ca_disability"] = m.daly_wt_oes_cancer_controlled
-        df.loc[ca_oes_stage2_idx, "ca_disability"] = m.daly_wt_oes_cancer_primary_therapy
-        df.loc[ca_oes_stage3_idx, "ca_disability"] = m.daly_wt_oes_cancer_primary_therapy
-        df.loc[ca_oes_stage4_idx, "ca_disability"] = m.daly_wt_oes_cancer_metastatic
+        disability_lookup = {
+            'low_grade_dysplasia': 0.01,
+            'high_grade_dysplasis': 0.01,
+            'stage1': m.daly_wt_oes_cancer_controlled,
+            'stage2': m.daly_wt_oes_cancer_primary_therapy,
+            'stage3': m.daly_wt_oes_cancer_primary_therapy,
+            'stage4': m.daly_wt_oes_cancer_metastatic,
+        }
+
+        for stage, weight in disability_lookup.items():
+            df.loc[df.is_alive & (df.ca_oesophagus == stage)] = weight
+
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
         random_draw = m.rng.random_sample(size=len(stage4_idx))
