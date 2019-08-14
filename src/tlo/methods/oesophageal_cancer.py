@@ -536,8 +536,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                            (df.ca_oesophagus == current_stage) &
                            (df.age_years >= 20) &
                            ~df.ca_oesophagus_diagnosed]
-            eff_prob_diag = pd.Series(r_diagnosis, index=idx)
-            selected = eff_prob_diag > rng.random_sample(size=len(eff_prob_diag))
+            selected = idx[r_diagnosis > rng.random_sample(size=len(idx))]
             df.loc[selected, 'ca_oesophagus_diagnosed'] = True
             df.loc[selected, 'ca_incident_oes_cancer_diagnosis_this_3_month_period'] = True
 
