@@ -518,9 +518,6 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         progress_stage(ca_oes_current_stage1_idx,
                         'stage1', 'stage2',
                         m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
-        progress_stage(ca_oes_current_stage1_idx,
-                        'stage1', 'stage2',
-                        m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
         progress_stage(ca_oes_current_stage2_idx,
                         'stage2', 'stage3',
                         m.r_stage3_stage2, m.rr_stage3_undergone_curative_treatment)
