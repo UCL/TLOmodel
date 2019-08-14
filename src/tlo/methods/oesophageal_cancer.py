@@ -299,6 +299,8 @@ class Oesophageal_Cancer(Module):
         m = self
         rng = m.rng
 
+        cancer_stages = ["low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"]
+
         # -------------------- DEFAULTS ------------------------------------------------------------
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
@@ -313,11 +315,7 @@ class Oesophageal_Cancer(Module):
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
 
         # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
-        p_oes_dys_can = pd.DataFrame(
-            data=[m.init_prop_oes_cancer_stage],
-            columns=["low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
-            index=agege20_idx,
-        )
+        p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage], columns=cancer_stages, index=agege20_idx)
 
         # create probabilities of oes dysplasia and oe cancer for all over age 20
         p_oes_dys_can.loc[(df.sex == "F") & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
@@ -341,57 +339,15 @@ class Oesophageal_Cancer(Module):
         df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
-        low_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia")]
-        high_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia")]
-        stage1_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1")]
-        stage2_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2")]
-        stage3_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3")]
-        stage4_oes_can_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
-        # create a series of random uniform(0,1) for those with low grade dys (m. is self.)
-        random_draw = pd.Series(
-            rng.random_sample(size=len(low_grade_dys_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia")],
-        )
-        # allocate who is diagnosed this period based on random draw and parameter with prop diagnosed
-        df.loc[low_grade_dys_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[0]
-        )
-        # now do as above for each oesophageal cancer stage
-        random_draw = pd.Series(
-            rng.random_sample(size=len(high_grade_dys_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia")],
-        )
-        df.loc[high_grade_dys_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[1]
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage1_oes_can_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage1")],
-        )
-        df.loc[stage1_oes_can_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[2]
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage2_oes_can_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage2")],
-        )
-        df.loc[stage2_oes_can_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[3]
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage3_oes_can_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage3")],
-        )
-        df.loc[stage3_oes_can_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[4]
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage4_oes_can_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage4")],
-        )
-        df.loc[stage4_oes_can_idx, "ca_oesophagus_diagnosed"] = (
-            random_draw < m.init_prop_diagnosed_oes_cancer_by_stage[5]
-        )
+        def assign_diagnosed(stage):
+            offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
+            p_diagnosed = m.init_prop_diagnosed_oes_cancer_by_stage[offset]
+            subset = df.is_alive & (df.ca_oesophagus == stage)
+            df.loc[subset, 'ca_oesophagus_diagnosed'] = rng.random_sample(size=subset.sum()) < p_diagnosed
+
+        for stage in cancer_stages:
+            assign_diagnosed(stage)
+
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
         # create indexes for people in each stage
         low_grade_dys_diagnosed_idx = df.index[
