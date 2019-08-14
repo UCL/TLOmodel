@@ -42,7 +42,8 @@ class Contraception(Module):
         'contraception_switching_matrix': Parameter(Types.DATA_FRAME, 'switching_matrix'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
         'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
-        'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'), # from Fracpoly regression
+        'r_init1_age': Parameter(Types.REAL, 'proportioniate change in irate1 for each age in years'),    # from Fracpoly regression
+        'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),     # from Fracpoly regression
         'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
@@ -99,9 +100,12 @@ class Contraception(Module):
         self.parameters['rr_fail_under25'] = 2.2
         # From Guttmacher analysis - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
 
-        # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age: - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
+        self.parameters['r_init1_age'] = workbook['r_init1_age']
+        # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do: fracpoly: regress _d age_ // fracpoly exact age (better fitting model, higher F statistic) - see 'Initiation1 by age' worksheet, results are in 'r_init1_age' sheet
+
         self.parameters['r_discont_age'] = workbook['r_discont_age']
-        # TODO: allow for different initiation rates by age given declining population on contraception over time
+        # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age: - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -228,8 +232,44 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
 
         # prepare the probabilities
         c_worksheet = m.parameters['contraception_initiation1']
-        c_probs = c_worksheet.loc[0].values.tolist()
+        c_worksheet2 = m.parameters['r_init1_age']
+
+        # add the probabilities and copy to each row of the sim population (population dataframe)
+        df_new = pd.concat([df, c_worksheet], axis=1)
+        df_new.loc[:, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                       'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[
+            0, ['not_using', 'pill', 'IUD', 'injections',
+                'implant', 'male_condom',
+                'female_sterilization',
+                'other_modern',
+                'periodic_abstinence',
+                'withdrawal',
+                'other_traditional']].tolist()
+        probabilities = df_new.loc[
+            not_using_idx, ['age_years', 'co_contraception', 'not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
+                        'female_sterilization', 'other_modern', 'periodic_abstinence',
+                        'withdrawal', 'other_traditional']]
+
+        # get the proportioniate change in irate1 for each age in years, through merging with the r_init1_age data
+        len_before_merge = len(probabilities)
+        probabilities = probabilities.reset_index().merge(c_worksheet2,
+                                              left_on=['age_years'],
+                                              right_on=['age'],
+                                              how='left').set_index('person')
+        assert len(probabilities) == len_before_merge
+
+        ##c_probs = c_worksheet.loc[0].values.tolist()
         c_names = c_worksheet.columns.tolist()
+
+        # adjust the probabilities of initiation1 of each method according to the proportionate change by age in years (which is based on the fracpoly regression parameters):
+        c_probs = probabilities[['pill', 'IUD', 'injections',
+                'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                'periodic_abstinence', 'withdrawal', 'other_traditional']]
+        c_probs_age_extra = probabilities[['pill', 'IUD', 'injections',
+                'implant', 'male_condom', 'female_sterilization', 'other_modern',
+                'periodic_abstinence', 'withdrawal', 'other_traditional']].mul(probabilities['r_init1_age'], axis='index')
+        c_probs = c_probs + c_probs_age_extra
+        c_probs['not_using'] = 1 - c_probs.sum(axis=1)
 
         # sample contraceptive method for everyone not using
         # and put in a series which has index of all currently not using
