@@ -387,9 +387,11 @@ class Oesophageal_Cancer(Module):
         df.at[child_id, "ca_oesophagus"] = "none"
         df.at[child_id, "ca_oesophagus_diagnosed"] = False
         df.at[child_id, "ca_oesophagus_curative_treatment"] = "never"
-        df.at[child_id, "ca_oesophageal_cancer_death"] = "never"
+        df.at[child_id, "ca_oesophageal_cancer_death"] = False
         df.at[child_id, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
         df.at[child_id, "ca_disability"] = 0
+        df.at[child_id, "ca_oesophagus_curative_treatment_requested"] = False
+        df.at[child_id, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
