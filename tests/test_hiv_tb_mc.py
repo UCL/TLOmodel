@@ -20,12 +20,14 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
+    service_availability = list(['hiv*', 'tb*', 'male_circumcision*'])
+
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=["tb*"],
+                                           service_availability=service_availability,
                                            capabilities_coefficient=0.0))
     sim.register(tb.tb(resourcefilepath=resourcefilepath))
     sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
