@@ -1,14 +1,14 @@
 import datetime
-import logging
+# import logging
 import os
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
+# from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
 
 # Where will output go

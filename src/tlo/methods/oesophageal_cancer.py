@@ -298,6 +298,7 @@ class Oesophageal_Cancer(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
         m = self
         rng = m.rng
+
         # -------------------- DEFAULTS ------------------------------------------------------------
         df.loc[df.is_alive, "ca_oesophagus"] = "none"
         df.loc[df.is_alive, "ca_oesophagus_diagnosed"] = False
@@ -307,88 +308,38 @@ class Oesophageal_Cancer(Module):
         df.loc[df.is_alive, "ca_disability"] = 0
         df.loc[df.is_alive, "ca_oesophagus_curative_treatment_requested"] = False
         df.loc[df.is_alive, "ca_date_treatment_oesophageal_cancer"] = pd.NaT
+
         # -------------------- ASSIGN VALUES OF OESOPHAGEAL DYSPLASIA/CANCER STATUS AT BASELINE -----------
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
+
         # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
         p_oes_dys_can = pd.DataFrame(
             data=[m.init_prop_oes_cancer_stage],
-            columns=["low grade dysplasia", "high grade dysplasia", "stage 1", "stage 2", "stage 3", "stage 4"],
+            columns=["low_grade_dysplasia", "high_grade_dysplasia", "stage1", "stage2", "stage3", "stage4"],
             index=agege20_idx,
         )
+
         # create probabilities of oes dysplasia and oe cancer for all over age 20
         p_oes_dys_can.loc[(df.sex == "F") & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
         p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
         p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
-        p_oes_dys_can_age_muliplier = pd.Series(
-            m.rp_oes_cancer_per_year_older ** (df.age_years - 20), index=agege20_idx
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(agege20_idx)), index=df.index[(df.age_years >= 20) & df.is_alive]
-        )
-        # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([p_oes_dys_can, p_oes_dys_can_age_muliplier, random_draw], axis=1)
-        dfx.columns = [
-            "p_low_grade_dysplasia",
-            "p_high_grade_dysplasia",
-            "p_stage1",
-            "p_stage2",
-            "p_stage3",
-            "p_stage4",
-            "p_oes_dys_can_age_muliplier",
-            "random_draw",
-        ]
-        dfx.p_low_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
-        dfx.p_high_grade_dysplasia *= dfx.p_oes_dys_can_age_muliplier
-        dfx.p_stage1 *= dfx.p_oes_dys_can_age_muliplier
-        dfx.p_stage2 *= dfx.p_oes_dys_can_age_muliplier
-        dfx.p_stage3 *= dfx.p_oes_dys_can_age_muliplier
-        dfx.p_stage4 *= dfx.p_oes_dys_can_age_muliplier
-        # based on probabilities of being in each category, define cut-offs to determine status from
-        # random draw uniform(0,1)
-        # assign baseline values of ca_oesophagus based on probabilities and value of random draw
-        idx_low_grade_dysplasia = dfx.index[dfx.p_low_grade_dysplasia > dfx.random_draw]
-        idx_high_grade_dysplasia = dfx.index[
-            (dfx.p_low_grade_dysplasia < dfx.random_draw)
-            & ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia) > dfx.random_draw)
-        ]
-        idx_stage1 = dfx.index[
-            ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia) < dfx.random_draw)
-            & ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1) > dfx.random_draw)
-        ]
-        idx_stage2 = dfx.index[
-            ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1) < dfx.random_draw)
-            & ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2) > dfx.random_draw)
-        ]
-        idx_stage3 = dfx.index[
-            ((dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2) < dfx.random_draw)
-            & (
-                (dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2 + dfx.p_stage3)
-                > dfx.random_draw
-            )
-        ]
-        idx_stage4 = dfx.index[
-            (
-                (dfx.p_low_grade_dysplasia + dfx.p_high_grade_dysplasia + dfx.p_stage1 + dfx.p_stage2 + dfx.p_stage3)
-                < dfx.random_draw
-            )
-            & (
-                (
-                    dfx.p_low_grade_dysplasia
-                    + dfx.p_high_grade_dysplasia
-                    + dfx.p_stage1
-                    + dfx.p_stage2
-                    + dfx.p_stage3
-                    + dfx.p_stage4
-                )
-                > dfx.random_draw
-            )
-        ]
-        df.loc[idx_low_grade_dysplasia, "ca_oesophagus"] = "low_grade_dysplasia"
-        df.loc[idx_high_grade_dysplasia, "ca_oesophagus"] = "high_grade_dysplasia"
-        df.loc[idx_stage1, "ca_oesophagus"] = "stage1"
-        df.loc[idx_stage2, "ca_oesophagus"] = "stage2"
-        df.loc[idx_stage3, "ca_oesophagus"] = "stage3"
-        df.loc[idx_stage4, "ca_oesophagus"] = "stage4"
+
+        # apply multiplier
+        p_oes_dys_can_age_muliplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
+        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_muliplier, axis="index")
+
+        # add column for the probability of no cancer at start of dataframe
+        p_oes_dys_can.insert(0, 'none', 1 - p_oes_dys_can.sum(axis=1))
+
+        # check the categories match and line up
+        assert df.ca_oesophagus.cat.categories.all() == p_oes_dys_can.columns.all()
+
+        # for each row, make a choice
+        stage = p_oes_dys_can.apply(lambda p_oes: rng.choice(p_oes_dys_can.columns, p=p_oes), axis=1)
+
+        # set for those that have cancer
+        df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
+
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
         low_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia")]
         high_grade_dys_idx = df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia")]
@@ -458,9 +409,11 @@ class Oesophageal_Cancer(Module):
         stage3_oes_can_diagnosed_idx = df.index[
             df.is_alive & (df.ca_oesophagus == "stage3") & df.ca_oesophagus_diagnosed
         ]
-        stage4_oes_can_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "stage4") & df.ca_oesophagus_diagnosed
-        ]
+
+        # stage4_oes_can_diagnosed_idx = df.index[
+        #     df.is_alive & (df.ca_oesophagus == "stage4") & df.ca_oesophagus_diagnosed
+        # ]
+
         # for those with low grade dysplasia, create a series with random uniform(0,1)
         random_draw = pd.Series(
             rng.random_sample(size=len(low_grade_dys_diagnosed_idx)),
@@ -602,15 +555,17 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         """Apply this event to the population.
         :param population: the current population
         """
-        TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
+        # TREATMENT_ID = "attempted curative treatment for oesophageal cancer"
+
         df = population.props
         m = self.module
         rng = m.rng
+
         # set ca_oesophageal_cancer_death back to False after death
-        df["ca_oesophageal_cancer_death"] = False
-        df["ca_disability"] = 0
+        df.loc[df.is_alive, "ca_oesophageal_cancer_death"] = False
+        df.loc[df.is_alive, "ca_disability"] = 0
         #       df['ca_oesophagus_curative_treatment_requested'] = False
-        df["ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
+        df.loc[df.is_alive, "ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
         # -------------------- UPDATING of CA-OESOPHAGUS OVER TIME -----------------------------------
         # updating for people aged over 20 with current status 'none'
         # create indexes of subgroups of people with no current oes cancer
