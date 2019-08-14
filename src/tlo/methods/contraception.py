@@ -273,21 +273,30 @@ class Init1(RegularEvent, PopulationScopeEventMixin):
 
         # sample contraceptive method for everyone not using
         # and put in a series which has index of all currently not using
-        sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(not_using_idx), replace=True),
-                                   index=not_using_idx)
+        #c_probs['sampled_method'] = rng.choice(c_names, p=c_probs)
+        #sampled_method = pd.Series(rng.choice(c_probs, p=c_probs, size=len(not_using_idx), replace=True),
+        #                           index=not_using_idx)
 
         # only update those starting on contraception
-        now_using_idx = not_using_idx[sampled_method != 'not_using']
-        df.loc[now_using_idx, 'co_contraception'] = sampled_method[now_using_idx]
+        #now_using_idx = not_using_idx[sampled_method != 'not_using']
+        #df.loc[now_using_idx, 'co_contraception'] = sampled_method[now_using_idx]
 
-        # output some logging if any start contraception
-        if len(now_using_idx):
-            for woman_id in now_using_idx:
-                logger.info('%s|start_contraception|%s',
+        for woman in not_using_idx:
+            her_p = np.asarray(c_probs.loc[woman, :], dtype='float64')
+            her_op = np.asarray(c_probs.columns)
+
+            her_method = rng.choice(her_op, p=her_p)
+
+            df.loc[woman, 'co_contraception'] = her_method
+
+            # output some logging if any start of contraception
+            if her_method != 'not_using':
+                logger.info('%s|start_contraception1|%s',
                             self.sim.date,
                             {
-                                'woman_index': woman_id,
-                                'co_contraception': df.at[woman_id, 'co_contraception']
+                                'woman_index': woman,
+                                'age': df.at[woman, 'age_years'],
+                                'co_contraception': df.at[woman, 'co_contraception']
                             })
 
 
