@@ -3,13 +3,14 @@ import datetime
 import os
 from pathlib import Path
 
+from tlo import Date, Simulation
+# from tlo.analysis.utils import parse_log_file
+from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
+
 # import matplotlib.pyplot as plt
 # import numpy as np
 # import pandas as pd
 
-from tlo import Date, Simulation
-# from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
 
 # Where will output go
 outputpath = './src/scripts/oesophageal_cancer_analyses/'
