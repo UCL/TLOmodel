@@ -462,6 +462,12 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         ca_oes_current_low_grade_dysp_idx = df.index[df.is_alive &
                                                      (df.ca_oesophagus == "low_grade_dysplasia") &
                                                      (df.age_years >= 20)]
+        ca_oes_current_high_grade_dysp_idx = df.index[df.is_alive &
+                                                      (df.ca_oesophagus == "high_grade_dysplasia") &
+                                                      (df.age_years >= 20)]
+        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1") & (df.age_years >= 20)]
+        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2") & (df.age_years >= 20)]
+        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3") & (df.age_years >= 20)]
 
         # updating for people aged over 20 with current status 'none'
         # create series of the parameter r_low_grade_dysplasia_none which is the probability of low grade dysplasia for
@@ -492,103 +498,36 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # based on the random draw determine who develops low grade dysplasia in this update
         df.loc[eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp)), "ca_oesophagus"] = "low_grade_dysplasia"
 
-        # updating for people aged over 20 with current status 'low grade dysplasia'
-        # this uses a very similar approach to that described in detail above
-        eff_prob_high_grade_dysp = pd.Series(m.r_high_grade_dysplasia_low_grade_dysp, index=ca_oes_current_low_grade_dysp_idx)
-        eff_prob_high_grade_dysp.loc[df.is_alive &
-                                     (df.ca_oesophagus == "low_grade_dysplasia") &
-                                     (df.age_years >= 20) &
-                                     (df.ca_oesophagus_curative_treatment == "low_grade_dysplasia")
-                                     ] *= m.rr_high_grade_dysp_undergone_curative_treatment
-        df.loc[eff_prob_high_grade_dysp > rng.random_sample(size=len(eff_prob_high_grade_dysp)), 'ca_oesophagus'] = 'high_grade_dysplasia'
+        # updating for people aged over 20 with current stage to next stage
+        def progress_cancer(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
+            """helper function to progress people at given stage to next stage"""
+            eff_prob_next_stage = pd.Series(r_next_stage, index=index)
+            eff_prob_next_stage.loc[df.is_alive &
+                                    (df.ca_oesophagus == current_stage) &
+                                    (df.age_years >= 20) &
+                                    (df.ca_oesophagus_curative_treatment == current_stage)
+                                    ] *= rr_curative_treatment
+            df.loc[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage)), 'ca_oesophagus'] = next_stage
 
-        # updating for people aged over 20 with current status 'high grade dysplasia'
-        # this uses a very similar approach to that described in detail above
-        ca_oes_current_high_grade_dysp_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia") & (df.age_years >= 20)
-        ]
-        ca_oes_current_high_grade_dysp_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "high_grade_dysplasia")
-            & (df.age_years >= 20)
-            & (df.ca_oesophagus_curative_treatment == "high_grade_dysplasia")
-        ]
-        eff_prob_stage1 = pd.Series(
-            m.r_stage1_high_grade_dysp,
-            index=df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia") & (df.age_years >= 20)],
-        )
-        eff_prob_stage1.loc[ca_oes_current_high_grade_dysp_treated_idx] *= m.rr_stage1_undergone_curative_treatment
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_current_high_grade_dysp_idx)),
-            index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia")],
-        )
-        dfx = pd.concat([eff_prob_stage1, random_draw], axis=1)
-        dfx.columns = ["eff_prob_stage1", "random_draw"]
-        idx_incident_stage1 = dfx.index[dfx.eff_prob_stage1 > dfx.random_draw]
-        df.loc[idx_incident_stage1, "ca_oesophagus"] = "stage1"
-        # updating for people aged over 20 with current status stage 1 oes cancer
-        # this uses a very similar approach to that described in detail above
-        ca_oes_current_stage1_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage1") & (df.age_years >= 20)]
-        ca_oes_current_stage1_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage1")
-            & (df.age_years >= 20)
-            & (df.ca_oesophagus_curative_treatment == "stage1")
-        ]
-        eff_prob_stage2 = pd.Series(
-            m.r_stage2_stage1, index=df.index[df.is_alive & (df.ca_oesophagus == "stage1") & (df.age_years >= 20)]
-        )
-        eff_prob_stage2.loc[ca_oes_current_stage1_treated_idx] *= m.rr_stage2_undergone_curative_treatment
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_current_stage1_idx)),
-            index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == "stage1")],
-        )
-        dfx = pd.concat([eff_prob_stage2, random_draw], axis=1)
-        dfx.columns = ["eff_prob_stage2", "random_draw"]
-        idx_incident_stage2 = dfx.index[dfx.eff_prob_stage2 > dfx.random_draw]
-        df.loc[idx_incident_stage2, "ca_oesophagus"] = "stage2"
-        # updating for people aged over 20 with current status stage 2 oes cancer
-        # this uses a very similar approach to that described in detail above
-        ca_oes_current_stage2_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage2") & (df.age_years >= 20)]
-        ca_oes_current_stage2_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage2")
-            & (df.age_years >= 20)
-            & (df.ca_oesophagus_curative_treatment == "stage2")
-        ]
-        eff_prob_stage3 = pd.Series(
-            m.r_stage3_stage2, index=df.index[df.is_alive & (df.ca_oesophagus == "stage2") & (df.age_years >= 20)]
-        )
-        eff_prob_stage3.loc[ca_oes_current_stage2_treated_idx] *= m.rr_stage3_undergone_curative_treatment
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_current_stage2_idx)),
-            index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == "stage2")],
-        )
-        dfx = pd.concat([eff_prob_stage3, random_draw], axis=1)
-        dfx.columns = ["eff_prob_stage3", "random_draw"]
-        idx_incident_stage3 = dfx.index[dfx.eff_prob_stage3 > dfx.random_draw]
-        df.loc[idx_incident_stage3, "ca_oesophagus"] = "stage3"
-        # updating for people aged over 20 with current status stage 3 oes cancer
-        # this uses a very similar approach to that described in detail above
-        ca_oes_current_stage3_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage3") & (df.age_years >= 20)]
-        ca_oes_current_stage3_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage3")
-            & (df.age_years >= 20)
-            & (df.ca_oesophagus_curative_treatment == "stage3")
-        ]
-        eff_prob_stage4 = pd.Series(
-            m.r_stage4_stage3, index=df.index[df.is_alive & (df.ca_oesophagus == "stage3") & (df.age_years >= 20)]
-        )
-        eff_prob_stage4.loc[ca_oes_current_stage3_treated_idx] *= m.rr_stage4_undergone_curative_treatment
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_current_stage3_idx)),
-            index=df.index[(df.age_years >= 20) & df.is_alive & (df.ca_oesophagus == "stage3")],
-        )
-        dfx = pd.concat([eff_prob_stage4, random_draw], axis=1)
-        dfx.columns = ["eff_prob_stage4", "random_draw"]
-        idx_incident_stage4 = dfx.index[dfx.eff_prob_stage4 > dfx.random_draw]
-        df.loc[idx_incident_stage4, "ca_oesophagus"] = "stage4"
+        progress_cancer(ca_oes_current_low_grade_dysp_idx,
+                        'low_grade_dysplasia', 'high_grade_dysplasia',
+                        m.r_high_grade_dysplasia_low_grade_dysp, m.rr_high_grade_dysp_undergone_curative_treatment)
+        progress_cancer(ca_oes_current_high_grade_dysp_idx,
+                        'high_grade_dysplasia', 'stage1',
+                        m.r_stage1_high_grade_dysp, m.rr_stage1_undergone_curative_treatment)
+        progress_cancer(ca_oes_current_stage1_idx,
+                        'stage1', 'stage2',
+                        m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
+        progress_cancer(ca_oes_current_stage1_idx,
+                        'stage1', 'stage2',
+                        m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
+        progress_cancer(ca_oes_current_stage2_idx,
+                        'stage2', 'stage3',
+                        m.r_stage3_stage2, m.rr_stage3_undergone_curative_treatment)
+        progress_cancer(ca_oes_current_stage3_idx,
+                        'stage3', 'stage4',
+                        m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
+
         # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
         # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
         # todo: for diagnosis
