@@ -339,14 +339,19 @@ class Oesophageal_Cancer(Module):
         df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS DIAGNOSED AT BASELINE --------------------------------
-        def assign_diagnosed(stage):
+
+        def set_diagnosed(stage):
+            """samples diagnosed status based on stage of cancer"""
+            # get the positional offset of the stage (from definition of category in PROPERTIES)
             offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
+            # get the probability of diagnosis at this stage of cancer
             p_diagnosed = m.init_prop_diagnosed_oes_cancer_by_stage[offset]
+            # randomly select some to have been diagnosed
             subset = df.is_alive & (df.ca_oesophagus == stage)
             df.loc[subset, 'ca_oesophagus_diagnosed'] = rng.random_sample(size=subset.sum()) < p_diagnosed
 
         for stage in cancer_stages:
-            assign_diagnosed(stage)
+            set_diagnosed(stage)
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
         # create indexes for people in each stage
