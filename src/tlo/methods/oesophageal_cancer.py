@@ -499,7 +499,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp)), "ca_oesophagus"] = "low_grade_dysplasia"
 
         # updating for people aged over 20 with current stage to next stage
-        def progress_cancer(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
+        def progress_stage(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
             """helper function to progress people at given stage to next stage"""
             eff_prob_next_stage = pd.Series(r_next_stage, index=index)
             eff_prob_next_stage.loc[df.is_alive &
@@ -509,29 +509,29 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                     ] *= rr_curative_treatment
             df.loc[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage)), 'ca_oesophagus'] = next_stage
 
-        progress_cancer(ca_oes_current_low_grade_dysp_idx,
+        progress_stage(ca_oes_current_low_grade_dysp_idx,
                         'low_grade_dysplasia', 'high_grade_dysplasia',
                         m.r_high_grade_dysplasia_low_grade_dysp, m.rr_high_grade_dysp_undergone_curative_treatment)
-        progress_cancer(ca_oes_current_high_grade_dysp_idx,
+        progress_stage(ca_oes_current_high_grade_dysp_idx,
                         'high_grade_dysplasia', 'stage1',
                         m.r_stage1_high_grade_dysp, m.rr_stage1_undergone_curative_treatment)
-        progress_cancer(ca_oes_current_stage1_idx,
+        progress_stage(ca_oes_current_stage1_idx,
                         'stage1', 'stage2',
                         m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
-        progress_cancer(ca_oes_current_stage1_idx,
+        progress_stage(ca_oes_current_stage1_idx,
                         'stage1', 'stage2',
                         m.r_stage2_stage1, m.rr_stage2_undergone_curative_treatment)
-        progress_cancer(ca_oes_current_stage2_idx,
+        progress_stage(ca_oes_current_stage2_idx,
                         'stage2', 'stage3',
                         m.r_stage3_stage2, m.rr_stage3_undergone_curative_treatment)
-        progress_cancer(ca_oes_current_stage3_idx,
+        progress_stage(ca_oes_current_stage3_idx,
                         'stage3', 'stage4',
                         m.r_stage4_stage3, m.rr_stage4_undergone_curative_treatment)
 
         # -------------------- UPDATING OF CA_OESOPHAGUS DIAGNOSED OVER TIME --------------------------------
         # todo: make diagnosis an hsi event (and model symptoms (dysphagia) leading to presentation
         # todo: for diagnosis
-        df["ca_incident_oes_cancer_diagnosis_this_3_month_period"] = False
+
         # update diagnosis status for undiagnosed people with low grade dysplasia
         # create index of people with undiagnosed low grade dysplasia
         ca_oes_current_low_grade_dysp_not_diag_idx = df.index[
