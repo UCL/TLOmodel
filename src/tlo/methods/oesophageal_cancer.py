@@ -496,7 +496,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_low_grade_dysp *= (m.rr_low_grade_dysplasia_none_per_year_older ** (df.loc[ca_oes_current_none_idx, 'age_years'] - 20))
 
         # based on the random draw determine who develops low grade dysplasia in this update
-        df.loc[eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp)), "ca_oesophagus"] = "low_grade_dysplasia"
+        selected = ca_oes_current_none_idx[eff_prob_low_grade_dysp > rng.random_sample(size=len(eff_prob_low_grade_dysp))]
+        df.loc[selected, "ca_oesophagus"] = "low_grade_dysplasia"
 
         # updating for people aged over 20 with current stage to next stage
         def progress_stage(index, current_stage, next_stage, r_next_stage, rr_curative_treatment):
@@ -507,7 +508,8 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                                     (df.age_years >= 20) &
                                     (df.ca_oesophagus_curative_treatment == current_stage)
                                     ] *= rr_curative_treatment
-            df.loc[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage)), 'ca_oesophagus'] = next_stage
+            selected = index[eff_prob_next_stage > rng.random_sample(size=len(eff_prob_next_stage))]
+            df.loc[selected, 'ca_oesophagus'] = next_stage
 
         progress_stage(ca_oes_current_low_grade_dysp_idx,
                         'low_grade_dysplasia', 'high_grade_dysplasia',
@@ -610,7 +612,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         }
 
         for stage, weight in disability_lookup.items():
-            df.loc[df.is_alive & (df.ca_oesophagus == stage)] = weight
+            df.loc[df.is_alive & (df.ca_oesophagus == stage), 'ca_disability'] = weight
 
         # -------------------- DEATH FROM OESOPHAGEAL CANCER ---------------------------------------
         stage4_idx = df.index[df.is_alive & (df.ca_oesophagus == "stage4")]
