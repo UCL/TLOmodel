@@ -354,96 +354,18 @@ class Oesophageal_Cancer(Module):
             set_diagnosed(stage)
 
         # -------------------- ASSIGN VALUES CA_OESOPHAGUS_CURATIVE_TREATMENT AT BASELINE -------------------
-        # create indexes for people in each stage
-        low_grade_dys_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia") & df.ca_oesophagus_diagnosed
-        ]
-        high_grade_dys_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia") & df.ca_oesophagus_diagnosed
-        ]
-        stage1_oes_can_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "stage1") & df.ca_oesophagus_diagnosed
-        ]
-        stage2_oes_can_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "stage2") & df.ca_oesophagus_diagnosed
-        ]
-        stage3_oes_can_diagnosed_idx = df.index[
-            df.is_alive & (df.ca_oesophagus == "stage3") & df.ca_oesophagus_diagnosed
-        ]
 
-        # stage4_oes_can_diagnosed_idx = df.index[
-        #     df.is_alive & (df.ca_oesophagus == "stage4") & df.ca_oesophagus_diagnosed
-        # ]
+        def set_curative_treatment(stage):
+            """sets the curative treatment flag for given stage of cancer"""
+            idx = df.index[df.is_alive & (df.ca_oesophagus == stage) & df.ca_oesophagus_diagnosed]
+            offset = df.ca_oesophagus.cat.categories.get_loc(stage) - 1
+            p_curative_treatment = m.init_prop_treatment_status_oes_cancer[offset]
+            selected = idx[p_curative_treatment > rng.random_sample(size=len(idx))]
+            df.loc[selected, "ca_oesophagus_curative_treatment"] = stage
 
-        # for those with low grade dysplasia, create a series with random uniform(0,1)
-        random_draw = pd.Series(
-            rng.random_sample(size=len(low_grade_dys_diagnosed_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia") & df.ca_oesophagus_diagnosed],
-        )
-        # create series with initial proportion with low grade dysplasia, based on parameter
-        p_treatment = pd.Series(
-            m.init_prop_treatment_status_oes_cancer[0],
-            index=df.index[df.is_alive & (df.ca_oesophagus == "low_grade_dysplasia") & df.ca_oesophagus_diagnosed],
-        )
-        # create a temporary dataframe dfx that has columns probability of treatment and random draw
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ["p_treatment", "random_draw"]
-        # create an index for those who are diagnosed and set ca_oesophagus_curative_treatment to
-        # low_grade_dysplasia
-        idx_low_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_low_grade_dysplasia_treatment, "ca_oesophagus_curative_treatment"] = "low_grade_dysplasia"
-        # do as above for high grade dysplasia
-        random_draw = pd.Series(
-            rng.random_sample(size=len(high_grade_dys_diagnosed_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia") & df.ca_oesophagus_diagnosed],
-        )
-        p_treatment = pd.Series(
-            m.init_prop_treatment_status_oes_cancer[1],
-            index=df.index[df.is_alive & (df.ca_oesophagus == "high_grade_dysplasia") & df.ca_oesophagus_diagnosed],
-        )
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ["p_treatment", "random_draw"]
-        idx_high_grade_dysplasia_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_high_grade_dysplasia_treatment, "ca_oesophagus_curative_treatment"] = "high_grade_dysplasia"
-        # do as above for stage1 oes cancer
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage1_oes_can_diagnosed_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage1") & df.ca_oesophagus_diagnosed],
-        )
-        p_treatment = pd.Series(
-            m.init_prop_treatment_status_oes_cancer[2],
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage1") & df.ca_oesophagus_diagnosed],
-        )
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ["p_treatment", "random_draw"]
-        idx_stage1_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_stage1_oes_can_treatment, "ca_oesophagus_curative_treatment"] = "stage1"
-        # do as above for stage2 oes cancer
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage2_oes_can_diagnosed_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage2") & df.ca_oesophagus_diagnosed],
-        )
-        p_treatment = pd.Series(
-            m.init_prop_treatment_status_oes_cancer[3],
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage2") & df.ca_oesophagus_diagnosed],
-        )
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ["p_treatment", "random_draw"]
-        idx_stage2_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_stage2_oes_can_treatment, "ca_oesophagus_curative_treatment"] = "stage2"
-        # do as above for stage3 oes cancer
-        random_draw = pd.Series(
-            rng.random_sample(size=len(stage3_oes_can_diagnosed_idx)),
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage3") & df.ca_oesophagus_diagnosed],
-        )
-        p_treatment = pd.Series(
-            m.init_prop_treatment_status_oes_cancer[4],
-            index=df.index[df.is_alive & (df.ca_oesophagus == "stage3") & df.ca_oesophagus_diagnosed],
-        )
-        dfx = pd.concat([p_treatment, random_draw], axis=1)
-        dfx.columns = ["p_treatment", "random_draw"]
-        idx_stage3_oes_can_treatment = dfx.index[dfx.p_treatment > dfx.random_draw]
-        df.loc[idx_stage3_oes_can_treatment, "ca_oesophagus_curative_treatment"] = "stage3"
+        # NOTE: excludes stage4 cancer
+        for stage in cancer_stages[:-1]:
+            set_curative_treatment(stage)
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
