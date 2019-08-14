@@ -550,222 +550,33 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- UPDATING VALUES OF CA_OESOPHAGUS_CURATIVE_TREATMENT -------------------
         # update ca_oesophagus_curative_treatment for diagnosed, untreated people with low grade dysplasia w
         # this uses the approach descibed in detail above for updating diagosis status
-        ca_oes_diag_low_grade_dysp_not_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "low_grade_dysplasia")
-            & (df.age_years >= 20)
-            & df.ca_oesophagus_diagnosed
-            & (df.ca_oesophagus_curative_treatment == "never")
-        ]
-        eff_prob_treatment = pd.Series(
-            m.r_curative_treatment_low_grade_dysp,
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "low_grade_dysplasia")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_diag_low_grade_dysp_not_treated_idx)),
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "low_grade_dysplasia")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
-        dfx.columns = ["eff_prob_treatment", "random_draw"]
-        requested_treatment_low_grade_dysplasia_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[requested_treatment_low_grade_dysplasia_idx, "ca_oesophagus_curative_treatment_requested"] = True
-        # generate the HSI Events whereby persons present for care and get treatment_low_grade_dysplasia
-        for person_id in requested_treatment_low_grade_dysplasia_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
-            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 91)))
-            # For this person, create the HSI Event for their presentation for care
-            hsi_present_for_care = HSIoStartTreatmentLowGradeOesDysplasia(self.module, person_id)
-            # Enter this event to the HealthSystem
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-            )
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with high grade dysplasia w
-        # this follows the same approach as above
-        ca_oes_diag_high_grade_dysp_not_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "high_grade_dysplasia")
-            & (df.age_years >= 20)
-            & df.ca_oesophagus_diagnosed
-            & (df.ca_oesophagus_curative_treatment == "never")
-        ]
-        eff_prob_treatment = pd.Series(
-            m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp,
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "high_grade_dysplasia")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_diag_high_grade_dysp_not_treated_idx)),
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "high_grade_dysplasia")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
-        dfx.columns = ["eff_prob_treatment", "random_draw"]
-        requested_treatment_high_grade_dysplasia_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[requested_treatment_high_grade_dysplasia_idx, "ca_oesophagus_curative_treatment_requested"] = True
-        # generate the HSI Events whereby persons present for care and get treatment_high_grade_dysplasia
-        # this follows the same approach as above
-        for person_id in requested_treatment_high_grade_dysplasia_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
-            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 91)))
-            # For this person, create the HSI Event for their presentation for care
-            hsi_present_for_care = HSIoStartTreatmentHighGradeOesDysplasia(self.module, person_id)
-            # Enter this event to the HealthSystem
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-            )
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 1
-        # this follows the same approach as above
-        ca_oes_diag_stage1_not_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage1")
-            & (df.age_years >= 20)
-            & df.ca_oesophagus_diagnosed
-            & (df.ca_oesophagus_curative_treatment == "never")
-        ]
-        eff_prob_treatment = pd.Series(
-            m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage1,
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage1")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_diag_stage1_not_treated_idx)),
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage1")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
-        dfx.columns = ["eff_prob_treatment", "random_draw"]
-        requested_treatment_stage1_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[requested_treatment_stage1_idx, "ca_oesophagus_curative_treatment_requested"] = True
-        # generate the HSI Events whereby persons present for care and get treatment atsge 1
-        # this follows the same approach as above
-        for person_id in requested_treatment_stage1_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
-            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 91)))
-            # For this person, create the HSI Event for their presentation for care
-            hsi_present_for_care = HSIoStartTreatmentStage1OesCancer(self.module, person_id)
-            # Enter this event to the HealthSystem
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-            )
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 2
-        # this follows the same approach as above
-        ca_oes_diag_stage2_not_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage2")
-            & (df.age_years >= 20)
-            & df.ca_oesophagus_diagnosed
-            & (df.ca_oesophagus_curative_treatment == "never")
-        ]
-        eff_prob_treatment = pd.Series(
-            m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2,
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage2")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_diag_stage2_not_treated_idx)),
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage2")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
-        dfx.columns = ["eff_prob_treatment", "random_draw"]
-        requested_treatment_stage2_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[requested_treatment_stage2_idx, "ca_oesophagus_curative_treatment_requested"] = True
-        # generate the HSI Events whereby persons present for care and get treatment for stage 2 oes cancer
-        # this follows the same approach as above
-        for person_id in requested_treatment_stage2_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
-            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 91)))
-            # For this person, create the HSI Event for their presentation for care
-            hsi_present_for_care = HSIoStartTreatmentStage2OesCancer(self.module, person_id)
-            # Enter this event to the HealthSystem
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-            )
-        # update ca_oesophagus_curative_treatment for diagnosed, untreated people with stage 3
-        # this follows the same approach as above
-        ca_oes_diag_stage3_not_treated_idx = df.index[
-            df.is_alive
-            & (df.ca_oesophagus == "stage3")
-            & (df.age_years >= 20)
-            & df.ca_oesophagus_diagnosed
-            & (df.ca_oesophagus_curative_treatment == "never")
-        ]
-        eff_prob_treatment = pd.Series(
-            m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3,
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage3")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        random_draw = pd.Series(
-            rng.random_sample(size=len(ca_oes_diag_stage3_not_treated_idx)),
-            index=df.index[
-                df.is_alive
-                & (df.ca_oesophagus == "stage3")
-                & (df.age_years >= 20)
-                & df.ca_oesophagus_diagnosed
-                & (df.ca_oesophagus_curative_treatment == "never")
-            ],
-        )
-        dfx = pd.concat([eff_prob_treatment, random_draw], axis=1)
-        dfx.columns = ["eff_prob_treatment", "random_draw"]
-        requested_treatment_stage3_idx = dfx.index[dfx.eff_prob_treatment > dfx.random_draw]
-        df.loc[requested_treatment_stage3_idx, "ca_oesophagus_curative_treatment_requested"] = True
-        # generate the HSI Events whereby persons present for care and get treatment for stage 2 oes cancer
-        for person_id in requested_treatment_stage3_idx:
-            # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
-            date_seeking_care = self.sim.date + pd.DateOffset(days=int(self.module.rng.uniform(0, 91)))
-            # For this person, create the HSI Event for their presentation for care
-            hsi_present_for_care = HSIoStartTreatmentStage3OesCancer(self.module, person_id)
-            # Enter this event to the HealthSystem
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
-            )
+
+        def update_curative_treatment(current_stage, p_curative_treatment):
+            idx = df.index[df.is_alive &
+                           (df.ca_oesophagus == current_stage) &
+                           (df.age_years >= 20) &
+                           df.ca_oesophagus_diagnosed &
+                           (df.ca_oesophagus_curative_treatment == 'never')]
+            selected = idx[p_curative_treatment > rng.random_sample(size=len(idx))]
+            df.loc[selected, 'ca_oesophagus_curative_treatment_requested'] = True
+
+            # generate the HSI Events whereby persons present for care and get treatment
+            for person_id in idx:
+                # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
+                date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
+                # For this person, create the HSI Event for their presentation for care
+                hsi_present_for_care = HSIoStartTreatmentLowGradeOesDysplasia(self.module, person_id)
+                # Enter this event to the HealthSystem
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
+                )
+
+        update_curative_treatment('low_grade_dysplasia', m.r_curative_treatment_low_grade_dysp)
+        update_curative_treatment('high_grade_dysplasia', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_high_grade_dysp)
+        update_curative_treatment('stage1', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage1)
+        update_curative_treatment('stage2', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage2)
+        update_curative_treatment('stage3', m.r_curative_treatment_low_grade_dysp * m.rr_curative_treatment_stage3)
+
         # -------------------- DISABLITY -----------------------------------------------------------
 
         # 547, Controlled phase of esophageal cancer, Generic uncomplicated disease: worry and daily
