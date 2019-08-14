@@ -74,45 +74,110 @@ def test_show_changes_same_size(mock_sim):
 
 class TestTransitionsStates:
     def setup(self):
-        self.states = ['a', 'b', 'c', 'd']
-
-        self.df = pd.DataFrame({'state': self.states * 1000,
-                                'other_data_1': range(0, 4000),
-                                'is_alive': True})
-        self.prob_matrix = pd.DataFrame(columns=self.states, index=self.states)
-        # key is original state, values are probability for new states
-        #                        A    B     C    D
-        self.prob_matrix['a'] = [None, 0.1, None, None]
-        self.prob_matrix['b'] = [0.1, None, 0.6, None]
-        self.prob_matrix['c'] = [None, 0.2, None, 0.2]
-        self.prob_matrix['d'] = [None, None, 0.3, None]
-        # set seed for testing. Is there a better way do test this?
+        # set seed for unit testing
         self.seed = 1234
+        self.states = list("abcd")
+        prob_matrix = pd.DataFrame(columns=self.states, index=self.states)
+        # key is original state, values are probability for new states
+        #                   A    B    C    D
+        prob_matrix["a"] = [0.9, 0.1, 0.0, 0.0]
+        prob_matrix["b"] = [0.1, 0.3, 0.6, 0.0]
+        prob_matrix["c"] = [0.0, 0.2, 0.6, 0.2]
+        prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
+        # columns are original state, rows are the new state
+        all_states = prob_matrix.columns.tolist()
+        prob_matrix.rename(
+            index={
+                row_num: col_name
+                for row_num, col_name in zip(range(len(prob_matrix)), all_states)
+            }
+        )
+        self.prob_matrix = prob_matrix
 
-        # repeat each state by the list of integers
-        nested_states = [                     # perfect ratio would be: 1000, 600, 1500, 900
-            list(state * repeat) for state, repeat in zip(self.states, [1024, 610, 1476, 890])
+        # default input data
+        self.input = pd.DataFrame({'state': self.states * 1_000,
+                                   'other_data_1': range(0, 4_000)})
+
+        # default output data
+        nested_states = [                    # perfect ratio would be: [1000, 600, 1500, 900]
+            list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1465, 919])
         ]
         self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                      'other_data_1': pd.Series(range(0, 4000)),
-                                      'is_alive': True})
+                                      'other_data_1': pd.Series(range(0, 4000))})
 
-    def test_all_alive(self):
-        """Simple case, should change roughly to the probabilites given"""
+    def test_simple_case(self):
+        """Simple case, should change to probabilities found per seed"""
+
         expected = self.expected.copy()
-        output = tlo.util.transition_states(self.df, 'state', self.prob_matrix, seed=self.seed)
-        output_merged = self.df.copy()
+
+        # run the function
+        output = tlo.util.transition_states(self.input.state, self.prob_matrix, seed=self.seed)
+        output_merged = self.input.copy()
         output_merged['state'] = output
         expected_size = expected.groupby('state').size()
         output_size = output_merged.groupby('state').size()
-        assert (expected_size + output_size).equals(expected_size * 2)
+        pd.testing.assert_series_equal(expected_size, output_size)
 
-    def test_all_dead(self):
-        """No changes should be made if all individuals are dead"""
-        df = self.df.copy()
-        df['is_alive'] = False
-        output = tlo.util.transition_states(df, 'state', self.prob_matrix, seed=self.seed)
-        df['state'] = output
-        expected_size = self.df.groupby('state').size()
-        output_size = df.groupby('state').size()
-        assert (expected_size + output_size).equals(expected_size * 2)
+    def test_state_doesnt_transition(self):
+        """State d shouldn't transition at all"""
+        nested_states = [                    # perfect ratio would be: [1000, 600, 1400, 1000]
+            list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1384, 1000])
+        ]
+        expected = pd.DataFrame({'state': sum(nested_states, []),
+                                 'other_data_1': pd.Series(range(0, 4000))})
+        prob_matrix = self.prob_matrix.copy()
+        prob_matrix['c'] = [0.0, 0.2, 0.8, 0.0]
+        prob_matrix['d'] = [0.0, 0.0, 0.0, 1.0]
+
+        # run the function
+        output = tlo.util.transition_states(self.input.state, prob_matrix, seed=self.seed)
+        output_merged = self.input.copy()
+        output_merged['state'] = output
+        expected_size = expected.groupby('state').size()
+        output_size = output_merged.groupby('state').size()
+        pd.testing.assert_series_equal(expected_size, output_size)
+
+    def test_none_in_initial_state(self):
+        """States start without any in state c"""
+        # input
+        nested_states = [
+            list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])
+        ]
+        input = pd.DataFrame({'state': sum(nested_states, []),
+                              'other_data_1': pd.Series(range(0, 6000))})
+
+        # default output data
+        nested_states = [                    # perfect ratio would be: [2000, 800, 1800, 1400]
+            list(state * repeat) for state, repeat in zip(self.states, [2006, 760, 1853, 1381])
+        ]
+        self.expected = pd.DataFrame({'state': sum(nested_states, []),
+                                      'other_data_1': pd.Series(range(0, 6000))})
+        expected = self.expected.copy()
+
+        # run the function
+        output = tlo.util.transition_states(input.state, self.prob_matrix, seed=self.seed)
+        output_merged = input.copy()
+        output_merged['state'] = output
+        expected_size = expected.groupby('state').size()
+        output_size = output_merged.groupby('state').size()
+        pd.testing.assert_series_equal(expected_size, output_size)
+
+    def test_transition_removes_state(self):
+        """Transition causes complete removal of a state a from the series"""
+        new_states = list('bcd')
+        nested_states = [                    # perfect ratio would be: [1600, 1500, 900]
+            list(state * repeat) for state, repeat in zip(new_states, [1616, 1465, 919])
+        ]
+        expected = pd.DataFrame({'state': sum(nested_states, []),
+                                 'other_data_1': pd.Series(range(0, 4000))})
+        prob_matrix = self.prob_matrix.copy()
+        prob_matrix["a"] = [0.0, 1.0, 0.0, 0.0]
+        prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
+
+        # run the function
+        output = tlo.util.transition_states(self.input.state, prob_matrix, seed=self.seed)
+        output_merged = self.input.copy()
+        output_merged['state'] = output
+        expected_size = expected.groupby('state').size()
+        output_size = output_merged.groupby('state').size()
+        pd.testing.assert_series_equal(expected_size, output_size)
