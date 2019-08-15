@@ -1,5 +1,6 @@
 """Unit tests for utility functions."""
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -74,8 +75,9 @@ def test_show_changes_same_size(mock_sim):
 
 class TestTransitionsStates:
     def setup(self):
-        # set seed for unit testing
-        self.seed = 1234
+        # create rng for testing
+        self.rng = np.random.RandomState(1234)
+
         self.states = list("abcd")
         prob_matrix = pd.DataFrame(columns=self.states, index=self.states)
         # key is original state, values are probability for new states
@@ -111,7 +113,7 @@ class TestTransitionsStates:
         expected = self.expected.copy()
 
         # run the function
-        output = tlo.util.transition_states(self.input.state, self.prob_matrix, seed=self.seed)
+        output = tlo.util.transition_states(self.input.state, self.prob_matrix, rng=self.rng)
         output_merged = self.input.copy()
         output_merged['state'] = output
         expected_size = expected.groupby('state').size()
@@ -130,7 +132,7 @@ class TestTransitionsStates:
         prob_matrix['d'] = [0.0, 0.0, 0.0, 1.0]
 
         # run the function
-        output = tlo.util.transition_states(self.input.state, prob_matrix, seed=self.seed)
+        output = tlo.util.transition_states(self.input.state, prob_matrix, rng=self.rng)
         output_merged = self.input.copy()
         output_merged['state'] = output
         expected_size = expected.groupby('state').size()
@@ -155,7 +157,7 @@ class TestTransitionsStates:
         expected = self.expected.copy()
 
         # run the function
-        output = tlo.util.transition_states(input.state, self.prob_matrix, seed=self.seed)
+        output = tlo.util.transition_states(input.state, self.prob_matrix, rng=self.rng)
         output_merged = input.copy()
         output_merged['state'] = output
         expected_size = expected.groupby('state').size()
@@ -175,9 +177,18 @@ class TestTransitionsStates:
         prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
 
         # run the function
-        output = tlo.util.transition_states(self.input.state, prob_matrix, seed=self.seed)
+        output = tlo.util.transition_states(self.input.state, prob_matrix, rng=self.rng)
         output_merged = self.input.copy()
         output_merged['state'] = output
         expected_size = expected.groupby('state').size()
         output_size = output_merged.groupby('state').size()
         pd.testing.assert_series_equal(expected_size, output_size)
+
+    def test_type_is_maintained(self):
+        """Given a categorical input, this data type should be maintained"""
+        categorical_input = pd.Series(pd.Categorical(self.input.state))
+
+        # run the function
+        output = tlo.util.transition_states(categorical_input, self.prob_matrix, rng=self.rng)
+        print(output.dtype)
+        assert output.dtype == categorical_input.dtype
