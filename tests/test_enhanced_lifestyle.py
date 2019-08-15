@@ -17,15 +17,14 @@ popsize = 10000
 def disable_logging():
     logging.disable(logging.INFO)
 
-
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
+
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle())
-    logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
-#   sim.seed_rngs(1)
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+#   sim.seed_rngs(0)
     return sim
 
 
