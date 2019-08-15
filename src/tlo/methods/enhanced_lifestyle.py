@@ -408,29 +408,27 @@ class Lifestyle(Module):
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
-        init_odds_tob_age1519_m = m.init_p_tob_age1519_m / (1 - m.init_p_tob_age1519_m)
+        init_odds_tob_age1519_m_wealth1 = m.init_p_tob_age1519_m_wealth1 / (1 - m.init_p_tob_age1519_m_wealth1)
 
-        odds_tob = pd.Series(init_odds_tob_age1519_m, index=age_ge15_idx)
+        odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
 
         odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
-        odds_tob.loc[df.sex == 'M' & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
-        odds_tob.loc[df.sex == 'M' & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
+        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
+        odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
+        odds_tob.loc[df.li_wealth == 2] *= 2
+        odds_tob.loc[df.li_wealth == 3] *= 3
+        odds_tob.loc[df.li_wealth == 4] *= 4
+        odds_tob.loc[df.li_wealth == 5] *= 5
 
         tob_probs = pd.Series((odds_tob / (1 + odds_tob)), index=age_ge15_idx)
 
         assert len(age_ge15_idx) == len(tob_probs)
 
-        # each individual has a baseline probability
-        # multiply this probability by the wealth level. wealth is a category, so convert to integer
-        tob_probs = pd.to_numeric(tob_probs['li_wealth']) * tob_probs['p_tob']
-
-        # we now have the probability of tobacco use for each individual where age >= 15
-        # draw a random number between 0 and 1 for all of them
-        random_draw = rng.random_sample(size=len(age_gte15))
+        random_draw = rng.random_sample(size=len(age_ge15_idx))
 
         # decide on tobacco use based on the individual probability is greater than random draw
         # this is a list of True/False. assign to li_tob
-        df.loc[age_gte15, 'li_tob'] = (random_draw < tob_probs.values)
+        df.loc[age_ge15_idx, 'li_tob'] = (random_draw < tob_probs)
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
