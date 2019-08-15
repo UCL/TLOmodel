@@ -64,6 +64,8 @@ class tb(Module):
         # clinical features
         'pulm_tb': Parameter(Types.REAL, 'probability of pulmonary tb'),
         'prop_smear_positive': Parameter(Types.REAL, 'proportion of new active cases that will be smear-positive'),
+        'prop_smear_positive_hiv': Parameter(Types.REAL,
+                                             'proportion of hiv+ active tb cases that will be smear-positive'),
 
         # mortality
         'monthly_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
@@ -199,6 +201,7 @@ class tb(Module):
         # clinical features
         params['pulm_tb'] = workbook['pulm_tb']
         params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value1']
+        params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value1']
 
         # mortality
         params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value1']
@@ -484,25 +487,65 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # no age distribution for FOI but the relative risks would affect distribution of active infections
 
         # infectious people are active_pulm
-        active_hiv_neg = len(df[df['tb_inf'].str.contains('active_susc') & (
-            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive])
-        active_hiv_pos = len(df[df['tb_inf'].str.contains('active_susc') & (
-            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & df.is_alive])
+        # hiv-negative
+        active_hiv_neg_sm_pos = int(len(df[df['tb_inf'].str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive]) * params['prop_smear_positive'])
+
+        active_hiv_neg_sm_neg = int(len(df[df['tb_inf'].str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive]) * (
+                                            1 - params['prop_smear_positive']))
+
+        # hiv-positive, no ART
+        active_hiv_pos_sm_pos = int(len(df[df.tb_inf.str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art != 2) & df.is_alive].index) * params[
+                                        'prop_smear_positive_hiv'])
+
+        active_hiv_pos_sm_neg = int(len(df[df['tb_inf'].str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art != 2) & df.is_alive]) * (
+                                            1 - params['prop_smear_positive_hiv']))
+
+        # hiv-positive, on ART
+        active_hiv_pos_sm_pos_art = int(len(df[df['tb_inf'].str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art == 2) & df.is_alive]) * params[
+                                            'prop_smear_positive_hiv'])
+
+        active_hiv_pos_sm_neg_art = int(len(df[df['tb_inf'].str.contains('active_susc') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art == 2) & df.is_alive]) * (
+                                                1 - params['prop_smear_positive_hiv']))
+
 
         # population at-risk of new infection = uninfected
         uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
         # in small pops, may get zero values which results in FOI = 0
-        if active_hiv_neg == 0:
-            active_hiv_neg = 1
+        if active_hiv_neg_sm_pos == 0:
+            active_hiv_neg_sm_pos = 1
 
-        if active_hiv_pos == 0:
-            active_hiv_pos = 1
+        if active_hiv_neg_sm_neg == 0:
+            active_hiv_neg_sm_neg = 1
 
+        if active_hiv_pos_sm_pos == 0:
+            active_hiv_pos_sm_pos = 1
 
-        force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
-            'rel_inf_hiv']) * uninfected_total) / total_population
+        if active_hiv_pos_sm_neg == 0:
+            active_hiv_pos_sm_neg = 1
+
+        if active_hiv_pos_sm_pos_art == 0:
+            active_hiv_pos_sm_pos_art = 1
+
+        if active_hiv_pos_sm_neg_art == 0:
+            active_hiv_pos_sm_neg_art = 1
+
+        force_of_infection = (params['transmission_rate'] *
+                              active_hiv_neg_sm_pos *
+                              (active_hiv_neg_sm_neg * params['rel_inf_smear_ng']) *
+                              (active_hiv_pos_sm_pos * params['rel_inf_hiv']) *
+                              (active_hiv_pos_sm_neg * params['rel_inf_smear_ng']) *
+                              (active_hiv_pos_sm_pos_art) *
+                              (active_hiv_pos_sm_neg_art * params['rel_inf_smear_ng']) *
+                              uninfected_total) / total_population
+
         # print('force_of_infection: ', force_of_infection)
 
 
@@ -552,7 +595,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog = pd.Series(0, index=df.index)
         prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params['prog_active']
         prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
-        prob_prog.loc[df.hv_on_art] *= params['rr_tb_art_adult']
+        prob_prog.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_adult']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
         prob_prog.loc[df.li_overwt] *= params['rr_tb_obese']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
@@ -562,9 +605,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         dur_ipt = pd.to_timedelta(params['dur_prot_ipt'], unit='d')
 
         prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & ~df.hv_inf] *= params['rr_ipt_adult']
-        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & ~df.hv_on_art] *= params[
+        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art != 2)] *= params[
             'rr_ipt_adult_hiv']
-        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & df.hv_on_art] *= params[
+        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)] *= params[
             'rr_ipt_art_adult']
         
         # if any newly infected latent cases, 14% become active directly, only for new infections
@@ -621,16 +664,16 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
         # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']        
-        prob_prog_child.loc[df.hv_on_art] *= params['rr_tb_art_child']
+        prob_prog_child.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_child']
 
         dur_ipt_inf = pd.to_timedelta(params['dur_prot_ipt_infant'], unit='d')
 
         prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & ~df.hv_inf] *= params[
             'rr_ipt_child']
-        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & ~df.hv_on_art] *= \
+        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art != 2)] *= \
             params[
             'rr_ipt_child_hiv']
-        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & df.hv_on_art] *= \
+        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art == 2)] *= \
             params[
             'rr_ipt_art_child']
 
@@ -805,7 +848,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
 
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
-                if df.at[person_index, 'age_years'] < 15:
+                if (df.at[person_index, 'age_years'] < 15):
 
                     logger.debug(
                         'This is TbActiveEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed child %d',
@@ -840,34 +883,25 @@ class TbCheckXpert(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        logger.debug("Checking if person %d received xpert", person_id)
+        logger.debug("This is TbCheckXpert checking if person %d received xpert test", person_id)
 
         df = self.sim.population.props
         now = self.sim.date
 
-        # if no xpert test within last 14 days, schedule sputum smear
-        if ~df.at(person_id, 'tb_xpert_test') | (df.at(person_id, 'tb_xpert_test') &
-                                                 (now - df.at[person_id, 'tb_date_xpert_test']) > 14):
+        # if no xpert test OR no xpert in last 14 days
+        if not df.at[person_id, 'tb_xpert_test'] or (now - df.at[person_id, 'tb_date_xpert_test']) < pd.to_timedelta(14,
+                                                                                                                     unit='d'):
+
             logger.debug(
                 'This is TbCheckXpert, scheduling HSI_Tb_SputumTest for person %d',
                 person_id)
 
             event = HSI_Tb_SputumTest(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=3,
+                                                                priority=2,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=2)
                                                                 )
-
-
-
-
-
-
-
-
-
-
 
 
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
@@ -918,17 +952,64 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
 
-        # population at-risk = uninfected
-        active_hiv_neg = len(df[df['tb_inf'].str.contains('active_mdr') & (
-            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive])
-        active_hiv_pos = len(df[df['tb_inf'].str.contains('active_mdr') & (
-            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & df.is_alive])
+        # infectious people are active_pulm
+        # hiv-negative
+        active_hiv_neg_sm_pos = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive]) * params['prop_smear_positive'])
 
+        active_hiv_neg_sm_neg = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & ~df.hv_inf & df.is_alive]) * (
+                                            1 - params['prop_smear_positive']))
+
+        # hiv-positive, no ART
+        active_hiv_pos_sm_pos = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art != 2) & df.is_alive]) * params[
+                                        'prop_smear_positive_hiv'])
+
+        active_hiv_pos_sm_neg = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art != 2) & df.is_alive]) * (
+                                            1 - params['prop_smear_positive_hiv']))
+
+        # hiv-positive, on ART
+        active_hiv_pos_sm_pos_art = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art == 2) & df.is_alive]) * params[
+                                            'prop_smear_positive_hiv'])
+
+        active_hiv_pos_sm_neg_art = int(len(df[df['tb_inf'].str.contains('active_mdr') & (
+            df.tb_specific_symptoms == 'active_pulm') & df.hv_inf & (df.hv_on_art == 2) & df.is_alive]) * (
+                                                1 - params['prop_smear_positive_hiv']))
+
+        # population at-risk of new infection = uninfected
         uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
         total_population = len(df[df.is_alive])
 
-        force_of_infection = (params['transmission_rate'] * active_hiv_neg * (active_hiv_pos * params[
-            'rel_inf_hiv']) * uninfected_total) / total_population
+        # in small pops, may get zero values which results in FOI = 0
+        if active_hiv_neg_sm_pos == 0:
+            active_hiv_neg_sm_pos = 1
+
+        if active_hiv_neg_sm_neg == 0:
+            active_hiv_neg_sm_neg = 1
+
+        if active_hiv_pos_sm_pos == 0:
+            active_hiv_pos_sm_pos = 1
+
+        if active_hiv_pos_sm_neg == 0:
+            active_hiv_pos_sm_neg = 1
+
+        if active_hiv_pos_sm_pos_art == 0:
+            active_hiv_pos_sm_pos_art = 1
+
+        if active_hiv_pos_sm_neg_art == 0:
+            active_hiv_pos_sm_neg_art = 1
+
+        force_of_infection = (params['transmission_rate'] *
+                              active_hiv_neg_sm_pos *
+                              (active_hiv_neg_sm_neg * params['rel_inf_smear_ng']) *
+                              (active_hiv_pos_sm_pos * params['rel_inf_hiv']) *
+                              (active_hiv_pos_sm_neg * params['rel_inf_smear_ng']) *
+                              (active_hiv_pos_sm_pos_art) *
+                              (active_hiv_pos_sm_neg_art * params['rel_inf_smear_ng']) *
+                              uninfected_total) / total_population
         # print('force_of_infection: ', force_of_infection)
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
@@ -976,7 +1057,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog = pd.Series(0, index=df.index)
         prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params['prog_active']
         prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
-        prob_prog.loc[df.hv_on_art] *= params['rr_tb_art_adult']
+        prob_prog.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_adult']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
         prob_prog.loc[df.li_overwt] *= params['rr_tb_obese']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
@@ -986,9 +1067,9 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         dur_ipt = pd.to_timedelta(params['dur_prot_ipt'], unit='d')
 
         prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & ~df.hv_inf] *= params['rr_ipt_adult']
-        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & ~df.hv_on_art] *= params[
+        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art != 2)] *= params[
             'rr_ipt_adult_hiv']
-        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & df.hv_on_art] *= params[
+        prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)] *= params[
             'rr_ipt_art_adult']
 
         # if any newly infected latent cases, 14% become active directly, only for new infections
@@ -1045,16 +1126,16 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
         # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']
-        prob_prog_child.loc[df.hv_on_art] *= params['rr_tb_art_child']
+        prob_prog_child.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_child']
 
         dur_ipt_inf = pd.to_timedelta(params['dur_prot_ipt_infant'], unit='d')
 
         prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & ~df.hv_inf] *= params[
             'rr_ipt_child']
-        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & ~df.hv_on_art] *= \
+        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art != 2)] *= \
             params[
                 'rr_ipt_child_hiv']
-        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & df.hv_on_art] *= \
+        prob_prog_child.loc[(df.tb_date_ipt < (now - dur_ipt_inf)) & df.hv_inf & (df.hv_on_art == 2)] *= \
             params[
                 'rr_ipt_art_child']
 
@@ -1378,7 +1459,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Tb_SputumTest, a first appointment for person %d', person_id)
 
         df = self.sim.population.props
-        params = self.module.parameters
+        params = self.sim.modules['tb'].parameters
         now = self.sim.date
 
         df.at[person_id, 'tb_ever_tested'] = True
@@ -1717,7 +1798,7 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
 
         # follow-up appts
         # TODO check intensive phase and continuation phase
-        logger.debug('....This is HSI_Tb_StartTreatmentAdult: scheduling follow-up appointments for person %d',
+        logger.debug('This is HSI_Tb_StartTreatmentAdult: scheduling follow-up appointments for person %d',
                      person_id)
 
         # clinical monitoring
