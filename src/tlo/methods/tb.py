@@ -172,66 +172,68 @@ class tb(Module):
         self.param_list.set_index("parameter", inplace=True)
 
         # baseline
-        params['prop_active_2010'], params['prop_latent_2010'] = workbook['Active_TB_prob'], workbook['Latent_TB_prob']
+        params['prop_active_2010'], params['prop_latent_2010'] = workbook['ProportionActiveTb'], workbook[
+            'Latent_TB_prob']
         params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value1']
 
         # natural history
         params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value1']
-        params['rel_inf_hiv'] = self.param_list.loc['transmission_rate', 'value1']
-        params['rel_inf_smear_ng'] = self.param_list.loc['transmission_rate', 'value1']
-        params['rr_bcg_inf'] = self.param_list.loc['transmission_rate', 'value1']
-        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['transmission_rate', 'value1']
-        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc['transmission_rate', 'value1']
-        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['transmission_rate', 'value1']
+        params['rel_inf_hiv'] = self.param_list.loc['rel_inf_hiv', 'value1']
+        params['rel_inf_smear_ng'] = self.param_list.loc['rel_inf_smear_ng', 'value1']
+        params['rr_bcg_inf'] = self.param_list.loc['rr_bcg_inf', 'value1']
+        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value1']
+        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc[
+            'monthly_prob_relapse_tx_incomplete', 'value1']
+        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value1']
 
         # progression
         params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_active'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_1yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_1_2yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_2_5yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_5_10yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_10yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['monthly_prob_self_cure'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_active'] = self.param_list.loc['prog_active', 'value1']
+        params['prog_1yr'] = self.param_list.loc['prog_1yr', 'value1']
+        params['prog_1_2yr'] = self.param_list.loc['prog_1_2yr', 'value1']
+        params['prog_2_5yr'] = self.param_list.loc['prog_2_5yr', 'value1']
+        params['prog_5_10yr'] = self.param_list.loc['prog_5_10yr', 'value1']
+        params['prog_10yr'] = self.param_list.loc['prog_10yr', 'value1']
+        params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value1']
 
         # clinical features
         params['pulm_tb'] = workbook['pulm_tb']
-        params['prop_smear_positive'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value1']
 
         # mortality
-        params['monthly_prob_tb_mortality'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['mortality_cotrim'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value1']
+        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['monthly_prob_tb_mortality_hiv', 'value1']
+        params['mortality_cotrim'] = self.param_list.loc['mortality_cotrim', 'value1']
 
         # relative risks of progression to active disease
-        params['rr_tb_bcg'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_art_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_art_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_overweight'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_obese'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_diabetes1'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_alcohol'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_tb_smoking'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_bcg'] = self.param_list.loc['rr_tb_bcg', 'value1']
+        params['rr_tb_hiv'] = self.param_list.loc['rr_tb_hiv', 'value1']
+        params['rr_tb_art_adult'] = self.param_list.loc['rr_tb_art_adult', 'value1']
+        params['rr_tb_art_child'] = self.param_list.loc['rr_tb_art_child', 'value1']
+        params['rr_tb_overweight'] = self.param_list.loc['rr_tb_overweight', 'value1']
+        params['rr_tb_obese'] = self.param_list.loc['rr_tb_obese', 'value1']
+        params['rr_tb_diabetes1'] = self.param_list.loc['rr_tb_diabetes1', 'value1']
+        params['rr_tb_alcohol'] = self.param_list.loc['rr_tb_alcohol', 'value1']
+        params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value1']
 
-        params['dur_prot_ipt'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['dur_prot_ipt_infant'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_adult_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_child_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_art_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['rr_ipt_art_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['dur_prot_ipt'] = self.param_list.loc['dur_prot_ipt', 'value1']
+        params['dur_prot_ipt_infant'] = self.param_list.loc['dur_prot_ipt_infant', 'value1']
+        params['rr_ipt_adult'] = self.param_list.loc['rr_ipt_adult', 'value1']
+        params['rr_ipt_child'] = self.param_list.loc['rr_ipt_child', 'value1']
+        params['rr_ipt_adult_hiv'] = self.param_list.loc['rr_ipt_adult_hiv', 'value1']
+        params['rr_ipt_child_hiv'] = self.param_list.loc['rr_ipt_child_hiv', 'value1']
+        params['rr_ipt_art_adult'] = self.param_list.loc['rr_ipt_art_adult', 'value1']
+        params['rr_ipt_art_child'] = self.param_list.loc['rr_ipt_art_child', 'value1']
 
         # health system interactions
-        params['prop_fail_xpert'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_new'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_prev'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_mdr'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_extra'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_0_14'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prob_tx_success_5_14'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prop_fail_xpert'] = self.param_list.loc['prop_fail_xpert', 'value1']
+        params['prob_tx_success_new'] = self.param_list.loc['prob_tx_success_new', 'value1']
+        params['prob_tx_success_prev'] = self.param_list.loc['prob_tx_success_prev', 'value1']
+        params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value1']
+        params['prob_tx_success_mdr'] = self.param_list.loc['prob_tx_success_mdr', 'value1']
+        params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value1']
+        params['prob_tx_success_0_14'] = self.param_list.loc['prob_tx_success_0_14', 'value1']
+        params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value1']
         params['followup_times'] = workbook['followup']
 
         # get the DALY weight that this module will use from the weight database
@@ -260,13 +262,6 @@ class tb(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
-
-        # TODO use the age distributed estimates for baseline population
-
-
-
-
-
         df = population.props
         now = self.sim.date
 
@@ -301,11 +296,11 @@ class tb(Module):
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
-        active_tb_data = self.parameters['Active_tb_prob']
-        latent_tb_data = self.parameters['Latent_tb_prob']
+        active_tb_data = self.parameters['prop_active_2010']
+        latent_tb_data = self.parameters['prop_latent_2010']
 
         active_tb_prob_year = active_tb_data.loc[
-            active_tb_data.Year == now.year, ['ages', 'Sex', 'incidence_per_capita']]
+            active_tb_data.Year == now.year, ['Age', 'Sex', 'Proportion_pop_with_active_tb']]
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ LATENT ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -341,7 +336,7 @@ class tb(Module):
         # select probability of active infection
         # same for all ages and sex so pick value for M age 0
         frac_active_tb = active_tb_prob_year.loc[
-            (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == 0), 'incidence_per_capita']
+            (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.Age == 0), 'Proportion_pop_with_active_tb']
 
         active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb).index
         # print(active)
@@ -392,7 +387,7 @@ class tb(Module):
         df.at[child_id, 'tb_specific_symptoms'] = 'none'
         df.at[child_id, 'tb_unified_symptom_code'] = 0
 
-        df.at[child_id, 'tb_ever_tested'] = False  # default: no individuals tested
+        df.at[child_id, 'tb_ever_tested'] = False  # default: not tested
         df.at[child_id, 'tb_smear_test'] = False
         df.at[child_id, 'tb_result_smear_test'] = False
         df.at[child_id, 'tb_date_smear_test'] = pd.NaT
@@ -410,7 +405,6 @@ class tb(Module):
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
 
-    # TODO: complete this
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -419,13 +413,17 @@ class tb(Module):
         logger.debug('This is TB, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-        if treatment_id == 'Tb_screening':
+        # create list of appts which link to tb screening
+        id_list = ['Hiv_Testing', 'Hiv_TestingInfant', 'Hiv_InfantTreatmentInitiation', 'Hiv_TreatmentInitiation',
+                   'Hiv_Treatment']
+
+        if treatment_id in id_list:
             piggy_back_dx_at_appt = HSI_Tb_Screening(self, person_id)
-            piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
+            piggy_back_dx_at_appt.TREATMENT_ID = 'Tb_Screening_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.5
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
