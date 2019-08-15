@@ -8,6 +8,7 @@ import logging
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -205,7 +206,9 @@ class Lifestyle(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LIfestyle_Enhanced.xlsx', sheet_name='parameter_values')
+
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+                            sheet_name='parameter_values')
 
         dfd.set_index('parameter_name', inplace=True)
 
@@ -214,7 +217,7 @@ class Lifestyle(Module):
                     [dfd.loc['init_p_wealth_urban', 'value1'], dfd.loc['init_p_wealth_urban', 'value2'],
                      dfd.loc['init_p_wealth_urban', 'value3'], dfd.loc['init_p_wealth_urban', 'value4'],
                      dfd.loc['init_p_wealth_urban', 'value5']]
-        p['init_p_wealth_urban'] = \
+        p['init_p_wealth_rural'] = \
                     [dfd.loc['init_p_wealth_rural', 'value1'], dfd.loc['init_p_wealth_rural', 'value2'],
                      dfd.loc['init_p_wealth_rural', 'value3'], dfd.loc['init_p_wealth_rural', 'value4'],
                      dfd.loc['init_p_wealth_rural', 'value5']]
@@ -234,6 +237,9 @@ class Lifestyle(Module):
         p['init_p_high_sugar'] = dfd.loc['init_p_high_sugar', 'value1']
         p['init_p_high_salt_urban'] = dfd.loc['init_p_high_salt_urban', 'value1'],
         p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
+        p['init_p_low_ex_urban_m'] = dfd.loc['init_p_low_ex_urban_m', 'value1']
+        p['init_or_low_ex_rural'] = dfd.loc['init_rp_low_ex_rural', 'value1']
+        p['init_or_low_ex_f'] = dfd.loc['init_rp_low_ex_f', 'value1']
         p['init_p_ex_alc_m'] = dfd.loc['init_p_ex_alc_m', 'value1']
         p['init_p_ex_alc_f'] = dfd.loc['init_p_ex_alc_f', 'value1']
         p['init_dist_mar_stat_age1520'] = [dfd.loc['init_dist_mar_stat_age1520', 'value1'],
@@ -356,9 +362,6 @@ class Lifestyle(Module):
         df['li_high_salt'] = False
         df['li_high_sugar'] = False
 
-        # todo: odds bmi 1 x (1.1**2), odds bmi 2 x (1.1**1), odds bmi 3 x 1.1**0, odds bmi 4 x 1.1**(-1),
-        # todo: odds bmi 5 x 1.1**(-2) - then re-normalise to sum proportions to 1
-
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -374,42 +377,26 @@ class Lifestyle(Module):
         df.loc[urban_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_index), p=m.init_p_wealth_urban)
         df.loc[rural_index, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_index), p=m.init_p_wealth_rural)
 
-        # -------------------- OVERWEIGHT ----------------------------------------------------------
-
-        # get indices of all individuals over 15 years
-        age_gte15 = df.index[df.is_alive & (df.age_years >= 15)]
-
-        overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
-                                               ('M', False, 0.27),
-                                               ('F', True, 0.32),
-                                               ('F', False, 0.17)],
-                                         columns=['sex', 'is_urban', 'p_ow'])
-
-        overweight_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(overweight_lookup,
-                                                                        left_on=['sex', 'li_urban'],
-                                                                        right_on=['sex', 'is_urban'],
-                                                                        how='inner')['p_ow']
-        assert len(overweight_probs) == len(age_gte15)
-
-        random_draw = rng.random_sample(size=len(age_gte15))
-        df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
-
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
-        low_ex_lookup = pd.DataFrame(data=[('M', True, 0.32),
-                                           ('M', False, 0.11),
-                                           ('F', True, 0.18),
-                                           ('F', False, 0.07)],
-                                     columns=['sex', 'is_urban', 'p_low_ex'])
+        agege15_idx = df.index[df.is_alive & (df.age_years >= 15)]
 
-        low_ex_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(low_ex_lookup,
-                                                                    left_on=['sex', 'li_urban'],
-                                                                    right_on=['sex', 'is_urban'],
-                                                                    how='inner')['p_low_ex']
+        odds_init_p_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
+
+        odds_low_ex = pd.Series(odds_init_p_low_ex_urban_m, index=age_ge15)
+
+        #todo  note now using odds ratio rather than relative prevalence so small amendments needed
+
+        odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
+        odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
+
+        odds_low_ex = pd.Series((1 / (1 + odds_low_ex)), index=age_ge15)
+
+
         assert len(low_ex_probs) == len(age_gte15)
 
-        random_draw = rng.random_sample(size=len(age_gte15))
-        df.loc[age_gte15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
+        random_draw = rng.random_sample(size=len(age_ge15))
+        df.loc[age_ge15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -494,16 +481,6 @@ class Lifestyle(Module):
         df.loc[age_40_49, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_40_49), p=m.init_dist_mar_stat_age4050)
         df.loc[age_50_59, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_50_59), p=m.init_dist_mar_stat_age5060)
         df.loc[age_gte60, 'li_mar_stat'] = rng.choice([1, 2, 3], size=len(age_gte60), p=m.init_dist_mar_stat_agege60)
-
-        # -------------------- CONTRACEPTION STATUS ------------------------------------------------
-
-        f_age_1550 = df.index[df.age_years.between(15, 49) & df.is_alive & (df.sex == 'F')]
-        df.loc[f_age_1550, 'li_on_con'] = (rng.random_sample(size=len(f_age_1550)) < m.init_p_on_contrac)
-
-        f_age_1550_on_con = df.index[df.age_years.between(14, 49) & df.is_alive & (df.sex == 'F') & df.li_on_con]
-        df.loc[f_age_1550_on_con, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6],
-                                                           size=len(f_age_1550_on_con),
-                                                           p=m.init_dist_con_t)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
@@ -615,6 +592,30 @@ class Lifestyle(Module):
         random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
 
         df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < eff_prev_no_access_handwashing
+        # -------------------- BMI CATEGORIES ----------------------------------------------------------
+
+        # get indices of all individuals over 15 years
+        age_gte15 = df.index[df.is_alive & (df.age_years >= 15)]
+
+        # todo: odds bmi 1 x (1.1**2), odds bmi 2 x (1.1**1), odds bmi 3 x 1.1**0, odds bmi 4 x 1.1**(-1),
+        # todo: odds bmi 5 x 1.1**(-2) - then re-normalise to sum proportions to 1
+
+        # todo  to be completed
+
+        overweight_lookup = pd.DataFrame(data=[('M', True, 0.46),
+                                               ('M', False, 0.27),
+                                               ('F', True, 0.32),
+                                               ('F', False, 0.17)],
+                                         columns=['sex', 'is_urban', 'p_ow'])
+
+        overweight_probs = df.loc[age_gte15, ['sex', 'li_urban']].merge(overweight_lookup,
+                                                                        left_on=['sex', 'li_urban'],
+                                                                        right_on=['sex', 'is_urban'],
+                                                                        how='inner')['p_ow']
+        assert len(overweight_probs) == len(age_gte15)
+
+        random_draw = rng.random_sample(size=len(age_gte15))
+        df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
