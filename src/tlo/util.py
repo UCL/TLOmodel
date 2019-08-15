@@ -35,11 +35,12 @@ def show_changes(sim, initial_state, final_state):
         subset=pd.IndexSlice[len1:])
 
 
-def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, seed: int = None) -> pd.Series:
+def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng: np.random.RandomState) -> pd.Series:
     """Transitions states based on probability matrix
 
     This should carry out all state transitions for a specific state_column
     based on the probability of state-transition between each of the states.
+
     Timing values for 1M rows per state, 4 states, 100 times:
     - Looping through groups: [59.5, 58.7, 59.5]
     - Using apply: [84.2, 83.3, 84.4]
@@ -48,26 +49,19 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, seed
     :param Series initial_series: the initial state series
     :param DataFrame prob_matrix: DataFrame of state-transition probabilities
         columns are the original state, rows are the new state. values are the probabilities
-    :param integer seed: should only be set during testing
+    :param RandomState rng: RandomState from the disease module
     :return: Series with states changed according to probabilities
     """
     # TODO: assert that columns add up to one during initialisation of disease?
-    rng = np.random.RandomState(seed)
-    final_states = pd.Series()
+    # Create final series with index so that we are sure it's the same size
+    final_states = pd.Series(None, index=initial_series.index, dtype=initial_series.dtype)
 
     # for each state, get the random choice states and add to the final_states Series
     state_indexes = initial_series.groupby(initial_series).groups
     all_states = prob_matrix.columns.tolist()
-    for state in all_states:
-        try:
-            state_index = state_indexes[state]
-        except KeyError:
-            # no initial state, not going to be transitioning. skip over step in loop
-            continue
+    for state, state_index in state_indexes.items():
         new_states = rng.choice(
             all_states, len(state_index), p=prob_matrix[state]
         )
-        final_states = final_states.append(
-            pd.Series(new_states, index=state_index)
-        )
+        final_states[state_index] = new_states
     return final_states
