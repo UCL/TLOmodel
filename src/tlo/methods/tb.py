@@ -460,11 +460,29 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # -----------------------------------------------------------------------------------------------------
         # PROGRESSION TO ACTIVE DISEASE
 
+
         # ----------------------------------- ADULT PROGRESSORS TO ACTIVE DISEASE -----------------------------------
 
+        # probability of active disease
+        prob_prog = pd.Series(0, index=df.index)
+        prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params['prob_prog']
+        prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
+        prob_prog.loc[df.hv_on_art] *= params['rr_tb_art_adult']
+        # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
+        prob_prog.loc[df.li_overwt] *= params['rr_tb_art_obese']
+        # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
+        prob_prog.loc[df.li_ex_alc] *= params['rr_tb_alcohol']
+        prob_prog.loc[df.li_tob] *= params['rr_tb_smoking']
+
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & ~df.hv_inf] *= params['rr_ipt_adult']
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & df.hv_inf & ~df.hv_on_art] *= params[
+            'rr_ipt_adult_hiv']
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & df.hv_inf & df.hv_on_art] *= params[
+            'rr_ipt_art_adult']
+        
         # if any newly infected latent cases, 14% become active directly, only for new infections
         new_latent = df[
-            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                 df.age_years >= 15) & df.is_alive].sum()
         # print(new_latent)
 
@@ -472,13 +490,8 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
 
             idx = df[
-                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                     df.age_years >= 15) & df.is_alive].index
-
-            fast_progression = df[
-                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
-                    df.age_years >= 15) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
 
             # for each person determine if fast progressor and schedule onset of active disease
             fast = pd.Series(data=False, index=df.loc[idx].index)
@@ -496,49 +509,72 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                         self.sim.schedule_event(TbActiveEvent(self, person_id), now)
 
                 for person_id in fast.index[~fast]:
-                    # random draw of days 0-732
-                    # random_date = rng.choice(list(range(0, 732)), size=1, p=[(1 / 732)] * 732)
-                    random_date = rng.randint(low=0, high=732)
+                    # decide if person will develop active tb
+                    active = self.module.rng.rand() < prob_prog[person_id]
 
-                    # convert days into years
-                    random_days = pd.to_timedelta(random_date, unit='d')
+                    if active:
+                        # randomly select date of onset of active disease
+                        # random draw of days 0-732
+                        random_date = rng.randint(low=0, high=732)
+                        sch_date = now + pd.to_timedelta(random_date, unit='d')
 
-                    sch_date = now + random_days
+                        logger.debug(
+                            'This is TbEvent, scheduling active disease for slow progressing person %d on date %s',
+                            person_id, sch_date)
 
-                    logger.debug('This is TbEvent, scheduling active disease for slow progressing person %d on date %s',
-                                 person_id, sch_date)
-
-                    # schedule active disease
-                    self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
+                        # schedule active disease
+                        self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
 
         # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
+        # probability of active disease
+        prob_prog_child = pd.Series(0, index=df.index)
+        prob_prog_child.loc[df.is_alive & (df.age_years < 1)] = params['prog_1yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(1, 2))] = params['prog_1_2yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(2, 5))] = params['prog_2_5yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
+        # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']        
+        prob_prog_child.loc[df.hv_on_art] *= params['rr_tb_art_child']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & ~df.hv_inf] *= params[
+            'rr_ipt_child']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & df.hv_inf & ~df.hv_on_art] *= \
+        params[
+            'rr_ipt_child_hiv']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & df.hv_inf & df.hv_on_art] *= \
+        params[
+            'rr_ipt_art_child']
+
         # no direct progression
         # progression within 1 year
         new_latent_child = df[
-            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                 df.age_years < 15) & df.is_alive].sum()
         # print(new_latent)
 
         # some proportion schedule active now, else schedule active at random date
         if new_latent_child.any():
             prog = df[
-                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & (
+                (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                     df.age_years < 15) & df.is_alive].index
 
             for person_id in prog:
-                # random draw of days 0-365
-                # random_date = rng.choice(list(range(0, 365)), size=1, p=[(1 / 365)] * 365)
-                random_date = rng.randint(low=0, high=365)
-                # convert days into years
-                random_days = pd.to_timedelta(random_date, unit='d')
+                # decide if person will develop active tb
+                active = self.module.rng.rand() < prob_prog_child[person_id]
 
-                sch_date = now + random_days
+                if active:
+                    # random draw of days 0-365
+                    # random_date = rng.choice(list(range(0, 365)), size=1, p=[(1 / 365)] * 365)
+                    random_date = rng.randint(low=0, high=365)
+                    # convert days into years
+                    random_days = pd.to_timedelta(random_date, unit='d')
 
-                logger.debug('This is TbEvent, scheduling active disease for child %d on date %s',
-                             person_id, sch_date)
+                    sch_date = now + random_days
 
-                # schedule active disease
-                self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
+                    logger.debug('This is TbEvent, scheduling active disease for child %d on date %s',
+                                 person_id, sch_date)
+
+                    # schedule active disease
+                    self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
@@ -798,132 +834,196 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[repeat_case, 'tb_specific_symptoms'] = 'latent'
         df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
 
+        # -----------------------------------------------------------------------------------------------------
+        # PROGRESSION TO ACTIVE MDR-TB DISEASE
 
-class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
-    """ tb-mdr progression from latent to active infection
+        # ----------------------------------- ADULT PROGRESSORS TO ACTIVE DISEASE -----------------------------------
+
+        # probability of active disease
+        prob_prog = pd.Series(0, index=df.index)
+        prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params['prob_prog']
+        prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
+        prob_prog.loc[df.hv_on_art] *= params['rr_tb_art_adult']
+        # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
+        prob_prog.loc[df.li_overwt] *= params['rr_tb_art_obese']
+        # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
+        prob_prog.loc[df.li_ex_alc] *= params['rr_tb_alcohol']
+        prob_prog.loc[df.li_tob] *= params['rr_tb_smoking']
+
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & ~df.hv_inf] *= params['rr_ipt_adult']
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & df.hv_inf & ~df.hv_on_art] *= params[
+            'rr_ipt_adult_hiv']
+        prob_prog.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt'])) & df.hv_inf & df.hv_on_art] *= params[
+            'rr_ipt_art_adult']
+
+        # if any newly infected latent cases, 14% become active directly, only for new infections
+        new_latent = df[
+            (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & (
+                df.age_years >= 15) & df.is_alive].sum()
+        # print(new_latent)
+
+        # some proportion schedule active now, else schedule active at random date
+        if new_latent.any():
+
+            idx = df[
+                (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & (
+                    df.age_years >= 15) & df.is_alive].index
+
+            # for each person determine if fast progressor and schedule onset of active disease
+            fast = pd.Series(data=False, index=df.loc[idx].index)
+
+            for i in df.index[idx]:
+                fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
+                # print('fast', fast)
+
+                if fast.sum() > 0:
+                    for person_id in fast.index[fast]:
+                        logger.debug(
+                            'This is TbMdrEvent, scheduling active disease for fast progressing person %d on date %s',
+                            person_id, now)
+                        # schedule active disease now
+                        self.sim.schedule_event(TbMdrActiveEvent(self, person_id), now)
+
+                for person_id in fast.index[~fast]:
+                    # decide if person will develop active tb
+                    active = self.module.rng.rand() < prob_prog[person_id]
+
+                    if active:
+                        # randomly select date of onset of active disease
+                        # random draw of days 0-732
+                        random_date = rng.randint(low=0, high=732)
+                        sch_date = now + pd.to_timedelta(random_date, unit='d')
+
+                        logger.debug(
+                            'This is TbMdrEvent, scheduling active disease for slow progressing person %d on date %s',
+                            person_id, sch_date)
+
+                        # schedule active disease
+                        self.sim.schedule_event(TbMdrActiveEvent(self, person_id), sch_date)
+
+        # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
+        # probability of active disease
+        prob_prog_child = pd.Series(0, index=df.index)
+        prob_prog_child.loc[df.is_alive & (df.age_years < 1)] = params['prog_1yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(1, 2))] = params['prog_1_2yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(2, 5))] = params['prog_2_5yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
+        prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
+        # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']
+        prob_prog_child.loc[df.hv_on_art] *= params['rr_tb_art_child']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & ~df.hv_inf] *= params[
+            'rr_ipt_child']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & df.hv_inf & ~df.hv_on_art] *= \
+            params[
+                'rr_ipt_child_hiv']
+        prob_prog_child.loc[(df.tb_date_ipt < (now - params['dur_prot_ipt_infant'])) & df.hv_inf & df.hv_on_art] *= \
+            params[
+                'rr_ipt_art_child']
+
+        # no direct progression
+        # progression within 1 year
+        new_latent_child = df[
+            (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & (
+                df.age_years < 15) & df.is_alive].sum()
+        # print(new_latent)
+
+        # some proportion schedule active now, else schedule active at random date
+        if new_latent_child.any():
+            prog = df[
+                (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & (
+                    df.age_years < 15) & df.is_alive].index
+
+            for person_id in prog:
+                # decide if person will develop active tb
+                active = self.module.rng.rand() < prob_prog_child[person_id]
+
+                if active:
+                    # random draw of days 0-365
+                    # random_date = rng.choice(list(range(0, 365)), size=1, p=[(1 / 365)] * 365)
+                    random_date = rng.randint(low=0, high=365)
+                    # convert days into years
+                    random_days = pd.to_timedelta(random_date, unit='d')
+
+                    sch_date = now + random_days
+
+                    logger.debug('This is TbMdrEvent, scheduling active disease for child %d on date %s',
+                                 person_id, sch_date)
+
+                    # schedule active disease
+                    self.sim.schedule_event(TbMdrActiveEvent(self, person_id), sch_date)
+
+
+class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Onset of active MDR-TB for person %d", person_id)
+
+        df = self.sim.population.props
+        params = self.sim.modules['tb'].parameters
+        prob_pulm = params['pulm_tb']
+        rng = self.sim.rng
+
+        # check not on ipt now or on tb treatment
+
+        df.at[person_id, 'tb_date_active'] = self.sim.date
+
+        # check if new infection or re-infection
+        # latent_susc_new or latent_susc_tx
+        if (df.at[person_id, 'tb_inf'] == 'latent_mdr_new'):
+            df.at[person_id, 'tb_inf'] = 'active_mdr_new'
+        elif (df.at[person_id, 'tb_inf'] == 'latent_mdr_tx'):
+            df.at[person_id, 'tb_inf'] = 'active_mdr_tx'
+
+        # decide pulm or extra
+        # depends on age and HIV status
+        age = df.at[person_id, 'age_years']
+        hiv = df.at[person_id, 'hv_inf']
+        prob_pulm_tb = prob_pulm.loc[(prob_pulm.age == age) & (prob_pulm.hiv == hiv), 'prob_pulm'].values
+
+        if (rng.rand() < prob_pulm_tb):
+            df.at[person_id, 'tb_specific_symptoms'] = 'active_pulm'
+            df.at[person_id, 'tb_unified_symptom_code'] = 2
+
+        else:
+            df.at[person_id, 'tb_specific_symptoms'] = 'active_extra'
+            df.at[person_id, 'tb_unified_symptom_code'] = 3
+
+        # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
+
+        # for each person determine whether they will seek care on symptom change
+        prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+        seeks_care = rng.rand() < prob_care
+
+        if seeks_care:
+            logger.debug('This is TbMdrActiveEvent, scheduling HSI_Tb_Screening for person %d', person_id)
+
+            event = HSI_Tb_Screening(self.sim.modules['tb'], person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=2,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                )
+        else:
+            logger.debug(
+                'This is TbMdrActiveEvent, person %d is not seeking care', person_id)
+
+
+class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
+    """ relapse from latent to active
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
 
     def apply(self, population):
+
+        df = self.sim.population.props
         params = self.module.parameters
         now = self.sim.date
         rng = self.module.rng
-
-        df = population.props
-        # ----------------------------------- FAST PROGRESSORS TO ACTIVE DISEASE -----------------------------------
-
-        # if any newly infected latent cases, 14% become active directly, only for primary infection
-        new_latent = df[
-            (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & ~df.tb_on_ipt & df.is_alive].sum()
-        # print(new_latent)
-
-        if new_latent.any():
-            fast_progression = df[
-                (df.tb_inf == 'latent_mdr_new') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
-            df.loc[fast_progression, 'tb_inf'] = 'active_mdr_new'
-            df.loc[fast_progression, 'tb_date_active'] = now
-            df.loc[fast_progression, 'tb_ever_tb'] = True
-            df.loc[fast_progression, 'tb_specific_symptoms'] = 'active_pulm'
-            df.loc[fast_progression, 'tb_unified_symptom_code'] = 2
-
-            # ----------------------------------- FAST PROGRESSORS SEEKING CARE -----------------------------------
-
-            # for each person determine whether they will seek care on symptom change
-            # get_prob_seek_care will be the healthcare seeking function developed by Wingston
-            seeks_care = pd.Series(data=False, index=df.loc[fast_progression].index)
-            for i in df.index[fast_progression]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-                seeks_care[i] = self.module.rng.rand() < prob
-
-            # if seeks_care.sum() > 0:
-            #     for person_index in seeks_care.index[seeks_care]:
-            #         logger.debug(
-            #             'This is TbMdrActiveEvent, scheduling HSI_Tb_SputumTest for person %d',
-            #             person_index)
-            #         event = HSI_Tb_SputumTest(self.module, person_id=person_index)
-            #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-            #                                                         priority=2,
-            #                                                         topen=self.sim.date,
-            #                                                         tclose=self.sim.date + DateOffset(weeks=2)
-            #                                                         )
-            # else:
-            #     logger.debug(
-            #         'This is TbMdrActiveEvent, There is  no one with new active disease so no new healthcare seeking')
-
-        # ----------------------------------- SLOW PROGRESSORS TO ACTIVE DISEASE -----------------------------------
-
-        # slow progressors with latent TB become active
-        # random sample with weights for RR of active disease
-        eff_prob_active_tb = pd.Series(0, index=df.index)
-        eff_prob_active_tb.loc[(df.tb_inf == 'latent_mdr_new') & ~df.tb_on_ipt] = params[
-            'monthly_prob_progr_active']
-        # print('eff_prob_active_tb: ', eff_prob_active_tb)
-
-        hiv_stage1 = df.index[df.hv_inf & (df.tb_inf == 'latent_mdr_new') &
-                              (((now - df.hv_date_inf).dt.days / 365.25) < 3.33)]
-        # print('hiv_stage1', hiv_stage1)
-
-        hiv_stage2 = df.index[df.hv_inf & (df.tb_inf == 'latent_mdr_new') &
-                              (((now - df.hv_date_inf).dt.days / 365.25) >= 3.33) &
-                              (((now - df.hv_date_inf).dt.days / 365.25) < 6.67)]
-        # print('hiv_stage2', hiv_stage2)
-
-        hiv_stage3 = df.index[df.hv_inf & (df.tb_inf == 'latent_mdr_new') &
-                              (((now - df.hv_date_inf).dt.days / 365.25) >= 6.67) &
-                              (((now - df.hv_date_inf).dt.days / 365.25) < 10)]
-        # print('hiv_stage3', hiv_stage3)
-
-        hiv_stage4 = df.index[df.hv_inf & (df.tb_inf == 'latent_mdr_new') &
-                              (((now - df.hv_date_inf).dt.days / 365.25) >= 10)]
-        # print('hiv_stage4', hiv_stage4)
-
-        eff_prob_active_tb.loc[hiv_stage1] *= params['rr_tb_with_hiv_stages'][0]
-        eff_prob_active_tb.loc[hiv_stage2] *= params['rr_tb_with_hiv_stages'][1]
-        eff_prob_active_tb.loc[hiv_stage3] *= params['rr_tb_with_hiv_stages'][2]
-        eff_prob_active_tb.loc[hiv_stage4] *= params['rr_tb_with_hiv_stages'][3]
-        eff_prob_active_tb.loc[df.hv_on_art == 2] *= params['rr_tb_art']
-        # eff_prob_active_tb.loc[df.is_malnourished] *= params['rr_tb_malnourished']
-        # eff_prob_active_tb.loc[df.has_diabetes1] *= params['rr_tb_diabetes1']
-        # eff_prob_active_tb.loc[df.high_alcohol] *= params['rr_tb_alcohol']
-        # eff_prob_active_tb.loc[df.is_smoker] *= params['rr_tb_smoking']
-        # eff_prob_active_tb.loc[df.high_pollution] *= params['rr_tb_pollution']
-
-        prog_to_active = eff_prob_active_tb > rng.rand(len(eff_prob_active_tb))
-        # print('prog_to_active: ', prog_to_active )
-        new_active_case = prog_to_active[prog_to_active].index
-        # print('new_active_case: ', new_active_case)
-        df.loc[new_active_case, 'tb_inf'] = 'active_mdr_new'
-        df.loc[new_active_case, 'tb_date_active'] = now
-        df.loc[new_active_case, 'tb_ever_tb'] = True
-        df.loc[new_active_case, 'tb_specific_symptoms'] = 'active_pulm'
-        df.loc[new_active_case, 'tb_unified_symptom_code'] = 2
-
-        # ----------------------------------- SLOW PROGRESSORS SEEKING CARE -----------------------------------
-
-        # for each person determine whether they will seek care on symptom change
-        # get_prob_seek_care will be the healthcare seeking function developed by Wingston
-        seeks_care = pd.Series(data=False, index=df.loc[new_active_case].index)
-        for i in df.index[new_active_case]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        # if seeks_care.sum() > 0:
-        #     for person_index in seeks_care.index[seeks_care]:
-        #         logger.debug(
-        #             'This is TbMdrActiveEvent, scheduling HSI_Tb_SputumTest for person %d',
-        #             person_index)
-        #         event = HSI_Tb_SputumTest(self.module, person_id=person_index)
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-        #                                                         priority=2,
-        #                                                         topen=self.sim.date,
-        #                                                         tclose=self.sim.date + DateOffset(weeks=2)
-        #                                                         )
-        # else:
-        #     logger.debug(
-        #         'This is TbMdrActiveEvent, There is  no one with new active disease so no new healthcare seeking')
 
         # ----------------------------------- RELAPSE -----------------------------------
         random_draw = rng.random_sample(size=len(df))
@@ -945,7 +1045,7 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
         # relapse after >2 years following completion of treatment (or default)
         # use tb_date_treated + 2 years + 6 months of treatment
         relapse_tx_2yrs = df[
-            (df.tb_inf == 'latent_mdr_tx') & ~df.tb_on_ipt & df.is_alive & (
+            (df.tb_inf == 'latent_mdr_secondary') & ~df.tb_on_ipt & df.is_alive & (
                 self.sim.date - df.tb_date_treated >= pd.to_timedelta(732.5, unit='d')) & (
                 random_draw < params['monthly_prob_relapse_2yrs'])].index
 
@@ -963,41 +1063,55 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
             seeks_care[i] = self.module.rng.rand() < prob
 
-        # if seeks_care.sum() > 0:
-        #     for person_index in seeks_care.index[seeks_care]:
-        #         logger.debug(
-        #             'This is TbMdrActiveEvent, scheduling HSI_Tb_XpertTest for person %d',
-        #             person_index)
-        #         event = HSI_Tb_XpertTest(self.module, person_id=person_index)
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-        #                                                         priority=2,
-        #                                                         topen=self.sim.date,
-        #                                                         tclose=self.sim.date + DateOffset(weeks=2)
-        #                                                         )
-        # else:
-        #     logger.debug(
-        #         'This is TbMdrActiveEvent, There is  no one with new active disease so no new health care seeking')
-        #
-        # # relapse after incomplete treatment course - repeat treatment course
-        # seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_incomplete].index)
-        # for i in df.loc[relapse_tx_incomplete].index:
-        #     prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-        #     seeks_care[i] = self.module.rng.rand() < prob
-        #
-        # if seeks_care.sum() > 0:
-        #     for person_index in seeks_care.index[seeks_care]:
-        #         logger.debug(
-        #             'This is TbMdrActiveEvent, scheduling HSI_Tb_StartTreatment for person %d',
-        #             person_index)
-        #         event = HSI_Tb_StartTreatment(self.module, person_id=person_index)
-        #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-        #                                                         priority=2,
-        #                                                         topen=self.sim.date,
-        #                                                         tclose=self.sim.date + DateOffset(weeks=2)
-        #                                                         )
-        # else:
-        #     logger.debug(
-        #         'This is TbMdrActiveEvent, There is  no one with new active disease so no new health care seeking')
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                logger.debug(
+                    'This is TbMdrRelapseEvent, scheduling HSI_Tb_XpertTest for person %d',
+                    person_index)
+                event = HSI_Tb_XpertTest(self.module, person_id=person_index)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    )
+        else:
+            logger.debug(
+                'This is TbMdrRelapseEvent, there are no new relapse cases seeking care')
+
+        # relapse after incomplete treatment course - repeat treatment course
+        seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_incomplete].index)
+        for i in df.loc[relapse_tx_incomplete].index:
+            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
+            seeks_care[i] = self.module.rng.rand() < prob
+
+        if seeks_care.sum() > 0:
+            for person_index in seeks_care.index[seeks_care]:
+                if df.at[person_index, 'age_years'] < 15:
+
+                    logger.debug(
+                        'This is TbMdrActiveEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed child %d',
+                        person_index)
+                    event = HSI_Tb_StartTreatmentChild(self.module, person_id=person_index)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                        priority=2,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(weeks=2)
+                                                                        )
+                else:
+                    logger.debug(
+                        'This is TbMdrActiveEvent, scheduling HSI_Tb_StartTreatmentChild for relapsed adult %d',
+                        person_index)
+                    event = HSI_Tb_StartTreatmentAdult(self.module, person_id=person_index)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                        priority=2,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(weeks=2)
+                                                                        )
+
+        else:
+            logger.debug(
+                'This is TbMdrRelapseEvent, there are no new relapse cases seeking care')
+
 
 
 class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1122,10 +1236,6 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
         now = self.sim.date
-
-        # TODO add in follow-up sputum tests, so outcomes for first test -> diagnosed
-        # TODO outcome for folow-up testing = nothing just log the appt
-        # TODO only schedule treatment if just diagnosed
 
         df.at[person_id, 'tb_ever_tested'] = True
         df.at[person_id, 'tb_smear_test'] = True
@@ -1305,13 +1415,13 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
             district = df.at[person_id, 'district_of_residence']
 
             if len(df.index[(df.age_years <= 5) &
-                            ~df.ever_tb &
-                            ~df.ever_tb_mdr &
+                            ~df.tb_ever_tb &
+                            ~df.tb_ever_tb_mdr &
                             df.is_alive &
                             df.district_of_residence == district] > 5):
                 ipt_sample = df[(df.age_years <= 5) &
-                                ~df.ever_tb &
-                                ~df.ever_tb_mdr &
+                                ~df.tb_ever_tb &
+                                ~df.tb_ever_tb_mdr &
                                 df.is_alive &
                                 df.district_of_residence == district].sample(
                     n=5,
