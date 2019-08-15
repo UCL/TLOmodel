@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
-from tlo.methods.iCCM import HSI_Sick_Child_Seeks_Care_From_HSA
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -86,7 +85,27 @@ class NewDiarrhoea(Module):
                                   'for children under 11 months, no SAM, no HIV'
                       ),
         'rr_bec_persistent_age12to23':
-            Parameter(Types.REAL, 'relative rate of acute diarrhoea becoming persistent diarrhoea for age 11 to 23 months'
+            Parameter(Types.REAL, 'relative rate of acute diarrhoea becoming persistent diarrhoea for age 12 to 23 months'
+                      ),
+        'rr_bec_persistent_age24to59':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for age 24 to 59 months'
+                      ),
+        'rr_bec_persistent_HIV':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for HIV positive'
+                      ),
+        'rr_bec_persistent_SAM':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for severely acute malnutrition'
+                      ),
+        'rr_bec_persistent_excl_breast':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for exclusive breastfeeding'
+                      ),
+        'rr_bec_persistent_cont_breast':
+            Parameter(Types.REAL,
+                      'relative rate of acute diarrhoea becoming persistent diarrhoea for continued breastfeeding'
                       ),
         'daly_mild_diarrhoea':
             Parameter(Types.REAL, 'DALY weight for diarrhoea with no dehydration'
@@ -96,6 +115,29 @@ class NewDiarrhoea(Module):
                       ),
         'daly_severe_diarrhoea':
             Parameter(Types.REAL, 'DALY weight for diarrhoea with severe dehydration'
+                      ),
+        # PARAMETERS FOR THE ICCM ALGORITHM PERFORMED BY HSA
+
+        'prob_correct_id_danger_sign':
+            Parameter(Types.REAL, 'probability of HSA correctly identified a general danger sign'
+                      ),
+        'prob_correct_id_diarrhoea_dehydration':
+            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea and dehydrayion'
+                      ),
+        'prob_correct_classified_diarrhoea_danger_sign':
+            Parameter(Types.REAL, 'probability of HSA correctly identified diarrhoea with a danger sign'
+                      ),
+        'prob_correct_identified_persist_or_bloody_diarrhoea':
+            Parameter(Types.REAL, 'probability of HSA correctly identified persistent diarrhoea or dysentery'
+                      ),
+        'prob_correct_classified_diarrhoea':
+            Parameter(Types.REAL, 'probability of HSA correctly classified diarrhoea'
+                      ),
+        'prob_correct_referral_decision':
+            Parameter(Types.REAL, 'probability of HSA correctly referred the case'
+                      ),
+        'prob_correct_treatment_advice_given':
+            Parameter(Types.REAL, 'probability of HSA correctly treated and advised caretaker'
                       ),
 
     }
@@ -126,6 +168,35 @@ class NewDiarrhoea(Module):
         'di_diarrhoea_loose_watery_stools': Property(Types.BOOL, 'diarrhoea symptoms - loose or watery stools'),
         'di_blood_in_stools': Property(Types.BOOL, 'dysentery symptoms - blood in the stools'),
         'di_diarrhoea_over14days': Property(Types.BOOL, 'persistent diarrhoea - diarrhoea for 14 days or more'),
+        'di_any_general_danger_sign': Property
+        (Types.BOOL,
+         'any danger sign - lethargic/uncounscious, not able to drink/breastfeed, convulsions and vomiting everything'),
+        'correctly_identified_danger_signs': Property
+        (Types.BOOL, 'HSA correctly identified at least one danger sign'
+         ),
+        'correctly_identified_diarrhoea_and_dehydration': Property
+        (Types.BOOL, 'HSA correctly identified diarrhoea and dehydration'
+         ),
+        'correctly_classified_diarrhoea_with_danger_sign': Property
+        (Types.BOOL, 'HSA correctly classified as diarrhoea with danger sign or with signs of severe dehydration'
+         ),
+        'correctly_classified_persistent_or_bloody_diarrhoea': Property
+        (Types.BOOL, 'HSA correctly classified persistent diarrhoea or bloody diarrhoea'
+         ),
+        'correctly_classified_diarrhoea': Property
+        (Types.BOOL, 'HSA correctly classified diarrhoea without blood and less than 14 days'
+         ),
+        'referral_options': Property
+        (Types.CATEGORICAL,
+         'Referral decisions', categories=['refer immediately', 'refer to health facility', 'do not refer']),
+        'correct_referral_decision': Property
+        (Types.BOOL,
+         'HSA made the correct referral decision based on the assessment and classification process'
+         ),
+        'correct_treatment_and_advice_given': Property
+        (Types.BOOL,
+         'HSA has given the correct treatment for the classified condition'
+         ),
     }
 
     def read_parameters(self, data_folder):
@@ -160,12 +231,19 @@ class NewDiarrhoea(Module):
         p['rr_bec_persistent_SAM'] = 1.8
         p['rr_bec_persistent_excl_breast'] = 0.4
         p['rr_bec_persistent_cont_breast'] = 0.4
+        p['prob_correct_id_diarrhoea_dehydration'] = 0.8
+        p['prob_correct_id_danger_sign'] = 0.7
+        p['prob_correct_id_persist_or_bloody_diarrhoea'] = 0.8
+        p['prob_correctly_classified_diarrhoea_danger_sign'] = 0.8
+        p['prob_correctly_classified_persist_or_bloody_diarrhoea'] = 0.8
+        p['prob_correctly_classified_diarrhoea'] = 0.8
+        p['prob_correct_referral_decision'] = 0.8
+        p['prob_correct_treatment_advice_given'] = 0.8
 
         if 'HealthBurden' in self.sim.modules.keys():
             p['daly_mild_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(32)
             p['daly_moderate_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(35)
             p['daly_severe_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(34)
-
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -201,8 +279,7 @@ class NewDiarrhoea(Module):
         """
 
         # add the basic event for dysentery ---------------------------------------------------
-        event_diarrhoea = AcuteDiarrhoeaEvent(self)
-        sim.schedule_event(event_diarrhoea, sim.date + DateOffset(months=3))
+        sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=3))
 
         # add an event to log to screen
         # sim.schedule_event(DysenteryLoggingEvent(self), sim.date + DateOffset(months=6))
@@ -214,13 +291,7 @@ class NewDiarrhoea(Module):
         # add an event to log to screen
         sim.schedule_event(AcuteDiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=6))
 
-        # add the basic event for persistent diarrhoea ------------------------------------------
-        event_persistent_diar = PersistentDiarrhoeaEvent(self)
-        sim.schedule_event(event_persistent_diar, sim.date + DateOffset(months=3))
-
-        # add an event to log to screen
-        sim.schedule_event(PersistentDiarrhoeaLoggingEvent(self), sim.date + DateOffset(months=6))
-        '''
+       '''
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual.
@@ -523,11 +594,12 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         for individual in watery_diarrhoea_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
             seeks_care[individual] = self.module.rng.rand() < prob
+            date_seeking_care = df.date_of_onset_diarrhoea[individual] + pd.DateOffset(days=int(rng.uniform(0, 7)))
             event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module, person_id=individual)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                tclose=None
                                                                 )
 
         # --------------------------------------------------------------------------------------------------------
@@ -545,39 +617,38 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                tclose=None
                                                                 )
 
         # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # #
 
         dysentery_bec_persistent = pd.Series(m.prob_dysentery_become_persistent, index=under5_dysentery_idx)
         watery_diarr_bec_persistent = pd.Series(m.prob_watery_diarr_become_persistent, index=under5_watery_diarrhoea_idx)
-        becoming_peristent = pd.concat([dysentery_bec_persistent, watery_diarr_bec_persistent], axis=0).sort_index()
+        becoming_persistent = pd.concat([dysentery_bec_persistent, watery_diarr_bec_persistent], axis=0).sort_index()
 
-        becoming_peristent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
+        becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
             *= m.rr_bec_persistent_age12to23
-        becoming_peristent.loc[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)] \
+        becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 2) & (df.age_exact_years < 5)] \
             *= m.rr_bec_persistent_age24to59
-        becoming_peristent.loc[df.is_alive & (df.has_hiv == True)] \
+        becoming_persistent.loc[df.is_alive & (df.has_hiv == True)] \
             *= m.rr_bec_persistent_HIV
-        becoming_peristent.loc[df.is_alive & df.malnutrition == True] \
+        becoming_persistent.loc[df.is_alive & df.malnutrition == True] \
             *= m.rr_bec_persistent_SAM
-        becoming_peristent.loc[
+        becoming_persistent.loc[
             df.is_alive & df.exclusive_breastfeeding == True & (df.age_exact_years <= 0.5)] \
             *= m.rr_bec_persistent_excl_breast
-        becoming_peristent.loc[
+        becoming_persistent.loc[
             df.is_alive & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
             (df.age_exact_years < 2)] *= m.rr_bec_persistent_cont_breast
 
         random_draw_c = pd.Series(self.sim.rng.random_sample(size=len(incident_acute_diarrhoea)),
                                   index=incident_acute_diarrhoea)
-        persistent_diarr = becoming_peristent > random_draw_c
-        persistent_diarr_idx = becoming_peristent.index[persistent_diarr]
+        persistent_diarr = becoming_persistent > random_draw_c
+        persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
         df.loc[persistent_diarr_idx, 'gi_persistent_diarrhoea'] = True
 
-        # SET THE TIMELINE
-        # persistent_diarrhoea = df.index[df.gi_persistent_diarrhoea == True]
-        # date_of_aquisition + DateOffset(weeks=2)
+        # SET THE TIMELINE FOR PERSISTENT DIARRHOEA
+        date_become_persistent = date_of_aquisition + DateOffset(weeks=2)
 
         # # # # # # # # SYMPTOMS FROM PERSISTENT DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[under5_dysentery_idx, 'di_diarrhoea_loose_watery_stools'] = True
@@ -594,17 +665,72 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         seeks_care = pd.Series(data=False, index=persistent_diarrhoea_symptoms)
         for individual in persistent_diarrhoea_symptoms:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual, symptom_code=1)
+            # date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
             seeks_care[individual] = self.module.rng.rand() < prob
             event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module, person_id=individual)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
+                                                                tclose=None
                                                                 )
 
 
-class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
+class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
 
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Sick_child_presents_for_care'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        logger.debug('This is HSI_Sick_Child_Seeks_Care_From_HSA, a first appointment for person %d in the community',
+                     person_id)
+
+        df = self.sim.population.props
+        m = self.module
+        p = self.module.parameters
+
+        # # # # # # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
+        current_diarrhoea = df.index[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_years < 5)]
+
+        for person_id in current_diarrhoea:
+            diarrhoea_identified_by_HSA = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_diarrhoea_dehydration'],
+                                                              (1 - p['prob_correct_id_diarrhoea_dehydration'])])
+            if diarrhoea_identified_by_HSA[True]:
+                df.at[person_id, 'correctly_identified_diarrhoea_and_dehydration'] = True
+            if df.at[person_id, 'di_any_general_danger_sign']:
+                danger_sign_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_danger_sign'],
+                                                                  (1 - p['prob_correct_id_danger_sign'])])
+                if diarrhoea_identified_by_HSA[True] & danger_sign_identified_by_HSA[True]:
+                    df.at[person_id, 'correctly_classified_diarrhoea_with_danger_sign'] = True
+            if (df.at[person_id, 'gi_diarrhoea_acute_type'] == 'dysentery') | (
+                df.at[person_id, 'gi_persistent_diarrhoea']):
+                persistent_or_bloody_diarr_identified_by_HSA = self.sim.rng.choice([True, False], size=1, p=[
+                    p['prob_correct_id_persist_or_bloody_diarrhoea'],
+                    (1 - p['prob_correct_id_persist_or_bloody_diarrhoea'])])
+                if diarrhoea_identified_by_HSA[True] & persistent_or_bloody_diarr_identified_by_HSA[True]:
+                    df.at[person_id, 'correctly_classified_persistent_or_bloody_diarrhoea'] = True
+            if not (df.at[person_id, 'gi_persistent_diarrhoea'] & (
+                (df.at[person_id, 'gi_diarrhoea_acute_type']) == 'dysentery') & (
+                    df.at[person_id, 'di_any_general_danger_sign'])) & diarrhoea_identified_by_HSA[True]:
+                df.at[person_id, 'correctly_classified_diarrhoea'] = True
+
+        logger.info('Current diarrhoea, person %d has been correctly diagnosed %s', person_id, correctly_classified_bloody_diarrhoea )
+
+
+class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
