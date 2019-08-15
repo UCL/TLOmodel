@@ -1,12 +1,12 @@
 
 import logging
 import os
+import time
 
 import pytest
 from tlo import Date, Simulation
-from pathlib import Path
 from tlo.methods import demography, enhanced_lifestyle
-
+from pathlib import Path
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
@@ -29,25 +29,12 @@ def simulation():
     return sim
 
 
-def __check_properties(df):
-
- def test_make_initial_population(simulation):
+def test_run(simulation):
     simulation.make_initial_population(n=popsize)
-
-
-def test_initial_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_simulate(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def test_final_population(simulation):
-    __check_properties(simulation.population.props)
-
-
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
@@ -55,7 +42,8 @@ def test_dypes(simulation):
 
 
 if __name__ == '__main__':
+    t0 = time.time()
     simulation = simulation()
-    logging.getLogger('tlo.methods.demography').setLevel(logging.WARNING)
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
+    test_run(simulation)
+    t1 = time.time()
+    print('Time taken', t1 - t0)
