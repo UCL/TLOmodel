@@ -24,42 +24,86 @@ class tb(Module):
         self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
-        'prop_fast_progressor': Parameter(Types.REAL,
-                                          'Proportion of infections that progress directly to active stage'),
-        'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, estimated by Juan'),
-        'monthly_prob_progr_active': Parameter(Types.REAL,
-                                               'Combined rate of progression/reinfection/relapse from Juan'),
-        'rr_tb_hiv_stages': Parameter(Types.REAL, 'relative risk of tb in hiv+ compared with hiv- by cd4 stage'),
-        'rr_tb_art': Parameter(Types.REAL, 'relative risk of tb in hiv+ on art'),
-        'rr_tb_ipt': Parameter(Types.REAL, 'relative risk of tb on ipt'),
-        'rr_tb_malnourished': Parameter(Types.REAL, 'relative risk of tb with malnourishment'),
-        'rr_tb_diabetes1': Parameter(Types.REAL, 'relative risk of tb with diabetes type 1'),
-        'rr_tb_alcohol': Parameter(Types.REAL, 'relative risk of tb with heavy alcohol use'),
-        'rr_tb_smoking': Parameter(Types.REAL, 'relative risk of tb with smoking'),
-        'rr_tb_pollution': Parameter(Types.REAL, 'relative risk of tb with indoor air pollution'),
-        'rel_infectiousness_hiv': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
-        'monthly_prob_self_cure': Parameter(Types.REAL, 'annual probability of self-cure'),
-        'monthly_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
-        'monthly_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
+        # baseline population
+        'prop_latent_2010': Parameter(Types.REAL,
+                                      'Proportion of population with latent tb in 2010'),
+        'prop_active_2010': Parameter(Types.REAL,
+                                      'Proportion of population with active tb in 2010'),
+        'prop_mdr2010': Parameter(Types.REAL,
+                                  'Proportion of active tb cases with multidrug resistance in 2010'),
+
+        # natural history
+        'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
+        'rel_inf_hiv': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
+        'rel_inf_smear_ng': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
+        'rr_bcg_inf': Parameter(Types.REAL, 'relative risk of tb infection with bcg vaccination'),
         'monthly_prob_relapse_tx_complete': Parameter(Types.REAL,
                                                       'annual probability of relapse once treatment complete'),
         'monthly_prob_relapse_tx_incomplete': Parameter(Types.REAL,
                                                         'annual probability of relapse if treatment incomplete'),
         'monthly_prob_relapse_2yrs': Parameter(Types.REAL,
                                                'annual probability of relapse 2 years after treatment complete'),
-        'prob_treatment_success': Parameter(Types.REAL,
-                                            'probability of treatment completion'),
 
-        'prop_mdr2010': Parameter(Types.REAL, 'prevalence of mdr in TB cases 2010'),
-        'prop_mdr_new': Parameter(Types.REAL, 'prevalence of mdr in new tb cases'),
-        'prop_mdr_retreated': Parameter(Types.REAL, 'prevalence of mdr in previously treated cases'),
-        'tb_testing_coverage': Parameter(Types.REAL, 'proportion of population tested'),
-        'prop_smear_positive': Parameter(Types.REAL, 'proportion of TB cases smear positive'),
-        'prop_smear_positive_hiv': Parameter(Types.REAL, 'proportion of HIV/TB cases smear positive'),
+        # progression
+        'prop_fast_progressor': Parameter(Types.REAL,
+                                          'Proportion of infections that progress directly to active stage'),
+        'prog_active': Parameter(Types.REAL,
+                                 'risk of progressing to active tb within two years'),
+        'prog_1yr': Parameter(Types.REAL,
+                              'proportion children aged <1 year progressing to active disease'),
+        'prog_1_2yr': Parameter(Types.REAL,
+                                'proportion children aged 1-2 year2 progressing to active disease'),
+        'prog_2_5yr': Parameter(Types.REAL,
+                                'proportion children aged 2-5 years progressing to active disease'),
+        'prog_5_10yr': Parameter(Types.REAL,
+                                 'proportion children aged 5-10 years progressing to active disease'),
+        'prog_10yr': Parameter(Types.REAL,
+                               'proportion children aged 10-15 years progressing to active disease'),
+        'monthly_prob_self_cure': Parameter(Types.REAL, 'annual probability of self-cure'),
 
-        'followup_times': Parameter(Types.INT, 'times(weeks) tb treatment monitoring required after tx start'),
-
+        # clinical features
         'pulm_tb': Parameter(Types.REAL, 'probability of pulmonary tb'),
+        'prop_smear_positive': Parameter(Types.REAL, 'proportion of new active cases that will be smear-positive'),
+
+        # mortality
+        'monthly_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
+        'monthly_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
+        'mortality_cotrim': Parameter(Types.REAL, 'mreduction in mortality rates due to cotrimoxazole prophylaxis'),
+
+        # relative risks of progression to active disease
+        'rr_tb_bcg': Parameter(Types.REAL,
+                               'relative risk of progression to active disease for children with BCG vaccine'),
+        'rr_tb_hiv': Parameter(Types.REAL, 'relative risk of progression to active disease for PLHIV'),
+        'rr_tb_art_adult': Parameter(Types.REAL,
+                                     'relative risk of progression to active disease for adults with HIV on ART'),
+        'rr_tb_art_child': Parameter(Types.REAL,
+                                     'relative risk of progression to active disease for adults with HIV on ART'),
+        'rr_tb_overweight': Parameter(Types.REAL, 'relative risk of progression to active disease if overweight'),
+        'rr_tb_obese': Parameter(Types.REAL, 'relative risk of progression to active disease if obese'),
+        'rr_tb_diabetes1': Parameter(Types.REAL, 'relative risk of progression to active disease with type 1 diabetes'),
+        'rr_tb_alcohol': Parameter(Types.REAL, 'relative risk of progression to active disease with heavy alcohol use'),
+        'rr_tb_smoking': Parameter(Types.REAL, 'relative risk of progression to active disease with smoking'),
+
+        'dur_prot_ipt': Parameter(Types.REAL, 'duration in days of protection conferred by IPT against active TB'),
+        'dur_prot_ipt_infant': Parameter(Types.REAL,
+                                         'duration in days of protection conferred by IPT against active TB in infants'),
+        'rr_ipt_adult': Parameter(Types.REAL, 'relative risk of active TB with IPT in adults'),
+        'rr_ipt_child': Parameter(Types.REAL, 'relative risk of active TB with IPT in children'),
+        'rr_ipt_adult_hiv': Parameter(Types.REAL, 'relative risk of active TB with IPT in adults with hiv'),
+        'rr_ipt_child_hiv': Parameter(Types.REAL, 'relative risk of active TB with IPT in children with hiv'),
+        'rr_ipt_art_adult': Parameter(Types.REAL, 'relative risk of active TB with IPT and ART in adults'),
+        'rr_ipt_art_child': Parameter(Types.REAL, 'relative risk of active TB with IPT and ART in children'),
+
+        # health system interactions
+        'prop_fail_xpert': Parameter(Types.REAL, 'proportion of active TB cases not detected with Xpert'),
+        'prob_tx_success_new': Parameter(Types.REAL, 'Probability of treatment success for new TB cases'),
+        'prob_tx_success_prev': Parameter(Types.REAL, 'Probability of treatment success for previously treated cases'),
+        'prob_tx_success_hiv': Parameter(Types.REAL, 'Probability of treatment success for PLHIV'),
+        'prob_tx_success_mdr': Parameter(Types.REAL, 'Probability of treatment success for MDR-TB cases'),
+        'prob_tx_success_extra': Parameter(Types.REAL, 'Probability of treatment success for extrapulmonary TB cases'),
+        'prob_tx_success_0_14': Parameter(Types.REAL, 'Probability of treatment success for children aged 0-14 years'),
+        'prob_tx_success_5_14': Parameter(Types.REAL, 'Probability of treatment success for children aged 5-14 years'),
+        'followup_times': Parameter(Types.INT, 'times(weeks) tb treatment monitoring required after tx start'),
 
         # daly weights, no daly weight for latent tb
         'daly_wt_susc_tb':
@@ -127,39 +171,68 @@ class tb(Module):
         params['param_list'] = workbook['parameters']
         self.param_list.set_index("parameter", inplace=True)
 
-        params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value1']
-        params['monthly_prob_progr_active'] = self.param_list.loc['monthly_prob_progr_active', 'value1']
-
-        params['rr_tb_with_hiv_stages'] = self.param_list.loc['transmission_rate'].values
-        params['rr_tb_art'] = self.param_list.loc['rr_tb_art', 'value1']
-        params['rr_tb_ipt'] = self.param_list.loc['rr_tb_ipt', 'value1']
-        params['rr_tb_malnourished'] = self.param_list.loc['rr_tb_malnourished', 'value1']
-        params['rr_tb_diabetes1'] = self.param_list.loc['rr_tb_diabetes1', 'value1']
-        params['rr_tb_alcohol'] = self.param_list.loc['rr_tb_alcohol', 'value1']
-        params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value1']
-        params['rr_tb_pollution'] = self.param_list.loc['rr_tb_pollution', 'value1']
-        params['rel_infectiousness_hiv'] = self.param_list.loc['rel_infectiousness_hiv', 'value1']
-        params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value1']
-        params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value1']
-        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['monthly_prob_tb_mortality_hiv', 'value1']
+        # baseline
+        params['prop_active_2010'], params['prop_latent_2010'] = workbook['Active_TB_prob'], workbook['Latent_TB_prob']
         params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value1']
-        params['prop_mdr_new'] = self.param_list.loc['prop_mdr_new', 'value1']
-        params['prop_mdr_retreated'] = self.param_list.loc['prop_mdr_retreated', 'value1']
-        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value1']
-        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc[
-            'monthly_prob_relapse_tx_incomplete', 'value1']
-        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value1']
-        params['prob_treatment_success'] = self.param_list.loc['prob_treatment_success', 'value1']
 
-        params['Active_tb_prob'], params['Latent_tb_prob'] = workbook['Active_TB_prob'], workbook['Latent_TB_prob']
+        # natural history
+        params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value1']
+        params['rel_inf_hiv'] = self.param_list.loc['transmission_rate', 'value1']
+        params['rel_inf_smear_ng'] = self.param_list.loc['transmission_rate', 'value1']
+        params['rr_bcg_inf'] = self.param_list.loc['transmission_rate', 'value1']
+        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['transmission_rate', 'value1']
+        params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc['transmission_rate', 'value1']
+        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['transmission_rate', 'value1']
 
-        params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value1']
-        params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value1']
+        # progression
+        params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_active'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_1yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_1_2yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_2_5yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_5_10yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prog_10yr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['monthly_prob_self_cure'] = self.param_list.loc['prop_fast_progressor', 'value1']
 
-        params['followup_times'] = workbook['followup']
-
+        # clinical features
         params['pulm_tb'] = workbook['pulm_tb']
+        params['prop_smear_positive'] = self.param_list.loc['prop_fast_progressor', 'value1']
+
+        # mortality
+        params['monthly_prob_tb_mortality'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['mortality_cotrim'] = self.param_list.loc['prop_fast_progressor', 'value1']
+
+        # relative risks of progression to active disease
+        params['rr_tb_bcg'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_art_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_art_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_overweight'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_obese'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_diabetes1'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_alcohol'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_tb_smoking'] = self.param_list.loc['prop_fast_progressor', 'value1']
+
+        params['dur_prot_ipt'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['dur_prot_ipt_infant'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_adult_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_child_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_art_adult'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['rr_ipt_art_child'] = self.param_list.loc['prop_fast_progressor', 'value1']
+
+        # health system interactions
+        params['prop_fail_xpert'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_new'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_prev'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_hiv'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_mdr'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_extra'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_0_14'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['prob_tx_success_5_14'] = self.param_list.loc['prop_fast_progressor', 'value1']
+        params['followup_times'] = workbook['followup']
 
         # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
@@ -184,10 +257,16 @@ class tb(Module):
             params['daly_wt_resistant_tb_hiv_mild_anaemia'] = self.sim.modules['HealthBurden'].get_daly_weight(
                 11)  # Multidrug resistant Tuberculosis, HIV infected and anemia, mild
 
-    # TODO check malawi clinical guidelines to treatments available
     def initialise_population(self, population):
         """Set our property values for the initial population.
         """
+
+        # TODO use the age distributed estimates for baseline population
+
+
+
+
+
         df = population.props
         now = self.sim.date
 
@@ -286,7 +365,7 @@ class tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbMdrActiveEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=12))
 
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
