@@ -29,6 +29,8 @@ class Lifestyle(Module):
 
         # -------- list of parameters -----------------------------------------------------------------------------------
 
+        #todo check these are fully consistent with list in read_parameters def
+
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
@@ -238,10 +240,18 @@ class Lifestyle(Module):
         p['init_p_high_salt_urban'] = dfd.loc['init_p_high_salt_urban', 'value1'],
         p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
         p['init_p_low_ex_urban_m'] = dfd.loc['init_p_low_ex_urban_m', 'value1']
-        p['init_or_low_ex_rural'] = dfd.loc['init_rp_low_ex_rural', 'value1']
-        p['init_or_low_ex_f'] = dfd.loc['init_rp_low_ex_f', 'value1']
+        p['init_or_low_ex_rural'] = dfd.loc['init_or_low_ex_rural', 'value1']
+        p['init_or_low_ex_f'] = dfd.loc['init_or_low_ex_f', 'value1']
         p['init_p_ex_alc_m'] = dfd.loc['init_p_ex_alc_m', 'value1']
         p['init_p_ex_alc_f'] = dfd.loc['init_p_ex_alc_f', 'value1']
+        p['init_p_tob_age1519_m_wealth1'] = dfd.loc['init_p_tob_age1519_m_wealth1', 'value1']
+        p['init_or_tob_f'] = dfd.loc['init_or_tob_f', 'value1']
+        p['init_or_tob_age2039_m'] = dfd.loc['init_or_tob_age2039_m', 'value1']
+        p['init_or_tob_agege40_m'] = dfd.loc['init_or_tob_agege40_m', 'value1']
+        p['init_or_tob_wealth2'] = dfd.loc['init_or_tob_wealth2', 'value1']
+        p['init_or_tob_wealth3'] = dfd.loc['init_or_tob_wealth3', 'value1']
+        p['init_or_tob_wealth4'] = dfd.loc['init_or_tob_wealth4', 'value1']
+        p['init_or_tob_wealth5'] = dfd.loc['init_or_tob_wealth5', 'value1']
         p['init_dist_mar_stat_age1520'] = [dfd.loc['init_dist_mar_stat_age1520', 'value1'],
                                            dfd.loc['init_dist_mar_stat_age1520', 'value2'],
                                            dfd.loc['init_dist_mar_stat_age1520', 'value3']]
@@ -273,7 +283,7 @@ class Lifestyle(Module):
         p['init_or_some_ed_sec_age3040'] = dfd.loc['init_or_some_ed_sec_age3040', 'value1']
         p['init_or_some_ed_sec_age4050'] = dfd.loc['init_or_some_ed_sec_age4050', 'value1']
         p['init_or_some_ed_sec_age5060'] = dfd.loc['init_or_some_ed_sec_age5060', 'value1']
-        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agegr60', 'value1']
+        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agege60', 'value1']
         p['init_or_some_ed_sec_per_higher_wealth'] = dfd.loc['init_or_some_ed_sec_per_higher_wealth', 'value1']
         p['init_p_unimproved_sanitation'] = dfd.loc['init_p_unimproved_sanitation', 'value1']
         p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1']
@@ -303,13 +313,14 @@ class Lifestyle(Module):
         p['rr_not_high_salt_pop_advice_salt'] = dfd.loc['rr_not_high_salt_pop_advice_salt', 'value1']
         p['r_high_sugar'] = dfd.loc['r_high_sugar', 'value1']
         p['r_not_high_sugar'] = dfd.loc['r_not_high_sugar', 'value1']
+        p['rr_not_high_sugar_pop_advice_sugar'] = dfd.loc['rr_not_high_sugar_pop_advice_sugar', 'value1']
         p['r_low_ex'] = dfd.loc['r_low_ex', 'value1']
         p['r_not_low_ex'] = dfd.loc['r_not_low_ex', 'value1']
-        p['rr_not_high_sugar_pop_advice_salt'] = dfd.loc['rr_not_high_sugar_pop_advice_salt', 'value1']
+        p['rr_not_low_ex_pop_advice_exercise'] = dfd.loc['rr_not_low_ex_pop_advice_exercise', 'value1']
         p['rr_low_ex_f'] = dfd.loc['rr_low_ex_f', 'value1']
         p['rr_low_ex_urban'] = dfd.loc['rr_low_ex_urban', 'value1']
         p['r_tob'] = dfd.loc['r_tob', 'value1']
-        p['r_not_to'] = dfd.loc['r_not_tob', 'value1']
+        p['r_not_tob'] = dfd.loc['r_not_tob', 'value1']
         p['rr_tob_age2039'] = dfd.loc['rr_tob_age2039', 'value1']
         p['rr_tob_agege40'] = dfd.loc['rr_tob_agege40', 'value1']
         p['rr_tob_wealth'] = dfd.loc['rr_tob_wealth', 'value1']
@@ -317,7 +328,7 @@ class Lifestyle(Module):
         p['r_ex_alc'] = dfd.loc['r_ex_alc', 'value1']
         p['r_not_ex_alc'] = dfd.loc['r_not_ex_alc', 'value1']
         p['rr_ex_alc_f'] = dfd.loc['rr_ex_alc_f', 'value1']
-        p['rr_not_tob_pop_advice_alc'] = dfd.loc['rr_not_tob_pop_advice_alc', 'value1']
+        p['rr_not_ex_alc_pop_advice_alcohol'] = dfd.loc['rr_not_ex_alc_pop_advice_alcohol', 'value1']
         p['r_mar'] = dfd.loc['r_mar', 'value1']
         p['r_div_wid'] = dfd.loc['r_div_wid', 'value1']
         p['r_stop_ed'] = dfd.loc['r_stop_ed', 'value1']
@@ -379,72 +390,35 @@ class Lifestyle(Module):
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
-        agege15_idx = df.index[df.is_alive & (df.age_years >= 15)]
+        age_ge15_idx = df.index[df.is_alive & (df.age_years >= 15)]
 
-        odds_init_p_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
+        init_odds_low_ex_urban_m = m.init_p_low_ex_urban_m / (1 - m.init_p_low_ex_urban_m)
 
-        odds_low_ex = pd.Series(odds_init_p_low_ex_urban_m, index=age_ge15)
-
-        #todo  note now using odds ratio rather than relative prevalence so small amendments needed
+        odds_low_ex = pd.Series(init_odds_low_ex_urban_m, index=age_ge15_idx)
 
         odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
         odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
 
-        odds_low_ex = pd.Series((1 / (1 + odds_low_ex)), index=age_ge15)
+        low_ex_probs = pd.Series((odds_low_ex / (1 + odds_low_ex)), index=age_ge15_idx)
 
+        assert len(low_ex_probs) == len(age_ge15_idx)
 
-        assert len(low_ex_probs) == len(age_gte15)
-
-        random_draw = rng.random_sample(size=len(age_ge15))
-        df.loc[age_ge15, 'li_low_ex'] = (random_draw < low_ex_probs.values)
+        random_draw = rng.random_sample(size=len(age_ge15_idx))
+        df.loc[age_ge15_idx, 'li_low_ex'] = (random_draw < low_ex_probs)
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
-        tob_lookup = pd.DataFrame([('M', '15-19', 0.01),
-                                   ('M', '20-24', 0.04),
-                                   ('M', '25-29', 0.04),
-                                   ('M', '30-34', 0.04),
-                                   ('M', '35-39', 0.04),
-                                   ('M', '40-44', 0.06),
-                                   ('M', '45-49', 0.06),
-                                   ('M', '50-54', 0.06),
-                                   ('M', '55-59', 0.06),
-                                   ('M', '60-64', 0.06),
-                                   ('M', '65-69', 0.06),
-                                   ('M', '70-74', 0.06),
-                                   ('M', '75-79', 0.06),
-                                   ('M', '80-84', 0.06),
-                                   ('M', '85-89', 0.06),
-                                   ('M', '90-94', 0.06),
-                                   ('M', '95-99', 0.06),
-                                   ('M', '100+',  0.06),
+        init_odds_tob_age1519_m = m.init_p_tob_age1519_m / (1 - m.init_p_tob_age1519_m)
 
-                                   ('F', '15-19', 0.002),
-                                   ('F', '20-24', 0.002),
-                                   ('F', '25-29', 0.002),
-                                   ('F', '30-34', 0.002),
-                                   ('F', '35-39', 0.002),
-                                   ('F', '40-44', 0.002),
-                                   ('F', '45-49', 0.002),
-                                   ('F', '50-54', 0.002),
-                                   ('F', '55-59', 0.002),
-                                   ('F', '60-64', 0.002),
-                                   ('F', '65-69', 0.002),
-                                   ('F', '70-74', 0.002),
-                                   ('F', '75-79', 0.002),
-                                   ('F', '80-84', 0.002),
-                                   ('F', '85-89', 0.002),
-                                   ('F', '90-94', 0.002),
-                                   ('F', '95-99', 0.002),
-                                   ('F', '100+',  0.002)],
-                                  columns=['sex', 'age_range', 'p_tob'])
+        odds_tob = pd.Series(init_odds_tob_age1519_m, index=age_ge15_idx)
 
-        # join the population-with-age dataframe with the tobacco use lookup table (join on sex and age_range)
-        tob_probs = df.loc[age_gte15].merge(tob_lookup,
-                                            left_on=['sex', 'age_range'],
-                                            right_on=['sex', 'age_range'],
-                                            how='inner')
-        assert len(age_gte15) == len(tob_probs)
+        odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
+        odds_tob.loc[df.sex == 'M' & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
+        odds_tob.loc[df.sex == 'M' & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
+
+        tob_probs = pd.Series((odds_tob / (1 + odds_tob)), index=age_ge15_idx)
+
+        assert len(age_ge15_idx) == len(tob_probs)
 
         # each individual has a baseline probability
         # multiply this probability by the wealth level. wealth is a category, so convert to integer
