@@ -4,11 +4,13 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import logging
+import numpy as np
 
 import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from pathlib import Path
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -237,7 +239,7 @@ class Lifestyle(Module):
         p['init_or_higher_bmi_tob'] = dfd.loc['init_or_higher_bmi_tob', 'value1']
         p['init_or_higher_bmi_per_higher_wealth'] = dfd.loc['init_or_higher_bmi_per_higher_wealth', 'value1']
         p['init_p_high_sugar'] = dfd.loc['init_p_high_sugar', 'value1']
-        p['init_p_high_salt_urban'] = dfd.loc['init_p_high_salt_urban', 'value1'],
+        p['init_p_high_salt_urban'] = 0.2 # dfd.loc['init_p_high_salt_urban', 'value1'],
         p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
         p['init_p_low_ex_urban_m'] = dfd.loc['init_p_low_ex_urban_m', 'value1']
         p['init_or_low_ex_rural'] = dfd.loc['init_or_low_ex_rural', 'value1']
@@ -532,11 +534,9 @@ class Lifestyle(Module):
         init_odds_no_clean_drinking_water = m.init_p_no_clean_drinking_water_urban / (
                 1 - m.init_p_no_clean_drinking_water_urban)
 
-        # create a series with odds of unimproved sanitation for base group (urban)
         odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water,
                                                index=all_idx)
 
-        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= m.init_or_no_clean_drinking_water_rural
 
         prob_no_clean_drinking_water = pd.Series((odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)),
@@ -551,10 +551,9 @@ class Lifestyle(Module):
         init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (
                 1 - m.init_p_wood_burn_stove_urban)
 
-        # create a series with odds of unimproved sanitation for base group (urban)
+
         odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=all_idx)
 
-        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= m.init_or_wood_burn_stove_rural
 
         prob_wood_burn_stove = pd.Series((odds_wood_burn_stove / (1 + odds_wood_burn_stove)),
@@ -608,7 +607,67 @@ class Lifestyle(Module):
 
         # -------------------- SUGAR INTAKE ----------------------------------------------------------
 
+        # no determinants of sugar intake hence dont need to convert to odds to apply odds ratios
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
+
+        # -------------------- WEALTH LEVEL ----------------------------------------------------------
+
+        urban_idx = df.index[df.is_alive & df.li_urban]
+        rural_idx = df.index[df.is_alive & ~df.li_urban]
+
+        # allocate wealth level for urban
+        df.loc[urban_idx, 'li_wealth'] = np.random.choice(
+            [1, 2, 3, 4, 5], size=len(urban_idx), p=m.init_p_wealth_urban
+        )
+
+        # allocate wealth level for rural
+        df.loc[rural_idx, 'li_wealth'] = np.random.choice(
+            [1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural
+        )
+
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
+
+
+        agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
+
+        # create dataframe of the probabilities of ca_oesophagus status for 20 year old males, no ex alcohol, no tobacco
+        p_oes_dys_can = pd.DataFrame(data=[m.init_prop_oes_cancer_stage], columns=cancer_stages, index=agege20_idx)
+
+        # create probabilities of oes dysplasia and oe cancer for all over age 20
+        p_oes_dys_can.loc[(df.sex == "F") & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_female
+        p_oes_dys_can.loc[df.li_ex_alc & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_ex_alc
+        p_oes_dys_can.loc[df.li_tob & (df.age_years >= 20) & df.is_alive] *= m.rp_oes_cancer_tobacco
+
+        # apply multiplier
+        p_oes_dys_can_age_muliplier = m.rp_oes_cancer_per_year_older ** (df.loc[agege20_idx, 'age_years'] - 20)
+        p_oes_dys_can = p_oes_dys_can.multiply(p_oes_dys_can_age_muliplier, axis="index")
+
+        # add column for the probability of no cancer at start of dataframe
+        p_oes_dys_can.insert(0, 'none', 1 - p_oes_dys_can.sum(axis=1))
+
+        # check the categories match and line up
+        assert df.ca_oesophagus.cat.categories.all() == p_oes_dys_can.columns.all()
+
+        # for each row, make a choice
+        stage = p_oes_dys_can.apply(lambda p_oes: rng.choice(p_oes_dys_can.columns, p=p_oes), axis=1)
+
+        # set for those that have cancer
+        df.loc[stage.index[stage != 'none'], 'ca_oesophagus'] = stage[stage != 'none']
+
+        """
+        init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1
+        init_or_higher_bmi_f
+        init_or_higher_bmi_rural
+        init_or_higher_bmi_high_sugar
+        init_or_higher_bmi_age3049
+        init_or_higher_bmi_agege50
+        init_or_higher_bmi_tob
+        init_or_higher_bmi_per_higher_wealth
+        """
+
 
         # get indices of all individuals over 15 years
         age_gte15 = df.index[df.is_alive & (df.age_years >= 15)]
