@@ -548,8 +548,6 @@ class Lifestyle(Module):
 
         # -------------------- WOOD BURN STOVE ---------------------------------------------------
 
-        all_idx = df.index[df.is_alive]
-
         init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (
                 1 - m.init_p_wood_burn_stove_urban)
 
@@ -568,22 +566,48 @@ class Lifestyle(Module):
 
         # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
 
-        all_idx = df.index[df.is_alive]
         wealth2_idx = df.index[df.is_alive & (df.li_wealth == 2)]
         wealth3_idx = df.index[df.is_alive & (df.li_wealth == 3)]
         wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
         wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
 
-        eff_prev_no_access_handwashing = pd.Series(m.init_p_no_access_handwashing, index=df.index[df.is_alive])
+        init_odds_no_access_handwashing = 1 / (1-m.init_p_no_access_handwashing_wealth1)
 
-        eff_prev_no_access_handwashing.loc[wealth2_idx] *= m.init_rp_no_access_handwashing_per_lower_wealth
-        eff_prev_no_access_handwashing.loc[wealth3_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 2)
-        eff_prev_no_access_handwashing.loc[wealth4_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 3)
-        eff_prev_no_access_handwashing.loc[wealth5_idx] *= (m.init_rp_no_access_handwashing_per_lower_wealth ** 4)
+        odds_no_access_handwashing = pd.Series(init_odds_no_access_handwashing, index=all_idx)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+        odds_no_access_handwashing.loc[wealth2_idx] *= m.init_or_no_access_handwashing_per_lower_wealth
+        odds_no_access_handwashing.loc[wealth3_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 2)
+        odds_no_access_handwashing.loc[wealth4_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 3)
+        odds_no_access_handwashing.loc[wealth5_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 4)
 
-        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < eff_prev_no_access_handwashing
+        prob_no_access_handwashing = odds_no_access_handwashing / (1+odds_no_access_handwashing)
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
+
+        # -------------------- SALT INTAKE ----------------------------------------------------------
+
+        init_odds_high_salt = m.init_p_high_salt_urban / (
+            1 - m.init_p_high_salt_urban)
+
+        # create a series with odds of unimproved sanitation for base group (urban)
+        odds_high_salt = pd.Series(init_odds_high_salt,
+                                               index=all_idx)
+
+        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
+        odds_high_salt.loc[df.is_alive & ~df.li_urban] *= m.init_or_high_salt_rural
+
+        prob_high_salt = pd.Series((odds_high_salt / (1 + odds_high_salt)),
+                                               index=all_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_high_salt'] = random_draw < prob_high_salt
+
+
+        # -------------------- SUGAR INTAKE ----------------------------------------------------------
+
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
 
         # get indices of all individuals over 15 years
@@ -608,17 +632,6 @@ class Lifestyle(Module):
 
         random_draw = rng.random_sample(size=len(age_gte15))
         df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
-
-
-
-       # -------------------- SALT INTAKE ----------------------------------------------------------
-
-
-       # -------------------- SUGAR INTAKE ----------------------------------------------------------
-
-
-
-
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
