@@ -2168,6 +2168,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ INC / PREV ------------------------------------
         # adult incidence
+        # TODO add is_alive condition to all new cases
         mask = (df.loc[(df.age_years >= 15), 'hv_date_inf'] > now - DateOffset(months=self.repeat))
         adult_new_inf = mask.sum()
         adult_inc = adult_new_inf / len(df[~df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
