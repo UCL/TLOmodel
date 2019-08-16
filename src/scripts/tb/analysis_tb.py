@@ -24,7 +24,7 @@ resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 500
+popsize = 2000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
