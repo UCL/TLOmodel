@@ -161,7 +161,8 @@ class tb(Module):
         'tb_treated_mdr': Property(Types.BOOL, 'on tb treatment MDR regimen'),
         'tb_date_treated_mdr': Property(Types.DATE, 'date tb MDR treatment started'),
         'tb_on_ipt': Property(Types.BOOL, 'if currently on ipt'),
-        'tb_date_ipt': Property(Types.DATE, 'date ipt started')
+        'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
+        'tb_date_death': Property(Types.DATE, 'date of tb death')
     }
 
     def read_parameters(self, data_folder):
@@ -296,6 +297,7 @@ class tb(Module):
         df['tb_request_mdr_regimen'] = False
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
+        df['tb_date_death'] = pd.NaT
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
@@ -407,6 +409,7 @@ class tb(Module):
         df.at[child_id, 'tb_request_mdr_regimen'] = False
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
+        df.at[child_id, 'tb_date_death'] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -1812,7 +1815,7 @@ class HSI_Tb_Xray(Event, IndividualScopeEventMixin):
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = \
             pd.unique(
-                consumables.loc[consumables['Item _Code'] == 175, 'Intervention_Pkg_Code'])[
+                consumables.loc[consumables['Item_Code'] == 175, 'Intervention_Pkg_Code'])[
                 0]
 
         the_cons_footprint = {
