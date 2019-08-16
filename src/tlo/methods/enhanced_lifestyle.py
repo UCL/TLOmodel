@@ -630,6 +630,63 @@ class Lifestyle(Module):
 
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
 
+        agege15_w_idx = df.index[df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
+        agege15_rural_idx = df.index[df.is_alive & ~df.li_urban & (df.age_years >= 15)]
+        agege15_high_sugar_idx = df.index[df.is_alive & df.li_high_sugar & (df.age_years >= 15)]
+        agege3049_idx = df.index[df.is_alive & (df.age_years >= 30) & (df.age_years < 50)]
+        agege50_idx = df.index[df.is_alive & (df.age_years >= 50)]
+        agege15_tob_idx = df.index[df.is_alive & df.li_tob & (df.age_years >= 15)]
+
+        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = \
+            [i / (1-i) for i in m.init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1]
+
+        df_odds_bmi_levels = pd.DataFrame(data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
+                                       columns=['1', '2', '3', '4', '5'], index=age_ge15_idx)
+
+        df_odds_bmi_levels.loc[agege15_w_idx, '1'] *= (m.init_or_higher_bmi_f ** 2)
+        df_odds_bmi_levels.loc[agege15_rural_idx, '1'] *= (m.init_or_higher_bmi_rural ** 2)
+        df_odds_bmi_levels.loc[agege15_high_sugar_idx, '1'] *= (m.init_or_higher_bmi_high_sugar ** 2)
+        df_odds_bmi_levels.loc[agege3049_idx, '1'] *= (m.init_or_higher_bmi_age3049 ** 2)
+        df_odds_bmi_levels.loc[agege50_idx, '1'] *= (m.init_or_higher_bmi_agege50 ** 2)
+        df_odds_bmi_levels.loc[agege15_tob_idx, '1'] *= (m.init_or_higher_bmi_tob ** 2)
+
+        df_odds_bmi_levels.loc[agege15_w_idx, '2'] *= (m.init_or_higher_bmi_f ** 1)
+        df_odds_bmi_levels.loc[agege15_rural_idx, '2'] *= (m.init_or_higher_bmi_rural ** 1)
+        df_odds_bmi_levels.loc[agege15_high_sugar_idx, '2'] *= (m.init_or_higher_bmi_high_sugar ** 1)
+        df_odds_bmi_levels.loc[agege3049_idx, '2'] *= (m.init_or_higher_bmi_age3049 ** 1)
+        df_odds_bmi_levels.loc[agege50_idx, '2'] *= (m.init_or_higher_bmi_agege50 ** 1)
+        df_odds_bmi_levels.loc[agege15_tob_idx, '2'] *= (m.init_or_higher_bmi_tob ** 1)
+
+        # realise this does nothing
+        df_odds_bmi_levels.loc[agege15_w_idx, '3'] *= (m.init_or_higher_bmi_f ** 0)
+        df_odds_bmi_levels.loc[agege15_rural_idx, '3'] *= (m.init_or_higher_bmi_rural ** 0)
+        df_odds_bmi_levels.loc[agege15_high_sugar_idx, '3'] *= (m.init_or_higher_bmi_high_sugar ** 0)
+        df_odds_bmi_levels.loc[agege3049_idx, '3'] *= (m.init_or_higher_bmi_age3049 ** 0)
+        df_odds_bmi_levels.loc[agege50_idx, '3'] *= (m.init_or_higher_bmi_agege50 ** 0)
+        df_odds_bmi_levels.loc[agege15_tob_idx, '3'] *= (m.init_or_higher_bmi_tob ** 0)
+
+        df_odds_bmi_levels.loc[agege15_w_idx, '4'] *= (m.init_or_higher_bmi_f ** -1)
+        df_odds_bmi_levels.loc[agege15_rural_idx, '4'] *= (m.init_or_higher_bmi_rural ** -1)
+        df_odds_bmi_levels.loc[agege15_high_sugar_idx, '4'] *= (m.init_or_higher_bmi_high_sugar ** -1)
+        df_odds_bmi_levels.loc[agege3049_idx, '4'] *= (m.init_or_higher_bmi_age3049 ** -1)
+        df_odds_bmi_levels.loc[agege50_idx, '4'] *= (m.init_or_higher_bmi_agege50 ** -1)
+        df_odds_bmi_levels.loc[agege15_tob_idx, '4'] *= (m.init_or_higher_bmi_tob ** -1)
+
+        df_odds_bmi_levels.loc[agege15_w_idx, '5'] *= (m.init_or_higher_bmi_f ** -2)
+        df_odds_bmi_levels.loc[agege15_rural_idx, '5'] *= (m.init_or_higher_bmi_rural ** -2)
+        df_odds_bmi_levels.loc[agege15_high_sugar_idx, '5'] *= (m.init_or_higher_bmi_high_sugar ** -2)
+        df_odds_bmi_levels.loc[agege3049_idx, '5'] *= (m.init_or_higher_bmi_age3049 ** -2)
+        df_odds_bmi_levels.loc[agege50_idx, '5'] *= (m.init_or_higher_bmi_agege50 ** -2)
+        df_odds_bmi_levels.loc[agege15_tob_idx, '5'] *= (m.init_or_higher_bmi_tob ** -2)
+
+        df_odds_bmi_levels['sum'] = df_odds_bmi_levels.apply(lambda row: row['1'] + row['2'] + row['3']
+                                                            + row['4'] + row['5'], axis=1)
+
+        df_odds_bmi_levels['sum'] = df_odds_bmi_levels.sum(['1', '2', '3', '4', '5'])
+
+        # todo: odds bmi 1 x (1.1**2), odds bmi 2 x (1.1**1), odds bmi 3 x 1.1**0, odds bmi 4 x 1.1**(-1),
+        # todo: odds bmi 5 x 1.1**(-2) - then re-normalise to sum proportions to 1
+
 
         agege20_idx = df.index[(df.age_years >= 20) & df.is_alive]
 
