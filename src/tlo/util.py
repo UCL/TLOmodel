@@ -1,8 +1,7 @@
 """This file contains helpful utility functions."""
-import timeit  # remove after development
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def show_changes(sim, initial_state, final_state):
@@ -36,10 +35,10 @@ def show_changes(sim, initial_state, final_state):
 
 
 def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng: np.random.RandomState) -> pd.Series:
-    """Transitions states based on probability matrix
+    """Transition a series of states based on probability matrix
 
-    This should carry out all state transitions for a specific state_column
-    based on the probability of state-transition between each of the states.
+    This should carry out all state transitions for a Series (i.e. column in DataFrame)
+    based on the probability of state-transition matrix.
 
     Timing values for 1M rows per state, 4 states, 100 times:
     - Looping through groups: [59.5, 58.7, 59.5]
@@ -52,8 +51,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     :param RandomState rng: RandomState from the disease module
     :return: Series with states changed according to probabilities
     """
-    # TODO: assert that columns add up to one during initialisation of disease?
-    # Create final series with index so that we are sure it's the same size
+    # Create final_series with index so that we are sure it's the same size as the original
     final_states = pd.Series(None, index=initial_series.index, dtype=initial_series.dtype)
 
     # for each state, get the random choice states and add to the final_states Series
