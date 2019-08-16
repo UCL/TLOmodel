@@ -271,27 +271,28 @@ class Lifestyle(Module):
                                            dfd.loc['init_dist_mar_stat_agege60', 'value2'],
                                            dfd.loc['init_dist_mar_stat_agege60', 'value3']]
         p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1']
-        p['init_or_some_ed_age0513'] = dfd.loc['init_or_some_ed_age0513', 'value1']
-        p['init_or_some_ed_age1320'] = dfd.loc['init_or_some_ed_age1320', 'value1']
-        p['init_or_some_ed_age2030'] = dfd.loc['init_or_some_ed_age2030', 'value1']
-        p['init_or_some_ed_age3040'] = dfd.loc['init_or_some_ed_age3040', 'value1']
-        p['init_or_some_ed_age4050'] = dfd.loc['init_or_some_ed_age4050', 'value1']
-        p['init_or_some_ed_age5060'] = dfd.loc['init_or_some_ed_age5060', 'value1']
-        p['init_or_some_ed_per_higher_wealth'] = dfd.loc['init_or_some_ed_per_higher_wealth', 'value1']
+        p['init_rp_some_ed_age0513'] = dfd.loc['init_rp_some_ed_age0513', 'value1']
+        p['init_rp_some_ed_age1320'] = dfd.loc['init_rp_some_ed_age1320', 'value1']
+        p['init_rp_some_ed_age2030'] = dfd.loc['init_rp_some_ed_age2030', 'value1']
+        p['init_rp_some_ed_age3040'] = dfd.loc['init_rp_some_ed_age3040', 'value1']
+        p['init_rp_some_ed_age4050'] = dfd.loc['init_rp_some_ed_age4050', 'value1']
+        p['init_rp_some_ed_age5060'] = dfd.loc['init_rp_some_ed_age5060', 'value1']
+        p['init_rp_some_ed_agege60'] = dfd.loc['init_rp_some_ed_agege60', 'value1']
+        p['init_rp_some_ed_per_higher_wealth'] = dfd.loc['init_rp_some_ed_per_higher_wealth', 'value1']
         p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1']
-        p['init_or_some_ed_sec_age1320'] = dfd.loc['init_or_some_ed_sec_age1320', 'value1']
-        p['init_or_some_ed_sec_age3040'] = dfd.loc['init_or_some_ed_sec_age3040', 'value1']
-        p['init_or_some_ed_sec_age4050'] = dfd.loc['init_or_some_ed_sec_age4050', 'value1']
-        p['init_or_some_ed_sec_age5060'] = dfd.loc['init_or_some_ed_sec_age5060', 'value1']
-        p['init_or_some_ed_sec_agege60'] = dfd.loc['init_or_some_ed_sec_agege60', 'value1']
-        p['init_or_some_ed_sec_per_higher_wealth'] = dfd.loc['init_or_some_ed_sec_per_higher_wealth', 'value1']
-        p['init_p_unimproved_sanitation'] = dfd.loc['init_p_unimproved_sanitation', 'value1']
+        p['init_rp_some_ed_sec_age1320'] = dfd.loc['init_rp_some_ed_sec_age1320', 'value1']
+        p['init_rp_some_ed_sec_age3040'] = dfd.loc['init_rp_some_ed_sec_age3040', 'value1']
+        p['init_rp_some_ed_sec_age4050'] = dfd.loc['init_rp_some_ed_sec_age4050', 'value1']
+        p['init_rp_some_ed_sec_age5060'] = dfd.loc['init_rp_some_ed_sec_age5060', 'value1']
+        p['init_rp_some_ed_sec_agege60'] = dfd.loc['init_rp_some_ed_sec_agege60', 'value1']
+        p['init_rp_some_ed_sec_per_higher_wealth'] = dfd.loc['init_rp_some_ed_sec_per_higher_wealth', 'value1']
+        p['init_p_unimproved_sanitation_urban'] = dfd.loc['init_p_unimproved_sanitation_urban', 'value1']
         p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1']
-        p['init_p_no_clean_drinking_water'] = dfd.loc['init_p_no_clean_drinking_water', 'value1']
+        p['init_p_no_clean_drinking_water_urban'] = dfd.loc['init_p_no_clean_drinking_water_urban', 'value1']
         p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1']
-        p['init_p_wood_burn_stove'] = dfd.loc['init_p_wood_burn_stove', 'value1']
+        p['init_p_wood_burn_stove_urban'] = dfd.loc['init_p_wood_burn_stove_urban', 'value1']
         p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1']
-        p['init_p_no_access_handwashing'] = dfd.loc['init_p_no_access_handwashing', 'value1']
+        p['init_p_no_access_handwashing_wealth1'] = dfd.loc['init_p_no_access_handwashing_wealth1', 'value1']
         p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1']
 
         p['r_urban'] = dfd.loc['r_urban', 'value1']
@@ -377,6 +378,8 @@ class Lifestyle(Module):
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
 
+        # todo: urban rural depends on district of residence
+
         # randomly selected some individuals as urban
         df['li_urban'] = (rng.random_sample(size=len(df)) < m.init_p_urban)
 
@@ -432,11 +435,11 @@ class Lifestyle(Module):
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
-        m_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
-        f_gte15 = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
+        agege15_m_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'M')]
+        agege15_f_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.sex == 'F')]
 
-        df.loc[m_gte15, 'li_ex_alc'] = rng.random_sample(size=len(m_gte15)) < m.init_p_ex_alc_m
-        df.loc[f_gte15, 'li_ex_alc'] = rng.random_sample(size=len(f_gte15)) < m.init_p_ex_alc_f
+        df.loc[agege15_m_idx, 'li_ex_alc'] = rng.random_sample(size=len(agege15_m_idx)) < m.init_p_ex_alc_m
+        df.loc[agege15_f_idx, 'li_ex_alc'] = rng.random_sample(size=len(agege15_f_idx)) < m.init_p_ex_alc_f
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -460,10 +463,6 @@ class Lifestyle(Module):
 
         # calculate the probability of education for all individuals over 5 years old
         p_some_ed = pd.Series(m.init_age2030_w5_some_ed, index=age_gte5)
-
-
-        #todo  note now using odds ratio rather than relative prevalence so small amendments needed
-
 
         # adjust probability of some education based on age
         p_some_ed.loc[df.age_years < 13] *= m.init_rp_some_ed_age0513
@@ -508,43 +507,64 @@ class Lifestyle(Module):
 
         # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
 
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
         all_idx = df.index[df.is_alive]
 
-        eff_prev_unimproved_sanitation = pd.Series(m.init_p_unimproved_sanitation,
-                                                   index=df.index[df.is_alive])
+        init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban  / (1-m.init_p_unimproved_sanitation_urban)
 
-        eff_prev_unimproved_sanitation.loc[rural_idx] *= m.init_rp_unimproved_sanitation_rural
+        # create a series with odds of unimproved sanitation for base group (urban)
+        odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation,
+                                               index=all_idx)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
+        odds_unimproved_sanitation.loc[df.is_alive & ~df.li_urban] *= m.init_or_unimproved_sanitation_rural
 
-        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < eff_prev_unimproved_sanitation
+        prob_unimproved_sanitation = pd.Series((odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)),
+                                               index=all_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
 
         # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
 
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
         all_idx = df.index[df.is_alive]
 
-        eff_prev_no_clean_drinking_water = pd.Series(m.init_p_no_clean_drinking_water, index=df.index[df.is_alive])
+        init_odds_no_clean_drinking_water = m.init_p_no_clean_drinking_water_urban / (
+                1 - m.init_p_no_clean_drinking_water_urban)
 
-        eff_prev_no_clean_drinking_water.loc[rural_idx] *= m.init_rp_no_clean_drinking_water
+        # create a series with odds of unimproved sanitation for base group (urban)
+        odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water,
+                                               index=all_idx)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
+        odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= m.init_or_no_clean_drinking_water_rural
 
-        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < eff_prev_no_clean_drinking_water
+        prob_no_clean_drinking_water = pd.Series((odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)),
+                                               index=all_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
 
         # -------------------- WOOD BURN STOVE ---------------------------------------------------
 
-        rural_idx = df.index[df.is_alive & ~df.li_urban]
         all_idx = df.index[df.is_alive]
 
-        eff_prev_wood_burn_stove = pd.Series(m.init_p_wood_burn_stove, index=df.index[df.is_alive])
+        init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (
+                1 - m.init_p_wood_burn_stove_urban)
 
-        eff_prev_wood_burn_stove.loc[rural_idx] *= m.init_rp_wood_burn_stove
+        # create a series with odds of unimproved sanitation for base group (urban)
+        odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=all_idx)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=df.index[df.is_alive])
+        # update odds according to determinants of unimproved sanitation (rural status the only determinant)
+        odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= m.init_or_wood_burn_stove_rural
 
-        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove
+        prob_wood_burn_stove = pd.Series((odds_wood_burn_stove / (1 + odds_wood_burn_stove)),
+                                         index=all_idx)
+
+        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+
+        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
 
         # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
 
@@ -588,6 +608,17 @@ class Lifestyle(Module):
 
         random_draw = rng.random_sample(size=len(age_gte15))
         df.loc[age_gte15, 'li_overwt'] = (random_draw < overweight_probs.values)
+
+
+
+       # -------------------- SALT INTAKE ----------------------------------------------------------
+
+
+       # -------------------- SUGAR INTAKE ----------------------------------------------------------
+
+
+
+
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
