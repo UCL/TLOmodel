@@ -2561,8 +2561,6 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that kills people.
     """
 
-    # TODO: if HIV+, cause of death should be HIV as hiv/tb deaths are counted in hiv data
-    # TODO output hiv-tb and tb only deaths separately
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -2662,7 +2660,10 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                df.is_alive & (
                    df.tb_date_active < (now - DateOffset(months=self.repeat)))])
 
-        prop_inc_active_mdr = inc_active_mdr / inc_active
+        if inc_active > 0:
+            prop_inc_active_mdr = inc_active_mdr / inc_active
+        else:
+            prop_inc_active_mdr = 0
 
         logger.info('%s|tb_incidence|%s', now,
                     {
@@ -2687,7 +2688,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # proportion of active TB cases with concurrent HIV infection - whole population
         num_active_hiv = len(df[(df.tb_inf.str.contains('active')) & df.hv_inf & df.is_alive])
-        prop_hiv_tb = num_active_hiv / num_active
+
+        if num_active > 0:
+            prop_hiv_tb = num_active_hiv / num_active
+        else:
+            prop_hiv_tb = 0
 
         # proportion of population with active TB by age/sex - compare to WHO 2018
         m_num_cases = df[df.is_alive & (df.sex == 'M') & (df.tb_inf.str.contains('active'))].groupby('age_range').size()
@@ -2729,4 +2734,21 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'tbPropLatent': prop_latent,
                         'tbPropLatentAdult': prop_latent_adult,
                         'tbPropLatentChild': prop_latent_child,
+                    })
+
+        # ------------------------------------ MORTALITY ------------------------------------
+        # tb deaths (excl hiv) reported in the last 12 months / pop size
+        deaths = len(df[(df.tb_date_death < (now - DateOffset(months=self.repeat)))])
+
+        mort_rate = (deaths / len(df[df.is_alive])) * 100000
+
+        # tb deaths (inc hiv) reported in the last 12 months / pop size
+        deaths_tb_hiv = len(df[df.hv_inf & (df.tb_date_death < (now - DateOffset(months=self.repeat)))])
+
+        mort_rate_tb_hiv = (deaths_tb_hiv / len(df[df.is_alive])) * 100000
+
+        logger.info('%s|tb_prevalence|%s', now,
+                    {
+                        'tbMortRate': mort_rate,
+                        'tbMortRateHiv': mort_rate_tb_hiv,
                     })
