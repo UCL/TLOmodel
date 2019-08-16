@@ -2580,23 +2580,11 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
             ~df.tb_on_treatment | ~df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
             'monthly_prob_tb_mortality']
 
-        # hiv-positive
-        mortality_rate.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-            ~df.tb_on_treatment | ~df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
-            'monthly_prob_tb_mortality_hiv']
-
         # hiv-negative on cotrim - shouldn't be any
         mortality_rate.loc[df['tb_inf'].str.contains('active') & ~df.hv_inf & (
             ~df.tb_on_treatment | ~df.tb_treated_mdr) & df.hv_on_cotrim] = params[
                                                                                'monthly_prob_tb_mortality'] * params[
                                                                                'mortality_cotrim']
-
-        # hiv-positive on cotrim
-        mortality_rate.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-            ~df.tb_on_treatment | ~df.tb_treated_mdr) & df.hv_on_cotrim] = params[
-                                                                               'monthly_prob_tb_mortality_hiv'] * \
-                                                                           params['mortality_cotrim']
-
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -2608,6 +2596,35 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         for person in will_die:
             if df.at[person, 'is_alive']:
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'),
+                                        now)
+                df.at[person, 'tb_date_death'] = now
+
+        # ---------------------------------- HIV-TB DEATHS ------------------------------------
+
+        # only active infections result in death, no deaths on treatment
+        mort_hiv = pd.Series(0, index=df.index)
+
+        # hiv-positive
+        mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality_hiv']
+
+        # hiv-positive on cotrim
+        mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & df.hv_on_cotrim] = params[
+                                                                               'monthly_prob_tb_mortality_hiv'] * \
+                                                                           params['mortality_cotrim']
+
+        # Generate a series of random numbers, one per individual
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < mortality_rate)
+        # print('deaths: ', deaths)
+        will_die = (df[deaths]).index
+        # print('will_die: ', will_die)
+
+        for person in will_die:
+            if df.at[person, 'is_alive']:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='hiv'),
                                         now)
                 df.at[person, 'tb_date_death'] = now
 
@@ -2657,6 +2674,20 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ PREVALENCE ------------------------------------
 
         ## ACTIVE
+        num_active = len(df[(df.tb_inf.str.contains('active')) & df.is_alive])
+        prop_active = num_active / len(df[df.is_alive])
+
+        # proportion of adults with active tb
+        num_active_adult = len(df[(df.tb_inf.str.contains('active')) & (df.age_years >= 15) & df.is_alive])
+        prop_active_adult = num_active_adult / len(df[(df.age_years >= 15) & df.is_alive])
+
+        # proportion of children with active tb
+        num_active_child = len(df[(df.tb_inf.str.contains('active')) & (df.age_years < 15) & df.is_alive])
+        prop_active_child = num_active_child / len(df[(df.age_years < 15) & df.is_alive])
+
+        # proportion of active TB cases with concurrent HIV infection - whole population
+        num_active_hiv = len(df[(df.tb_inf.str.contains('active')) & df.hv_inf & df.is_alive])
+        prop_hiv_tb = num_active_hiv / num_active
 
         # proportion of population with active TB by age/sex - compare to WHO 2018
         m_num_cases = df[df.is_alive & (df.sex == 'M') & (df.tb_inf.str.contains('active'))].groupby('age_range').size()
@@ -2674,6 +2705,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|propActiveTbFemale|%s', self.sim.date,
                     f_prop_active.to_dict())
 
+
         ## LATENT
 
         # proportion of population with latent TB - all pop
@@ -2690,6 +2722,10 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|tb_prevalence|%s', now,
                     {
+                        'tbPropActive': prop_active,
+                        'tbPropActiveAdult': prop_active_adult,
+                        'tbPropActiveChild': prop_active_child,
+                        'tbPropActiveHiv': prop_hiv_tb,
                         'tbPropLatent': prop_latent,
                         'tbPropLatentAdult': prop_latent_adult,
                         'tbPropLatentChild': prop_latent_child,
