@@ -620,7 +620,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 tclose=None
                                                                 )
 
-        # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # #
+        # # # # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # # # # #
 
         dysentery_bec_persistent = pd.Series(m.prob_dysentery_become_persistent, index=under5_dysentery_idx)
         watery_diarr_bec_persistent = pd.Series(m.prob_watery_diarr_become_persistent, index=under5_watery_diarrhoea_idx)
@@ -676,6 +676,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
 
 class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
+    """ This is the first Health Systems Interaction event for diarrhoea module.
+    A sick child presenting symptoms is taken to the HSA for assessment, referral and treatment. """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -685,11 +687,11 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Sick_child_presents_for_care'
+        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = [1]
-        self.ALERT_OTHER_DISEASES = []
+        self.ALERT_OTHER_DISEASES = ['NewPneumonia']
 
     def apply(self, person_id):
 
@@ -697,10 +699,10 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
                      person_id)
 
         df = self.sim.population.props
-        m = self.module
         p = self.module.parameters
 
-        # # # # # # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
+        # ---------------- Work out if child with diarrhoea is correctly diagnosed by the HSA ----------------
+
         current_diarrhoea = df.index[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_years < 5)]
 
         for person_id in current_diarrhoea:
@@ -715,6 +717,11 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
                                                                   (1 - p['prob_correct_id_danger_sign'])])
                 if diarrhoea_identified_by_HSA[True] & danger_sign_identified_by_HSA[True]:
                     df.at[person_id, 'correctly_classified_diarrhoea_with_danger_sign'] = True
+                    HSA_referral_decision = \
+                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
+                                                                      (1 - p['prob_correct_referral_decision'])])
+                    if HSA_referral_decision[True]:
+                        df.at[person_id, 'correct_referral_decision'] = True
             if (df.at[person_id, 'gi_diarrhoea_acute_type'] == 'dysentery') | (
                 df.at[person_id, 'gi_persistent_diarrhoea']):
                 persistent_or_bloody_diarr_identified_by_HSA = self.sim.rng.choice([True, False], size=1, p=[
@@ -722,13 +729,135 @@ class HSI_Sick_Child_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
                     (1 - p['prob_correct_id_persist_or_bloody_diarrhoea'])])
                 if diarrhoea_identified_by_HSA[True] & persistent_or_bloody_diarr_identified_by_HSA[True]:
                     df.at[person_id, 'correctly_classified_persistent_or_bloody_diarrhoea'] = True
+                    HSA_referral_decision = \
+                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
+                                                                      (1 - p['prob_correct_referral_decision'])])
+                    if HSA_referral_decision[True]:
+                        df.at[person_id, 'correct_referral_decision'] = True
             if not (df.at[person_id, 'gi_persistent_diarrhoea'] & (
                 (df.at[person_id, 'gi_diarrhoea_acute_type']) == 'dysentery') & (
                     df.at[person_id, 'di_any_general_danger_sign'])) & diarrhoea_identified_by_HSA[True]:
                 df.at[person_id, 'correctly_classified_diarrhoea'] = True
+                HSA_referral_decision = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
+                                                                  (1 - p['prob_correct_referral_decision'])])
+                if HSA_referral_decision[True]:
+                    df.at[person_id, 'correct_referral_decision'] = True
+            if df.at[person_id, 'correct_referral_decision'] & \
+                df.at[person_id, 'correctly_classified_diarrhoea_with_danger_sign']:
+                df.at[person_id, 'referral_options'] = 'refer immediately'
+                # Get the consumables required
+                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+                pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                          'Intervention_Pkg'] ==
+                                                      'ORS',
+                                                      'Intervention_Pkg_Code'])[37]
+                event_referred_immediately = HSI_HSA_Diarrhoea_Referred_Immediately(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_event(event_referred_immediately,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
-        logger.info('Current diarrhoea, person %d has been correctly diagnosed %s', person_id, correctly_classified_bloody_diarrhoea )
+            if df.at[person_id, 'correct_referral_decision'] & \
+                df.at[person_id, 'correctly_classified_persistent_or_bloody_diarrhoea']:
+                df.at[person_id, 'referral_options'] = 'refer to health facility'
+                # Get the consumables required
+                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+                pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                          'Intervention_Pkg'] ==
+                                                      'ORS',
+                                                      'Intervention_Pkg_Code'])[37]
+                event_referred_immediately = HSI_HSA_Diarrhoea_Referred_HealthFacility(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_event(event_referred_immediately,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
 
+            if df.at[person_id, 'correct_referral_decision'] & \
+                df.at[person_id, 'correctly_classified_diarrhoea']:
+                df.at[person_id, 'referral_options'] = 'do not refer'
+                # Get the consumables required
+                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+                pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                          'Intervention_Pkg'] ==
+                                                      'ORS',
+                                                      'Intervention_Pkg_Code'])[37]
+                pkg_code2 = pd.unique(consumables.loc[consumables[
+                                                          'Intervention_Pkg'] ==
+                                                      'Zinc for Children 0-6 months',
+                                                      'Intervention_Pkg_Code'])[38]
+                pkg_code3 = pd.unique(consumables.loc[consumables[
+                                                          'Intervention_Pkg'] ==
+                                                      'Zinc for Children 6-59 months',
+                                                      'Intervention_Pkg_Code'])[39]
+
+            if df.at[person_id, 'correct_referral_decision']:
+                logger.debug(
+                    '...This is HSI_Sick_Child_Seeks_Care_From_HSA: \
+                    there should now be treatment for person %d',
+                    person_id)
+                event_treatment_decision = HSI_HSA_Diarrhoea_StartTreatment(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_event(event_treatment_decision)
+            else:
+                logger.debug(
+                    '...This is HSI_Sick_Child_Seeks_Care_From_HSA: there will not be treatment for person %d',
+                    person_id)
+
+
+class HSI_HSA_Diarrhoea_StartTreatment(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
+        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
+
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] ==
+                                              'ORS',
+                                              'Intervention_Pkg_Code'])[37]
+        pkg_code2 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] ==
+                                              'Zinc for Children 0-6 months',
+                                              'Intervention_Pkg_Code'])[38]
+        pkg_code3 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] ==
+                                              'Zinc for Children 6-59 months',
+                                              'Intervention_Pkg_Code'])[39]
+
+        item_code1 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1, pkg_code2],
+            'Item_Code': [item_code1, item_code2]
+        }
+
+    def apply(self, person_id):
+        logger.debug('This is HSI_Sick_Child_Seeks_Care_From_HSA, a first appointment for person %d in the community',
+                     person_id)
+
+        df = self.sim.population.props
+        now = self.sim.date
+
+        target_date_for_followup_appt = self.sim.date + DateOffset(days=5)
+
+        logger.debug(
+            '....This is HHSI_Sick_Child_Seeks_Care_From_HSA: scheduling a follow-up appointment for person %d on date %s',
+            person_id, target_date_for_followup_appt)
+
+        followup_appt = HSI_HSA_followup_care(self.module, person_id=person_id)
+
+        # Request the heathsystem to have this follow-up appointment
+        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
+                                                            priority=2,
+                                                            topen=target_date_for_followup_appt,
+                                                            tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
