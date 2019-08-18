@@ -185,7 +185,7 @@ class Lifestyle(Module):
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
+        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (high) to 5 (low)', categories=['1', '2', '3', '4', '5']),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
         'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
         'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
@@ -358,7 +358,7 @@ class Lifestyle(Module):
         df['li_urban'] = False
         df['li_date_trans_to_urban'] = pd.NaT
         df['li_wealth'].values[:] = 3
-        df['li_bmi'].values[:] = 3
+ #      df['li_bmi'].values[:] = 3   dont set default as default is nan for age < 15
         df['li_low_ex'] = False
         df['li_tob'] = False
         df['li_ex_alc'] = False
@@ -715,26 +715,22 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] + row['prob 2']
                                                     + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1)
 
-        df_odds_probs_bmi_levels['prob 1'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['prob 2'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 2'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['prob 3'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 3'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['prob 4'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['prob 5'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels['1'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels['2'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 2'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels['3'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 3'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels['4'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels['5'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
 
         random_draw = pd.Series(rng.random_sample(size=len(age_ge15_idx)), index=age_ge15_idx)
 
-        dfxx = pd.concat([df_odds_probs_bmi_levels, random_draw], axis=1)
-
-        # allocate bmi level
-        df.loc[age_ge15_idx, 'li_bmi'] = np.random.choice(
-            [1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural
-        )
+        dfxx = df_odds_probs_bmi_levels[['1', '2', '3', '4', '5']]
 
         # for each row, make a choice
-        stage = p_oes_dys_can.apply(lambda p_oes: rng.choice(p_oes_dys_can.columns, p=p_oes), axis=1)
+        dfxx['bmi_cat'] = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
 
+        df.loc[age_ge15_idx, 'li_bmi'] = dfxx['bmi_cat']
 
-
+        
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
