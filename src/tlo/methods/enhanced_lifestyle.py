@@ -730,7 +730,7 @@ class Lifestyle(Module):
 
         df.loc[age_ge15_idx, 'li_bmi'] = dfxx['bmi_cat']
 
-        
+
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
         """
@@ -751,7 +751,7 @@ class Lifestyle(Module):
         df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
         df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
         df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
-        df.at[child_id, 'li_overwt'] = False
+ #      df.at[child_id, 'li_bmi'] = False    # dont assign until age 15
         df.at[child_id, 'li_low_ex'] = False
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_ex_alc'] = False
@@ -764,6 +764,8 @@ class Lifestyle(Module):
         df.at[child_id, 'li_no_access_handwashing'] = df.at[mother_id, 'li_no_access_handwashing']
         df.at[child_id, 'li_no_clean_drinking_water'] = df.at[mother_id, 'li_no_clean_drinking_water']
         df.at[child_id, 'li_wood_burn_stove'] = df.at[mother_id, 'li_wood_burn_stove']
+        df.at[child_id, 'li_high_salt'] = df.at[mother_id, 'li_high_salt']
+        df.at[child_id, 'li_high_sugar'] = df.at[mother_id, 'li_high_sugar']
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -801,27 +803,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < m.r_rural
         df.loc[currently_urban[now_rural], 'li_urban'] = False
 
-        # -------------------- OVERWEIGHT ----------------------------------------------------------
-
-        # get all adult who are not overweight
-        adults_not_ow = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
-
-        # calculate the effective prob of becoming overweight; use the index of adults not ow
-        eff_p_ow = pd.Series(m.r_overwt, index=adults_not_ow)
-        eff_p_ow.loc[df.sex == 'F'] *= m.rr_overwt_f
-        eff_p_ow.loc[df.li_urban] *= m.rr_overwt_urban
-
-        # random draw and start of overweight status
-        df.loc[adults_not_ow, 'li_overwt'] = (rng.random_sample(len(adults_not_ow)) < eff_p_ow)
-
-        # transition from over weight to not over weight
-        overwt_idx = df.index[df.li_overwt & df.is_alive]
-        eff_rate_not_overwt = pd.Series(m.r_not_overwt, index=overwt_idx)
-        random_draw = rng.random_sample(len(overwt_idx))
-        newly_not_overwt: pd.Series = random_draw < eff_rate_not_overwt
-        newly_not_overwt_idx = overwt_idx[newly_not_overwt]
-        df.loc[newly_not_overwt_idx, 'li_overwt'] = False
-        df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
@@ -1072,6 +1053,35 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] \
             = random_draw < eff_prev_wood_burn_stove_urban
+
+        # -------------------- HIGH SALT ----------------------------------------------------------
+
+        # -------------------- HIGH SUGAR ----------------------------------------------------------
+
+        # -------------------- BMI ----------------------------------------------------------
+
+        # get all adult who are not overweight
+        adults_not_ow = df.index[~df.li_overwt & df.is_alive & (df.age_years >= 15)]
+
+        # calculate the effective prob of becoming overweight; use the index of adults not ow
+        eff_p_ow = pd.Series(m.r_overwt, index=adults_not_ow)
+        eff_p_ow.loc[df.sex == 'F'] *= m.rr_overwt_f
+        eff_p_ow.loc[df.li_urban] *= m.rr_overwt_urban
+
+        # random draw and start of overweight status
+        df.loc[adults_not_ow, 'li_overwt'] = (rng.random_sample(len(adults_not_ow)) < eff_p_ow)
+
+        # transition from over weight to not over weight
+        overwt_idx = df.index[df.li_overwt & df.is_alive]
+        eff_rate_not_overwt = pd.Series(m.r_not_overwt, index=overwt_idx)
+        random_draw = rng.random_sample(len(overwt_idx))
+        newly_not_overwt: pd.Series = random_draw < eff_rate_not_overwt
+        newly_not_overwt_idx = overwt_idx[newly_not_overwt]
+        df.loc[newly_not_overwt_idx, 'li_overwt'] = False
+        df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
+
+
+
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
