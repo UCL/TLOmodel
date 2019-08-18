@@ -201,7 +201,11 @@ class Lifestyle(Module):
         'li_date_no_longer_low_ex': Property(Types.DATE, 'li_date_no_longer_low_ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_quit_tob': Property(Types.DATE, 'li_date_quit_tob'),
+        'li_exposed_to_campaign_quit_smoking': Property(Types.BOOL, 'currently exposed to population campaign to'
+                                                                      'quit smoking if tob'),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
+        'li_exposed_to_campaign_alcohol_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
+                                                                      'alcohol reduction if ex alc'),
         'li_date_no_longer_ex_alc': Property(Types.DATE, 'li_date_no_longer_ex_alc'),
         'li_mar_stat': Property(Types.CATEGORICAL,
                                 'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
@@ -384,6 +388,12 @@ class Lifestyle(Module):
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
         df['li_high_salt'] = False
         df['li_high_sugar'] = False
+        df['li_exposed_to_campaign_weight_reduction'] = False
+        df['li_exposed_to_campaign_exercise_increase'] = False
+        df['li_exposed_to_campaign_salt_reduction'] = False
+        df['li_exposed_to_campaign_sugar_reduction'] = False
+        df['li_exposed_to_campaign_quit_smoking'] = False
+        df['li_exposed_to_campaign_alcohol_reduction'] = False
 
         # todo: express all rates per year and divide by 4 inside program
 
@@ -833,9 +843,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
         df.loc[newly_not_low_ex_idx, 'li_date_no_longer_low_ex'] = self.sim.date
 
-        # -------------------- TOBACCO USE ---------------------------------------------------------
+        #todo: have rate of starting and stopping of
+        'li_exposed_to_campaign_exercise_increase'
 
-        # todo: add in effect of public health campaigns
+
+
+        # -------------------- TOBACCO USE ---------------------------------------------------------
 
         adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         currently_tob = df.index[df.li_tob & df.is_alive]
@@ -858,9 +871,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
 
-        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
+        # todo:  add in 'li_exposed_to_campaign_quit_smoking'
 
-        # todo: add in effect of public health campaigns
+        # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
         not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
         not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
@@ -878,6 +891,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
         df.loc[newly_not_ex_alc_idx, 'li_date_no_longer_ex_alc'] = self.sim.date
+
+        # todo:  'li_exposed_to_campaign_alcohol_reduction'
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
 
@@ -1039,11 +1054,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- HIGH SALT ----------------------------------------------------------
 
-        # todo: add in effect of public health campaigns
+        # todo: add in  'li_exposed_to_campaign_salt_reduction'
 
         # -------------------- HIGH SUGAR ----------------------------------------------------------
 
-        # todo: add in effect of public health campaigns
+        # todo: add in 'li_exposed_to_campaign_sugar_reduction'
 
         # -------------------- BMI ----------------------------------------------------------
 
@@ -1067,9 +1082,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_overwt_idx, 'li_overwt'] = False
         df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
+        # todo:  'li_exposed_to_campaign_weight_reduction'
 
-
-        # todo: add in effect of public health campaigns
 
 
 
