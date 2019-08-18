@@ -185,10 +185,19 @@ class Lifestyle(Module):
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_date_trans_to_urban': Property(Types.DATE, 'date of transition to urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (high) to 5 (low)', categories=['1', '2', '3', '4', '5']),
+        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)',
+                           categories=['1', '2', '3', '4', '5']),
+        'li_exposed_to_campaign_weight_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
+                                                                        'weight reduction if BMI >= 25'),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
+        'li_exposed_to_campaign_exercise_increase': Property(Types.BOOL, 'currently exposed to population campaign for '
+                                                                        'increase exercise if low ex'),
         'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
+        'li_exposed_to_campaign_salt_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
+                                                                        'salt reduction if high salt'),
         'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
+        'li_exposed_to_campaign_sugar_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
+                                                                      'sugar reduction if high sugar'),
         'li_date_no_longer_low_ex': Property(Types.DATE, 'li_date_no_longer_low_ex'),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_quit_tob': Property(Types.DATE, 'li_date_quit_tob'),
@@ -803,8 +812,9 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < m.r_rural
         df.loc[currently_urban[now_rural], 'li_urban'] = False
 
-
         # -------------------- LOW EXERCISE --------------------------------------------------------
+
+        # todo: add in effect of public health campaigns
 
         adults_not_low_ex = df.index[~df.li_low_ex & df.is_alive & (df.age_years >= 15)]
 
@@ -824,6 +834,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_low_ex_idx, 'li_date_no_longer_low_ex'] = self.sim.date
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
+
+        # todo: add in effect of public health campaigns
 
         adults_not_tob = df.index[(df.age_years >= 15) & df.is_alive & ~df.li_tob]
         currently_tob = df.index[df.li_tob & df.is_alive]
@@ -847,6 +859,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_date_quit_tob'] = self.sim.date
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
+
+        # todo: add in effect of public health campaigns
 
         not_ex_alc_f = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'F') & (df.age_years >= 15)]
         not_ex_alc_m = df.index[~df.li_ex_alc & df.is_alive & (df.sex == 'M') & (df.age_years >= 15)]
@@ -877,37 +891,6 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # update if now divorced/widowed
         now_div_wid = rng.random_sample(len(curr_mar)) < m.r_div_wid
         df.loc[curr_mar[now_div_wid], 'li_mar_stat'] = 3
-
-        # -------------------- CONTRACEPTION USE ---------------------------------------------------
-
-        possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
-        curr_not_on_con = df.index[possibly_using & ~df.li_on_con]
-        curr_on_con = df.index[possibly_using & df.li_on_con]
-
-        # currently not on contraceptives -> start using contraceptives
-        now_on_con = rng.random_sample(size=len(curr_not_on_con)) < m.r_contrac
-        df.loc[curr_not_on_con[now_on_con], 'li_on_con'] = True
-
-        # currently using contraceptives -> interrupted
-        now_not_on_con = rng.random_sample(size=len(curr_on_con)) < m.r_contrac_int
-        df.loc[curr_on_con[now_not_on_con], 'li_on_con'] = False
-
-        # everyone stops using contraceptives at age 50
-        f_age_50 = df.index[(df.age_years == 50) & df.li_on_con]
-        df.loc[f_age_50, 'li_on_con'] = False
-
-        # contraceptive method transitions
-        # note: transitions contr. type for those already using, not those who just started in this event
-        def con_method_transition(con_type, rates):
-            curr_on_con_type = df.index[curr_on_con & (df.li_con_t == con_type)]
-            df.loc[curr_on_con_type, 'li_con_t'] = rng.choice([1, 2, 3, 4, 5, 6], size=len(curr_on_con_type), p=rates)
-
-#       con_method_transition(1, m.r_con_from_1)
-#       con_method_transition(2, m.r_con_from_2)
-#       con_method_transition(3, m.r_con_from_3)
-#       con_method_transition(4, m.r_con_from_4)
-#       con_method_transition(5, m.r_con_from_5)
-#       con_method_transition(6, m.r_con_from_6)
 
         # -------------------- EDUCATION -----------------------------------------------------------
 
@@ -1056,7 +1039,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- HIGH SALT ----------------------------------------------------------
 
+        # todo: add in effect of public health campaigns
+
         # -------------------- HIGH SUGAR ----------------------------------------------------------
+
+        # todo: add in effect of public health campaigns
 
         # -------------------- BMI ----------------------------------------------------------
 
@@ -1081,6 +1068,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_overwt_idx, 'li_date_no_longer_overwt'] = self.sim.date
 
 
+
+        # todo: add in effect of public health campaigns
 
 
 
