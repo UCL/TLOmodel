@@ -348,6 +348,8 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # Here we apply the incidence of complications associated with prematurity for which this neonate will need
         # additional care:
 
+        #TODO: APPLY RISK REDUCTION WITH STEROIDS (if mni[][delivery_setting] == 'FD') etc etc
+
         if df.at[individual_id, 'nb_early_preterm'] & (mni[mother_id]['gestation_at_labour'] < 32):
 
             # LINKED WITH <32 weeks gest & VLBW/LBW (maybe exclude others)
