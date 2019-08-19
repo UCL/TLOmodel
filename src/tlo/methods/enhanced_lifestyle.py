@@ -1091,27 +1091,34 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- BMI ----------------------------------------------------------
 
-        r_higher_bmi
-        rr_higher_bmi_urban
-        rr_higher_bmi_f
-        rr_higher_bmi_age3049
-        rr_higher_bmi_agege50
-        rr_higher_bmi_tob
-        rr_higher_bmi_per_higher_wealth
-        rr_higher_bmi_high_sugar
-        r_lower_bmi
-        rr_lower_bmi_tob
-        rr_lower_bmi_pop_advice_weight
+        bmi_cat_1_to_4_idx = df.index[df.is_alive & df.li_bmi.between(1, 4) & (df.age_years >= 15)]
+        eff_p_higher_bmi = pd.Series(m.r_higher_bmi, index=bmi_cat_1_to_4_idx)
+        eff_p_higher_bmi[df.urban] *= m.rr_higher_bmi_urban
+        eff_p_higher_bmi[df.sex == 'F'] *= m.rr_higher_bmi_f
+        eff_p_higher_bmi[df.ages_years.between(30, 49)] *= m.rr_higher_bmi_age3049
+        eff_p_higher_bmi[df.ages_years >= 50] *= m.rr_higher_bmi_agege50
+        eff_p_higher_bmi[df.li_tob] *= m.rr_higher_bmi_tob
+        eff_p_higher_bmi[df.li_wealth == 2] *= m.rr_higher_bmi_per_higher_wealth ** 2
+        eff_p_higher_bmi[df.li_wealth == 3] *= m.rr_higher_bmi_per_higher_wealth ** 3
+        eff_p_higher_bmi[df.li_wealth == 4] *= m.rr_higher_bmi_per_higher_wealth ** 4
+        eff_p_higher_bmi[df.li_wealth == 5] *= m.rr_higher_bmi_per_higher_wealth ** 5
+        eff_p_higher_bmi[df.li_high_sugar] *= m.rr_higher_bmi_high_sugar
 
+        random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
+        increase_bmi_cat: pd.Series = random_draw < eff_p_higher_bmi
+        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[increase_bmi_cat]
+        df.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df.li_bmi + 1
+
+        bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.between(3, 5) & (df.age_years >= 15)]
+        eff_p_lower_bmi = pd.Series(m.r_lower_bmi, index=bmi_cat_3_to_5_idx)
+        eff_p_lower_bmi[df.urban] *= m.rr_lower_bmi_tob
+
+        random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
+        decrease_bmi_cat: pd.Series = random_draw < eff_p_lower_bmi
+        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[decrease_bmi_cat]
+        df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df.li_bmi - 1
 
         # todo:  'li_exposed_to_campaign_weight_reduction'
-
-
-
-
-
-
-
 
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
