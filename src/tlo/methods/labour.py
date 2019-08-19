@@ -50,6 +50,8 @@ class Labour (Module):
             Types.REAL, 'relative risk of pregnancy loss for women who is between 31 and 34 years old'),
         'rr_miscarriage_grav4': Parameter(
             Types.REAL, 'relative risk of pregnancy loss for women who has a gravidity of greater than 4'),
+        'prob_prom': Parameter(
+            Types.REAL, 'probability of a woman in term labour having had experience prolonged rupture of membranes'),
         'prob_pl_ol': Parameter(
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
@@ -175,6 +177,11 @@ class Labour (Module):
             Types.REAL, 'relative risk of maternal sepsis following clean birth practices employed in a facility'),
         'rr_newborn_sepsis_clean_delivery': Parameter(
             Types.REAL, 'relative risk of newborn sepsis following clean birth practices employed in a facility'),
+        'rr_sepsis_post_abx_prom': Parameter(
+            Types.REAL, 'relative risk of maternal sepsis following prophylatic antibiotics for PROM in a facility'),
+        'rr_newborn_sepsis_proph_abx': Parameter(
+            Types.REAL, 'relative risk of newborn sepsis following prophylatic antibiotics for '
+                        'premature labour in a facility'),
         'rr_pph_amtsl': Parameter(
             Types.REAL, 'relative risk of severe post partum haemorrhage following active management of the third '
                         'stage of labour'),
@@ -271,6 +278,7 @@ class Labour (Module):
         params['rr_miscarriage_35'] = dfd.loc['rr_miscarriage_35', 'value']
         params['rr_miscarriage_3134'] = dfd.loc['rr_miscarriage_3134', 'value']
         params['rr_miscarriage_grav4'] = dfd.loc['rr_miscarriage_grav4', 'value']
+        params['prob_prom'] = dfd.loc['prob_prom', 'value']
         params['prob_pl_ol'] = dfd.loc['prob_pl_ol', 'value']
         params['rr_PL_OL_nuliparity'] = dfd.loc['rr_PL_OL_nuliparity', 'value']
         params['rr_PL_OL_para1'] = dfd.loc['rr_PL_OL_para1', 'value']
@@ -330,6 +338,7 @@ class Labour (Module):
         params['prob_successful_induction'] = dfd.loc['prob_successful_induction', 'value']  # norwegien study
         params['rr_maternal_sepsis_clean_delivery'] = dfd.loc['rr_maternal_sepsis_clean_delivery', 'value']  # dummy
         params['rr_newborn_sepsis_clean_delivery'] = dfd.loc['rr_newborn_sepsis_clean_delivery', 'value'] # dummy
+        params['rr_sepsis_post_abx_prom'] = dfd.loc['rr_sepsis_post_abx_prom', 'value'] # dummy
         params['rr_pph_amtsl'] = dfd.loc['rr_pph_amtsl', 'value']  # cochrane (for SEVERE pph)
         params['prob_cure_antibiotics'] = dfd.loc['prob_cure_antibiotics', 'value']  # dummy
         params['prob_cure_mgso4'] = dfd.loc['prob_cure_mgso4', 'value']
@@ -1041,19 +1050,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 # ====================================== STATUS OF MEMBRANES ==========================================================
 
         # Todo: consider risk factors
+        # Todo: discuss with Tim C importance of modelling PPROM (would change structure)
 
         # Here we apply a risk that this woman's labour was preceded by premature rupture of membranes, in preterm
         # women this has likley predisposed their labour
-        if (mni[individual_id]['labour_state'] == 'EPTL') or (mni[individual_id]['labour_state']== 'LPTL'):
+        if (mni[individual_id]['labour_state'] == 'EPTL') or (mni[individual_id]['labour_state'] == 'LPTL'):
             random = self.sim.rng.random_sample(size=1)
             if random < params['prob_prom']:
                 mni[individual_id]['PROM'] = True
-
-        # For women who have gone into labour past term, we determine if they experienced premature rupture or membranes
-            if (mni[individual_id]['labour_state'] == 'TL') or (mni[individual_id]['labour_state'] == 'POTL'):
-                random = self.sim.rng.random_sample(size=1)
-                if random < params['prob_pprom']:
-                    mni[individual_id]['PPROM'] = True
 
 # ===================================  OBSTRUCTED LABOUR =============================================================
 
@@ -1206,7 +1210,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     rf2 = 1
 
                 if (df.at[individual_id, 'la_parity'] < 5) & (df.at[individual_id, 'la_total_deliveries_by_cs'] == 0) & \
-                    df.at[individual_id, 'la_obstructed_labour']:  #REVIEW
+                    (mni[individual_id]['labour_is_currently_obstructed'] == True):  # only HBs can already be in OL
                         rf3 = params['rr_ur_ref_ol']
                 else:
                     rf3 = 1
@@ -1228,7 +1232,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                 if df.at[individual_id, 'la_current_labour_successful_induction']:
                     df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
 
-                # Here we schedule the birth event for 2 days after labour- we do this prior to the death event as women who
+        # Here we schedule the birth event for 2 days after labour- we do this prior to the death event as women who
         # die but still deliver a live child will pass through birth event
 
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
@@ -1757,7 +1761,8 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
                     'at birth for person %d on date %s', person_id, self.sim.date)
 
-        # TODO: Who is attending this labour?- Will I determine this or will it link to capacity, need to apply effect
+        # TODO: Discuss with Tim H the best way to capture which HCP will be attending this delivery and how that may
+        #  affect outcomes?
 
     # ============================ CLEAN DELIVERY PRACTICES AT BIRTH ==================================================
 
@@ -1774,22 +1779,34 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
         print(adjusted_newborn_sepsis_risk)
 
 # =============================== SKILLED BIRTH ATTENDANCE EFFECT ======================================================
-
         # Then we apply the estimated effect of fetal surveillance methods on maternal/newborn outcomes
 
-        # todo: Quantify this effect and consider where it will be applied (- issue that studies will be evaluating
-        #  broadly, interventions applied by SBA so will this be double counting?)
+        # todo: Discuss again with Tim C if it is worth trying to quantify this, as many evaluative studies look at
+        #  provision of BEmOC etc. so will include the impact of the interventions
 
 # ================================== INTERVENTIONS FOR PRE-EXSISTING CONDITIONS =====================================
         # Here we apply the effect of any 'upstream' interventions that may reduce the risk of intrapartum
         # complications/poor newborn outcomes
 
+        # ------------------------------------- PROM ------------------------------------------------------------------
+        # First we apply a risk reduction in likelihood of sepsis for women with PROM as they have received prophylactic
+        # antibiotics
+        if mni[person_id]['PROM']:
+            treatment_effect = params['rr_sepsis_post_abx_prom']
+            new_sepsis_risk = mni[person_id]['risk_ip_sepsis'] * treatment_effect
+            mni[person_id]['risk_ip_sepsis'] = new_sepsis_risk
 
-        # (antibiotics in PROM, mgso4 for severe PE)
+        # ------------------------------------- PREMATURITY -----------------------------------------------------------
+        # Here we apply the effect of interventions to improve outcomes of neonates born preterm
 
-# ====================================  PRETERM LABOUR INTERVENTIONS  ===============================================
-        # Antenatal antibiotics (continued antenatally or commenced if hasnt had them started in the community)
-        # Prophylactic antibiotics?
+        # Antibiotics for group b strep prophylaxsis: (are we going to apply this to all cause sepsis?)
+        if mni[person_id]['labour_state'] == 'EPTL' or mni[person_id]['labour_state'] == 'LPTL':
+            treatment_effect = params['rr_newborn_sepsis_proph_abx']
+            new_newborn_risk = mni[person_id]['risk_newborn_sepsis'] * treatment_effect
+            mni[person_id]['risk_newborn_sepsis'] = new_newborn_risk
+
+        # STEROIDS - effect applied directly to newborns (need consumables here
+        # TOXOLYTICS !? - WHO advises against
 
 # ===================================  COMPLICATIONS OF LABOUR ========================================================
 
@@ -1803,6 +1820,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             mni[person_id]['labour_has_previously_been_obstructed'] = True
             logger.info('person %d is experiencing obstructed labour in a health facility',
                         person_id)
+
+            # TODO: issue- if we apply risk of both UR and OL here then we will negate the effect of OL treatment on
+            #  reduction of incidence of UR
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ip_eclampsia']:
@@ -1836,8 +1856,6 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 # ==================================== SCHEDULE HEALTH SYSTEM INTERACTIONS ===========================================
     # Here, if a woman has developed a complication, she is scheduled to receive any care she may need
 
-        #todo: schedule caesarean for induction of labour
-
         # TODO: apply cord prolapse risk here, (if worth while- dont know RR of BA with it, and think about treatment)
         # DUMMY ...
         prob = 0.004
@@ -1853,36 +1871,31 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
             event = HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                        priority=0,
-                                                        topen=self.sim.date,
-                                                        tclose=self.sim.date + DateOffset(days=14)
-                                                        )
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14))
 
         # if df.at[person_id,'la_sepsis']:
-
         if mni[person_id]['sepsis_ip']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
                         'treatment for maternal sepsis during labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                        priority=0,
-                                                        topen=self.sim.date,
-                                                        tclose=self.sim.date + DateOffset(days=14)
-                                                        )
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14))
 
         # if df.at[person_id, 'la_aph']:
-
         if mni[person_id]['APH']:
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
                         'treatment for antepartum haemorrhage during labour for person %d', person_id)
 
             event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=14)
-                                                                    )
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14))
         # if df.at[person_id, 'la_eclampsia']:
 
         if mni[person_id]['eclampsia_ip']:
@@ -1891,14 +1904,30 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
 
             event = HSI_Labour_ReceivesCareForEclampsia(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=14)
-                                                                    )
-        # TODO: how will we caputure the effect of treating obstructed labour to prevent uterine rupture (UR treatment
-        #  isnt scheduled here yet)
-        # TODO: consider UR from OL and UR not from OL as 2 seperate properties to manage this risk
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14))
 
+        if mni[person_id]['UR']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for uterine rupture during labour for person %d', person_id)
+
+            event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14)
+                                                                )
+
+        if df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction':
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling a caesarean section'
+                        ' for person %d', person_id)
+
+            event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=14))
 
 class HSI_Labour_ReceivesCareForObstructedLabour(Event, IndividualScopeEventMixin):
     """
@@ -2401,7 +2430,8 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
 
 # ====================================== EMERGENCY CAESAREAN SECTION ==================================================
 
-        if (mni[person_id]['UR']) or (mni[person_id]['APH']) or (mni[person_id]['labour_is_currently_obstructed']):
+        if (mni[person_id]['UR']) or (mni[person_id]['APH']) or (mni[person_id]['labour_is_currently_obstructed']) or \
+                (df.at[person_id, 'la_current_labour_successful_induction']== 'failed_induction'):
             # Consider all indications (elective)
             # df.at[person_id, 'la_aph'] = False   # Should this be the case?
             # df.at[person_id, 'la_obstructed_labour'] = False
