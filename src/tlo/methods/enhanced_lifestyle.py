@@ -687,10 +687,10 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels.loc[agege3049_idx, '2'] *= (m.init_or_higher_bmi_age3049 ** -1)
         df_odds_probs_bmi_levels.loc[agege50_idx, '2'] *= (m.init_or_higher_bmi_agege50 ** -1)
         df_odds_probs_bmi_levels.loc[agege15_tob_idx, '2'] *= (m.init_or_higher_bmi_tob ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** -1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** -1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** -1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** -1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** -1)
 
         # realise this does nothing
         df_odds_probs_bmi_levels.loc[agege15_w_idx, '3'] *= (m.init_or_higher_bmi_f ** 0)
@@ -699,10 +699,10 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels.loc[agege3049_idx, '3'] *= (m.init_or_higher_bmi_age3049 ** 0)
         df_odds_probs_bmi_levels.loc[agege50_idx, '3'] *= (m.init_or_higher_bmi_agege50 ** 0)
         df_odds_probs_bmi_levels.loc[agege15_tob_idx, '3'] *= (m.init_or_higher_bmi_tob ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 0)
+        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 0)
+        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 0)
+        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 0)
+        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 0)
 
         df_odds_probs_bmi_levels.loc[agege15_w_idx, '4'] *= (m.init_or_higher_bmi_f ** 1)
         df_odds_probs_bmi_levels.loc[agege15_rural_idx, '4'] *= (m.init_or_higher_bmi_rural ** 1)
@@ -710,10 +710,10 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels.loc[agege3049_idx, '4'] *= (m.init_or_higher_bmi_age3049 ** 1)
         df_odds_probs_bmi_levels.loc[agege50_idx, '4'] *= (m.init_or_higher_bmi_agege50 ** 1)
         df_odds_probs_bmi_levels.loc[agege15_tob_idx, '4'] *= (m.init_or_higher_bmi_tob ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 1)
+        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 1)
 
         df_odds_probs_bmi_levels.loc[agege15_w_idx, '5'] *= (m.init_or_higher_bmi_f ** 2)
         df_odds_probs_bmi_levels.loc[agege15_rural_idx, '5'] *= (m.init_or_higher_bmi_rural ** 2)
@@ -721,10 +721,10 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels.loc[agege3049_idx, '5'] *= (m.init_or_higher_bmi_age3049 ** 2)
         df_odds_probs_bmi_levels.loc[agege50_idx, '5'] *= (m.init_or_higher_bmi_agege50 ** 2)
         df_odds_probs_bmi_levels.loc[agege15_tob_idx, '5'] *= (m.init_or_higher_bmi_tob ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 2)
+        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 2)
+        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 2)
+        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 2)
+        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 2)
 
         df_odds_probs_bmi_levels['prob 1'] = df_odds_probs_bmi_levels.apply(lambda row: row['1'] / (1 + row['1']), axis=1)
         df_odds_probs_bmi_levels['prob 2'] = df_odds_probs_bmi_levels.apply(lambda row: row['2'] / (1 + row['2']), axis=1)
@@ -1089,6 +1089,11 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # -------------------- BMI ----------------------------------------------------------
 
+        # those reaching age 15 allocated bmi 3
+
+        age15_idx = df.index[df.is_alive & (df.age_exact_years >= 15) & (df.age_exact_years < 15.25)]
+        df.loc[age15_idx, 'li_bmi'] = 3
+
         # possible increase in category of bmi
 
         bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15)
@@ -1140,13 +1145,53 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        #   logger.info('%s|li_wealth li_no_access_handwashing|%s',
-        #               self.sim.date,
-        #               df[df.is_alive].groupby(['li_wealth', 'li_no_access_handwashing']).size().to_dict())
+        n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
+        n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
+        n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
+        n_agege15_urban = (df.is_alive & (df.age_years >= 15) & df.li_urban).sum()
+        n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
 
-        logger.debug('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[0].to_dict())
+        n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
+        prop_bmi_1 = n_bmi_1 / n_agege15
+        n_bmi_2 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2)).sum()
+        prop_bmi_2 = n_bmi_2 / n_agege15
+        n_bmi_3 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3)).sum()
+        prop_bmi_3 = n_bmi_3 / n_agege15
+        n_bmi_4 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4)).sum()
+        prop_bmi_4 = n_bmi_4 / n_agege15
+        n_bmi_5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5)).sum()
+        prop_bmi_5 = n_bmi_5 / n_agege15
+
+        n_bmi_45_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'F')).sum()
+        prop_bmi_45_f = n_bmi_45_f / n_agege15_f
+        n_bmi_45_m = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'M')).sum()
+        prop_bmi_45_m = n_bmi_45_m / n_agege15_m
+        n_bmi_45_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & df.urban).sum()
+        prop_bmi_45_urban = n_bmi_45_urban / n_agege15_urban
+        prop_bmi_45_rural = n_bmi_45_rural / n_agege15_rural
+
+        n_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (df.is_alive & (df.sex == 'M') & ~df.li_high_sugar
+                                                            & df.age_years.between(15, 24) & ~df.li_tob
+                                                            & (df.li_wealth == 1)).sum()
+
+        n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (df.is_alive & (df.sex == 'M') & ~df.li_high_sugar
+                                                            & df.age_years.between(15, 24) & ~df.li_tob
+                                                            & (df.li_wealth == 1) & (df.li_bmi == 5)).sum()
+
+        prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = \
+            n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / \
+            n_urban_m_not_high_sugar_age1529_not_tob_wealth1
+
+
+        logger.info('%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
+                    'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s',
+                    self.sim.date, prop_bmi_1, prop_bmi_2, prop_bmi_3, prop_bmi_4, prop_bmi_5,
+                    prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural)
+
+#       logger.debug('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[0].to_dict())
+
 
         """
         logger.info('%s|li_urban|%s',
