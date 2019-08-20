@@ -185,8 +185,8 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_bmi': Property(Types.CATEGORICAL, 'bmi category: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)',
-                           categories=['1', '2', '3', '4', '5']),
+        'li_bmi': Property(Types.INT, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)'
+                                      'bmi is 0 until age 15'),
         'li_exposed_to_campaign_weight_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
                                                                         'weight reduction if BMI >= 25'),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
@@ -370,7 +370,7 @@ class Lifestyle(Module):
         df['li_urban'] = False
         df['li_date_trans_to_urban'] = pd.NaT
         df['li_wealth'].values[:] = 3
- #      df['li_bmi'].values[:] = 3   dont set default as default is nan for age < 15
+        df['li_bmi'] = 0
         df['li_low_ex'] = False
         df['li_tob'] = False
         df['li_ex_alc'] = False
@@ -735,21 +735,20 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] + row['prob 2']
                                                     + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1)
 
-        df_odds_probs_bmi_levels['1'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['2'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 2'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['3'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 3'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['4'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels['5'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels[1] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels[2] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 2'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels[3] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 3'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels[4] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
+        df_odds_probs_bmi_levels[5] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
 
         random_draw = pd.Series(rng.random_sample(size=len(age_ge15_idx)), index=age_ge15_idx)
 
-        dfxx = df_odds_probs_bmi_levels[['1', '2', '3', '4', '5']]
+        dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
 
         # for each row, make a choice
         dfxx['bmi_cat'] = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
 
         df.loc[age_ge15_idx, 'li_bmi'] = dfxx['bmi_cat']
-
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -1095,7 +1094,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # possible increase in category of bmi
 
         bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15)
-                                      & (df.li_bmi != '5')]
+                                      & df.li_bmi.between (1, 4)]
         eff_p_higher_bmi = pd.Series(m.r_higher_bmi, index=bmi_cat_1_to_4_idx)
         eff_p_higher_bmi[df.li_urban] *= m.rr_higher_bmi_urban
         eff_p_higher_bmi[df.sex == 'F'] *= m.rr_higher_bmi_f
@@ -1108,54 +1107,22 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_higher_bmi[df.li_wealth == 5] *= m.rr_higher_bmi_per_higher_wealth ** 5
         eff_p_higher_bmi[df.li_high_sugar] *= m.rr_higher_bmi_high_sugar
 
-        bmi_cat_1_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '1')]
-        random_draw_1 = rng.random_sample(len(bmi_cat_1_idx))
-        increase_bmi_cat_1: pd.Series = random_draw_1 < eff_p_higher_bmi
-        newly_increase_bmi_cat_1_idx = bmi_cat_1_idx[increase_bmi_cat_1]
-        df.loc[newly_increase_bmi_cat_1_idx, 'li_bmi'] = '2'
-
-        bmi_cat_2_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '2')]
-        random_draw_2 = rng.random_sample(len(bmi_cat_2_idx))
-        increase_bmi_cat_2: pd.Series = random_draw_2 < eff_p_higher_bmi
-        newly_increase_bmi_cat_2_idx = bmi_cat_2_idx[increase_bmi_cat_2]
-        df.loc[newly_increase_bmi_cat_2_idx, 'li_bmi'] = '3'
-
-        bmi_cat_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '3')]
-        random_draw_3 = rng.random_sample(len(bmi_cat_3_idx))
-        increase_bmi_cat_3: pd.Series = random_draw_3 < eff_p_higher_bmi
-        newly_increase_bmi_cat_3_idx = bmi_cat_2_idx[increase_bmi_cat_3]
-        df.loc[newly_increase_bmi_cat_3_idx, 'li_bmi'] = '4'
-
-        bmi_cat_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '4')]
-        random_draw_4 = rng.random_sample(len(bmi_cat_4_idx))
-        increase_bmi_cat_4: pd.Series = random_draw_4 < eff_p_higher_bmi
-        newly_increase_bmi_cat_4_idx = bmi_cat_4_idx[increase_bmi_cat_4]
-        df.loc[newly_increase_bmi_cat_4_idx, 'li_bmi'] = '5'
+        random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
+        increase_bmi_cat: pd.Series = random_draw < eff_p_higher_bmi
+        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[increase_bmi_cat]
+        df.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] + 1
 
         # possible decrease in category of bmi
 
-        bmi_cat_3_to_5_idx = df.index[df.is_alive & (df.li_bmi != '1') & (df.li_bmi != '2')
-                                                     & (df.age_years >= 15)]
+        bmi_cat_3_to_5_idx = df.index[df.is_alive & df.li_bmi.between(3, 5) & (df.age_years >= 15)]
         eff_p_lower_bmi = pd.Series(m.r_lower_bmi, index=bmi_cat_3_to_5_idx)
-        eff_p_lower_bmi[df.urban] *= m.rr_lower_bmi_tob
+        eff_p_lower_bmi[df.li_urban] *= m.rr_lower_bmi_tob
 
-        bmi_cat_3_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '3')]
-        random_draw_3 = rng.random_sample(len(bmi_cat_3_idx))
-        decrease_bmi_cat_3: pd.Series = random_draw_3 < eff_p_lower_bmi
-        newly_decrease_bmi_cat_3_idx = bmi_cat_2_idx[decrease_bmi_cat_3]
-        df.loc[newly_decrease_bmi_cat_3_idx, 'li_bmi'] = '2'
+        random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
+        decrease_bmi_cat: pd.Series = random_draw < eff_p_lower_bmi
+        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[decrease_bmi_cat]
+        df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
-        bmi_cat_4_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '4')]
-        random_draw_4 = rng.random_sample(len(bmi_cat_4_idx))
-        decrease_bmi_cat_4: pd.Series = random_draw_4 < eff_p_lower_bmi
-        newly_decrease_bmi_cat_4_idx = bmi_cat_4_idx[decrease_bmi_cat_4]
-        df.loc[newly_decrease_bmi_cat_4_idx, 'li_bmi'] = '3'
-
-        bmi_cat_5_idx = df.index[df.is_alive & (df.age_years >= 15) & (df.li_bmi == '5')]
-        random_draw_5 = rng.random_sample(len(bmi_cat_5_idx))
-        decrease_bmi_cat_5: pd.Series = random_draw_5 < eff_p_lower_bmi
-        newly_decrease_bmi_cat_5_idx = bmi_cat_5_idx[decrease_bmi_cat_5]
-        df.loc[newly_decrease_bmi_cat_5_idx, 'li_bmi'] = '4'
 
         # todo:  'li_exposed_to_campaign_weight_reduction'
 
