@@ -1159,7 +1159,7 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
 
         df = self.sim.population.props
 
-        df.loc['hv_behaviour_change'] = True
+        df.loc[(df.age_years >= 15), 'hv_behaviour_change'] = True
 
         # Find the person_ids who are going to get the behaviour change intervention
         # open to any adults not currently infected
@@ -2209,14 +2209,14 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ INC / PREV ------------------------------------
         # adult incidence
-        mask = (df.loc[(df.age_years >= 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
-        adult_new_inf = mask.sum()
-        adult_inc = adult_new_inf / len(df[~df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
+        tmp = len(
+            df.loc[(df.age_years >= 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
+        adult_inc = tmp / len(df[~df.hv_inf & df.is_alive & (df.age_years.between(15, 80))])
 
         # child incidence
-        mask = (df.loc[(df.age_years < 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
-        adult_new_inf = mask.sum()
-        child_inc = adult_new_inf / len(df[~df.hv_inf & df.is_alive & (df.age_years < 15)])
+        tmp2 = len(
+            df.loc[(df.age_years < 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
+        child_inc = tmp2 / len(df[~df.hv_inf & df.is_alive & (df.age_years < 15)])
 
         # adult prevalence
         ad_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 65))]) / len(
