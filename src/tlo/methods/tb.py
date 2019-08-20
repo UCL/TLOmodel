@@ -103,7 +103,7 @@ class tb(Module):
         'prob_tx_success_hiv': Parameter(Types.REAL, 'Probability of treatment success for PLHIV'),
         'prob_tx_success_mdr': Parameter(Types.REAL, 'Probability of treatment success for MDR-TB cases'),
         'prob_tx_success_extra': Parameter(Types.REAL, 'Probability of treatment success for extrapulmonary TB cases'),
-        'prob_tx_success_0_14': Parameter(Types.REAL, 'Probability of treatment success for children aged 0-14 years'),
+        'prob_tx_success_0_4': Parameter(Types.REAL, 'Probability of treatment success for children aged 0-4 years'),
         'prob_tx_success_5_14': Parameter(Types.REAL, 'Probability of treatment success for children aged 5-14 years'),
         'followup_times': Parameter(Types.INT, 'times(weeks) tb treatment monitoring required after tx start'),
 
@@ -411,6 +411,15 @@ class tb(Module):
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
         df.at[child_id, 'tb_date_death'] = pd.NaT
 
+        # if mother is diagnosed with TB, give IPT to infant
+        if df.at[mother_id, 'tb_diagnosed']:
+            event = HSI_Tb_Ipt(self, person_id=child_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(weeks=4)
+                                                                )
+
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
@@ -639,7 +648,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                             'This is TbEvent, scheduling active disease for fast progressing person %d on date %s',
                             person_id, now)
                         # schedule active disease now
-                        self.sim.schedule_event(TbActiveEvent(self, person_id), now)
+                        self.sim.schedule_event(TbActiveEvent(self.module, person_id), now)
 
                 for person_id in fast.index[~fast]:
                     # decide if person will develop active tb
@@ -656,7 +665,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                             person_id, sch_date)
 
                         # schedule active disease
-                        self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
+                        self.sim.schedule_event(TbActiveEvent(self.module, person_id), sch_date)
 
         # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
         # probability of active disease
@@ -710,7 +719,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                                  person_id, sch_date)
 
                     # schedule active disease
-                    self.sim.schedule_event(TbActiveEvent(self, person_id), sch_date)
+                    self.sim.schedule_event(TbActiveEvent(self.module, person_id), sch_date)
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
@@ -760,7 +769,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         if seeks_care:
             logger.debug('This is TbActiveEvent, scheduling HSI_Tb_Screening for person %d', person_id)
 
-            event = HSI_Tb_Screening(self.sim.modules['tb'], person_id=person_id)
+            event = HSI_Tb_Screening(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
                                                                 topen=self.sim.date,
@@ -837,7 +846,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                                                                     )
 
                 # add back-up check if xpert is not available, then schedule sputum smear
-                self.sim.schedule_event(TbCheckXpert(self, person_index), self.sim.date + DateOffset(weeks=2))
+                self.sim.schedule_event(TbCheckXpert(self.module, person_index), self.sim.date + DateOffset(weeks=2))
 
         else:
             logger.debug(
@@ -1130,7 +1139,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                             'This is TbMdrEvent, scheduling active disease for fast progressing person %d on date %s',
                             person_id, now)
                         # schedule active disease now
-                        self.sim.schedule_event(TbMdrActiveEvent(self, person_id), now)
+                        self.sim.schedule_event(TbMdrActiveEvent(self.module, person_id), now)
 
                 for person_id in fast.index[~fast]:
                     # decide if person will develop active tb
@@ -1147,7 +1156,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                             person_id, sch_date)
 
                         # schedule active disease
-                        self.sim.schedule_event(TbMdrActiveEvent(self, person_id), sch_date)
+                        self.sim.schedule_event(TbMdrActiveEvent(self.module, person_id), sch_date)
 
         # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
         # probability of active disease
@@ -1202,7 +1211,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                                  person_id, sch_date)
 
                     # schedule active disease
-                    self.sim.schedule_event(TbMdrActiveEvent(self, person_id), sch_date)
+                    self.sim.schedule_event(TbMdrActiveEvent(self.module, person_id), sch_date)
 
 
 class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
@@ -1328,7 +1337,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                                                                     )
 
                 # add back-up check if xpert is not available, then schedule sputum smear
-                self.sim.schedule_event(TbCheckXpert(self, person_index), self.sim.date + DateOffset(weeks=2))
+                self.sim.schedule_event(TbCheckXpert(self.module, person_index), self.sim.date + DateOffset(weeks=2))
         else:
             logger.debug(
                 'This is TbMdrRelapseEvent, there are no new relapse cases seeking care')
@@ -1414,7 +1423,7 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 0.5  # This requires a few minutes of an outpatient appt
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Tb_Testing'
+        self.TREATMENT_ID = 'Tb_Screening'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
@@ -1430,7 +1439,7 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_specific_symptoms'] == 'active_pulm') and (
             df.at[person_id, 'age_exact_years'] >= 5) and not (df.at[person_id, 'hv_inf']):
 
-            logger.debug("This is HSI_Tb_SputumTest scheduling xpert test for person %d", person_id)
+            logger.debug("This is HSI_TbScreening scheduling xpert test for person %d", person_id)
 
             test = HSI_Tb_SputumTest(self.module, person_id=person_id)
 
@@ -1443,7 +1452,7 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active_pulm') and (
             df.at[person_id, 'age_exact_years'] >= 5) and (df.at[person_id, 'hv_inf']):
 
-            logger.debug("This is HSI_Tb_SputumTest scheduling xpert test for person %d", person_id)
+            logger.debug("This is HSI_TbScreening scheduling xpert test for person %d", person_id)
 
             test = HSI_Tb_XpertTest(self.module, person_id=person_id)
 
@@ -1454,13 +1463,13 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
                                                                 tclose=None)
 
             # add back-up check if xpert is not available, then schedule sputum smear
-            self.sim.schedule_event(TbCheckXpert(self, person_id), self.sim.date + DateOffset(weeks=2))
+            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
         # if child <5 schedule chest x-ray for diagnosis and add check if x-ray not available
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active_pulm') and (
             df.at[person_id, 'age_exact_years'] < 5):
 
-            logger.debug("This is HSI_Tb_SputumTest scheduling chest xray for person %d", person_id)
+            logger.debug("This is HSI_TbScreening scheduling chest xray for person %d", person_id)
 
             test = HSI_Tb_Xray(self.module, person_id=person_id)
 
@@ -1471,7 +1480,7 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
                                                                 tclose=None)
 
             # add back-up check if chest x-ray is not available, then treat if still symptomatic
-            self.sim.schedule_event(TbCheckXray(self, person_id), self.sim.date + DateOffset(weeks=2))
+            self.sim.schedule_event(TbCheckXray(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
 
 
@@ -1735,7 +1744,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                                         tclose=None)
 
                     # add back-up check if xpert is not available, then schedule sputum smear
-                    self.sim.schedule_event(TbCheckXpert(self, person_id), self.sim.date + DateOffset(weeks=2))
+                    self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
         if (df.at[person_id, 'tb_diagnosed'] &
@@ -1942,7 +1951,7 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
             df.at[person_id, 'date_tb_treated'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         # TODO check intensive phase and continuation phase
@@ -2023,7 +2032,7 @@ class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
             df.at[person_id, 'date_tb_treated'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         logger.debug('....This is HSI_Tb_StartTreatmentChild: scheduling follow-up appointments for person %d',
@@ -2104,7 +2113,7 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
             # TODO check all properties prefixed with tb_
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         logger.debug('....This is HSI_Tb_StartMdrTreatment: scheduling follow-up appointments for person %d',
@@ -2184,7 +2193,7 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
             df.at[person_id, 'date_tb_treated'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         logger.debug('....This is HSI_Tb_RetreatmentAdult: scheduling follow-up appointments for person %d',
@@ -2263,7 +2272,7 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
             df.at[person_id, 'date_tb_treated'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         logger.debug('....This is HSI_Tb_RetreatmentChild: scheduling follow-up appointments for person %d',
@@ -2389,33 +2398,75 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
 
         # after six months of treatment, stop
         df.at[person_id, 'tb_on_treatment'] = False
+        cured = False
 
-        # if drug-susceptible then probability of successful treatment for both primary and secondary
-        if df.at[person_id, 'tb_inf'].startswith("active_susc"):
+        # ADULTS: if drug-susceptible and pulmonary tb:
+        # prob of tx success
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
+            person_id, 'tb_specific_symptoms'] == 'active_pulm' \
+            and (df.at[person_id, 'age_exact_years'] >= 15):
 
-            cured = self.sim.rng.random_sample(size=1) < params['prob_treatment_success']
+            # new case
+            if df.at[person_id, 'tb_inf'] == 'active_susc_new':
+                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_new']
 
-            if cured:
-                df.at[person_id, 'tb_inf'] = 'latent_susc_tx'
-                df.at[person_id, 'tb_diagnosed'] = False
-                df.loc[person_id, 'tb_specific_symptoms'] = 'latent'
-                df.loc[person_id, 'tb_unified_symptom_code'] = 1
+            # previously treated case
+            if df.at[person_id, 'tb_inf'] == 'active_susc_prev':
+                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_prev']
 
-            else:
-                # request a repeat / Xpert test - follow-up
-                # this will include drug-susceptible treatment failures and mdr-tb cases
-                secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+            # hiv+
+            if df.at[person_id, 'hv_inf']:
+                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_hiv']
 
-                # Request the health system to give xpert test
-                self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
-                                                                    priority=1,
-                                                                    topen=self.sim.date,
-                                                                    tclose=None)
+        # if drug-susceptible and extrapulmonary
+        if df.at[person_id, 'tb_specific_symptoms'] == 'active_pulm':
+            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_extra']
 
-                # add back-up check if xpert is not available, then schedule sputum smear
-                self.sim.schedule_event(TbCheckXpert(self, person_id), self.sim.date + DateOffset(weeks=2))
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
+            person_id, 'tb_specific_symptoms'] == 'active_pulm' \
+            and (df.at[person_id, 'age_exact_years'].between(0, 4)):
+            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_0_4']
 
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
+            person_id, 'tb_specific_symptoms'] == 'active_pulm' \
+            and (df.at[person_id, 'age_exact_years'].between(5, 14)):
+            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_5_14']
 
+        # if cured change properties
+        if cured:
+            df.at[person_id, 'tb_inf'] = 'latent_susc_tx'
+            df.at[person_id, 'tb_diagnosed'] = False
+            df.loc[person_id, 'tb_specific_symptoms'] = 'latent'
+            df.loc[person_id, 'tb_unified_symptom_code'] = 1
+
+        else:
+            # request a repeat / Xpert test - follow-up
+            # this will include drug-susceptible treatment failures and mdr-tb cases
+            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+            # add back-up check if xpert is not available, then schedule sputum smear
+            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
+
+        # else if mdr - schedule xpert and check xpert
+        if df.at[person_id, 'tb_inf'].startswith("active_mdr"):
+            # request a repeat / Xpert test - follow-up
+            # this will include drug-susceptible treatment failures and mdr-tb cases
+            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+            # add back-up check if xpert is not available, then schedule sputum smear
+            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
 
 class TbCureMdrEvent(Event, IndividualScopeEventMixin):
@@ -2427,26 +2478,41 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
         logger.debug("Stopping tb-mdr treatment and curing person %d", person_id)
 
         df = self.sim.population.props
+        params = self.sim.modules['tb'].parameters
 
         # after six months of treatment, stop
-        # assume 100% cure rate with tb-mdr treatment
         df.at[person_id, 'tb_treated_mdr'] = False
-        df.at[person_id, 'tb_inf'] = 'latent_mdr_tx'
-        df.at[person_id, 'tb_diagnosed'] = False
-        df.loc[person_id, 'tb_specific_symptoms'] = 'latent'
-        df.loc[person_id, 'tb_unified_symptom_code'] = 1
+
+        cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_mdr']
+
+        if cured:
+            df.at[person_id, 'tb_inf'] = 'latent_mdr_tx'
+            df.at[person_id, 'tb_diagnosed'] = False
+            df.loc[person_id, 'tb_specific_symptoms'] = 'latent'
+            df.loc[person_id, 'tb_unified_symptom_code'] = 1
+
+        else:
+            # request a repeat / Xpert test - follow-up
+            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
+                                                                priority=1,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+            # add back-up check if xpert is not available, then schedule sputum smear
+            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
 
 #
 # ---------------------------------------------------------------------------
 #   IPT
 # ---------------------------------------------------------------------------
-# TODO consumables should be IPT for non-HIV+
-# TODO also IPT for infants of smear-positive mothers
 class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - give ipt to contacts of tb cases for 6 months
-        """
+    """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -2483,7 +2549,7 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         df.at[person_id, 'tb_date_ipt'] = self.sim.date
 
         # schedule end date of ipt after six months
-        self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbIptEndEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
 
 class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
@@ -2518,15 +2584,21 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
-        logger.debug("Starting IPT for HIV+ person %d", person_id)
 
         df = self.sim.population.props
 
-        df.at[person_id, 'tb_on_ipt'] = True
-        df.at[person_id, 'tb_date_ipt'] = self.sim.date
+        if not df.at[person_id, 'tb_inf'].startswith("active"):
+            logger.debug("This is HSI_Tb_IptHiv, starting IPT for HIV+ person %d", person_id)
 
-        # schedule end date of ipt after six months and repeat call to HS for another prescription
-        self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
+            df.at[person_id, 'tb_on_ipt'] = True
+            df.at[person_id, 'tb_date_ipt'] = self.sim.date
+
+            # schedule end date of ipt after six months and repeat call to HS for another prescription
+            self.sim.schedule_event(TbIptEndEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
+
+        else:
+            logger.debug("This is HSI_Tb_IptHiv, person %d has active TB and can't start IPT", person_id)
+
 
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):
