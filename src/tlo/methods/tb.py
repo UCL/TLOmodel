@@ -1643,8 +1643,6 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         This is a Health System Interaction Event - tb xpert test
         """
 
-    # TODO if xpert test not available then request sputum test or clinical diagnosis / chest x-ray
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -1681,8 +1679,8 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         df.at[person_id, 'tb_xpert_test'] = True
         df.at[person_id, 'tb_date_xpert_test'] = now
         df.at[person_id, 'tb_result_xpert_test'] = False
+        df.at[person_id, 'tb_diagnosed'] = False
         df.at[person_id, 'tb_diagnosed_mdr'] = False  # default
-        # TODO add tb_diagnosed as well, if not mdr but referred because HIV+
 
         # a further 10% of TB cases fail to be diagnosed with Xpert (smear-negative + sensitivity of test)
         # they will present back to the health system with some delay (2-4 weeks)
@@ -1952,7 +1950,6 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
         self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
-        # TODO check intensive phase and continuation phase
         logger.debug('This is HSI_Tb_StartTreatmentAdult: scheduling follow-up appointments for person %d',
                      person_id)
 
@@ -2107,8 +2104,7 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
         # treatment allocated
         if df.at[person_id, 'is_alive'] and df.at[person_id, 'tb_diagnosed']:
             df.at[person_id, 'tb_treated_mdr'] = True
-            df.at[person_id, 'date_tb_treated_mdr'] = now
-            # TODO check all properties prefixed with tb_
+            df.at[person_id, 'tb_date_treated_mdr'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
         self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
@@ -2532,7 +2528,6 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        # TODO IPT from OneHealth returns intervention package code -99
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
             consumables.loc[
