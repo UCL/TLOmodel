@@ -9,8 +9,8 @@ from tlo.methods import demography, enhanced_lifestyle
 from pathlib import Path
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 1000
+end_date = Date(2025, 1, 1)
+popsize = 10000
 
 
 @pytest.fixture(autouse=True)
