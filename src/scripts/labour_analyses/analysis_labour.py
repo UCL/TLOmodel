@@ -10,23 +10,25 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, lifestyle, newborn_outcomes
+from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem
 
 # Where will output go - by default, wherever this script is run
-outputpath = ''
+#outputpath = './src/scripts/analyses_labour/'
+outputpath = ""
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefile_demography = Path('./resources')
+#resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+resourcefilepath = "./resources/"
 
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2013, 1, 1)
 popsize = 100
 
 # add file handler for the purpose of logging
@@ -43,10 +45,12 @@ fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
 # run the simulation
-sim.register(demography.Demography(resourcefilepath=resourcefile_demography))
+sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(labour.Labour())
-sim.register(newborn_outcomes.NewbornOutcomes())
+sim.register(labour.Labour(resourcefilepath=resourcefilepath))
+sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -136,3 +140,7 @@ sbr_df['SBR'] = sbr_df['still_births']/sbr_df['all_births'] * 1000
 sbr_df.plot.bar(y='SBR', stacked=True)
 plt.title("Yearly Still Birth Rate")
 plt.show()
+
+
+# Intervention Analysis
+#
