@@ -1150,6 +1150,8 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_agege15_urban = (df.is_alive & (df.age_years >= 15) & df.li_urban).sum()
         n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
+        n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
+        n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
 
         n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
         prop_bmi_1 = n_bmi_1 / n_agege15
@@ -1166,9 +1168,15 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_bmi_45_f = n_bmi_45_f / n_agege15_f
         n_bmi_45_m = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'M')).sum()
         prop_bmi_45_m = n_bmi_45_m / n_agege15_m
-        n_bmi_45_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & df.urban).sum()
+        n_bmi_45_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & df.li_urban).sum()
+        n_bmi_45_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & ~df.li_urban).sum()
         prop_bmi_45_urban = n_bmi_45_urban / n_agege15_urban
         prop_bmi_45_rural = n_bmi_45_rural / n_agege15_rural
+        n_bmi_45_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 1)).sum()
+        prop_bmi_45_wealth1 = n_bmi_45_wealth1 / n_agege15_wealth1
+        n_bmi_45_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 5)).sum()
+        prop_bmi_45_wealth5 = n_bmi_45_wealth5 / n_agege15_wealth5
+
 
         n_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (df.is_alive & (df.sex == 'M') & ~df.li_high_sugar
                                                             & df.age_years.between(15, 24) & ~df.li_tob
@@ -1184,9 +1192,11 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         logger.info('%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
-                    'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s',
+                    'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
+                    'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s',
                     self.sim.date, prop_bmi_1, prop_bmi_2, prop_bmi_3, prop_bmi_4, prop_bmi_5,
-                    prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural)
+                    prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural,
+                    prop_bmi_45_wealth1, prop_bmi_45_wealth5)
 
 #       logger.debug('%s|person_one|%s',
 #                    self.sim.date,
