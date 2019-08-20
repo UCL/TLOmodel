@@ -99,8 +99,9 @@ class NewbornOutcomes(Module):
                                                 categories=['SGA', 'AGA', 'LGA']),
         'nb_early_breastfeeding': Property(Types.BOOL, 'whether this neonate is exclusively breastfed after birth'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
+        'nb_death_after_birth_date': Property(Types.DATE, 'date on which the child died after birth'),
 
-         }
+    }
 
     def read_parameters(self, data_folder):
 
@@ -145,7 +146,7 @@ class NewbornOutcomes(Module):
         df['nb_early_onset_neonatal_sepsis'] = False
         df['nb_birth_asphyxia'] = False
         df['nb_hypoxic_ischemic_enceph'] = False
-        df['nb_encephalopathy'] = False
+        df['nb_encephalopathy'] = 'none'
         df['nb_intravascular_haem'] = False
         df['nb_necrotising_entero'] = False
         df['nb_resp_distress_synd'] = False
@@ -153,6 +154,7 @@ class NewbornOutcomes(Module):
         df['nb_size_for_gestational_age'] = None
         df['nb_early_breastfeeding'] = False
         df['nb_death_after_birth'] = False
+        df['nb_death_after_birth_date'] = pd.NaT
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -173,7 +175,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
         df.at[child_id, 'nb_birth_asphyxia'] = False
         df.at[child_id, 'nb_hypoxic_ischemic_enceph'] = False
-        df.at[child_id, 'nb_encephalopathy'] = False
+        df.at[child_id, 'nb_encephalopathy'] = 'none'
         df.at[child_id, 'nb_intravascular_haem'] = False
         df.at[child_id, 'nb_necrotising_entero'] = False
         df.at[child_id, 'nb_resp_distress_synd'] = False
@@ -182,6 +184,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_size_for_gestational_age'] = None
         df.at[child_id, 'nb_early_breastfeeding'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
+        df.at[child_id, 'nb_death_after_birth_date'] = pd.NaT
 
         # Newborns delivered at less than 37 weeks are allocated as either late or early preterm based on the
         # gestation at labour
@@ -462,28 +465,44 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
         if df.at[individual_id, 'nb_early_onset_neonatal_sepsis']:
             random = self.sim.rng.random_sample()
-            if random > params['cfr_neonatal_sepsis']:
+            if random < params['cfr_neonatal_sepsis']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
+                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
+
+                logger.info(
+                    'Neonate %d has died from neonatal sepsis', individual_id)
 
 #        if df.at[individual_id, 'nb_birth_asphyxia']:
 #            random = self.sim.rng.random_sample()
 #            if random > params['cfr_enceph_mild_mod']: #dummy
 #                df.at[individual_id, 'nb_death_after_birth'] = True
 
-        if df.at[individual_id, 'nb_encephalopathy']== 'mild_enceph' or 'moderate_enceph':
-            random = self.sim.rng.random_sample()
-            if random > params['cfr_enceph_mild_mod']:
-                df.at[individual_id, 'nb_death_after_birth'] = True
+        if (df.at[individual_id, 'nb_encephalopathy'] == 'mild_enceph') or\
+           (df.at[individual_id, 'nb_encephalopathy'] == 'moderate_enceph'):
+                random = self.sim.rng.random_sample()
+                if random < params['cfr_enceph_mild_mod']:
+                    df.at[individual_id, 'nb_death_after_birth'] = True
+                    df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
+
+                    logger.info( 'Neonate %d has died from mild/moderate encephalopathy', individual_id)
 
         if df.at[individual_id, 'nb_encephalopathy']== 'severe_enceph':
             random = self.sim.rng.random_sample()
-            if random > params['cfr_enceph_severe']:
+            if random < params['cfr_enceph_severe']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
+                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
+
+                logger.info(
+                    'Neonate %d has died from severe encephalopathy', individual_id)
 
         if df.at[individual_id, 'nb_congenital_anomaly']: # will this live here?
             random = self.sim.rng.random_sample()
-            if random > params['cfr_cba']:
+            if random < params['cfr_cba']:
                 df.at[individual_id, 'nb_death_after_birth'] = True
+                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
+
+                logger.info(
+                    'Neonate %d has died from a congenital birth anomaly', individual_id)
 
         # Schedule the death of any newborns who have died from their complications, whilst cause of death is recorded
         # as "neonatal complications" we will have contributory factors recorded as the properties of newborns
@@ -553,6 +572,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
         # todo: if we're not applying % of receiving intervention then do we need to code anything, or we assume if they
         # attend then they receive
 
+
 # ------------------------------ EARLY INITIATION OF BREAST FEEDING ----------------------------------------------------
 
         random = self.sim.rng.random_sample(size=1)
@@ -572,6 +592,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
         # 4.) TBC- Vit K,Syphlis prophylaxis, malaria prophylaxsis, tetracycline eyedrops?
         # todo: these interventions would impact outcomes over the next few days?
 
+        # VACCINES (POLIO + BCG)
         # Recalculate risk of complications
 
 # ================================== NEONATAL ENCEPHALOPATHY (FACILITY BIRTHS) ======================================
@@ -687,8 +708,9 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
-        self.repeat = 3
-        super().__init__(module, frequency=DateOffset(days=self.repeat))
+    #    self.repeat = 3
+    #    super().__init__(module, frequency=DateOffset(days=self.repeat))
+        super().__init__(module, frequency=DateOffset(months=12))
 
     def apply(self, population):
         """Apply this event to the population.
@@ -696,5 +718,18 @@ class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
 
-        logger.debug('%s|person_one|%s',
-                          self.sim.date, df.loc[0].to_dict())
+        # First 48 hours NMR:
+
+        one_year_prior = self.sim.date - np.timedelta64(1, 'Y')
+        live_births = df.index[(df.date_of_birth > one_year_prior) & (df.date_of_birth < self.sim.date)]
+        live_births_sum = len(live_births)
+        print(live_births_sum)
+
+        deaths = df.index[(df.nb_death_after_birth == True) & (df.nb_death_after_birth_date > one_year_prior) &
+                          (df.nb_death_after_birth_date < self.sim.date)]
+
+        cumm_deaths = len(deaths)
+        print(cumm_deaths)
+
+        nmr = cumm_deaths / live_births_sum * 1000
+        print('The neonatal mortality ratio for this year is', nmr)

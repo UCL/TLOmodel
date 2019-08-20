@@ -10,8 +10,8 @@ from tlo.methods import demography, lifestyle, labour,newborn_outcomes, healthbu
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 200
+end_date = Date(2021, 1, 1)
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
