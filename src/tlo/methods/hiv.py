@@ -795,7 +795,6 @@ class hiv(Module):
             self.sim.schedule_event(death, death_scheduled)  # schedule the death
 
         # ----------------------------------- PMTCT -----------------------------------
-        # TODO: check difference between HIV/AIDS, PMTCT and PMTCT. Both have code 90
         # first contact is testing, then schedule treatment / prophylaxis as needed
         # then if child infected, schedule ART
         if df.at[child_id, 'hv_mother_inf_by_birth'] and not df.at[child_id, 'hv_diagnosed']:
@@ -1147,7 +1146,7 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
-# TODO: change to environmental process, affects whole pop hiv risk, not individual
+
 class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
     """
     this is all behaviour change interventions that will reduce risk of HIV
@@ -1157,7 +1156,10 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
+
         df = self.sim.population.props
+
+        df.loc['hv_behaviour_change'] = True
 
         # Find the person_ids who are going to get the behaviour change intervention
         # open to any adults not currently infected
@@ -1566,10 +1568,15 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         the_appt_footprint['Peds'] = 1  # This requires one outpatient appt
         the_appt_footprint['Under5OPD'] = 1  # general child outpatient appt
 
-        # TODO: get the correct consumables listing cotrim + NVP/AZT
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'PMTCT',
+                                                  'Items'] == 'Zidovudine (AZT), capsule, 100 mg',
+                                              'Intervention_Pkg_Code'])[0]
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Items'] == 'Nevirapine (NVP), tablet, 200 mg',
+                                              'Intervention_Pkg_Code'])[0]
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients',
                                               'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
@@ -1612,10 +1619,10 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Peds'] = 1  # This requires one out patient appt
         the_appt_footprint['Under5OPD'] = 1  # hiv-specific appt type
 
-        # TODO: get the correct consumables listing, ART + cotrim
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'PMTCT', 'Intervention_Pkg_Code'])[0]
+                                                  'Items'] == 'Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300 + 200 mg', 'Intervention_Pkg_Code'])[
+            0]
         pkg_code2 = pd.unique(consumables.loc[
                                   consumables[
                                       'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
@@ -1876,7 +1883,7 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
             person_id)
 
 
-# TODO: find ART in consumables, how long is prescription for?
+# TODO: check ART in consumables, how long is prescription for?
 # schedule next Tx in 3 months
 class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
     """
@@ -2202,13 +2209,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ INC / PREV ------------------------------------
         # adult incidence
-        # TODO add is_alive condition to all new cases
-        mask = (df.loc[(df.age_years >= 15), 'hv_date_inf'] > now - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years >= 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
         adult_new_inf = mask.sum()
         adult_inc = adult_new_inf / len(df[~df.hv_inf & df.is_alive & (df.age_years.between(15, 49))])
 
         # child incidence
-        mask = (df.loc[(df.age_years < 15), 'hv_date_inf'] > now - DateOffset(months=self.repeat))
+        mask = (df.loc[(df.age_years < 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
         adult_new_inf = mask.sum()
         child_inc = adult_new_inf / len(df[~df.hv_inf & df.is_alive & (df.age_years < 15)])
 
