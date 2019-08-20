@@ -513,8 +513,8 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
             event = HSI_Sick_Child_Seeks_Care_From_HSA(self.module, person_id=individual)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=2,
-                                                                topen=date_of_aquisition,
-                                                                tclose=date_of_aquisition + DateOffset(weeks=2)
+                                                                topen=self.sim.date,
+                                                                tclose=None
                                                                 )
 
         # ---------------------------------------------------------------------------------------------------

@@ -8,6 +8,7 @@ from tlo.methods.iCCM import HSI_Sick_Child_Seeks_Care_From_HSA
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class ChildhoodMeasles(Module):
     PARAMETERS = {
         'base_prev_measles': Parameter

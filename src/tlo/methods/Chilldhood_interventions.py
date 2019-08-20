@@ -1,7 +1,6 @@
 import logging
 
-import pandas as pd
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin
 
 logger = logging.getLogger(__name__)
@@ -39,10 +38,16 @@ class ChildhoodDiseaseInterventions(Module):
     }
     PROPERTIES = {
         # iCCM - Integrated community case management classification, referral and treatment algorithm
+        'imci_general_danger_signs': Property
+        (Types.BOOL, 'IMCI guidelines - 4 general danger signs, include convulsions, lethargic or unconscious, '
+                     'vomiting everything, not able to drink or breastfeed'
+         ),
         'ccm_correctly_identified_danger_signs': Property
         (Types.BOOL, 'HSA correctly identified at least one danger sign, including '
-                     'convulsions, very sleepy or unconscious, chest in-drawing, vomiting everything, '
-                     'not able to drink or breastfeed'
+                     'convulsions, very sleepy or unconscious, chest indrawing, vomiting everything, '
+                     'not able to drink or breastfeed, red on MUAC strap, swelling of both feet, '
+                     'fever for last 7 days or more, blood in stool, diarrhoea for 14 days or more, '
+                     'and cough for at least 21 days'
          ),
         'ccm_correctly_assessed_fast_breathing_and_cough': Property
         (Types.BOOL, 'HSA correctly assessed for fast breathing for age and cough'
@@ -107,8 +112,21 @@ class ChildhoodDiseaseInterventions(Module):
         p = self.parameters
 
         p['prob_correct_id_diarrhoea_dehydration'] = 0.8
+        p['prob_correct_id_convulsions'] = 0.8
+        p['prob_correct_id_vomits_everything'] = 0.8
+        p['prob_correct_id_not_able_to_drink_or_breastfeed'] = 0.8
+        p['prob_correct_id_unusually_sleepy_unconscious'] = 0.8
+        p['prob_correct_id_red_MUAC'] = 0.8
+        p['prob_correct_id_swelling_both_feet'] = 0.8
+        p['prob_correct_id_diarrhoea'] = 0.9
+        p['prob_correct_id_bloody_stools'] = 0.8
+        p['prob_correct_id_persistent_diarrhoea'] = 0.8
         p['prob_correct_id_danger_sign'] = 0.7
+        p['prob_correct_id_fast_breathing']
         p['prob_correct_id_fast_breathing_and_cough'] = 0.8
+        p['prob_correct_id_chest_indrawing']
+        p['prob_correct_id_cough_more_than_21days']
+        p['prob_correct_id_fever_more_than_7days']
         p['prob_correct_id_persist_or_bloody_diarrhoea'] = 0.8
         p['prob_correctly_classified_diarrhoea_danger_sign'] = 0.8
         p['prob_correctly_classified_persist_or_bloody_diarrhoea'] = 0.8
@@ -126,8 +144,8 @@ class ChildhoodDiseaseInterventions(Module):
         pass
 
 
-class HSI_Pneumonia_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
-    """ This is the first Health Systems Interaction event for pneumonia module.
+class HSI_ICCM(Event, IndividualScopeEventMixin):
+    """ This is the first Health Systems Interaction event in the community for all childhood diseases modules.
     A sick child presenting symptoms is taken to the HSA for assessment, referral and treatment. """
 
     def __init__(self, module, person_id):
@@ -146,213 +164,134 @@ class HSI_Pneumonia_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
-        logger.debug('This is HSI_Pneumonia_Seeks_Care_From_HSA, a first appointment for person %d in the community',
+        logger.debug('This is HSI_ICCM, a first appointment for person %d in the community',
                      person_id)
 
         df = self.sim.population.props
         p = self.module.parameters
 
-        # ---------------- Work out if child with diarrhoea is correctly diagnosed by the HSA ----------------
+        sick_child = df.index[df.is_alive & (df.gi_diarrhoea_status | df.ri_pneumonia_status) & (df.age_years < 5)]
+        # TODO: add other childhood diseases to the index: measles, malaria, malnutrition and other
 
-        current_pneumonia = df.index[df.is_alive & df.ri_pneumonia_status & (df.age_years < 5)]
+        for person_id in sick_child:
+            # first checking for general danger signs
+            # danger sign - convulsions
+            if df.at[person_id, 'ds_convulsions']:
+                convulsions_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_convulsions'],
+                                                                  (1 - p['prob_correct_id_convulsions'])])
+                if convulsions_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+                    # if one danger sign identified, refer
+            # danger sign - not able to drink or breastfeed
+            if df.at[person_id, 'ds_not_able_to_drink_or_breastfeed']:
+                inability_to_drink_breastfeed_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_not_able_to_drink_or_breastfeed'],
+                                                                  (1 - p[
+                                                                      'prob_correct_id_not_able_to_drink_or_breastfeed'])])
+                if inability_to_drink_breastfeed_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+            # danger sign - vomits everything
+            if df.at[person_id, 'ds_vomits_everything']:
+                vomiting_everything_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_vomits_everything'],
+                                                                  (1 - p['prob_correct_id_vomits_everything'])])
+                if vomiting_everything_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+            # danger sign - unusually sleepy or unconscious
+            if df.at[person_id, 'ds_unusually_sleepy_unconscious']:
+                unusually_sleepy_unconscious_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_unusually_sleepy_unconscious'],
+                                                                  (1 - p[
+                                                                      'prob_correct_id_unusually_sleepy_unconscious'])])
+                if unusually_sleepy_unconscious_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+            # Checking for malnutrition signs TODO: complete this section with malnutrition code
+            # danger sign - for child aged 6 to 59 months, red on MUAC strap
+            if df.at[person_id, 'ds_red_MUAC_strap']:
+                red_MUAC_strap_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_red_MUAC'],
+                                                                  (1 - p['prob_correct_id_red_MUAC'])])
+                if red_MUAC_strap_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+            # danger sign - swelling of both feet
+            if df.at[person_id, 'ds_swelling_both_feet']:
+                swelling_both_feet_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_swelling_both_feet'],
+                                                                  (1 - p['prob_correct_id_swelling_both_feet'])])
+                if swelling_both_feet_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
 
-        for person_id in current_pneumonia:
-            fast_breathing_assessed_by_HSA = \
-                self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_fast_breathing_and_cough'],
-                                                              (1 - p['prob_correct_id_fast_breathing_and_cough'])])
-            if fast_breathing_assessed_by_HSA[True]:
-                df.at[person_id, 'ccm_correctly_assessed_fast_breathing_and_cough'] = True
-            if df.at[person_id, 'pn_any_general_danger_sign']: # TODO: have to include stridor
-                danger_sign_identified_by_HSA = \
-                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_danger_sign'],
-                                                                  (1 - p['prob_correct_id_danger_sign'])])
-                if df.at[person_id, 'ccm_correctly_assessed_fast_breathing_and_cough'] & danger_sign_identified_by_HSA[True]:
-                    df.at[person_id, 'ccm_correctly_classified_severe_pneumonia'] = True
-                    HSA_referral_decision = \
-                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
-                                                                      (1 - p['prob_correct_referral_decision'])])
-                    if HSA_referral_decision[True]:
-                        df.at[person_id, 'ccm_correct_referral_decision'] = True
-                if df.at[person_id, 'ccm_correctly_assessed_fast_breathing_and_cough'] & danger_sign_identified_by_HSA[False]:
+            # Checking for diarrhoea -----------------------------------------------------------------------------
+            if df.at[person_id, df.gi_diarrhoea_status]:
+                HSA_identified_diarrhoea =\
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_diarrhoea'],
+                                                                  (1 - p['prob_correct_id_diarrhoea'])])
+                if HSA_identified_diarrhoea[True]:
+                    if df.at[person_id, df.gi_diarrhoea_acute_type] == 'dysentery':
+                        HSA_identified_bloody_diarrhoea = \
+                            self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_bloody_stools'],
+                                                                          (1 - p['prob_correct_id_bloody_stools'])])
+                        if HSA_identified_bloody_diarrhoea[True]:
+                            df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+                        # give first dose of treatment before assisting referral
+                    if df.at[person_id, df.gi_persistent_diarrhoea]:
+                        HSA_identified_persistent_diarrhoea = \
+                            self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_persistent_diarrhoea'],
+                                                                          (1 - p['prob_correct_id_persistent_diarrhoea'])])
+                        if HSA_identified_persistent_diarrhoea[True]:
+                            df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+                        # give first dose of treatment before assisting referral
+                    if df.at[person_id, df.gi_diarrhoea_acute_type] == 'acute watery diarrhoea' & (
+                        df.at[person_id, 'ccm_correctly_identified_danger_sign'] == False):
+                        df.at[person_id, 'ccm_correctly_classified_diarrhoea'] = True
+                        # Do NOT refer, treat at home
+                    if df.at[person_id, df.gi_diarrhoea_acute_type] == 'acute watery diarrhoea' & (
+                        df.at[person_id, 'ccm_correctly_identified_danger_sign']):
+                        df.at[person_id, 'ccm_correctly_classified_diarrhoea_with_danger_sign'] = True
+                        # give first dose of treatment before assisting referral
+
+            # Checking for fast breathing and cough ----------------------------------------------------------------
+            if df.at[person_id, df.ri_pneumonia_status]:
+                HSA_identified_fast_breathing =\
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_fast_breathing'],
+                                                                  (1 - p['prob_correct_id_fast_breathing'])])
+                if HSA_identified_fast_breathing[True]: # TODO: danger signs
                     df.at[person_id, 'ccm_correctly_classified_pneumonia'] = True
-                    HSA_referral_decision = \
-                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
-                                                                      (1 - p['prob_correct_referral_decision'])])
-                    if HSA_referral_decision[True]:
-                        df.at[person_id, 'ccm_correct_referral_decision'] = True
-            if df.at[person_id, 'pn_fast_breathing'] == False & df.at[person_id, 'pn_cough']:
-                df.at[person_id, 'ccm_correctly_classified_common_cold_or_cough'] = True
+                    # do not refer, treat at home
+                if HSA_identified_fast_breathing[True] & df.at[person_id, 'ccm_correctly_identified_danger_sign']:
+                    df.at[person_id, 'ccm_correctly_classified_severe_pneumonia'] = True
+                    # give first dose of treatment before assisting referral
+                if df.at[person_id, 'ds_chest_indrawing']:
+                    chest_indrawing_identified_by_HSA = \
+                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_chest_indrawing'],
+                                                                      (1 - p['prob_correct_id_chest_indrawing'])])
+                    if chest_indrawing_identified_by_HSA[True]:
+                        df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+                    # give first dose of treatment before assisting referral
+
+            # danger sign - cough for more than 21 days
+            if df.at[person_id, 'ds_cough_more_than_21days']:
+                cough_more_than_21days_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1,
+                                        p=[p['prob_correct_id_cough_more_than_21days'],
+                                            (1 - p['prob_correct_cough_more_than_21days'])])
+                    if cough_more_than_21days_identified_by_HSA[True]:
+                        df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+            # danger sign - fever for last 7 days or more
+            # TODO: Add in malaria stuff
+            # if df.at[person_id, df.fever]:
+            if df.at[person_id, 'ds_fever_more_than_7days']:
+                fever_more_than_7days_identified_by_HSA = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_fever_more_than_7days'],
+                                                                  (1 - p['prob_correct_id_fever_more_than_7days'])])
+                if fever_more_than_7days_identified_by_HSA[True]:
+                            df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+
+
                 HSA_referral_decision = \
                     self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
                                                                   (1 - p['prob_correct_referral_decision'])])
-                if HSA_referral_decision[True]:
-                    df.at[person_id, 'ccm_correct_referral_decision'] = True
-            if df.at[person_id, 'ccm_correct_referral_decision'] & \
-                df.at[person_id, 'correctly_classified_diarrhoea_with_danger_sign']:
-                df.at[person_id, 'referral_options'] = 'refer immediately'
-
-
-class HSI_Diarrhoea_Seeks_Care_From_HSA(Event, IndividualScopeEventMixin):
-    """ This is the first Health Systems Interaction event for diarrhoea module.
-    A sick child presenting symptoms is taken to the HSA for assessment, referral and treatment. """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [1]
-        self.ALERT_OTHER_DISEASES = ['NewPneumonia']
-
-    def apply(self, person_id):
-
-        logger.debug('This is HSI_Diarrhoea_Seeks_Care_From_HSA, a first appointment for person %d in the community',
-                     person_id)
-
-        df = self.sim.population.props
-        p = self.module.parameters
-
-        # ---------------- Work out if child with diarrhoea is correctly diagnosed by the HSA ----------------
-
-        current_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_years < 5)]
-
-        for person_id in current_diarrhoea:
-            diarrhoea_assessed_by_HSA = \
-                self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_diarrhoea_dehydration'],
-                                                              (1 - p['prob_correct_id_diarrhoea_dehydration'])])
-            if diarrhoea_assessed_by_HSA[True]:
-                df.at[person_id, 'ccm_correctly_assessed_diarrhoea_and_dehydration'] = True
-            if df.at[person_id, 'di_any_general_danger_sign']:
-                danger_sign_identified_by_HSA = \
-                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_danger_sign'],
-                                                                  (1 - p['prob_correct_id_danger_sign'])])
-                if diarrhoea_assessed_by_HSA[True] & danger_sign_identified_by_HSA[True]:
-                    df.at[person_id, 'correctly_classified_diarrhoea_with_danger_sign'] = True
-                    HSA_referral_decision = \
-                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
-                                                                      (1 - p['prob_correct_referral_decision'])])
-                    if HSA_referral_decision[True]:
-                        df.at[person_id, 'ccm_correct_referral_decision'] = True
-            if (df.at[person_id, 'gi_diarrhoea_acute_type'] == 'dysentery') | (
-                df.at[person_id, 'gi_persistent_diarrhoea']):
-                persistent_or_bloody_diarr_identified_by_HSA = self.sim.rng.choice([True, False], size=1, p=[
-                    p['prob_correct_id_persist_or_bloody_diarrhoea'],
-                    (1 - p['prob_correct_id_persist_or_bloody_diarrhoea'])])
-                if diarrhoea_assessed_by_HSA[True] & persistent_or_bloody_diarr_identified_by_HSA[True]:
-                    df.at[person_id, 'ccm_correctly_classified_persistent_or_bloody_diarrhoea'] = True
-                    HSA_referral_decision = \
-                        self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
-                                                                      (1 - p['prob_correct_referral_decision'])])
-                    if HSA_referral_decision[True]:
-                        df.at[person_id, 'ccm_correct_referral_decision'] = True
-            if not (df.at[person_id, 'gi_persistent_diarrhoea'] & (
-                (df.at[person_id, 'gi_diarrhoea_acute_type']) == 'dysentery') & (
-                    df.at[person_id, 'di_any_general_danger_sign'])) & diarrhoea_assessed_by_HSA[True]:
-                df.at[person_id, 'ccm_correctly_classified_diarrhoea'] = True
-                HSA_referral_decision = \
-                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
-                                                                  (1 - p['prob_correct_referral_decision'])])
-                if HSA_referral_decision[True]:
-                    df.at[person_id, 'ccm_correct_referral_decision'] = True
-            if df.at[person_id, 'ccm_correct_referral_decision'] & \
-                df.at[person_id, 'ccm_correctly_classified_diarrhoea_with_danger_sign']:
-                df.at[person_id, 'ccm_referral_options'] = 'refer immediately'
-                # Get the consumables required - give pre-referral treatment with ORS solution
-                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-                pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                          'Intervention_Pkg'] ==
-                                                      'ORS',
-                                                      'Intervention_Pkg_Code'])[37]
-                event_immediate_referral = HSI_HSA_Diarrhoea_Referred_Immediately(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(event_immediate_referral,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-
-            if df.at[person_id, 'ccm_correct_referral_decision'] & \
-                df.at[person_id, 'ccm_correctly_classified_persistent_or_bloody_diarrhoea']:
-                df.at[person_id, 'ccm_referral_options'] = 'refer to health facility'
-                # Get the consumables required - give pre-referral treatment with ORS solution
-                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-                pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                          'Intervention_Pkg'] ==
-                                                      'ORS',
-                                                      'Intervention_Pkg_Code'])[37]
-                the_cons_footprint = {
-                    'Intervention_Package_Code': [pkg_code1],
-                    'Item_Code': []
-                }
-
-                event_referral = HSI_HSA_Diarrhoea_Referred_HealthFacility(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(event_referral,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-
-            if df.at[person_id, 'ccm_correct_referral_decision'] & \
-                df.at[person_id, 'ccm_correctly_classified_diarrhoea']:
-                df.at[person_id, 'ccm_referral_options'] = 'do not refer'
-                # Get the consumables required - not referred, treated at home with ORS and zinc
-                consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-                pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                          'Intervention_Pkg'] ==
-                                                      'ORS',
-                                                      'Intervention_Pkg_Code'])[37]
-                pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                          'Intervention_Pkg'] ==
-                                                      'Zinc for Children 0-6 months',
-                                                      'Intervention_Pkg_Code'])[38]
-                pkg_code3 = pd.unique(consumables.loc[consumables[
-                                                          'Intervention_Pkg'] ==
-                                                      'Zinc for Children 6-59 months',
-                                                      'Intervention_Pkg_Code'])[39]
-
-            if df.at[person_id, 'ccm_correct_referral_decision']:
-                logger.debug(
-                    '...This is HSI_Sick_Child_Seeks_Care_From_HSA: \
-                    there should now be treatment for person %d',
-                    person_id)
-                event_treatment_decision = HSI_HSA_Diarrhoea_StartTreatment(self.module, person_id=person_id)
-                self.sim.modules['HealthSystem'].schedule_event(event_treatment_decision)
-            else:
-                logger.debug(
-                    '...This is HSI_Sick_Child_Seeks_Care_From_HSA: there will not be treatment for person %d',
-                    person_id)
-
-            target_date_for_followup_appt = self.sim.date + DateOffset(days=5)
-
-            logger.debug(
-                '....This is HSI_Sick_Child_Seeks_Care_From_HSA: '
-                'scheduling a follow-up appointment for person %d on date %s',
-                person_id, target_date_for_followup_appt)
-
-            followup_appt = HSI_HSA_followup_care(self.module, person_id=person_id)
-
-            # Request the heathsystem to have this follow-up appointment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
-                                                                priority=2,
-                                                                topen=target_date_for_followup_appt,
-                                                                tclose=target_date_for_followup_appt + DateOffset(
-                                                                    weeks=2))
-
-
-class HSI_HSA_followup_care(Event, IndividualScopeEventMixin):
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-    def apply(self, population):
-
-        df = population.props
-        m = self.module
-        rng = m.rng
-
 
 """  
         # stepone : work out if the child has 'malaria'
