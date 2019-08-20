@@ -741,8 +741,6 @@ class Lifestyle(Module):
         df_odds_probs_bmi_levels[4] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
         df_odds_probs_bmi_levels[5] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
 
-        random_draw = pd.Series(rng.random_sample(size=len(age_ge15_idx)), index=age_ge15_idx)
-
         dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
 
         # for each row, make a choice
@@ -770,7 +768,7 @@ class Lifestyle(Module):
         df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
         df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
         df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
- #      df.at[child_id, 'li_bmi'] = False    # dont assign until age 15
+        df.at[child_id, 'li_bmi'] = 0
         df.at[child_id, 'li_low_ex'] = False
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_ex_alc'] = False
@@ -1094,7 +1092,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # possible increase in category of bmi
 
         bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15)
-                                      & df.li_bmi.between (1, 4)]
+                                      & df.li_bmi.between(1, 4)]
         eff_p_higher_bmi = pd.Series(m.r_higher_bmi, index=bmi_cat_1_to_4_idx)
         eff_p_higher_bmi[df.li_urban] *= m.rr_higher_bmi_urban
         eff_p_higher_bmi[df.sex == 'F'] *= m.rr_higher_bmi_f

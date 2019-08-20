@@ -17,7 +17,7 @@ from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
