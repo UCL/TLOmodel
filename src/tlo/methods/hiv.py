@@ -1268,13 +1268,47 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                 '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling hiv treatment for person %d on date %s',
                 person_id, self.sim.date)
 
-            treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+            # pre-2012, only AIDS patients received ART
+            if self.sim.date.year <= 2012:
+                logger.debug(
+                    '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling treatment for person %d on date %s',
+                    person_id, self.sim.date)
 
-            # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                if df.at[person_id, 'hv_specific_symptoms'] == 'aids':
+                    treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+                    # Request the health system to start treatment
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                        priority=1,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None)
+                # if not eligible for art, give ipt
+                else:
+                    logger.debug(
+                        '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling IPT for person %d on date %s',
+                        person_id, self.sim.date)
+
+                    ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
+
+                    # Request the health system to have this follow-up appointment
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(ipt_start,
+                                                                        priority=1,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None
+                                                                        )
+
+            # post-2012, treat all
+            else:
+                logger.debug(
+                    '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling art for person %d on date %s',
+                    person_id, self.sim.date)
+                treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+                # Request the health system to start treatment
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
 
 class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
