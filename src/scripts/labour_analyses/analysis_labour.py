@@ -28,8 +28,8 @@ resourcefilepath = "./resources/"
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 100
+end_date = Date(2011, 1, 1)
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -68,7 +68,7 @@ output = parse_log_file(logfile)
 # https://stackoverflow.com/questions/38792122/how-to-group-and-count-rows-by-month-and-year-using-pandas
 
 # Yearly Maternal Deaths
-deaths_df = output['tlo.methods.labour']['maternal_death']
+deaths_df = output['tlo.methods.labour']['maternal_death'] #N.B WONT RUN ON VERY SMALL POP- NEEDS SOME DEATHS
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year'])['person_id'].size()
@@ -90,6 +90,7 @@ deaths_df = output['tlo.methods.labour']['still_birth']
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year'])['person_id'].size()
+# TODO: n.b do we count maternal death where the baby dies as a still birth
 
 death_by_cause = death_by_cause.reset_index()
 death_by_cause.index = death_by_cause['year']
@@ -141,6 +142,20 @@ sbr_df.plot.bar(y='SBR', stacked=True)
 plt.title("Yearly Still Birth Rate")
 plt.show()
 
+# %% Plot Perinatal Mortality Rate Over time (stillbirths + deaths in firs week of life per 1000 births ):
+
+neonatal_deaths_df = output['tlo.methods.newborn_outcomes']['neonatal_death_48hrs']
+neonatal_deaths_df['date'] = pd.to_datetime(neonatal_deaths_df['date'])
+neonatal_deaths_df['year'] = neonatal_deaths_df['date'].dt.year
+death_by_year_pmr = (neonatal_deaths_df.groupby(['year'])['person_id'].size()) + death_by_year_s
+
+pmr_df = pd.concat((death_by_year_pmr, birth_by_year), axis=1)
+pmr_df.columns = ['perinatal_deaths', 'all_births']
+pmr_df['PMR'] = pmr_df['perinatal_deaths']/pmr_df['all_births'] * 1000
+
+pmr_df.plot.bar(y='PMR', stacked=True)
+plt.title("Yearly Perinatal Mortality Rate")
+plt.show()
 
 # Intervention Analysis
 #
