@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-# todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that is coded.
+# todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that
+# todo: module is coded.
 
 class Lifestyle(Module):
     """
@@ -373,6 +374,7 @@ class Lifestyle(Module):
         df['li_bmi'] = 0
         df['li_low_ex'] = False
         df['li_tob'] = False
+        df['li_date_not_tob'] = pd.NaT
         df['li_ex_alc'] = False
         df['li_mar_stat'].values[:] = 1
         df['li_in_ed'] = False
@@ -452,8 +454,6 @@ class Lifestyle(Module):
         # decide on tobacco use based on the individual probability is greater than random draw
         # this is a list of True/False. assign to li_tob
         df.loc[age_ge15_idx, 'li_tob'] = (random_draw < tob_probs)
-
-        # todo: add an ever smoked property and date of quitting
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
@@ -836,14 +836,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
-
-        # todo: move these to top and read in as parameters
-        date_campaign_exercise_increase_start_1 = datetime.date(2017, 1, 1)
-        date_campaign_exercise_increase_stop_1 = datetime.date(2020, 1, 1)
-
-        all_idx_campaign_exercise_increase = df.index[df.is_alive & (self.sim.date ==
-                                                                     date_campaign_exercise_increase_start_1)]
-
+        # todo: this line below to start a general population campaign to increase exercise not working yet (same for others below)
+        all_idx_campaign_exercise_increase = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
@@ -862,13 +856,15 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # transition from tobacco to no tobacco
         tob_idx = df.index[df.li_tob & df.is_alive]
         eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
+        eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_quit_smoking] *= m.rr_not_tob_pop_advice_tobacco
         random_draw = rng.random_sample(len(tob_idx))
         newly_not_tob: pd.Series = random_draw < eff_rate_not_tob
         newly_not_tob_idx = tob_idx[newly_not_tob]
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
-        # todo:  add in 'li_exposed_to_campaign_quit_smoking' and its effect once working for low ex
+        all_idx_campaign_quit_smoking = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
