@@ -31,9 +31,7 @@ class Lifestyle(Module):
 
     PARAMETERS = {
 
-        # -------- list of parameters -----------------------------------------------------------------------------------
-
-        #todo check these are fully consistent with list in read_parameters def
+        # -------- list of parameters ---------------------------------------------------------------
 
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
@@ -138,9 +136,9 @@ class Lifestyle(Module):
         'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
                                                           'intake'),
         'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
+        'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
         'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
                                                                 'given population advice/campaign on weight'),
-        'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
         'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
         'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
         'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
@@ -148,10 +146,12 @@ class Lifestyle(Module):
                                                                   'population advice/campaign on salt'),
         'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
         'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
+        'rr_not_high_sugar_pop_advice_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
+                                                                   'population advice/campaign on sugar'),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
         'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'),
-        'rr_not_high_sugar_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
-                                                                   'population advice/campaign on sugar'),
+        'rr_not_low_ex_pop_advice_sugar': Parameter(Types.REAL, 'probability per 3 months of not low exercise'
+                                                                    'population advice/campaign on exercise'),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
         'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
@@ -170,7 +170,7 @@ class Lifestyle(Module):
         'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
                                               'not excess alcohol'),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
-        'rr_not_tob_pop_advice_alc': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
+        'rr_not_tob_pop_advice_alcohol': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
                                                            'population advice/campaign on alcohol'),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
         'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
