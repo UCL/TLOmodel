@@ -789,7 +789,6 @@ class Lifestyle(Module):
         df.at[child_id, 'li_ex_alc'] = False
         df.at[child_id, 'li_mar_stat'] = 1
         df.at[child_id, 'li_on_con'] = False
-        df.at[child_id, 'li_con_t'] = 1
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
         df.at[child_id, 'li_unimproved_sanitation'] = df.at[mother_id, 'li_unimproved_sanitation']
