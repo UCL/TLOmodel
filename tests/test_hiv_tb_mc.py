@@ -48,6 +48,15 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+def test_params(simulation):
+    # check types of columns
+    df = simulation.population.props
+    test = simulation.modules['tb'].parameters
+    assert (test.isnull().values.any().any())
+
+    df.isnull().values.any()
+
+
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
