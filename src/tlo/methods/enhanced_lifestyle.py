@@ -50,17 +50,32 @@ class Lifestyle(Module):
         'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
         'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
         'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
+
         'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
         'init_p_high_salt_urban': Parameter(Types.REAL, 'initital proportion with high salt intake'),
         'init_or_high_salt_rural': Parameter(Types.REAL, 'odds ratio high salt if rural'),
         'init_p_ex_alc_m': Parameter(Types.REAL, 'initital proportion of men with excess alcohol use'),
         'init_p_ex_alc_f': Parameter(Types.REAL, 'initital proportion of women with excess alcohol use'),
+
+        'init_p_low_ex_urban_m': Parameter(Types.REAL, 'initital proportion of men with low exercise urban'),
+        'init_or_low_ex_rural': Parameter(Types.REAL, 'odds ratio low exercise rural'),
+        'init_or_low_ex_f': Parameter(Types.REAL, 'odds ratio low exercise female'),
+        'init_p_tob_age1519_m_wealth1': Parameter(Types.REAL, 'initital proportion of 15-19 year old men using '
+                                                              'tobacco, wealth level 1 '),
+        'init_or_tob_f': Parameter(Types.REAL, 'odds ratio tobacco use females'),
+        'init_or_tob_age2039_m': Parameter(Types.REAL, 'odds ratio tobacco use age2039 in men'),
+        'init_or_tob_agege40_m': Parameter(Types.REAL, 'odds ratio tobacco use age40+ in men'),
+        'init_or_tob_wealth2': Parameter(Types.REAL, 'odds ratio tobacco use wealth level 2'),
+        'init_or_tob_wealth3': Parameter(Types.REAL, 'odds ratio tobacco use wealth level 3'),
+        'init_or_tob_wealth4': Parameter(Types.REAL, 'odds ratio tobacco use wealth level 4'),
+        'init_or_tob_wealth5': Parameter(Types.REAL, 'odds ratio tobacco use wealth level 5'),
         'init_dist_mar_stat_age1520': Parameter(Types.LIST, 'proportions never, current, div_wid age 15-20 baseline'),
         'init_dist_mar_stat_age2030': Parameter(Types.LIST, 'proportions never, current, div_wid age 20-30 baseline'),
         'init_dist_mar_stat_age3040': Parameter(Types.LIST, 'proportions never, current, div_wid age 30-40 baseline'),
         'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
         'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
         'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
+
         'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
                                                          'education at baseline'),
         'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
@@ -81,33 +96,33 @@ class Lifestyle(Module):
         'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
         'init_or_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of secondary education '
                                                                        'per higher wealth level'),
-        'init_p_unimproved_sanitation': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
+        'init_p_unimproved_sanitation_urban': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
                                                               'given urban'),
         # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
         #                                                     'true to false upon move from rural to urban'
         'init_or_unimproved_sanitation_rural': Parameter(Types.REAL,
                                                          'initial odds ratio of unimproved_sanitation if '
                                                          'rural'),
-        'init_p_no_clean_drinking_water': Parameter(Types.REAL,
+        'init_p_no_clean_drinking_water_urban': Parameter(Types.REAL,
                                                     'initial probability of no_clean_drinking_water given urban'),
         # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
         #                                                     'true to false upon move from rural to urban'
         'init_or_no_clean_drinking_water_rural': Parameter(Types.REAL,
                                                            'initial odds ratio of no clean drinking_water '
                                                            'if rural'),
-        'init_p_wood_burn_stove': Parameter(Types.REAL,
+        'init_p_wood_burn_stove_urban': Parameter(Types.REAL,
                                             'initial probability of wood_burn_stove given urban'),
         # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
         #                                                     'true to false upon move from rural to urban'
         'init_or_wood_burn_stove_rural': Parameter(Types.REAL,
                                                    'initial odds ratio of wood_burn_stove if rural'),
-        'init_p_no_access_handwashing': Parameter(Types.REAL,
+        'init_p_no_access_handwashing_wealth1': Parameter(Types.REAL,
                                                   'initial probability of no_access_handwashing given wealth 1'),
         'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
                                                                                 'access_handwashing per lower wealth '
                                                                                 'level'),
 
-        # ------------ parameters relating to updating of property values over time ------------------------
+    # ------------ parameters relating to updating of property values over time ------------------------
 
         'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
