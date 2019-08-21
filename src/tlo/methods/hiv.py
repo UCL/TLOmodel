@@ -413,7 +413,7 @@ class hiv(Module):
         # probability of hiv > random number, assign hiv_inf = True
         # TODO: cluster this by mother's hiv status?? currently no linked mother pre-baseline year
         hiv_index = df_hivprob.index[
-            df.is_alive & (df_hivprob.prev_prop > random_draw) & df_hivprob.age_years.between(0, 14)]
+            df.is_alive & (df_hivprob.prev_prop < random_draw) & df_hivprob.age_years.between(0, 14)]
         # print(hiv_index)
 
         df.loc[hiv_index, 'hv_inf'] = True
@@ -2230,7 +2230,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_behav = len(df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]) / len(
             df[df.is_alive & (df.age_years >= 15)])
 
-        logger.info('%s|infected|%s', self.sim.date,
+        logger.info('%s|hiv_infected|%s', self.sim.date,
                     {
                         'hiv_adult_inc': adult_inc,
                         'hiv_child_inc': child_inc,
@@ -2279,7 +2279,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         c_art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years < 15)])
         prop_vir_sup_child = c_art_vs / c_art if c_art else 0
 
-        logger.info('%s|treatment|%s', self.sim.date,
+        logger.info('%s|hiv_treatment|%s', self.sim.date,
                     {
                         'hiv_coverage_adult_art': adult_art,
                         'hiv_coverage_child_art': child_art,
@@ -2296,7 +2296,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         hiv_fsw = len(df[df.is_alive & df.hv_inf & (df.hv_sexual_risk == 'sex_work') & (df.age_years >= 15)])
         hiv_prev_fsw = hiv_fsw / fsw if fsw else 0
 
-        logger.info('%s|fsw|%s', self.sim.date,
+        logger.info('%s|hiv_fsw|%s', self.sim.date,
                     {
                         'prop_fsw': prop_fsw,
                         'hiv_prev_fsw': hiv_prev_fsw,
