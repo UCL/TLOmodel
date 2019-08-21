@@ -6,6 +6,7 @@ import logging
 import os
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -238,7 +239,7 @@ class tb(Module):
         params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value1']
         params['prob_tx_success_mdr'] = self.param_list.loc['prob_tx_success_mdr', 'value1']
         params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value1']
-        params['prob_tx_success_0_14'] = self.param_list.loc['prob_tx_success_0_14', 'value1']
+        params['prob_tx_success_0_4'] = self.param_list.loc['prob_tx_success_0_4', 'value1']
         params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value1']
         params['followup_times'] = workbook['followup']
 
@@ -350,12 +351,8 @@ class tb(Module):
 
         active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb).index
         # print(active)
-        df.loc[active, 'tb_inf'] = 'active_susc_new'
-        df.loc[active, 'tb_date_active'] = now
-        df.loc[active, 'tb_specific_symptoms'] = 'active_pulm'
-        df.loc[tb_idx, 'tb_unified_symptom_code'] = 2
 
-        # allocate some active infections as mdr-tb
+        idx_c = pd.Series(data=False, index=df.loc[active])
         if len(active) > 10:
             idx_c = df[df.is_alive & (df.tb_inf == 'active_susc_new')].sample(
                 frac=self.parameters['prop_mdr2010']).index
@@ -363,17 +360,41 @@ class tb(Module):
             df.loc[idx_c, 'tb_inf'] = 'active_mdr_new'
             df.loc[idx_c, 'tb_specific_symptoms'] = 'active_pulm'
 
+        for person_id in active[~idx_c]:
+            # random draw of days 0-365
+            random_day = self.rng.choice(list(range(0, 365)), size=1, replace=True, p=[(1 / 365)] * 365)
+            pd_day = now + pd.to_timedelta(random_day, unit='d')
+
+            logger.debug(
+                'This is Tb, scheduling active disease for person %d on date %s',
+                person_id, pd_day)
+
+            # schedule active disease
+            self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
+
+        for person_id in idx_c:
+            # random draw of days 0-365
+            random_day = self.rng.choice(list(range(0, 365)), size=1, replace=True, p=[(1 / 365)] * 365)
+            pd_day = now + pd.to_timedelta(random_day, unit='d')
+
+            logger.debug(
+                'This is Tb, scheduling mdr-active disease for person %d on date %s',
+                person_id, pd_day)
+
+            # schedule active disease
+            self.sim.schedule_event(TbMdrActiveEvent(self, person_id), pd_day)
+
     def initialise_simulation(self, sim):
 
         sim.schedule_event(TbEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbRelapseEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=1))
 
-        sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=1))
 
         # Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
@@ -643,30 +664,30 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                 fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
                 # print('fast', fast)
 
-                if fast.sum() > 0:
-                    for person_id in fast.index[fast]:
-                        logger.debug(
-                            'This is TbEvent, scheduling active disease for fast progressing person %d on date %s',
-                            person_id, now)
-                        # schedule active disease now
-                        self.sim.schedule_event(TbActiveEvent(self.module, person_id), now)
+            if fast.sum() > 0:
+                for person_id in fast.index[fast]:
+                    logger.debug(
+                        'This is TbEvent, scheduling active disease for fast progressing person %d on date %s',
+                        person_id, now)
+                    # schedule active disease now
+                    self.sim.schedule_event(TbActiveEvent(self.module, person_id), now)
 
-                for person_id in fast.index[~fast]:
-                    # decide if person will develop active tb
-                    active = self.module.rng.rand() < prob_prog[person_id]
+            for person_id in fast.index[~fast]:
+                # decide if person will develop active tb
+                active = self.module.rng.rand() < prob_prog[person_id]
 
-                    if active:
-                        # randomly select date of onset of active disease
-                        # random draw of days 0-732
-                        random_date = rng.randint(low=0, high=732)
-                        sch_date = now + pd.to_timedelta(random_date, unit='d')
+                if active:
+                    # randomly select date of onset of active disease
+                    # random draw of days 0-732
+                    random_date = rng.randint(low=0, high=732)
+                    sch_date = now + pd.to_timedelta(random_date, unit='d')
 
-                        logger.debug(
-                            'This is TbEvent, scheduling active disease for slow progressing person %d on date %s',
-                            person_id, sch_date)
+                    logger.debug(
+                        'This is TbEvent, scheduling active disease for slow progressing person %d on date %s',
+                        person_id, sch_date)
 
-                        # schedule active disease
-                        self.sim.schedule_event(TbActiveEvent(self.module, person_id), sch_date)
+                    # schedule active disease
+                    self.sim.schedule_event(TbActiveEvent(self.module, person_id), sch_date)
 
         # ----------------------------------- CHILD PROGRESSORS TO ACTIVE DISEASE -----------------------------------
         # probability of active disease
@@ -2776,11 +2797,11 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         num_active_child = len(df[(df.tb_inf.str.contains('active')) & (df.age_years < 15) & df.is_alive])
         prop_active_child = num_active_child / len(df[(df.age_years < 15) & df.is_alive])
 
-        # proportion of active TB cases with concurrent HIV infection - whole population
+        # proportion of hiv cases with active tb
         num_active_hiv = len(df[(df.tb_inf.str.contains('active')) & df.hv_inf & df.is_alive])
 
         if num_active > 0:
-            prop_hiv_tb = num_active_hiv / num_active
+            prop_hiv_tb = num_active_hiv / len(df[df.hv_inf & df.is_alive])
         else:
             prop_hiv_tb = 0
 
@@ -2836,7 +2857,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         mort_rate_tb_hiv = (deaths_tb_hiv / len(df[df.is_alive])) * 100000
 
-        logger.info('%s|tb_prevalence|%s', now,
+        logger.info('%s|tb_mortality|%s', now,
                     {
                         'tbMortRate': mort_rate,
                         'tbMortRateHiv': mort_rate_tb_hiv,

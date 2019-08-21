@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 2000
+end_date = Date(2012, 12, 1)
+popsize = 1500
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -57,7 +57,8 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger("tlo.methods.tb").setLevel(logging.DEBUG)
+logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.hiv").setLevel(logging.INFO)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
