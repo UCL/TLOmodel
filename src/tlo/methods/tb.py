@@ -78,6 +78,7 @@ class tb(Module):
         'rr_tb_bcg': Parameter(Types.REAL,
                                'relative risk of progression to active disease for children with BCG vaccine'),
         'rr_tb_hiv': Parameter(Types.REAL, 'relative risk of progression to active disease for PLHIV'),
+        'rr_tb_aids': Parameter(Types.REAL, 'relative risk of progression to active disease for PLHIV with AIDS'),
         'rr_tb_art_adult': Parameter(Types.REAL,
                                      'relative risk of progression to active disease for adults with HIV on ART'),
         'rr_tb_art_child': Parameter(Types.REAL,
@@ -217,6 +218,7 @@ class tb(Module):
         # relative risks of progression to active disease
         params['rr_tb_bcg'] = self.param_list.loc['rr_tb_bcg', 'value1']
         params['rr_tb_hiv'] = self.param_list.loc['rr_tb_hiv', 'value1']
+        params['rr_tb_aids'] = self.param_list.loc['rr_tb_aids', 'value1']
         params['rr_tb_art_adult'] = self.param_list.loc['rr_tb_art_adult', 'value1']
         params['rr_tb_art_child'] = self.param_list.loc['rr_tb_art_child', 'value1']
         params['rr_tb_overweight'] = self.param_list.loc['rr_tb_overweight', 'value1']
@@ -641,6 +643,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog = pd.Series(0, index=df.index)
         prob_prog.loc[df.is_alive & df.age_years.between(15, 100)] = params['prog_active']
         prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
+        prob_prog.loc[df.hv_inf] *= params['rr_tb_aids']
         prob_prog.loc[(df.hv_on_art == 2)] *= (params['rr_tb_hiv'] * params['rr_tb_art_adult'])
         # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
         prob_prog.loc[df.li_overwt] *= params['rr_tb_obese']
