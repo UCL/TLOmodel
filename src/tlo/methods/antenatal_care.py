@@ -266,6 +266,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
 
         # consider facility level at which interventions can be delivered- most basic ANC may be able to be delivered
         # at community level but some additional interventions need to be delivered at higher level facilites
+        x='y'
 
 
 class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, IndividualScopeEventMixin):
