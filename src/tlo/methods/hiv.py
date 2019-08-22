@@ -1709,6 +1709,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         if (not df.at[person_id, 'hv_on_art'] == 0
             and not (df.at[person_id, 'tb_inf'].startswith('active'))
             and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
+
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, self.sim.date)
@@ -1834,6 +1835,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
             df.at[person_id, 'tb_inf'].startswith('active')) and (
             self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
+
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, now)
