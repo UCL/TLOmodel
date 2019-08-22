@@ -304,7 +304,6 @@ class tb(Module):
         df['tb_treatment_failure'] = False
         df['tb_treated_mdr'] = False
         df['tb_date_treated_mdr'] = pd.NaT
-        df['tb_request_mdr_regimen'] = False
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
         df['tb_date_death'] = pd.NaT
@@ -479,7 +478,6 @@ class tb(Module):
         df.at[child_id, 'tb_treatment_failure'] = False
         df.at[child_id, 'tb_treated_mdr'] = False
         df.at[child_id, 'tb_date_treated_mdr'] = pd.NaT
-        df.at[child_id, 'tb_request_mdr_regimen'] = False
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
         df.at[child_id, 'tb_date_death'] = pd.NaT
