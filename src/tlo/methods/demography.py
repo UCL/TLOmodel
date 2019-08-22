@@ -1,6 +1,5 @@
 """
 The core demography module and its associated events.
-
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
@@ -93,6 +92,7 @@ class Demography(Module):
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
+        'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
@@ -119,9 +119,7 @@ class Demography(Module):
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
-
         Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
-
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
@@ -152,14 +150,14 @@ class Demography(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
         """
         df = population.props
+
+        df.date_of_death = pd.NaT
 
         worksheet = self.parameters['interpolated_pop']
 
@@ -230,7 +228,6 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
@@ -251,9 +248,7 @@ class Demography(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
         This is called by the simulation whenever a new person is born.
-
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -309,7 +304,7 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
 
@@ -383,11 +378,9 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, mother_id):
         """Create a new birth event.
-
         We need to pass the person this event happens to to the base class constructor
         using super(). We also pass the module that created this event, so that random
         number generators can be scoped per-module.
-
         :param module: the module that created this event
         :param mother_id: the person giving birth
         """
@@ -483,6 +476,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
             # the person is now dead
+            df.at[individual_id, 'date_of_death'] = self.sim.date
 
         logger.debug("*******************************************The person %s "
                      "is now officially dead and has died of %s", individual_id, self.cause)

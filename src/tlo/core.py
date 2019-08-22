@@ -155,8 +155,7 @@ class Module:
 
     `rng`
         A random number generator specific to this module, with its own internal state.
-        It's an instance of `numpy.random.RandomState`; see
-        https://docs.scipy.org/doc/numpy/reference/generated/numpy.random.RandomState.html
+        It's an instance of `numpy.random.RandomState`
 
     `sim`
         The simulation this module is part of, once registered.
