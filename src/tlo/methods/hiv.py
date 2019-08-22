@@ -752,26 +752,26 @@ class hiv(Module):
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and (df.at[child_id, 'hv_mother_art'] != 2)
-                and (((now - df.at[mother_id, 'hv_date_inf']) / np.timedelta64(1, 'M')) < 9)):
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and (df.at[child_id, 'hv_mother_art'] != 2)
+            and (((now - df.at[mother_id, 'hv_date_inf']) / np.timedelta64(1, 'M')) < 9)):
             df.at[child_id, 'hv_inf'] = True
 
         # mother has existing infection, mother NOT ON ART
         if ((random_draw < params['prob_mtct_untreated'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and not df.at[child_id, 'hv_inf']
-                and (df.at[child_id, 'hv_mother_art'] != 2)):
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and not df.at[child_id, 'hv_inf']
+            and (df.at[child_id, 'hv_mother_art'] != 2)):
             df.at[child_id, 'hv_inf'] = True
 
         #  mother has existing infection, mother ON ART
         if ((random_draw < params['prob_mtct_treated'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and not df.at[child_id, 'hv_inf']
-                and (df.at[child_id, 'hv_mother_art'] == 2)):
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and not df.at[child_id, 'hv_inf']
+            and (df.at[child_id, 'hv_mother_art'] == 2)):
             df.at[child_id, 'hv_inf'] = True
 
         # ----------------------------------- ASSIGN DEATHS  -----------------------------------
@@ -1156,7 +1156,6 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
         super().__init__(module)
 
     def apply(self, population):
-
         df = self.sim.population.props
 
         # could do this by district
@@ -1620,9 +1619,11 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Peds'] = 1  # This requires one out patient appt
         the_appt_footprint['Under5OPD'] = 1  # hiv-specific appt type
 
+        Item = 'Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300 + 200 mg'
+
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Items'] == 'Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300 + 200 mg', 'Intervention_Pkg_Code'])[
+                                                  'Items'] == Item, 'Intervention_Pkg_Code'])[
             0]
         pkg_code2 = pd.unique(consumables.loc[
                                   consumables[
@@ -1651,8 +1652,8 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         df.at[person_id, 'hv_on_cotrim'] = True
 
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] < 15)):
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] < 15)):
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                               params['vls_child']])
 
@@ -1706,8 +1707,8 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         # df.at[person_id, 'tb_inf'].startswith("active"):
 
         if (not df.at[person_id, 'hv_on_art'] == 0
-                and not (df.at[person_id, 'tb_inf'].startswith('active'))
-                and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
+            and not (df.at[person_id, 'tb_inf'].startswith('active'))
+            and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, self.sim.date)
@@ -1764,22 +1765,22 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         # condition: not already on art
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] < 15)):
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] < 15)):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                                           params['vls_child']])
 
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] >= 15)
-                and (df.at[person_id, 'sex'] == 'M')):
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] >= 15)
+            and (df.at[person_id, 'sex'] == 'M')):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_m']),
                                                                                           params['vls_m']])
 
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] >= 15)
-                and (df.at[person_id, 'sex'] == 'F')):
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] >= 15)
+            and (df.at[person_id, 'sex'] == 'F')):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_f']),
                                                                                           params['vls_f']])
 
@@ -1832,7 +1833,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         # ----------------------------------- SCHEDULE IPT START -----------------------------------
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
             df.at[person_id, 'tb_inf'].startswith('active')) and (
-                self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
+            self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, now)
@@ -2302,5 +2303,3 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'prop_fsw': prop_fsw,
                         'hiv_prev_fsw': hiv_prev_fsw,
                     })
-
-

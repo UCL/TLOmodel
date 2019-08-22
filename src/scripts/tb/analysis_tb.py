@@ -74,25 +74,3 @@ fh.flush()
 t1 = time.time()
 print('Time taken, mins', (t1 - t0) / 60)
 
-# %% read the results
-# out = sim.population.props
-# out.to_csv(r'C:\Users\Tara\Documents\TLO\outputs.csv', header=True)
-import pandas as pd
-import numpy as np
-import datetime
-import matplotlib.pyplot as plt
-from matplotlib import cm
-# from tlo.analysis.utils import parse_log_file
-#
-#
-# #
-# # outputpath = './src/scripts/tb/'
-# # datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-# #
-# # logfile = outputpath + 'LogFile' + datestamp + '.log'
-# ##
-# logfile = './src/scripts/tb/LogFile__2019_08_21.log'
-#
-# output = parse_log_file(logfile)
-#
-# tb_df = output['tlo.methods.tb']['tb_prevalence']
