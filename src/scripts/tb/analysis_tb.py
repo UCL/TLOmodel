@@ -25,8 +25,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 500
+end_date = Date(2018, 12, 1)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -91,7 +91,7 @@ from matplotlib import cm
 # #
 # # logfile = outputpath + 'LogFile' + datestamp + '.log'
 # ##
-# logfile = './src/scripts/tb/LogFile__2019_08_22.log'
+# logfile = './src/scripts/tb/LogFile__2019_08_21.log'
 #
 # output = parse_log_file(logfile)
 #
