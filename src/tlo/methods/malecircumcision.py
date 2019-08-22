@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class male_circumcision(Module):
+class MaleCircumcision(Module):
     """
     male circumcision, without health system links
     """

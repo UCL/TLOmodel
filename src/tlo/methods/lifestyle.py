@@ -14,8 +14,6 @@ logger = logging.getLogger(__name__)
 
 logger.setLevel(logging.INFO)
 
-
-
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
