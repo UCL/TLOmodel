@@ -157,5 +157,11 @@ pmr_df.plot.bar(y='PMR', stacked=True)
 plt.title("Yearly Perinatal Mortality Rate")
 plt.show()
 
-# Intervention Analysis
-#
+# Complication Incidence and Prevlance
+
+# Maternal Sepsis
+# Eclampsia
+# Obstructed Labour
+# Antepartum Haemorrhage
+# Post Partum Haemorrhage
+
