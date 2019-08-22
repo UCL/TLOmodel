@@ -1,5 +1,5 @@
 """
-A skeleton template for disease methods.
+Module responsible for antenatal care provision and care seeking for pregnant women .
 """
 
 import logging
@@ -65,23 +65,9 @@ class AntenatalCare(Module):
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-
-        If this is a disease module, register this disease module with the healthsystem:
-        e.g. self.sim.modules['HealthSystem'].register_disease_module(self)"
-
-        If this is an interveton module: register the footprints with the healthsystem:
-        e.g.    footprint_for_treatment = pd.DataFrame(index=np.arange(1), data={
-                 'Name': self.TREATMENT_ID,
-                 'Nurse_Time': 5,
-                 'Doctor_Time': 10,
-                 'Electricity': False,
-                 'Water': False})
-             self.sim.modules['HealthSystem'].register_interventions(footprint_for_treatment)
-
         """
+        event = AntenatalCareLoggingEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(days=0))
 
         raise NotImplementedError
 
@@ -176,7 +162,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #    the_appt_footprint['Over5OPD'] = 1
+    #   the_appt_footprint['Over5OPD'] = 1
         the_appt_footprint['AntenatalFirst'] = 1
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -190,6 +176,8 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
                                                    'Basic ANC',
                                                    'Intervention_Pkg_Code'])[0]
 
+        # Additional consumables: Deworming treatment, syphyllis detection, tetanus toxid
+
         the_cons_footprint = {
             'Intervention_Package_Code': [pkg_code],
             'Item_Code': []
@@ -199,7 +187,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
         self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3] # Community?!
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -208,8 +196,75 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
         m = self
 
         logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
-                    'first antenatal care visit of their pregnancy on date %s',
-                     person_id, self.sim.date)
+                    'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
 
         pass
 
+        # consider facility level at which interventions can be delivered- most basic ANC may be able to be delivered
+        # at community level but some additional interventions need to be delivered at higher level facilites
+
+
+class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, IndividualScopeEventMixin):
+    """
+    This is a Health System Interaction Event.
+    This is event manages all subsequent antenatal care visits additional to her first visit
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+    #   the_appt_footprint['Over5OPD'] = 1
+        the_appt_footprint['ANCSubsequent'] = 1
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        dummy_pkg_code = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                   'HIV Testing Services',
+                                                   'Intervention_Pkg_Code'])[0]
+
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                   'Basic ANC',
+                                                   'Intervention_Pkg_Code'])[0]
+
+        # Additional consumables: Deworming treatment, syphyllis detection, tetanus toxoid,
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'AntenatalCare_PresentsForAdditionalAntenatalCareVisit'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+        logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
+                    'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
+
+        pass
+
+class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+        """Handles Antenatal Care logging"""
+
+        def __init__(self, module):
+            """schedule logging to repeat every 3 months
+            """
+            #    self.repeat = 3
+            #    super().__init__(module, frequency=DateOffset(days=self.repeat))
+            super().__init__(module, frequency=DateOffset(months=3))
+
+        def apply(self, population):
+            """Apply this event to the population.
+            :param population: the current population
+            """
+            df = population.props
