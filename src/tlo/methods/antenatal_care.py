@@ -6,6 +6,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -29,7 +30,7 @@ class AntenatalCare(Module):
     }
 
     PROPERTIES = {
-        'property_a': Property(Types.BOOL, 'Description of property a'),
+        'ac_total_anc_visits': Property(Types.INT, 'rolling total of antenatal visits this woman has'),
     }
 
     # Declaration of how we will refer to any treatments that are related to this disease.
@@ -43,6 +44,14 @@ class AntenatalCare(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
+        params = self.parameters
+
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
+                            sheet_name='parameter_values')
+
+        dfd.set_index('parameter_name', inplace=True)
+
+
         pass
 
     def initialise_population(self, population):
@@ -54,7 +63,10 @@ class AntenatalCare(Module):
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        df = population.props
+
+        df.loc[df.sex == 'F','ac_total_anc_visits'] = 0
+
 
         # Baseline previous ANC visit history for women who are pregnant at baseline
         # Schedule ALL (?) remaining ANC visits for baseline women (with a function that will determine attendance?)
