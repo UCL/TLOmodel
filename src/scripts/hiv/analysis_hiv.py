@@ -9,7 +9,7 @@ from tlo.methods import (
     healthsystem,
     hiv,
     lifestyle,
-    male_circumcision,
+    malecircumcision,
     tb,
 )
 
@@ -49,9 +49,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
-sim.register(tb.tb(resourcefilepath=resourcefilepath))
-sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
+sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+sim.register(tb.Tb(resourcefilepath=resourcefilepath))
+sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):

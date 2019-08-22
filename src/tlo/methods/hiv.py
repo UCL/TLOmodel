@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class hiv(Module):
+class Hiv(Module):
     """
     baseline hiv infection
     """
@@ -1101,7 +1101,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
 
             if seeks_care:
                 logger.debug(
-                    'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                    'This is HivAidsEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
                 event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1189,7 +1189,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
     def apply(self, population):
         df = self.sim.population.props
         # params = self.module.parameters  # this is causing errors from 2011 onwards
-        params = self.sim.modules['hiv'].parameters
+        params = self.sim.modules['Hiv'].parameters
 
         # Find the person_ids who are going to get prep
         # open to fsw only
@@ -1758,7 +1758,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Hiv_StartTreatment: initiating treatment for person %d', person_id)
 
         # params = self.module.parameters  # why doesn't this command work post-2011?
-        params = self.sim.modules['hiv'].parameters
+        params = self.sim.modules['Hiv'].parameters
         df = self.sim.population.props
         now = self.sim.date
 
@@ -1768,21 +1768,21 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'is_alive']
             and df.at[person_id, 'hv_diagnosed']
             and (df.at[person_id, 'age_years'] < 15)):
-            df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_child']),
+            df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                                           params['vls_child']])
 
         if (df.at[person_id, 'is_alive']
             and df.at[person_id, 'hv_diagnosed']
             and (df.at[person_id, 'age_years'] >= 15)
             and (df.at[person_id, 'sex'] == 'M')):
-            df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_m']),
+            df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_m']),
                                                                                           params['vls_m']])
 
         if (df.at[person_id, 'is_alive']
             and df.at[person_id, 'hv_diagnosed']
             and (df.at[person_id, 'age_years'] >= 15)
             and (df.at[person_id, 'sex'] == 'F')):
-            df.at[person_id, 'hv_on_art'] = self.sim.modules['hiv'].rng.choice([1, 2], p=[(1 - params['vls_f']),
+            df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_f']),
                                                                                           params['vls_f']])
 
         df.at[person_id, 'hv_date_art_start'] = now

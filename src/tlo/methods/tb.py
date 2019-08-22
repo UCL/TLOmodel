@@ -9,13 +9,13 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography
+from tlo.methods import demography, hiv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-class tb(Module):
+class Tb(Module):
     """ Set up the baseline population with TB prevalence
     """
 
@@ -357,6 +357,7 @@ class tb(Module):
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
 
+        # all new active cases
         active_idx = df_active_prob[
             df_active_prob.is_alive & (df_active_prob.tb_inf == 'uninfected') & (
                 random_draw < df_active_prob.prob_active_tb)].index
@@ -770,74 +771,77 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         logger.debug("Onset of active TB for person %d", person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
         prob_pulm = params['pulm_tb']
         rng = self.sim.rng
         now = self.sim.date
 
-        # TODO check not on ipt now or on tb treatment
+        if not df.at[person_id, 'tb_on_ipt'] or not df.at[person_id, 'tb_on_treatment']:
 
-        df.at[person_id, 'tb_date_active'] = self.sim.date
+            df.at[person_id, 'tb_date_active'] = self.sim.date
 
-        # check if new infection or re-infection
-        # latent_susc_new or latent_susc_tx
-        if (df.at[person_id, 'tb_inf'] == 'latent_susc_new'):
-            df.at[person_id, 'tb_inf'] = 'active_susc_new'
-        elif (df.at[person_id, 'tb_inf'] == 'latent_susc_tx'):
-            df.at[person_id, 'tb_inf'] = 'active_susc_tx'
+            # check if new infection or re-infection
+            # latent_susc_new or latent_susc_tx
+            if (df.at[person_id, 'tb_inf'] == 'latent_susc_new'):
+                df.at[person_id, 'tb_inf'] = 'active_susc_new'
+            elif (df.at[person_id, 'tb_inf'] == 'latent_susc_tx'):
+                df.at[person_id, 'tb_inf'] = 'active_susc_tx'
 
-        # decide pulm or extra
-        # depends on age and HIV status
-        age = df.at[person_id, 'age_years']
-        hiv = df.at[person_id, 'hv_inf']
-        prob_pulm_tb = prob_pulm.loc[(prob_pulm.age == age) & (prob_pulm.hiv == hiv), 'prob_pulm'].values
+            # decide pulm or extra
+            # depends on age and HIV status
+            age = df.at[person_id, 'age_years']
+            hiv_case = df.at[person_id, 'hv_inf']
+            prob_pulm_tb = prob_pulm.loc[(prob_pulm.age == age) & (prob_pulm.hiv == hiv_case), 'prob_pulm'].values[0]
 
-        if rng.rand() < prob_pulm_tb:
-            df.at[person_id, 'tb_stage'] = 'active_pulm'
-            df.at[person_id, 'tb_unified_symptom_code'] = 2
+            if rng.rand() < prob_pulm_tb:
+                df.at[person_id, 'tb_stage'] = 'active_pulm'
+                df.at[person_id, 'tb_unified_symptom_code'] = 2
 
-        else:
-            df.at[person_id, 'tb_stage'] = 'active_extra'
-            df.at[person_id, 'tb_unified_symptom_code'] = 3
+            else:
+                df.at[person_id, 'tb_stage'] = 'active_extra'
+                df.at[person_id, 'tb_unified_symptom_code'] = 3
 
-        # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
+            # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
 
-        # for each person determine whether they will seek care on symptom change
-        # prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            # for each person determine whether they will seek care on symptom change
+            # prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
 
-        # this will be removed once healthcare seeking model is in place
-        prob_care = 0.47
-        if now.year == 2013:
-            prob_care = 0.44
-        elif now.year == 2014:
-            prob_care = 0.45
-        elif now.year == 2015:
-            prob_care = 0.5
-        elif now.year == 2016:
-            prob_care = 0.57
-        elif now.year > 2016:
-            prob_care = 0.73
+            # this will be removed once healthcare seeking model is in place
+            prob_care = 0.47
+            if now.year == 2013:
+                prob_care = 0.44
+            elif now.year == 2014:
+                prob_care = 0.45
+            elif now.year == 2015:
+                prob_care = 0.5
+            elif now.year == 2016:
+                prob_care = 0.57
+            elif now.year > 2016:
+                prob_care = 0.73
 
-        seeks_care = rng.rand() < prob_care
+            seeks_care = rng.rand() < prob_care
 
-        if seeks_care:
-            logger.debug('This is TbActiveEvent, scheduling HSI_Tb_Screening for person %d', person_id)
+            if seeks_care:
+                logger.debug('This is TbActiveEvent, scheduling HSI_Tb_Screening for person %d', person_id)
 
-            event = HSI_Tb_Screening(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
-        else:
-            logger.debug(
-                'This is TbActiveEvent, person %d is not seeking care', person_id)
+                event = HSI_Tb_Screening(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(weeks=2)
+                                                                    )
+            else:
+                logger.debug(
+                    'This is TbActiveEvent, person %d is not seeking care', person_id)
 
-        # ----------------------------------- HIV+ SCHEDULE AIDS ONSET -----------------------------------
+            # ----------------------------------- HIV+ SCHEDULE AIDS ONSET -----------------------------------
 
-        if df.at[person_id, 'hv_inf']:
-            aids_event = self.sim.modules['hiv'].HivAidsEvent(self, person_id)
-            self.sim.schedule_event(aids_event, self.sim.date)
+            if df.at[person_id, 'hv_inf']:
+                logger.debug(
+                    'This is TbActiveEvent scheduling aids onset for person %d', person_id)
+
+                aids = hiv.HivAidsEvent(self.module, person_id)
+                self.sim.schedule_event(aids, self.sim.date)
 
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1313,7 +1317,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
         logger.debug("Onset of active MDR-TB for person %d", person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
         prob_pulm = params['pulm_tb']
         rng = self.sim.rng
 
@@ -1352,7 +1356,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
             if seeks_care:
                 logger.debug('This is TbMdrActiveEvent, scheduling HSI_Tb_Screening for person %d', person_id)
 
-                event = HSI_Tb_Screening(self.sim.modules['tb'], person_id=person_id)
+                event = HSI_Tb_Screening(self.sim.modules['Tb'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
                                                                     topen=self.sim.date,
@@ -1535,7 +1539,7 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = ['hiv']
+        self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id):
         logger.debug('This is HSI_TbScreening, a screening appointment for person %d', person_id)
@@ -1624,13 +1628,13 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = ['hiv']
+        self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id):
         logger.debug('This is HSI_Tb_SputumTest, giving a sputum test to person %d', person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
         now = self.sim.date
 
         df.at[person_id, 'tb_ever_tested'] = True
@@ -1785,7 +1789,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
-        self.ALERT_OTHER_DISEASES = ['hiv']
+        self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id):
         logger.debug("This is HSI_Tb_XpertTest giving xpert test for person %d", person_id)
@@ -1950,7 +1954,7 @@ class HSI_Tb_Xray(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = ['hiv']
+        self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id):
         logger.debug('This is HSI_Tb_Xray, a chest x-ray for person %d', person_id)
@@ -2385,7 +2389,7 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
         now = self.sim.date
         df = self.sim.population.props
 
@@ -2465,7 +2469,7 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
         now = self.sim.date
         df = self.sim.population.props
 
@@ -2597,7 +2601,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
         logger.debug("Stopping tb treatment and curing person %d", person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
 
         # after six months of treatment, stop
         df.at[person_id, 'tb_on_treatment'] = False
@@ -2688,7 +2692,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
         logger.debug("Stopping tb-mdr treatment and curing person %d", person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
 
         # after six months of treatment, stop
         df.at[person_id, 'tb_treated_mdr'] = False
@@ -2798,7 +2802,7 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
 
         df = self.sim.population.props
-        params = self.sim.modules['tb'].parameters
+        params = self.sim.modules['Tb'].parameters
 
         # if lives in a high-risk district
         if df.at[person_id, 'district_of_residence'] in params['tb_high_risk_distr']:
@@ -2905,9 +2909,9 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         # hiv-positive on cotrim
         mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-            ~df.tb_on_treatment | ~df.tb_treated_mdr) & df.hv_on_cotrim] = params[
-                                                                               'monthly_prob_tb_mortality_hiv'] * \
-                                                                           params['mortality_cotrim']
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) &
+                     df.hv_on_cotrim] = params['monthly_prob_tb_mortality_hiv'] * \
+                                        params['mortality_cotrim']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))

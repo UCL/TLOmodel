@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthsystem, hiv, lifestyle, male_circumcision, tb
+from tlo.methods import demography, healthsystem, hiv, lifestyle, malecircumcision, tb
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -29,9 +29,9 @@ def simulation():
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0))
-    sim.register(tb.tb(resourcefilepath=resourcefilepath))
-    sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
-    sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
+    sim.register(tb.Tb(resourcefilepath=resourcefilepath))
+    sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+    sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
     return sim
 
