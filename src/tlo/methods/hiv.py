@@ -1159,6 +1159,7 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
 
         df = self.sim.population.props
 
+        # could do this by district
         df.loc[(df.age_years >= 15), 'hv_behaviour_change'] = True
 
         # Find the person_ids who are going to get the behaviour change intervention
