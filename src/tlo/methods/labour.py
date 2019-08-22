@@ -10,7 +10,7 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, healthsystem, healthburden
+from tlo.methods import demography, healthsystem, healthburden, antenatal_care
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1283,6 +1283,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1
+            df.at[mother_id,'ac_gestational_age'] = 0
             logger.info('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
                          mother_id)
             self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id, cause='post partum'),
