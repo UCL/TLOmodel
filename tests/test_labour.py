@@ -11,7 +11,7 @@ workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 100
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
@@ -33,7 +33,7 @@ def simulation():
     service_availability = ['*']
     lab_module = labour.Labour(resourcefilepath=resourcefilepath)
     nb_module = newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath)
-    anc_module= antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath)
+    anc_module = antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath)
 
     sim.register(core_module)
     sim.register(lab_module)
