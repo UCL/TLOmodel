@@ -11,8 +11,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
-
+logger.setLevel(logging.INFO)
 
 class Lifestyle(Module):
     """
