@@ -240,6 +240,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
     # !!!!!!!!!!!!! PLACEHOLDER PRIOR TO MALNUTRITION MODULE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+        # TODO: currently everyone at baseline is NBW- either we apply prevlance of LBW at birth or ignore for now
         # DUMMY
         # Applying a dummy incidence of low birth weight in term infants
         if ~df.at[individual_id, 'nb_early_preterm'] & ~df.at[individual_id, 'nb_late_preterm']:

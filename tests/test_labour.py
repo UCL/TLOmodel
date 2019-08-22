@@ -5,7 +5,7 @@ import pytest
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, labour,newborn_outcomes, healthburden, healthsystem
+from tlo.methods import demography, lifestyle, labour,newborn_outcomes, healthburden, healthsystem, antenatal_care
 
 workbook_name = 'demography.xlsx'
 
@@ -33,15 +33,18 @@ def simulation():
     service_availability = ['*']
     lab_module = labour.Labour(resourcefilepath=resourcefilepath)
     nb_module = newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath)
+    anc_module= antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath)
 
     sim.register(core_module)
     sim.register(lab_module)
     sim.register(nb_module)
+    sim.register(anc_module)
 
     sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
 #    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+
 
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)

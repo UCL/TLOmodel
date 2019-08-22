@@ -23,6 +23,9 @@ class AntenatalCare(Module):
     """
     This module is responsible for antenatal care seeking and antenatal care health system interaction events
      for pregnant women """
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
         'parameter_a': Parameter(
@@ -30,10 +33,12 @@ class AntenatalCare(Module):
     }
 
     PROPERTIES = {
-        'ac_total_anc_visits': Property(Types.INT, 'rolling total of antenatal visits this woman has'),
+        'ac_gestational_age': Property(Types.INT, 'current gestational age of this womans pregnancy in weeks'),
+        'ac_total_anc_visits': Property(Types.INT, 'rolling total of antenatal visits this woman has attended during '
+                                                   'her pregnancy'),
+
     }
 
-    # Declaration of how we will refer to any treatments that are related to this disease.
     TREATMENT_ID = ''
 
     def read_parameters(self, data_folder):
@@ -49,10 +54,9 @@ class AntenatalCare(Module):
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                             sheet_name='parameter_values')
 
-        dfd.set_index('parameter_name', inplace=True)
+    #    dfd.set_index('parameter_name', inplace=True)
 
 
-        pass
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -65,23 +69,24 @@ class AntenatalCare(Module):
         """
         df = population.props
 
-        df.loc[df.sex == 'F','ac_total_anc_visits'] = 0
-
+        df.loc[df.sex == 'F', 'ac_gestational_age'] = 0
+        df.loc[df.sex == 'F', 'ac_total_anc_visits'] = 0
 
         # Baseline previous ANC visit history for women who are pregnant at baseline
         # Schedule ALL (?) remaining ANC visits for baseline women (with a function that will determine attendance?)
 
         # Will we use the MNI, it will be massive
 
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
         """
+        event = GestationUpdateEvent
+        sim.schedule_event(event(self),
+                           sim.date + DateOffset(days=0))
+
         event = AntenatalCareLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
-
-        raise NotImplementedError
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -91,7 +96,11 @@ class AntenatalCare(Module):
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
-        raise NotImplementedError
+        df = self.sim.population.props
+
+        if df.at[child_id, 'sex'] == 'F':
+            df.at[child_id, 'ac_gestational_age'] = 0
+            df.at[child_id, 'ac_total_anc_visits'] = 0
 
     def query_symptoms_now(self):
         """
@@ -138,6 +147,25 @@ class AntenatalCare(Module):
         pass
 
 
+class GestationUpdateEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event updates the ac_gestational_age for the pregnant population based on the current simulation date
+    """
+
+    def __init__(self, module,):
+        super().__init__(module, frequency=DateOffset(weeks=1))
+
+    def apply(self, population):
+        df = population.props
+
+        gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
+        gestation_in_weeks = gestation_in_days/ np.timedelta64(1, 'W')
+
+        df.loc[df.is_pregnant, 'ac_gestational_age'] = gestation_in_weeks.astype(int)
+
+        # TODO: Confirm is resetting through BirthEvent
+
+
 class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin):
     """ The event manages care seeking for newly pregnant women
     """
@@ -151,14 +179,26 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(weeks=8)) # could it be 8 weeks?
 
     def apply(self, population):
         """Apply this event to the population.
 
         :param population: the current population
         """
-        raise NotImplementedError
+        df = population.props
+
+        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)]
+
+
+
+#        event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, pregnant_past_month)
+#        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+#                                                            priority=0, #????
+#                                                            topen=self.sim.date,
+#                                                            tclose=self.sim.date + DateOffset(days=14)
+#                                                            )
+
         # Not sure if this should be population level or individual
         # Individual : woman are scheduled to come to this event at conception
 
