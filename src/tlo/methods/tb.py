@@ -833,6 +833,12 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
             logger.debug(
                 'This is TbActiveEvent, person %d is not seeking care', person_id)
 
+        # ----------------------------------- HIV+ SCHEDULE AIDS ONSET -----------------------------------
+
+        if df.at[person_id, 'hv_inf']:
+            aids_event = self.sim.modules['hiv'].HivAidsEvent(self, person_id)
+            self.sim.schedule_event(aids_event, self.sim.date)
+
 
 class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
     """ relapse from latent to active
@@ -1676,6 +1682,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_new') & (
             df.at[person_id, 'age_years'] < 15)):
+
             # request child treatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1688,6 +1695,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_new') & (
             df.at[person_id, 'age_years'] >= 15)):
+
             # request adult treatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1700,6 +1708,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_tx') & (
             df.at[person_id, 'age_years'] < 15)):
+
             # request child retreatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_RetreatmentChild for person %d", person_id)
 
@@ -1712,6 +1721,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_tx') & (
             df.at[person_id, 'age_years'] >= 15)):
+
             # request adult retreatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_RetreatmentAdult for person %d", person_id)
 
@@ -1958,6 +1968,7 @@ class HSI_Tb_Xray(Event, IndividualScopeEventMixin):
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_new') & (
             df.at[person_id, 'age_years'] < 15)):
+
             # request child treatment
             logger.debug("This is HSI_Tb_Xray scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 

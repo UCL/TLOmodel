@@ -69,7 +69,6 @@ sim.simulate(end_date=end_date)
 fh.flush()
 # fh.close()
 
-
 # %% read the results
 # out = sim.population.props
 # out.to_csv(r'C:\Users\Tara\Documents\TLO\outputs.csv', header=True)
@@ -144,10 +143,3 @@ fh.flush()
 # # Create legend & Show graphic
 # plt.legend(['15-19','20-24', '25-29'], loc='upper left')
 # plt.show()
-
-
-
-
-
-# TODO: Maybe add some graphs here to demonstrate the results? For example....
-# %% Demonstrate the HIV epidemic and it's impact on the population
