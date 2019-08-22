@@ -7,10 +7,10 @@ import logging
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import random
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import InstantaneousDeath
 
 from tlo.methods import demography, healthsystem, healthburden, labour, newborn_outcomes
 
@@ -28,8 +28,8 @@ class AntenatalCare(Module):
         self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
-        'parameter_a': Parameter(
-            Types.REAL, 'Description of parameter a'),
+        'prob_seek_care_first_anc': Parameter(
+            Types.REAL, 'Probability a woman will seeking formal antenatal care'),  # DUMMY PARAMETER
     }
 
     PROPERTIES = {
@@ -42,21 +42,16 @@ class AntenatalCare(Module):
     TREATMENT_ID = ''
 
     def read_parameters(self, data_folder):
-        """Read parameter values from file, if required.
-
-        Here we do nothing.
-
-        :param data_folder: path of a folder supplied to the Simulation containing data files.
-          Typically modules would read a particular file within here.
+        """
         """
         params = self.parameters
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                             sheet_name='parameter_values')
 
-    #    dfd.set_index('parameter_name', inplace=True)
+        dfd.set_index('parameter_name', inplace=True)
 
-
+        params['prob_seek_care_first_anc'] = dfd.loc['prob_seek_care_first_anc', 'value']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -84,6 +79,9 @@ class AntenatalCare(Module):
         event = GestationUpdateEvent
         sim.schedule_event(event(self),
                            sim.date + DateOffset(days=0))
+
+        event= AntenatalCareSeekingAndScheduling(self)
+        sim.schedule_event(event, sim.date + DateOffset(days=0))
 
         event = AntenatalCareLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -179,7 +177,7 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
 
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(weeks=8)) # could it be 8 weeks?
+        super().__init__(module, frequency=DateOffset(weeks=8))  # could it be 8 weeks?
 
     def apply(self, population):
         """Apply this event to the population.
@@ -187,20 +185,36 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
         :param population: the current population
         """
         df = population.props
+        m = self
+        params = self.module.parameters
+        print('cooeyy')
 
         pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)]
 
+        # DUMMY CARE SEEKING
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_month)),
+                                index=df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)])
+
+        prob_care_seeking = float(params['prob_seek_care_first_anc'])
+        eff_prob_anc = pd.Series(prob_care_seeking, index=[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)])
+
+        dfx = pd.concat([eff_prob_anc, random_draw], axis=1)
+        dfx.columns = ['eff_prob_anc', 'random_draw']
+        idx_anc = dfx.index[dfx.eff_prob_anc < dfx.random_draw] # right?
+
+        for person in idx_anc:
+            gestation_at_anc = self.module.rng.choice(range(9, 17))  # this isnt right... (8 weeks GA + 16...)
+            care_seeking_date = self.sim.date + gestation_at_anc
+            event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                            priority=0, #????
+                                                            topen=care_seeking_date,
+                                                            tclose=care_seeking_date + DateOffset(days=14)
+                                                            )
 
 
-#        event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, pregnant_past_month)
-#        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-#                                                            priority=0, #????
-#                                                            topen=self.sim.date,
-#                                                            tclose=self.sim.date + DateOffset(days=14)
-#                                                            )
 
-        # Not sure if this should be population level or individual
-        # Individual : woman are scheduled to come to this event at conception
+        # Should we schedule all events here or at ANC 1?
 
 
 class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScopeEventMixin):
@@ -247,10 +261,8 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
         params = self.module.parameters
         m = self
 
-        logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
-                    'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
-
-        pass
+        logger.critical('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
+                        'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
 
         # consider facility level at which interventions can be delivered- most basic ANC may be able to be delivered
         # at community level but some additional interventions need to be delivered at higher level facilites
