@@ -120,15 +120,6 @@ class Hiv(Module):
         'vl_monitoring_times': Parameter(Types.INT, 'times(months) viral load monitoring required after ART start'),
         'fsw_prep': Parameter(Types.REAL, 'prob of fsw receiving PrEP'),
         'hiv_art_ipt': Parameter(Types.REAL, 'proportion of hiv-positive cases on ART also on IPT'),
-
-        # 'rr_testing_high_risk': Parameter(Types.DATA_FRAME,
-        #                                   'relative increase in testing probability if high sexual risk'),
-        # 'rr_testing_female': Parameter(Types.DATA_FRAME, 'relative change in testing for women versus men'),
-        # 'rr_testing_previously_negative':
-        # Parameter(Types.DATA_FRAME, 'relative change in testing if previously negative versus never tested'),
-        # 'rr_testing_previously_positive':
-        # Parameter(Types.DATA_FRAME, 'relative change in testing if previously positive versus never tested'),
-        # 'rr_testing_age25': Parameter(Types.DATA_FRAME, 'relative change in testing for >25 versus <25'),
     }
 
     # Next we declare the properties of individuals that this module provides.
