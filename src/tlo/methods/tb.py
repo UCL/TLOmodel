@@ -2913,8 +2913,8 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # hiv-positive on cotrim
         mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
             ~df.tb_on_treatment | ~df.tb_treated_mdr) &
-                     df.hv_on_cotrim] = params['monthly_prob_tb_mortality_hiv'] * \
-                                        params['mortality_cotrim']
+            df.hv_on_cotrim] = params['monthly_prob_tb_mortality_hiv'] * \
+            params['mortality_cotrim']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
