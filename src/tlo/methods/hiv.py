@@ -20,7 +20,7 @@ class Hiv(Module):
     baseline hiv infection
     """
 
-    def __init__(self, name=None, resourcefilepath=None, par_est=None):
+    def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
         # self.beta_calib = par_est
@@ -743,26 +743,26 @@ class Hiv(Module):
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
-            and df.at[child_id, 'is_alive']
-            and df.at[child_id, 'hv_mother_inf_by_birth']
-            and (df.at[child_id, 'hv_mother_art'] != 2)
-            and (((now - df.at[mother_id, 'hv_date_inf']) / np.timedelta64(1, 'M')) < 9)):
+                and df.at[child_id, 'is_alive']
+                and df.at[child_id, 'hv_mother_inf_by_birth']
+                and (df.at[child_id, 'hv_mother_art'] != 2)
+                and (((now - df.at[mother_id, 'hv_date_inf']) / np.timedelta64(1, 'M')) < 9)):
             df.at[child_id, 'hv_inf'] = True
 
         # mother has existing infection, mother NOT ON ART
         if ((random_draw < params['prob_mtct_untreated'])
-            and df.at[child_id, 'is_alive']
-            and df.at[child_id, 'hv_mother_inf_by_birth']
-            and not df.at[child_id, 'hv_inf']
-            and (df.at[child_id, 'hv_mother_art'] != 2)):
+                and df.at[child_id, 'is_alive']
+                and df.at[child_id, 'hv_mother_inf_by_birth']
+                and not df.at[child_id, 'hv_inf']
+                and (df.at[child_id, 'hv_mother_art'] != 2)):
             df.at[child_id, 'hv_inf'] = True
 
         #  mother has existing infection, mother ON ART
         if ((random_draw < params['prob_mtct_treated'])
-            and df.at[child_id, 'is_alive']
-            and df.at[child_id, 'hv_mother_inf_by_birth']
-            and not df.at[child_id, 'hv_inf']
-            and (df.at[child_id, 'hv_mother_art'] == 2)):
+                and df.at[child_id, 'is_alive']
+                and df.at[child_id, 'hv_mother_inf_by_birth']
+                and not df.at[child_id, 'hv_inf']
+                and (df.at[child_id, 'hv_mother_art'] == 2)):
             df.at[child_id, 'hv_inf'] = True
 
         # ----------------------------------- ASSIGN DEATHS  -----------------------------------
@@ -930,6 +930,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         # schedule the symptom update event for each person
         for person_index in newly_infected_index:
             symp_event = HivSymptomaticEvent(self, person_index)
+
             if df.at[person_index, 'hv_proj_date_symp'] < self.sim.date:
                 df.at[person_index, 'hv_proj_date_symp'] = self.sim.date + DateOffset(days=1)
             # print('symp_date', df.at[person_index, 'hv_proj_date_symp'])
@@ -942,6 +943,7 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         # schedule the symptom update event for each person
         for person_index in newly_infected_index:
             aids_event = HivAidsEvent(self, person_index)
+
             if df.at[person_index, 'hv_proj_date_aids'] < self.sim.date:
                 df.at[person_index, 'hv_proj_date_aids'] = self.sim.date + DateOffset(days=1)
             # print('aids_date', df.at[person_index, 'hv_proj_date_aids'])
@@ -992,6 +994,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
             time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                    size=len(new_inf)) * params[
                                   'weibull_scale_mort_infant_slow_progressor']
+
             time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
             df.loc[new_inf, 'hv_proj_date_death'] = now + time_death_slow
 
@@ -1124,6 +1127,7 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
         # Find the person_ids who are going to get the outreach
         # open to any adults not currently on ART
         gets_outreach = df.index[(df['is_alive']) & (df['hv_on_art'] != 0) & (df.age_years.between(15, 80))]
+
         for person_id in gets_outreach:
             # make the outreach event
             outreach_event_for_individual = HSI_Hiv_OutreachIndividual(self.module, person_id=person_id)
@@ -1560,19 +1564,16 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         the_appt_footprint['Under5OPD'] = 1  # general child outpatient appt
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Items'] == 'Zidovudine (AZT), capsule, 100 mg',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Items'] == 'Nevirapine (NVP), tablet, 200 mg',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients',
-                                              'Intervention_Pkg_Code'])[0]
+        item_code1 = pd.unique(consumables.loc[consumables[
+            'Items'] == 'Zidovudine (AZT), capsule, 100 mg', 'Intervention_Pkg_Code'])[0]
+        item_code2 = pd.unique(consumables.loc[consumables[
+            'Items'] == 'Nevirapine (NVP), tablet, 200 mg','Intervention_Pkg_Code'])[0]
+        item_code3 = pd.unique(consumables.loc[consumables[
+            'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
+            'Intervention_Package_Code': [],
+            'Item_Code': [item_code1, item_code2, item_code3]
         }
 
         # Define the necessary information for an HSI
@@ -1643,8 +1644,8 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         df.at[person_id, 'hv_on_cotrim'] = True
 
         if (df.at[person_id, 'is_alive']
-            and df.at[person_id, 'hv_diagnosed']
-            and (df.at[person_id, 'age_years'] < 15)):
+                and df.at[person_id, 'hv_diagnosed']
+                and (df.at[person_id, 'age_years'] < 15)):
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                               params['vls_child']])
 
@@ -1698,8 +1699,8 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         # df.at[person_id, 'tb_inf'].startswith("active"):
 
         if (not df.at[person_id, 'hv_on_art'] == 0
-            and not (df.at[person_id, 'tb_inf'].startswith('active'))
-            and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
+                and not (df.at[person_id, 'tb_inf'].startswith('active'))
+                and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
 
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
@@ -1757,22 +1758,22 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         # condition: not already on art
         if (df.at[person_id, 'is_alive']
-            and df.at[person_id, 'hv_diagnosed']
-            and (df.at[person_id, 'age_years'] < 15)):
+                and df.at[person_id, 'hv_diagnosed']
+                and (df.at[person_id, 'age_years'] < 15)):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                                           params['vls_child']])
 
         if (df.at[person_id, 'is_alive']
-            and df.at[person_id, 'hv_diagnosed']
-            and (df.at[person_id, 'age_years'] >= 15)
-            and (df.at[person_id, 'sex'] == 'M')):
+                and df.at[person_id, 'hv_diagnosed']
+                and (df.at[person_id, 'age_years'] >= 15)
+                and (df.at[person_id, 'sex'] == 'M')):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_m']),
                                                                                           params['vls_m']])
 
         if (df.at[person_id, 'is_alive']
-            and df.at[person_id, 'hv_diagnosed']
-            and (df.at[person_id, 'age_years'] >= 15)
-            and (df.at[person_id, 'sex'] == 'F')):
+                and df.at[person_id, 'hv_diagnosed']
+                and (df.at[person_id, 'age_years'] >= 15)
+                and (df.at[person_id, 'sex'] == 'F')):
             df.at[person_id, 'hv_on_art'] = self.sim.modules['Hiv'].rng.choice([1, 2], p=[(1 - params['vls_f']),
                                                                                           params['vls_f']])
 
@@ -1824,8 +1825,8 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         # ----------------------------------- SCHEDULE IPT START -----------------------------------
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
-            df.at[person_id, 'tb_inf'].startswith('active')) and (
-            self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
+                df.at[person_id, 'tb_inf'].startswith('active')) and (
+                self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
 
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
@@ -1983,6 +1984,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
             # ----------------------------------- RESCHEDULE DEATH -----------------------------------
             # if now poor adherence, re-schedule death and symptom onset as if not on treatment
             if len(poor):
+
                 for person in poor:
                     logger.debug('This is ArtGoodToPoorAdherenceEvent: transitioning to poor adherence for person %d',
                                  person)
@@ -1993,6 +1995,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
+
                     else:
                         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                           size=1) * \
@@ -2013,6 +2016,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
 
                         # schedule the symptom update event for each person
                         symp_event = HivSymptomaticEvent(self, person)
+
                         if df.at[person, 'hv_proj_date_symp'] < self.sim.date:
                             df.at[person, 'hv_proj_date_symp'] = self.sim.date + DateOffset(days=1)
                         # print('symp_date', df.at[person, 'hv_proj_date_symp'])
@@ -2083,6 +2087,7 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
+
                     else:
                         death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                           size=1) * \
