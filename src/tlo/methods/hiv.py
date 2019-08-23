@@ -1567,7 +1567,7 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         item_code1 = pd.unique(consumables.loc[consumables[
             'Items'] == 'Zidovudine (AZT), capsule, 100 mg', 'Intervention_Pkg_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables[
-            'Items'] == 'Nevirapine (NVP), tablet, 200 mg','Intervention_Pkg_Code'])[0]
+            'Items'] == 'Nevirapine (NVP), tablet, 200 mg', 'Intervention_Pkg_Code'])[0]
         item_code3 = pd.unique(consumables.loc[consumables[
             'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients', 'Intervention_Pkg_Code'])[0]
 
