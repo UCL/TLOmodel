@@ -209,43 +209,48 @@ class NewDiarrhoea(Module):
     def read_parameters(self, data_folder):
         """ Setup parameters values used by the module
         """
-        p = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Childhood_Diarrhoea.xlsx",
-                            sheet_name="parameter_values")
-        dfd.set_index("parameter_name", inplace=True)
 
-        # prevalence values
-        p['base_prev_dysentery'] = 0.3
-        p['rp_dysentery_age12to23mo'] = 0.8
-        p['rp_dysentery_age24to59mo'] = 0.5
-        p['rp_dysentery_HIV'] = 1.4
-        p['rp_dysentery_SAM'] = 1.25
-        p['rp_dysentery_excl_breast'] = 0.5
-        p['rp_dysentery_cont_breast'] = 0.7
-        p['rp_dysentery_HHhandwashing'] = 0.5
-        p['rp_dysentery_clean_water'] = 0.6
-        p['rp_dysentery_improved_sanitation'] = 0.6
-        p['base_prev_acute_diarrhoea'] = 0.4
-        p['rp_acute_diarrhoea_age12to23mo'] = 0.8
-        p['rp_acute_diarrhoea_age24to59mo'] = 0.5
-        p['rp_acute_diarrhoea_HIV'] = 1.3
-        p['rp_acute_diarrhoea_SAM'] = 1.3
-        p['rp_acute_diarrhoea_excl_breast'] = 0.5
-        p['rp_acute_diarrhoea_cont_breast'] = 0.7
-        p['rp_acute_diarrhoea_HHhandwashing'] = 0.8
-        p['rp_acute_diarrhoea_clean_water'] = 0.6
-        p['rp_acute_diarrhoea_improved_sanitation'] = 0.6
-        p['base_prev_persistent_diarrhoea'] = 0.2
-        p['rp_persistent_diarrhoea_age12to23mo'] = 0.8
-        p['rp_persistent_diarrhoea_age24to59mo'] = 0.5
-        p['rp_persistent_diarrhoea_HIV'] = 1.3
-        p['rp_persistent_diarrhoea_SAM'] = 1.3
-        p['rp_persistent_diarrhoea_excl_breast'] = 0.5
-        p['rp_persistent_diarrhoea_cont_breast'] = 0.7
-        p['rp_persistent_diarrhoea_HHhandwashing'] = 0.8
-        p['rp_persistent_diarrhoea_clean_water'] = 0.6
-        p['rp_persistent_diarrhoea_improved_sanitation'] = 0.7
-        p['init_prop_diarrhoea_status'] = [0.2, 0.1, 0.1]
+        p = self.parameters
+        dfd = pd.read_excel(
+            Path(self.resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx', sheet_name='Parameter_values')
+        dfd.set_index("Parameter_name", inplace=True)
+
+        # all diarrhoea prevalence values
+        p['base_prev_dysentery'] = dfd.loc['base_prev_dysentery', 'value1']
+        p['rp_dysentery_age12to23mo'] = dfd.loc['rp_dysentery_age12to23mo', 'value1']
+        p['rp_dysentery_age24to59mo'] = dfd.loc['p_dysentery_age24to59mo', 'value1']
+        p['rp_dysentery_HIV'] = dfd.loc['rp_dysentery_HIV', 'value1']
+        p['rp_dysentery_SAM'] = dfd.loc['rp_dysentery_SAM', 'value1']
+        p['rp_dysentery_excl_breast'] = dfd.loc['rp_dysentery_excl_breast', 'value1']
+        p['rp_dysentery_cont_breast'] = dfd.loc['rp_dysentery_cont_breast', 'value1']
+        p['rp_dysentery_HHhandwashing'] = dfd.loc['rp_dysentery_HHhandwashing', 'value1']
+        p['rp_dysentery_clean_water'] = dfd.loc['rp_dysentery_clean_water', 'value1']
+        p['rp_dysentery_improved_sanitation'] = dfd.loc['rp_dysentery_improved_sanitation', 'value1']
+        p['base_prev_acute_diarrhoea'] = dfd.loc['base_prev_acute_diarrhoea', 'value1']
+        p['rp_acute_diarrhoea_age12to23mo'] = dfd.loc['rp_acute_diarrhoea_age12to23mo', 'value1']
+        p['rp_acute_diarrhoea_age24to59mo'] = dfd.loc['rp_acute_diarrhoea_age24to59mo', 'value1']
+        p['rp_acute_diarrhoea_HIV'] = dfd.loc['rp_acute_diarrhoea_HIV', 'value1']
+        p['rp_acute_diarrhoea_SAM'] = dfd.loc['rp_acute_diarrhoea_SAM', 'value1']
+        p['rp_acute_diarrhoea_excl_breast'] = dfd.loc['rp_acute_diarrhoea_excl_breast', 'value1']
+        p['rp_acute_diarrhoea_cont_breast'] = dfd.loc['rp_acute_diarrhoea_cont_breast', 'value1']
+        p['rp_acute_diarrhoea_HHhandwashing'] = dfd.loc['rp_acute_diarrhoea_HHhandwashing', 'value1']
+        p['rp_acute_diarrhoea_clean_water'] = dfd.loc['rp_acute_diarrhoea_clean_water', 'value1']
+        p['rp_acute_diarrhoea_improved_sanitation'] = dfd.loc['rp_acute_diarrhoea_improved_sanitation', 'value1']
+        p['base_prev_persistent_diarrhoea'] = dfd.loc['base_prev_persistent_diarrhoea', 'value1']
+        p['rp_persistent_diarrhoea_age12to23mo'] = dfd.loc['rp_persistent_diarrhoea_age12to23mo', 'value1']
+        p['rp_persistent_diarrhoea_age24to59mo'] = dfd.loc['rp_persistent_diarrhoea_age24to59mo', 'value1']
+        p['rp_persistent_diarrhoea_HIV'] = dfd.loc['rp_persistent_diarrhoea_HIV', 'value1']
+        p['rp_persistent_diarrhoea_SAM'] = dfd.loc['rp_persistent_diarrhoea_SAM', 'value1']
+        p['rp_persistent_diarrhoea_excl_breast'] = dfd.loc['rp_persistent_diarrhoea_excl_breast', 'value1']
+        p['rp_persistent_diarrhoea_cont_breast'] = dfd.loc['rp_persistent_diarrhoea_cont_breast', 'value1']
+        p['rp_persistent_diarrhoea_HHhandwashing'] = dfd.loc['rp_persistent_diarrhoea_HHhandwashing', 'value1']
+        p['rp_persistent_diarrhoea_clean_water'] = dfd.loc['rp_persistent_diarrhoea_clean_water', 'value1']
+        p['rp_persistent_diarrhoea_improved_sanitation'] = dfd.loc['rp_persistent_diarrhoea_improved_sanitation', 'value1']
+        p['init_prop_diarrhoea_status'] = [
+            dfd.loc['init_prop_diarrhoea_status', 'value1'],
+            dfd.loc['init_prop_diarrhoea_status', 'value2'],
+            dfd.loc['init_prop_diarrhoea_status', 'value3']
+        ]
         # diarrhoea incidence by pathogen and relative rates
         p['base_incidence_diarrhoea_by_rotavirus'] = [
             dfd.loc['base_incidence_diarrhoea_by_rotavirus', 'value1'],
@@ -309,11 +314,14 @@ class NewDiarrhoea(Module):
         p['prob_correctly_classified_diarrhoea'] = 0.8
         p['prob_correct_referral_decision'] = 0.8
         p['prob_correct_treatment_advice_given'] = 0.8
+        p['dhs_care_seeking_2010'] = 0.58
+        p['IMCI_effectiveness_2010'] = 0.6
 
+        # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
-            p['daly_mild_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(32)
-            p['daly_moderate_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(35)
-            p['daly_severe_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(34)
+            p['daly_mild_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=32)
+            p['daly_moderate_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=35)
+            p['daly_severe_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=34)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -323,9 +331,6 @@ class NewDiarrhoea(Module):
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the data-frame storing data for individuals
-        m = self
-        rng = m.rng
-        now = self.sim.date
 
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
@@ -333,16 +338,22 @@ class NewDiarrhoea(Module):
         df['date_of_onset_diarrhoea'] = pd.NaT
         df['gi_recovered_date'] = pd.NaT
         df['gi_diarrhoea_death_date'] = pd.NaT
-        df['gi_diarrhoea_count'] = 0
         df['gi_diarrhoea_death'] = False
         df['malnutrition'] = False
         df['has_hiv'] = False
         df['exclusive_breastfeeding'] = False
         df['continued_breastfeeding'] = False
 
-        # -------------------- ASSIGN DIARRHOEA STATUS AT BASELINE (PREVALENCE) -----------------------
+        self.baseline_prevalence(population)  # allocate baseline prevalence
+        self.baseline_diagnosed_treated(population)  # allocate baseline diagnosis and treatment
 
-        """df_under5 = df.age_years < 5 & df.is_alive
+    def baseline_prevalence(self, population):
+        """ Assign diarrhoea status at baseline (prevalence) """
+        df = population.props
+        rng = self.module.rng
+        now = self.sim.date
+
+        df_under5 = df.age_years < 5 & df.is_alive
         under5_idx = df.index[(df.age_years < 5) & df.is_alive]
 
         # create dataframe of the probabilities of gi_diarrhoea_prev_state for children
@@ -364,8 +375,10 @@ class NewDiarrhoea(Module):
             *= self.rp_dysentery_excl_breast
         p_dysentery_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
                                (df.age_exact_years < 2) & df.is_alive] *= self.rp_dysentery_cont_breast
-        p_dysentery_status.loc[(df.li_no_access_handwashing == False) & df_under5] *= self.rp_dysentery_HHhandwashing
-        p_dysentery_status.loc[(df.li_no_clean_drinking_water == False) & df_under5] *= self.rp_dysentery_clean_water
+        p_dysentery_status.loc[
+            (df.li_no_access_handwashing == False) & df_under5] *= self.rp_dysentery_HHhandwashing
+        p_dysentery_status.loc[
+            (df.li_no_clean_drinking_water == False) & df_under5] *= self.rp_dysentery_clean_water
         p_dysentery_status.loc[
             (df.li_unimproved_sanitation == False) & df_under5] *= self.rp_dysentery_improved_sanitation
 
@@ -376,7 +389,8 @@ class NewDiarrhoea(Module):
             *= self.rp_acute_diarrhoea_age24to59mo
         p_acute_diarrhoea_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_acute_diarrhoea_HIV
         p_acute_diarrhoea_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_acute_diarrhoea_SAM
-        p_acute_diarrhoea_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+        p_acute_diarrhoea_status.loc[
+            (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
             *= self.rp_acute_diarrhoea_excl_breast
         p_acute_diarrhoea_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
                                      (df.age_exact_years < 2) & df.is_alive] *= self.rp_acute_diarrhoea_cont_breast
@@ -413,7 +427,8 @@ class NewDiarrhoea(Module):
         dfx['p_none'] = 1 - (dfx.p_dysentery + dfx.p_acute_diarrhoea + dfx.p_persistent_diarrhoea)
 
         idx_none = dfx.index[dfx.p_none > dfx.random_draw]
-        idx_dysentery = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_dysentery) > dfx.random_draw)]
+        idx_dysentery = dfx.index[
+            (dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_dysentery) > dfx.random_draw)]
         idx_acute_diarrhoea = dfx.index[((dfx.p_none + dfx.p_dysentery) < dfx.random_draw) &
                                         (dfx.p_none + dfx.p_dysentery + dfx.p_acute_diarrhoea) > dfx.random_draw]
         idx_persistent_diarrhoea = dfx.index[
@@ -425,7 +440,26 @@ class NewDiarrhoea(Module):
         df.loc[idx_dysentery, 'gi_diarrhoea_acute_type'] = 'dysentery'
         df.loc[idx_acute_diarrhoea, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
         df.loc[idx_persistent_diarrhoea, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
-        """
+        df.loc[idx_dysentery, idx_acute_diarrhoea, idx_persistent_diarrhoea, 'gi_diarrhoea_status'] = True
+
+    def baseline_diagnosed_treated(self, population):
+        """ Sample diagnosed based on care seeking and IMCI effectiveness"""
+        df = self.sim.population.props
+        rng = self.module.rng
+
+        init_diarrhoea_idx = df.index[df.is_alive & df.age_exact_years < 5 & df.gi_diarrhoea_status]
+        random_draw = self.sim.rng.random_sample(size=len(init_diarrhoea_idx))
+        sought_care = df.index[(random_draw < self.parameters['dhs_care_seeking_2010']) & df.is_alive & (
+                df.age_years < 5)]
+        for i in sought_care:
+            random_draw1 = self.sim.rng.random_sample(size=len(sought_care))
+            diagnose_and_treated = df.index[random_draw1[i] < self.parameters['IMCI_effectiveness_2010']
+                                            & df.is_alive & (df.age_years < 5)]
+            df.loc[diagnose_and_treated, 'gi_diarrhoea_status'] = False
+
+    def initial_deaths(self, population):
+        """ Assign recovery and death to baseline diarrhoea cases """
+        pass
 
     def initialise_simulation(self, sim):
         """
@@ -435,13 +469,13 @@ class NewDiarrhoea(Module):
         It is a good place to add initial events to the event queue.
         """
 
-        # add the basic event for dysentery ---------------------------------------------------
-        sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=3))
+        # add the basic event for acute diarrhoea ---------------------------------------------------
+        sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=1))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        '''# death event
+        ''' # death event
         death_all_diarrhoea = DeathDiarrhoeaEvent(self)
         sim.schedule_event(death_all_diarrhoea, sim.date)
 
@@ -466,6 +500,7 @@ class NewDiarrhoea(Module):
 
         logger.debug('This is Diarrhoea, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
+        pass
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -503,9 +538,10 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         rng = m.rng
 
         no_diarrhoea0 = df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years < 1)
-        no_diarrhoea1 = df.is_alive & (df.gi_diarrhoea_status == False) & \
-                        (df.age_exact_years >= 1) & (df.age_exact_years < 2)
-        no_diarrhoea2 = df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years >= 2) & (df.age_exact_years < 5)
+        no_diarrhoea1 = \
+            df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years >= 1) & (df.age_exact_years < 2)
+        no_diarrhoea2 = \
+            df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years >= 2) & (df.age_exact_years < 5)
         no_diarrhoea_under5 = df.is_alive & (df.gi_diarrhoea_status == False) & (df.age_exact_years < 5)
         current_no_diarrhoea = df.index[no_diarrhoea_under5]
 
