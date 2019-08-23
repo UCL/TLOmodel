@@ -1322,7 +1322,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
         rng = self.sim.rng
 
         # check not on ipt now or on tb treatment
-        if not df.at[person_id, 'tb_on_ipt']:
+        if not df.at[person_id, 'tb_on_ipt'] or not df.at[person_id, 'tb_on_treatment']:
 
             df.at[person_id, 'tb_date_active'] = self.sim.date
 
@@ -1365,6 +1365,13 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
             else:
                 logger.debug(
                     'This is TbMdrActiveEvent, person %d is not seeking care', person_id)
+
+            if df.at[person_id, 'hv_inf']:
+                logger.debug(
+                    'This is TbActiveEvent scheduling aids onset for person %d', person_id)
+
+                aids = hiv.HivAidsEvent(self.module, person_id)
+                self.sim.schedule_event(aids, self.sim.date)
 
 
 class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
