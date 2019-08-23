@@ -81,7 +81,7 @@ class AntenatalCare(Module):
                            sim.date + DateOffset(days=0))
 
         event= AntenatalCareSeekingAndScheduling(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=0))
+        sim.schedule_event(event, sim.date + DateOffset(days=7))
 
         event = AntenatalCareLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -187,32 +187,42 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
         df = population.props
         m = self
         params = self.module.parameters
-        print('cooeyy')
 
-        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)]
+        # TODO: need to use weibull distribution to determne time to care seeking (?)
+        # TODO: to discuss with TIM best way to mirror whats happening in malawi (only 50% women have ANC1 in first
+        #  trimester)
 
-        # DUMMY CARE SEEKING
+        pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8) &
+                                       (df.date_of_last_pregnancy > self.sim.start_date)]
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1 DUMMY CARE SEEKING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_month)),
-                                index=df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)])
+                                index=df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8) &
+                                               (df.date_of_last_pregnancy > self.sim.start_date)])
 
         prob_care_seeking = float(params['prob_seek_care_first_anc'])
-        eff_prob_anc = pd.Series(prob_care_seeking, index=[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8)])
-
+        eff_prob_anc = pd.Series(prob_care_seeking,
+                                 index=df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 8) &
+                                                (df.date_of_last_pregnancy > self.sim.start_date)])
         dfx = pd.concat([eff_prob_anc, random_draw], axis=1)
         dfx.columns = ['eff_prob_anc', 'random_draw']
-        idx_anc = dfx.index[dfx.eff_prob_anc < dfx.random_draw] # right?
+        idx_anc = dfx.index[dfx.eff_prob_anc > dfx.random_draw] # right?
+
+        gestation_at_anc = pd.Series(self.module.rng.choice(range(9, 39), size=len(idx_anc)), index=df.index[idx_anc])
+        # THIS IS ALL WRONG DATE WISE
+        conception = pd.Series(df.date_of_last_pregnancy, index=df.index[idx_anc])
+        dfx = pd.concat([conception, gestation_at_anc], axis=1)
+        dfx.columns = ['conception', 'gestation_at_anc']
+        dfx['first_anc']= dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
 
         for person in idx_anc:
-            gestation_at_anc = self.module.rng.choice(range(9, 17))  # this isnt right... (8 weeks GA + 16...)
-            care_seeking_date = self.sim.date + gestation_at_anc
+            care_seeking_date = dfx.at[person, 'first_anc']
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=0, #????
                                                             topen=care_seeking_date,
                                                             tclose=care_seeking_date + DateOffset(days=14)
                                                             )
-
-
 
         # Should we schedule all events here or at ANC 1?
 
@@ -228,14 +238,9 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #   the_appt_footprint['Over5OPD'] = 1
         the_appt_footprint['AntenatalFirst'] = 1
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
 
         pkg_code = pd.unique(consumables.loc[consumables[
                                                        'Intervention_Pkg'] ==
@@ -261,12 +266,13 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScop
         params = self.module.parameters
         m = self
 
-        logger.critical('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
-                        'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
+        gestation_at_vist = df.at[person_id, 'ac_gestational_age']
+        logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
+                    'first antenatal care visit of their pregnancy on date %s at gestation %d', person_id,
+                        self.sim.date, gestation_at_vist)
 
         # consider facility level at which interventions can be delivered- most basic ANC may be able to be delivered
         # at community level but some additional interventions need to be delivered at higher level facilites
-        x='y'
 
 
 class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, IndividualScopeEventMixin):
@@ -313,10 +319,11 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, Individua
         params = self.module.parameters
         m = self
 
+        if ~df.at[person_id,'is_pregnant']:
+            pass
+
         logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
                     'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
-
-        pass
 
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Handles Antenatal Care logging"""
