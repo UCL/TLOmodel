@@ -2925,7 +2925,6 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         deaths = df.is_alive & (probs < mortality_rate)
         # print('deaths: ', deaths)
         will_die = (df[deaths]).index
-        # print('will_die: ', will_die)
 
         for person in will_die:
             if df.at[person, 'is_alive']:
