@@ -28,8 +28,8 @@ resourcefilepath = "./resources/"
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 1000
+end_date = Date(2015, 1, 1)
+popsize = 2000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -56,6 +56,7 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
 #TODO; Need to think about integration with HealthBurden capture (DALY weights)
+# TODO: must capture indirect death of women during pregnancy
 
 # this will make sure that the logging file is complete
 fh.flush()
@@ -142,7 +143,7 @@ sbr_df.plot.bar(y='SBR', stacked=True)
 plt.title("Yearly Still Birth Rate")
 plt.show()
 
-# %% Plot Perinatal Mortality Rate Over time (stillbirths + deaths in firs week of life per 1000 births ):
+# %% Plot Perinatal Mortality Rate Over time (stillbirths + deaths in first week of life per 1000 births ):
 
 neonatal_deaths_df = output['tlo.methods.newborn_outcomes']['neonatal_death_48hrs']
 neonatal_deaths_df['date'] = pd.to_datetime(neonatal_deaths_df['date'])
@@ -157,11 +158,78 @@ pmr_df.plot.bar(y='PMR', stacked=True)
 plt.title("Yearly Perinatal Mortality Rate")
 plt.show()
 
-# Complication Incidence and Prevlance
+# ----------------------------------- Incidence of Complications in Labour --------------------------------------------
 
 # Maternal Sepsis
+# Yearly Incidence(per 1000 births):
+maternal_sepsis_df = output['tlo.methods.labour']['maternal_sepsis']
+maternal_sepsis_df['date'] = pd.to_datetime(maternal_sepsis_df['date'])
+maternal_sepsis_df['year'] = maternal_sepsis_df['date'].dt.year
+sepsis_by_year = maternal_sepsis_df.groupby(['year'])['person_id'].size()
+
+msi_df=pd.concat((sepsis_by_year, birth_by_year), axis=1)
+msi_df.columns = ['maternal_sepsis_cases', 'all_births']
+msi_df['sepsis_incidence'] = msi_df['maternal_sepsis_cases']/msi_df['all_births'] * 1000
+
+msi_df.plot.bar(y='sepsis_incidence', stacked=True)
+plt.title("Yearly Maternal Sepsis Incidence")
+plt.show()
+
 # Eclampsia
-# Obstructed Labour
+# Yearly Incidence(per 10000 (?) births):
+eclampsia_df = output['tlo.methods.labour']['eclampsia']
+eclampsia_df['date'] = pd.to_datetime(eclampsia_df['date'])
+eclampsia_df['year'] = eclampsia_df['date'].dt.year
+eclampsia_by_year = eclampsia_df.groupby(['year'])['person_id'].size()
+
+ei_df=pd.concat((eclampsia_by_year, birth_by_year), axis=1)
+ei_df.columns = ['eclampsia_cases', 'all_births']
+ei_df['eclampsia_incidence'] = ei_df['eclampsia_cases']/ei_df['all_births'] * 10000
+
+ei_df.plot.bar(y='eclampsia_incidence', stacked=True)
+plt.title("Yearly Incidence of Eclampsia")
+plt.show()
+
+# Obstructed Labour (per 1000 births)
+obstructed_labour_df = output['tlo.methods.labour']['obstructed_labour']
+obstructed_labour_df['date'] = pd.to_datetime(obstructed_labour_df['date'])
+obstructed_labour_df['year'] = obstructed_labour_df['date'].dt.year
+obstructed_labour_year = obstructed_labour_df.groupby(['year'])['person_id'].size()
+
+ol_df=pd.concat((obstructed_labour_year, birth_by_year), axis=1)
+ol_df.columns = ['obstructed_labour_cases', 'all_births']
+ol_df['obstructed_labour_incidence'] = ol_df['obstructed_labour_cases']/ol_df['all_births'] * 1000
+
+ol_df.plot.bar(y='obstructed_labour_incidence', stacked=True)
+plt.title("Yearly Incidence of Obstructed Labour")
+plt.show()
+
 # Antepartum Haemorrhage
+
+aph_df = output['tlo.methods.labour']['antepartum_haemorrhage']
+aph_df['date'] = pd.to_datetime(aph_df['date'])
+aph_df['year'] = aph_df['date'].dt.year
+aph_year = aph_df.groupby(['year'])['person_id'].size()
+
+aph_n_df = pd.concat((aph_year, birth_by_year), axis=1)
+aph_n_df.columns = ['aph_cases', 'all_births']
+aph_n_df['aph_incidence'] = aph_n_df['aph_cases']/aph_n_df['all_births'] * 1000
+
+aph_n_df.plot.bar(y='aph_incidence', stacked=True)
+plt.title("Yearly Incidence of Antepartum Haemorrhage")
+plt.show()
+
 # Post Partum Haemorrhage
 
+pph_df = output['tlo.methods.labour']['postpartum_haemorrhage']
+pph_df['date'] = pd.to_datetime(pph_df['date'])
+pph_df['year'] = pph_df['date'].dt.year
+pph_year = pph_df.groupby(['year'])['person_id'].size()
+
+pph_n_df = pd.concat((pph_year, birth_by_year), axis=1)
+pph_n_df.columns = ['pph_cases', 'all_births']
+pph_n_df['pph_incidence'] = pph_n_df['pph_cases']/pph_n_df['all_births'] * 1000
+
+pph_n_df.plot.bar(y='pph_incidence', stacked=True)
+plt.title("Yearly Incidence of Postpartum Haemorrhage")
+plt.show()
