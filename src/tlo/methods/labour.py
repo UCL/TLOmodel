@@ -13,7 +13,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import demography, healthsystem, healthburden, antenatal_care
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 LOG_FILENAME = 'labour.log'
 logging.basicConfig(filename=LOG_FILENAME,
                             filemode='w',
@@ -252,6 +252,7 @@ class Labour (Module):
         'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
         'la_maternal_death':Property(Types.BOOL,' whether the woman has died as a result of this pregnancy'), # DUMMY
         'la_maternal_death_date': Property(Types.DATE, 'date of death for a date in pregnancy')  # DUMMY
+
 
     }
 
@@ -1115,6 +1116,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         df.at[individual_id, 'la_obstructed_labour'] = True
                         logger.info('person %d has developed obstructed labour in the community on date %s',
                                     individual_id, self.sim.date)
+                        logger.info('%s|obstructed_labour|%s', self.sim.date,
+                                    {'age': df.at[individual_id, 'age_years'],
+                                     'person_id': individual_id})
 
 # We then work through the next complications and assess if this woman will experience additional complications
 
@@ -1152,6 +1156,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['eclampsia_ip'] = True
                         logger.info('person %d is experiencing intrapartum eclampsia in the community on date %s',
                                     individual_id, self.sim.date)
+                        logger.info('%s|eclampsia|%s', self.sim.date,
+                                    {'age': df.at[individual_id, 'age_years'],
+                                     'person_id': individual_id})
 
 
 # ============================================ ANTEPARTUM HAEMORRHAGE =================================================
@@ -1180,6 +1187,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['APH'] = True
                         logger.info('person %d is experiencing an antepartum haemorrhage in the community on date %s',
                                     individual_id, self.sim.date)
+                        logger.info('%s|antepartum_haemorrhage|%s', self.sim.date,
+                                    {'age': df.at[individual_id, 'age_years'],
+                                     'person_id': individual_id})
 
 
 # ==========================================  SEPSIS =================================================================
@@ -1205,6 +1215,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['sepsis_ip'] = True
                         logger.info('person %d is experiencing intrapartum maternal sepsis in the community on date %s',
                                     individual_id, self.sim.date)
+                        logger.info('%s|maternal_sepsis|%s', self.sim.date,
+                                    {'age': df.at[individual_id, 'age_years'],
+                                     'person_id': individual_id})
+
                         # TODO modify newborn risk of sepsis for septic women
 
 # ====================================== UTERINE RUPTURE  =============================================================
@@ -1240,6 +1254,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['UR'] = True
                         logger.info('person %d is experiencing uterine rupture in the community on date %s',
                                     individual_id, self.sim.date)
+                        logger.info('%s|uterine_rupture|%s', self.sim.date,
+                                    {'age': df.at[individual_id, 'age_years'],
+                                     'person_id': individual_id})
 
         # Here we schedule the birth event for 2 days after labour- we do this prior to the death event as women who
         # die but still deliver a live child will pass through birth event
@@ -1334,6 +1351,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['PPH'] = True
                     logger.info('person %d is experiencing a postpartum haemorrhage in the community on date %s',
                                 individual_id, self.sim.date)
+                    logger.info('%s|postpartum_haemorrhage|%s', self.sim.date,
+                                {'age': df.at[individual_id, 'age_years'],
+                                 'person_id': individual_id})
 
             #  todo: include severity
 
@@ -1357,6 +1377,10 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['sepsis_pp'] = True
                     logger.info('person %d is experiencing postpartum maternal sepsis in the community on date %s',
                             individual_id, self.sim.date)
+
+                    logger.info('%s|maternal_sepsis|%s', self.sim.date,
+                                {'age': df.at[individual_id, 'age_years'],
+                                 'person_id': individual_id})
 
 # ============================================= RISK OF ECLAMPSIA ====================================================
 
@@ -1389,6 +1413,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['timing_eclampsia'] = 'PP'
                     logger.info('person %d is experiencing postpartum eclampsia in the community on date %s',
                                 individual_id, self.sim.date)
+                    logger.info('%s|eclampsia|%s', self.sim.date,
+                                {'age': df.at[individual_id, 'age_years'],
+                                 'person_id': individual_id})
 
             # if in facility....
             if mni[individual_id]['delivery_setting'] == 'FD':
@@ -1865,12 +1892,18 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             mni[person_id]['eclampsia_ip'] = True
             logger.info('person %d is experiencing eclampsia in a health facility',
                         person_id)
+            logger.info('%s|eclampsia|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
         if random < mni[person_id]['risk_aph']:
             df.at[person_id, 'la_aph'] = True
             mni[person_id]['APH'] = True
             logger.info('person %d is experiencing an antepartum haemorrhage in a health facility',
                         person_id)
+            logger.info('%s|antepartum_haemorrhage|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ip_sepsis']:
@@ -1879,6 +1912,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             mni[person_id]['source_sepsis'] = 'IP'
             logger.info('person %d has developed maternal sepsis in a health facility',
                         person_id)
+            logger.info('%s|maternal_sepsis|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
             # TODO modify newborn risk of sepsis for septic women
 
         random = self.sim.rng.random_sample(size=1)
@@ -1887,6 +1923,9 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             df.at[person_id, 'la_uterine_rupture'] = True
             logger.info('person %d is experiencing a uterine rupture in a health facility',
                         person_id)
+            logger.info('%s|uterine_rupture|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
         # DUMMY ... (risk factors)
         random = self.sim.rng.random_sample(size=1)
@@ -1930,7 +1969,7 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
             logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
                         'treatment for eclampsia during labour for person %d', person_id)
 
-            event = HSI_Labour_ReceivesCareForEclampsia(self.module, person_id=person_id)
+            event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -2099,7 +2138,7 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(Event, IndividualScopeEventMixin)
                 print('Treatment success- antibiotics')
 
 
-class HSI_Labour_ReceivesCareForEclampsia(Event, IndividualScopeEventMixin):
+class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(Event, IndividualScopeEventMixin):
     # TODO: consider refactoring as HSI_Labour_ReceivesCareForHypertensiveDisorders??
     """
     This is a Health System Interaction Event.
@@ -2143,8 +2182,13 @@ class HSI_Labour_ReceivesCareForEclampsia(Event, IndividualScopeEventMixin):
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
-        logger.info('This is HSI_Labour_ReceivesCareForEclampsia, management of eclampsia for person %d on date %s',
+        logger.info('This is HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy, management of hypertensive '
+                    'disorders of pregnancy for person %d on date %s',
                              person_id, self.sim.date)
+
+# =======================================  HYPERTENSION TREATMENT ======================================================
+
+# =======================================  SEVERE PRE-ECLAMPSIA TREATMENT ==============================================
 
 # =======================================  ECLAMPSIA TREATMENT ========================================================
 
@@ -2176,7 +2220,8 @@ class HSI_Labour_ReceivesCareForEclampsia(Event, IndividualScopeEventMixin):
                                                                             )
 
                         logger.info(
-                            'This is HSI_Labour_ReceivesCareForEclampsia referring person %d for a caesarean section'
+                            'This is HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy referring person %d '
+                            'for a caesarean section'
                             ' following uncontrolled eclampsia',
                             person_id)
 
@@ -2375,12 +2420,18 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(Event, IndividualScopeEventMixi
             mni[person_id]['eclampsia_pp'] = True
             logger.info('person %d is experiencing eclampsia in a health facility following birth',
                         person_id)
+            logger.info('%s|eclampsia|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
         if random < mni[person_id]['risk_pph']: # increased liklihood of PPH based on whats happened so far? (APH, CS)
             df.at[person_id, 'la_pph'] = True
             mni[person_id]['PPH'] = True
             logger.info('person %d is experiencing an postpartum haemorrhage in a health facility following birth',
                         person_id)
+            logger.info('%s|postpartum_haemorrhage|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_pp_sepsis']:
@@ -2388,8 +2439,11 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(Event, IndividualScopeEventMixi
             mni[person_id]['sepsis_pp'] = True
             logger.info('person %d has developed maternal sepsis in a health facility following delivery',
                         person_id)
+            logger.info('%s|maternal_sepsis|%s', self.sim.date,
+                        {'age': df.at[person_id, 'age_years'],
+                         'person_id': person_id})
 
-    # =============================  SCHEDULING ADDITIONAL TREATMENT ==================================================
+        # =============================  SCHEDULING ADDITIONAL TREATMENT ==================================================
 
         if mni[person_id]['sepsis']:
             logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
@@ -2418,7 +2472,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(Event, IndividualScopeEventMixi
             logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
                         'treatment for eclampsia during the postpartum period for person %d', person_id)
 
-            event = HSI_Labour_ReceivesCareForEclampsia(self.module, person_id=person_id)
+            event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=0,
                                                                     topen=self.sim.date,

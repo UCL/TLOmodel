@@ -13,7 +13,7 @@ from tlo.methods import demography, labour, newborn_outcomes
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class NewbornOutcomes(Module):
@@ -23,6 +23,7 @@ class NewbornOutcomes(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.newborn_care_info = dict()
 
     PARAMETERS = {
         'base_incidence_low_birth_weight': Parameter(
@@ -34,7 +35,7 @@ class NewbornOutcomes(Module):
         'prob_early_onset_neonatal_sepsis': Parameter(
             Types.REAL, 'baseline probability of a neonate developing sepsis following birth'),
         'prob_birth_asphyxia_iprc': Parameter(
-            Types.REAL, 'baseline probability of a neonate devloping intrapartum related complications '
+            Types.REAL, 'baseline probability of a neonate developing intrapartum related complications '
                         '(previously birth asphyxia) following delivery '),
         'prob_encephalopathy': Parameter(
             Types.REAL, 'baseline probability of a neonate developing encephalopathy following birth'),
@@ -43,7 +44,8 @@ class NewbornOutcomes(Module):
                         'of prematurity '),
         'prob_nec_preterm': Parameter(
             Types.REAL,
-            'baseline probability of a preterm neonate developing necrotising enterocolitis as a result of prematurity '),
+            'baseline probability of a preterm neonate developing necrotising enterocolitis as a result of '
+            'prematurity'),
         'prob_nrds_preterm': Parameter(
             Types.REAL,
             'baseline probability of a preterm neonate developing newborn respiratory distress syndrome as a result of '
@@ -58,8 +60,7 @@ class NewbornOutcomes(Module):
                         'delivered at home'),
         'prob_facility_offers_kmc': Parameter(
             Types.REAL, 'probability that the facility in which a low birth weight neonate is born will offer kangaroo'
-                        ' mother care for low birth weight infants'
-                        'delivered at home'),
+                        ' mother care for low birth weight infants delivered at home'),
         'cfr_cba': Parameter(
             Types.REAL, 'case fatality rate for a neonate with a congenital birth anomaly'),
         'cfr_neonatal_sepsis': Parameter(
@@ -78,26 +79,25 @@ class NewbornOutcomes(Module):
         'nb_late_preterm': Property(Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks '
                                                 'gestation)'),
         'nb_congenital_anomaly': Property(Types.BOOL, 'whether this neonate has been born with a congenital anomaly'),
-        'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whethert his neonate has developed neonatal sepsis'
+        'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_birth_asphyxia': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic due to '
                                                   'intrapartum related complications'),
-        'nb_hypoxic_ischemic_enceph': Property(Types.BOOL, 'whether a perinatally asphyixiated neonate has developed '
+        'nb_hypoxic_ischemic_enceph': Property(Types.BOOL, 'whether a perinatally asphyxiated neonate has developed '
                                                            'hypoxic ischemic encephalopathy'),
         'nb_encephalopathy': Property(Types.CATEGORICAL, 'None, mild encephalopathy, moderate encephalopathy, '
                                                          'severe encephalopathy',
-                                    categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
+                                                categories=['none', 'mild_enceph', 'moderate_enceph', 'severe_enceph']),
         'nb_intravascular_haem': Property(Types.BOOL, 'whether this neonate has developed an intravascular haemorrhage '
                                                       'following preterm birth'),
         'nb_necrotising_entero': Property(Types.BOOL, 'whether this neonate has developed necrotising enterocolitis '
                                                       'following preterm birth'),
         'nb_resp_distress_synd': Property(Types.BOOL, 'whether this neonate has developed newborn respiritory distress '
                                                       'syndrome following preterm birth '),
-        'nb_birth_weight': Property(Types.CATEGORICAL,'extremely low birth weight (<1000g), '
-                                                                                  'very low birth weight (<1500g), '
-                                                                                  'low birth weight (<2500g),'
+        'nb_birth_weight': Property(Types.CATEGORICAL,'extremely low birth weight (<1000g), very low birth weight '
+                                                      '(<1500g), low birth weight (<2500g),'
                                                       ' normal birth weight (>2500g)',
-                                categories=['ext_LBW', 'very_LBW', 'LBW', 'NBW']),
+                                                categories=['ext_LBW', 'very_LBW', 'LBW', 'NBW']),
         'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'small for gestational age, average for gestational'
                                                                    ' age, large for gestational age',
                                                 categories=['SGA', 'AGA', 'LGA']),
@@ -117,7 +117,8 @@ class NewbornOutcomes(Module):
 
         dfd.set_index('parameter_name', inplace=True)
 
-        params['base_incidence_low_birth_weight'] = dfd.loc['base_incidence_low_birth_weight', 'value'] # dummy (DHS prevelance 12%)
+        params['base_incidence_low_birth_weight'] = dfd.loc['base_incidence_low_birth_weight', 'value']
+        # dummy (DHS prevalence 12%)
         params['base_incidence_sga'] = dfd.loc['base_incidence_sga', 'value']  # dummy
         params['prob_cba'] = dfd.loc['prob_cba', 'value']  # DUMMY
         params['prob_early_onset_neonatal_sepsis'] = dfd.loc['prob_early_onset_neonatal_sepsis', 'value']  # DUMMY
@@ -136,10 +137,35 @@ class NewbornOutcomes(Module):
         params['cfr_enceph_severe'] = dfd.loc['cfr_enceph_severe', 'value']  # DUMMY
         params['cfr_ptb_comps'] = dfd.loc['cfr_ptb_comps', 'value']  # DUMMY
 
-        # if 'HealthBurden' in self.sim.modules.keys():
-        #    params['daly_wt_mild_sneezing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
-        #    params['daly_wt_coughing'] = self.sim.modules['HealthBurden'].get_daly_weight(50)
-        #    params['daly_wt_advanced'] = self.sim.modules['HealthBurden'].get_daly_weight(589)
+        if 'HealthBurden' in self.sim.modules.keys():
+            params['daly_wt_mild_motor_cognitive_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(357)
+            params['daly_wt_mild_motor_cognitive_32_36wks'] = self.sim.modules['HealthBurden'].get_daly_weight(359)
+            params['daly_wt_mild_motor_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(371)
+            params['daly_wt_moderate_motor_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(378)
+            params['daly_wt_severe_motor_<28wks'] = self.sim.modules['HealthBurden'].get_daly_weight(383)
+            params['daly_wt_mild_motor_28_32wks'] = self.sim.modules['HealthBurden'].get_daly_weight(372)
+            params['daly_wt_moderate_motor_28_32wks'] = self.sim.modules['HealthBurden'].get_daly_weight(377)
+            params['daly_wt_severe_motor_28_32wks'] = self.sim.modules['HealthBurden'].get_daly_weight(375)
+            params['daly_wt_mild_motor_32_36wks'] = self.sim.modules['HealthBurden'].get_daly_weight(373)
+            params['daly_wt_moderate_motor_32_36wks'] = self.sim.modules['HealthBurden'].get_daly_weight(379)
+            params['daly_wt_severe_motor_32_36wks'] = self.sim.modules['HealthBurden'].get_daly_weight(366)
+            params['daly_wt_mild_vision_rptb'] = self.sim.modules['HealthBurden'].get_daly_weight(404)
+            params['daly_wt_moderate_vision_rptb'] = self.sim.modules['HealthBurden'].get_daly_weight(405)
+            params['daly_wt_severe_vision_rptb'] = self.sim.modules['HealthBurden'].get_daly_weight(402)
+            params['daly_wt_blindness_rptb'] = self.sim.modules['HealthBurden'].get_daly_weight(386)
+            params['daly_wt_mild_motor_enceph'] = self.sim.modules['HealthBurden'].get_daly_weight(416)
+            params['daly_wt_moderate_motor_enceph'] = self.sim.modules['HealthBurden'].get_daly_weight(411)
+            params['daly_wt_severe_motor_enceph'] = self.sim.modules['HealthBurden'].get_daly_weight(410)
+            params['daly_wt_mild_motor_cognitive_enceph'] = self.sim.modules['HealthBurden'].get_daly_weight(419)
+            params['daly_wt_severe_motor_cognitive_enceph'] = self.sim.modules['HealthBurden'].get_daly_weight(420)
+            params['daly_wt_mild_motor_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(431)
+            params['daly_wt_moderate_motor_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(438)
+            params['daly_wt_severe_motor_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(435)
+            params['daly_wt_severe_infection_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(436)
+            params['daly_wt_mild_motor_cognitive_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(441)
+            params['daly_wt_mild_motor_cognitive_haemolytic'] = self.sim.modules['HealthBurden'].get_daly_weight(457)
+            params['daly_wt_severe_motor_cognitive_haemolytic'] = self.sim.modules['HealthBurden'].get_daly_weight(455)
+
 
     def initialise_population(self, population):
 
@@ -217,8 +243,9 @@ class NewbornOutcomes(Module):
         logger.info('This is NewbornOutcomes, being alerted about a health system interaction '
                     'person %d for: %s', person_id, treatment_id)
 
-        # TODO: Looks like some of the neonatal DALYs have been collapsed so should be easier to apply
-        # TODO: just need to sort out if they will be  managed here or elsewhere
+#    def report_daly_values(self):
+
+        # TODO: discuss with TC 1.) will these all be managed here. 2.) application of incidence of these comps?
 
 
 class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
@@ -233,7 +260,18 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         m = self
         mni = self.sim.modules['Labour'].mother_and_newborn_info
 
-    # First we identify the mother of this newborn, allowing us to access information about her labour and delivery
+    # For all newborns we first generate a dictionary that will store the prophylactic interventions then receive at
+    # birth if delivered in a facility
+
+        nci = self.module.newborn_care_info
+        nci[individual_id] = {'cord_care': False,
+                              'bcg_vacc': False,
+                              'polio_vacc': False,
+                              'vit_k': False,
+                              'tetra_eye_d': False,
+                              'proph_abx': False}
+
+    # Then we identify the mother of this newborn, allowing us to access information about her labour and delivery
         mother_id = df.at[individual_id, 'mother_id']
 
 # ================================== BIRTH-WEIGHT AND SIZE FOR GESTATIONAL AGE =========================================
@@ -349,9 +387,9 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
 
 # ------------------------------------  NEONATAL ENCEPHALOPATHY --------------------------------------------------------
 
-            # Here we apply the incidence and grade of neonatal encephalopathy to children delivered at home
+        # Here we apply the incidence and grade of neonatal encephalopathy to children delivered at home
 
-            # TODO: should this become before BA as BA is an outcome of NE/outcome of NE causative agent?
+        # TODO: should this become before BA as BA is an outcome of NE/outcome of NE causative agent?
         rf1 = 1
         riskfactors = rf1
         eff_prob_enceph = riskfactors * params['prob_encephalopathy']
@@ -373,6 +411,9 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # TODO: APPLY RISK REDUCTION WITH STEROIDS (if mni[][delivery_setting] == 'FD') etc etc (or should this still be
         # kept with the mother as its not where they were delivered that meant they got steroids but rather if they
         # were availible
+
+        # TODO: consider applying the incidence of motor impairment, cognitive impairment , retinopathy (CP?) to allow
+        #  for DALY counting
 
         if df.at[individual_id, 'nb_early_preterm'] & (mni[mother_id]['gestation_at_labour'] < 32):
             # LINKED WITH <32 weeks gest & VLBW/LBW (maybe exclude others)
@@ -581,19 +622,29 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+        nci = self.module.newborn_care_info
 
         logger.info('This is HSI_NewbornOutcomes_ReceivesCareFollowingDelivery, neonate %d is receiving care from a '
                     'skilled birth attendant following their birth',
-                     person_id)
+                    person_id)
 
 # ----------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------------------
-# ------------------------------------- VACCINATIONS (BCG/POLIO) -------------------------------------------------------
-# ------------------------------------------ VITAMIN K  ----------------------------------------------------------------
-# --------------------------------------- TETRACYCLINE EYE DROPS -------------------------------------------------------
-# --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)--------------------------------------
+        nci[person_id]['cord_care'] = True
 
-        # todo: a/w discussion regarding storing interventions that impact downstream
+# ------------------------------------- VACCINATIONS (BCG/POLIO) -------------------------------------------------------
+        nci[person_id]['bcg_vacc'] = True
+        nci[person_id]['polio_vacc'] = True
+
+# ------------------------------------------ VITAMIN K  ----------------------------------------------------------------
+        nci[person_id]['vit_k'] = True
+
+# --------------------------------------- TETRACYCLINE EYE DROPS -------------------------------------------------------
+        nci[person_id]['tetra_eye_d'] = True
+
+# --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)--------------------------------------
         # TODO: need to confirm if this is practice in malawi and find the appropriate risk factors
+
+        nci[person_id]['proph_abx'] = True
 
 # ----------------------------------------- KANGAROO MOTHER CARE -------------------------------------------------------
         # CURRENTLY ONLY APPLYING TO STABLE NEWBORNS (or should anyone be eligible- cochrane looks at discharge
