@@ -542,6 +542,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_all_pathogens.loc[
             no_pneumonia_under5 & (df.influenza_vaccination == True)] *= m.rr_ri_pneumonia_influenza_vaccine
 
+        # # # # # # # # OPTION 1  # # # # # # # #
+        # # # # # # # #  # # # # # # # #  # # # # # # # #
+
         random_draw_all = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
         dfx = pd.concat([eff_prob_all_pathogens, random_draw_all], axis=1)
         dfx.columns = ['eff_prob_RSV', 'eff_prob_rhinovirus', 'eff_prob_hMPV', 'eff_prob_parainfluenza',
@@ -675,7 +678,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years > 0.1667) & (
             df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
 
-'''
+        # # # # # # # #  # # # # # # # #  # # # # # # # #
+        # # # # # # # # OPTION 2  # # # # # # # #
+        # # # # # # # #  # # # # # # # #  # # # # # # # #
         random_draw1 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
         pneumonia_by_RSV = eff_prob_RSV > random_draw1
         pneum_RSV_idx = eff_prob_RSV.index[pneumonia_by_RSV]
@@ -775,7 +780,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                'ri_pneumonia_severity'] = 'severe pneumonia'
         df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years > 0.1667) & (
                 df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-                '''
 
         # NOTE: NON-SEVERE PNEUMONIA ONLY IN 2-59 MONTHS
         pn_current_pneumonia_idx = df.index[
