@@ -25,7 +25,7 @@ def simulation():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(new_pneumonia.NewPneumonia())
+    sim.register(new_pneumonia.NewPneumonia(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)
