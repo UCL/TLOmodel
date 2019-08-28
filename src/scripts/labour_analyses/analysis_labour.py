@@ -10,7 +10,8 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem
+from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem, abortion_and_miscarriage,\
+    antenatal_care
 
 # Where will output go - by default, wherever this script is run
 #outputpath = './src/scripts/analyses_labour/'
@@ -28,8 +29,8 @@ resourcefilepath = "./resources/"
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 2000
+end_date = Date(2012, 1, 1)
+popsize = 500
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -50,6 +51,8 @@ sim.register(lifestyle.Lifestyle())
 sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
+sim.register(abortion_and_miscarriage.AbortionAndMiscarriage(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
@@ -157,6 +160,23 @@ pmr_df.plot.bar(y='PMR', stacked=True)
 plt.title("Yearly Perinatal Mortality Rate")
 plt.show()
 
+# INCIDENCE OF INDUCED ABORTION (per 1000 women aged 15-49) #TODO: CURRENTLY THIS IS ALL WOMEN
+ia_df = output['tlo.methods.abortion_and_miscarriage']['induced_abortion']
+ia_df['date'] = pd.to_datetime(ia_df['date'])
+ia_df['year'] = ia_df['date'].dt.year
+ia_year = ia_df.groupby(['year'])['person_id'].size()
+
+pop_df = output['tlo.methods.demography']['population']
+pop_df['date'] = pd.to_datetime(pop_df['date'])
+pop_df['year'] = pop_df['date'].dt.year
+women_year = pop_df.groupby(['year'])['female']#.size()
+
+ia_wom_df = pd.concat((ia_year, women_year), axis=1)
+ia_wom_df.columns = ['yearly_abortions', 'female_pop']
+ia_wom_df['abortion_incidence'] = ia_wom_df['yearly_abortions']/ia_wom_df['female_pop'] * 1000
+
+x='y'
+
 # ----------------------------------- Incidence of Complications in Labour --------------------------------------------
 # Todo: Confirm standard metrics of incidence for these complications to allow comparison
 
@@ -233,3 +253,5 @@ pph_n_df['pph_incidence'] = pph_n_df['pph_cases']/pph_n_df['all_births'] * 1000
 pph_n_df.plot.bar(y='pph_incidence', stacked=True)
 plt.title("Yearly Incidence of Postpartum Haemorrhage")
 plt.show()
+
+
