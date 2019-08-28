@@ -7,10 +7,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.methods import demography
-from tlo.methods.Childhood_interventions import HSI_ICCM
+from tlo.methods.Chilldhood_interventions import HSI_ICCM
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -521,17 +522,17 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
                        eff_prob_hib, eff_prob_TB, eff_prob_staph, eff_prob_influenza, eff_prob_jirovecii], axis=1)
 
         # adding the effects of risk factors
-        eff_prob_all_pathogens.loc[no_pneumonia_under5 & df.li_no_access_handwashing == False] \
+        eff_prob_all_pathogens.loc[no_pneumonia_under5 & (df.li_no_access_handwashing == False)] \
             *= m.rr_ri_pneumonia_HHhandwashing
         eff_prob_all_pathogens.loc[no_pneumonia_under5 & (df.has_hiv == True)] \
             *= m.rr_ri_pneumonia_HIV
-        eff_prob_all_pathogens.loc[no_pneumonia_under5 & df.malnutrition == True] \
+        eff_prob_all_pathogens.loc[no_pneumonia_under5 & (df.malnutrition == True)] \
             *= m.rr_ri_pneumonia_SAM
         eff_prob_all_pathogens.loc[
-            no_pneumonia_under5 & df.exclusive_breastfeeding == True & (df.age_exact_years <= 0.5)] \
+            no_pneumonia_under5 & (df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5)] \
             *= m.rr_ri_pneumonia_excl_breast
         eff_prob_all_pathogens.loc[
-            no_pneumonia_under5 & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
+            no_pneumonia_under5 & (df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
             (df.age_exact_years < 2)] *= m.rr_ri_pneumonia_cont_breast
         eff_prob_all_pathogens.loc[
             no_pneumonia_under5 & (df.li_wood_burn_stove == False)] *= m.rr_ri_pneumonia_indoor_air_pollution
@@ -542,244 +543,33 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_all_pathogens.loc[
             no_pneumonia_under5 & (df.influenza_vaccination == True)] *= m.rr_ri_pneumonia_influenza_vaccine
 
-        # # # # # # # # OPTION 1  # # # # # # # #
-        # # # # # # # #  # # # # # # # #  # # # # # # # #
-
+        # cumulative sum to determine which pathogen is the cause of pneumonia
         random_draw_all = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        dfx = pd.concat([eff_prob_all_pathogens, random_draw_all], axis=1)
-        dfx.columns = ['eff_prob_RSV', 'eff_prob_rhinovirus', 'eff_prob_hMPV', 'eff_prob_parainfluenza',
-                       'eff_prob_streptococcus', 'eff_prob_hib', 'eff_prob_TB', 'eff_prob_staph',
-                       'eff_prob_influenza', 'eff_prob_jirovecii', 'random_draw_all']
-        dfx['eff_prob_none'] = 1 - (dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                                    dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib +
-                                    dfx.eff_prob_TB + dfx.eff_prob_staph + dfx.eff_prob_influenza +
-                                    dfx.eff_prob_jirovecii)
+        eff_prob_none = 1 - eff_prob_all_pathogens.sum(axis=1)
+        infection_probs = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
+        infection_probs = infection_probs.cumsum(axis=1)
+        infection_probs.columns = ['prob_none', 'RSV', 'rhinovirus', 'hMPV', 'parainfluenza',
+                                   'streptococcus', 'hib', 'TB', 'staph', 'influenza',
+                                   'P. jirovecii']
+        infection_probs['random_draw_all'] = random_draw_all
 
-        pneum_RSV_idx = dfx.index[(dfx.eff_prob_none < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV) > dfx.random_draw_all)]
-        df.loc[pneum_RSV_idx, 'ri_pneumonia_pathogen'] = 'RSV'
-        df.loc[pneum_RSV_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'RSV') & (df.age_exact_years < 0.1667),
+        for i, column in enumerate(infection_probs.columns):
+            # go through each pathogen and assign the pathogen and status
+            if column in ('prob_none', 'random_draw_all'):
+                # skip probability of none and random draw columns
+                continue
+
+            idx_to_infect = infection_probs.index[
+                ((infection_probs.iloc[:, i - 1] < infection_probs.random_draw_all)
+                 & (infection_probs.loc[:, column] >= infection_probs.random_draw_all))]
+            df.loc[idx_to_infect, 'ri_pneumonia_pathogen'] = column
+            df.loc[idx_to_infect, 'ri_pneumonia_status'] = True
+
+        # assign status for any individuals that are infected
+        df.loc[(df.ri_pneumonia_status == True) & (df.age_exact_years < 0.1667),
                'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'RSV') & (df.age_exact_years > 0.1667) & (
+        df.loc[(df.ri_pneumonia_status == True) & (df.age_exact_years > 0.1667) & (
             df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_rhinovirus_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus) > dfx.random_draw_all)]
-        df.loc[pneum_rhinovirus_idx, 'ri_pneumonia_pathogen'] = 'rhinovirus'
-        df.loc[pneum_rhinovirus_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'rhinovirus') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'rhinovirus') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_hMPV_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV) >
-                       dfx.random_draw_all)]
-        df.loc[pneum_hMPV_idx, 'ri_pneumonia_pathogen'] = 'hMPV'
-        df.loc[pneum_hMPV_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'hMPV') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'hMPV') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_parainfluenza_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV
-                       < dfx.random_draw_all) & ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus +
-                                                  dfx.eff_prob_hMPV + dfx.eff_prob_parainfluenza) > dfx.random_draw_all)]
-        df.loc[pneum_parainfluenza_idx, 'ri_pneumonia_pathogen'] = 'parainfluenza'
-        df.loc[pneum_parainfluenza_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'parainfluenza') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'parainfluenza') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_streptococcus_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus) > dfx.random_draw_all)]
-        df.loc[pneum_streptococcus_idx, 'ri_pneumonia_pathogen'] = 'streptococcus'
-        df.loc[pneum_streptococcus_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'streptococcus') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'streptococcus') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_hib_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib) >
-                       dfx.random_draw_all)]
-        df.loc[pneum_hib_idx, 'ri_pneumonia_pathogen'] = 'hib'
-        df.loc[pneum_hib_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'hib') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'hib') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_TB_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_streptococcus +
-                       dfx.eff_prob_hib < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib + dfx.eff_prob_TB) >
-                       dfx.random_draw_all)]
-        df.loc[pneum_TB_idx, 'ri_pneumonia_pathogen'] = 'TB'
-        df.loc[pneum_TB_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'TB') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'TB') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_staph_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_streptococcus +
-                       dfx.eff_prob_hib + dfx.eff_prob_TB < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib + dfx.eff_prob_TB +
-                        dfx.eff_prob_staph) > dfx.random_draw_all)]
-        df.loc[pneum_staph_idx, 'ri_pneumonia_pathogen'] = 'staph'
-        df.loc[pneum_staph_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'staph') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'staph') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_influenza_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_streptococcus +
-                       dfx.eff_prob_hib + dfx.eff_prob_TB + dfx.eff_prob_staph < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib + dfx.eff_prob_TB +
-                        dfx.eff_prob_staph + dfx.eff_prob_influenza) > dfx.random_draw_all)]
-        df.loc[pneum_influenza_idx, 'ri_pneumonia_pathogen'] = 'influenza'
-        df.loc[pneum_influenza_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'influenza') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'influenza') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        pneum_jirovecii_idx = \
-            dfx.index[(dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + + dfx.eff_prob_hMPV +
-                       dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_streptococcus +
-                       dfx.eff_prob_hib + dfx.eff_prob_TB + dfx.eff_prob_staph + dfx.eff_prob_influenza
-                       < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_RSV + dfx.eff_prob_rhinovirus + dfx.eff_prob_hMPV +
-                        dfx.eff_prob_parainfluenza + dfx.eff_prob_streptococcus + dfx.eff_prob_hib + dfx.eff_prob_TB +
-                        dfx.eff_prob_staph + dfx.eff_prob_influenza + dfx.eff_prob_jirovecii) > dfx.random_draw_all)]
-        df.loc[pneum_jirovecii_idx, 'ri_pneumonia_pathogen'] = 'P. jirovecii'
-        df.loc[pneum_jirovecii_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        # # # # # # # #  # # # # # # # #  # # # # # # # #
-        # # # # # # # # OPTION 2  # # # # # # # #
-        # # # # # # # #  # # # # # # # #  # # # # # # # #
-        random_draw1 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_RSV = eff_prob_RSV > random_draw1
-        pneum_RSV_idx = eff_prob_RSV.index[pneumonia_by_RSV]
-        df.loc[pneum_RSV_idx, 'ri_pneumonia_pathogen'] = 'RSV'
-        df.loc[pneum_RSV_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'RSV') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'RSV') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw2 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_rhinovirus = eff_prob_rhinovirus > random_draw2
-        pneum_rhinovirus_idx = eff_prob_rhinovirus.index[pneumonia_by_rhinovirus]
-        df.loc[pneum_rhinovirus_idx, 'ri_pneumonia_pathogen'] = 'rhinovirus'
-        df.loc[pneum_rhinovirus_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'rhinovirus') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'rhinovirus') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw3 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_hMPV = eff_prob_hMPV > random_draw3
-        pneum_hMPV_idx = eff_prob_hMPV.index[pneumonia_by_hMPV]
-        df.loc[pneum_hMPV_idx, 'ri_pneumonia_pathogen'] = 'hMPV'
-        df.loc[pneum_hMPV_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'hMPV') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'hMPV') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw4 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_parainfluenza = eff_prob_parainfluenza > random_draw4
-        pneum_parainfluenza_idx = eff_prob_parainfluenza.index[pneumonia_by_parainfluenza]
-        df.loc[pneum_parainfluenza_idx, 'ri_pneumonia_pathogen'] = 'parainfluenza'
-        df.loc[pneum_parainfluenza_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'parainfluenza') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'parainfluenza') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw5 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_streptococcus = eff_prob_streptococcus > random_draw5
-        pneum_streptococcus_idx = eff_prob_streptococcus.index[pneumonia_by_streptococcus]
-        df.loc[pneum_streptococcus_idx, 'ri_pneumonia_pathogen'] = 'streptococcus'
-        df.loc[pneum_streptococcus_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'streptococcus') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'streptococcus') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw6 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_hib = eff_prob_hib > random_draw6
-        pneum_hib_idx = eff_prob_hib.index[pneumonia_by_hib]
-        df.loc[pneum_hib_idx, 'ri_pneumonia_pathogen'] = 'hib'
-        df.loc[pneum_hib_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'hib') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'hib') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw7 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_TB = eff_prob_TB > random_draw7
-        pneum_TB_idx = eff_prob_TB.index[pneumonia_by_TB]
-        df.loc[pneum_TB_idx, 'ri_pneumonia_pathogen'] = 'TB'
-        df.loc[pneum_TB_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'TB') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'TB') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw8 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_staph = eff_prob_staph > random_draw8
-        pneum_staph_idx = eff_prob_staph.index[pneumonia_by_staph]
-        df.loc[pneum_staph_idx, 'ri_pneumonia_pathogen'] = 'staph'
-        df.loc[pneum_staph_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'staph') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'staph') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw9 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_influenza = eff_prob_influenza > random_draw9
-        pneum_influenza_idx = eff_prob_influenza.index[pneumonia_by_influenza]
-        df.loc[pneum_influenza_idx, 'ri_pneumonia_pathogen'] = 'influenza'
-        df.loc[pneum_influenza_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'influenza') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'influenza') & (df.age_exact_years > 0.1667) & (
-            df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
-
-        random_draw10 = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
-        pneumonia_by_jirovecii = eff_prob_jirovecii > random_draw10
-        pneum_jirovecii_idx = eff_prob_jirovecii.index[pneumonia_by_jirovecii]
-        df.loc[pneum_jirovecii_idx, 'ri_pneumonia_pathogen'] = 'P. jirovecii'
-        df.loc[pneum_jirovecii_idx, 'ri_pneumonia_status'] = True
-        df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years < 0.1667),
-               'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_pathogen == 'P. jirovecii') & (df.age_exact_years > 0.1667) & (
-                df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
 
         # NOTE: NON-SEVERE PNEUMONIA ONLY IN 2-59 MONTHS
         pn_current_pneumonia_idx = df.index[

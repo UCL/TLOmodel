@@ -28,13 +28,25 @@ def simulation():
     sim.register(new_pneumonia.NewPneumonia(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
-#   sim.seed_rngs(1)
+    sim.seed_rngs(0)
     return sim
 
 
-def __check_properties(df):
+def test_run(simulation):
+    simulation.make_initial_population(n=popsize)
+    simulation.simulate(end_date=end_date)
 
- def test_make_initial_population(simulation):
+
+def test_dtypes(simulation):
+    # check types of columns
+    df = simulation.population.props
+    orig = simulation.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+def __check_properties(df):
+    pass
+
+def test_make_initial_population(simulation):
     simulation.make_initial_population(n=popsize)
 
 
