@@ -83,7 +83,6 @@ death_by_cause.plot.bar(stacked=True)
 plt.title("Total Maternal Deaths per Year")
 plt.show()
 
-# Consider maternal mortality rate (deaths per 1000 population per anum
 
 # %% Plot Still Births  Over time:
 
@@ -159,6 +158,7 @@ plt.title("Yearly Perinatal Mortality Rate")
 plt.show()
 
 # ----------------------------------- Incidence of Complications in Labour --------------------------------------------
+# Todo: Confirm standard metrics of incidence for these complications to allow comparison
 
 # Maternal Sepsis
 # Yearly Incidence(per 1000 births):

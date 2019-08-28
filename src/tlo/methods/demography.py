@@ -15,7 +15,7 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import labour
+from tlo.methods import labour, abortion_and_miscarriage
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -379,8 +379,10 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
-            self.sim.schedule_event(labour.CheckIfNewlyPregnantWomanWillMiscarry(self.sim.modules['Labour'], female_id,
-                                                                                 cause='miscarriage event'), self.sim.date)
+            self.sim.schedule_event(abortion_and_miscarriage.CheckIfNewlyPregnantWomanWillMiscarry
+                                    (self.sim.modules['AbortionAndMiscarriage'], female_id,
+                                                                                 cause='miscarriage event'),
+                                    self.sim.date)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):

@@ -39,16 +39,6 @@ class Labour (Module):
 
         'prob_pregnancy': Parameter(
             Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMETER
-        'prob_miscarriage': Parameter(
-            Types.REAL, 'baseline probability of pregnancy loss before 28 weeks gestation'),
-        'rr_miscarriage_prevmiscarriage': Parameter(
-            Types.REAL, 'relative risk of pregnancy loss for women who have previously miscarried'),
-        'rr_miscarriage_35': Parameter(
-            Types.REAL, 'relative risk of pregnancy loss for women who is over 35 years old'),
-        'rr_miscarriage_3134': Parameter(
-            Types.REAL, 'relative risk of pregnancy loss for women who is between 31 and 34 years old'),
-        'rr_miscarriage_grav4': Parameter(
-            Types.REAL, 'relative risk of pregnancy loss for women who has a gravidity of greater than 4'),
         'prob_prom': Parameter(
             Types.REAL, 'probability of a woman in term labour having had experience prolonged rupture of membranes'),
         'prob_pl_ol': Parameter(
@@ -144,11 +134,6 @@ class Labour (Module):
             Types.REAL, 'relative risk of postpartum haemorrhage following obstructed labour'),
         'prob_pp_sepsis': Parameter(
             Types.REAL, 'probability of sepsis following delivery'),
-        'prob_sa_pph': Parameter(
-            Types.REAL, 'probability of a postpartum haemorrhage following a spontaneous abortion before 28 weeks'
-                        ' gestation'),
-        'prob_sa_sepsis': Parameter(
-            Types.REAL, 'probability of a sepsis  following a spontaneous abortion before 28 weeks gestation'),
         'cfr_pph': Parameter(
             Types.REAL, 'case fatality rate for postpartum haemorrhages'),
         'cfr_pp_eclampsia': Parameter(
@@ -237,9 +222,6 @@ class Labour (Module):
                                                                 'in a stillbirth'),
         #  TODO: work out if we need this property in main DF, or we could store number of still births per woman?
         #   (and log still births by type)
-        'la_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
-        'la_date_most_recent_miscarriage': Property(Types.DATE, 'the date this woman has last experienced spontaneous'
-                                                                ' miscarriage'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_total_deliveries_by_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
@@ -276,11 +258,6 @@ class Labour (Module):
         # TODO: rename so parameters reflect the actual measure being employed (incidence rates/prevelance etc)
 
         params['prob_pregnancy'] = dfd.loc['prob_pregnancy', 'value']
-        params['prob_miscarriage'] = dfd.loc['prob_miscarriage', 'value']
-        params['rr_miscarriage_prevmiscarriage'] = dfd.loc['rr_miscarriage_prevmiscarriage', 'value']
-        params['rr_miscarriage_35'] = dfd.loc['rr_miscarriage_35', 'value']
-        params['rr_miscarriage_3134'] = dfd.loc['rr_miscarriage_3134', 'value']
-        params['rr_miscarriage_grav4'] = dfd.loc['rr_miscarriage_grav4', 'value']
         params['prob_prom'] = dfd.loc['prob_prom', 'value']
         params['prob_pl_ol'] = dfd.loc['prob_pl_ol', 'value']
         params['rr_PL_OL_nuliparity'] = dfd.loc['rr_PL_OL_nuliparity', 'value']
@@ -329,8 +306,6 @@ class Labour (Module):
         params['prob_pph'] = dfd.loc['prob_pph', 'value']
         params['rr_pph_pl_ol'] = dfd.loc['rr_pph_pl_ol', 'value']
         params['prob_pp_sepsis'] = dfd.loc['prob_pp_sepsis', 'value']
-        params['prob_sa_pph'] = dfd.loc['prob_sa_pph', 'value']
-        params['prob_sa_sepsis'] = dfd.loc['prob_sa_sepsis', 'value']
         params['cfr_pph'] = dfd.loc['cfr_pph', 'value']
         params['cfr_pp_eclampsia'] = dfd.loc['cfr_pp_eclampsia', 'value']
         params['cfr_pp_sepsis'] = dfd.loc['cfr_pp_sepsis', 'value']
@@ -394,8 +369,6 @@ class Labour (Module):
 
         df.loc[df.sex == 'F', 'la_labour_current_pregnancy'] = 'not_in_labour'
         df.loc[df.sex == 'F', 'la_current_labour_successful_induction'] = 'not_induced'
-        df.loc[df.sex == 'F', 'la_total_miscarriages'] = 0
-        df.loc[df.sex == 'F', 'la_date_most_recent_miscarriage'] = pd.NaT
         df.loc[df.sex == 'F', 'la_still_birth_current_pregnancy'] = False
         df.loc[df.sex == 'F', 'la_parity'] = 0
         df.loc[df.sex == 'F', 'la_total_deliveries_by_cs'] = 0
@@ -646,8 +619,6 @@ class Labour (Module):
             df.at[child_id, 'la_due_date_current_pregnancy'] = pd.NaT
             df.at[child_id, 'la_current_labour_successful_induction'] = 'not_induced'
             df.at[child_id, 'la_labour_current_pregnancy'] = 'not_in_labour'
-            df.at[child_id, 'la_total_miscarriages'] = 0
-            df.at[child_id, 'la_date_most_recent_miscarriage'] = pd.NaT
             df.at[child_id, 'la_still_birth_current_pregnancy'] = False
             df.at[child_id, 'la_parity'] = 0
             df.at[child_id, 'la_total_deliveries_by_cs'] = 0
@@ -749,80 +720,6 @@ class Labour (Module):
                                       health_values_5.loc[df.is_alive], health_values_6.loc[df.is_alive]], axis=1)
 
         return health_values_df  # return the dataframe
-
-
-class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
-    """This event checks if a woman who is newly pregnant will experience a miscarriage, and will record on what date
-     this miscarriage has occured. Women who """
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
-
-        # todo: should we code in twins/triplets (risk factors for ptb, bleeding etc)- should be in DHS
-        # First we identify if this woman has any risk factors for early pregnancy loss
-
-        if (df.at[individual_id, 'la_total_miscarriages'] >= 1) & (df.at[individual_id, 'age_years'] <= 30) & \
-            (df.at[individual_id, 'la_parity'] < 1 > 3):
-            rf1 = params['rr_miscarriage_prevmiscarriage']
-        else:
-            rf1 = 1
-
-        if (df.at[individual_id, 'la_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] >= 35) & \
-            (df.at[individual_id,'la_parity'] < 1 > 3):
-            rf2 = params['rr_miscarriage_35']
-        else:
-            rf2 = 1
-
-        if (df.at[individual_id, 'la_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
-            (df.at[individual_id, 'age_years'] <= 34) & (df.at[individual_id,'la_parity'] < 1 > 3):
-            rf3 = params['rr_miscarriage_3134']
-        else:
-            rf3 = 1
-
-        if (df.at[individual_id, 'la_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] <= 30) & \
-            (df.at[individual_id,'la_parity'] >= 1 <= 3):
-            rf4 = params['rr_miscarriage_grav4']
-        else:
-            rf4 = 1
-
-        # Next we multiply the baseline rate of miscarriage in the reference population who are absent of riskfactors
-        # by the product of the relative rates for any risk factors this mother may have
-        riskfactors = rf1 * rf2 * rf3 * rf4
-
-        if riskfactors == 1:
-            eff_prob_miscarriage = params['prob_miscarriage']
-        else:
-            eff_prob_miscarriage = riskfactors * params['prob_miscarriage']
-
-        # Finally a random draw is used to determine if this woman will experience a miscarriage for this pregnancy
-        random = self.sim.rng.random_sample(size=1)
-        if random < eff_prob_miscarriage:
-
-            # If a newly pregnant woman will miscarry her pregnancy, a random date within 24 weeks of conception is
-            # generated, the date of miscarriage is scheduled for this day
-
-            # (N.b malawi date of viability is 28 weeks, we using 24 as cut off to allow for very PTB.)
-
-            random_draw = self.sim.rng.exponential(scale=0.5, size=1)  # todo: finalise scale (check correct)
-            random_days = pd.to_timedelta(random_draw[0] * 168, unit='d')
-            miscarriage_date = self.sim.date + random_days
-            df.at[individual_id, 'la_date_most_recent_miscarriage'] = miscarriage_date
-
-            self.sim.schedule_event(MiscarriageAndPostMiscarriageComplicationsEvent(self.module, individual_id,
-                                                                                    cause='post miscarriage'),
-                                    miscarriage_date)
-
-            # And for women who do not have a miscarriage we move them to labour scheduler to determine at what
-            # gestation they will go into labour
-        else:
-            assert df.at[individual_id, 'la_due_date_current_pregnancy'] != pd.NaT
-            self.sim.schedule_event(LabourScheduler(self.module, individual_id, cause='pregnancy'), self.sim.date)
-
 
 class LabourScheduler (Event, IndividualScopeEventMixin):
     """This event determines when pregnant women, who have not experienced a miscarriage, will going to labour"""
@@ -1434,52 +1331,6 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                          self.sim.date + DateOffset(days=3))  # Date offsetted to allow for interventions
 
 
-class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEventMixin):
-
-    """applies probability of postpartum complications to women who have just experience a miscarriage """
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
-
-        # TODO: consider stage of pregnancy loss and its impact on likelihood of complications i.e retained product
-        # i.e. look up effects of incomplete miscarriage (apply incidence)
-
-        df.at[individual_id, 'is_pregnant'] = False
-        df.at[individual_id, 'la_total_miscarriages'] = +1
-        df.at[individual_id, 'la_due_date_current_pregnancy'] = pd.NaT
-
-        logger.info('This is MiscarriageAndPostMiscarriageComplicationsEvent, person %d has experienced a miscarriage '
-                    'on date %s and is no longer pregnant',
-                    individual_id, self.sim.date)
-
-        # As with the other complication events here we determine if this woman will experience any complications
-        # following her miscarriage
-        riskfactors = 1  # rf1
-        eff_prob_pph = riskfactors * params['prob_sa_pph']
-        random = self.sim.rng.random_sample(size=1)
-        if random < eff_prob_pph:
-            df.at[individual_id, 'la_pph'] = True
-
-        riskfactors = 1  # rf1
-        eff_prob_pp_sepsis = riskfactors * params['prob_sa_sepsis']
-        random = self.sim.rng.random_sample(size=1)
-        if random < eff_prob_pp_sepsis:
-                df.at[individual_id, 'la_sepsis'] = True
-
-        # Currently if she has experienced any of these complications she is scheduled to pass through the DeathEvent
-        # to determine if they are fatal
-        if df.at[individual_id,'la_sepsis'] or df.at[individual_id, 'la_pph']:
-            logger.info('This is MiscarriageAndPostMiscarriageComplicationsEvent scheduling a possible death for'
-                     ' person %d after suffering complications of miscarriage', individual_id)
-            self.sim.schedule_event(MiscarriageDeathEvent(self.module, individual_id, cause='miscarriage'),
-                                    self.sim.date)
-
-
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
 
     """handles death in labour"""
@@ -1669,46 +1520,6 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             logger.info('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
                          'labour_profile': complication_profile})
-
-
-class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
-
-    """handles death following miscarriage"""
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
-
-        if df.at[individual_id, 'la_pph']:
-            random = self.sim.rng.random_sample(size=1)
-            if random < params['cfr_pph']:
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause=' complication of miscarriage'),
-                                        self.sim.date)
-
-        if df.at[individual_id, 'la_sepsis']:
-            random = self.sim.rng.random_sample(size=1)
-            if random < params['cfr_pp_sepsis']:
-                df.at[individual_id, 'la_maternal_death'] = True
-                df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
-                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
-                                                                      cause='complication of miscarriage'),
-                                        self.sim.date)
-                logger.info('This is MiscarriageDeathEvent scheduling a death for person %d on date %s who died '
-                            'following complications of miscarriage', individual_id,
-                             self.sim.date)
-
-                logger.info('%s|maternal_death|%s', self.sim.date,
-                        {
-                            'age': df.at[individual_id, 'age_years'],
-                            'person_id': individual_id
-                        })
 
 # ======================================================================================================================
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ====================================================
