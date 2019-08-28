@@ -19,7 +19,8 @@ class TestLoadParameters:
             'string_basic': Parameter(Types.STRING, 'string'),
         }
 
-        self.resource = pd.read_excel("tests/resources/ResourceFile_load-parameters.xlsx", sheet_name="parameter_values")
+        self.resource = pd.read_excel("tests/resources/ResourceFile_load-parameters.xlsx",
+                                      sheet_name="parameter_values")
         self.resource.set_index('parameter_name', inplace=True)
 
     def test_happy_path(self):

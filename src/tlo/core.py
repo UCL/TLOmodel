@@ -105,7 +105,6 @@ class Property(Specifiable):
         super().__init__(type_, description, categories)
         self.optional = optional
 
-
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
 
