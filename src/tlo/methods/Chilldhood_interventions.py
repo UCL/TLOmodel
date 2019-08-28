@@ -276,8 +276,8 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
                     self.sim.rng.choice([True, False], size=1,
                                         p=[p['prob_correct_id_cough_more_than_21days'],
                                             (1 - p['prob_correct_cough_more_than_21days'])])
-                    if cough_more_than_21days_identified_by_HSA[True]:
-                        df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
+                if cough_more_than_21days_identified_by_HSA[True]:
+                    df.at[person_id, 'ccm_correctly_identified_danger_sign'] = True
             # danger sign - fever for last 7 days or more
             # TODO: Add in malaria stuff
             # if df.at[person_id, df.fever]:
