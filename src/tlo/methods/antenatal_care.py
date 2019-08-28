@@ -213,7 +213,7 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
         conception = pd.Series(df.date_of_last_pregnancy, index=df.index[idx_anc])
         dfx = pd.concat([conception, gestation_at_anc], axis=1)
         dfx.columns = ['conception', 'gestation_at_anc']
-        dfx['first_anc']= dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
+        dfx['first_anc'] = dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
 
         for person in idx_anc:
             care_seeking_date = dfx.at[person, 'first_anc']
