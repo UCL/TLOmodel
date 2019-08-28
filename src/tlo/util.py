@@ -1,7 +1,67 @@
 """This file contains helpful utility functions."""
 
+import json
+from typing import Dict
+
 import numpy as np
 import pandas as pd
+
+from tlo import Parameter
+
+
+def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]) -> Dict[str, Parameter]:
+    """Automatically load parameters from resource dataframe, returning updated parameter dictionary
+
+    Automatically updates the values of data types:
+        - Integers
+        - Real numbers
+        - Lists
+        - Categorical
+        - Strings
+
+    :param Dict parameters: Module's parameters
+    :param DataFrame resource: DataFrame with index of the parameter_name and a column of `value`
+    :return: parameters dictionary updated with values from the resource dataframe
+    """
+    # should parse BOOL and DATE, just need to write some tests if we want these?
+    skipped_data_types = ('BOOL', 'DATA_FRAME', 'DATE', 'SERIES')
+
+    # for each supported parameter, convert to the correct type
+    for parameter_name, parameter_definition in parameters.items():
+        if parameter_definition.type_.name in skipped_data_types:
+            continue
+
+        # For each parameter, raise error if the value can't be coerced
+        # Could the Exception message for a parameter that isn't in the resource more explicit? currently:
+        # 'the label [int_basic] is not in the [index]'
+        parameter_value = resource.loc[parameter_name, 'value']
+        error_message = (f"The value of '{parameter_value}' for parameter '{parameter_name}' "
+                         f"could not be parsed as a {parameter_definition.type_.name} data type")
+        if parameter_definition.python_type == list:
+            try:
+                # chose json.loads instead of save_eval
+                # because it raises error instead of joining two strings without a comma
+                parameter_value = json.loads(parameter_value)
+                assert isinstance(parameter_value, list)
+            except (json.decoder.JSONDecodeError, AssertionError) as e:
+                raise ValueError(error_message) from e
+        elif parameter_definition.python_type == pd.Categorical:
+            categories = parameter_definition.categories
+            assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
+            parameter_value = pd.Categorical(parameter_value, categories=categories)
+        elif parameter_definition.type_.name == 'STRING':
+            parameter_value = parameter_value.strip()
+        else:
+            # All other data types
+            try:
+                parameter_value = parameter_definition.python_type(parameter_value)
+            except Exception as e:
+                raise ValueError(error_message) from e
+
+        # Save the values to the parameters
+        parameters[parameter_name] = parameter_value
+
+    return parameters
 
 
 def show_changes(sim, initial_state, final_state):

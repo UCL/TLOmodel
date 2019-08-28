@@ -63,7 +63,7 @@ class Specifiable:
         Types.STRING: object
     }
 
-    def __init__(self, type_, description):
+    def __init__(self, type_, description, categories=None):
         """Create a new Specifiable.
 
         :param type_: an instance of Types giving the type of allowed values
@@ -72,6 +72,12 @@ class Specifiable:
         assert type_ in Types
         self.type_ = type_
         self.description = description
+
+        # Save the categories for a categorical property
+        if self.type_ is Types.CATEGORICAL:
+            if not categories:
+                raise ValueError("CATEGORICAL types require the 'categories' argument")
+            self.categories = categories
 
     @property
     def python_type(self):
@@ -96,14 +102,9 @@ class Property(Specifiable):
         :param description: textual description of what this property represents
         :param optional: whether a value needs to be given for this property
         """
-        super().__init__(type_, description)
+        super().__init__(type_, description, categories)
         self.optional = optional
 
-        # Save the categories for a categorical property
-        if self.type_ is Types.CATEGORICAL:
-            if not categories:
-                raise ValueError("CATEGORICAL types require the 'categories' argument")
-            self.categories = categories
 
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
