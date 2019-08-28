@@ -81,7 +81,7 @@ class AntenatalCare(Module):
                            sim.date + DateOffset(days=0))
 
         event= AntenatalCareSeekingAndScheduling(self)
-        sim.schedule_event(event, sim.date + DateOffset(days=7))
+        sim.schedule_event(event, sim.date + DateOffset(weeks=8))
 
         event = AntenatalCareLoggingEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(days=0))
@@ -215,6 +215,8 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
         dfx.columns = ['conception', 'gestation_at_anc']
         dfx['first_anc'] = dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
 
+
+        x='y'
         for person in idx_anc:
             care_seeking_date = dfx.at[person, 'first_anc']
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
