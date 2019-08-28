@@ -588,60 +588,31 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_all_pathogens.loc[no_diarrhoea_under5 & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
                                    (df.age_exact_years < 2)] *= m.rr_gi_diarrhoea_cont_breast
 
+        # cumulative sum to determine which pathogen is the cause of diarrhoea
         random_draw_all = pd.Series(rng.random_sample(size=len(current_no_diarrhoea)), index=current_no_diarrhoea)
+        eff_prob_none = 1 - eff_prob_all_pathogens.sum(axis=1)
+        infection_probs = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
+        infection_probs = infection_probs.cumsum(axis=1)
+        infection_probs.columns = ['prob_none', 'rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
+                                   'campylobacter', 'ST-ETEC']
+        infection_probs['random_draw_all'] = random_draw_all
 
-        # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([eff_prob_all_pathogens, random_draw_all], axis=1)
-        dfx.columns = ['eff_prob_rotavirus', 'eff_prob_shigella', 'eff_prob_adenovirus', 'eff_prob_crypto',
-                       'eff_prob_campylo', 'eff_prob_ETEC', 'random_draw_all']
-        dfx['eff_prob_none'] = 1 - (dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus +
-                                    dfx.eff_prob_crypto + dfx.eff_prob_campylo + dfx.eff_prob_ETEC)
+        for i, column in enumerate(infection_probs.columns):
+            # go through each pathogen and assign the pathogen and status
+            if column in ('prob_none', 'random_draw_all'):
+                # skip probability of none and random draw columns
+                continue
 
-        no_diarr = dfx.index[dfx.eff_prob_none > dfx.random_draw_all]
-        diarr_rotavirus_idx =\
-            dfx.index[(dfx.eff_prob_none < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_rotavirus) > dfx.random_draw_all)]
-        df.loc[diarr_rotavirus_idx, 'gi_diarrhoea_pathogen'] = 'rotavirus'
-        df.loc[diarr_rotavirus_idx, 'gi_diarrhoea_status'] = True
-
-        diarr_shigella_idx = \
-            dfx.index[((dfx.eff_prob_none + dfx.eff_prob_rotavirus) < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella) > dfx.random_draw_all)]
-        df.loc[diarr_shigella_idx, 'gi_diarrhoea_pathogen'] = 'shigella'
-        df.loc[diarr_shigella_idx, 'gi_diarrhoea_status'] = True
-
-        diarr_adenovirus_idx = \
-            dfx.index[((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella) < dfx.random_draw_all) &
-                      ((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus) >
-                       dfx.random_draw_all)]
-        df.loc[diarr_adenovirus_idx, 'gi_diarrhoea_pathogen'] = 'adenovirus'
-        df.loc[diarr_adenovirus_idx, 'gi_diarrhoea_status'] = True
-
-        diarr_crypto_idx = \
-            dfx.index[((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus) <
-                       dfx.random_draw_all) & ((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella +
-                                                dfx.eff_prob_adenovirus + dfx.eff_prob_crypto) > dfx.random_draw_all)]
-        df.loc[diarr_crypto_idx, 'gi_diarrhoea_pathogen'] = 'cryptosporidium'
-        df.loc[diarr_crypto_idx, 'gi_diarrhoea_status'] = True
-
-        diarr_campylo_idx = \
-            dfx.index[((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus +
-                        dfx.eff_prob_crypto) < dfx.random_draw_all) &
-                      (dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus +
-                       dfx.eff_prob_crypto + dfx.eff_prob_campylo > dfx.random_draw_all)]
-        df.loc[diarr_campylo_idx, 'gi_diarrhoea_pathogen'] = 'campylobacter'
-        df.loc[diarr_campylo_idx, 'gi_diarrhoea_status'] = True
-
-        diarr_ETEC_idx = \
-            dfx.index[((dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus +
-                        dfx.eff_prob_crypto + dfx.eff_prob_campylo) < dfx.random_draw_all) &
-                      (dfx.eff_prob_none + dfx.eff_prob_rotavirus + dfx.eff_prob_shigella + dfx.eff_prob_adenovirus +
-                       dfx.eff_prob_crypto + dfx.eff_prob_campylo + dfx.eff_prob_ETEC > dfx.random_draw_all)]
-        df.loc[diarr_ETEC_idx, 'gi_diarrhoea_pathogen'] = 'ST-ETEC'
-        df.loc[diarr_ETEC_idx, 'gi_diarrhoea_status'] = True
+            idx_to_infect = infection_probs.index[
+                ((infection_probs.iloc[:, i - 1] < infection_probs.random_draw_all)
+                 & (infection_probs.loc[:, column] >= infection_probs.random_draw_all))]
+            df.loc[idx_to_infect, 'gi_diarrhoea_pathogen'] = column
+            df.loc[idx_to_infect, 'gi_diarrhoea_status'] = True
 
         # ----------------- ASSIGN WHETHER IT IS DYSENTERY OR ACUTE WATERY DIARRHOEA ---------------------
 
+        diarr_rotavirus_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'rotavirus')]
         p_acute_watery_rotavirus = pd.Series(self.module.rotavirus_AWD, index=diarr_rotavirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_rotavirus_idx)), index=diarr_rotavirus_idx)
         diarr_rota_AWD = p_acute_watery_rotavirus >= random_draw
@@ -651,6 +622,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_rota_dysentery_idx = p_acute_watery_rotavirus.index[diarr_rota_dysentery]
         df.loc[diarr_rota_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
+        diarr_shigella_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'shigella')]
         p_acute_watery_shigella = pd.Series(self.module.shigella_AWD, index=diarr_shigella_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_shigella_idx)), index=diarr_shigella_idx)
         diarr_shigella_AWD = p_acute_watery_shigella >= random_draw
@@ -660,6 +633,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_shigella_dysentery_idx = p_acute_watery_shigella.index[diarr_shigella_dysentery]
         df.loc[diarr_shigella_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
+        diarr_adenovirus_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'adenovirus')]
         p_acute_watery_adeno = pd.Series(self.module.adenovirus_AWD, index=diarr_adenovirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_adenovirus_idx)), index=diarr_adenovirus_idx)
         diarr_adeno_AWD = p_acute_watery_adeno >= random_draw
@@ -669,6 +644,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_adeno_dysentery_idx = p_acute_watery_adeno.index[diarr_adeno_dysentery]
         df.loc[diarr_adeno_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
+        diarr_crypto_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'cryptosporidium')]
         p_acute_watery_crypto = pd.Series(self.module.crypto_AWD, index=diarr_crypto_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_crypto_idx)), index=diarr_crypto_idx)
         diarr_crypto_AWD = p_acute_watery_crypto >= random_draw
@@ -678,6 +655,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_crypto_dysentery_idx = p_acute_watery_crypto.index[diarr_crypto_dysentery]
         df.loc[diarr_crypto_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
+        diarr_campylo_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'campylobacter')]
         p_acute_watery_campylo = pd.Series(self.module.campylo_AWD, index=diarr_campylo_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_campylo_idx)), index=diarr_campylo_idx)
         diarr_campylo_AWD = p_acute_watery_campylo >= random_draw
@@ -687,6 +666,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_campylo_dysentery_idx = p_acute_watery_campylo.index[diarr_campylo_dysentery]
         df.loc[diarr_campylo_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
+        diarr_ETEC_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & (df.gi_diarrhoea_pathogen == 'ST-ETEC')]
         p_acute_watery_ETEC = pd.Series(self.module.ETEC_AWD, index=diarr_ETEC_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_ETEC_idx)), index=diarr_ETEC_idx)
         diarr_ETEC_AWD = p_acute_watery_ETEC >= random_draw
@@ -696,66 +677,66 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_ETEC_dysentery_idx = p_acute_watery_ETEC.index[diarr_ETEC_dysentery]
         df.loc[diarr_ETEC_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
 
-        # # # # # # WHEN THEY GET ACUTE DIARRHOEA - DATE # # # # # #
+        # ------------------------------ WHEN THEY GET ACUTE DIARRHOEA - DATE  ------------------------------
         incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
         random_draw_days = np.random.randint(0, 60, size=len(incident_acute_diarrhoea))
         adding_days = pd.to_timedelta(random_draw_days, unit='d')
         date_of_aquisition = self.sim.date + adding_days
         df.loc[incident_acute_diarrhoea, 'date_of_onset_diarrhoea'] = date_of_aquisition
 
-        # # # # # # ASSIGN DEHYDRATION LEVELS FOR ACUTE WATERY DIARRHOEA # # # # # #
+        # # # # # # # # # # # # ASSIGN DEHYDRATION LEVELS FOR ACUTE WATERY DIARRHOEA # # # # # # # # # # # #
         under5_watery_diarrhoea_idx = df.index[
             (df.age_years < 5) & df.is_alive & (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea')]
+        eff_prob_some_dehydration_watery_diarrhoea = pd.Series(0.5, index=under5_watery_diarrhoea_idx)
+        eff_prob_severe_dehydration_watery_diarrhoea = pd.Series(0.2, index=under5_watery_diarrhoea_idx)
+        eff_prob_dehydration_watery_diarr = pd.concat([eff_prob_some_dehydration_watery_diarrhoea,
+                                                       eff_prob_severe_dehydration_watery_diarrhoea], axis=1)
 
-        eff_prob_some_dehydration_acute_diarrhoea = pd.Series(0.5, index=under5_watery_diarrhoea_idx)
-        eff_prob_severe_dehydration_acute_diarrhoea = pd.Series(0.2, index=under5_watery_diarrhoea_idx)
+        # cumulative sum to determine dehydration level for acute watery diarrhoea
         random_draw_a = pd.Series(self.sim.rng.random_sample(size=len(under5_watery_diarrhoea_idx)),
                                   index=under5_watery_diarrhoea_idx)
+        eff_prob_no_dehyd = 1 - eff_prob_dehydration_watery_diarr.sum(axis=1)
+        dehydration_probs = pd.concat([eff_prob_no_dehyd, eff_prob_dehydration_watery_diarr], axis=1)
+        dehydration_probs = dehydration_probs.cumsum(axis=1)
+        dehydration_probs.columns = ['no dehydration', 'some dehydration', 'severe dehydration']
+        dehydration_probs['random_draw_a'] = random_draw_a
 
-        no_dehydration_acute_diarrhoea = \
-            1 - (eff_prob_some_dehydration_acute_diarrhoea + eff_prob_severe_dehydration_acute_diarrhoea)
-        some_dehydration_acute_diarrhoea = \
-            (random_draw_a > no_dehydration_acute_diarrhoea) & \
-            (random_draw_a < (no_dehydration_acute_diarrhoea + eff_prob_some_dehydration_acute_diarrhoea))
-        severe_dehydration_acute_diarrhoea = \
-            ((no_dehydration_acute_diarrhoea + eff_prob_some_dehydration_acute_diarrhoea) < random_draw_a) & \
-            ((no_dehydration_acute_diarrhoea + eff_prob_some_dehydration_acute_diarrhoea +
-              eff_prob_severe_dehydration_acute_diarrhoea) > random_draw_a)
+        for i, column in enumerate(dehydration_probs.columns):
+            # go through each dehydration level and assign the dehydration status
+            if column in 'random_draw_a':
+                # skip probability of none and random draw columns
+                continue
+            dehydration_idx = dehydration_probs.index[
+                ((dehydration_probs.iloc[:, i - 1] < dehydration_probs.random_draw_a)
+                 & (dehydration_probs.loc[:, column] >= dehydration_probs.random_draw_a))]
+            df.loc[dehydration_idx, 'gi_dehydration_status'] = column
 
-        idx_some_dehydration_acute_diarrhoea = eff_prob_some_dehydration_acute_diarrhoea.index[
-            some_dehydration_acute_diarrhoea]
-        idx_severe_dehydration_acute_diarrhoea = eff_prob_severe_dehydration_acute_diarrhoea.index[
-            severe_dehydration_acute_diarrhoea]
-
-        df.loc[idx_some_dehydration_acute_diarrhoea, 'gi_dehydration_status'] = 'some dehydration'
-        df.loc[idx_severe_dehydration_acute_diarrhoea, 'gi_dehydration_status'] = 'severe dehydration'
-
-        # # # # # # ASSIGN DEHYDRATION LEVELS FOR ACUTE DYSENTERY # # # # # #
+        # # # # # # # # # # # # ASSIGN DEHYDRATION LEVELS FOR ACUTE DYSENTERY # # # # # # # # # # # #
         under5_dysentery_idx = df.index[
             (df.age_years < 5) & df.is_alive & (df.gi_diarrhoea_acute_type == 'dysentery')]
-
         eff_prob_some_dehydration_dysentery = pd.Series(0.5, index=under5_dysentery_idx)
         eff_prob_severe_dehydration_dysentery = pd.Series(0.2, index=under5_dysentery_idx)
+        eff_prob_dehydration_dysentery = pd.concat([eff_prob_some_dehydration_dysentery,
+                                                    eff_prob_severe_dehydration_dysentery], axis=1)
+
+        # cumulative sum to determine dehydration level for acute dysentery
         random_draw_b = pd.Series(self.sim.rng.random_sample(size=len(under5_dysentery_idx)),
                                   index=under5_dysentery_idx)
+        eff_prob_no_dehyd = 1 - eff_prob_dehydration_dysentery.sum(axis=1)
+        dehydration_probs = pd.concat([eff_prob_no_dehyd, eff_prob_dehydration_dysentery], axis=1)
+        dehydration_probs = dehydration_probs.cumsum(axis=1)
+        dehydration_probs.columns = ['no dehydration', 'some dehydration', 'severe dehydration']
+        dehydration_probs['random_draw_b'] = random_draw_b
 
-        no_dehydration_dysentery = \
-            1 - (eff_prob_some_dehydration_dysentery + eff_prob_severe_dehydration_dysentery)
-        some_dehydration_dysentery = \
-            (random_draw_b > no_dehydration_dysentery) & \
-            (random_draw_b < (no_dehydration_dysentery + eff_prob_some_dehydration_dysentery))
-        severe_dehydration_dysentery = \
-            ((no_dehydration_dysentery + eff_prob_some_dehydration_dysentery) < random_draw_b) & \
-            ((no_dehydration_dysentery + eff_prob_some_dehydration_dysentery +
-              eff_prob_severe_dehydration_dysentery) > random_draw_b)
-
-        idx_some_dehydration_dysentery = eff_prob_some_dehydration_dysentery.index[
-            some_dehydration_dysentery]
-        idx_severe_dehydration_dysentery = eff_prob_severe_dehydration_dysentery.index[
-            severe_dehydration_dysentery]
-
-        df.loc[idx_some_dehydration_dysentery, 'gi_dehydration_status'] = 'some dehydration'
-        df.loc[idx_severe_dehydration_dysentery, 'gi_dehydration_status'] = 'severe dehydration'
+        for i, column in enumerate(dehydration_probs.columns):
+            # go through each dehydration level and assign the dehydration status
+            if column in 'random_draw_b':
+                # skip probability of none and random draw columns
+                continue
+            dehydration_idx = dehydration_probs.index[
+                ((dehydration_probs.iloc[:, i - 1] < dehydration_probs.random_draw_b)
+                 & (dehydration_probs.loc[:, column] >= dehydration_probs.random_draw_b))]
+            df.loc[dehydration_idx, 'gi_dehydration_status'] = column
 
         # # # # # # # # SYMPTOMS FROM ACUTE WATERY DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[under5_watery_diarrhoea_idx, 'di_diarrhoea_loose_watery_stools'] = True
