@@ -9,8 +9,8 @@ import pandas as pd
 from tlo import Parameter
 
 
-def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]) -> Dict[str, Parameter]:
-    """Automatically load parameters from resource dataframe, returning updated parameter dictionary
+def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]):
+    """Automatically load parameters from resource dataframe, updating the parameters dictionary
 
     Automatically updates the values of data types:
         - Integers
@@ -19,9 +19,8 @@ def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]) ->
         - Categorical
         - Strings
 
-    :param Dict parameters: Module's parameters
     :param DataFrame resource: DataFrame with index of the parameter_name and a column of `value`
-    :return: parameters dictionary updated with values from the resource dataframe
+    :param Dict parameters: Module's parameters
     """
     # should parse BOOL and DATE, just need to write some tests if we want these?
     skipped_data_types = ('BOOL', 'DATA_FRAME', 'DATE', 'SERIES')
@@ -35,8 +34,10 @@ def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]) ->
         # Could the Exception message for a parameter that isn't in the resource more explicit? currently:
         # 'the label [int_basic] is not in the [index]'
         parameter_value = resource.loc[parameter_name, 'value']
-        error_message = (f"The value of '{parameter_value}' for parameter '{parameter_name}' "
-                         f"could not be parsed as a {parameter_definition.type_.name} data type")
+        error_message = (
+            f"The value of '{parameter_value}' for parameter '{parameter_name}' "
+            f"could not be parsed as a {parameter_definition.type_.name} data type"
+        )
         if parameter_definition.python_type == list:
             try:
                 # chose json.loads instead of save_eval
@@ -60,8 +61,6 @@ def load_parameters(resource: pd.DataFrame, parameters: Dict[str, Parameter]) ->
 
         # Save the values to the parameters
         parameters[parameter_name] = parameter_value
-
-    return parameters
 
 
 def show_changes(sim, initial_state, final_state):
@@ -118,8 +117,6 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     state_indexes = initial_series.groupby(initial_series).groups
     all_states = prob_matrix.columns.tolist()
     for state, state_index in state_indexes.items():
-        new_states = rng.choice(
-            all_states, len(state_index), p=prob_matrix[state]
-        )
+        new_states = rng.choice(all_states, len(state_index), p=prob_matrix[state])
         final_states[state_index] = new_states
     return final_states

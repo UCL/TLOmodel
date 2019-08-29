@@ -68,6 +68,7 @@ class Specifiable:
 
         :param type_: an instance of Types giving the type of allowed values
         :param description: textual description of what this Specifiable represents
+        :param categories: list of strings which will be the available categories
         """
         assert type_ in Types
         self.type_ = type_
