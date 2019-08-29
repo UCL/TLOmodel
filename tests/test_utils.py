@@ -20,7 +20,7 @@ class TestLoadParameters:
             'list_basic_real': Parameter(Types.LIST, 'list_real'),
             'string_basic': Parameter(Types.STRING, 'string'),
         }
-        test_resource = pathlib.Path(os.path.dirname(__file__) / "resources/ResourceFile_load-parameters.xlsx")
+        test_resource = pathlib.Path(os.path.dirname(__file__)) / "resources/ResourceFile_load-parameters.xlsx"
 
         self.resource = pd.read_excel(test_resource, sheet_name="parameter_values")
         self.resource.set_index('parameter_name', inplace=True)
