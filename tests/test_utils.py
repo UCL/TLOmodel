@@ -1,4 +1,6 @@
 """Unit tests for utility functions."""
+import os
+import pathlib
 
 import numpy as np
 import pandas as pd
@@ -18,29 +20,29 @@ class TestLoadParameters:
             'list_basic_real': Parameter(Types.LIST, 'list_real'),
             'string_basic': Parameter(Types.STRING, 'string'),
         }
+        test_resource = pathlib.Path(os.path.dirname(__file__) / "resources/ResourceFile_load-parameters.xlsx")
 
-        self.resource = pd.read_excel("tests/resources/ResourceFile_load-parameters.xlsx",
-                                      sheet_name="parameter_values")
+        self.resource = pd.read_excel(test_resource, sheet_name="parameter_values")
         self.resource.set_index('parameter_name', inplace=True)
 
     def test_happy_path(self):
         """Simple case parsing from excel file dataframe"""
-        output = tlo.util.load_parameters(self.resource, self.PARAMETERS)
+        tlo.util.load_parameters(self.resource, self.PARAMETERS)
 
-        assert isinstance(output['int_basic'], int)
-        assert isinstance(output['real_basic'], float)
-        assert isinstance(output['categorical_basic'], pd.Categorical)
-        assert isinstance(output['list_basic_int'], list)
-        assert isinstance(output['list_basic_real'], list)
-        assert isinstance(output['string_basic'], str)
+        assert isinstance(self.PARAMETERS['int_basic'], int)
+        assert isinstance(self.PARAMETERS['real_basic'], float)
+        assert isinstance(self.PARAMETERS['categorical_basic'], pd.Categorical)
+        assert isinstance(self.PARAMETERS['list_basic_int'], list)
+        assert isinstance(self.PARAMETERS['list_basic_real'], list)
+        assert isinstance(self.PARAMETERS['string_basic'], str)
 
     def test_string_stripping(self):
         """Strings should have left and right whitespace trimmed"""
         resource = self.resource.copy()
         resource.loc['string_basic', 'value'] = ' string_with_space    '
-        output = tlo.util.load_parameters(resource, self.PARAMETERS)
+        tlo.util.load_parameters(resource, self.PARAMETERS)
 
-        assert output['string_basic'] == 'string_with_space'
+        assert self.PARAMETERS['string_basic'] == 'string_with_space'
 
     def test_parameter_not_in_df(self):
         """Resource df is missing a parameter
@@ -81,24 +83,22 @@ class TestLoadParameters:
 
     def test_skip_dataframe_and_series(self):
         """Dataframe and Series should not be altered"""
-        input_parameters = dict(self.PARAMETERS)
-        input_parameters['data_frame'] = Parameter(Types.DATA_FRAME, "data_frame")
-        input_parameters['series'] = Parameter(Types.SERIES, "series")
+        parameters = dict(self.PARAMETERS)
+        parameters['data_frame'] = Parameter(Types.DATA_FRAME, "data_frame")
+        parameters['series'] = Parameter(Types.SERIES, "series")
 
-        output_parameters = tlo.util.load_parameters(self.resource, input_parameters)
-        assert input_parameters['data_frame'] == output_parameters['data_frame']
-        assert input_parameters['series'] == output_parameters['series']
+        original_state = dict(parameters)
+
+        tlo.util.load_parameters(self.resource, parameters)
+        assert original_state['data_frame'] == parameters['data_frame']
+        assert original_state['series'] == parameters['series']
 
 
 @pytest.fixture
 def mock_pop():
     class Population:
         def _create_props(self, n):
-            return pd.DataFrame(
-                {'col1': [1.0] * n,
-                 'col2': [''] * n,
-                 'col3': [[]] * n,
-                 'col4': [Date(0)] * n})
+            return pd.DataFrame({'col1': [1.0] * n, 'col2': [''] * n, 'col3': [[]] * n, 'col4': [Date(0)] * n})
 
     return Population()
 
@@ -113,16 +113,17 @@ def mock_sim(mock_pop):
 
 def test_show_changes(mock_sim):
     initial = pd.DataFrame(
-        {'col1': [1.0, 2.0],
-         'col2': ['a', 'b'],
-         'col3': [[], [1]],
-         'col4': [Date(2020, 1, 1), None]})
+        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
+    )
     initial.index.name = 'row'
     final = pd.DataFrame(
-        {'col1': [3.0, 2.0, 1.0],
-         'col2': ['a', 'c', ''],
-         'col3': [[2], [1], []],
-         'col4': [Date(2020, 1, 1), Date(2020, 1, 2), None]})
+        {
+            'col1': [3.0, 2.0, 1.0],
+            'col2': ['a', 'c', ''],
+            'col3': [[2], [1], []],
+            'col4': [Date(2020, 1, 1), Date(2020, 1, 2), None],
+        }
+    )
     final.index.name = 'row'
 
     changes = tlo.util.show_changes(mock_sim, initial, final)
@@ -136,16 +137,12 @@ def test_show_changes(mock_sim):
 
 def test_show_changes_same_size(mock_sim):
     initial = pd.DataFrame(
-        {'col1': [1.0, 2.0],
-         'col2': ['a', 'b'],
-         'col3': [[], [1]],
-         'col4': [Date(2020, 1, 1), None]})
+        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
+    )
     initial.index.name = 'row'
     final = pd.DataFrame(
-        {'col1': [1.5, 2],
-         'col2': ['aa', 'b'],
-         'col3': [[], [1, 1]],
-         'col4': [Date(2020, 1, 2), None]})
+        {'col1': [1.5, 2], 'col2': ['aa', 'b'], 'col3': [[], [1, 1]], 'col4': [Date(2020, 1, 2), None]}
+    )
     final.index.name = 'row'
 
     changes = tlo.util.show_changes(mock_sim, initial, final)
@@ -172,24 +169,17 @@ class TestTransitionsStates:
         prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
         # columns are original state, rows are the new state
         all_states = prob_matrix.columns.tolist()
-        prob_matrix.rename(
-            index={
-                row_num: col_name
-                for row_num, col_name in zip(range(len(prob_matrix)), all_states)
-            }
-        )
+        prob_matrix.rename(index={row_num: col_name for row_num, col_name in zip(range(len(prob_matrix)), all_states)})
         self.prob_matrix = prob_matrix
 
         # default input data
-        self.input = pd.DataFrame({'state': self.states * 1_000,
-                                   'other_data_1': range(0, 4_000)})
+        self.input = pd.DataFrame({'state': self.states * 1_000, 'other_data_1': range(0, 4_000)})
 
         # default output data
         nested_states = [  # perfect ratio would be: [1000, 600, 1500, 900]
             list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1465, 919])
         ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                      'other_data_1': pd.Series(range(0, 4000))})
+        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
 
     def test_simple_case(self):
         """Simple case, should change to probabilities found per seed"""
@@ -209,8 +199,7 @@ class TestTransitionsStates:
         nested_states = [  # perfect ratio would be: [1000, 600, 1400, 1000]
             list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1384, 1000])
         ]
-        expected = pd.DataFrame({'state': sum(nested_states, []),
-                                 'other_data_1': pd.Series(range(0, 4000))})
+        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
         prob_matrix = self.prob_matrix.copy()
         prob_matrix['c'] = [0.0, 0.2, 0.8, 0.0]
         prob_matrix['d'] = [0.0, 0.0, 0.0, 1.0]
@@ -226,18 +215,14 @@ class TestTransitionsStates:
     def test_none_in_initial_state(self):
         """States start without any in state c"""
         # input
-        nested_states = [
-            list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])
-        ]
-        input = pd.DataFrame({'state': sum(nested_states, []),
-                              'other_data_1': pd.Series(range(0, 6000))})
+        nested_states = [list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])]
+        input = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
 
         # default output data
         nested_states = [  # perfect ratio would be: [2000, 800, 1800, 1400]
             list(state * repeat) for state, repeat in zip(self.states, [2006, 760, 1853, 1381])
         ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                      'other_data_1': pd.Series(range(0, 6000))})
+        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
         expected = self.expected.copy()
 
         # run the function
@@ -254,8 +239,7 @@ class TestTransitionsStates:
         nested_states = [  # perfect ratio would be: [1600, 1500, 900]
             list(state * repeat) for state, repeat in zip(new_states, [1616, 1465, 919])
         ]
-        expected = pd.DataFrame({'state': sum(nested_states, []),
-                                 'other_data_1': pd.Series(range(0, 4000))})
+        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
         prob_matrix = self.prob_matrix.copy()
         prob_matrix["a"] = [0.0, 1.0, 0.0, 0.0]
         prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
