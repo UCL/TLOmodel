@@ -48,6 +48,11 @@ class AbortionAndMiscarriage(Module):
         'am_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
         'am_date_most_recent_miscarriage': Property(Types.DATE, 'the date this woman has last experienced spontaneous'
                                                                 ' miscarriage'),
+        'am_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
+        'am_date_most_recent_abortion': Property(Types.DATE, 'the date this woman has last undergone an induced'
+                                                             ' abortion'),
+        'am_safety_of_abortion': Property(Types.CATEGORICAL, 'Null, Safe, Less Safe, Least Safe', categories=['null',
+                                                                                    'safe', 'less_safe', 'least_safe']),
 
     }
 
@@ -88,6 +93,10 @@ class AbortionAndMiscarriage(Module):
         df = population.props
         df.loc[df.sex == 'F', 'am_total_miscarriages'] = 0
         df.loc[df.sex == 'F', 'am_date_most_recent_miscarriage'] = pd.NaT
+        df.loc[df.sex == 'F', 'am_total_induced_abortion'] = 0
+        df.loc[df.sex == 'F', 'am_date_most_recent_abortion'] = pd.NaT
+        df.loc[df.sex == 'F', 'am_safety_of_abortion'] = 'null'
+
 
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
@@ -122,6 +131,11 @@ class AbortionAndMiscarriage(Module):
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'am_total_miscarriages'] = 0
             df.at[child_id, 'am_date_most_recent_miscarriage'] = pd.NaT
+            df.at[child_id, 'am_total_induced_abortion'] = 0
+            df.at[child_id, 'am_date_most_recent_abortion'] = pd.NaT
+            df.at[child_id, 'am_safety_of_abortion'] = 'null'
+
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -315,6 +329,8 @@ class InducedAbortionScheduler(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params= self.module.parameters
 
+        # TODO: consider women who are scheduled to miscarry (doesnt matter if they miscarry  prior to abortion)
+
         # First we create an index of all the women who have become pregnant in the previous month
         pregnant_past_month = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 4) &
                                        (df.date_of_last_pregnancy > self.sim.start_date)]
@@ -339,6 +355,7 @@ class InducedAbortionScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # do we use a risk factor model, or maybe we just do married/unmarried/wanted/unwanted?
 
+
 class AbortionAndPostAbortionComplicationsEvent(Event, IndividualScopeEventMixin):
 
     """applies probability of postpartum complications to women who have just experience an induced abortion """
@@ -351,21 +368,26 @@ class AbortionAndPostAbortionComplicationsEvent(Event, IndividualScopeEventMixin
         params = self.module.parameters
         m = self
 
-        print(individual_id,'is having an induced abortion')
-
         logger.info('%s|induced_abortion|%s', self.sim.date,
                     {
                         'age': df.at[individual_id, 'age_years'],
                         'person_id': individual_id
                     })
 
-class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+        # Todo: Event
+        # todo: check pregnancy status
+
+        if df.at[individual_id, 'is_pregnant']:
+            df.at[individual_id, 'is_pregnant'] = False
+            df.at[individual_id, ]
+
+
+
+class HSI_AbortionAndMiscarriage_PresentsForPostAbortionCare(Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
+    This interaction manages the initial appointment for women presenting to hospital for post aboriton care for
+    incomplete loss of pregnancy
     """
 
     def __init__(self, module, person_id):
@@ -373,21 +395,32 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+        the_appt_footprint['MinorSurg'] = 1  # todo: medical management would require less
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        abortion_pkg_code = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] == 'Post-abortion case management',
+                                                      'Intervention_Pkg_Code'])[0]
+        the_cons_footprint = {
+            'Intervention_Package_Code': [abortion_pkg_code],
+            'Item_Code': []
+        }
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
+        self.TREATMENT_ID = 'AbortionAndMiscarriage_PresentsForPostAbortionCare'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [0]
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
 
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
+        logger.debug('This is HSI_AbortionAndMiscarriage_PresentsForPostAbortionCare, a first appointment for person %d',
                      person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
+
+        #  Treatment for: Incomplete abortion (medical/surgical), sepsis?, trauma, bleeding
 
 
 class AbortionAndMiscarriageLoggingEvent(RegularEvent, PopulationScopeEventMixin):
