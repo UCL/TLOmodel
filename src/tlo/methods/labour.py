@@ -13,7 +13,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import demography, healthsystem, healthburden, antenatal_care
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 LOG_FILENAME = 'labour.log'
 logging.basicConfig(filename=LOG_FILENAME,
                             filemode='w',
@@ -413,12 +413,13 @@ class Labour (Module):
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
         dfx['gestational_age_in_weeks'] = (39 - 39 * dfx.random_draw)
+        df.loc[pregnant_idx, 'ac_gestational_age'] = dfx.gestational_age_in_weeks.astype(int)
 
         # Use this gestational age to calculate when the woman's baby was conceived
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age_in_weeks'], unit='w')
 
         # Apply a due date of 9 months in the future from the date of conception for each woman
-        dfx['due_date_mth'] = 39 - dfx['gestational_age_in_weeks']
+        dfx['due_date_mth'] = 39 - df['ac_gestational_age']
         dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'la_due_date_current_pregnancy'] = dfx.due_date
@@ -803,6 +804,9 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
 
         # Labour is then scheduled on the newly generated due date
         self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
+#        print('PREG INFO!','sim date:',self.sim.date, 'conception:', df.at[individual_id, 'date_of_last_pregnancy'],
+#              'due:', due_date)
+        print('LABOUR SCHEDULED:', individual_id, self.sim.date)
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -819,8 +823,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
         # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour begins
         mni = self.module.mother_and_newborn_info
-        mni[individual_id] = {'gestation_at_labour': 0,
-                              'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
+
+        print('LABOUR:', individual_id, self.sim.date)
+        mni[individual_id] = {'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
                                                     # Post Term (POTL)
                               'delivery_setting': None,  # Facility Delivery (FD) or Home Birth (HB)
                               'induced_labour': False,
@@ -868,11 +873,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # labour
 
         if df.at[individual_id, 'la_due_date_current_pregnancy'] == pd.NaT:
-            pass
             logger.info('This is LabourEvent, person %d has reached their previously allocated due date but is not '
                         'entering labour at this time', individual_id)
 
-        elif df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
+        if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive'] & \
+            (df.at[individual_id, 'la_due_date_current_pregnancy'] == self.sim.date):
 
             if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'failed_induction') or \
                (df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction'):
@@ -880,21 +885,15 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             if df.at[individual_id, 'la_current_labour_successful_induction'] == 'successful_induction':
                     mni[individual_id]['induced_labour'] = True
 
-            gestation_date = df.at[individual_id, 'la_due_date_current_pregnancy'] - df.at[individual_id,
-                                                                                           'date_of_last_pregnancy']
-            gestation_weeks = gestation_date / np.timedelta64(1, 'W')
-            gestation_weeks = int(gestation_weeks)
-            mni[individual_id]['gestation_at_labour'] = gestation_weeks
-
             if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
-                if 37 <= mni[individual_id]['gestation_at_labour'] < 42:
+                if 37 <= df.at[individual_id,'ac_gestational_age'] < 42:
                     mni[individual_id]['labour_state'] = 'TL'
                 # df.at[individual_id, 'la_labour_current_pregnancy'] = "term_labour"
 
                     logger.info('This is LabourEvent, person %d has now gone into term labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif 24 <= mni[individual_id]['gestation_at_labour'] < 34:
+                elif 24 <= df.at[individual_id,'ac_gestational_age'] < 34:
                     mni[individual_id]['labour_state'] = 'EPTL'
                 # df.at[individual_id, 'la_labour_current_pregnancy'] = "early_preterm_labour"
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
@@ -902,14 +901,14 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     logger.info('This is LabourEvent, person %d has now gone into early preterm labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif 37 > mni[individual_id]['gestation_at_labour'] >= 34:
+                elif 37 > df.at[individual_id,'ac_gestational_age'] >= 34:
                     mni[individual_id]['labour_state'] = 'LPTL'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.info('This is LabourEvent, person %d has now gone into late preterm labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif mni[individual_id]['gestation_at_labour'] > 41:
+                elif df.at[individual_id,'ac_gestational_age'] > 41:
                     mni[individual_id]['labour_state'] = 'POTL'
                 # df.at[individual_id, 'la_labour_current_pregnancy'] = "post_term_labour"
 
@@ -919,7 +918,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 # ===================== PLACE HOLDER CARE SEEKING AND SCHEDULING (DUMMY) =====================================
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual_id, symptom_code=4)
-                prob = 0 # 0.73  # DUMMY- will just generate 2010 home birth rate #TODO: incorporate care seeking equation
+                prob = 0.73  # DUMMY- will just generate 2010 home birth rate #TODO: incorporate care seeking equation
                 random = self.sim.rng.random_sample(size=1)
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
                     mni[individual_id]['delivery_setting'] = 'FD'
@@ -1194,10 +1193,15 @@ class BirthEvent(Event, IndividualScopeEventMixin):
 
         # If the mother is alive and still pregnant we generate a live child and the woman is scheduled to move to the
         # postpartum event to determine if she experiences any additional complications
-        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant']:
+        if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant'] and \
+            ~df.at[mother_id,'la_still_birth_current_pregnancy']:
+            print('BIRTH:', mother_id, self.sim.date)
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1
             df.at[mother_id,'ac_gestational_age'] = 0
+            df.at[mother_id, 'is_pregnant'] = False
+            df.at[mother_id,'date_of_last_pregnancy'] = pd.NaT
+
             logger.info('This is BirthEvent scheduling mother %d to undergo the PostPartumEvent following birth',
                          mother_id)
             self.sim.schedule_event(PostpartumLabourEvent(self.module, mother_id, cause='post partum'),
@@ -1208,6 +1212,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
         if df.at[mother_id, 'is_alive'] == False & df.at[mother_id, 'is_pregnant'] == True & \
             (mni[mother_id]['death_in_labour'] == True):
             self.sim.do_birth(mother_id)
+            df.at[mother_id, 'is_pregnant'] = False
 
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
@@ -2345,7 +2350,7 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
 
 # ====================================== EMERGENCY CAESAREAN SECTION ==================================================
 
-        if (mni[person_id]['UR']) or (mni[person_id]['APH']) or (mni[person_id]['ip_eclampsia']) or\
+        if (mni[person_id]['UR']) or (mni[person_id]['APH']) or (mni[person_id]['eclampsia_ip']) or\
             (mni[person_id]['labour_is_currently_obstructed']) or \
             (df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction'):
             # Consider all indications (elective)

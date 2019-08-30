@@ -16,7 +16,7 @@ from tlo.methods import demography, healthsystem, healthburden, labour, newborn_
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class AntenatalCare(Module):
@@ -208,23 +208,23 @@ class AntenatalCareSeekingAndScheduling(RegularEvent, PopulationScopeEventMixin)
         dfx.columns = ['eff_prob_anc', 'random_draw']
         idx_anc = dfx.index[dfx.eff_prob_anc > dfx.random_draw] # right?
 
-        gestation_at_anc = pd.Series(self.module.rng.choice(range(9, 39), size=len(idx_anc)), index=df.index[idx_anc])
+        gestation_at_anc = pd.Series(self.module.rng.choice(range(10, 39), size=len(idx_anc)), index=df.index[idx_anc])
         # THIS IS ALL WRONG DATE WISE
         conception = pd.Series(df.date_of_last_pregnancy, index=df.index[idx_anc])
         dfx = pd.concat([conception, gestation_at_anc], axis=1)
         dfx.columns = ['conception', 'gestation_at_anc']
         dfx['first_anc'] = dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
+        x= 'y'
 
-
-        x='y'
         for person in idx_anc:
             care_seeking_date = dfx.at[person, 'first_anc']
+            print('ANC:', person, self.sim.date, 'care seeking:', care_seeking_date)
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                            priority=0, #????
-                                                            topen=care_seeking_date,
-                                                            tclose=care_seeking_date + DateOffset(days=14)
-                                                            )
+                                                            priority = 1, # ????
+                                                            topen =care_seeking_date,
+                                                            tclose=None )
+            #  dummy#                                                            )
 
         # Should we schedule all events here or at ANC 1?
 
@@ -326,6 +326,7 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, Individua
 
         logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
                     'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
+
 
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Handles Antenatal Care logging"""
