@@ -214,11 +214,10 @@ class Oesophageal_Cancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
         """
+        # Update parameters from the resource dataframe
         dfd = pd.read_excel(
             Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx", sheet_name="parameter_values"
         )
-        dfd.set_index("parameter_name", inplace=True)
-        # Update parameters from the resource dataframe
         self.load_parameters_from_dataframe(dfd)
 
         if "HealthBurden" in self.sim.modules.keys():
