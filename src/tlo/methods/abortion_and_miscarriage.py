@@ -106,7 +106,7 @@ class AbortionAndMiscarriage(Module):
         """
 
         # add the basic event
-        event = InducedAbortionScheduler(self)
+        event = InducedAbortionEvent(self)
         sim.schedule_event(event, sim.date + DateOffset(months=6))
 
         # add an event to log to screen
@@ -244,7 +244,8 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
 
 class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEventMixin):
 
-    """applies probability of postpartum complications to women who have just experience a miscarriage """
+    """reset a woman's pregnancy properties as she has miscarried. Also calculates risk of complications following
+     miscarriage """
 
     def __init__(self, module, individual_id, cause):
         super().__init__(module, person_id=individual_id)
@@ -254,10 +255,7 @@ class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEven
         params = self.module.parameters
         m = self
 
-        # TODO: consider stage of pregnancy loss and its impact on likelihood of complications i.e retained product
-        #  THIS SHOULD BE WEIGHTED TOWARDS LATER PREGNANCY LOSS
-        # i.e. look up effects of incomplete miscarriage (apply incidence)
-
+        # Here we reset the pregnancy properties of a woman who has miscarried
         if df.at[individual_id, 'is_alive'] & df.at[individual_id, 'is_pregnant']:
             df.at[individual_id, 'is_pregnant'] = False
             df.at[individual_id, 'am_total_miscarriages'] = +1
@@ -284,14 +282,54 @@ class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEven
 
         # Currently if she has experienced any of these complications she is scheduled to pass through the DeathEvent
         # to determine if they are fatal
-            if df.at[individual_id,'la_sepsis'] or df.at[individual_id, 'la_pph']:
+            if df.at[individual_id, 'la_sepsis'] or df.at[individual_id, 'la_pph']:
                 logger.info('This is MiscarriageAndPostMiscarriageComplicationsEvent scheduling a possible death for'
                             ' person %d after suffering complications of miscarriage', individual_id)
-                self.sim.schedule_event(MiscarriageDeathEvent(self.module, individual_id, cause='miscarriage'),
-                                    self.sim.date)
+                self.sim.schedule_event(MiscarriageAndAbortionDeathEvent(self.module, individual_id, cause='miscarriage'),
+                                        self.sim.date)
 
 
-class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
+class InducedAbortionEvent(RegularEvent, PopulationScopeEventMixin):
+    """
+    This event is occurring regularly at 6 montly intervals to determine if women will undergo an induced abortion
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=6))
+
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
+
+        # First we create an index of all the women who have become pregnant in the previous 6 months
+        pregnant_past_six_mths = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 27) &
+                                          (df.date_of_last_pregnancy > self.sim.start_date)]
+
+        # We then apply the risk of induced abortion to these women
+        incidence_abortion = pd.Series(params['incidence_induced_abortion'], index=pregnant_past_six_mths)
+
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_six_mths)),
+                                index=df.index[df.is_pregnant & df.is_alive &
+                                               (df.ac_gestational_age <= 27) &
+                                               (df.date_of_last_pregnancy > self.sim.start_date)])
+
+        dfx = pd.concat([incidence_abortion, random_draw], axis=1)
+        dfx.columns = ['incidence_abortion', 'random_draw']
+        idx_induced_abortion = dfx.index[dfx.incidence_abortion > dfx.random_draw]
+
+        # For women who will undergo induced abortion we reset their pregnancy properties and update the data frame
+        df.loc[idx_induced_abortion, 'is_pregnant'] = False
+        df.loc[idx_induced_abortion, 'am_total_induced_abortion'] = +1
+        df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date  # (is this needed)
+        df.loc[idx_induced_abortion, 'ac_gestational_age'] = 0
+        print('ABORTION:', idx_induced_abortion, self.sim.date)
+
+        # Todo: Please see SBA master sheet for epi queires
+        # Todo: Apply safety level and complications
+        # Todo : schedule care seeking for HSI and schedule death event
+
+
+class MiscarriageAndAbortionDeathEvent (Event, IndividualScopeEventMixin):
 
     """handles death following miscarriage"""
 
@@ -311,6 +349,8 @@ class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                       cause=' complication of miscarriage'),
                                         self.sim.date)
+            else:
+                df.at[individual_id, 'la_pph'] = False
 
         if df.at[individual_id, 'la_sepsis']:
             random = self.sim.rng.random_sample(size=1)
@@ -329,81 +369,10 @@ class MiscarriageDeathEvent (Event, IndividualScopeEventMixin):
                             'age': df.at[individual_id, 'age_years'],
                             'person_id': individual_id
                         })
+            else:
+                df.at[individual_id, 'la_pph'] = False
 
 
-class InducedAbortionScheduler(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event is occurring regularly at three monthly intervals and is responsible for induced abortion in pregnant
-    women
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=6))
-
-    def apply(self, population):
-
-        df = population.props
-        params= self.module.parameters
-
-        # TODO: consider women who are scheduled to miscarry (doesnt matter if they miscarry  prior to abortion)
-
-        # First we create an index of all the women who have become pregnant in the previous month
-        pregnant_past_six_mths = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 27) &
-                                          (df.date_of_last_pregnancy > self.sim.start_date)]
-
-        incidence_abortion = pd.Series(params['incidence_induced_abortion'], index=pregnant_past_six_mths)
-
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_six_mths)),
-                                index=df.index[df.is_pregnant & df.is_alive &
-                                               (df.ac_gestational_age <= 27) &
-                                               (df.date_of_last_pregnancy > self.sim.start_date)])
-
-        dfx = pd.concat([incidence_abortion, random_draw], axis=1)
-        dfx.columns = ['incidence_abortion', 'random_draw']
-        idx_induced_abortion = dfx.index[dfx.incidence_abortion > dfx.random_draw]
-
-        df.loc[idx_induced_abortion, 'is_pregnant'] = False
-        df.loc[idx_induced_abortion, 'am_total_induced_abortion'] = +1
-        df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date # (is this needed)
-        df.loc[idx_induced_abortion, 'ac_gestational_age'] = 0
-        print('ABORTION:', idx_induced_abortion, self.sim.date)
-
-    #        event = AbortionAndPostAbortionComplicationsEvent(self.module, individual_id=person,
-    #                                                          cause='induced abortion')
-    #        random_draw = self.sim.rng.exponential(scale=0.5, size=1)  # TODO: COPIED FROM MC MAY NOT BE APPROPRIATE
-    #        random_days = pd.to_timedelta(random_draw[0] * 168, unit='d')
-    #        abortion_date = self.sim.date + random_days
-    #        self.sim.schedule_event(event, abortion_date)
-    #        print('ABORTION:', person, self.sim.date)
-
-        # do we use a risk factor model, or maybe we just do married/unmarried/wanted/unwanted?
-
-
-# class AbortionAndPostAbortionComplicationsEvent(Event, IndividualScopeEventMixin):
-
-#    """applies probability of postpartum complications to women who have just experience an induced abortion """
-
-#    def __init__(self, module, individual_id, cause):
-#        super().__init__(module, person_id=individual_id)
-
-#    def apply(self, individual_id):
-#        df = self.sim.population.props
-#        params = self.module.parameters
-#        m = self
-
-#        logger.info('person %d is undergoing an induced abortion date %s',individual_id, self.sim.date)
-#        logger.info('%s|induced_abortion|%s', self.sim.date,
-#                    {
-#                        'age': df.at[individual_id, 'age_years'],
-#                        'person_id': individual_id
-#                    })
-
-#        if df.at[individual_id, 'is_pregnant']:
-#            df.at[individual_id, 'is_pregnant'] = False
-#            df.at[individual_id, 'am_total_induced_abortion'] = +1
-#            df.at[individual_id, 'am_date_most_recent_abortion'] = self.sim.date
-
-            #TODO: safety
 
 
 class HSI_AbortionAndMiscarriage_PresentsForPostAbortionCare(Event, IndividualScopeEventMixin):
@@ -441,7 +410,7 @@ class HSI_AbortionAndMiscarriage_PresentsForPostAbortionCare(Event, IndividualSc
         logger.debug('This is HSI_AbortionAndMiscarriage_PresentsForPostAbortionCare, a first appointment for person %d',
                      person_id)
 
-        df = self.sim.population.props  # shortcut to the dataframe
+        df = self.sim.population.props
 
         #  Treatment for: Incomplete abortion (medical/surgical), sepsis?, trauma, bleeding
 
