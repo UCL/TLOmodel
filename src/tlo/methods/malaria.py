@@ -180,9 +180,9 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
             if seeks_care.sum() > 0:
                 for person_index in seeks_care.index[seeks_care is True]:
                     logger.debug(
-                        'This is MalariaEvent, scheduling Malaria_PresentsForCareWithSevereSymptoms for person %d',
+                        'This is MalariaEvent, scheduling HSI_Malaria_rdt for person %d',
                         person_index)
-                    event = HSI_Malaria_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+                    event = HSI_Malaria_rdt(self.module, person_id=person_index)
                     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                         priority=2,
                                                                         topen=self.sim.date,
@@ -222,11 +222,9 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-
-
-
 class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
     """
+    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
     """
 
     def __init__(self, module, person_id):
@@ -234,7 +232,7 @@ class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['LabParasit'] = 1  # This requires one out patient
+        the_appt_footprint['LabParasit'] = 1
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -256,8 +254,45 @@ class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
 
+        df = self.sim.population.props
+        params = self.sim.modules['malaria'].parameters
+
         logger.debug('This is HSI_Malaria_rdt, rdt test for person %d',
                      person_id)
+
+        # check if diagnosed
+        if (df.at[person_id, 'ma_status'] != 'Uninfected'):
+
+            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
+                                                                      (1 - params['sensitivity_rdt'])])
+            if diagnosed & (df.at[person_id, 'age_years'] < 5):
+                treat = HSI_Malaria_tx_0_5(self.module, person_id=person_id)
+
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date + DateOffset(days=1),
+                                                                    tclose=None)
+
+            if diagnosed & (df.at[person_id, 'age_years'] >= 5) & (df.at[person_id, 'age_years'] < 15):
+                treat = HSI_Malaria_tx_5_15(self.module, person_id=person_id)
+
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date + DateOffset(days=1),
+                                                                    tclose=None)
+
+            if diagnosed & (df.at[person_id, 'age_years'] >= 15):
+                treat = HSI_Malaria_tx_adult(self.module, person_id=person_id)
+
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                    priority=1,
+                                                                    topen=self.sim.date + DateOffset(days=1),
+                                                                    tclose=None)
+
+
 
 
 class HSI_Malaria_tx_0_5(Event, IndividualScopeEventMixin):
@@ -438,46 +473,6 @@ class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
 
         logger.debug('This is HSI_Malaria_tx_compl_adult, complicated malaria treatment for person %d',
                      person_id)
-
-
-
-class HSI_Malaria_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-    """
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_PresentsForCareWithSevereSymptoms'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-
-        logger.debug('This is HSI_Malaria_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
-                     person_id)
-
-        df = self.sim.population.props  # shortcut to the dataframe
-
-        if df.at[person_id, 'age_years'] >= 15:
-            logger.debug(
-                '...This is HSI_Malaria_PresentsForCareWithSevereSymptoms: \
-                there should now be treatment for person %d',
-                person_id)
-            # schedule event
-
-
-        else:
-            logger.debug(
-                '...This is HSI_Malaria_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
-                person_id)
 
 
 
