@@ -116,16 +116,11 @@ class Depression(Module):
     }
 
     def read_parameters(self, data_folder):
-
-        p = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
-        # TODO: Note the rename!
-
-        dfd.set_index('parameter_name', inplace=True)
-
         # Update parameters from the resource dataframe
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
+        p = self.parameters
         p['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
 
         if 'HealthBurden' in self.sim.modules.keys():

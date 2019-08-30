@@ -25,7 +25,11 @@ def test_categorical():
         s[0] = 'A'
 
 
-class TestLoadParameters:
+class TestLoadParametersFromDataframe:
+    """Tests for the load_parameters_from_dataframe method
+
+    No explicit tests for correct parsing of boolean because of how python evaluates truthiness
+    """
     def setup(self):
         class ParameterModule(Module):
             def __init__(self):
@@ -38,6 +42,9 @@ class TestLoadParameters:
                     'list_basic_int': Parameter(Types.LIST, 'list_int'),
                     'list_basic_real': Parameter(Types.LIST, 'list_real'),
                     'string_basic': Parameter(Types.STRING, 'string'),
+                    'bool_true': Parameter(Types.BOOL, 'string'),
+                    'bool_false': Parameter(Types.BOOL, 'string'),
+                    'date': Parameter(Types.DATE, 'string'),
                 }
 
         self.module = ParameterModule()
@@ -45,7 +52,6 @@ class TestLoadParameters:
         test_resource = pathlib.Path(os.path.dirname(__file__)) / "resources/ResourceFile_load-parameters.xlsx"
 
         self.resource = pd.read_excel(test_resource, sheet_name="parameter_values")
-        self.resource.set_index('parameter_name', inplace=True)
 
     def test_happy_path(self):
         """Simple case parsing from excel file dataframe"""
@@ -58,11 +64,17 @@ class TestLoadParameters:
         assert isinstance(self.module.parameters['list_basic_int'], list)
         assert isinstance(self.module.parameters['list_basic_real'], list)
         assert isinstance(self.module.parameters['string_basic'], str)
+        assert isinstance(self.module.parameters['bool_true'], bool)
+        assert isinstance(self.module.parameters['bool_false'], bool)
+        assert isinstance(self.module.parameters['date'], pd.Timestamp)
+        assert self.module.parameters['bool_true'] is True
+        assert self.module.parameters['bool_false'] is False
+        assert self.module.parameters['date'] == pd.Timestamp("2015-02-01")
 
     def test_string_stripping(self):
         """Strings should have left and right whitespace trimmed"""
         resource = self.resource.copy()
-        resource.loc['string_basic', 'value'] = ' string_with_space    '
+        resource.loc[resource.parameter_name == 'string_basic', 'value'] = ' string_with_space    '
         self.module.load_parameters_from_dataframe(resource)
 
         assert self.module.parameters['string_basic'] == 'string_with_space'
@@ -72,7 +84,7 @@ class TestLoadParameters:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource.loc["new_value"] = [1]
+        resource = resource.append({"parameter_name": "new_value", "value": 1}, ignore_index=True)
         with pytest.raises(KeyError):
             self.module.load_parameters_from_dataframe(resource)
 
@@ -81,7 +93,7 @@ class TestLoadParameters:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource.loc['real_basic', 'value'] = "a"
+        resource.loc[resource.parameter_name == 'real_basic', 'value'] = "a"
         with pytest.raises(ValueError):
             self.module.load_parameters_from_dataframe(resource)
 
@@ -90,7 +102,7 @@ class TestLoadParameters:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource.loc['categorical_basic', 'value'] = "invalid"
+        resource.loc[resource.parameter_name == 'categorical_basic', 'value'] = "invalid"
         with pytest.raises(AssertionError):
             self.module.load_parameters_from_dataframe(resource)
 
@@ -100,7 +112,17 @@ class TestLoadParameters:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource.loc['list_basic_int', 'value'] = list_value
+        resource.loc[resource.parameter_name == 'list_basic_int', 'value'] = list_value
+        with pytest.raises(ValueError):
+            self.module.load_parameters_from_dataframe(resource)
+
+    @pytest.mark.parametrize("date_value", ["[1, 2, 3]", "monday", False])
+    def test_invalid_date(self, date_value):
+        """Non-valid dates
+
+        should raise an Exception"""
+        resource = self.resource.copy()
+        resource.loc[resource.parameter_name == 'date', 'value'] = date_value
         with pytest.raises(ValueError):
             self.module.load_parameters_from_dataframe(resource)
 

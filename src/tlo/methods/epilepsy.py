@@ -117,14 +117,11 @@ class Epilepsy(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
+        # Update parameters from the resource dataframe
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx', sheet_name='parameter_values')
-
-        dfd.set_index('parameter_name', inplace=True)
+        self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
-        # Update parameters from the resource dataframe
-        self.load_parameters_from_dataframe(dfd)
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 860-862 are the sequale codes for epilepsy

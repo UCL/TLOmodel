@@ -197,12 +197,15 @@ class Module:
             - Lists
             - Categorical
             - Strings
+            - Dates (Any numbers will be converted into dated without warnings)
+            - Booleans (Any input will be converted into a boolean without warnings)
 
-        :param DataFrame resource: DataFrame with index of the parameter_name and a column of `value`
+        Will also make the parameter_name the index of the resource DataFrame.
+
+        :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
-        # should parse BOOL and DATE, just need to write some tests if we want these?
-        skipped_data_types = ('BOOL', 'DATA_FRAME', 'DATE', 'SERIES')
-
+        resource.set_index('parameter_name', inplace=True)
+        skipped_data_types = ('DATA_FRAME', 'SERIES')
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
             parameter_definition = self.PARAMETERS[parameter_name]
