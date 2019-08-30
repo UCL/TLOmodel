@@ -4,7 +4,7 @@ import pathlib
 import pandas as pd
 import pytest
 
-from tlo import Property, Parameter, Types, Module
+from tlo import Module, Parameter, Property, Types
 
 
 def test_categorical():
@@ -67,12 +67,12 @@ class TestLoadParameters:
 
         assert self.module.parameters['string_basic'] == 'string_with_space'
 
-    def test_parameter_not_in_df(self):
+    def test_parameter_df_not_in_class(self):
         """Resource df is missing a parameter
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource = resource.drop('int_basic', axis=0)
+        resource.loc["new_value"] = [1]
         with pytest.raises(KeyError):
             self.module.load_parameters_from_dataframe(resource)
 

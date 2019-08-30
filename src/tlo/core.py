@@ -4,9 +4,8 @@ This contains things that didn't obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.
 """
-
-from enum import Enum, auto
 import json
+from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
@@ -205,14 +204,13 @@ class Module:
         skipped_data_types = ('BOOL', 'DATA_FRAME', 'DATE', 'SERIES')
 
         # for each supported parameter, convert to the correct type
-        for parameter_name, parameter_definition in self.PARAMETERS.items():
+        for parameter_name in resource.index[resource.index.notnull()]:
+            parameter_definition = self.PARAMETERS[parameter_name]
 
             if parameter_definition.type_.name in skipped_data_types:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            # Could the Exception message for a parameter that isn't in the resource more explicit? currently:
-            # 'the label [int_basic] is not in the [index]'
             parameter_value = resource.loc[parameter_name, 'value']
             error_message = (
                 f"The value of '{parameter_value}' for parameter '{parameter_name}' "
@@ -233,7 +231,7 @@ class Module:
             elif parameter_definition.type_.name == 'STRING':
                 parameter_value = parameter_value.strip()
             else:
-                # All other data types
+                # All other data types, assign to the python_type defined in Parameter class
                 try:
                     parameter_value = parameter_definition.python_type(parameter_value)
                 except Exception as e:
