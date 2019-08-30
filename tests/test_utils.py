@@ -1,97 +1,11 @@
 """Unit tests for utility functions."""
-import os
-import pathlib
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import tlo.util
-from tlo import Date, Parameter, Types
-
-
-class TestLoadParameters:
-    def setup(self):
-        self.PARAMETERS = {
-            'int_basic': Parameter(Types.INT, 'int'),
-            'real_basic': Parameter(Types.REAL, 'real'),
-            'categorical_basic': Parameter(Types.CATEGORICAL, 'categorical', categories=["category_1", "category_2"]),
-            'list_basic_int': Parameter(Types.LIST, 'list_int'),
-            'list_basic_real': Parameter(Types.LIST, 'list_real'),
-            'string_basic': Parameter(Types.STRING, 'string'),
-        }
-        test_resource = pathlib.Path(os.path.dirname(__file__)) / "resources/ResourceFile_load-parameters.xlsx"
-
-        self.resource = pd.read_excel(test_resource, sheet_name="parameter_values")
-        self.resource.set_index('parameter_name', inplace=True)
-
-    def test_happy_path(self):
-        """Simple case parsing from excel file dataframe"""
-        tlo.util.load_parameters(self.resource, self.PARAMETERS)
-
-        assert isinstance(self.PARAMETERS['int_basic'], int)
-        assert isinstance(self.PARAMETERS['real_basic'], float)
-        assert isinstance(self.PARAMETERS['categorical_basic'], pd.Categorical)
-        assert isinstance(self.PARAMETERS['list_basic_int'], list)
-        assert isinstance(self.PARAMETERS['list_basic_real'], list)
-        assert isinstance(self.PARAMETERS['string_basic'], str)
-
-    def test_string_stripping(self):
-        """Strings should have left and right whitespace trimmed"""
-        resource = self.resource.copy()
-        resource.loc['string_basic', 'value'] = ' string_with_space    '
-        tlo.util.load_parameters(resource, self.PARAMETERS)
-
-        assert self.PARAMETERS['string_basic'] == 'string_with_space'
-
-    def test_parameter_not_in_df(self):
-        """Resource df is missing a parameter
-
-        should raise an Exception"""
-        resource = self.resource.copy()
-        resource = resource.drop('int_basic', axis=0)
-        with pytest.raises(KeyError):
-            tlo.util.load_parameters(resource, self.PARAMETERS)
-
-    def test_invalid_numeric(self):
-        """Non-numeric value given to a numeric field
-
-        should raise an Exception"""
-        resource = self.resource.copy()
-        resource.loc['real_basic', 'value'] = "a"
-        with pytest.raises(ValueError):
-            tlo.util.load_parameters(resource, self.PARAMETERS)
-
-    def test_invalid_category(self):
-        """Category is given in sheet which has not been defined in the parameter
-
-        should raise an Exception"""
-        resource = self.resource.copy()
-        resource.loc['categorical_basic', 'value'] = "invalid"
-        with pytest.raises(AssertionError):
-            tlo.util.load_parameters(resource, self.PARAMETERS)
-
-    @pytest.mark.parametrize("list_value", ["[1, 2, 3", "[1 2, 3]", "['a' 'b', 'c']", 'a', '2'])
-    def test_invalid_list(self, list_value):
-        """List input isn't parsable as a list
-
-        should raise an Exception"""
-        resource = self.resource.copy()
-        resource.loc['list_basic_int', 'value'] = list_value
-        with pytest.raises(ValueError):
-            tlo.util.load_parameters(resource, self.PARAMETERS)
-
-    def test_skip_dataframe_and_series(self):
-        """Dataframe and Series should not be altered"""
-        parameters = dict(self.PARAMETERS)
-        parameters['data_frame'] = Parameter(Types.DATA_FRAME, "data_frame")
-        parameters['series'] = Parameter(Types.SERIES, "series")
-
-        original_state = dict(parameters)
-
-        tlo.util.load_parameters(self.resource, parameters)
-        assert original_state['data_frame'] == parameters['data_frame']
-        assert original_state['series'] == parameters['series']
+from tlo import Date
 
 
 @pytest.fixture
