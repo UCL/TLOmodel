@@ -128,6 +128,7 @@ class Demography(Module):
 
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
+ #       self.parmeters['risk_multiple_gestation'] = 0.02
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
@@ -211,7 +212,6 @@ class Demography(Module):
         # assign that none of the adult (woman) population is pregnant
         df.loc[df.is_alive, 'is_pregnant'] = False
         df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-        df.loc[df.is_alive, 'la_due_date_current_pregnancy'] = pd.NaT
 
         # TODO: Lifestyle module should look after contraception property
         df.loc[df.is_alive, 'contraception'] = 'not using'  # this will be ascribed by the lifestype module
@@ -379,10 +379,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         for female_id in newly_pregnant_ids:
             logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
+
             self.sim.schedule_event(abortion_and_miscarriage.CheckIfNewlyPregnantWomanWillMiscarry
                                     (self.sim.modules['AbortionAndMiscarriage'], female_id,
                                                                                  cause='miscarriage event'),
                                     self.sim.date)
+            print('CONCEPTION:', female_id, self.sim.date)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
