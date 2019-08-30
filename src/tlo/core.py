@@ -182,7 +182,7 @@ class Module:
 
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
-        self.parameters = dict(self.PARAMETERS)
+        self.parameters = {}
         self.rng = np.random.RandomState()
         self.name = name or self.__class__.__name__
         self.sim = None
