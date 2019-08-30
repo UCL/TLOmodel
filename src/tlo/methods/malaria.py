@@ -28,8 +28,8 @@ class Malaria(Module):
         'ma_is_infected': Property(
             Types.BOOL, 'Current status of mockitis'),
         'ma_status': Property(
-            Types.CATEGORICAL, 'current malaria stage: U=uninfected; A=asymptomatic; C=clinical; S=severe; P=past',
-            categories=['U', 'A', 'C', 'S', 'P']),
+            Types.CATEGORICAL, 'current malaria stage: Uninf=uninfected; Asym=asymptomatic; Clin=clinical; Sev=severe; Past=past',
+            categories=['Uninf', 'Asym', 'Clin', 'Sev', 'Past']),
         'ma_date_infected': Property(
             Types.DATE, 'Date of latest infection'),
 
@@ -59,11 +59,11 @@ class Malaria(Module):
 
         # Set default for properties
         df['ma_is_infected'] = False
-        df['ma_status'].values[:] = 'U'  # default: never infected
+        df['ma_status'].values[:] = 'Uninf'  # default: never infected
         df['ma_date_infected'] = pd.NaT
 
         # randomly selected some individuals as infected
-        at_risk = df[(df.ma_status == 'U') & df.is_alive].index
+        at_risk = df[(df.ma_status == 'Uninf') & df.is_alive].index
 
         prob_new = pd.Series(self.parameters['p_infection'], index=at_risk)
         print('prob_new: ', prob_new)
@@ -71,7 +71,7 @@ class Malaria(Module):
         is_newly_infected = prob_new > self.rng.rand(len(prob_new))
         new_case = is_newly_infected[is_newly_infected].index
         print('new_case', new_case)
-        df.loc[new_case, 'ma_status'] = 'C'
+        df.loc[new_case, 'ma_status'] = 'Clin'
 
         # Assign time of infections
         # date of infection of infected individuals
@@ -119,10 +119,10 @@ class Malaria(Module):
         p = self.parameters
 
         health_values = df.loc[df.is_alive, 'ma_status'].map({
-            'U': 0,
-            'A': 0,
-            'C': p['daly_wt_clinical'],
-            'S': p['daly_wt_severe']
+            'Uninf': 0,
+            'Asym': 0,
+            'Clin': p['daly_wt_clinical'],
+            'Sev': p['daly_wt_severe']
         })
         health_values.name = 'Malaria Symptoms'    # label the cause of this disability
 
@@ -130,10 +130,6 @@ class Malaria(Module):
 
 
 class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event is occurring regularly at one monthly intervals and controls the infection process
-    and onset of symptoms of Mockitis.
-    """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=12))
@@ -145,8 +141,8 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[(df.ma_status == 'C') & df.is_alive]
-        currently_uninfected = df.index[(df.ma_status != 'C') & df.is_alive]
+        currently_infected = df.index[(df.ma_status == 'Clin') & df.is_alive]
+        currently_uninfected = df.index[(df.ma_status != 'Clin') & df.is_alive]
 
         if df.is_alive.sum():
             prevalence = len(currently_infected) / (
@@ -168,7 +164,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
                 size=now_infected.sum(),
                 p=self.module.parameters['stage']['probability'])
 
-            df.loc[infected_idx, 'ma_status'] = 'C'
+            df.loc[infected_idx, 'ma_status'] = 'Clin'
             df.loc[infected_idx, 'ma_date_infected'] = self.sim.date
             df.loc[infected_idx, 'mi_specific_symptoms'] = symptoms
             df.loc[infected_idx, 'mi_unified_symptom_code'] = 0
@@ -226,6 +222,50 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
+
+
+
+class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
+    """
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['LabParasit'] = 1  # This requires one out patient
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Items'] == 'malaria P. falciparum + P. pan  RDT',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_RDT'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = []
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        logger.debug('This is HSI_Malaria_rdt, rdt test for person %d',
+                     person_id)
+
+
+
+
+
+
+
+
 class HSI_Malaria_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
     """
     """
@@ -270,32 +310,48 @@ class HSI_Malaria_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventM
 
 
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
     def __init__(self, module):
-        """Produce a summmary of the numbers of people with respect to their 'mockitis status'
-        """
-        # run this event every month
-        self.repeat = 6
+
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         # get some summary statistics
         df = population.props
+        now = self.sim.date
 
-        infected_total = len(df.loc[df.is_alive & (df.ma_status == 'C')])
-        proportion_infected = infected_total / len(df)
+        # ------------------------------------ INCIDENCE ------------------------------------
 
-        mask: pd.Series = (df.loc[df.is_alive, 'ma_date_infected'] >
-                           self.sim.date - DateOffset(months=self.repeat))
-        infected_in_last_month = mask.sum()
+        # infected in the last year, clinical and severe cases only
+        tmp = len(
+            df.loc[df.is_alive & (df.ma_date_infected > (now - DateOffset(months=self.repeat)))])
+        # incidence rate per 1000 person-years
+        inc_1000py = (tmp / len(df[(df.ma_status == 'Uninf') & df.is_alive ])) * 1000
 
-        counts = {'U': 0, 'A': 0, 'C': 0, 'S': 0}
+        logger.info('%s|incidence|%s', now, inc_1000py)
+
+        # ------------------------------------ RUNNING COUNTS ------------------------------------
+
+        counts = {'Uninf': 0, 'Asym': 0, 'Clin': 0, 'Sev': 0}
         counts.update(df.loc[df.is_alive, 'ma_status'].value_counts().to_dict())
 
-        logger.info('%s|summary|%s', self.sim.date,
-                    {
-                        'TotalInf': infected_total,
-                        'PropInf': proportion_infected,
-                        'PrevMonth': infected_in_last_month,
-                    })
+        logger.info('%s|status_counts|%s', now, counts)
 
-        logger.info('%s|status_counts|%s', self.sim.date, counts)
+        # ------------------------------------ PREVALENCE BY AGE ------------------------------------
+
+        # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
+        child2_10_clin = len(df[df.is_alive & (df.ma_status == 'Clin') & (df.age_years.between(2,10))])
+        child2_10_sev = len(df[df.is_alive & (df.ma_status == 'Sev') & (df.age_years.between(2,10))])
+        child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
+        child_prev = (child2_10_clin +  child2_10_sev) / child2_10_pop if child2_10_pop else 0
+
+        prev_clin = len(df[df.is_alive & (df.ma_status == 'Clin')])
+        prev_sev = len(df[df.is_alive & (df.ma_status == 'Sev')])
+        total_prev = (prev_clin + prev_sev) / len(df[df.is_alive])
+
+        logger.info('%s|prevalence|%s', now,
+                    {
+                        'child_prev': child_prev,
+                        'total_prev': total_prev,
+                    })
