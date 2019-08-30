@@ -47,7 +47,7 @@ class Depression(Module):
         'init_rp_ever_depr_per_year_older_f': Parameter(
             Types.REAL, 'initial relative prevalence ever depression per year older in women if not currently depressed'
         ),
-        'init_pr_on_antidepr_curr_depressed': Parameter(
+        'init_pr_antidepr_curr_depr': Parameter(
             Types.REAL, 'initial prob of being on antidepressants if currently depressed'
         ),
         'init_rp_antidepr_ever_depr_not_curr': Parameter(
@@ -123,38 +123,10 @@ class Depression(Module):
 
         dfd.set_index('parameter_name', inplace=True)
 
-        p['init_pr_depr_m_age1519_no_cc_wealth123'] = dfd.loc[
-            'init_pr_depr_m_age1519_no_cc_wealth123', 'value'
-        ]
-        p['init_rp_depr_f_not_rec_preg'] = dfd.loc['init_rp_depr_f_not_rec_preg', 'value']
-        p['init_rp_depr_f_rec_preg'] = dfd.loc['init_rp_depr_f_rec_preg', 'value']
-        p['init_rp_depr_age2059'] = dfd.loc['init_rp_depr_age2059', 'value']
-        p['init_rp_depr_agege60'] = dfd.loc['init_rp_depr_agege60', 'value']
-        p['init_rp_depr_cc'] = dfd.loc['init_rp_depr_cc', 'value']
-        p['init_rp_depr_wealth45'] = dfd.loc['init_rp_depr_wealth45', 'value']
-        p['init_rp_ever_depr_per_year_older_m'] = dfd.loc['init_rp_ever_depr_per_year_older_m', 'value']
-        p['init_rp_ever_depr_per_year_older_f'] = dfd.loc['init_rp_ever_depr_per_year_older_f', 'value']
-        p['init_pr_antidepr_curr_depr'] = dfd.loc['init_pr_antidepr_curr_depr', 'value']
-        p['init_rp_never_depr'] = dfd.loc['init_rp_never_depr', 'value']
-        p['init_rp_antidepr_ever_depr_not_curr'] = dfd.loc['init_rp_antidepr_ever_depr_not_curr', 'value']
-        p['base_3m_prob_depr'] = dfd.loc['base_3m_prob_depr', 'value']
-        p['rr_depr_wealth45'] = dfd.loc['rr_depr_wealth45', 'value']
-        p['rr_depr_cc'] = dfd.loc['rr_depr_cc', 'value']
-        p['rr_depr_pregnancy'] = dfd.loc['rr_depr_pregnancy', 'value']
-        p['rr_depr_female'] = dfd.loc['rr_depr_female', 'value']
-        p['rr_depr_prev_epis'] = dfd.loc['rr_depr_prev_epis', 'value']
-        p['rr_depr_on_antidepr'] = dfd.loc['rr_depr_on_antidepr', 'value']
-        p['rr_depr_age1519'] = dfd.loc['rr_depr_age1519', 'value']
-        p['rr_depr_agege60'] = dfd.loc['rr_depr_agege60', 'value']
+        # Update parameters from the resource dataframe
+        self.load_parameters_from_dataframe(dfd)
+
         p['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
-        p['rr_resol_depr_cc'] = dfd.loc['rr_resol_depr_cc', 'value']
-        p['rr_resol_depr_on_antidepr'] = dfd.loc['rr_resol_depr_on_antidepr', 'value']
-        p['rate_init_antidep'] = dfd.loc['rate_init_antidep', 'value']
-        p['rate_stop_antidepr'] = dfd.loc['rate_stop_antidepr', 'value']
-        p['rate_default_antidepr'] = dfd.loc['rate_default_antidepr', 'value']
-        p['prob_3m_suicide_depr_m'] = dfd.loc['prob_3m_suicide_depr_m', 'value']
-        p['rr_suicide_depr_f'] = dfd.loc['rr_suicide_depr_f', 'value']
-        p['prob_3m_selfharm_depr'] = dfd.loc['prob_3m_selfharm_depr', 'value']
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 932 and 933 are the sequale codes for epilepsy
@@ -364,7 +336,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         self.depr_resolution_rates = p['depr_resolution_rates']
         self.rr_resol_depr_cc = p['rr_resol_depr_cc']
         self.rr_resol_depr_on_antidepr = p['rr_resol_depr_on_antidepr']
-        self.rate_init_antidep = p['rate_init_antidep']
+        self.rate_init_antidepr = p['rate_init_antidepr']
         self.rate_stop_antidepr = p['rate_stop_antidepr']
         self.rate_default_antidepr = p['rate_default_antidepr']
         self.prob_3m_suicide_depr_m = p['prob_3m_suicide_depr_m']
@@ -427,7 +399,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         # initiation of antidepressants
         depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr]
 
-        eff_prob_antidepressants = pd.Series(self.rate_init_antidep, index=depr_not_on_antidepr_idx)
+        eff_prob_antidepressants = pd.Series(self.rate_init_antidepr, index=depr_not_on_antidepr_idx)
         antidepr = eff_prob_antidepressants > self.module.rng.random_sample(size=len(depr_not_on_antidepr_idx))
 
         # get the indicies of persons who are going to present for care at somepoint in the next 3 months
