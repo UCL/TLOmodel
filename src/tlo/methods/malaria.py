@@ -28,8 +28,11 @@ class Malaria(Module):
         'sensitivity_rdt': Parameter(
             Types.REAL, 'Sensitivity of rdt'),
         'cfr': Parameter(
-            Types.REAL, 'case-fatality rate for severe malaria'
-        )
+            Types.REAL, 'case-fatality rate for severe malaria'),
+        'dur_asym': Parameter(
+            Types.REAL, 'duration (days) of asymptomatic malaria'),
+        'dur_clin': Parameter(
+            Types.REAL, 'duration (days) of clinical malaria '),
     }
 
     PROPERTIES = {
@@ -45,7 +48,7 @@ class Malaria(Module):
             Types.BOOL, 'Person sleeps under a bednet'),
         'ma_irs': Property(
             Types.BOOL, 'Person sleeps in house which has had indoor residual spraying'),
-        'ml_tx': Property(Types.BOOL, 'Currently on anti-malarial treatment')
+        'ml_tx': Property(Types.BOOL, 'Currently on anti-malarial treatment'),
     }
 
     def read_parameters(self, data_folder):
@@ -68,6 +71,8 @@ class Malaria(Module):
             })
         p['sensitivity_rdt'] = 0.95
         p['cfr'] = 0.15
+        p['dur_asym'] = 110
+        p['dur_clin'] = 5
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
@@ -255,6 +260,34 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             logger.debug('This is MalariaEvent, no one is newly infected.')
 
+            # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
+            # schedule self-cure if no treatment, no self-cure from severe malaria
+
+            # asymptomatic
+            asym = df.index[(df.ma_status == 'Asym') & (df.ma_date_infected == now)]
+
+            random_date = rng.randint(low=0, high=p['dur_asym'], size=len(asym))
+            random_days = pd.to_timedelta(random_date, unit='d')
+
+            for person in df.loc[asym].index:
+
+                cure = MalariaParasiteClearanceEvent(self.module, person)
+                self.sim.schedule_event(cure, (self.sim.date + random_days))
+
+            # clinical
+            clin = df.index[(df.ma_status == 'Clin') & (df.ma_date_infected == now)]
+
+            random_date = rng.randint(low=0, high=p['dur_clin'], size=len(clin))
+            random_days = pd.to_timedelta(random_date, unit='d')
+
+            for person in df.loc[clin].index:
+                cure = MalariaParasiteClearanceEvent(self.module, person)
+                self.sim.schedule_event(cure, (self.sim.date + random_days))
+
+                # schedule symptom end (5 days)
+                symp_end = MalariaSympEndEvent(self.module, person)
+                self.sim.schedule_event(symp_end, self.sim.date + DateOffset(days=5))
+
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -282,10 +315,10 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
                                         self.sim.date)
 
-
-# ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
+# ---------------------------------------------------------------------------------
+
 
 class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
     """
@@ -579,6 +612,8 @@ class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
 
 
 # ---------------------------------------------------------------------------------
+# Recovery Events
+# ---------------------------------------------------------------------------------
 class MalariaCureEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -588,7 +623,7 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
         logger.debug("Stopping malaria treatment and curing person %d", person_id)
 
         df = self.sim.population.props
-        params = self.sim.modules['malaria'].parameters
+        params = self.sim.modules['Malaria'].parameters
 
         # stop treatment
         if df.at[person_id, 'is_alive']:
@@ -596,6 +631,41 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
 
             df.at[person_id, 'ma_status'] = 'Uninf'
 
+
+class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("This is MalariaParasiteClearanceEvent for person %d", person_id)
+
+        df = self.sim.population.props
+
+        if df.at[person_id, 'is_alive']:
+            df.at[person_id, 'ml_tx'] = False
+
+            df.at[person_id, 'ma_status'] = 'Uninf'
+
+
+class MalariaSympEndEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("This is MalariaSympEndEvent ending symptoms of clinical malaria for person %d", person_id)
+
+        df = self.sim.population.props
+
+        if df.at[person_id, 'is_alive']:
+
+            df.at[person_id, 'mi_specific_symptoms'] = 'none'
+
+
+# ---------------------------------------------------------------------------------
+# Logging
+# ---------------------------------------------------------------------------------
 
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
