@@ -53,7 +53,7 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger('tlo.methods.malaria').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.malaria').setLevel(logging.INFO)
 
 
 # Run the simulation and flush the logger
