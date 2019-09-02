@@ -58,8 +58,6 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     state_indexes = initial_series.groupby(initial_series).groups
     all_states = prob_matrix.columns.tolist()
     for state, state_index in state_indexes.items():
-        new_states = rng.choice(
-            all_states, len(state_index), p=prob_matrix[state]
-        )
+        new_states = rng.choice(all_states, len(state_index), p=prob_matrix[state])
         final_states[state_index] = new_states
     return final_states
