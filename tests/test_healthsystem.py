@@ -150,9 +150,11 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     f.close()
 
     # check that there have been no HSI events (due to there being no capabilities)
-    assert 'Appt' not in output['tlo.methods.healthsystem'], 'one'
+    assert 'HSI_Event' not in output['tlo.methods.healthsystem'], 'one'
     assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
+
+
 
 
 def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_appt_constraints():
@@ -188,7 +190,9 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
 
     # read the results
     fh.flush()
+    output = parse_log_file(f.name)
     f.close()
 
-    # check that there have been some HSI events (due to there being no capabilities)
-    assert sim.modules['HealthSystem'].hsi_event_queue_counter > 0
+
+    # check that there have been some HSI events having occured
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
