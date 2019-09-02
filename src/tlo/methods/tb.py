@@ -2322,7 +2322,7 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_date_treated_mdr'] = now
 
         # schedule a 6-month event where people are cured, symptoms return to latent or not cured
-        self.sim.schedule_event(TbCureEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(TbCureMdrEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # follow-up appts
         logger.debug('....This is HSI_Tb_StartMdrTreatment: scheduling follow-up appointments for person %d',
