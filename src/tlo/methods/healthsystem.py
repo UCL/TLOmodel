@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import tlo
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 
@@ -200,45 +201,61 @@ class HealthSystem(Module):
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
-        # Correctly formatted footprint
-        assert 'APPT_FOOTPRINT' in dir(hsi_event)
-        assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        if type(hsi_event.target) is tlo.population.Population:     # check if hsi_event is this population-scoped
+            # This is a poulation-scoped HSI event.
+            # It does not need APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
 
-        # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-        assert all(
-            np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
-        assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
+            assert 'TREATMENT_ID' in dir(hsi_event)
+            assert 'APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
+            assert 'CONS_FOOTPRINT' not in dir(hsi_event)
+            assert 'ACCEPTED_FACILITY_LEVELS' not in dir(hsi_event)
+            assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
 
-        # That it has a dictionary for the consumables needed in the right format
-        assert 'CONS_FOOTPRINT' in dir(hsi_event)
-        assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
-        assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
-        consumables = self.parameters['Consumables']
-        assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
-            set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
-                consumables['Intervention_Pkg_Code']))
-        assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
-            set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+        else:
+            # This is an individual-scoped HSI event.
+            # It must have APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
 
-        # That it has an 'ACCEPTED_FACILITY_LEVELS' attribute (a list of Ok facility levels of a '*'
-        # If it a list with one element '*' in it, then update that with all the facility levels
-        assert 'ACCEPTED_FACILITY_LEVELS' in dir(hsi_event)
-        assert type(hsi_event.ACCEPTED_FACILITY_LEVELS) is list
-        assert len(hsi_event.ACCEPTED_FACILITY_LEVELS) > 0
-        all_fac_levels = list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
-        if hsi_event.ACCEPTED_FACILITY_LEVELS[0] == '*':
-            # replace the '*' with all the facility_levels being used
-            hsi_event.ACCEPTED_FACILITY_LEVELS = all_fac_levels
-        assert set(hsi_event.ACCEPTED_FACILITY_LEVELS).issubset(set(all_fac_levels))
+            # Correctly formatted footprint
+            assert 'TREATMENT_ID' in dir(hsi_event)
 
-        # That it has a list for the other disease that will be alerted when it is run and that this make sense
-        assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
-        assert type(hsi_event.ALERT_OTHER_DISEASES) is list
+            assert 'APPT_FOOTPRINT' in dir(hsi_event)
+            assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
 
-        if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
-            if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
-                for d in hsi_event.ALERT_OTHER_DISEASES:
-                    assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
+            # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
+            assert all(
+                np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
+            assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
+
+            # That it has a dictionary for the consumables needed in the right format
+            assert 'CONS_FOOTPRINT' in dir(hsi_event)
+            assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
+            assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
+            consumables = self.parameters['Consumables']
+            assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
+                set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
+                    consumables['Intervention_Pkg_Code']))
+            assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
+                set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+
+            # That it has an 'ACCEPTED_FACILITY_LEVELS' attribute (a list of Ok facility levels of a '*'
+            # If it a list with one element '*' in it, then update that with all the facility levels
+            assert 'ACCEPTED_FACILITY_LEVELS' in dir(hsi_event)
+            assert type(hsi_event.ACCEPTED_FACILITY_LEVELS) is list
+            assert len(hsi_event.ACCEPTED_FACILITY_LEVELS) > 0
+            all_fac_levels = list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
+            if hsi_event.ACCEPTED_FACILITY_LEVELS[0] == '*':
+                # replace the '*' with all the facility_levels being used
+                hsi_event.ACCEPTED_FACILITY_LEVELS = all_fac_levels
+            assert set(hsi_event.ACCEPTED_FACILITY_LEVELS).issubset(set(all_fac_levels))
+
+            # That it has a list for the other disease that will be alerted when it is run and that this make sense
+            assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
+            assert type(hsi_event.ALERT_OTHER_DISEASES) is list
+
+            if len(hsi_event.ALERT_OTHER_DISEASES) > 0:
+                if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
+                    for d in hsi_event.ALERT_OTHER_DISEASES:
+                        assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
 
         # 2) Check topen, tclose and priority
 
@@ -629,6 +646,28 @@ class HealthSystem(Module):
                     self.sim.date,
                     log_appts)
 
+    def log_hsi_event(self, event):
+        """
+        This will write to the log with a record that this HSI event has occured
+        :param hsi_event: The hsi event
+        """
+
+        # appts = hsi_event.APPT_FOOTPRINT
+        # log_appts = dict()
+        # log_appts['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+        # log_appts['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
+        #                                          v}  # remove the appt-types with zeros
+        # log_appts['Person_ID'] = hsi_event.target
+
+        if type(event.target) is tlo.population.Population:
+            scope = 'Pop'
+        else:
+            scope = 'Indi'
+
+        logger.info('%s|HSI_event|%s',
+                    self.sim.date,
+                    {'scope': scope, 'TREATMENT_ID': event.TREATMENT_ID})
+
     def log_current_capabilities(self, current_capabilities):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
@@ -757,28 +796,42 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     break
 
             else:
-
+                # The event is now due to run.
                 # Check if the event can run
-                (can_do_appt_footprint, current_capabilities) = \
-                    self.module.check_if_can_do_hsi_event(event, current_capabilities=current_capabilities)
 
-                if can_do_appt_footprint:
-                    # The event can be run:
+                if not (type(event.target) is tlo.population.Population):
+                    # The event is an individual level HSI_event: check resources in local healthsystem facilities
 
-                    if df.at[event.target, 'is_alive']:
-                        # Run the event
-                        event.run()
+                    (can_do_appt_footprint, current_capabilities) = \
+                        self.module.check_if_can_do_hsi_event(event, current_capabilities=current_capabilities)
 
-                        # Broadcast to other modules that the event is running:
-                        self.module.broadcast_healthsystem_interaction(hsi_event=event)
+                    if can_do_appt_footprint:
+                        # The event can be run:
 
-                        # Write to the log
-                        self.module.log_consumables_used(event)
-                        self.module.log_appts_used(event)
+                        if df.at[event.target, 'is_alive']:
+                            # Run the event
+                            event.run()
+
+                            # Broadcast to other modules that the event is running:
+                            self.module.broadcast_healthsystem_interaction(hsi_event=event)
+
+                            # Write to the log
+                            self.module.log_consumables_used(event)
+                            self.module.log_appts_used(event)
+                            self.module.log_hsi_event(event)
+                    else:
+                        # The event cannot be run due to insufficient resources.
+                        # Add to hold-over list
+                        hp.heappush(hold_over, next_event_tuple)
 
                 else:
-                    # Add to hold-over list
-                    hp.heappush(hold_over, next_event_tuple)
+                    # The event is a population level HSI event: allow it to run without further checks.
+
+                    # Run the event
+                    event.run()
+
+                    # Write to the log
+                    self.module.log_hsi_event(event)
 
         # Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
         while len(hold_over) > 0:

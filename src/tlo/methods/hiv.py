@@ -694,9 +694,22 @@ class hiv(Module):
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
-        # Schedule the event that will launch the Behaviour change event
-        behav_change_event = HivLaunchBehavChangeEvent(self)
-        self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+        # -----
+        # Schedule the population-wide HSI event that will govern behaviour change:
+        # (NB. TH changed this to be a population-wide HSI)
+
+        # Define the way in which persons that benefit from this change will be identified
+        def target_fn(person_id, population):
+            # Receives a person_id and returns True/False to indicate whether that person is to be included
+            return 15 <= population.at[person_id, 'age_years'] <= 50 and (not population.at[person_id, 'hv_inf'])
+
+        population_level_HSI_event = HSI_Hiv_PopulationWideBehaviourChange(self, target_fn=target_fn)
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=population_level_HSI_event,
+                                                            priority=0,
+                                                            topen=self.sim.date + DateOffset(months=12),
+                                                            tclose=None)
+        # -----
 
         # Schedule the event that will launch the PrEP event (2018 onwards)
         prep_event = HivLaunchPrepEvent(self)
@@ -1150,34 +1163,6 @@ class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
 
-class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
-    """
-    this is all behaviour change interventions that will reduce risk of HIV
-    """
-
-    def __init__(self, module):
-        super().__init__(module)
-
-    def apply(self, population):
-        df = self.sim.population.props
-
-        # Find the person_ids who are going to get the behaviour change intervention
-        # open to any adults not currently infected
-        gets_outreach = df.index[(df['is_alive']) & ~df.hv_inf & (df.age_years.between(15, 80))]
-        for person_id in gets_outreach:
-            # make the outreach event
-            outreach_event_for_individual = HSI_Hiv_BehaviourChange(self.module, person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=12))
-
-        # schedule next behav change launch event
-        behav_change_event = HivLaunchBehavChangeEvent(self)
-        self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
-
-
 class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
     """
     this is all behaviour change interventions that will reduce risk of HIV
@@ -1349,53 +1334,37 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                                                                 tclose=None)
 
 
-class HSI_Hiv_BehaviourChange(Event, IndividualScopeEventMixin):
+class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
     """
-    This is a Health System Interaction Event - encompassing all behaviour change interventions
+    This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
     """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, target_fn=None):
+        super().__init__(module)
 
-        # Get a blank footprint, doesn't require any clinic time
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1  # This doesn't require any appt time, but throws error if blank
+        # If no "target_fn" is provided, then let this event pertain to everyone
+        if (target_fn is None):
+            def target_fn(person_id):
+                return True
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on female sex workers ',
-                            'Intervention_Pkg_Code']
-        )[0]
+        self.target_fn = target_fn
 
-        pkg_code2 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on male sex workers ',
-                            'Intervention_Pkg_Code']
-        )[0]
+        # # Define the necessary information for an HSI (Population level)
+        self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
 
-        pkg_code3 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on men who have sex with men ',
-                            'Intervention_Pkg_Code']
-        )[0]
+    def apply(self, population):
+        logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2, pkg_code3],
-            'Item_Code': []
-        }
+        # Label the relevant people as having had contact with the 'behaviour change' intervention
+        # NB. An alternative approach would be for, at this point, a property in the module to be changed.
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_BehavChange'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        # hv_behaviour_change
+        df = population.props
+        for person_id in df.index:
+            if self.target_fn(person_id, df):
+                df.at[person_id, 'hv_behaviour_change'] = True
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Hiv_BehaviourChange, a first appointment for person %d', person_id)
-
-        df = self.sim.population.props
-
-        df.at[person_id, 'hv_behaviour_change'] = True
+        # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
 
 
 class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
@@ -1792,7 +1761,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
 
         # ----------------------------------- SCHEDULE IPT START -----------------------------------
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
-            df.at[person_id, 'tb_inf'].startswith('active')) and (
+                df.at[person_id, 'tb_inf'].startswith('active')) and (
                 self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
