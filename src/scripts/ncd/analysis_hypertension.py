@@ -50,7 +50,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 #sim.register(mockitis.Mockitis())
-sim.register(hypertension.HT())
+sim.register(hypertension.HT(resourcefilepath=resourcefilepath))
 sim.register(t2dm.T2DM())
 #sim.register(chronicsyndrome.ChronicSyndrome())
 

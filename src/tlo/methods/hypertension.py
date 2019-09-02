@@ -20,10 +20,10 @@ logger.setLevel(logging.DEBUG)
 # TODO: change file path mac/window flex
 # TODO: Read in 95% CI from file?
 # Read in data
-# file_path = 'resources/ResourceFile_Method_HT.xlsx'
-# method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-# HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
-                                                method_ht_data['parameters'], method_ht_data['data']
+#file_path = 'resources/ResourceFile_Method_HT.xlsx'
+#method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
+#HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+#                                                method_ht_data['parameters'], method_ht_data['data']
 
 
 class HT(Module):
@@ -37,6 +37,10 @@ class HT(Module):
     - Health care seeking
     - Running an "outreach" event
     """
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     logger.debug("Hypertension method is running.  ")
 
@@ -77,10 +81,18 @@ class HT(Module):
     def read_parameters(self, data_folder):
         logger.debug("Hypertension method: reading in parameters.  ")
 
+#         HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data[
+#             'incidence2018_plus'], \
+#                                                 method_ht_data['parameters'], method_ht_data['data']
+
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Method_HT.xlsx',
                                  sheet_name=None)
 
         p = self.parameters
+        p['HT_prevalence'] = workbook['prevalence2018']
+        p['HT_incidence'] = workbook['incidence2018_plus']
+
+        HT_risk = workbook['parameters']
         df = HT_risk.set_index('parameter')
         p['prob_HT_basic'] = df.at['prob_basic', 'value']
         p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']],
@@ -92,6 +104,8 @@ class HT(Module):
         p['prob_treat'] = 0.5
         p['prob_contr'] = 0.5
         p['dalywt_ht'] = 0.0
+
+        HT_data = workbook['data']
         df = HT_data.set_index('index')
         p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['b_25_35', 'value']],
                                                 [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']],
@@ -131,7 +145,7 @@ class HT(Module):
 
         # 3. Assign prevalence as per data
         # 3.1 Get corresponding risk
-        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(HT_prevalence, left_on=['age_years'],
+        ht_prob = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'], left_on=['age_years'],
                                                                       right_on=['age'], how='left')['probability']
         df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
         df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] = self.prob_HTgivenDiab
