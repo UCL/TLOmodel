@@ -628,45 +628,37 @@ class HealthSystem(Module):
 
         return consumables_used
 
-    def log_appts_used(self, hsi_event):
+
+
+    def log_hsi_event(self, hsi_event):
         """
-        This will write to the log with a record of the appts that were in the footprint of an HSI event
+        This will write to the log with a record that this HSI event has occured.
+        If this is an individual-level HSI event, it will also record the appointment footprint
         :param hsi_event: The hsi event
         """
 
-        # Log the individual footprints being applied
-        appts = hsi_event.APPT_FOOTPRINT
-        log_appts = dict()
-        log_appts['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-        log_appts['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
-                                                 v}  # remove the appt-types with zeros
-        log_appts['Person_ID'] = hsi_event.target
+        if type(hsi_event.target) is tlo.population.Population:
+            # Population HSI-Event:
 
-        logger.info('%s|Appt|%s',
-                    self.sim.date,
-                    log_appts)
+            log_info = dict()
+            log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+            log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
+            log_info['Person_ID'] = -1 # Junk code
 
-    def log_hsi_event(self, event):
-        """
-        This will write to the log with a record that this HSI event has occured
-        :param hsi_event: The hsi event
-        """
-
-        # appts = hsi_event.APPT_FOOTPRINT
-        # log_appts = dict()
-        # log_appts['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-        # log_appts['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
-        #                                          v}  # remove the appt-types with zeros
-        # log_appts['Person_ID'] = hsi_event.target
-
-        if type(event.target) is tlo.population.Population:
-            scope = 'Pop'
         else:
-            scope = 'Indi'
+            # Individual HSI-Event:
 
-        logger.info('%s|HSI_event|%s',
-                    self.sim.date,
-                    {'scope': scope, 'TREATMENT_ID': event.TREATMENT_ID})
+            appts = hsi_event.APPT_FOOTPRINT
+            log_info = dict()
+            log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+            log_info['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
+                                                     v}  # remove the appt-types with zeros
+            log_info['Person_ID'] = hsi_event.target
+
+        logger.info('%s|HSI_Event|%s',
+                        self.sim.date,
+                        log_info)
+
 
     def log_current_capabilities(self, current_capabilities):
         """
@@ -817,7 +809,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                             # Write to the log
                             self.module.log_consumables_used(event)
-                            self.module.log_appts_used(event)
                             self.module.log_hsi_event(event)
                     else:
                         # The event cannot be run due to insufficient resources.
