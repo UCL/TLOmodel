@@ -22,7 +22,7 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability=None,     # must be a list of treatment_ids to allow
+                 service_availability=None,  # must be a list of treatment_ids to allow
                  ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
                  ignore_cons_constraints=False,  # remove constraints to do with consumables availability
                  ignore_priority=False,  # do not use the priroity information in HSI event to schedule
@@ -157,7 +157,6 @@ class HealthSystem(Module):
             my_district = pop.at[person_id, 'district_of_residence']
             my_health_facilities = fac_per_district.loc[fac_per_district['District'] == my_district]
             my_health_facility_level = pd.unique(my_health_facilities.Facility_Level)
-
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
@@ -201,7 +200,7 @@ class HealthSystem(Module):
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
-        if type(hsi_event.target) is tlo.population.Population:     # check if hsi_event is this population-scoped
+        if type(hsi_event.target) is tlo.population.Population:  # check if hsi_event is this population-scoped
             # This is a poulation-scoped HSI event.
             # It does not need APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
 
@@ -274,9 +273,9 @@ class HealthSystem(Module):
 
         # 3) Check that this request is allowable under current policy (i.e. included in service_availability)
         allowed = False
-        if not self.service_availability:   # it's an empty list
+        if not self.service_availability:  # it's an empty list
             allowed = False
-        elif self.service_availability[0] == '*':   # it's the overall wild-card, do anything
+        elif self.service_availability[0] == '*':  # it's the overall wild-card, do anything
             allowed = True
         elif hsi_event.TREATMENT_ID in self.service_availability:
             allowed = True
@@ -500,7 +499,7 @@ class HealthSystem(Module):
                 # Check if there are sufficient minutes available for each type of officer to satisfy
                 # the appt_footprint
                 if self.ignore_appt_constraints or (all(comparison['_merge'] == 'both') & all(
-                                comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
+                        comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
 
                     # the appt_footprint can be accommodated by officers at this facility
                     can_do_appt_footprint = True
@@ -550,7 +549,7 @@ class HealthSystem(Module):
                             # update current_capabilities
                             current_capabilities.loc[
                                 (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                     'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
+                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
                                 new_mins_remaining
 
                     break  # cease looking at other facility_types as the need has been met
@@ -628,8 +627,6 @@ class HealthSystem(Module):
 
         return consumables_used
 
-
-
     def log_hsi_event(self, hsi_event):
         """
         This will write to the log with a record that this HSI event has occured.
@@ -643,7 +640,7 @@ class HealthSystem(Module):
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
-            log_info['Person_ID'] = -1 # Junk code
+            log_info['Person_ID'] = -1  # Junk code
 
         else:
             # Individual HSI-Event:
@@ -652,13 +649,12 @@ class HealthSystem(Module):
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
-                                                     v}  # remove the appt-types with zeros
+                                                    v}  # remove the appt-types with zeros
             log_info['Person_ID'] = hsi_event.target
 
         logger.info('%s|HSI_Event|%s',
-                        self.sim.date,
-                        log_info)
-
+                    self.sim.date,
+                    log_info)
 
     def log_current_capabilities(self, current_capabilities):
         """

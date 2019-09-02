@@ -155,8 +155,6 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
 
 
-
-
 def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_appt_constraints():
     f = tempfile.NamedTemporaryFile(dir='.')
     fh = logging.FileHandler(f.name)
@@ -193,6 +191,5 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
     output = parse_log_file(f.name)
     f.close()
 
-
     # check that there have been some HSI events having occured
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
