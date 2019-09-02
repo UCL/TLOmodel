@@ -956,14 +956,17 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---- DROP OUT OF EDUCATION
 
+        # get all individuals currently in education age 15+
+        in_ed_agege15 = df.index[df.is_alive & df.li_in_ed & (df.age_years >= 15)]
+
         # baseline rate of leaving education then adjust for wealth level
-        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
+        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed_agege15)
         p_leave_ed *= m.rr_stop_ed_lower_wealth**(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
-        now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
+        now_not_in_ed = rng.random_sample(len(in_ed_agege15)) < p_leave_ed
 
-        df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
+        df.loc[in_ed_agege15[now_not_in_ed], 'li_in_ed'] = False
 
         # everyone leaves education at age 20
         df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
@@ -1161,6 +1164,51 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        n_alive = (df.is_alive).sum()
+        n_urban = (df.is_alive & df.li_urban).sum()
+        n_rural = (df.is_alive & ~df.li_urban).sum()
+        prop_urban = n_urban / n_alive
+
+        n_urban_wealth1 = (df.is_alive & df.li_urban & (df.li_wealth == 1)).sum()
+        n_urban_wealth2 = (df.is_alive & df.li_urban & (df.li_wealth == 2)).sum()
+        n_urban_wealth3 = (df.is_alive & df.li_urban & (df.li_wealth == 3)).sum()
+        n_urban_wealth4 = (df.is_alive & df.li_urban & (df.li_wealth == 4)).sum()
+        n_urban_wealth5 = (df.is_alive & df.li_urban & (df.li_wealth == 5)).sum()
+        n_rural_wealth1 = (df.is_alive & ~df.li_urban & (df.li_wealth == 1)).sum()
+        n_rural_wealth2 = (df.is_alive & ~df.li_urban & (df.li_wealth == 2)).sum()
+        n_rural_wealth3 = (df.is_alive & ~df.li_urban & (df.li_wealth == 3)).sum()
+        n_rural_wealth4 = (df.is_alive & ~df.li_urban & (df.li_wealth == 4)).sum()
+        n_rural_wealth5 = (df.is_alive & ~df.li_urban & (df.li_wealth == 5)).sum()
+
+        p_wealth1_urban = n_urban_wealth1 / n_urban
+        p_wealth2_urban = n_urban_wealth2 / n_urban
+        p_wealth3_urban = n_urban_wealth3 / n_urban
+        p_wealth4_urban = n_urban_wealth4 / n_urban
+        p_wealth5_urban = n_urban_wealth5 / n_urban
+
+        p_wealth1_rural = n_rural_wealth1 / n_rural
+        p_wealth2_rural = n_rural_wealth2 / n_rural
+        p_wealth3_rural = n_rural_wealth3 / n_rural
+        p_wealth4_rural = n_rural_wealth4 / n_rural
+        p_wealth5_rural = n_rural_wealth5 / n_rural
+
+        n_age6 = (df.is_alive & (df.age_years.between(5, 7))).sum()
+        n_age6_in_ed = (df.is_alive & (df.age_years.between(5, 7)) & df.li_in_ed).sum()
+        p_in_ed_age6 = n_age6_in_ed / n_age6
+        n_age12 = (df.is_alive & df.age_years.between(11, 13)).sum()
+        n_age12_in_ed = (df.is_alive & (df.age_years.between(11, 13)) & df.li_in_ed).sum()
+        p_in_ed_age12 = n_age12_in_ed / n_age12
+        n_age16 = (df.is_alive & (df.age_years.between(15, 17))).sum()
+        n_age16_in_ed = (df.is_alive & (df.age_years.between(15, 17)) & df.li_in_ed).sum()
+        p_in_ed_age16 = n_age16_in_ed / n_age16
+        n_age19 = (df.is_alive & (df.age_years.between(18, 19))).sum()
+        n_age19_in_ed = (df.is_alive & (df.age_years.between(18, 19)) & df.li_in_ed).sum()
+        p_in_ed_age19 = n_age19_in_ed / n_age19
+
+        n_agege20 = (df.is_alive & (df.age_years >= 20)).sum()
+        n_sec_ed_agege20 = (df.is_alive & (df.age_years >= 20) & (df.li_ed_lev == 3)).sum()
+        p_sec_ed_agege20 = n_sec_ed_agege20 / n_agege20
+
         n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
         n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
         n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
@@ -1206,13 +1254,26 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / \
             n_urban_m_not_high_sugar_age1529_not_tob_wealth1
 
+        logger.info('%s|p_in_ed_age6|%s|p_in_ed_age12|%s|p_in_ed_age16|%s|p_in_ed_age19|%s|p_sec_ed_agege20|%s',
+                    self.sim.date,
+                    p_in_ed_age6, p_in_ed_age12, p_in_ed_age16, p_in_ed_age19, p_sec_ed_agege20)
 
-        logger.info('%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
-                    'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
-                    'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s',
-                    self.sim.date, prop_bmi_1, prop_bmi_2, prop_bmi_3, prop_bmi_4, prop_bmi_5,
-                    prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural,
-                    prop_bmi_45_wealth1, prop_bmi_45_wealth5)
+#       logger.info('%s|p_wealth1_urban|%s|p_wealth2_urban|%s|p_wealth3_urban|%s|p_wealth4_urban|%s|'
+#                   'p_wealth5_urban|%s|p_wealth1_rural|%s|p_wealth2_rural|%s|p_wealth3_rural|'
+#                   '%s|p_wealth4_rural|%s|p_wealth5_rural|%s',
+#                   self.sim.date, p_wealth1_urban, p_wealth2_urban, p_wealth3_urban, p_wealth4_urban,
+#                   p_wealth5_urban, p_wealth1_rural, p_wealth2_rural, p_wealth3_rural, p_wealth4_rural,
+#                   p_wealth5_rural)
+
+#       logger.info('%s|prop_urban|%s|',
+#                   self.sim.date, prop_urban)
+
+#       logger.info('%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
+#                   'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
+#                   'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s',
+#                   self.sim.date, prop_bmi_1, prop_bmi_2, prop_bmi_3, prop_bmi_4, prop_bmi_5,
+#                   prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural,
+#                   prop_bmi_45_wealth1, prop_bmi_45_wealth5)
 
 #       logger.debug('%s|person_one|%s',
 #                    self.sim.date,
