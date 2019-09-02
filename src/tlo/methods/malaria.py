@@ -1,6 +1,6 @@
 import logging
+import os
 
-import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -18,6 +18,9 @@ class Malaria(Module):
         self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
+        'mal_inc': Parameter(Types.REAL, 'monthly incidence of malaria in all ages'),
+        'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
+
         'p_infection': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'stage': Parameter(
@@ -35,11 +38,22 @@ class Malaria(Module):
             categories=['Uninf', 'Asym', 'Clin', 'Sev', 'Past']),
         'ma_date_infected': Property(
             Types.DATE, 'Date of latest infection'),
+        'ma_itn_use': Property(
+            Types.BOOL, 'Person sleeps under a bednet'),
+        'ma_irs': Property(
+            Types.BOOL, 'Person sleeps in house which has had indoor residual spraying'),
 
     }
 
     def read_parameters(self, data_folder):
         p = self.parameters
+
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'ResourceFile_malaria.xlsx'), sheet_name=None)
+
+        # baseline characteristics
+        p['mal_inc'] = workbook['incidence']
+        p['interv'] = workbook['interventions']
 
         p['p_infection'] = 0.5
         p['stage'] = pd.DataFrame(
@@ -59,30 +73,48 @@ class Malaria(Module):
 
     def initialise_population(self, population):
         df = population.props
+        p = self.parameters
+        now = self.sim.date
 
         # Set default for properties
         df['ma_is_infected'] = False
         df['ma_status'].values[:] = 'Uninf'  # default: never infected
         df['ma_date_infected'] = pd.NaT
 
-        # randomly selected some individuals as infected
-        at_risk = df[(df.ma_status == 'Uninf') & df.is_alive].index
+        # ----------------------------------- BASELINE CASES -----------------------------------
 
-        prob_new = pd.Series(self.parameters['p_infection'], index=at_risk)
-        # print('prob_new: ', prob_new)
+        inc = p['mal_inc']
 
-        is_newly_infected = prob_new > self.rng.rand(len(prob_new))
-        new_case = is_newly_infected[is_newly_infected].index
-        # print('new_case', new_case)
-        df.loc[new_case, 'ma_status'] = 'Clin'
+        # find monthly incidence rate for Jan 2010
+        inc_2010 = inc.loc[inc.year == now.year, 'monthly_inc_rate'].values
 
-        # Assign time of infections
-        # date of infection of infected individuals
-        # schedule random day throughout 2010 for infection to begin
-        # random draw of days 0-365
-        random_date = self.rng.randint(low=0, high=365, size=len(new_case))
+        # get a list of random numbers between 0 and 1 for each susceptible individual
+        random_draw = self.rng.random_sample(size=len(df))
+
+        ml_idx = df.index[df.is_alive & (random_draw < inc_2010)]
+        df.loc[ml_idx, 'ma_status'] = 'Clin'
+
+        # Assign time of infections across the month
+        random_date = self.rng.randint(low=0, high=31, size=len(ml_idx))
         random_days = pd.to_timedelta(random_date, unit='d')
-        df.loc[new_case, 'ma_date_infected'] = self.sim.date + random_days
+        df.loc[ml_idx, 'ma_date_infected'] = self.sim.date + random_days
+
+        # ----------------------------------- INTERVENTIONS -----------------------------------
+        interv = p['interv']
+
+        # find annual intervention coverage levels rate for 2010
+        itn_2010 = interv.loc[interv.Year == now.year, 'ITN_coverage'].values
+        irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values
+
+        # get a list of random numbers between 0 and 1 for each person
+        random_draw = self.rng.random_sample(size=len(df))
+
+        # use the same random draws for itn and irs as having one increases likelihood of having other
+        itn_idx = df.index[df.is_alive & (random_draw < itn_2010)]
+        irs_idx = df.index[df.is_alive & (random_draw < irs_2010)]
+
+        df.loc[itn_idx, 'itn_use'] = True
+        df.loc[irs_idx, 'irs'] = True
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -90,10 +122,10 @@ class Malaria(Module):
     def initialise_simulation(self, sim):
         # add the basic event
         event = MalariaEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=12))
+        sim.schedule_event(event, sim.date + DateOffset(months=1))
 
         # add an event to log to screen
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=6))
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         pass
@@ -132,52 +164,49 @@ class Malaria(Module):
 class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))
+        super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
 
         logger.debug('This is MalariaEvent, tracking the disease progression of the population.')
 
         df = population.props
+        p = self.module.parameters
+        rng = self.module.rng
+        now = self.sim.date
 
-        # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected = df.index[(df.ma_status == 'Clin') & df.is_alive]
-        currently_uninfected = df.index[(df.ma_status == 'Uninf') & df.is_alive]
+        inc_df = p['mal_inc']
 
-        if df.is_alive.sum():
-            prevalence = len(currently_infected) / (
-                len(currently_infected) + len(currently_uninfected))
-        else:
-            prevalence = 0
-        # print('prevalence', prevalence)
+        # find monthly incidence rate for Jan 2010
+        curr_inc = inc_df.loc[inc_df.year == now.year, 'monthly_inc_rate'].values
 
-        # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
+        # get a list of random numbers between 0 and 1 for each susceptible individual
+        random_draw = rng.random_sample(size=len(df))
+
+        ml_idx = df.index[df.is_alive & (df.ma_status == 'Uninf') & (random_draw < curr_inc)]
 
         # if any are infected
-        if now_infected.sum():
-            infected_idx = currently_uninfected[now_infected]
+        if len(ml_idx):
+            logger.debug('This is MalariaEvent, assigning new malaria infections')
 
             symptoms = self.module.rng.choice(
                 self.module.parameters['stage']['level_of_symptoms'],
-                size=now_infected.sum(),
+                size=len(ml_idx),
                 p=self.module.parameters['stage']['probability'])
 
-            df.loc[infected_idx, 'ma_status'] = 'Clin'
-            df.loc[infected_idx, 'ma_date_infected'] = self.sim.date
-            df.loc[infected_idx, 'mi_specific_symptoms'] = symptoms
-            df.loc[infected_idx, 'mi_unified_symptom_code'] = 0
+            df.loc[ml_idx, 'ma_status'] = 'Clin'
+            df.loc[ml_idx, 'ma_date_infected'] = self.sim.date
+            df.loc[ml_idx, 'mi_specific_symptoms'] = symptoms
+            df.loc[ml_idx, 'mi_unified_symptom_code'] = 0
 
             # Determine if anyone with symptoms will seek care
             symptoms = df.index[(df['is_alive']) & (
-                    (df['mi_specific_symptoms'] == 'severe') | ((df['mi_specific_symptoms'] == 'clinical')))]
-            print('symptoms', symptoms)
+                (df['mi_specific_symptoms'] == 'severe') | ((df['mi_specific_symptoms'] == 'clinical')))]
+            # print('symptoms', symptoms)
 
             seeks_care = pd.Series(data=False, index=df.loc[symptoms].index)
 
             for i in df.loc[symptoms].index:
-
                 prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
                 seeks_care[i] = self.module.rng.rand() < prob
 
