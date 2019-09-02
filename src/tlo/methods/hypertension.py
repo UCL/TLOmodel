@@ -5,6 +5,7 @@ Developed by Mikaela Smit, October 2018
 """
 
 import logging
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,9 +20,9 @@ logger.setLevel(logging.DEBUG)
 # TODO: change file path mac/window flex
 # TODO: Read in 95% CI from file?
 # Read in data
-file_path = 'resources/ResourceFile_Method_HT.xlsx'
-method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
-HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
+# file_path = 'resources/ResourceFile_Method_HT.xlsx'
+# method_ht_data = pd.read_excel(file_path, sheet_name=None, header=0)
+# HT_prevalence, HT_incidence, HT_risk, HT_data = method_ht_data['prevalence2018'], method_ht_data['incidence2018_plus'], \
                                                 method_ht_data['parameters'], method_ht_data['data']
 
 
@@ -76,6 +77,9 @@ class HT(Module):
     def read_parameters(self, data_folder):
         logger.debug("Hypertension method: reading in parameters.  ")
 
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Method_HT.xlsx',
+                                 sheet_name=None)
+
         p = self.parameters
         df = HT_risk.set_index('parameter')
         p['prob_HT_basic'] = df.at['prob_basic', 'value']
@@ -87,7 +91,7 @@ class HT(Module):
         p['prob_diag'] = 0.5  # ToDO: remove once HSi activated
         p['prob_treat'] = 0.5
         p['prob_contr'] = 0.5
-        p['dalywt_mild_ht'] = 0.0
+        p['dalywt_ht'] = 0.0
         df = HT_data.set_index('index')
         p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['b_25_35', 'value']],
                                                 [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']],

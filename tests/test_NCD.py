@@ -1,6 +1,8 @@
 import logging
 import os
 import time
+import numpy as np
+import pandas as pd
 from pathlib import Path
 
 
@@ -11,7 +13,7 @@ from tlo.methods import demography, hypertension, t2dm#, CVD
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 100
+popsize = 10
 
 
 @pytest.fixture(autouse=True)
