@@ -5,7 +5,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import InstantaneousDeath
+from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -27,6 +27,9 @@ class Malaria(Module):
             Types.CATEGORICAL, 'malaria stage'),
         'sensitivity_rdt': Parameter(
             Types.REAL, 'Sensitivity of rdt'),
+        'cfr': Parameter(
+            Types.REAL, 'case-fatality rate for severe malaria'
+        )
     }
 
     PROPERTIES = {
@@ -42,7 +45,7 @@ class Malaria(Module):
             Types.BOOL, 'Person sleeps under a bednet'),
         'ma_irs': Property(
             Types.BOOL, 'Person sleeps in house which has had indoor residual spraying'),
-
+        'ml_tx': Property(Types.BOOL, 'Currently on anti-malarial treatment')
     }
 
     def read_parameters(self, data_folder):
@@ -64,6 +67,7 @@ class Malaria(Module):
                 'probability': [0.2, 0.5, 0.3],
             })
         p['sensitivity_rdt'] = 0.95
+        p['cfr'] = 0.15
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
@@ -175,6 +179,8 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
         now = self.sim.date
 
+        # ----------------------------------- NEW INFECTIONS -----------------------------------
+
         inc_df = p['mal_inc']
 
         # find monthly incidence rate for Jan 2010
@@ -189,7 +195,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         if len(ml_idx):
             logger.debug('This is MalariaEvent, assigning new malaria infections')
 
-            symptoms = self.module.rng.choice(
+            symptoms = rng.choice(
                 self.module.parameters['stage']['level_of_symptoms'],
                 size=len(ml_idx),
                 p=self.module.parameters['stage']['probability'])
@@ -204,11 +210,29 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
                 (df['mi_specific_symptoms'] == 'severe') | ((df['mi_specific_symptoms'] == 'clinical')))]
             # print('symptoms', symptoms)
 
+            # ----------------------------------- SCHEDULED DEATHS -----------------------------------
+            # schedule deaths within the next week
+            # Assign time of infections across the month
+            severe = df.index[(df.ma_status == 'Sev') & (df.ma_date_infected == now)]
+
+            random_date = rng.randint(low=0, high=7, size=len(severe))
+            random_days = pd.to_timedelta(random_date, unit='d')
+            df.loc[severe, 'ma_date_death'] = self.sim.date + random_days
+
+            random_draw = rng.random_sample(size=len(df))
+            death = df.index[(df.ma_status == 'Sev') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
+
+            for person in death:
+                death_event = MalariaDeathEvent(self, individual_id=person, cause='malaria')  # make that death event
+                self.sim.schedule_event(death_event, df.at[person, 'ma_date_death'])  # schedule the death
+
+            # ----------------------------------- HEALTHCARE-SEEKING -----------------------------------
+
             seeks_care = pd.Series(data=False, index=df.loc[symptoms].index)
 
             for i in df.loc[symptoms].index:
                 prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-                seeks_care[i] = self.module.rng.rand() < prob
+                seeks_care[i] = rng.rand() < prob
 
             if seeks_care.sum() > 0:
 
@@ -234,24 +258,29 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     """
-    This is the death event for malaria
+    Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+        self.cause = cause
 
-    def apply(self, person_id):
-        df = self.sim.population.props  # shortcut to the dataframe
+    def apply(self, individual_id):
+        df = self.sim.population.props
 
-        # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'mi_specific_symptoms'] == 'severe':
+        if df.at[individual_id, 'is_alive'] and not df.at[individual_id, 'ml_tx']:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
+                                    self.sim.date)
 
-            will_die = 0.2 < self.module.rng.rand()
+        elif df.at[individual_id, 'is_alive'] and df.at[individual_id, 'ml_tx']:
+            # schedule death with some probability relating to late / ineffective tx
 
-            if will_die:
-                # Fire the centralised death event:
-                death = InstantaneousDeath(self.module, person_id, cause='Malaria')
-                self.sim.schedule_event(death, self.sim.date)
+            cfr_tx = 0.2
+            death = self.module.rng.rand() < cfr_tx
+
+            if death:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
+                                        self.sim.date)
 
 
 # ---------------------------------------------------------------------------------
@@ -378,6 +407,12 @@ class HSI_Malaria_tx_0_5(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Malaria_tx_0_5, malaria treatment for child %d',
                      person_id)
 
+        df = self.sim.population.props
+
+        df.at[person_id, 'ml_tx'] = True
+
+        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+
 
 class HSI_Malaria_tx_5_15(Event, IndividualScopeEventMixin):
     """
@@ -412,6 +447,12 @@ class HSI_Malaria_tx_5_15(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug('This is HSI_Malaria_tx_5_15, malaria treatment for child %d',
                      person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'ml_tx'] = True
+
+        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
 
 class HSI_Malaria_tx_adult(Event, IndividualScopeEventMixin):
@@ -448,6 +489,12 @@ class HSI_Malaria_tx_adult(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Malaria_tx_adult, malaria treatment for person %d',
                      person_id)
 
+        df = self.sim.population.props
+
+        df.at[person_id, 'ml_tx'] = True
+
+        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+
 
 class HSI_Malaria_tx_compl_child(Event, IndividualScopeEventMixin):
     """
@@ -482,6 +529,12 @@ class HSI_Malaria_tx_compl_child(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         logger.debug('This is HSI_Malaria_tx_compl_child, complicated malaria treatment for child %d',
                      person_id)
+
+        df = self.sim.population.props
+
+        df.at[person_id, 'ml_tx'] = True
+
+        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
 
 class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
@@ -518,8 +571,30 @@ class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Malaria_tx_compl_adult, complicated malaria treatment for person %d',
                      person_id)
 
+        df = self.sim.population.props
+
+        df.at[person_id, 'ml_tx'] = True
+
+        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+
 
 # ---------------------------------------------------------------------------------
+class MalariaCureEvent(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug("Stopping malaria treatment and curing person %d", person_id)
+
+        df = self.sim.population.props
+        params = self.sim.modules['malaria'].parameters
+
+        # stop treatment
+        if df.at[person_id, 'is_alive']:
+            df.at[person_id, 'ml_tx'] = False
+
+            df.at[person_id, 'ma_status'] = 'Uninf'
 
 
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
