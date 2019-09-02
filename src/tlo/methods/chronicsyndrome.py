@@ -435,7 +435,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
         self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         self.APPT_FOOTPRINT['ConWithDCSA'] = 0.5  # outreach event takes small amount of time for DCSA
         self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # Can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVELS = [0] # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id):
