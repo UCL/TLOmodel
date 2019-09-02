@@ -369,6 +369,40 @@ class HealthSystem(Module):
 
         return capabilities
 
+    def get_capabilities_as_series(self):
+        """
+        Converts the capabailities information into the series using the index that is used as a convention on Facility_ID and Officer Type
+        """
+
+        capabilities= self.get_capabilities()
+
+        # Turn into the series
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes=self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
+
+        dict_capabilities=dict()
+
+        for f in facility_ids:
+            for o in officer_type_codes:
+                new_key = ('Facility_ID_' + f.astype(str) + '__Officer_' + o)
+                loc_capabilities = capabilities.loc[(capabilities['Facility_ID']==f) & (capabilities['Officer_Type_Code'].astype(str)==o),'Total_Minutes_Per_Day']
+                if len(loc_capabilities)>0:
+                    new_value = loc_capabilities.values[0]
+                else:
+                    # If there is no entry in the capabilities table, the capability must be zero
+                    new_value = 0
+
+                dict_capabilities.update({new_key : new_value})
+
+        capabilities_as_series = pd.DataFrame.from_dict(dict_capabilities,orient='index')[0]
+        capabilities_as_series.name = 'Capabilities'
+
+        # TODO: Check that this conversion is perfect and preserves the right amount of minutes in total and per officer etc.
+        return capabilities_as_series
+
+
+
+
     def get_blank_appt_footprint(self):
         """
         This is a helper function so that disease modules can easily create their appt_footprints.
@@ -400,6 +434,71 @@ class HealthSystem(Module):
         """
         # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
         return 1.0
+
+
+    def get_appt_footprint_as_series(self, hsi_event):
+        """
+
+        :param hsi_event: The HSI event
+        :return: A series that gives the time required for each officer-type in each facility_ID
+        """
+
+        # Gather useful information
+        df = self.sim.population.props
+        mfl = self.parameters['Master_Facilities_List']
+        fac_per_district = self.parameters['Facilities_For_Each_District']
+        appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
+        appt_times = self.parameters['Appt_Time_Table']
+
+        # Gather information about the HSI event
+        the_person_id = hsi_event.target
+        the_district = df.at[the_person_id, 'district_of_residence']
+        the_appt_footprint = hsi_event.APPT_FOOTPRINT
+
+        # Get the health_facilities available to this person (based on their district), and which are accepted by the
+        # hsi_event.ACCEPTED_FACILITY_LEVELS:
+        the_facility_id = fac_per_district.loc[(fac_per_district['District'] == the_district) &
+                                                                fac_per_district['Facility_Level'].isin(
+                                                                    hsi_event.ACCEPTED_FACILITY_LEVELS)]['Facility_ID'].values[0]
+        the_facility_level = mfl.loc[mfl['Facility_ID']==the_facility_id,'Facility_Level'].values[0]
+
+
+        # Transform the treatment footprint into a demand for time for officers of each type, for this
+        # facility level (it varies by facility level)
+        time_requested_by_officer = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
+        for this_appt_type in appt_types:
+            if the_appt_footprint[this_appt_type] > 0:
+                time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt_type) &
+                                                        (appt_times['Facility_Level'] == the_facility_level),
+                                                        ['Officer_Type_Code',
+                                                         'Time_Taken']].copy().reset_index(drop=True)
+                time_requested_by_officer = pd.concat([time_requested_by_officer, time_req_for_this_appt])
+
+
+        # Create Serioes with index that also contains the Facility_ID (along with the Officer_Types)
+        df_appt_footprint=time_requested_by_officer.copy()
+        df_appt_footprint = df_appt_footprint.set_index('Facility_ID_' + the_facility_id.astype(str) + '__Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str))
+        appt_footprint_as_series = df_appt_footprint['Time_Taken']
+
+        return appt_footprint_as_series
+
+    def get_all_combinations_of_facility_id_and_health_officers(self):
+        """
+        This generates la ist of the strings that give all combination of facility_ID and officer_types in the format that is provided 'get_appt_footprint_as_series'
+        :return: list of the strings that give all combination of facility_ID and officer_types
+        """
+
+        facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
+        officer_type_codes=self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
+
+        combinations_of_facility_id_and_health_officers=list()
+
+        for f in facility_ids:
+            for o in officer_type_codes:
+                combinations_of_facility_id_and_health_officers.append('Facility_ID_' + f.astype(str) + '__Officer_' + o)
+
+        return combinations_of_facility_id_and_health_officers
+
 
     def check_if_can_do_hsi_event(self, hsi_event, current_capabilities):
         """
@@ -714,13 +813,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         * Look at events in order (the order is set by the heapq: see schedule_event
         * Ignore is the current data is before topen
         * Remove and do nothing if tclose has expired
-        * Otherwise, test to see if there are sufficient health system capabilities to run the event
+        * Run any  population-level HSI events
+        * For an individual-level HSI event, check if there are sufficient health system capabilities to run the event
 
     If the event is to be run, then the following events occur:
-        * The resources used are logged
-        * The resources used are 'occupied'
         * The HSI event itself is run.
-        * Other disease modules are alerted of the occurence of the HSI event
+        * The occurence of the event is logged
+        * The resources used are 'occupied' (if individual level HSI event)
+        * Other disease modules are alerted of the occurence of the HSI event (if individual level HSI event)
 
     At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
     """
@@ -742,6 +842,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Get the total Capabilities for Appts for today
         current_capabilities = self.module.get_capabilities()
+        current_capabilities_as_series = self.module.get_capabilities_as_series()
+
 
         # Add column for Minutes Remaining Today (for live-tracking the use of those resources)
         current_capabilities.loc[:, 'Minutes_Remaining_Today'] = current_capabilities['Total_Minutes_Per_Day']
@@ -750,11 +852,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # This will hold events that cannot occur today before they are added back to the heapq
         hold_over = list()
 
+
+        # 1) Get the events that are due today:
+
+        list_of_event_due_today = list()
+
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
-            # Pop the next event off the heapq
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-
             # Read the tuple and assemble into a dict 'next_event'
             # Pos 0: priority,
             # Pos 1: topen,
@@ -779,55 +884,103 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 hp.heappush(hold_over, next_event_tuple)
 
                 if next_event['priority'] == 2:
-                    # If the next event is not due and has low priorty, then stop looking through the heapq
+                    # If the next event is not due and has low priority, then stop looking through the heapq
                     # as all other events will also not be due.
                     break
 
             else:
-                # The event is now due to run.
-                # Check if the event can run
+                # The event is now due to run today
+                # Assemble the set of events that are due to run today
+                # The list is ordered by priority and then due date.
+                list_of_event_due_today.append(next_event['object'])
 
-                if not (type(event.target) is tlo.population.Population):
-                    # The event is an individual level HSI_event: check resources in local healthsystem facilities
 
-                    (can_do_appt_footprint, current_capabilities) = \
-                        self.module.check_if_can_do_hsi_event(event, current_capabilities=current_capabilities)
 
-                    if can_do_appt_footprint:
-                        # The event can be run:
+        # 2) Determine how to execute the events that are due for today
 
-                        if df.at[event.target, 'is_alive']:
-                            # Run the event
-                            event.run()
 
-                            # Broadcast to other modules that the event is running:
-                            self.module.broadcast_healthsystem_interaction(hsi_event=event)
+        # MODE 1: Work out loading in each facility and officer for the day and send this information when the event runs
 
-                            # Write to the log
-                            self.module.log_consumables_used(event)
-                            self.module.log_hsi_event(event)
-                    else:
-                        # The event cannot be run due to insufficient resources.
-                        # Add to hold-over list
-                        hp.heappush(hold_over, next_event_tuple)
+        # DEBUG Create temporary convenient place to stop the code:
 
+        if len(list_of_event_due_today)>5:
+            print('stop')
+
+
+        # For all events in 'list_of_event_due_today'
+            # expand the appt-footprint of the event into give the demands on each officer-type in each facility_id
+
+        # Create dataframe containing the calls on each type of officer in each facility_id for today's HSI events
+        all_combinations_of_facility_id_and_health_officers = self.module.get_all_combinations_of_facility_id_and_health_officers()
+        all_appt_footprint_today=pd.DataFrame(index=all_combinations_of_facility_id_and_health_officers)
+
+        for ev_num in np.arange(0,len(list_of_event_due_today)):
+            appt_footprint_as_series = self.module.get_appt_footprint_as_series(list_of_event_due_today[ev_num])
+            appt_footprint_as_series.name = ev_num;
+            all_appt_footprint_today[ev_num] = appt_footprint_as_series
+        all_appt_footprint_today = all_appt_footprint_today.fillna(0)
+
+        # Add the footprints together
+        total_appt_footprint_today = all_appt_footprint_today.sum(axis=1)
+
+        # Work out load factors in comparison with the total capacity today
+
+
+
+
+        # For all events in 'list_of_event_due_today'
+            # Run the event with the loading factor provided.
+
+
+        # -----
+
+        # MODE 0: ORIGINAL BLOCKING MODE -- do not allow the events to run if exceeds health sytsem capacities
+
+        while len(list_of_event_due_today)>0:
+
+            event = list_of_event_due_today.pop()
+
+            if not (type(event.target) is tlo.population.Population):
+                # The event is an individual level HSI_event: check resources in local healthsystem facilities
+
+                (can_do_appt_footprint, current_capabilities) = \
+                    self.module.check_if_can_do_hsi_event(event, current_capabilities=current_capabilities)
+
+                if can_do_appt_footprint:
+                    # The event can be run:
+
+                    if df.at[event.target, 'is_alive']:
+                        # Run the event
+                        event.run()
+
+                        # Broadcast to other modules that the event is running:
+                        self.module.broadcast_healthsystem_interaction(hsi_event=event)
+
+                        # Write to the log
+                        self.module.log_consumables_used(event)
+                        self.module.log_hsi_event(event)
                 else:
-                    # The event is a population level HSI event: allow it to run without further checks.
+                    # The event cannot be run due to insufficient resources.
+                    # Add to hold-over list
+                    hp.heappush(hold_over, next_event_tuple)
 
-                    # Run the event
-                    event.run()
+            else:
+                # The event is a population level HSI event: allow it to run without further checks.
 
-                    # Write to the log
-                    self.module.log_hsi_event(event)
+                # Run the event
+                event.run()
 
-        # Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
+                # Write to the log
+                self.module.log_hsi_event(event)
+
+        # -----
+
+
+        # 3) Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
         while len(hold_over) > 0:
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
-        # After completing routine for the day, log total usage of the facilities
+
+        # 4) After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities)
 
-        """
-        Possible alternative is to empty the current HSI_EVENT_QUEUE, either processing the event or adding to the list
-         hold_over. Then at the end of the loop, set self.module.HSI_EVENT_QUEUE = hp.heapify(hold_over)
-        """
