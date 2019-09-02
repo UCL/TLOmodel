@@ -1166,7 +1166,9 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_alive = (df.is_alive).sum()
         n_urban = (df.is_alive & df.li_urban).sum()
+        n_urban_agege15 = (df.is_alive & df.li_urban & (df.age_years >= 15)).sum()
         n_rural = (df.is_alive & ~df.li_urban).sum()
+        n_rural_agege15 = (df.is_alive & ~df.li_urban & (df.age_years >= 15)).sum()
         prop_urban = n_urban / n_alive
 
         n_urban_wealth1 = (df.is_alive & df.li_urban & (df.li_wealth == 1)).sum()
@@ -1217,16 +1219,27 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
         n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
 
-        n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
-        prop_bmi_1 = n_bmi_1 / n_agege15
-        n_bmi_2 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2)).sum()
-        prop_bmi_2 = n_bmi_2 / n_agege15
-        n_bmi_3 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3)).sum()
-        prop_bmi_3 = n_bmi_3 / n_agege15
-        n_bmi_4 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4)).sum()
-        prop_bmi_4 = n_bmi_4 / n_agege15
-        n_bmi_5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5)).sum()
-        prop_bmi_5 = n_bmi_5 / n_agege15
+        n_bmi1_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1) & df.li_urban).sum()
+        prop_bmi1_urban = n_bmi1_urban / n_urban_agege15
+        n_bmi2_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2) & df.li_urban).sum()
+        prop_bmi2_urban = n_bmi2_urban / n_urban_agege15
+        n_bmi3_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3) & df.li_urban).sum()
+        prop_bmi3_urban = n_bmi3_urban / n_urban_agege15
+        n_bmi4_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4) & df.li_urban).sum()
+        prop_bmi4_urban = n_bmi4_urban / n_urban_agege15
+        n_bmi5_urban = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5) & df.li_urban).sum()
+        prop_bmi5_urban = n_bmi5_urban / n_urban_agege15
+
+        n_bmi1_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1) & df.li_rural).sum()
+        prop_bmi1_rural = n_bmi1_rural / n_rural_agege15
+        n_bmi2_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2) & df.li_rural).sum()
+        prop_bmi2_rural = n_bmi2_rural / n_rural_agege15
+        n_bmi3_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3) & df.li_rural).sum()
+        prop_bmi3_rural = n_bmi3_rural / n_rural_agege15
+        n_bmi4_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4) & df.li_rural).sum()
+        prop_bmi4_rural = n_bmi4_rural / n_rural_agege15
+        n_bmi5_rural = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5) & df.li_rural).sum()
+        prop_bmi5_rural = n_bmi5_rural / n_rural_agege15
 
         n_bmi_45_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'F')).sum()
         prop_bmi_45_f = n_bmi_45_f / n_agege15_f
@@ -1254,9 +1267,19 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / \
             n_urban_m_not_high_sugar_age1529_not_tob_wealth1
 
-        logger.info('%s|p_in_ed_age6|%s|p_in_ed_age12|%s|p_in_ed_age16|%s|p_in_ed_age19|%s|p_sec_ed_agege20|%s',
-                    self.sim.date,
-                    p_in_ed_age6, p_in_ed_age12, p_in_ed_age16, p_in_ed_age19, p_sec_ed_agege20)
+
+
+        logger.info('%s|prop_bmi1_urban|%s|prop_bmi2_urban|%s|prop_bmi3_urban|%s|prop_bmi4_urban|%s|prop_bmi5_urban|%s'
+                    '|prop_bmi1_rural|%s|prop_bmi2_rural|%s|prop_bmi3_rural|%s|prop_bmi4_rural|%s|prop_bmi5_rural|%s',
+        self.sim.date, prop_bmi1_urban, prop_bmi2_urban, prop_bmi3_urban, prop_bmi4_urban, prop_bmi5_urban,
+                    prop_bmi1_rural, prop_bmi2_rural, prop_bmi3_rural, prop_bmi4_rural, prop_bmi5_rural)
+        
+
+
+
+#       logger.info('%s|p_in_ed_age6|%s|p_in_ed_age12|%s|p_in_ed_age16|%s|p_in_ed_age19|%s|p_sec_ed_agege20|%s',
+#                   self.sim.date,
+#                   p_in_ed_age6, p_in_ed_age12, p_in_ed_age16, p_in_ed_age19, p_sec_ed_agege20)
 
 #       logger.info('%s|p_wealth1_urban|%s|p_wealth2_urban|%s|p_wealth3_urban|%s|p_wealth4_urban|%s|'
 #                   'p_wealth5_urban|%s|p_wealth1_rural|%s|p_wealth2_rural|%s|p_wealth3_rural|'
