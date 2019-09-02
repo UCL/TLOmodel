@@ -1,18 +1,14 @@
 import logging
 import os
 import time
-import numpy as np
-import pandas as pd
+import pytest
 from pathlib import Path
 
-
-import pytest
-
 from tlo import Simulation, Date, Property
-from tlo.methods import demography, hypertension, t2dm#, CVD
+from tlo.methods import demography, hypertension#, t2dm#, CVD
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2012, 1, 1)
 popsize = 10
 
 
@@ -20,26 +16,14 @@ popsize = 10
 def disable_logging():
     logging.disable(logging.INFO)
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def simulation():
+    demography_resource_path = Path(os.path.dirname(__file__)) / '../resources'
+    hypertension_resource_path = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-
-    demography_workbook = os.path.join(os.path.dirname(__file__),
-                                       'resources',
-                                       'demography.xlsx')
-    core_module = demography.Demography(workbook_path=demography_workbook)
-    logging.getLogger('tlo.methods.demography').setLevel(logging.FATAL)
-
-    #diabetes_module = t2dm.T2DM()                         # This will load method for diabetes
-    hypertension_module = hypertension.HT()               # This will load method for hypertension
-
-    sim.register(core_module)
-    #sim.register(diabetes_module)                          # This will register method for diabetes
-    #sim.register(highcholesterol_module)                   # This will register method for high cholesterol
-    sim.register(hypertension_module)                       # This will register method for hypertension
-
-    sim.seed_rngs(0)
-
+    sim.register(demography.Demography(resourcefilepath=demography_resource_path))
+    sim.register(hypertension.HT(resourcefilepath=hypertension_resource_path))
+    sim.seed_rngs(1)
     return sim
 
 
@@ -62,7 +46,7 @@ if __name__ == '__main__':
 
 
 def test_hypertension_adults(simulation):
-    # check all mothers are female
+    # check all hypertensive individuals are adults
     df = simulation.population.props
     HTN = df.loc[df.current_status]
     is_adult = HTN.apply(lambda age_years: df.at.age_years > 17)
