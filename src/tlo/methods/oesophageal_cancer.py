@@ -109,13 +109,13 @@ class Oesophageal_Cancer(Module):
             "relative rate of receiving medical treatment aimed at cure if have stage3, "
             "given diagnosis (surgery, radiotherapy and/or chemotherapy",
         ),
-        "r_diagnosis_low_grade_dysp": Parameter(
+        "rr_diagnosis_low_grade_dysp": Parameter(
             Types.REAL, "probability per 3 months of diagnosis in a person with low grade oesophageal dysplasia"
         ),
         "rr_diagnosis_high_grade_dysp": Parameter(
             Types.REAL, "rate ratio for diagnosis if have high grade oesophageal dysplasia"
         ),
-        "rr_diagnosis_stage1": Parameter(
+        "r_diagnosis_stage1": Parameter(
             Types.REAL, "rate ratio for diagnosis if have high stage 1 oesophageal cancer"
         ),
         "rr_diagnosis_stage2": Parameter(
@@ -128,7 +128,7 @@ class Oesophageal_Cancer(Module):
             Types.REAL, "rate ratio for diagnosis if have high stage 4 oesophageal cancer"
         ),
         "init_prop_oes_cancer_stage": Parameter(
-            Types.REAL,
+            Types.LIST,
             "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
         ),
         "rp_oes_cancer_female": Parameter(
@@ -214,68 +214,12 @@ class Oesophageal_Cancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
         """
-        p = self.parameters
+        # Update parameters from the resource dataframe
         dfd = pd.read_excel(
             Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx", sheet_name="parameter_values"
         )
-        dfd.set_index("parameter_name", inplace=True)
-        p["r_low_grade_dysplasia_none"] = dfd.loc["r_low_grade_dysplasia_none", "value"]
-        p["rr_low_grade_dysplasia_none_female"] = dfd.loc["rr_low_grade_dysplasia_none_female", "value"]
-        p["rr_low_grade_dysplasia_none_per_year_older"] = dfd.loc["rr_low_grade_dysplasia_none_per_year_older", "value"]
-        p["rr_low_grade_dysplasia_none_tobacco"] = dfd.loc["rr_low_grade_dysplasia_none_tobacco", "value"]
-        p["rr_low_grade_dysplasia_none_ex_alc"] = dfd.loc["rr_low_grade_dysplasia_none_ex_alc", "value"]
-        p["r_high_grade_dysplasia_low_grade_dysp"] = dfd.loc["r_high_grade_dysplasia_low_grade_dysp", "value"]
-        p["rr_high_grade_dysp_undergone_curative_treatment"] = dfd.loc[
-            "rr_high_grade_dysp_undergone_curative_treatment", "value"
-        ]
-        p["r_stage1_high_grade_dysp"] = dfd.loc["r_stage1_high_grade_dysp", "value"]
-        p["rr_stage1_undergone_curative_treatment"] = dfd.loc["rr_stage1_undergone_curative_treatment", "value"]
-        p["r_stage2_stage1"] = dfd.loc["r_stage2_stage1", "value"]
-        p["rr_stage2_undergone_curative_treatment"] = dfd.loc["rr_stage2_undergone_curative_treatment", "value"]
-        p["r_stage3_stage2"] = dfd.loc["r_stage3_stage2", "value"]
-        p["rr_stage3_undergone_curative_treatment"] = dfd.loc["rr_stage3_undergone_curative_treatment", "value"]
-        p["r_stage4_stage3"] = dfd.loc["r_stage4_stage3", "value"]
-        p["rr_stage4_undergone_curative_treatment"] = dfd.loc["rr_stage4_undergone_curative_treatment", "value"]
-        p["r_death_oesoph_cancer"] = dfd.loc["r_death_oesoph_cancer", "value"]
-        p["r_curative_treatment_low_grade_dysp"] = dfd.loc["r_curative_treatment_low_grade_dysp", "value"]
-        p["rr_curative_treatment_high_grade_dysp"] = dfd.loc["rr_curative_treatment_high_grade_dysp", "value"]
-        p["rr_curative_treatment_stage1"] = dfd.loc["rr_curative_treatment_stage1", "value"]
-        p["rr_curative_treatment_stage2"] = dfd.loc["rr_curative_treatment_stage2", "value"]
-        p["rr_curative_treatment_stage3"] = dfd.loc["rr_curative_treatment_stage3", "value"]
-        p["r_diagnosis_stage1"] = dfd.loc["r_diagnosis_stage1", "value"]
-        p["rr_diagnosis_low_grade_dysp"] = dfd.loc["rr_diagnosis_low_grade_dysp", "value"]
-        p["rr_diagnosis_high_grade_dysp"] = dfd.loc["rr_diagnosis_high_grade_dysp", "value"]
-        p["rr_diagnosis_stage2"] = dfd.loc["rr_diagnosis_stage2", "value"]
-        p["rr_diagnosis_stage3"] = dfd.loc["rr_diagnosis_stage3", "value"]
-        p["rr_diagnosis_stage4"] = dfd.loc["rr_diagnosis_stage4", "value"]
-        p["init_prop_oes_cancer_stage"] = [
-            dfd.loc["init_prop_oes_cancer_stage", "value"],
-            dfd.loc["init_prop_oes_cancer_stage", "value2"],
-            dfd.loc["init_prop_oes_cancer_stage", "value3"],
-            dfd.loc["init_prop_oes_cancer_stage", "value4"],
-            dfd.loc["init_prop_oes_cancer_stage", "value5"],
-            dfd.loc["init_prop_oes_cancer_stage", "value6"],
-        ]
-        p["rp_oes_cancer_female"] = dfd.loc["rp_oes_cancer_female", "value"]
-        p["rp_oes_cancer_per_year_older"] = dfd.loc["rp_oes_cancer_per_year_older", "value"]
-        p["rp_oes_cancer_tobacco"] = dfd.loc["rp_oes_cancer_tobacco", "value"]
-        p["rp_oes_cancer_ex_alc"] = dfd.loc["rp_oes_cancer_ex_alc", "value"]
-        p["init_prop_diagnosed_oes_cancer_by_stage"] = [
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value2"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value3"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value4"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value5"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value6"],
-        ]
-        p["init_prop_treatment_status_oes_cancer"] = [
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value2"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value3"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value4"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value5"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value6"],
-        ]
+        self.load_parameters_from_dataframe(dfd)
+
         if "HealthBurden" in self.sim.modules.keys():
             # get the DALY weight - 547-550 are the sequale codes for oesophageal cancer
             self.parameters["daly_wt_oes_cancer_controlled"] = self.sim.modules["HealthBurden"].get_daly_weight(
