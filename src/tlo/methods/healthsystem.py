@@ -922,14 +922,31 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Add the footprints together
         total_appt_footprint_today = all_appt_footprint_today.sum(axis=1)
+        total_appt_footprint_today.name = 'Total_Request'
 
-        # Work out load factors in comparison with the total capacity today
+        # Combined into dataframe and work out load factors in comparison with the total capacity today
+        x=pd.concat([total_appt_footprint_today,current_capabilities_as_series],axis=1)
+        x['Load_Factor']= x['Total_Request']/x['Capabilities']
+
+        # Run the events due today and send the information about the load-factor
+        for ev in list_of_event_due_today:
+
+            # Get the load factors for the appointment-types requested by the HSI event
+
+            # Check that the load-factors are being provided fro the correct Appt_Types
+
+            # Run the HSI event
+            event.run()
+
+            # Write to the log
+            # Maybe adding something about the load-factor
+            self.module.log_hsi_event(event)
+
+            # Write to the log and time and consumables
+
+            # Update the load-factors
 
 
-
-
-        # For all events in 'list_of_event_due_today'
-            # Run the event with the loading factor provided.
 
 
         # -----
