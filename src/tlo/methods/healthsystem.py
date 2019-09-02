@@ -249,6 +249,9 @@ class HealthSystem(Module):
         # Check topen is not in the past
         assert topen >= self.sim.date
 
+        # Check that topen and tclose are not the same date
+        assert not topen == tclose
+
         # Check that priority is either 0, 1 or 2
         assert priority in {0, 1, 2}
 
