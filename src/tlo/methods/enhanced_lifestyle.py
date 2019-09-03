@@ -1263,13 +1263,17 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ex_alc_f = (df.is_alive & df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_ex_alc).sum()
         p_ex_alc_f = n_ex_alc_f / n_agege15_f
 
+        n_low_ex_urban_m = (df.is_alive & df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_low_ex).sum()
+        p_low_ex_urban_m = n_low_ex_urban_m / n_urban_agege15_m
+        n_low_ex_urban_f = (df.is_alive & ~df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
+        p_low_ex_urban_f = n_low_ex_urban_f / n_urban_agege15_f
 
 
+        logger.info('%s|p_low_ex_urban_m|%s|p_low_ex_urban_f|%s',
+            self.sim.date, p_low_ex_urban_m, p_low_ex_urban_f)
 
-
-
-        logger.info('%s|prop_ex_alc_m|%s|prop_ex_alc_f|%s',
-            self.sim.date, p_ex_alc_m, p_ex_alc_f)
+#       logger.info('%s|prop_ex_alc_m|%s|prop_ex_alc_f|%s',
+#           self.sim.date, p_ex_alc_m, p_ex_alc_f)
 
 #       logger.info('%s|prop_bmi1_urban_f|%s|prop_bmi2_urban_f|%s|prop_bmi3_urban_f|%s|prop_bmi4_urban_f|%s|prop_bmi5_urban_f|%s'
 #                   '|prop_bmi1_rural_f|%s|prop_bmi2_rural_f|%s|prop_bmi3_rural_f|%s|prop_bmi4_rural_f|%s|prop_bmi5_rural_f|%s',
