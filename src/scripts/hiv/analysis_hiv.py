@@ -92,7 +92,7 @@ fh.flush()
 #
 # barWidth = 0.25
 # # Set position of bar on X axis
-# r1 = np.arange(len(d_gp.loc[:, 'Other']))
+# r1 = np.arrange(len(d_gp.loc[:, 'Other']))
 # r2 = [x + barWidth for x in r1]
 # r3 = [x + barWidth for x in r2]
 #
