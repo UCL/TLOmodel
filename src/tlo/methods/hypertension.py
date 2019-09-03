@@ -99,21 +99,23 @@ class HT(Module):
 
         HT_data = workbook['data']
         df = HT_data.set_index('index')
-        p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['b_25_35', 'value']],
-                                                [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']],
-                                                [df.at['b_55_65', 'value']]],
-                                               index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'],
-                                               columns=['prevalence'])  #ToDo: Add 95% CI
+
+        p['initial_prevalence'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'], df.at['b_35_45', 'value'], df.at['b_45_55', 'value'], df.at['b_55_65', 'value']],
+                                                'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'], df.at['b_35_45', 'min'], df.at['b_45_55', 'min'], df.at['b_55_65', 'min']],
+                                                'max95ci': [df.at['b_all', 'max'], df.at['b_25_35', 'max'], df.at['b_35_45', 'max'], df.at['b_45_55', 'max'], df.at['b_55_65', 'max']]
+                                                },
+                                                index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
+
         p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
 
-        logger.debug('%s|prevalence_data|%s',
+        logger.info('%s|ht_prevalence_data|%s',
                      self.sim.date,
                      {
-                         'total': p['initial_prevalence'].loc['total', 'prevalence'],
-                         '25_to_35':  p['initial_prevalence'].loc['25_to_35', 'prevalence'],
-                         '35_to_45': p['initial_prevalence'].loc['35_to_45', 'prevalence'],
-                         '45_to_55': p['initial_prevalence'].loc['45_to_55', 'prevalence'],
-                         '55_to_65': p['initial_prevalence'].loc['55_to_65', 'prevalence']
+                         'total': [p['initial_prevalence'].loc['total', 'prevalence'],p['initial_prevalence'].loc['total', 'min95ci'],p['initial_prevalence'].loc['total', 'max95ci']],
+                         '25_to_35':  [p['initial_prevalence'].loc['25_to_35', 'prevalence'],p['initial_prevalence'].loc['25_to_35', 'min95ci'],p['initial_prevalence'].loc['25_to_35', 'max95ci']],
+                         '35_to_45': [p['initial_prevalence'].loc['35_to_45', 'prevalence'],p['initial_prevalence'].loc['35_to_45', 'min95ci'],p['initial_prevalence'].loc['35_to_45', 'max95ci']],
+                         '45_to_55': [p['initial_prevalence'].loc['45_to_55', 'prevalence'],p['initial_prevalence'].loc['45_to_55', 'min95ci'],p['initial_prevalence'].loc['45_to_55', 'max95ci']],
+                         '55_to_65': [p['initial_prevalence'].loc['55_to_65', 'prevalence'],p['initial_prevalence'].loc['55_to_65', 'min95ci'],p['initial_prevalence'].loc['55_to_65', 'prevalence']]
                      })
 
         logger.debug("Hypertension method: finished reading in parameters.  ")
@@ -202,6 +204,7 @@ class HT(Module):
 
         assert count == count_25to35 + count_35to45 + count_45to55 + count_55to65
 
+
         # Calculate overall and age-specific prevalence
         prevalence_overall = (count / adults_count_all) * 100
         prevalence_25to35 = (count_25to35 / adults_count_25to35) * 100
@@ -213,7 +216,7 @@ class HT(Module):
         df2 = self.parameters['initial_prevalence']
         logger.info('Prevalent hypertension has been assigned.  ')
         print("\n", df2, "\n")      #TODO: Add this to logger when debug code
-        logger.info('%s|prevalence|%s',
+        logger.info('%s|ht_prevalence|%s',
                     self.sim.date,
                     {
                         'total': prevalence_overall,
@@ -438,7 +441,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         df2 = self.module.parameters['initial_prevalence']
         logger.info('Prevalent hypertension has been assigned.  ')
         print("\n", df2, "\n")  # TODO: Add this to logger when debug code
-        logger.info('%s|prevalence|%s',
+        logger.info('%s|ht_prevalence|%s',
                     self.sim.date,
                     {
                         'total': prevalence_overall,

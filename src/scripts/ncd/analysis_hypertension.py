@@ -27,8 +27,8 @@ resourcefilepath = Path("./resources")
 # %% Run the Simulation
 
 start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=2015, month=12, day=31)
-popsize = 10000
+end_date = Date(year=2011, month=12, day=31)
+popsize = 100
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -83,10 +83,15 @@ Model_Pop = pop_df.total
 Model_Pop_Normalised = (
      100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == "2010-01-01"])
 )
-prev_df = output["tlo.methods.hypertension"]["prevalence"]
+prev_df = output["tlo.methods.hypertension"]["ht_prevalence"]
 Model_Prev_total = prev_df.total
 
+prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data"]
+Data_Prev_total = prev_data_df.total
+
 plt.plot(np.asarray(Model_Years), Model_Prev_total)
+
+#plt.plot(np.asarray(Model_Years), Model_Prev_total, Data_Prev_total)   #TODO: need to fix code to plot data versus code
 
 plt.show()
 
