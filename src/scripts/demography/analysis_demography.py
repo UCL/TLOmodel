@@ -20,7 +20,7 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-# assume Python console is started in the top-leve TLOModel directory
+# assume Python console is started in the top-level TLOModel directory
 resourcefilepath = Path("./resources")
 
 

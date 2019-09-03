@@ -42,7 +42,7 @@ class T2DM(Module):
     - Running an "outreach" event
     """
 
-    print("\n", "Type 2 Diabetes mellitus method is running", "\n")
+    logger.info('Type 2 Diabetes mellitus method is running.  ')
 
     PARAMETERS = {
 
