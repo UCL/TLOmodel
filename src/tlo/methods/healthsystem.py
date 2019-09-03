@@ -22,19 +22,23 @@ class HealthSystem(Module):
 
     def __init__(self, name=None,
                  resourcefilepath=None,
-                 service_availability=None,  # must be a list of treatment_ids to allow
-                 ignore_appt_constraints=False,  # remove constraints to do with officer numbers and time
-                 ignore_cons_constraints=False,  # remove constraints to do with consumables availability
-                 ignore_priority=False,  # do not use the priroity information in HSI event to schedule
-                 capabilities_coefficient=1.0):  # multiplier for the capabailities of health officers
+                 service_availability=None,         # must be a list of treatment_ids to allow
+                 mode_appt_constraints=0,           # mode of constraints to do with officer numbers and time
+                 ignore_priority=False,             # do not use the priroity information in HSI event to schedule
+                 capabilities_coefficient=1.0):     # multiplier for the capabailities of health officers
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.ignore_appt_constraints = ignore_appt_constraints
-        self.ignore_cons_constraints = ignore_cons_constraints
-        self.ignore_priority = ignore_priority
 
-        self.Facility_Levels = None
+        assert mode_appt_constraints in [0, 1, 2]   # Mode of constraints
+                                                    # 0: no constraints -- all HSI Events run with no squeeze factor
+                                                    # 1: elastic -- all HSI Events run - with squeeze factor
+                                                    # 2: hard -- only HSI events with no squeeze factor run
+
+
+        self.mode_appt_constraints = mode_appt_constraints
+
+        self.ignore_priority = ignore_priority
 
         # Check that the service_availability list is specified correctly
         if service_availability is None:
@@ -583,163 +587,7 @@ class HealthSystem(Module):
 
 
 
-    def check_if_can_do_hsi_event(self, hsi_event, current_capabilities):
-        """
-        This will determine if an HSI event can run given the constraints that of capabilities available.
-        It accepts the argument of the HSI event itself and a dataframe describing the current /
-        capabilities of the health system.
 
-        :param hsi_event: The HSI event
-        :param current_capabilities: The current capabailities of the health system.
-
-        :return: It returns a tuple:
-            * 1st element: True/False about whether the footprint can be accomodated
-            * 2nd element: an updated version of current capabilities (unchanged in the case of the footprint /
-                not being able to be accomodated)
-
-        """
-
-        # Check that the current_capabilities dataframe does not contain any errors
-        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
-
-        # Gather useful information
-        df = self.sim.population.props
-        mfl = self.parameters['Master_Facilities_List']
-        fac_per_district = self.parameters['Facilities_For_Each_District']
-        appt_types = self.parameters['Appt_Types_Table']['Appt_Type_Code'].values
-        appt_times = self.parameters['Appt_Time_Table']
-        consumables = self.parameters['Consumables']
-
-        # Gather information about the HSI event
-        the_person_id = hsi_event.target
-        the_district = df.at[the_person_id, 'district_of_residence']
-        the_treatment_footprint = hsi_event.APPT_FOOTPRINT
-
-        # Get the health_facilities available to this person (based on their district), and which are accepted by the
-        # hsi_event.ACCEPTED_FACILITY_LEVELS. Then sort by Facility_Level (to determine the order in which to try to
-        # place the hsi_event: lowest level first).
-        the_acceptable_health_facilities = fac_per_district.loc[(fac_per_district['District'] == the_district) &
-                                                                fac_per_district['Facility_Level'].isin(
-                                                                    hsi_event.ACCEPTED_FACILITY_LEVELS)]
-        the_acceptable_health_facilities = the_acceptable_health_facilities.sort_values(['Facility_Level'])
-
-        # get the capabilities of acceptable health facilities
-        capabilities_of_the_health_facilities = current_capabilities.loc[
-            current_capabilities['Facility_ID'].isin(the_acceptable_health_facilities['Facility_ID'])]
-
-        # ------------
-        # Test if capabilities of health system can meet this request
-        # This requires there to be at least one facility that can fulfill the entire appt_footprint/
-        #  (each type of appointment) AND has the consumables available (on this draw).
-        # NB. Even with the ignore_appp_constraints flag in place, the full algorithm needs to be gone through
-        # in order that we know at facility to look for consumables.
-
-        # Loop through facilities to look for facilities
-        # (Note that as the health_facilities dataframe was sorted on Facility_Level, this will start
-        #  at the lowest levels and work upwards successively).
-
-        can_do_appt_footprint = False
-        can_do_cons_footprint = False
-
-        for try_fac_id in the_acceptable_health_facilities.Facility_ID.values:
-            # Look at each facility to see if it can run the appointment
-
-            this_facility_level = mfl.loc[mfl['Facility_ID'] == try_fac_id, 'Facility_Level'].values[0]
-
-            # Establish how much time is available at this facility
-            time_available = capabilities_of_the_health_facilities.loc[
-                capabilities_of_the_health_facilities['Facility_ID'] == try_fac_id, ['Officer_Type_Code',
-                                                                                     'Minutes_Remaining_Today']]
-
-            # Transform the treatment footprint into a demand for time for officers of each type, for this
-            # facility level (it varies by facility level)
-            time_requested = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
-            for this_appt in appt_types:
-                if the_treatment_footprint[this_appt] > 0:
-                    time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt) &
-                                                            (appt_times['Facility_Level'] == this_facility_level),
-                                                            ['Officer_Type_Code',
-                                                             'Time_Taken']].copy().reset_index(drop=True)
-                    time_requested = pd.concat([time_requested, time_req_for_this_appt])
-
-            if len(time_requested) > 0 or self.ignore_appt_constraints:
-                # (If the data-frame of time-requested is empty, it means that the appointments is not possible
-                # at that type of facility. So we check that time_requested is not empty before progressing.)
-                # We also also allow the request to progress if we are ignoring appt_constraints
-                # -------------------------
-
-                # Collapse down the total_time_requested dataframe to give a sum of Time Taken by each
-                # Officer_Type_Code
-                time_requested = pd.DataFrame(
-                    time_requested.groupby(['Officer_Type_Code'])['Time_Taken'].sum()).reset_index()
-                time_requested = time_requested.drop(time_requested[time_requested['Time_Taken'] == 0].index)
-
-                # Merge the Minutes_Available at this facility with the minutes required in the footprint
-                comparison = time_requested.merge(time_available, on='Officer_Type_Code', how='left',
-                                                  indicator=True)
-
-                # Check if there are sufficient minutes available for each type of officer to satisfy
-                # the appt_footprint
-                if self.ignore_appt_constraints or (all(comparison['_merge'] == 'both') & all(
-                        comparison['Minutes_Remaining_Today'] >= comparison['Time_Taken'])):
-
-                    # the appt_footprint can be accommodated by officers at this facility
-                    can_do_appt_footprint = True
-
-                    # Now, check if the consumables are available at this facility
-                    consumables_used = self.get_consumables_as_individual_items(hsi_event)
-
-                    #   Get the probabilities that each item is available
-                    prob_item_available = consumables.loc[consumables['Item_Code'].isin(consumables_used['Item_Code']),
-                                                          'Available_Facility_Level_' + str(this_facility_level)]
-
-                    #   Detetermine if this facility level ever has these consumables
-                    #   (the appt_footprint will be imposed if these items are ever available)
-                    all_items_available_ever = bool((prob_item_available > 0).all())
-
-                    #   Get random numbers and see if the the items will be available on this occasion:
-                    all_items_available_now = bool(
-                        (prob_item_available > self.rng.rand(len(prob_item_available))).all())
-
-                    if self.ignore_cons_constraints or all_items_available_now:
-                        can_do_cons_footprint = True
-
-                    # -- Determine if the appt_footprint should be imposed:
-                    if (can_do_appt_footprint and all_items_available_ever) \
-                            or (can_do_appt_footprint and self.ignore_cons_constraints):
-                        # (Impose the appt_footprint if it can be done and the consumables are ever available,
-                        #  [represening that the appt happens but this is a temporary stock-out] or if ignoring
-                        # consumables constraints)
-
-                        # Impose the footprint for each one of the types being requested
-                        for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
-                            old_mins_remaining = \
-                                current_capabilities.loc[
-                                    (current_capabilities['Facility_ID'] == try_fac_id) &
-                                    (current_capabilities['Officer_Type_Code'] == this_officer_type),
-                                    'Minutes_Remaining_Today'].values[0]
-
-                            time_to_take_away = \
-                                time_requested.loc[
-                                    time_requested['Officer_Type_Code'] == this_officer_type, 'Time_Taken'].values[0]
-
-                            new_mins_remaining = \
-                                old_mins_remaining - time_to_take_away
-
-                            assert (new_mins_remaining >= 0) or self.ignore_appt_constraints
-
-                            # update current_capabilities
-                            current_capabilities.loc[
-                                (current_capabilities['Facility_ID'] == try_fac_id) & (current_capabilities[
-                                    'Officer_Type_Code'] == this_officer_type), 'Minutes_Remaining_Today'] = \
-                                new_mins_remaining
-
-                    break  # cease looking at other facility_types as the need has been met
-
-        assert not pd.isnull(current_capabilities['Minutes_Remaining_Today']).any()
-
-        rtn_tuple = ((can_do_appt_footprint and can_do_cons_footprint), current_capabilities)
-        return rtn_tuple
 
     def log_consumables_used(self, hsi_event, actual_cons_footprint):
         """
@@ -842,53 +690,54 @@ class HealthSystem(Module):
                     self.sim.date,
                     log_info)
 
-    def log_current_capabilities(self, current_capabilities):
+    def log_current_capabilities(self, current_capabilities, all_calls_today):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type
         NB. To get this per Officer_Type_Code, it would be possible to simply log the entire current_capabilities df.
         :param current_capabilities: the current_capabilities of the health system.
+        :param all_calls_today: dataframe of all the HSI events that ran
         """
 
-        # Log the current state of resource use
-        pass
-        # # groupby Facility_ID: index of X is Facility_ID
-        # summary = current_capabilities.groupby('Facility_ID')[['Total_Minutes_Per_Day',
-        #                                                        'Minutes_Remaining_Today']].sum()
-        #
-        # if summary['Total_Minutes_Per_Day'].sum() > 0:
-        #     overall_useage = 1 - (summary['Minutes_Remaining_Today'].sum() / summary['Total_Minutes_Per_Day'].sum())
-        # else:
-        #     overall_useage = 0.0  # in the case of there being no capabilities and nan arising
-        #
-        # summary['Fraction_Time_Used'] = 1 - (summary['Minutes_Remaining_Today'] / summary['Total_Minutes_Per_Day'])
-        # summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
-        # summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].fillna(0.0)
-        #
-        # # To change so that log includes the facility names:
-        # # Merge in Facilty_Name and drop everything else
-        # # X = X.merge(self.parameters['Master_Facilities_List'][['Facility_ID', 'Facility_Name']], how='left',
-        # #              left_index=True, right_on='Facility_ID')
-        # # X.index = X['Facility_Name']
-        # # X = X.drop(columns='Facility_Name')
-        # # X = X['Fraction_Time_Used']
-        #
-        # # Get just the series of Fraction_Time_Used in each facility, indexed by the Facility_ID
-        # summary = summary['Fraction_Time_Used']
-        #
-        # logger.debug('-------------------------------------------------')
-        # logger.debug('Current State of Health Facilities Appts:')
-        # print_table = summary.to_string().splitlines()
-        # for line in print_table:
-        #     logger.debug(line)
-        # logger.debug('-------------------------------------------------')
-        #
-        # log_capacity = dict()
-        # log_capacity['Frac_Time_Used_Overall'] = overall_useage
-        # log_capacity['Frac_Time_Used_By_Facility_Name'] = summary.to_dict()
-        #
-        # logger.info('%s|Capacity|%s',
-        #             self.sim.date,
-        #             log_capacity)
+        # Combine the current_capabiliites and the sum-across-columns of all_calls_today
+        comparison = current_capabilities[['Facility_ID','Total_Minutes_Per_Day']].merge(all_calls_today.sum(axis=1).to_frame(),
+                                                                            left_index=True,
+                                                                            right_index=True,
+                                                                            how='inner')
+        comparison = comparison.rename(columns={0: 'Minutes_Used'})
+        assert len(comparison) == len(current_capabilities)
+        assert comparison['Minutes_Used'].sum() == all_calls_today.sum().sum()
+
+        # groupby Facility_ID (index of 'summary' is Facility_ID
+        summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Used']].sum()
+
+        # Compute Fraction of Time Used Across All Facilities
+        if summary['Total_Minutes_Per_Day'].sum() > 0:
+            Fraction_Time_Used_Across_All_Facilities = (summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum())
+        else:
+            Fraction_Time_Used_Across_All_Facilities = 0.0  # in the case of there being no capabilities and nan arising
+
+
+        # Compute Fraction of Time Used In Each Facility
+        summary['Fraction_Time_Used'] = (summary['Minutes_Used'] / summary['Total_Minutes_Per_Day'])
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
+        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].fillna(0.0)
+
+
+        # Put out to the logger
+        logger.debug('-------------------------------------------------')
+        logger.debug('Current State of Health Facilities Appts:')
+        print_table = summary.to_string().splitlines()
+        for line in print_table:
+            logger.debug(line)
+        logger.debug('-------------------------------------------------')
+
+        log_capacity = dict()
+        log_capacity['Frac_Time_Used_Overall'] = Fraction_Time_Used_Across_All_Facilities
+        log_capacity['Frac_Time_Used_By_Facility_Name'] = summary['Fraction_Time_Used'].to_dict()
+
+        logger.info('%s|Capacity|%s',
+                    self.sim.date,
+                    log_capacity)
 
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
@@ -978,8 +827,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
 
 
-        # 2) Get the capabilities that are available today
+        # 2) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
+
+        # dataframe to store all the calls to the healthsystem today
+        all_calls_today = pd.DataFrame(index=current_capabilities.index)
 
         if len(list_of_event_due_today)>0:
 
@@ -987,7 +839,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # For all events in 'list_of_event_due_today', expand the appt-footprint of the event into give the demands on
             #  each officer-type in each facility_id. [Name of columns is the position in the list of event_due_today)
-            all_calls_today = pd.DataFrame(index=current_capabilities.index)
 
             for ev_num in np.arange(0, len(list_of_event_due_today)):
                 call = self.module.get_appt_footprint_as_time_request(list_of_event_due_today[ev_num])
@@ -1000,23 +851,39 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # TODO: ASSERT THAT MERGE IS NOT causing rows to be added to the dataframe because there are duplictae indicies in the cal
 
 
-            # 4) Estimate Squueze-Factors for today
-            squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(all_calls_today = all_calls_today,
-                                                                            current_capabilities = current_capabilities)
+            # 4) Estimate Squeeze-Factors for today
+
+            if self.module.mode_appt_constraints==0:
+                # For Mode 0 (no Contraints), the squeeze factors are all zero.
+                squeeze_factor_per_hsi_event = [0] * len(all_calls_today.columns)
+
+            else:
+                # For Other Modes, the squeeze factors must be computed
+                squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
+                                                                all_calls_today = all_calls_today,
+                                                                current_capabilities = current_capabilities)
 
 
-            # 6) For each event, determine if run or not, and run if so.
+            # 5) For each event, determine if run or not, and run if so.
             for ev_num in np.arange(0, len(list_of_event_due_today)):
                 event = list_of_event_due_today[ev_num]
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
-                if True:     # TODO Make this condition on the mode and the squeeze factor being less than one
+                ok_to_run = (self.module.mode_appt_constraints==0)  \
+                            or (self.module.mode_appt_constraints==1) \
+                            or ( (self.module.mode_appt_constraints==2) and (squeeze_factor==0.0) )
+
+                            # Mode 0: All HSI Event run
+                            # Mode 1: All Run
+                            # Mode 2: Only if squeeze <1
+
+                if ok_to_run:
 
                     # Run the HSI event
                     actual_footprint = event.run(squeeze_factor = squeeze_factor)
 
                     # Check if need to update the load-factors for the appointments
-                    if actual_footprint is not None:
+                    if (actual_footprint is not None) and (self.module.mode_appt_constraints>0):
                         # The returned footprint is different to the expected footprint: so must update load factors
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_footprint['APPT_FOOTPRINT'])
                         all_calls_today.loc[updated_call.index, ev_num] = updated_call
@@ -1047,56 +914,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     pass
 
 
-
+        # 6) After completing routine for the day, log total usage of the facilities
+        self.module.log_current_capabilities(current_capabilities= current_capabilities,
+                                             all_calls_today = all_calls_today)
 
         # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
 
-        #
-
-        #
-        # # Create dataframe containing the calls on each type of officer in each facility_id for today's HSI events
-        # all_combinations_of_facility_id_and_health_officers = self.module.get_all_combinations_of_facility_id_and_health_officers()
-        # all_appt_footprint_today=pd.DataFrame(index=all_combinations_of_facility_id_and_health_officers)
-        #
-        # f
-        #
-        # # Add the footprints together
-        # total_appt_footprint_today = all_appt_footprint_today.sum(axis=1)
-        # total_appt_footprint_today.name = 'Total_Request'
 
 
-
-
-        # Combined into dataframe and work out load factors in comparison with the total capacity today
-        # x=pd.concat([total_appt_footprint_today,current_capabilities_as_series],axis=1)
-        # x['Load_Factor']= x['Total_Request']/x['Capabilities']
-
-
-
-        # 3) Determine how to execute the events that are due for today
-
-
-
-        # # Run the events due today and send the information about the load-factor
-        # for ev in list_of_event_due_today:
-        #
-        #     # Get the load factors for the appointment-types requested by the HSI event
-        #
-        #     # Check that the load-factors are being provided fro the correct Appt_Types
-        #
-        #     # Look at Mode and decide whether to run the event.
-        #
-        #
-        #     # Run the HSI event
-        #     event.run()
-        #
-        #     # Write to the log
-        #     # Maybe adding something about the load-factor
-        #     self.module.log_hsi_event(event)
-        #
-        #     # Write to the log and time and consumables
-        #
-        #     # Update the load-factors
 
 
 
@@ -1148,6 +973,5 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
 
 
-        # 4) After completing routine for the day, log total usage of the facilities
-        self.module.log_current_capabilities(current_capabilities)
+
 
