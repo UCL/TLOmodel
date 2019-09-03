@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
@@ -361,7 +361,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 # Health System Interaction Events
 
 
-class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualScopeEventMixin):
+class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
@@ -392,13 +392,17 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # Can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVELS = [1]  # Can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d",
+            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d.",
             person_id)
+        logger.debug(
+            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-facotr is %d.",
+            squeeze_factor)
+
 
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -414,7 +418,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(Event, IndividualSc
             df.at[person_id, 'cs_unified_symptom_code'] = 0
 
 
-class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
+class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -438,7 +442,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVELS = [0] # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('Outreach event running now for person: %s', person_id)
 
         # Do here whatever happens during an outreach event with an individual
