@@ -8,7 +8,9 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     lifestyle,
-    malaria
+    malaria,
+    hiv,
+    malecircumcision
 )
 
 # Where will output go
@@ -21,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 100
+end_date = Date(2025, 1, 1)
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -48,6 +50,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
+# sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
+# sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
@@ -63,3 +67,23 @@ sim.simulate(end_date=end_date)
 fh.flush()
 # fh.close()
 
+
+# %% read the results
+from tlo.analysis.utils import parse_log_file
+import datetime
+
+outputpath = './src/scripts/malaria/'
+datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+logfile = outputpath + 'LogFile' + datestamp + '.log'
+output = parse_log_file(logfile)
+
+inc = output['tlo.methods.malaria']['incidence']
+pfpr = output['tlo.methods.malaria']['prevalence']
+tx = output['tlo.methods.malaria']['tx_coverage']
+mort = output['tlo.methods.malaria']['ma_mortality']
+
+
+inc.to_csv(r'Z:\Thanzi la Onse\Malaria\inc.csv', header=True)
+pfpr.to_csv(r'Z:\Thanzi la Onse\Malaria\pfpr.csv', header=True)
+tx.to_csv(r'Z:\Thanzi la Onse\Malaria\tx.csv', header=True)
+mort.to_csv(r'Z:\Thanzi la Onse\Malaria\mort.csv', header=True)
