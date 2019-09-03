@@ -35,6 +35,41 @@ class Event:
         self.post_apply_hook()
 
 
+
+class HSI_Event:
+    """Base HSI event class, from which all others inherit.
+
+    Concrete subclasses should also inherit from one of the EventMixin classes
+    defined below, and implement at least an `apply` method.
+    """
+
+    def __init__(self, module, *args, **kwargs):
+        """Create a new event.
+
+        Note that just creating an event does not schedule it to happen; that
+        must be done by calling Simulation.schedule_event.
+
+        :param module: the module that created this event.
+            All subclasses of Event take this as the first argument in their
+            constructor, but may also take further keyword arguments.
+        """
+        self.module = module
+        self.sim = module.sim
+        # This is needed so mixin constructors are called
+        super().__init__(*args, **kwargs)
+
+    def post_apply_hook(self):
+        """Do any required processing after apply() completes."""
+        pass
+
+    def run(self, squeeze_factor):
+        """Make the event happen."""
+        self.apply(self.target, squeeze_factor)
+        self.post_apply_hook()
+
+
+
+
 class RegularEvent(Event):
     """An event that automatically reschedules itself at a fixed frequency."""
 

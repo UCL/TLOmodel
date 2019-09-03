@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
@@ -347,7 +347,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -370,7 +370,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
         self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
                      person_id)
@@ -401,7 +401,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
                                                                 tclose=date_turns_15 + DateOffset(months=12))
 
 
-class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
+class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -444,7 +444,7 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -478,7 +478,7 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
                                                             )
 
 
-class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
+class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -522,7 +522,7 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         # There is a follow-up appoint happening now but it has no real effect!
 
         # Create the next follow-up appointment....
