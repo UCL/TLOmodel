@@ -473,7 +473,7 @@ class HealthSystem(Module):
         return 1.0
 
 
-    def get_appt_footprint_as_time_request(self, hsi_event):
+    def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
         Officer Type in each Facility ID.
@@ -481,6 +481,7 @@ class HealthSystem(Module):
         Daily_Capabilities.
 
         :param hsi_event: The HSI event
+        :param actual_appt_footprint: The actual appt footprint (optional) if different to that in the HSI_event
         :return: A series that gives the time required for each officer-type in each facility_ID
         """
 
@@ -494,7 +495,15 @@ class HealthSystem(Module):
         # Gather information about the HSI event
         the_person_id = hsi_event.target
         the_district = df.at[the_person_id, 'district_of_residence']
-        the_appt_footprint = hsi_event.APPT_FOOTPRINT
+
+        # Get the appt_footprint
+        if actual_appt_footprint is None:
+            # use the appt_footprint in the hsi_event
+            the_appt_footprint = hsi_event.APPT_FOOTPRINT
+        else:
+            # use the actual_appt_provided
+            the_appt_footprint = actual_appt_footprint
+
 
         # Get the health_facilities available to this person (based on their district), and which are accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVELS:
@@ -531,24 +540,48 @@ class HealthSystem(Module):
 
         return appt_footprint_as_time_request
 
-    # ----------------------------------------- NOT SURE IF THE BELOW IS NEEDED ANY MORE ------------
-    # def get_all_combinations_of_facility_id_and_health_officers(self):
-    #     """
-    #     This generates la ist of the strings that give all combination of facility_ID and officer_types in the format that is provided 'get_appt_footprint_as_series'
-    #     :return: list of the strings that give all combination of facility_ID and officer_types
-    #     """
-    #
-    #     facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-    #     officer_type_codes=self.parameters['Officer_Types_Table']['Officer_Type_Code'].values
-    #
-    #     combinations_of_facility_id_and_health_officers=list()
-    #
-    #     for f in facility_ids:
-    #         for o in officer_type_codes:
-    #             combinations_of_facility_id_and_health_officers.append('Facility_ID_' + f.astype(str) + '__Officer_' + o)
-    #
-    #     return combinations_of_facility_id_and_health_officers
-    # -----------------------------------------
+    def get_squeeze_factors(self,all_calls_today, current_capabilities):
+        """
+        This will compute the squeeze factors for each HSI event from the dataframe that lists all the calls on health
+        system resources for the day.
+        The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of
+        officer that is called-for in the appt_footprint of an HSI event.
+        A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.
+
+        :param all_calls_today: Dataframe, one column per HSI event, containing the minutes required from each health
+            officer in each health facility (using the standard index)
+        :param current_capabilities: Dataframe giving the amount of time available from each health officer in each
+            health facility (using the standard index)
+
+        :return: squeeze_factors: a list of the squeeze factors for each HSI event (position in list matches column numnber
+            in the all_call_today dataframe.
+        """
+
+        # 1) Compute the load factors
+        total_call = all_calls_today.sum(axis=1)
+        total_available = current_capabilities['Total_Minutes_Per_Day']
+
+        load_factor = (total_call / total_available) - 1
+        load_factor.loc[pd.isnull(load_factor)] = 99.99
+        load_factor= load_factor.where(load_factor>0,0)
+
+        # 5) Convert these load-factors into an overall 'squeeze' signal for each appointment_type requested
+        squeeze_factor_per_hsi_event=list()    # The "squeeze factor" for each HSI event
+                                        # [based on the highest load-factor of any officer required]
+
+        for col_num in np.arange(0, len(all_calls_today.columns)):
+            load_factor_per_officer_needed=list()
+            officers_needed = all_calls_today.loc[all_calls_today[col_num]>0,col_num].index.astype(str)
+            for officer in officers_needed:
+                load_factor_per_officer_needed.append(load_factor.loc[officer])
+            squeeze_factor_per_hsi_event.append(max(load_factor_per_officer_needed))
+
+        assert len(squeeze_factor_per_hsi_event) == len(all_calls_today.columns)
+        assert (np.asarray(squeeze_factor_per_hsi_event)>=0).all()
+
+        return squeeze_factor_per_hsi_event
+
+
 
     def check_if_can_do_hsi_event(self, hsi_event, current_capabilities):
         """
@@ -654,7 +687,7 @@ class HealthSystem(Module):
                     can_do_appt_footprint = True
 
                     # Now, check if the consumables are available at this facility
-                    consumables_used = self.get_consumable_items(hsi_event)
+                    consumables_used = self.get_consumables_as_individual_items(hsi_event)
 
                     #   Get the probabilities that each item is available
                     prob_item_available = consumables.loc[consumables['Item_Code'].isin(consumables_used['Item_Code']),
@@ -708,17 +741,18 @@ class HealthSystem(Module):
         rtn_tuple = ((can_do_appt_footprint and can_do_cons_footprint), current_capabilities)
         return rtn_tuple
 
-    def log_consumables_used(self, hsi_event):
+    def log_consumables_used(self, hsi_event, actual_cons_footprint):
         """
         This will write to the log with a record of the consumables that were in the footprint of an HSI event
 
-        :param hsi_event: The hsi event
+        :param hsi_event: The hsi event (containing the initial expectations of footprints)
+        :param actual_cons_footprint: The actual consumables footprint to log
 
         """
         # get the list of individual items used (from across the packages and individual items specified in the
         #  footprint)
 
-        consumables_used = self.get_consumable_items(hsi_event)
+        consumables_used = self.get_consumables_as_individual_items(actual_cons_footprint)
 
         if len(consumables_used) > 0:  # if any consumables have been recorded
 
@@ -746,7 +780,7 @@ class HealthSystem(Module):
                         self.sim.date,
                         log_consumables)
 
-    def get_consumable_items(self, hsi_event):
+    def get_consumables_as_individual_items(self, cons_footprint):
         """
         This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
         are used, collecting these from across the packages and the individual items that are specified.
@@ -755,32 +789,33 @@ class HealthSystem(Module):
         consumables = self.parameters['Consumables']
 
         # Get the consumables in the hsi_event
-        cons = hsi_event.CONS_FOOTPRINT
+        cons = cons_footprint
 
         # Create empty dataframe for storing the items used in the cons_footprint
-        consumables_used = pd.DataFrame(columns=['Item_Code', 'Expected_Units_Per_Case'])
+        consumables_used_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Expected_Units_Per_Case'])
 
         # Get the individual items in each package:
         if not cons['Intervention_Package_Code'] == []:
             for p in cons['Intervention_Package_Code']:
                 items = consumables.loc[
                     consumables['Intervention_Pkg_Code'] == p, ['Item_Code', 'Expected_Units_Per_Case']]
-                consumables_used = consumables_used.append(items, ignore_index=True, sort=False).reset_index(drop=True)
+                consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(drop=True)
 
         # Add in any additional items that have been specified seperately:
         if not cons['Item_Code'] == []:
             for i in cons['Item_Code']:
                 items = pd.DataFrame(data={'Item_Code': i, 'Expected_Units_Per_Case': 1}, index=[0])
-                consumables_used = consumables_used.append(items, ignore_index=True, sort=False).reset_index(
+                consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(
                     drop=True)
 
-        return consumables_used
+        return consumables_used_as_individual_items
 
-    def log_hsi_event(self, hsi_event):
+    def log_hsi_event(self, hsi_event, actual_appt_footprint, squeeze_factor):
         """
         This will write to the log with a record that this HSI event has occured.
         If this is an individual-level HSI event, it will also record the appointment footprint
-        :param hsi_event: The hsi event
+        :param hsi_event: The hsi event (containing the initial expectations of footprints)
+        :param actual_appt_footprint: The actual appt footprint to log
         """
 
         if type(hsi_event.target) is tlo.population.Population:
@@ -790,16 +825,18 @@ class HealthSystem(Module):
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
             log_info['Person_ID'] = -1  # Junk code
+            log_info['Squeeze_Factor'] = squeeze_factor
 
         else:
             # Individual HSI-Event:
 
-            appts = hsi_event.APPT_FOOTPRINT
+            appts = actual_appt_footprint
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = {k: v for k, v in appts.items() if
                                                     v}  # remove the appt-types with zeros
             log_info['Person_ID'] = hsi_event.target
+            log_info['Squeeze_Factor'] = squeeze_factor
 
         logger.info('%s|HSI_Event|%s',
                     self.sim.date,
@@ -896,7 +933,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         hold_over = list()
 
         # 1) Get the events that are due today:
-
         list_of_event_due_today = list()
 
         while len(self.module.HSI_EVENT_QUEUE) > 0:
@@ -937,6 +973,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 list_of_event_due_today.append(next_event['object'])
 
 
+        # <<>>><<>>) Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
+        while len(hold_over) > 0:
+            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
+
+
         # 2) Get the capabilities that are available today
         current_capabilities = self.module.get_capabilities_today()
 
@@ -955,50 +996,49 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                                         right_index=True,
                                                         left_index=True,
                                                         how='left')
-
+            all_calls_today = all_calls_today.fillna(0)
             # TODO: ASSERT THAT MERGE IS NOT causing rows to be added to the dataframe because there are duplictae indicies in the cal
-            try:
-                all_calls_today = all_calls_today.fillna(0)
-            except:
-                print('Somethingn funny')
-
-            # 4) Estimate Load-Factors for today (fraction of health officer time that is occupied by appointments)
-
-            load_factor = all_calls_today.sum(axis=1)/current_capabilities['Total_Minutes_Per_Day']
 
 
-            # 5) Convert these load-factors into an overall 'squeeze' signal for each appointment_type requested
-
-            squeeze=list()  # The "squeeze factor" for each HSI event
-                            # [based on the highest load-factor of any officer required]
-
-            for ev_num in np.arange(0, len(list_of_event_due_today)):
-                load_factor_per_officer_needed=list()
-                officers_needed = all_calls_today.loc[all_calls_today[ev_num]>0,ev_num].index.astype(str)
-                for officer in officers_needed:
-                    load_factor_per_officer_needed.append(load_factor.loc[officer])
-
-                squeeze.append(max(load_factor_per_officer_needed))
-
+            # 4) Estimate Squueze-Factors for today
+            squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(all_calls_today = all_calls_today,
+                                                                            current_capabilities = current_capabilities)
 
 
             # 6) For each event, determine if run or not, and run if so.
-
             for ev_num in np.arange(0, len(list_of_event_due_today)):
                 event = list_of_event_due_today[ev_num]
+                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
                 if True:     # TODO Make this condition on the mode and the squeeze factor being less than one
 
                     # Run the HSI event
-                    event.run(squeeze_factor = squeeze[ev_num])
+                    actual_footprint = event.run(squeeze_factor = squeeze_factor)
 
-                    # Write to the log ... TODO: Adding something about the load-factor
-                    self.module.log_hsi_event(event)
+                    # Check if need to update the load-factors for the appointments
+                    if actual_footprint is not None:
+                        # The returned footprint is different to the expected footprint: so must update load factors
+                        updated_call = self.module.get_appt_footprint_as_time_request(event, actual_footprint['APPT_FOOTPRINT'])
+                        all_calls_today.loc[updated_call.index, ev_num] = updated_call
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(all_calls_today = all_calls_today,
+                                                                                current_capabilities = current_capabilities)
 
-                    # Write to the log and time and consumables
+                   # Confirm that the actual footprint that is realised is the same as the expected footprint
+                    if actual_footprint is None:
+                        # no actual footprint is returned so take the initial declaration as the right one
+                        actual_footprint = dict()
+                        actual_footprint[
+                            'APPT_FOOTPRINT'] = event.APPT_FOOTPRINT  # The actual time take is the same as expected
+                        actual_footprint[
+                            'CONS_FOOTPRINT'] = event.CONS_FOOTPRINT  # The consumables used is the same as expected
 
-                    # Update the load-factors
+                    # Write to the log
+                    self.module.log_hsi_event(hsi_event=event,
+                                              actual_appt_footprint=actual_footprint['APPT_FOOTPRINT'],
+                                              squeeze_factor = squeeze_factor)
 
+                    self.module.log_consumables_used(hsi_event=event,
+                                                     actual_cons_footprint=actual_footprint['CONS_FOOTPRINT'])
 
 
                 else:
@@ -1105,9 +1145,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # -----
 
 
-        # 3) Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
-        while len(hold_over) > 0:
-            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
+
 
 
         # 4) After completing routine for the day, log total usage of the facilities

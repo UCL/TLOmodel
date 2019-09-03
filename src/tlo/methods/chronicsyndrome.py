@@ -400,7 +400,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
             "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d.",
             person_id)
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-facotr is %d.",
+            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.",
             squeeze_factor)
 
 
@@ -416,6 +416,15 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
             df.at[person_id, 'cs_date_cure'] = self.sim.date
             df.at[person_id, 'cs_specific_symptoms'] = 'none'
             df.at[person_id, 'cs_unified_symptom_code'] = 0
+
+
+        # Return the actual footprints (if they are different)
+        actual_footprint = dict()
+        actual_footprint['APPT_FOOTPRINT'] = self.APPT_FOOTPRINT  # The actual time take is the same as expected
+        actual_footprint['CONS_FOOTPRINT'] = self.CONS_FOOTPRINT  # The consumables used is the same as expected
+
+        return actual_footprint
+
 
 
 class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
@@ -446,7 +455,14 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         logger.debug('Outreach event running now for person: %s', person_id)
 
         # Do here whatever happens during an outreach event with an individual
-        pass
+        # ~~~~~~~~~~~~~~~~~~~~~~
+
+        # Return the actual footprints
+        actual_footprint = dict()
+        actual_footprint['APPT_FOOTPRINT'] = self.APPT_FOOTPRINT  # The actual time take is the same as expected
+        actual_footprint['CONS_FOOTPRINT'] = self.CONS_FOOTPRINT  # The consumables used is the same as expected
+
+        return actual_footprint
 
 
 # ---------------------------------------------------------------------------------
