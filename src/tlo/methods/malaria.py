@@ -44,6 +44,8 @@ class Malaria(Module):
             categories=['Uninf', 'Asym', 'Clin', 'Past']),
         'ma_date_infected': Property(
             Types.DATE, 'Date of latest infection'),
+        'ma_date_death': Property(
+            Types.DATE, 'Date of scheduled death due to malaria'),
         'ma_itn_use': Property(
             Types.BOOL, 'Person sleeps under a bednet'),
         'ma_irs': Property(
@@ -240,7 +242,8 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
             seeks_care = pd.Series(data=False, index=df.loc[symptoms].index)
 
             for i in df.loc[symptoms].index:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
+                # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
+                prob = 0.35  # placeholder for ACT coverage
                 seeks_care[i] = rng.rand() < prob
 
             if seeks_care.sum() > 0:
@@ -338,11 +341,6 @@ class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
 
         # the OneHealth consumables have Intervention_Pkg_Code= -99 which causes errors
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        # pkg_code1 = pd.unique(
-        #     consumables.loc[
-        #         consumables['Items'] == 'malaria P. falciparum + P. pan  RDT',
-        #         'Intervention_Pkg_Code'])[0]
-
         # this package contains treatment too
         pkg_code1 = pd.unique(
             consumables.loc[
@@ -757,3 +755,16 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'child_prev': child_prev,
                         'total_prev': total_prev,
                     })
+
+        # ------------------------------------ TREATMENT COVERAGE ------------------------------------
+        # prop on treatment, all ages
+        tx = len(df[df.is_alive & (df.ma_status == 'Clin') & df.ml_tx])
+        denom = len(df[df.is_alive & (df.ma_status == 'Clin')])
+        tx_coverage = tx / denom if denom else 0
+
+        logger.info('%s|tx_coverage|%s', now,
+                    {
+                        'treatment_coverage': tx_coverage,
+                    })
+
+
