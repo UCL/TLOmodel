@@ -705,9 +705,10 @@ class HealthSystem(Module):
                                                                             how='inner')
         comparison = comparison.rename(columns={0: 'Minutes_Used'})
         assert len(comparison) == len(current_capabilities)
-        assert comparison['Minutes_Used'].sum() == all_calls_today.sum().sum()
+        assert abs(comparison['Minutes_Used'].sum() - all_calls_today.sum().sum()) <= 0.0001*all_calls_today.sum().sum()
 
-        # groupby Facility_ID (index of 'summary' is Facility_ID
+
+        # Sum within each Facility_ID using groupby (index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
@@ -733,7 +734,7 @@ class HealthSystem(Module):
 
         log_capacity = dict()
         log_capacity['Frac_Time_Used_Overall'] = Fraction_Time_Used_Across_All_Facilities
-        log_capacity['Frac_Time_Used_By_Facility_Name'] = summary['Fraction_Time_Used'].to_dict()
+        log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
 
         logger.info('%s|Capacity|%s',
                     self.sim.date,
