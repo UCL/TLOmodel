@@ -102,9 +102,19 @@ class HT(Module):
         p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['b_25_35', 'value']],
                                                 [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']],
                                                 [df.at['b_55_65', 'value']]],
-                                               index=['both sexes', '25 to 35', '35 to 45', '45 to 55', '55 to 65'],
+                                               index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'],
                                                columns=['prevalence'])  #ToDo: Add 95% CI
         p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+
+        logger.debug('%s|prevalence_data|%s',
+                     self.sim.date,
+                     {
+                         'total': p['initial_prevalence'].loc['total', 'prevalence'],
+                         '25_to_35':  p['initial_prevalence'].loc['25_to_35', 'prevalence'],
+                         '35_to_45': p['initial_prevalence'].loc['35_to_45', 'prevalence'],
+                         '45_to_55': p['initial_prevalence'].loc['45_to_55', 'prevalence'],
+                         '55_to_65': p['initial_prevalence'].loc['55_to_65', 'prevalence']
+                     })
 
         logger.debug("Hypertension method: finished reading in parameters.  ")
 
