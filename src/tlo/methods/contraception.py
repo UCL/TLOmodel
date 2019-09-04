@@ -66,6 +66,7 @@ class Contraception(Module):
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
                                            'Date of the last pregnancy of this individual'),
+        'co_unintended_preg': Property(Types.BOOL, 'Unintended pregnancies following contraception failure')
     }
 
     def read_parameters(self, data_folder):
@@ -519,7 +520,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                 df.loc[woman, 'is_pregnant'] = True
                 df.loc[woman, 'date_of_last_pregnancy'] = self.sim.date
                 df.loc[
-                    woman, 'preg'] = 'new_unintented_preg'  # as these are contraceptive failures these pregnancies are unintended
+                    woman, 'co_unintended_preg'] = True # as these are contraceptive failures these pregnancies are unintended
                 # schedule the birth event for each newly pregnant woman (9 months plus/minus 2 wks)
                 df.loc[woman, 'co_date_of_childbirth'] = self.sim.date + DateOffset(months=9,
                                                                                     weeks=-2 + 4 * rng.random_sample())
