@@ -106,7 +106,6 @@ class Contraception(Module):
         self.parameters['r_discont_age'] = workbook['r_discont_age']
         # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age: - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -115,30 +114,27 @@ class Contraception(Module):
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
         """
         df = population.props
-        fertility = self.parameters['fertility_schedule']
 
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
-        possibly_using = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
-        females1549 = df.index[possibly_using]
-        # 2. Get probabilities of using each method of contraception by age
-        #       and merge the probabilities into each row in sim population
-        df_new = df.merge(fertility, left_on=['age_years'], right_on=['age'], how='left')
-        probabilities = df_new.loc[females1549, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                                 'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                                 'withdrawal', 'other_traditional']]
+        females1549 = df.is_alive & (df.sex == 'F') & df.age_years.between(15, 49)
+
+        # 2. Prepare probabilities lookup table
+        co_types_prob_lookup = self.parameters['fertility_schedule'].set_index('age')
+        co_types_prob_lookup.drop(columns=['year', 'basefert_dhs'], inplace=True)  # drop unused columns
+        co_types = list(co_types_prob_lookup.columns)
+
+        # normalise the values so they sum to 1 and collapse into single array
+        co_types_prob_lookup = co_types_prob_lookup.apply(lambda x: x.values / sum(x.values), axis=1)
 
         # 3. apply probabilities of each contraception type to sim population
-        for woman in probabilities.index:
-            her_p = np.asarray(probabilities.loc[woman, :])
-            her_op = np.asarray(probabilities.columns)
+        def pick_contraceptive(age):
+            """a function that randomly chooses a contraceptive based on age"""
+            return self.rng.choice(co_types, p=co_types_prob_lookup.loc[age])
 
-            her_method = self.rng.choice(her_op,
-                                         p=her_p / her_p.sum())  # /her_p.sum() added becasue probs sometimes add to not quite 1 due to rounding
-
-            df.loc[woman, 'co_contraception'] = her_method
+        df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(pick_contraceptive)
 
         # TODO: need to do it without above for loop:
         # probabilities['p_list'] = probabilities.apply(lambda row: row[:].tolist(), axis=1)  # doesn't work as p_list is dtype['O'] (object) rather than float64
