@@ -3,6 +3,7 @@ HIV infection event
 """
 import logging
 import os
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -151,6 +152,7 @@ class Hiv(Module):
         'hv_date_cotrim': Property(Types.DATE, 'date cotrimoxazole started'),
         'hv_fast_progressor': Property(Types.BOOL, 'infant fast progressor'),
         'hv_behaviour_change': Property(Types.BOOL, 'Exposed to hiv prevention counselling'),
+        'hv_date_death_occurred': Property(Types.DATE, 'date death due to AIDS actually occurred'),
 
     }
 
@@ -302,6 +304,7 @@ class Hiv(Module):
         df['hv_date_cotrim'] = pd.NaT
         df['hv_fast_progressor'] = False
         df['hv_behaviour_change'] = False
+        df['hv_date_death_occurred'] = pd.NaT
 
         self.fsw(population)  # allocate proportion of women with very high sexual risk (fsw)
         self.baseline_prevalence(population)  # allocate baseline prevalence
@@ -404,7 +407,7 @@ class Hiv(Module):
         # probability of hiv > random number, assign hiv_inf = True
         # TODO: cluster this by mother's hiv status?? currently no linked mother pre-baseline year
         hiv_index = df_hivprob.index[
-            df.is_alive & (df_hivprob.prev_prop < random_draw) & df_hivprob.age_years.between(0, 14)]
+            df.is_alive & (random_draw < df_hivprob.prev_prop) & df_hivprob.age_years.between(0, 14)]
         # print(hiv_index)
 
         df.loc[hiv_index, 'hv_inf'] = True
@@ -677,7 +680,7 @@ class Hiv(Module):
         sim.schedule_event(HivArtPoorToGoodAdherenceEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivTransitionOffArtEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
@@ -730,6 +733,8 @@ class Hiv(Module):
         df.at[child_id, 'hv_date_cotrim'] = pd.NaT
         df.at[child_id, 'hv_fast_progressor'] = False
         df.at[child_id, 'hv_behaviour_change'] = False
+        df.at[child_id, 'hv_date_death_occurred'] = pd.NaT
+
 
         if df.at[mother_id, 'hv_inf']:
             df.at[child_id, 'hv_mother_inf_by_birth'] = True
@@ -1565,11 +1570,11 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         item_code1 = pd.unique(consumables.loc[consumables[
-            'Items'] == 'Zidovudine (AZT), capsule, 100 mg', 'Intervention_Pkg_Code'])[0]
+            'Items'] == 'Zidovudine (AZT), capsule, 100 mg', 'Item_Code'])[0]
         item_code2 = pd.unique(consumables.loc[consumables[
-            'Items'] == 'Nevirapine (NVP), tablet, 200 mg', 'Intervention_Pkg_Code'])[0]
+            'Items'] == 'Nevirapine (NVP), tablet, 200 mg', 'Item_Code'])[0]
         item_code3 = pd.unique(consumables.loc[consumables[
-            'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients', 'Intervention_Pkg_Code'])[0]
+            'Items'] == 'Cotrimoxazole preventive therapy for TB HIV+ patients', 'Item_Code'])[0]
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
@@ -1614,16 +1619,16 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         Item = 'Lamiduvine/Zidovudine/Nevirapine (3TC + AZT + NVP), tablet, 150 + 300 + 200 mg'
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Items'] == Item, 'Intervention_Pkg_Code'])[
+        item_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Items'] == Item, 'Item_Code'])[
             0]
-        pkg_code2 = pd.unique(consumables.loc[
+        pkg_code1 = pd.unique(consumables.loc[
                                   consumables[
                                       'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': []
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': [item_code1]
         }
 
         # Define the necessary information for an HSI
@@ -2185,6 +2190,9 @@ class HivDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if df.at[individual_id, 'is_alive'] and (df.at[individual_id, 'hv_on_art'] != 2):
+
+            df.at[individual_id, 'hv_date_death_occurred'] = self.sim.date
+            # print('date_hiv_death', self.sim.date)
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='hiv'),
                                     self.sim.date)
 
@@ -2207,16 +2215,20 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
+        print('current_time', datetime.datetime.now())
+
         # ------------------------------------ INC / PREV ------------------------------------
         # adult incidence
         tmp = len(
-            df.loc[(df.age_years >= 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
-        adult_inc = tmp / len(df[~df.hv_inf & df.is_alive & (df.age_years.between(15, 80))])
+            df.loc[(df.age_years.between(15, 80)) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
+        pop = len(df[df.is_alive & (df.age_years.between(15, 80))])
+        adult_inc = (tmp / pop) * 100
 
         # child incidence
         tmp2 = len(
             df.loc[(df.age_years < 15) & df.is_alive & (df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
-        child_inc = tmp2 / len(df[~df.hv_inf & df.is_alive & (df.age_years < 15)])
+        child_pop = len(df[ df.is_alive & (df.age_years < 15)])
+        child_inc = (tmp2 / child_pop) * 100
 
         # adult prevalence
         ad_prev = len(df[df.hv_inf & df.is_alive & (df.age_years.between(15, 65))]) / len(
@@ -2242,22 +2254,24 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # ------------------------------------ PREVALENCE BY AGE ------------------------------------
         # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
         m_adult_hiv = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
-        m_adult_pop = len(df[df.is_alive & (df.sex == 'M') & (df.age_years.between(15, 65))])
-        m_adult_prev = m_adult_hiv / m_adult_pop if m_adult_pop else 0
+        m_adult_pop = df[df.is_alive & (df.sex == 'M') & (df.age_years.between(15, 65))].groupby('age_range').size()
+        m_adult_prev = m_adult_hiv / m_adult_pop
 
         f_adult_hiv = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
-        f_adult_pop = len(df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 65))])
-        f_adult_prev = f_adult_hiv / f_adult_pop if f_adult_pop else 0
+        f_adult_pop = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 65))].groupby('age_range').size()
+        f_adult_prev = f_adult_hiv / f_adult_pop
 
-        logger.info('%s|adult_prev_m|%s', self.sim.date,
+        logger.info('%s|hiv_adult_prev_m|%s', self.sim.date,
                     m_adult_prev.to_dict())
 
-        logger.info('%s|adult_prev_f|%s', self.sim.date,
+        logger.info('%s|hiv_adult_prev_f|%s', self.sim.date,
                     f_adult_prev.to_dict())
 
-        child_prev_age = df[df.is_alive & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
+        child_hiv_age = df[df.is_alive & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
+        child_pop = df[df.is_alive & (df.age_years < 15)].groupby('age_range').size()
+        child_prev_age = child_hiv_age / child_pop
 
-        logger.info('%s|child_prev_m|%s', self.sim.date,
+        logger.info('%s|hiv_child_prev_m|%s', self.sim.date,
                     child_prev_age.to_dict())
 
         # ------------------------------------ TREATMENT ------------------------------------
@@ -2268,7 +2282,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # on treatment, adults, virally suppressed
         # art_vs = df.loc[(df.hv_on_art == 2) & (df.age_years >= 15), 'is_alive'].sum()
-        art_vs = (df.is_alive & (df.hv_on_art == 2) & (df.age_years >= 15)).sum()
+        art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years >= 15)])
         prop_vir_sup_adult = art_vs / art if art else 0
 
         # prop on treatment, children
@@ -2300,4 +2314,16 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     {
                         'prop_fsw': prop_fsw,
                         'hiv_prev_fsw': hiv_prev_fsw,
+                    })
+
+        # ------------------------------------ MORTALITY ------------------------------------
+        # hiv deaths (incl tb) reported in the last 12 months / pop size
+        tmp3 = len(
+            df.loc[(df.hv_date_death_occurred > (now - DateOffset(months=self.repeat)))])
+        pop_alive = len(df[df.is_alive])
+        mort_rate = (tmp3 / pop_alive) * 1000
+
+        logger.info('%s|hiv_mortality|%s', now,
+                    {
+                        'hiv_MortRate': mort_rate,
                     })

@@ -562,6 +562,7 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
                            self.sim.date - DateOffset(months=self.repeat))
         infected_in_last_month = mask.sum()
+
         mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
         cured_in_last_month = mask.sum()
 
