@@ -4,7 +4,7 @@ Overview
 
 .. start-badges
 
-.. image:: https://travis-ci.com/UCL/TLOmodel.svg?branch=master
+.. image:: https://api.travis-ci.com/UCL/TLOmodel.svg?branch=master
     :alt: Travis-CI Build Status
     :target: https://travis-ci.com/UCL/TLOmodel
 
@@ -15,7 +15,7 @@ Thanzi la Onse Epidemiology Model
 
 This is the main software framework for epidemiology and health system modelling in the Thanzi la Onse project.
 
-See https://www.york.ac.uk/igdc/research/thanzi-la-onse/ for more about the project.
+See https://thanzi.org for more about the project.
 
 Installation
 ============
