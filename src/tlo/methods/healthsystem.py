@@ -708,7 +708,7 @@ class HealthSystem(Module):
         assert abs(comparison['Minutes_Used'].sum() - all_calls_today.sum().sum()) <= 0.0001*all_calls_today.sum().sum()
 
 
-        # Sum within each Facility_ID using groupby (index of 'summary' is Facility_ID)
+        # Sum within each Facility_ID using groupby (Index of 'summary' is Facility_ID)
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day','Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
