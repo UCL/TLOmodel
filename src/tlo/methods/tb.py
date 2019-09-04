@@ -168,6 +168,7 @@ class Tb(Module):
         'tb_on_ipt': Property(Types.BOOL, 'if currently on ipt'),
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
         'tb_date_death': Property(Types.DATE, 'date of tb death'),
+        'tb_date_death_occurred': Property(Types.DATE, 'date of tb death'),
     }
 
     def read_parameters(self, data_folder):
@@ -307,6 +308,7 @@ class Tb(Module):
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
         df['tb_date_death'] = pd.NaT
+        df['tb_date_death)occurred'] = pd.NaT
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
@@ -445,7 +447,7 @@ class Tb(Module):
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=1))
 
         # Logging
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=364))
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ HEALTH SYSTEM ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -482,6 +484,7 @@ class Tb(Module):
         df.at[child_id, 'tb_on_ipt'] = False
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
         df.at[child_id, 'tb_date_death'] = pd.NaT
+        df.at[child_id, 'tb_date_death_occurred'] = pd.NaT
 
         # if mother is diagnosed with TB, give IPT to infant
         if df.at[mother_id, 'tb_diagnosed']:
@@ -1334,8 +1337,8 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
             # decide pulm or extra
             # depends on age and HIV status
             age = df.at[person_id, 'age_years']
-            hiv = df.at[person_id, 'hv_inf']
-            prob_pulm_tb = prob_pulm.loc[(prob_pulm.age == age) & (prob_pulm.hiv == hiv), 'prob_pulm'].values
+            hiv_inf = df.at[person_id, 'hv_inf']
+            prob_pulm_tb = prob_pulm.loc[(prob_pulm.age == age) & (prob_pulm.hiv == hiv_inf), 'prob_pulm'].values
 
             if rng.rand() < prob_pulm_tb:
                 df.at[person_id, 'tb_stage'] = 'active_pulm'
@@ -2896,6 +2899,9 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
+
+                df.at[person, 'tb_date_death_occurred'] = self.sim.date
+
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'),
                                         now)
                 df.at[person, 'tb_date_death'] = now
@@ -2924,6 +2930,9 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in will_die:
             if df.at[person, 'is_alive']:
+
+                df.at[person, 'tb_date_death_occurred'] = self.sim.date
+
                 self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='hiv'),
                                         now)
                 df.at[person, 'tb_date_death'] = now
@@ -2956,6 +2965,17 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # incidence per 100k
         inc100k = (inc_active / len(df[df.is_alive])) * 100000
 
+        # percentage of TB cases who are HIV-positive
+        inc_active_hiv = len(
+            df[(df.tb_inf.str.contains('active')) &
+               df.is_alive & (
+                   df.tb_date_active < (now - DateOffset(months=self.repeat))) & df.hv_inf])
+
+        prop_hiv = inc_active_hiv / inc_active if inc_active else 0
+
+        # incidence per 100k
+        inc100k = (inc_active / len(df[df.is_alive])) * 100000
+
         # proportion of new active cases that are mdr-tb
         inc_active_mdr = len(
             df[(df.tb_inf.str.contains('active_mdr')) &
@@ -2972,6 +2992,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'tbIncActive': inc_active,
                         'tbIncActive100k': inc100k,
                         'tbPropIncActiveMdr': prop_inc_active_mdr,
+                        'tb_prop_hiv_pos': prop_hiv
                     })
 
         # ------------------------------------ PREVALENCE ------------------------------------
