@@ -183,23 +183,14 @@ class Contraception(Module):
         """
         df = self.sim.population.props
 
-        df.at[child_id, 'mother_id'] = mother_id
-        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
-        df.at[child_id, 'is_pregnant'] = False
         df.at[child_id, 'co_contraception'] = 'not_using'
+        df.at[child_id, 'co_date_of_childbirth'] = pd.NaT
+        df.at[child_id, 'is_pregnant'] = False
+        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
+        df.at[child_id, 'co_unintended_preg'] = False
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
-
-        # Log the birth:
-        logger.info('%s|on_birth|%s',
-                    self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years'],
-                        'xxx': 0
-                    })
 
 
 class Init1(RegularEvent, PopulationScopeEventMixin):
