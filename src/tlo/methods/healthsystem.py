@@ -586,6 +586,76 @@ class HealthSystem(Module):
         return squeeze_factor_per_hsi_event
 
 
+    def request_consumable(self, cons_req_as_footprint, to_log=True):
+        """
+        This is where HSI events can check access to and log use of consumables.
+        HSI Events request a consumable here. The healthsystem module will check if that consumable is available
+        at this time and at that facility and return a True/False response.
+        All requests are logged and, by default, it is assumed that if a requested consumable is available then it
+        is used. Alternatively, HSI Events can just query if a
+        consumable is available (without using it) by setting to_log=False.
+
+        :param cons_req: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
+        :param only_query: Indicator to show whether this should not be logged. [If]
+        :return: True for the consumable is available, False for it is not.
+        """
+
+        # 1) Unpack the consumables footprint into the individual items
+        cons_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
+
+
+        # # 2) For each elements of the cons_req, establish its availability
+        #
+        #
+        # #   Get the probabilities that each item is available
+        # prob_item_available = consumables.loc[consumables['Item_Code'].isin(consumables_used['Item_Code']),
+        #                                       'Available_Facility_Level_' + str(this_facility_level)]
+        #
+        # #   Detetermine if this facility level ever has these consumables
+        # #   (the appt_footprint will be imposed if these items are ever available)
+        # all_items_available_ever = bool((prob_item_available > 0).all())
+        #
+        # #   Get random numbers and see if the the items will be available on this occasion:
+        # all_items_available_now = bool(
+        #     (prob_item_available > self.rng.rand(len(prob_item_available))).all())
+        #
+        # if self.ignore_cons_constraints or all_items_available_now:
+        #     can_do_cons_footprint = True
+        #
+
+
+
+
+        # 3) Enter the the log
+        # Do a groupby for the different consumables (there could be repeats of individual items which need /
+        # to be summed)
+        cons_req = pd.DataFrame(cons_req.groupby('Item_Code').sum())
+        cons_req = cons_req.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
+
+        # Get the the total cost of the consumables
+        consumables_used_with_cost = cons_req.merge(self.parameters['Consumables_Cost_List'],
+                                                            how='left',
+                                                            on='Item_Code',
+                                                            left_index=True
+                                                            )
+        total_cost = (
+            consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
+
+
+        # Find out about the HSI Event making the request:
+
+
+        # # Enter to the log
+        # log_consumables = cons_req.to_dict()
+        # log_consumables['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+        # log_consumables['Total_Cost'] = total_cost
+        # log_consumables['Person_ID'] = hsi_event.target
+        #
+        # logger.info('%s|Consumables|%s',
+        #             self.sim.date,
+        #             log_consumables)
+
+
 
 
 
@@ -657,6 +727,9 @@ class HealthSystem(Module):
                     drop=True)
 
         return consumables_used_as_individual_items
+
+
+
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint, squeeze_factor):
         """
@@ -767,10 +840,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        df = self.sim.population.props
-
         logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s',
                      self.sim.date)
+
+        # 0) Determine the availability of consumables today:
+
+
+
+        df = self.sim.population.props
+
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
