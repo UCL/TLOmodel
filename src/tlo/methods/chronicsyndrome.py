@@ -384,7 +384,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
 
@@ -416,15 +416,6 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
             df.at[person_id, 'cs_date_cure'] = self.sim.date
             df.at[person_id, 'cs_specific_symptoms'] = 'none'
             df.at[person_id, 'cs_unified_symptom_code'] = 0
-
-
-        # Return the actual footprints (if they are different)
-        actual_footprint = dict()
-        actual_footprint['APPT_FOOTPRINT'] = self.APPT_FOOTPRINT  # The actual time take is the same as expected
-        actual_footprint['CONS_FOOTPRINT'] = self.CONS_FOOTPRINT  # The consumables used is the same as expected
-
-        return actual_footprint
-
 
 
 class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
@@ -487,11 +478,10 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
 
 
         # Return the actual footprints
-        actual_footprint = dict()
-        actual_footprint['APPT_FOOTPRINT'] = self.APPT_FOOTPRINT  # The actual time take is the same as expected
-        actual_footprint['CONS_FOOTPRINT'] = self.CONS_FOOTPRINT  # The consumables used is the same as expected
+        actual_appt_footprint = self.APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
 
-        return actual_footprint
+        return actual_appt_footprint
 
 
 # ---------------------------------------------------------------------------------
