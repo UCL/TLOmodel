@@ -684,14 +684,14 @@ class HealthSystem(Module):
                         log_consumables)
 
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
-        print(cons_req_as_footprint)
+        # Itterate through the packages that were requested
         packages_availability = dict()
         if not cons_req_as_footprint['Intervention_Package_Code'] == []:
             for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
                 package_code = int(list(p_dict.keys())[0])
                 packages_availability[int(package_code)] = bool(items_req.loc[items_req['Package_Code'] == float(package_code), 'Available'].all())
 
-        # Add in any additional items that have been specified seperately:
+        # Itterate therough the individual items that were requested
         items_availability=dict()
         if not cons_req_as_footprint['Item_Code'] == []:
             for i_dict in cons_req_as_footprint['Item_Code']:

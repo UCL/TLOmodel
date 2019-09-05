@@ -366,7 +366,6 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
         self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
@@ -417,30 +416,9 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
-            'Item_Code': [{item_code1:1}, {item_code2:1}]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
@@ -495,30 +473,9 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
-            'Item_Code': [{item_code1:1}, {item_code2:1}]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 

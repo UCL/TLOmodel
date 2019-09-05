@@ -376,22 +376,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['AccidentsandEmerg'] = 1  # Plus, an amount of resources similar to an A&E
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                        'Intervention_Pkg'] ==
-                                'Treatment for those with cerebrovascular disease and post-stroke_ No Diabetes',
-                                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1]  # Can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -436,9 +423,12 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # Define the necessary information for an HSI
         # (These are blank when created; but these should be filled-in by the module that calls it)
         self.TREATMENT_ID = 'ChronicSyndrome_Outreach_Individual'
-        self.APPT_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        self.APPT_FOOTPRINT['ConWithDCSA'] = 0.5  # outreach event takes small amount of time for DCSA
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+
+        # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
+        appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        appt_footprint['ConWithDCSA'] = 0.5
+        self.APPT_FOOTPRINT = appt_footprint
+
         self.ACCEPTED_FACILITY_LEVELS = [0] # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -465,15 +455,20 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2:1}],
-            'Item_Code': [{item_code1:1}, {item_code2:1}]
+            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2:4}],
+            'Item_Code': [{item_code1:1}, {item_code2:10}]
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
                                                                             hsi_event = self,
                                                                             cons_req_as_footprint=consumables_needed)
 
-        # answer comes back as a dict in the same format.....
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]:
+            logger.debug('PkgCode1 is available, so use it.')
+        else:
+            logger.debug('PkgCode1 is not available, so can''t use it.')
+
 
 
 
