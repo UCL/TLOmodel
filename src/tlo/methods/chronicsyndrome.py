@@ -474,8 +474,8 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
+            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2:1}],
+            'Item_Code': [{item_code1:1}, {item_code2:1}]
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
