@@ -179,7 +179,6 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
 
         for person in idx_anc:
             care_seeking_date = dfx.at[person, 'first_anc']
-            print('ANC:', person, self.sim.date, 'care seeking:', care_seeking_date)
             event = HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????

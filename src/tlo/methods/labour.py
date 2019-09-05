@@ -2,7 +2,6 @@
 A model of Labour and the Health System Interactions associated with Skilled Birth Attendance
 """
 import logging
-import os
 
 import pandas as pd
 import numpy as np
@@ -10,7 +9,7 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import demography, healthsystem, healthburden, antenatal_care
+from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.CRITICAL)
@@ -192,7 +191,7 @@ class Labour (Module):
             Types.REAL, 'probability of uterine tamponade arresting post-partum haemorrhage'),
         'prob_cure_uterine_ligation': Parameter(
             Types.REAL, 'probability of laparotomy and uterine ligation arresting post-partum haemorrhage'),
-        'prob_cure_b_lych': Parameter(
+        'prob_cure_b_lynch': Parameter(
             Types.REAL, 'probability of laparotomy and B-lynch sutures arresting post-partum haemorrhage'),
         'prob_cure_hysterectomy': Parameter(
             Types.REAL, 'probability of total hysterectomy arresting post-partum haemorrhage'),
@@ -270,7 +269,6 @@ class Labour (Module):
         params['rr_early_ptb_anaemia'] = dfd.loc['rr_early_ptb_anaemia', 'value']
         params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value'] # rough calc - should use 2014 global estimates?
         params['rr_late_ptb_prev_ptb'] = dfd.loc['rr_late_ptb_prev_ptb', 'value']
-        params['rr_ptl_pptb'] = dfd.loc['rr_ptl_pptb', 'value']
         params['prob_potl'] = dfd.loc['prob_potl', 'value']  # (incidence 32/1000 LBs)
         params['prob_ip_eclampsia'] = dfd.loc['prob_ip_eclampsia', 'value']
         params['prob_aph'] = dfd.loc['prob_aph', 'value']
@@ -332,7 +330,7 @@ class Labour (Module):
         params['prob_cure_uterine_massage'] = dfd.loc['prob_cure_uterine_massage', 'value']  # dummy
         params['prob_cure_uterine_tamponade'] = dfd.loc['prob_cure_uterine_tamponade', 'value'] # dummy
         params['prob_cure_uterine_ligation'] = dfd.loc['prob_cure_uterine_ligation', 'value'] # dummy
-        params['prob_cure_b_lych'] = dfd.loc['prob_cure_b_lych', 'value'] # dummy
+        params['prob_cure_b_lynch'] = dfd.loc['prob_cure_b_lynch', 'value'] # dummy
         params['prob_cure_hysterectomy'] = dfd.loc['prob_cure_hysterectomy', 'value']  # dummy
         params['prob_cure_manual_removal'] = dfd.loc['prob_cure_manual_removal', 'value']  # dummy
         params['prob_cure_uterine_repair'] = dfd.loc['prob_cure_uterine_repair', 'value']  # dummy
@@ -806,7 +804,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
 #        print('PREG INFO!','sim date:',self.sim.date, 'conception:', df.at[individual_id, 'date_of_last_pregnancy'],
 #              'due:', due_date)
-        print('LABOUR SCHEDULED:', individual_id, self.sim.date)
+
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -824,7 +822,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
         # Here we populate the maternal and newborn info dictionary with baseline values before the womans labour begins
         mni = self.module.mother_and_newborn_info
 
-        print('LABOUR:', individual_id, self.sim.date)
         mni[individual_id] = {'labour_state': None,  # Term Labour (TL), Early Preterm (EPTL), Late Preterm (LPTL) or
                                                     # Post Term (POTL)
                               'delivery_setting': None,  # Facility Delivery (FD) or Home Birth (HB)
@@ -918,7 +915,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 # ===================== PLACE HOLDER CARE SEEKING AND SCHEDULING (DUMMY) =====================================
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual_id, symptom_code=4)
-                prob = 0.73  # DUMMY- will just generate 2010 home birth rate #TODO: incorporate care seeking equation
+                prob = 0 #0.73  # DUMMY- will just generate 2010 home birth rate #TODO: incorporate care seeking equation
                 random = self.sim.rng.random_sample(size=1)
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
                     mni[individual_id]['delivery_setting'] = 'FD'
@@ -1195,7 +1192,6 @@ class BirthEvent(Event, IndividualScopeEventMixin):
         # postpartum event to determine if she experiences any additional complications
         if df.at[mother_id, 'is_alive'] and df.at[mother_id, 'is_pregnant'] and \
             ~df.at[mother_id,'la_still_birth_current_pregnancy']:
-            print('BIRTH:', mother_id, self.sim.date)
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1
             df.at[mother_id,'ac_gestational_age'] = 0
@@ -1448,6 +1444,8 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             # Schedule death for women who die in labour
 
         if mni[individual_id]['death_in_labour']:
+            print('intrapartum death!!!')
+
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='labour'), self.sim.date)
 
@@ -1505,7 +1503,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_maternal_death_date'] = self.sim.date
 
         if mni[individual_id]['death_postpartum']:
-
+            print('post partum death!!!')
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
             logger.info('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
@@ -1576,7 +1574,6 @@ class HSI_Labour_PresentsForInductionOfLabour(Event, IndividualScopeEventMixin):
         # TODO: await antenatal care module to schedule induction
         # TODO: women with praevia, obstructed labour, should be induced
 
-        print('Induction working')
         logger.info('This is HSI_Labour_PresentsForInductionOfLabour, person %d is attending a health facility to have'
                     ' their labour induced on date %s', person_id, self.sim.date)
 
@@ -2390,7 +2387,7 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
                 print('Treatment success- this bleed has been stopped by uterine ligation')
             else:
                 random = self.sim.rng.random_sample(size=1)
-                if params['prob_cure_b_lych'] > random:
+                if params['prob_cure_b_lynch'] > random:
                     mni[person_id]['PPH'] = False
                     print('Treatment success- this bleed has been stopped by b-lynch suturing')
                 else:
