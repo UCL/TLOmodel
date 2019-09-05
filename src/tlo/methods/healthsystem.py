@@ -592,15 +592,16 @@ class HealthSystem(Module):
     def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
-        HSI Events request a consumable here. The healthsystem module will check if that consumable is available
-        at this time and at that facility and return a True/False response.
+        The healthsystem module will check if that consumable is available
+        at this time and at that facility and return a True/False response. If a package is requested, it is considered
+        to be available only if all of the constituent items are available.
         All requests are logged and, by default, it is assumed that if a requested consumable is available then it
         is used. Alternatively, HSI Events can just query if a
         consumable is available (without using it) by setting to_log=False.
 
         :param cons_req: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
-        :param only_query: Indicator to show whether this should not be logged. [If]
-        :return: True for the consumable is available, False for it is not. TODO: say format!
+        :param to_log: Indicator to show whether this should not be logged (defualt: True)
+        :return: In the same format of the provided footprint, giving a bool for each package or item returned
         """
 
         # 0) Get information about the hsi_event
@@ -611,25 +612,19 @@ class HealthSystem(Module):
         # 1) Unpack the consumables footprint into the individual items
         items_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
         n_items_req = len(items_req)
-        items_req['Item_Code'] = items_req['Item_Code'].astype(int)
 
         # 2) Determine if these are available at the relevant facility level
         select_col = 'Available_Facility_Level_' + str(the_facility_level[0])
         availability = pd.DataFrame(data={'Available':self.cons_item_code_availability_today[select_col].copy()})
-
         items_req=items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
-
         assert len(items_req) == n_items_req
 
-
-
-        # 2) Enter the the log (logs each item)
+        # 3) Enter the the log (logs each item)
         # Do a groupby for the different consumables (there could be repeats of individual items which need /
         # to be summed)
         if to_log:
-
             items_req_to_log = pd.DataFrame(items_req.groupby('Item_Code').sum())
-            items_req_to_log = items_req.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
+            items_req_to_log = items_req_to_log.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
             items_req_to_log['Available'] = items_req_to_log['Available']>0     # restore to bool after sum in grouby()
 
             # Get the the cost of the each consumable item (could not do this merge until after model run)
@@ -638,6 +633,7 @@ class HealthSystem(Module):
                                                                 on='Item_Code',
                                                                 left_index=True
                                                                 )
+            items_req_to_log = items_req_to_log.drop(['Item_Code'], axis=1)
 
             # Compute total cost (limiting to those items which were available)
             total_cost = items_req_to_log.loc[items_req_to_log['Available'],['Units_By_Item_Code','Unit_Cost']].prod(axis=1).sum()
@@ -652,10 +648,30 @@ class HealthSystem(Module):
                         self.sim.date,
                         log_consumables)
 
-
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
+        packages_availability = dict()
+        if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+            for p in cons_req_as_footprint['Intervention_Package_Code']:
+                packages_availability[int(p)] = bool(items_req.loc[items_req['Package_Code'] == float(p), 'Available'].all())
 
+        # Add in any additional items that have been specified seperately:
+        items_availability=dict()
+        if not cons_req_as_footprint['Item_Code'] == []:
+            for i in cons_req_as_footprint['Item_Code']:
+                # check if *all* items in this package are available
+                items_availability[int(i)]=bool(items_req.loc[items_req['Item_Code']==i,'Available'].values[0])
 
+        # compile output
+        output = dict()
+        output['Intervention_Package_Code'] = packages_availability
+        output['Item_Code']=items_availability
+
+        # confirm output is in right format
+        assert list(output['Intervention_Package_Code'].keys()) == list(cons_req_as_footprint['Intervention_Package_Code'])
+        assert list(output['Item_Code'].keys()) == list(cons_req_as_footprint['Item_Code'])
+        #TODO: check that the outputs are bools
+
+        return output
 
 
     def log_consumables_used(self, hsi_event, actual_cons_footprint):
@@ -701,6 +717,7 @@ class HealthSystem(Module):
         """
         This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
         are used, collecting these from across the packages and the individual items that are specified.
+        A column indicates the package from which the item come from and shows NaN if the item is requested individually
         """
         # Load the data on consumables
         consumables = self.parameters['Consumables']
@@ -709,21 +726,29 @@ class HealthSystem(Module):
         cons = cons_footprint
 
         # Create empty dataframe for storing the items used in the cons_footprint
-        consumables_used_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Expected_Units_Per_Case'])
+        consumables_used_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code' ,'Expected_Units_Per_Case'])
 
         # Get the individual items in each package:
         if not cons['Intervention_Package_Code'] == []:
             for p in cons['Intervention_Package_Code']:
                 items = consumables.loc[
                     consumables['Intervention_Pkg_Code'] == p, ['Item_Code', 'Expected_Units_Per_Case']]
+                items['Package_Code']=p
                 consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(drop=True)
 
         # Add in any additional items that have been specified seperately:
         if not cons['Item_Code'] == []:
             for i in cons['Item_Code']:
-                items = pd.DataFrame(data={'Item_Code': i, 'Expected_Units_Per_Case': 1}, index=[0])
+                items = pd.DataFrame(data={'Item_Code': i, 'Package_Code': np.nan, 'Expected_Units_Per_Case': 1}, index=[0])
                 consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(
                     drop=True)
+
+        # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
+            # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
+            #       Non-null package_code must be coerced to int before use.
+        consumables_used_as_individual_items['Item_Code'] = consumables_used_as_individual_items['Item_Code'].astype(int)
+        consumables_used_as_individual_items['Package_Code'] = consumables_used_as_individual_items['Package_Code'].astype(float)
+        consumables_used_as_individual_items['Expected_Units_Per_Case'] = consumables_used_as_individual_items['Expected_Units_Per_Case'].astype(float)
 
         return consumables_used_as_individual_items
 
