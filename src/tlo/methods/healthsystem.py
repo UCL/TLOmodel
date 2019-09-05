@@ -230,24 +230,14 @@ class HealthSystem(Module):
             # Correctly formatted footprint
             assert 'TREATMENT_ID' in dir(hsi_event)
 
+            # Correct formated APPT_FOOTPRINT
             assert 'APPT_FOOTPRINT' in dir(hsi_event)
             assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-
             # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
             assert all(
                 np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
             assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
 
-            # That it has a dictionary for the consumables needed in the right format
-            assert 'CONS_FOOTPRINT' in dir(hsi_event)
-            assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
-            assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
-            consumables = self.parameters['Consumables']
-            assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
-                set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
-                    consumables['Intervention_Pkg_Code']))
-            assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
-                set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
 
             # That it has an 'ACCEPTED_FACILITY_LEVELS' attribute (a list of Ok facility levels of a '*'
             # If it a list with one element '*' in it, then update that with all the facility levels
@@ -450,6 +440,7 @@ class HealthSystem(Module):
         This is a helper function so that disease modules can easily create their appt_footprints.
         It returns a dataframe containing the appointment footprint information in the format that /
         the HealthSystemScheduler expects.
+
         """
 
         keys = self.parameters['Appt_Types_Table']['Appt_Type_Code']
@@ -463,7 +454,20 @@ class HealthSystem(Module):
         This is a helper function so that disease modules can easily create their cons_footprints.
         It returns a dictionary containing the consumables information in the format that the /
         HealthSystemScheduler expects.
+
+        Format is as follows:
+            * dict with two keys; Intervention_Package_Code and Item_Code
+            * the value for each is a list of dict
+            * each dict gives code (package_code or item_code):quantity
+            * the codes within each list must be unique and valid codes, quantities must be integer values >0
+
+            e.g.
+            cons_footprint = {
+                        'Intervention_Package_Code': [{my_pkg_code:1}],
+                        'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
+            }
         """
+
         blank_footprint = {
             'Intervention_Package_Code': [],
             'Item_Code': []
@@ -604,6 +608,36 @@ class HealthSystem(Module):
         :return: In the same format of the provided footprint, giving a bool for each package or item returned
         """
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # 0) Check the format of the cons_req_as_footprint:
+
+            # TODO: Checks on the structure of the cons_footprint (refactor)
+
+            # Format is as follows:
+            #     * dict with two keys; Intervention_Package_Code and Item_Code
+            #     * the value for each is a list of dict
+            #     * each dict gives code (package_code or item_code):quantity
+            #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
+            #
+            #     e.g.
+            #     cons_footprint = {
+            #                 'Intervention_Package_Code': [{my_pkg_code:1}],
+            #                 'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
+            #     }
+
+            # Check the CONS FOOTPRINT
+            # assert 'CONS_FOOTPRINT' in dir(hsi_event)
+            # assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
+            # assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
+            # consumables = self.parameters['Consumables']
+            # assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
+            #     set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
+            #         consumables['Intervention_Pkg_Code']))
+            # assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
+            #     set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
         # 0) Get information about the hsi_event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVELS
         the_treatment_id = hsi_event.TREATMENT_ID
@@ -624,7 +658,6 @@ class HealthSystem(Module):
         # to be summed)
         if to_log:
             items_req_to_log = pd.DataFrame(items_req.groupby('Item_Code').sum())
-            items_req_to_log = items_req_to_log.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
             items_req_to_log['Available'] = items_req_to_log['Available']>0     # restore to bool after sum in grouby()
 
             # Get the the cost of the each consumable item (could not do this merge until after model run)
@@ -633,12 +666,14 @@ class HealthSystem(Module):
                                                                 on='Item_Code',
                                                                 left_index=True
                                                                 )
-            items_req_to_log = items_req_to_log.drop(['Item_Code'], axis=1)
 
             # Compute total cost (limiting to those items which were available)
-            total_cost = items_req_to_log.loc[items_req_to_log['Available'],['Units_By_Item_Code','Unit_Cost']].prod(axis=1).sum()
+            total_cost = items_req_to_log.loc[items_req_to_log['Available'],['Quantity_Of_Item','Unit_Cost']].prod(axis=1).sum()
 
             # Enter to the log
+
+            items_req_to_log = items_req_to_log.drop(['Item_Code','Package_Code'], axis=1)  # drop from log for neatness
+
             log_consumables = items_req_to_log.to_dict()
             log_consumables['TREATMENT_ID'] = the_treatment_id
             log_consumables['Total_Cost'] = total_cost
@@ -649,69 +684,30 @@ class HealthSystem(Module):
                         log_consumables)
 
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
+        print(cons_req_as_footprint)
         packages_availability = dict()
         if not cons_req_as_footprint['Intervention_Package_Code'] == []:
-            for p in cons_req_as_footprint['Intervention_Package_Code']:
-                packages_availability[int(p)] = bool(items_req.loc[items_req['Package_Code'] == float(p), 'Available'].all())
+            for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                package_code = int(list(p_dict.keys())[0])
+                packages_availability[int(package_code)] = bool(items_req.loc[items_req['Package_Code'] == float(package_code), 'Available'].all())
 
         # Add in any additional items that have been specified seperately:
         items_availability=dict()
         if not cons_req_as_footprint['Item_Code'] == []:
-            for i in cons_req_as_footprint['Item_Code']:
+            for i_dict in cons_req_as_footprint['Item_Code']:
+                item_code = int(list(i_dict.keys())[0])
                 # check if *all* items in this package are available
-                items_availability[int(i)]=bool(items_req.loc[items_req['Item_Code']==i,'Available'].values[0])
+                items_availability[int(item_code)]=bool(items_req.loc[items_req['Item_Code']==item_code,'Available'].values[0])
 
         # compile output
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code']=items_availability
 
-        # confirm output is in right format
-        assert list(output['Intervention_Package_Code'].keys()) == list(cons_req_as_footprint['Intervention_Package_Code'])
-        assert list(output['Item_Code'].keys()) == list(cons_req_as_footprint['Item_Code'])
-        #TODO: check that the outputs are bools
+        # TODO: confirm output is in right format
 
         return output
 
-
-    def log_consumables_used(self, hsi_event, actual_cons_footprint):
-        """
-        This will write to the log with a record of the consumables that were in the footprint of an HSI event
-
-        :param hsi_event: The hsi event (containing the initial expectations of footprints)
-        :param actual_cons_footprint: The actual consumables footprint to log
-
-        """
-        # get the list of individual items used (from across the packages and individual items specified in the
-        #  footprint)
-
-        consumables_used = self.get_consumables_as_individual_items(actual_cons_footprint)
-
-        if len(consumables_used) > 0:  # if any consumables have been recorded
-
-            # Do a groupby for the different consumables (there could be repeats of individual items which need /
-            # to be summed)
-            consumables_used = pd.DataFrame(consumables_used.groupby('Item_Code').sum())
-            consumables_used = consumables_used.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
-
-            # Get the the total cost of the consumables
-            consumables_used_with_cost = consumables_used.merge(self.parameters['Consumables_Cost_List'],
-                                                                how='left',
-                                                                on='Item_Code',
-                                                                left_index=True
-                                                                )
-            total_cost = (
-                consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
-
-            # Enter to the log
-            log_consumables = consumables_used.to_dict()
-            log_consumables['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-            log_consumables['Total_Cost'] = total_cost
-            log_consumables['Person_ID'] = hsi_event.target
-
-            logger.info('%s|Consumables|%s',
-                        self.sim.date,
-                        log_consumables)
 
     def get_consumables_as_individual_items(self, cons_footprint):
         """
@@ -719,38 +715,47 @@ class HealthSystem(Module):
         are used, collecting these from across the packages and the individual items that are specified.
         A column indicates the package from which the item come from and shows NaN if the item is requested individually
         """
+
+        # Shortcut to the input cons_footprint
+        cons = cons_footprint
+
         # Load the data on consumables
         consumables = self.parameters['Consumables']
 
-        # Get the consumables in the hsi_event
-        cons = cons_footprint
-
         # Create empty dataframe for storing the items used in the cons_footprint
-        consumables_used_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code' ,'Expected_Units_Per_Case'])
+        consumables_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code' , 'Quantity_Of_Item', 'Expected_Units_Per_Case'])
 
         # Get the individual items in each package:
         if not cons['Intervention_Package_Code'] == []:
-            for p in cons['Intervention_Package_Code']:
+            for p_dict in cons['Intervention_Package_Code']:
+                package_code = int(list(p_dict.keys())[0])
+                quantity_of_packages = int(list(p_dict.values())[0])
                 items = consumables.loc[
-                    consumables['Intervention_Pkg_Code'] == p, ['Item_Code', 'Expected_Units_Per_Case']]
-                items['Package_Code']=p
-                consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(drop=True)
+                    consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']]
+                items['Quantity_Of_Item'] = items['Expected_Units_Per_Case'] * quantity_of_packages
+                items['Package_Code']=package_code
+                consumables_as_individual_items = consumables_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(drop=True)
+
 
         # Add in any additional items that have been specified seperately:
         if not cons['Item_Code'] == []:
-            for i in cons['Item_Code']:
-                items = pd.DataFrame(data={'Item_Code': i, 'Package_Code': np.nan, 'Expected_Units_Per_Case': 1}, index=[0])
-                consumables_used_as_individual_items = consumables_used_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(
+            for i_dict in cons['Item_Code']:
+                item_code = int(list(i_dict.keys())[0])
+                quantity_of_item = int(list(i_dict.values())[0])
+                items = pd.DataFrame(data={'Item_Code': item_code, 'Package_Code': np.nan, 'Quantity_Of_Item': quantity_of_item}, index=[0])
+                consumables_as_individual_items = consumables_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(
                     drop=True)
+
+        consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
 
         # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
             # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
             #       Non-null package_code must be coerced to int before use.
-        consumables_used_as_individual_items['Item_Code'] = consumables_used_as_individual_items['Item_Code'].astype(int)
-        consumables_used_as_individual_items['Package_Code'] = consumables_used_as_individual_items['Package_Code'].astype(float)
-        consumables_used_as_individual_items['Expected_Units_Per_Case'] = consumables_used_as_individual_items['Expected_Units_Per_Case'].astype(float)
+        consumables_as_individual_items['Item_Code'] = consumables_as_individual_items['Item_Code'].astype(int)
+        consumables_as_individual_items['Package_Code'] = consumables_as_individual_items['Package_Code'].astype(float)
+        consumables_as_individual_items['Quantity_Of_Item'] = consumables_as_individual_items['Quantity_Of_Item'].astype(float)
 
-        return consumables_used_as_individual_items
+        return consumables_as_individual_items
 
 
 
@@ -887,13 +892,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Determine the availability of the consumables today
         self.module.cons_item_code_availability_today = unique_item_codes > random_draws
 
-
-
-
-
-
         df = self.sim.population.props
-
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
@@ -1003,34 +1002,26 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if ok_to_run:
 
-                    # Run the HSI event
-                    actual_footprint = event.run(squeeze_factor = squeeze_factor)
+                    # Run the HSI event (allowing it to return an updated appt_footprint)
+                    actual_appt_footprint = event.run(squeeze_factor = squeeze_factor)
 
-                    # Check if need to update the load-factors for the appointments
-                    if (actual_footprint is not None) and (self.module.mode_appt_constraints>0):
+                    # Check if the HSI event returned updated appt_footprint
+                    if (actual_appt_footprint is not None):
                         # The returned footprint is different to the expected footprint: so must update load factors
-                        updated_call = self.module.get_appt_footprint_as_time_request(event, actual_footprint['APPT_FOOTPRINT'])
+
+                        # TODO; Check on the format of appt_footprint (refactor)
+                        updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
                         all_calls_today.loc[updated_call.index, ev_num] = updated_call
                         squeeze_factor_per_hsi_event = self.get_squeeze_factors(all_calls_today = all_calls_today,
                                                                                 current_capabilities = current_capabilities)
-
-                   # Confirm that the actual footprint that is realised is the same as the expected footprint
-                    if actual_footprint is None:
-                        # no actual footprint is returned so take the initial declaration as the right one
-                        actual_footprint = dict()
-                        actual_footprint[
-                            'APPT_FOOTPRINT'] = event.APPT_FOOTPRINT  # The actual time take is the same as expected
-                        actual_footprint[
-                            'CONS_FOOTPRINT'] = event.CONS_FOOTPRINT  # The consumables used is the same as expected
+                    else:
+                        # no actual footprint is returned so take the initial declaration as the actual
+                        actual_appt_footprint = event.APPT_FOOTPRINT
 
                     # Write to the log
                     self.module.log_hsi_event(hsi_event=event,
-                                              actual_appt_footprint=actual_footprint['APPT_FOOTPRINT'],
+                                              actual_appt_footprint=actual_appt_footprint,
                                               squeeze_factor = squeeze_factor)
-
-                    self.module.log_consumables_used(hsi_event=event,
-                                                     actual_cons_footprint=actual_footprint['CONS_FOOTPRINT'])
-
 
                 else:
                     # Do not run, add to the hold-over queue
@@ -1044,54 +1035,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
 
-
-
-
-
-
-
-        # -----
-        #
-        # # MODE 0: ORIGINAL BLOCKING MODE -- do not allow the events to run if exceeds health sytsem capacities
-        #
-        # while len(list_of_event_due_today)>0:
-        #
-        #     event = list_of_event_due_today.pop()
-        #
-        #     if not (type(event.target) is tlo.population.Population):
-        #         # The event is an individual level HSI_event: check resources in local healthsystem facilities
-        #
-        #         (can_do_appt_footprint, current_capabilities) = \
-        #             self.module.check_if_can_do_hsi_event(event, current_capabilities=current_capabilities)
-        #
-        #         if can_do_appt_footprint:
-        #             # The event can be run:
-        #
-        #             if df.at[event.target, 'is_alive']:
-        #                 # Run the event
-        #                 event.run()
-        #
-        #                 # Broadcast to other modules that the event is running:
-        #                 self.module.broadcast_healthsystem_interaction(hsi_event=event)
-        #
-        #                 # Write to the log
-        #                 self.module.log_consumables_used(event)
-        #                 self.module.log_hsi_event(event)
-        #         else:
-        #             # The event cannot be run due to insufficient resources.
-        #             # Add to hold-over list
-        #             hp.heappush(hold_over, next_event_tuple)
-        #
-        #     else:
-        #         # The event is a population level HSI event: allow it to run without further checks.
-        #
-        #         # Run the event
-        #         event.run()
-        #
-        #         # Write to the log
-        #         self.module.log_hsi_event(event)
-
-        # -----
 
 
 

@@ -433,8 +433,8 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
+            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
+            'Item_Code': [{item_code1:1}, {item_code2:1}]
         }
 
         # Define the necessary information for an HSI
@@ -511,8 +511,8 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
+            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
+            'Item_Code': [{item_code1:1}, {item_code2:1}]
         }
 
         # Define the necessary information for an HSI
