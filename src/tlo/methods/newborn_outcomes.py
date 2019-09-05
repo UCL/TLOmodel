@@ -78,8 +78,8 @@ class NewbornOutcomes(Module):
         'nb_congenital_anomaly': Property(Types.BOOL, 'whether this neonate has been born with a congenital anomaly'),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
-        'nb_respiratory_depression ': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic due to '
-                                                  'intrapartum related complications'),
+        'nb_respiratory_depression ': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic '
+                                                           'due to intrapartum related complications'),
         'nb_hypoxic_ischemic_enceph': Property(Types.BOOL, 'whether a perinatally asphyxiated neonate has developed '
                                                            'hypoxic ischemic encephalopathy'),
         'nb_encephalopathy': Property(Types.CATEGORICAL, 'None, mild encephalopathy, moderate encephalopathy, '
@@ -91,7 +91,15 @@ class NewbornOutcomes(Module):
                                                       'following preterm birth'),
         'nb_resp_distress_synd': Property(Types.BOOL, 'whether this neonate has developed newborn respiritory distress '
                                                       'syndrome following preterm birth '),
-        'nb_birth_weight': Property(Types.CATEGORICAL,'extremely low birth weight (<1000g), very low birth weight '
+        'nb_retinopathy_prem': Property(Types.CATEGORICAL, 'Level of visual disturbance due to retinopathy of'
+                                                           ' prematurity: None, mild, moderate, severe, blindness',
+                                        categories=['none', 'mild', 'moderate','severe', 'blindness']),
+        'nb_ongoing_impairment': Property(Types.CATEGORICAL,'none, mild motor, mild motor and cognitive, moderate motor'
+                                                            ' moderate motor and cognitive, severe motor, severe motor '
+                                                            'and cognitive',
+                                                categories=['none', 'mild_mot', 'mild_mot_cog', 'mod_mot', 'mod_mot_cog',
+                                                            'severe_mot',' severe_mot_cog']),
+        'nb_birth_weight': Property(Types.CATEGORICAL, 'extremely low birth weight (<1000g), very low birth weight '
                                                       '(<1500g), low birth weight (<2500g),'
                                                       ' normal birth weight (>2500g)',
                                                 categories=['ext_LBW', 'very_LBW', 'LBW', 'NBW']),
@@ -177,6 +185,8 @@ class NewbornOutcomes(Module):
         df['nb_intravascular_haem'] = False
         df['nb_necrotising_entero'] = False
         df['nb_resp_distress_synd'] = False
+        df['nb_retinopathy_prem'] = 'none'
+        df['nb_ongoing_impairment'] = 'none'
         df['nb_birth_weight'] = 'NBW'
         df['nb_size_for_gestational_age'] = None
         df['nb_early_breastfeeding'] = False
@@ -207,7 +217,8 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_intravascular_haem'] = False
         df.at[child_id, 'nb_necrotising_entero'] = False
         df.at[child_id, 'nb_resp_distress_synd'] = False
-        df.at[child_id, 'nb_ptb_comps'] = False
+        df.at[child_id, 'nb_retinopathy_prem'] = 'none'
+        df.at[child_id, 'nb_ongoing_impairment'] = 'none'
         df.at[child_id, 'nb_birth_weight'] = 'NBW'
         df.at[child_id, 'nb_size_for_gestational_age'] = None
         df.at[child_id, 'nb_early_breastfeeding'] = False
@@ -433,6 +444,9 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'nb_resp_distress_synd'] = True
                 logger.info('Neonate %d has developed newborn respiritory distress syndrome secondary to prematurity',
                             individual_id)
+
+            #TODO: RETINOPATHY
+            #TODO: WHERE IS BEST TO APPLY 'IMPAIRMENT' VARIABLE
 
 # ======================================= SCHEDULING NEWBORN CARE  ====================================================
 

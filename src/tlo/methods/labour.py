@@ -70,7 +70,7 @@ class Labour (Module):
         'prob_ip_sepsis': Parameter(
             Types.REAL, 'probability of sepsis in labour'),
         'prob_uterine_rupture': Parameter(
-            Types.REAL, 'probablity of a uterine rupture during labour'),
+            Types.REAL, 'probability of a uterine rupture during labour'),
         'rr_ur_grand_multip': Parameter(
             Types.REAL, 'relative risk of uterine rupture in women who have delivered >4 times previously'),
         'rr_ur_prev_cs': Parameter(
