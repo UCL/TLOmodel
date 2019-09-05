@@ -1265,12 +1265,52 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_low_ex_urban_m = (df.is_alive & df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_low_ex).sum()
         p_low_ex_urban_m = n_low_ex_urban_m / n_urban_agege15_m
-        n_low_ex_urban_f = (df.is_alive & ~df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
+        n_low_ex_urban_f = (df.is_alive & df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
         p_low_ex_urban_f = n_low_ex_urban_f / n_urban_agege15_f
+        n_low_ex_rural_m = (df.is_alive & ~df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_low_ex).sum()
+        p_low_ex_rural_m = n_low_ex_rural_m / n_rural_agege15_m
+        n_low_ex_rural_f = (df.is_alive & ~df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
+        p_low_ex_rural_f = n_low_ex_rural_f / n_rural_agege15_f
 
+        n_high_salt = (df.is_alive & df.li_high_salt).sum()
+        p_high_salt = n_high_salt / n_alive
+        n_high_sugar = (df.is_alive & df.li_high_sugar).sum()
+        p_high_sugar = n_high_sugar / n_alive
 
-        logger.info('%s|p_low_ex_urban_m|%s|p_low_ex_urban_f|%s',
-            self.sim.date, p_low_ex_urban_m, p_low_ex_urban_f)
+        n_urban_no_access_handwashing = (df.is_alive & df.li_urban & df.li_no_access_handwashing).sum()
+        p_no_access_handwashing_urban = n_urban_no_access_handwashing / n_urban
+        n_rural_no_access_handwashing = (df.is_alive & ~df.li_urban & df.li_no_access_handwashing).sum()
+        p_no_access_handwashing_rural = n_rural_no_access_handwashing / n_rural
+
+        n_urban_unimproved_sanitation = (df.is_alive & df.li_urban & df.li_unimproved_sanitation).sum()
+        p_unimproved_sanitation_urban = n_urban_unimproved_sanitation / n_urban
+        n_rural_unimproved_sanitation = (df.is_alive & ~df.li_urban & df.li_unimproved_sanitation).sum()
+        p_unimproved_sanitation_rural = n_rural_unimproved_sanitation / n_rural
+
+        n_urban_wood_burn_stove = (df.is_alive & df.li_urban & df.li_wood_burn_stove).sum()
+        p_wood_burn_stove_urban = n_urban_wood_burn_stove / n_urban
+        n_rural_wood_burn_stove = (df.is_alive & ~df.li_urban & df.li_wood_burn_stove).sum()
+        p_wood_burn_stove_rural = n_rural_wood_burn_stove / n_rural
+
+        n_urban_no_clean_drinking_water = (df.is_alive & df.li_urban & df.li_no_clean_drinking_water).sum()
+        p_no_clean_drinking_water_urban = n_urban_no_clean_drinking_water / n_urban
+        n_rural_no_clean_drinking_water = (df.is_alive & ~df.li_urban & df.li_no_clean_drinking_water).sum()
+        p_no_clean_drinking_water_rural = n_rural_no_clean_drinking_water / n_rural
+
+        logger.info('%s|p_no_access_handwashing_urban|%s|p_no_access_handwashing_rural|%s'
+                    '|p_unimproved_sanitation_urban|%s|p_unimproved_sanitation_rural|%s'
+                    '|p_wood_burn_stove_urban|%s|p_wood_burn_stove_rural|%s'
+                    '|p_no_clean_drinking_water_urban|%s|p_no_clean_drinking_water_rural|%s',
+                    self.sim.date, p_no_access_handwashing_urban, p_no_access_handwashing_rural,
+                    p_unimproved_sanitation_urban, p_unimproved_sanitation_rural,
+                    p_wood_burn_stove_urban, p_wood_burn_stove_rural,
+                    p_no_clean_drinking_water_urban, p_no_clean_drinking_water_rural)
+
+#       logger.info('%s|p_high_salt|%s|p_high_sugar|%s',
+#           self.sim.date, p_high_salt, p_high_sugar)
+
+#       logger.info('%s|p_low_ex_rural_m|%s|p_low_ex_rural_f|%s',
+#           self.sim.date, p_low_ex_rural_m, p_low_ex_rural_f)
 
 #       logger.info('%s|prop_ex_alc_m|%s|prop_ex_alc_f|%s',
 #           self.sim.date, p_ex_alc_m, p_ex_alc_f)
