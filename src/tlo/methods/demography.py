@@ -18,7 +18,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import labour, abortion_and_miscarriage
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -384,7 +384,6 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                                     (self.sim.modules['AbortionAndMiscarriage'], female_id,
                                                                                  cause='miscarriage event'),
                                     self.sim.date)
-            print('CONCEPTION:', female_id, self.sim.date)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):

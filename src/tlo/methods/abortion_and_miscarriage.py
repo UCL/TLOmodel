@@ -231,7 +231,6 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(MiscarriageAndPostMiscarriageComplicationsEvent(self.module, individual_id,
                                                                                     cause='post miscarriage'),
                                     miscarriage_date)
-            print('MISCARRIAGE:', individual_id, self.sim.date)
 
             # And for women who do not have a miscarriage we move them to labour scheduler to determine at what
             # gestation they will go into labour
@@ -239,7 +238,6 @@ class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
         else:
             self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], individual_id, cause='pregnancy')
                                     , self.sim.date)
-            print('NO MISCARRIAGE:', individual_id, self.sim.date)
 
 
 class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEventMixin):
@@ -322,7 +320,6 @@ class InducedAbortionEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_induced_abortion, 'am_total_induced_abortion'] = +1
         df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date  # (is this needed)
         df.loc[idx_induced_abortion, 'ac_gestational_age'] = 0
-        print('ABORTION:', idx_induced_abortion, self.sim.date)
 
         # Todo: Please see SBA master sheet for epi queires
         # Todo: Apply safety level and complications
