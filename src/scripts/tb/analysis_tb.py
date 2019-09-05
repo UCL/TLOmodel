@@ -1,10 +1,10 @@
 import datetime
 import logging
 import os
-from tlo.analysis.utils import parse_log_file
 from pathlib import Path
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     healthburden,
