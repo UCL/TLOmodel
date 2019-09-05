@@ -685,9 +685,6 @@ class Hiv(Module):
         sim.schedule_event(FswEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(days=364))
 
-        # TODO: remove this annual testing event for normal runs
-        sim.schedule_event(HivTestingEvent(self), sim.date + DateOffset(days=0))
-
         # Schedule the event that will launch the Outreach event
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
@@ -1120,32 +1117,6 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Launch outreach events
 # ---------------------------------------------------------------------------
-class HivTestingEvent(RegularEvent, PopulationScopeEventMixin):
-    """ hiv testing event for all adults every year
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))
-
-    def apply(self, population):
-        df = population.props
-        params = self.module.parameters
-        now = self.sim.date
-
-        test_idx = df[~df.hv_diagnosed].index
-
-        for person_index in test_idx:
-            logger.debug(
-                'This is HivAidsEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
-                person_index)
-
-            event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_index)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
-
 
 class HivLaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
