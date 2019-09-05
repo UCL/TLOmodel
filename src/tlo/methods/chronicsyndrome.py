@@ -457,6 +457,35 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # Do here whatever happens during an outreach event with an individual
         # ~~~~~~~~~~~~~~~~~~~~~~
 
+
+        # Make request for some consumables
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] ==
+                                              'First line treatment for new TB cases for adults',
+                                              'Intervention_Pkg_Code'])[0]
+        pkg_code2 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] ==
+                                              'MDR notification among previously treated patients',
+                                              'Intervention_Pkg_Code'])[0]
+
+        item_code1 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [pkg_code1, pkg_code2],
+            'Item_Code': [item_code1, item_code2]
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                                                                            hsi_event = self,
+                                                                            cons_req_as_footprint=consumables_needed)
+
+        # answer comes back as a dict in the same format.....
+
+
+
         # Return the actual footprints
         actual_footprint = dict()
         actual_footprint['APPT_FOOTPRINT'] = self.APPT_FOOTPRINT  # The actual time take is the same as expected

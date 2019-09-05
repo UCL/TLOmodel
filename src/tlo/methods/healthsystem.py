@@ -55,6 +55,9 @@ class HealthSystem(Module):
         # Define empty set of registered disease modules
         self.registered_disease_modules = {}
 
+        # Define the dataframe that determines the availability of consumables on a daily basis
+        self.cons_item_code_availability_today = pd.DataFrame()
+
         # Define the container for calls for health system interaction events
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
@@ -586,7 +589,7 @@ class HealthSystem(Module):
         return squeeze_factor_per_hsi_event
 
 
-    def request_consumable(self, cons_req_as_footprint, to_log=True):
+    def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
         HSI Events request a consumable here. The healthsystem module will check if that consumable is available
@@ -597,64 +600,60 @@ class HealthSystem(Module):
 
         :param cons_req: The consumable that is requested, in the format specified in 'get_blank_cons_footprint()'
         :param only_query: Indicator to show whether this should not be logged. [If]
-        :return: True for the consumable is available, False for it is not.
+        :return: True for the consumable is available, False for it is not. TODO: say format!
         """
 
+        # 0) Get information about the hsi_event
+        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVELS
+        the_treatment_id = hsi_event.TREATMENT_ID
+        the_person_id = hsi_event.target
+
         # 1) Unpack the consumables footprint into the individual items
-        cons_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
+        items_req = self.get_consumables_as_individual_items(cons_req_as_footprint)
+        n_items_req = len(items_req)
+        items_req['Item_Code'] = items_req['Item_Code'].astype(int)
 
+        # 2) Determine if these are available at the relevant facility level
+        select_col = 'Available_Facility_Level_' + str(the_facility_level[0])
+        availability = pd.DataFrame(data={'Available':self.cons_item_code_availability_today[select_col].copy()})
 
-        # # 2) For each elements of the cons_req, establish its availability
-        #
-        #
-        # #   Get the probabilities that each item is available
-        # prob_item_available = consumables.loc[consumables['Item_Code'].isin(consumables_used['Item_Code']),
-        #                                       'Available_Facility_Level_' + str(this_facility_level)]
-        #
-        # #   Detetermine if this facility level ever has these consumables
-        # #   (the appt_footprint will be imposed if these items are ever available)
-        # all_items_available_ever = bool((prob_item_available > 0).all())
-        #
-        # #   Get random numbers and see if the the items will be available on this occasion:
-        # all_items_available_now = bool(
-        #     (prob_item_available > self.rng.rand(len(prob_item_available))).all())
-        #
-        # if self.ignore_cons_constraints or all_items_available_now:
-        #     can_do_cons_footprint = True
-        #
+        items_req=items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
+
+        assert len(items_req) == n_items_req
 
 
 
-
-        # 3) Enter the the log
+        # 2) Enter the the log (logs each item)
         # Do a groupby for the different consumables (there could be repeats of individual items which need /
         # to be summed)
-        cons_req = pd.DataFrame(cons_req.groupby('Item_Code').sum())
-        cons_req = cons_req.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
+        if to_log:
 
-        # Get the the total cost of the consumables
-        consumables_used_with_cost = cons_req.merge(self.parameters['Consumables_Cost_List'],
-                                                            how='left',
-                                                            on='Item_Code',
-                                                            left_index=True
-                                                            )
-        total_cost = (
-            consumables_used_with_cost['Units_By_Item_Code'] * consumables_used_with_cost['Unit_Cost']).sum()
+            items_req_to_log = pd.DataFrame(items_req.groupby('Item_Code').sum())
+            items_req_to_log = items_req.rename(columns={'Expected_Units_Per_Case': 'Units_By_Item_Code'})
+            items_req_to_log['Available'] = items_req_to_log['Available']>0     # restore to bool after sum in grouby()
+
+            # Get the the cost of the each consumable item (could not do this merge until after model run)
+            items_req_to_log = items_req_to_log.merge(self.parameters['Consumables_Cost_List'],
+                                                                how='left',
+                                                                on='Item_Code',
+                                                                left_index=True
+                                                                )
+
+            # Compute total cost (limiting to those items which were available)
+            total_cost = items_req_to_log.loc[items_req_to_log['Available'],['Units_By_Item_Code','Unit_Cost']].prod(axis=1).sum()
+
+            # Enter to the log
+            log_consumables = items_req_to_log.to_dict()
+            log_consumables['TREATMENT_ID'] = the_treatment_id
+            log_consumables['Total_Cost'] = total_cost
+            log_consumables['Person_ID'] = the_person_id
+
+            logger.info('%s|Consumables|%s',
+                        self.sim.date,
+                        log_consumables)
 
 
-        # Find out about the HSI Event making the request:
-
-
-        # # Enter to the log
-        # log_consumables = cons_req.to_dict()
-        # log_consumables['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-        # log_consumables['Total_Cost'] = total_cost
-        # log_consumables['Person_ID'] = hsi_event.target
-        #
-        # logger.info('%s|Consumables|%s',
-        #             self.sim.date,
-        #             log_consumables)
-
+        # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
 
 
 
@@ -843,7 +842,28 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s',
                      self.sim.date)
 
-        # 0) Determine the availability of consumables today:
+        # 0) Determine the availability of consumables today based on their probabilities
+        cons = self.module.parameters['Consumables']
+        unique_item_codes = pd.DataFrame(data={'Item_Code':pd.unique(cons['Item_Code'])})
+
+        # merge in probabilities of being available
+        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
+        filter_col.append('Item_Code')
+        unique_item_codes = unique_item_codes.merge(cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner')
+        assert len(unique_item_codes) == len(unique_item_codes)
+
+        # set the index as the Item_Code
+        unique_item_codes = unique_item_codes.set_index(unique_item_codes['Item_Code'])
+        unique_item_codes = unique_item_codes.drop(['Item_Code'],axis=1)
+
+        # random draws: assume that availability of the same item is independent between different facility levels
+        random_draws = self.module.rng.rand(len(unique_item_codes),len(unique_item_codes.columns))
+
+        # Determine the availability of the consumables today
+        self.module.cons_item_code_availability_today = unique_item_codes > random_draws
+
+
+
 
 
 
