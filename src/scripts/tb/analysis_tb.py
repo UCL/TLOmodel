@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
+import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -75,7 +76,7 @@ fh.flush()
 
 output = parse_log_file(logfile)
 
-#
+
 ## HIV
 inc = output['tlo.methods.hiv']['hiv_infected']
 prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
@@ -84,14 +85,15 @@ prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
 tx = output['tlo.methods.hiv']['hiv_treatment']
 fsw = output['tlo.methods.hiv']['hiv_fsw']
 mort = output['tlo.methods.hiv']['hiv_mortality']
-#
-# inc.to_csv(r'Z:Thanzi la Onse\HIV\inc.csv', header=True)
-# prev_m.to_csv(r'Z:Thanzi la Onse\HIV\prev_m.csv', header=True)
-# prev_f.to_csv(r'Z:Thanzi la Onse\HIV\prev_f.csv', header=True)
-# prev_child.to_csv(r'Z:Thanzi la Onse\HIV\prev_child.csv', header=True)
-# tx.to_csv(r'Z:Thanzi la Onse\HIV\tx.csv', header=True)
-# fsw.to_csv(r'Z:Thanzi la Onse\HIV\fsw.csv', header=True)
-# mort.to_csv(r'Z:Thanzi la Onse\HIV\mort.csv', header=True)
+
+
+inc.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\inc.csv', header=True)
+prev_m.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\prev_m.csv', header=True)
+prev_f.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\prev_f.csv', header=True)
+prev_child.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\prev_child.csv', header=True)
+tx.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\tx.csv', header=True)
+fsw.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\fsw.csv', header=True)
+mort.to_csv(r'Z:Thanzi la Onse\HIV\york_sept5_2019_outputs\mort.csv', header=True)
 
 #
 ## TB
@@ -100,11 +102,17 @@ tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
 tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
 tb_prev = output['tlo.methods.tb']['tb_prevalence']
 tb_mort = output['tlo.methods.tb']['tb_mortality']
-#
-#
-# tb_inc.to_csv(r'Z:Thanzi la Onse\TB\inc.csv', header=True)
-# tb_prev_m.to_csv(r'Z:Thanzi la Onse\TB\prev_m.csv', header=True)
-# tb_prev_f.to_csv(r'Z:Thanzi la Onse\TB\prev_f.csv', header=True)
-# tb_prev.to_csv(r'Z:Thanzi la Onse\TB\prev_child.csv', header=True)
-# tb_mort.to_csv(r'Z:Thanzi la Onse\TB\tx.csv', header=True)
-#
+
+
+tb_inc.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\inc.csv', header=True)
+tb_prev_m.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\prev_m.csv', header=True)
+tb_prev_f.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\prev_f.csv', header=True)
+tb_prev.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\prev_child.csv', header=True)
+tb_mort.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\tx.csv', header=True)
+
+
+deaths_df = output['tlo.methods.demography']['death']
+deaths_df['date'] = pd.to_datetime(deaths_df['date'])
+deaths_df['year'] = deaths_df['date'].dt.year
+d_gp=deaths_df.groupby(['year', 'cause']).size().unstack().fillna(0)
+d_gp.to_csv(r'Z:Thanzi la Onse\TB\york_sept5_2019_outputs\deaths.csv', header=True)
