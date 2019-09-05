@@ -30,7 +30,7 @@ resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 3000
+popsize = 300
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -58,7 +58,7 @@ sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-#TODO; Need to think about integration with HealthBurden capture (DALY weights)
+# TODO; Need to think about integration with HealthBurden capture (DALY weights)
 # TODO: must capture indirect death of women during pregnancy
 
 # this will make sure that the logging file is complete
@@ -72,7 +72,7 @@ output = parse_log_file(logfile)
 # https://stackoverflow.com/questions/38792122/how-to-group-and-count-rows-by-month-and-year-using-pandas
 
 # Yearly Maternal Deaths
-deaths_df = output['tlo.methods.labour']['maternal_death'] #N.B WONT RUN ON VERY SMALL POP- NEEDS SOME DEATHS
+deaths_df = output['tlo.methods.labour']['maternal_death']  # N.B WONT RUN ON VERY SMALL POP- NEEDS SOME DEATHS
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 deaths_df['year'] = deaths_df['date'].dt.year
 death_by_cause = deaths_df.groupby(['year'])['person_id'].size()

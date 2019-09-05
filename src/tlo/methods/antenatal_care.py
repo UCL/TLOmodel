@@ -175,7 +175,6 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([conception, gestation_at_anc], axis=1)
         dfx.columns = ['conception', 'gestation_at_anc']
         dfx['first_anc'] = dfx['conception'] + pd.to_timedelta(dfx['gestation_at_anc'], unit='w')
-        x= 'y'
 
         for person in idx_anc:
             care_seeking_date = dfx.at[person, 'first_anc']
