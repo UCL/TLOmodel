@@ -24,7 +24,7 @@ resourcefilepath = "./resources/"
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 1, 1)
-popsize = 1000
+popsize = 3000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -57,9 +57,10 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
+logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-logging.getLogger('tlo.methods.malecircumcision').setLevel(logging.INFO)
 logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.male_circumcision").setLevel(logging.INFO)
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
@@ -70,54 +71,19 @@ fh.flush()
 
 # %% read the results
 # out = sim.population.props
-# out.to_csv(r'C:\Users\Tara\Documents\TLO\outputs.csv', header=True)
+# logfile.to_csv(r'C:\Users\tdm522\outputs.csv', header=True)
 # import pandas as pd
 # import numpy as np
-import datetime
+# import datetime
 # import matplotlib.pyplot as plt
 # from matplotlib import cm
-from tlo.analysis.utils import parse_log_file
+# from tlo.analysis.utils import parse_log_file
 #
-outputpath = './src/scripts/hiv/'
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-logfile = outputpath + 'LogFile' + datestamp + '.log'
-output = parse_log_file(logfile)
-
-
-## HIV
-inc = output['tlo.methods.hiv']['hiv_infected']
-prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
-prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
-prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
-tx = output['tlo.methods.hiv']['hiv_treatment']
-fsw = output['tlo.methods.hiv']['hiv_fsw']
-mort = output['tlo.methods.hiv']['hiv_mortality']
-
-inc.to_csv(r'Z:Thanzi la Onse\HIV\inc.csv', header=True)
-prev_m.to_csv(r'Z:Thanzi la Onse\HIV\prev_m.csv', header=True)
-prev_f.to_csv(r'Z:Thanzi la Onse\HIV\prev_f.csv', header=True)
-prev_child.to_csv(r'Z:Thanzi la Onse\HIV\prev_child.csv', header=True)
-tx.to_csv(r'Z:Thanzi la Onse\HIV\tx.csv', header=True)
-fsw.to_csv(r'Z:Thanzi la Onse\HIV\fsw.csv', header=True)
-mort.to_csv(r'Z:Thanzi la Onse\HIV\mort.csv', header=True)
-
-# C:\Users\tdm522
-
-## TB
-tb_inc = output['tlo.methods.tb']['tb_incidence']
-tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
-tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
-tb_prev = output['tlo.methods.tb']['tb_prevalence']
-tb_mort = output['tlo.methods.tb']['tb_mortality']
-
-
-tb_inc.to_csv(r'Z:Thanzi la Onse\TB\inc.csv', header=True)
-tb_prev_m.to_csv(r'Z:Thanzi la Onse\TB\prev_m.csv', header=True)
-tb_prev_f.to_csv(r'Z:Thanzi la Onse\TB\prev_f.csv', header=True)
-tb_prev.to_csv(r'Z:Thanzi la Onse\TB\prev_child.csv', header=True)
-tb_mort.to_csv(r'Z:Thanzi la Onse\TB\tx.csv', header=True)
-
-
+# outputpath = './src/scripts/hiv/'
+# datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+# logfile = outputpath + 'LogFile' + datestamp + '.log'
+# output = parse_log_file(logfile)
+#
 # # ------------------------------ PLOT DEATHS ----------------------------------------------------
 # deaths_df = output['tlo.methods.demography']['death']
 # deaths_df['date'] = pd.to_datetime(deaths_df['date'])
@@ -126,7 +92,7 @@ tb_mort.to_csv(r'Z:Thanzi la Onse\TB\tx.csv', header=True)
 #
 # barWidth = 0.25
 # # Set position of bar on X axis
-# r1 = np.arange(len(d_gp.loc[:, 'Other']))
+# r1 = np.arrange(len(d_gp.loc[:, 'Other']))
 # r2 = [x + barWidth for x in r1]
 # r3 = [x + barWidth for x in r2]
 #
