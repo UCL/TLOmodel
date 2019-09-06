@@ -35,7 +35,6 @@ class Labour (Module):
     PARAMETERS = {
 
      #  ===================================  NATURAL HISTORY PARAMETERS ===============================================
-
         'prob_pregnancy': Parameter(
             Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMETER
         'prob_prom': Parameter(
@@ -134,7 +133,7 @@ class Labour (Module):
         'prob_pp_sepsis': Parameter(
             Types.REAL, 'probability of sepsis following delivery'),
         'cfr_pph': Parameter(
-            Types.REAL, 'case fatality rate for postpartum haemorrhages'),
+            Types.REAL, 'case fatality rate for postpartum haemorrhage'),
         'cfr_pp_eclampsia': Parameter(
             Types.REAL, 'case fatality rate for eclampsia following delivery'),
         'cfr_pp_sepsis': Parameter(
@@ -163,9 +162,9 @@ class Labour (Module):
         'rr_newborn_sepsis_clean_delivery': Parameter(
             Types.REAL, 'relative risk of newborn sepsis following clean birth practices employed in a facility'),
         'rr_sepsis_post_abx_prom': Parameter(
-            Types.REAL, 'relative risk of maternal sepsis following prophylatic antibiotics for PROM in a facility'),
+            Types.REAL, 'relative risk of maternal sepsis following prophylactic antibiotics for PROM in a facility'),
         'rr_newborn_sepsis_proph_abx': Parameter(
-            Types.REAL, 'relative risk of newborn sepsis following prophylatic antibiotics for '
+            Types.REAL, 'relative risk of newborn sepsis following prophylactic antibiotics for '
                         'premature labour in a facility'),
         'rr_pph_amtsl': Parameter(
             Types.REAL, 'relative risk of severe post partum haemorrhage following active management of the third '
@@ -176,7 +175,7 @@ class Labour (Module):
             Types.REAL, 'relative risk of additional seizures following of administration of magnesium sulphate'),
         'prob_prevent_mgso4': Parameter(
             Types.REAL, 'relative risk of eclampsia following administration of magnesium sulphate in women '
-                        'with severe preeclampsia'),
+                        'with severe pre-eclampsia'),
         'prob_cure_diazepam': Parameter(
             Types.REAL, 'relative risk of additional seizures following of administration of diazepam'),
         'prob_cure_blood_transfusion': Parameter(
@@ -215,12 +214,10 @@ class Labour (Module):
                                           'post_term_labour']),
         'la_current_labour_successful_induction': Property(Types.CATEGORICAL, 'Not Induced, Successful Induction, '
                                                                               'Failed Induction',
-                                                     categories=['not_induced', 'successful_induction',
-                                                                 'failed_induction']),
+                                                           categories=['not_induced', 'successful_induction',
+                                                                       'failed_induction']),
         'la_still_birth_current_pregnancy': Property(Types.BOOL,'whether this womans most recent pregnancy has ended '
                                                                 'in a stillbirth'),
-        #  TODO: work out if we need this property in main DF, or we could store number of still births per woman?
-        #   (and log still births by type)
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_total_deliveries_by_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
@@ -231,10 +228,8 @@ class Labour (Module):
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
         'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
-        'la_maternal_death':Property(Types.BOOL,' whether the woman has died as a result of this pregnancy'), # DUMMY
+        'la_maternal_death': Property(Types.BOOL,' whether the woman has died as a result of this pregnancy'), # DUMMY
         'la_maternal_death_date': Property(Types.DATE, 'date of death for a date in pregnancy')  # DUMMY
-
-
     }
 
     def read_parameters(self, data_folder):
@@ -248,13 +243,11 @@ class Labour (Module):
         params = self.parameters
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
-                          sheet_name='parameter_values')
+                            sheet_name='parameter_values')
 
         dfd.set_index('parameter_name', inplace=True)
 
         #  ===================================  NATURAL HISTORY PARAMETERS ============================================
-
-        # TODO: rename so parameters reflect the actual measure being employed (incidence rates/prevelance etc)
 
         params['prob_pregnancy'] = dfd.loc['prob_pregnancy', 'value']
         params['prob_prom'] = dfd.loc['prob_prom', 'value']
@@ -346,7 +339,7 @@ class Labour (Module):
             params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=347)
             params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
 
-        # TODO: determine DALY weights for uterine rupture?
+        # TODO: source DALY weight for Uterine Rupture
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -373,7 +366,7 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_has_previously_delivered_preterm'] = False
         df.loc[df.sex == 'F', 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.sex == 'F', 'la_obstructed_labour'] = False
-        df.loc[df.sex == 'F', 'la_aph'] =False
+        df.loc[df.sex == 'F', 'la_aph'] = False
         df.loc[df.sex == 'F', 'la_uterine_rupture'] = False
         df.loc[df.sex == 'F', 'la_eclampsia'] = False
         df.loc[df.sex == 'F', 'la_pph'] = False
@@ -648,9 +641,9 @@ class Labour (Module):
         """
 
         logger.info('This is Labour, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+                    'person %d for: %s', person_id, treatment_id)
 
-        # TODO: do i need to utilise this functionality for anything?
+        # TODO: Confirm when this function should be utilised.
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -658,7 +651,7 @@ class Labour (Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        # TODO: Issues 1.) DALYS are hard coded 2.) how will monthly sum of DALYS work for labour comps
+        # TODO: Issues 1.) DALYS are hard coded 2.) how will monthly sum of DALYS work for labour complications
 
         logger.info('This is Labour reporting my health values')
 
@@ -713,6 +706,7 @@ class Labour (Module):
 
         return health_values_df  # return the dataframe
 
+
 class LabourScheduler (Event, IndividualScopeEventMixin):
     """This event determines when pregnant women, who have not experienced a miscarriage, will going to labour"""
 
@@ -749,7 +743,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         else:
             rf1 = 1
 
-        # todo: include persistant malaria
+        # todo: include persistent malaria
 
         riskfactors = rf1
         if riskfactors == 1:
@@ -783,9 +777,11 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta(random, unit='W')
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
+
                 # TODO: should all of these women automatically go into labour- how will we account for induction
-                #todo: we would just apply a higher risk of still birht to these women in these last few weeks if
-                # theyre not induced in time
+                # todo: we would just apply a higher risk of still birth to these women in these last few weeks if
+                #  they're not induced in time
+
             else:
                 random = np.random.randint(37, 41, size=1)
                 random = int(random)
@@ -904,8 +900,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
 # ===================== PLACE HOLDER CARE SEEKING AND SCHEDULING (DUMMY) =====================================
 
-            # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(individual_id, symptom_code=4)
-                prob = 0 #0.73  # DUMMY- will just generate 2010 home birth rate #TODO: incorporate care seeking equation
+                # TODO: Awaiting care seeking equation
+
+                prob = 0.73  # DUMMY- will just generate 2010 home birth rate
                 random = self.sim.rng.random_sample(size=1)
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
                     mni[individual_id]['delivery_setting'] = 'FD'
