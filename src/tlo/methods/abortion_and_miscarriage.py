@@ -11,7 +11,7 @@ from tlo.methods import demography, labour
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class AbortionAndMiscarriage(Module):

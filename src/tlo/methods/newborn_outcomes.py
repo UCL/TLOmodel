@@ -13,7 +13,7 @@ from tlo.methods import demography, labour, newborn_outcomes
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class NewbornOutcomes(Module):

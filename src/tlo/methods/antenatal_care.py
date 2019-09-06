@@ -13,7 +13,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 
 
 class AntenatalCare(Module):
