@@ -309,7 +309,7 @@ class Tb(Module):
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
         df['tb_date_death'] = pd.NaT
-        df['tb_date_death)occurred'] = pd.NaT
+        df['tb_date_death_occurred'] = pd.NaT
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
@@ -604,14 +604,14 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
         # pop at risk = uninfected only
-        at_risk = df[(df.tb_inf == 'uninfected') & df.is_alive].index
-
         #  no age/sex effect on risk of latent infection
-        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
-        # print('prob_tb_new: ', prob_tb_new)
+        prob_tb_new = pd.Series(0, index=df.index)
+        prob_tb_new.loc[df.is_alive & (df.tb_inf == 'uninfected')] = force_of_infection
 
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
+        # print('new tb case', new_case)
+
         df.loc[new_case, 'tb_inf'] = 'latent_susc_new'
         df.loc[new_case, 'tb_date_latent'] = now
         df.loc[new_case, 'tb_stage'] = 'latent'
@@ -620,12 +620,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
         # pop at risk = latent_susc_tx and latent_mdr (new & tx)
-        at_risk = df[
-            (df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains('latent_mdr') & df.is_alive].index
-
-        #  no age/sex effect on risk of latent infection
-        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
-        # print('prob_tb_new: ', prob_tb_new)
+        prob_tb_new = pd.Series(0, index=df.index)
+        prob_tb_new.loc[(df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains(
+            'latent_mdr') & df.is_alive] = force_of_infection
 
         repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         repeat_case = repeat_infected[repeat_infected].index
@@ -662,23 +659,11 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)] *= params[
             'rr_ipt_art_adult']
 
-        # need to scale the prob of progressing to active so overall pop prob of progression = params['prog_active']
-        # mean / scale = scaling factor
-        # don't include children here
-        mean = sum(prob_prog[df.is_alive & df.age_years.between(15, 100)]) / len(
-            prob_prog[df.is_alive & df.age_years.between(15, 100)])
-        scaling_factor = mean / params['prog_active']
-
-        prob_prog_scaled = [x / scaling_factor for x in prob_prog]
-        assert len(prob_prog) == len(prob_prog_scaled)
-
-        # if any newly infected latent cases, 14% become active directly, only for new infections
+        # new cases
         new_latent = len(df[
                              (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                                  df.age_years >= 15) & df.is_alive].index)
-        # print(new_latent)
 
-        # some proportion schedule active now, else schedule active at random date
         if new_latent:
 
             # index of all new susc cases
@@ -691,7 +676,16 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
             for i in df.index[idx]:
                 fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
-            # print('fast', fast)
+
+            # need to scale the prob of progressing to active so overall pop prob of progression = params['prog_active']
+            # mean / scale = scaling factor
+            # don't include children here
+            mean = sum(prob_prog[df.is_alive & df.age_years.between(15, 100)]) / len(
+                prob_prog[df.is_alive & df.age_years.between(15, 100)])
+            scaling_factor = mean / params['prog_active']
+
+            prob_prog_scaled = prob_prog.divide(other=scaling_factor)
+            assert len(prob_prog) == len(prob_prog_scaled)
 
             if fast.sum() > 0:
                 for person_id in fast.index[fast]:
@@ -703,6 +697,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                     # schedule active disease now
                     self.sim.schedule_event(TbActiveEvent(self.module, person_id), now)
 
+            # slow progressors
             for person_id in idx[~fast]:
                 # print('slow', person_id)
                 # decide if person will develop active tb
@@ -745,13 +740,13 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # no direct progression
         # progression within 1 year
-        new_latent_child = df[
-            (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
-                df.age_years < 15) & df.is_alive].sum()
+        new_latent_child = len(df.index[
+                                   (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
+                                       df.age_years < 15) & df.is_alive])
         # print(new_latent)
 
         # some proportion schedule active now, else schedule active at random date
-        if new_latent_child.any():
+        if new_latent_child:
             prog = df[
                 (df.tb_inf == 'latent_susc_new') & (df.tb_date_latent == now) & (
                     df.age_years < 15) & df.is_alive].index
@@ -790,7 +785,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
         rng = self.sim.rng
         now = self.sim.date
 
-        if not df.at[person_id, 'tb_on_ipt'] or not df.at[person_id, 'tb_on_treatment']:
+        if not df.at[person_id, 'tb_on_ipt'] and not df.at[person_id, 'tb_on_treatment']:
 
             df.at[person_id, 'tb_date_active'] = self.sim.date
 
@@ -1157,11 +1152,10 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- NEW INFECTIONS -----------------------------------
 
         # pop at risk = susceptible and latent_susc, latent_mdr_primary only
-        at_risk = df[(df.tb_inf == 'uninfected') & df.is_alive].index
-
         #  no age/sex effect on risk of latent infection
-        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
-        # print('prob_tb_new: ', prob_tb_new)
+        prob_tb_new = pd.Series(0, index=df.index)
+        prob_tb_new.loc[
+            df.is_alive & (df.tb_inf == 'uninfected')] = force_of_infection  # print('prob_tb_new: ', prob_tb_new)
 
         is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         new_case = is_newly_infected[is_newly_infected].index
@@ -1173,12 +1167,9 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
         # pop at risk = latent_mdr_secondary, latent_susc (primary & secondary)
-        at_risk = df[
-            (df.tb_inf == 'latent_mdr_tx') | df['tb_inf'].str.contains('latent_susc') & df.is_alive].index
-
-        #  no age/sex effect on risk of latent infection
-        prob_tb_new = pd.Series(force_of_infection, index=at_risk)
-        # print('prob_tb_new: ', prob_tb_new)
+        prob_tb_new = pd.Series(0, index=df.index)
+        prob_tb_new.loc[(df.tb_inf == 'latent_mdr_tx') | df['tb_inf'].str.contains(
+            'latent_susc') & df.is_alive] = force_of_infection
 
         repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
         repeat_case = repeat_infected[repeat_infected].index
@@ -1214,6 +1205,14 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             'rr_ipt_adult_hiv']
         prob_prog.loc[(df.tb_date_ipt < (now - dur_ipt)) & df.hv_inf & (df.hv_on_art == 2)] *= params[
             'rr_ipt_art_adult']
+
+        # scale probability of progression to match overall population values
+        mean = sum(prob_prog[df.is_alive & df.age_years.between(15, 100)]) / len(
+            prob_prog[df.is_alive & df.age_years.between(15, 100)])
+        scaling_factor = mean / params['prog_active']
+
+        prob_prog_scaled = prob_prog.divide(other=scaling_factor)
+        assert len(prob_prog) == len(prob_prog_scaled)
 
         # if any newly infected latent cases, 14% become active directly, only for new infections
         new_latent = len(df[
@@ -1331,6 +1330,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
         params = self.sim.modules['Tb'].parameters
         prob_pulm = params['pulm_tb']
         rng = self.sim.rng
+        now = self.sim.date
 
         # check not on ipt now or on tb treatment
         if not df.at[person_id, 'tb_on_ipt'] or not df.at[person_id, 'tb_on_treatment']:
@@ -1361,7 +1361,21 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
             # ----------------------------------- ACTIVE CASES SEEKING CARE -----------------------------------
 
             # determine whether they will seek care on symptom change
-            prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+            # prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
+
+            # this will be removed once healthcare seeking model is in place
+            prob_care = 0.47
+            if now.year == 2013:
+                prob_care = 0.44
+            elif now.year == 2014:
+                prob_care = 0.45
+            elif now.year == 2015:
+                prob_care = 0.5
+            elif now.year == 2016:
+                prob_care = 0.57
+            elif now.year > 2016:
+                prob_care = 0.73
+
             seeks_care = rng.rand() < prob_care
 
             if seeks_care:
@@ -3025,7 +3039,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # proportion of hiv cases with active tb
         num_active_hiv = len(df[(df.tb_inf.str.contains('active')) & df.hv_inf & df.is_alive])
 
-        if num_active > 0:
+        if (num_active > 0) & (len(df[df.hv_inf & df.is_alive]) > 0):
             prop_hiv_tb = num_active_hiv / len(df[df.hv_inf & df.is_alive])
         else:
             prop_hiv_tb = 0

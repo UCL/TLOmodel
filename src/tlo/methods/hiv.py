@@ -2278,30 +2278,32 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
         # ------------------------------------ PREVALENCE BY AGE ------------------------------------
-        # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
-        m_adult_hiv = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
-        m_adult_pop = df[df.is_alive & (df.sex == 'M') & (df.age_years.between(15, 65))].groupby('age_range').size()
-        m_adult_prev = m_adult_hiv / m_adult_pop
-        m_adult_prev = m_adult_prev.fillna(0)
-
-        f_adult_hiv = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
-        f_adult_pop = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 65))].groupby('age_range').size()
-        f_adult_prev = f_adult_hiv / f_adult_pop
-        f_adult_prev = f_adult_prev.fillna(0)
-
-        logger.info('%s|hiv_adult_prev_m|%s', self.sim.date,
-                    m_adult_prev.to_dict())
-
-        logger.info('%s|hiv_adult_prev_f|%s', self.sim.date,
-                    f_adult_prev.to_dict())
-
-        child_hiv_age = df[df.is_alive & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
-        child_pop = df[df.is_alive & (df.age_years < 15)].groupby('age_range').size()
-        child_prev_age = child_hiv_age / child_pop
-        child_prev_age = child_prev_age.fillna(0)
-
-        logger.info('%s|hiv_child_prev_m|%s', self.sim.date,
-                    child_prev_age.to_dict())
+        # # if groupby both sex and age_range, you lose categories where size==0, get the counts separately
+        # m_adult_hiv = df[df.is_alive & (df.sex == 'M') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
+        # m_adult_pop = df[df.is_alive & (df.sex == 'M') & (df.age_years.between(15, 65))].groupby('age_range').size()
+        # m_adult_prev = m_adult_hiv / m_adult_pop
+        # m_adult_prev_out = m_adult_prev.fillna(0)
+        # m_adult_prev_out = [x if x < 1 else 1 for x in m_adult_prev_out]
+        #
+        # f_adult_hiv = df[df.is_alive & (df.sex == 'F') & df.hv_inf & (df.age_years >= 15)].groupby('age_range').size()
+        # f_adult_pop = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 65))].groupby('age_range').size()
+        # f_adult_prev = f_adult_hiv / f_adult_pop
+        # f_adult_prev_out = f_adult_prev.fillna(0)
+        # f_adult_prev_out = [x if x < 1 else 1 for x in f_adult_prev_out]
+        #
+        # logger.info('%s|hiv_adult_prev_m|%s', self.sim.date,
+        #             m_adult_prev_out.to_dict())
+        #
+        # logger.info('%s|hiv_adult_prev_f|%s', self.sim.date,
+        #             f_adult_prev_out.to_dict())
+        #
+        # child_hiv_age = df[df.is_alive & df.hv_inf & (df.age_years < 15)].groupby('age_range').size()
+        # child_pop = df[df.is_alive & (df.age_years < 15)].groupby('age_range').size()
+        # child_prev_age = child_hiv_age / child_pop
+        # child_prev_age = child_prev_age.fillna(0)
+        #
+        # logger.info('%s|hiv_child_prev_m|%s', self.sim.date,
+        #             child_prev_age.to_dict())
 
         # ------------------------------------ TREATMENT ------------------------------------
         # prop on treatment, adults
@@ -2320,9 +2322,12 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # prop on treatment, children
         c_art = len(df[df.is_alive & df.hv_inf & (df.hv_on_art != 0) & (df.age_years < 15)])
-        child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
+        if len(df[df.is_alive & df.hv_inf & (df.age_years < 15)]) > 1:
+            child_art = c_art / len(df[df.is_alive & df.hv_inf & (df.age_years < 15)])
 
-        assert child_art <= 1
+            assert child_art <= 1
+        else:
+            child_art = 0
 
         # on treatment, children, virally suppressed
         c_art_vs = len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years < 15)])
