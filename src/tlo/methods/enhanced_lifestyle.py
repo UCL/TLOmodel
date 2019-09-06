@@ -1222,26 +1222,26 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_sec_ed_agege20 = (df.is_alive & (df.age_years >= 20) & (df.li_ed_lev == 3)).sum()
         p_sec_ed_agege20 = n_sec_ed_agege20 / n_agege20
 
-        n_bmi1_urban_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1) & df.li_urban & (df.sex == 'F')).sum()
+        n_bmi1_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 1) & df.li_urban & (df.sex == 'F')).sum()
         prop_bmi1_urban_f = n_bmi1_urban_f / n_urban_agege15_f
-        n_bmi2_urban_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2) & df.li_urban & (df.sex == 'F')).sum()
+        n_bmi2_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 2) & df.li_urban & (df.sex == 'F')).sum()
         prop_bmi2_urban_f = n_bmi2_urban_f / n_urban_agege15_f
-        n_bmi3_urban_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3) & df.li_urban & (df.sex == 'F')).sum()
+        n_bmi3_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 3) & df.li_urban & (df.sex == 'F')).sum()
         prop_bmi3_urban_f = n_bmi3_urban_f / n_urban_agege15_f
-        n_bmi4_urban_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4) & df.li_urban & (df.sex == 'F')).sum()
+        n_bmi4_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 4) & df.li_urban & (df.sex == 'F')).sum()
         prop_bmi4_urban_f = n_bmi4_urban_f / n_urban_agege15_f
-        n_bmi5_urban_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5) & df.li_urban & (df.sex == 'F')).sum()
+        n_bmi5_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 5) & df.li_urban & (df.sex == 'F')).sum()
         prop_bmi5_urban_f = n_bmi5_urban_f / n_urban_agege15_f
 
-        n_bmi1_rural_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1) & ~df.li_urban & (df.sex == 'F')).sum()
+        n_bmi1_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 1) & ~df.li_urban & (df.sex == 'F')).sum()
         prop_bmi1_rural_f = n_bmi1_rural_f / n_rural_agege15_f
-        n_bmi2_rural_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2) & ~df.li_urban & (df.sex == 'F')).sum()
+        n_bmi2_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 2) & ~df.li_urban & (df.sex == 'F')).sum()
         prop_bmi2_rural_f = n_bmi2_rural_f / n_rural_agege15_f
-        n_bmi3_rural_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3) & ~df.li_urban & (df.sex == 'F')).sum()
+        n_bmi3_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 3) & ~df.li_urban & (df.sex == 'F')).sum()
         prop_bmi3_rural_f = n_bmi3_rural_f / n_rural_agege15_f
-        n_bmi4_rural_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4) & ~df.li_urban & (df.sex == 'F')).sum()
+        n_bmi4_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 4) & ~df.li_urban & (df.sex == 'F')).sum()
         prop_bmi4_rural_f = n_bmi4_rural_f / n_rural_agege15_f
-        n_bmi5_rural_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5) & ~df.li_urban & (df.sex == 'F')).sum()
+        n_bmi5_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 5) & ~df.li_urban & (df.sex == 'F')).sum()
         prop_bmi5_rural_f = n_bmi5_rural_f / n_rural_agege15_f
 
     
@@ -1297,14 +1297,37 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_rural_no_clean_drinking_water = (df.is_alive & ~df.li_urban & df.li_no_clean_drinking_water).sum()
         p_no_clean_drinking_water_rural = n_rural_no_clean_drinking_water / n_rural
 
-        logger.info('%s|p_no_access_handwashing_urban|%s|p_no_access_handwashing_rural|%s'
-                    '|p_unimproved_sanitation_urban|%s|p_unimproved_sanitation_rural|%s'
-                    '|p_wood_burn_stove_urban|%s|p_wood_burn_stove_rural|%s'
-                    '|p_no_clean_drinking_water_urban|%s|p_no_clean_drinking_water_rural|%s',
-                    self.sim.date, p_no_access_handwashing_urban, p_no_access_handwashing_rural,
-                    p_unimproved_sanitation_urban, p_unimproved_sanitation_rural,
-                    p_wood_burn_stove_urban, p_wood_burn_stove_rural,
-                    p_no_clean_drinking_water_urban, p_no_clean_drinking_water_rural)
+        n_age25 = (df.is_alive & (df.age_years.between(24, 26))).sum()
+        n_age25_mar_stat_1 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 1)).sum()
+        n_age25_mar_stat_2 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 2)).sum()
+        n_age25_mar_stat_3 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 3)).sum()
+        p_mar_stat_1_age25 = n_age25_mar_stat_1 / n_age25 
+        p_mar_stat_2_age25 = n_age25_mar_stat_2 / n_age25 
+        p_mar_stat_3_age25 = n_age25_mar_stat_3 / n_age25 
+
+        n_age50 = (df.is_alive & (df.age_years.between(49, 51))).sum()
+        n_age50_mar_stat_1 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 1)).sum()
+        n_age50_mar_stat_2 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 2)).sum()
+        n_age50_mar_stat_3 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 3)).sum()
+        p_mar_stat_1_age50 = n_age50_mar_stat_1 / n_age50 
+        p_mar_stat_2_age50 = n_age50_mar_stat_2 / n_age50 
+        p_mar_stat_3_age50 = n_age50_mar_stat_3 / n_age50
+
+#       logger.info('%s|p_mar_stat_1_age25|%s|p_mar_stat_2_age25|%s|p_mar_stat_2_age25|%s',
+#               self.sim.date, p_mar_stat_1_age25, p_mar_stat_2_age25, p_mar_stat_3_age25)
+
+#       logger.info('%s|p_mar_stat_1_age50|%s|p_mar_stat_2_age50|%s|p_mar_stat_2_age50|%s',
+#               self.sim.date, p_mar_stat_1_age50, p_mar_stat_2_age50, p_mar_stat_3_age50)
+
+
+#       logger.info('%s|p_no_access_handwashing_urban|%s|p_no_access_handwashing_rural|%s'
+#                   '|p_unimproved_sanitation_urban|%s|p_unimproved_sanitation_rural|%s'
+#                   '|p_wood_burn_stove_urban|%s|p_wood_burn_stove_rural|%s'
+#                   '|p_no_clean_drinking_water_urban|%s|p_no_clean_drinking_water_rural|%s',
+#                   self.sim.date, p_no_access_handwashing_urban, p_no_access_handwashing_rural,
+#                   p_unimproved_sanitation_urban, p_unimproved_sanitation_rural,
+#                   p_wood_burn_stove_urban, p_wood_burn_stove_rural,
+#                   p_no_clean_drinking_water_urban, p_no_clean_drinking_water_rural)
 
 #       logger.info('%s|p_high_salt|%s|p_high_sugar|%s',
 #           self.sim.date, p_high_salt, p_high_sugar)
@@ -1315,10 +1338,10 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #       logger.info('%s|prop_ex_alc_m|%s|prop_ex_alc_f|%s',
 #           self.sim.date, p_ex_alc_m, p_ex_alc_f)
 
-#       logger.info('%s|prop_bmi1_urban_f|%s|prop_bmi2_urban_f|%s|prop_bmi3_urban_f|%s|prop_bmi4_urban_f|%s|prop_bmi5_urban_f|%s'
-#                   '|prop_bmi1_rural_f|%s|prop_bmi2_rural_f|%s|prop_bmi3_rural_f|%s|prop_bmi4_rural_f|%s|prop_bmi5_rural_f|%s',
-#       self.sim.date, prop_bmi1_urban_f, prop_bmi2_urban_f, prop_bmi3_urban_f, prop_bmi4_urban_f, prop_bmi5_urban_f,
-#                   prop_bmi1_rural_f, prop_bmi2_rural_f, prop_bmi3_rural_f, prop_bmi4_rural_f, prop_bmi5_rural_f)
+        logger.info('%s|prop_bmi1_urban_f|%s|prop_bmi2_urban_f|%s|prop_bmi3_urban_f|%s|prop_bmi4_urban_f|%s|prop_bmi5_urban_f|%s'
+                    '|prop_bmi1_rural_f|%s|prop_bmi2_rural_f|%s|prop_bmi3_rural_f|%s|prop_bmi4_rural_f|%s|prop_bmi5_rural_f|%s',
+        self.sim.date, prop_bmi1_urban_f, prop_bmi2_urban_f, prop_bmi3_urban_f, prop_bmi4_urban_f, prop_bmi5_urban_f,
+                    prop_bmi1_rural_f, prop_bmi2_rural_f, prop_bmi3_rural_f, prop_bmi4_rural_f, prop_bmi5_rural_f)
 
 #       logger.info('%s|p_in_ed_age6|%s|p_in_ed_age12|%s|p_in_ed_age16|%s|p_in_ed_age19|%s|p_sec_ed_agege20|%s',
 #                   self.sim.date,
