@@ -12,7 +12,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.CRITICAL)
+logger.setLevel(logging.INFO)
 LOG_FILENAME = 'labour.log'
 logging.basicConfig(filename=LOG_FILENAME,
                             filemode='w',
@@ -290,7 +290,7 @@ class Labour (Module):
         params['cfr_eclampsia'] = dfd.loc['cfr_eclampsia', 'value']
         params['cfr_sepsis'] = dfd.loc['cfr_sepsis', 'value']
         params['cfr_uterine_rupture'] = dfd.loc['cfr_uterine_rupture', 'value']
-        params['prob_still_obstructed_labour'] = dfd.loc['prob_still_obstructed_labour', 'value']  # dummy
+        params['prob_still_birth_obstructed_labour'] = dfd.loc['prob_still_birth_obstructed_labour', 'value']  # dummy
         params['prob_still_birth_obstructed_labour_md'] = dfd.loc['prob_still_birth_obstructed_labour_md', 'value']  # dummy
         params['prob_still_birth_aph'] = dfd.loc['prob_still_birth_aph', 'value']
         params['prob_still_birth_aph_md'] =dfd.loc['prob_still_birth_aph_md', 'value']
@@ -639,13 +639,6 @@ class Labour (Module):
                                                   cause='Intrapartum Stillbirth')
             self.sim.schedule_event(death, self.sim.date)
 
-            # Log the still birth
-            logger.info('@@@@ A Still Birth has occurred, to mother %s', mother_id)
-            logger.info('%s|still_birth|%s', self.sim.date,
-                        {'age': df.at[child_id, 'age_years'],
-                            'person_id': child_id,
-                            'mother_id': mother_id})
-
             # This property is then reset in case of future pregnancies/stillbirths
             df.loc[mother_id, 'la_still_birth_current_pregnancy'] = False
 
@@ -802,9 +795,6 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
 
         # Labour is then scheduled on the newly generated due date
         self.sim.schedule_event(LabourEvent(self.module, individual_id, cause='labour'), due_date)
-#        print('PREG INFO!','sim date:',self.sim.date, 'conception:', df.at[individual_id, 'date_of_last_pregnancy'],
-#              'due:', due_date)
-
 
 
 class LabourEvent(Event, IndividualScopeEventMixin):
@@ -1366,7 +1356,7 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                     mni[individual_id]['stillbirth_in_labour'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
-                if random < params['prob_still_obstructed_labour']:
+                if random < params['prob_still_birth_obstructed_labour']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
 
@@ -1461,6 +1451,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
             logger.info('%s|maternal_death|%s', self.sim.date,
                         {'age': df.at[individual_id, 'age_years'],
                             'person_id': individual_id })
+
+        if df.at[individual_id, 'la_still_birth_current_pregnancy']:
+            print('STILL BIRTH!!!!')
+            logger.info('@@@@ A Still Birth has occurred, to mother %s', individual_id)
+            logger.info('%s|still_birth|%s', self.sim.date,
+                        {'mother_id': individual_id})
+
 
 
 class PostPartumDeathEvent (Event, IndividualScopeEventMixin):

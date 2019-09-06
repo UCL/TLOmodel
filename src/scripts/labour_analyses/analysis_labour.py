@@ -29,8 +29,8 @@ resourcefilepath = "./resources/"
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 300
+end_date = Date(2020, 1, 1)
+popsize = 3000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -92,7 +92,7 @@ plt.show()
 deaths_df = output['tlo.methods.labour']['still_birth']
 deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 deaths_df['year'] = deaths_df['date'].dt.year
-death_by_cause = deaths_df.groupby(['year'])['person_id'].size()
+death_by_cause = deaths_df.groupby(['year'])['mother_id'].size()
 # TODO: n.b do we count maternal death where the baby dies as a still birth
 
 death_by_cause = death_by_cause.reset_index()
@@ -130,7 +130,7 @@ plt.show()
 still_births_df = output['tlo.methods.labour']['still_birth']
 still_births_df['date'] = pd.to_datetime(still_births_df['date'])
 still_births_df['year'] = still_births_df['date'].dt.year
-death_by_year_s = still_births_df.groupby(['year'])['person_id'].size()
+death_by_year_s = still_births_df.groupby(['year'])['mother_id'].size()
 
 all_births_df = output['tlo.methods.demography']['on_birth']
 all_births_df['date'] = pd.to_datetime(all_births_df['date'])
@@ -161,21 +161,21 @@ plt.title("Yearly Perinatal Mortality Rate")
 plt.show()
 
 # INCIDENCE OF INDUCED ABORTION (per 1000 women aged 15-49) #TODO: CURRENTLY THIS IS ALL WOMEN
-ia_df = output['tlo.methods.abortion_and_miscarriage']['induced_abortion']
-ia_df['date'] = pd.to_datetime(ia_df['date'])
-ia_df['year'] = ia_df['date'].dt.year
-ia_year = ia_df.groupby(['year'])['person_id'].size()
+# ia_df = output['tlo.methods.abortion_and_miscarriage']['induced_abortion']
+# ia_df['date'] = pd.to_datetime(ia_df['date'])
+# ia_df['year'] = ia_df['date'].dt.year
+# ia_year = ia_df.groupby(['year'])['person_id'].size()
 
-pop_df = output['tlo.methods.demography']['population']
-pop_df['date'] = pd.to_datetime(pop_df['date'])
-pop_df['year'] = pop_df['date'].dt.year
-women_year = pop_df.groupby(['year'])['female']#.size()
+# pop_df = output['tlo.methods.demography']['population']
+# pop_df['date'] = pd.to_datetime(pop_df['date'])
+# pop_df['year'] = pop_df['date'].dt.year
+# women_year = pop_df.groupby(['year'])['female']#.size()
 
-ia_wom_df = pd.concat((ia_year, women_year), axis=1)
-ia_wom_df.columns = ['yearly_abortions', 'female_pop']
-ia_wom_df['abortion_incidence'] = ia_wom_df['yearly_abortions']/ia_wom_df['female_pop'] * 1000
+# ia_wom_df = pd.concat((ia_year, women_year), axis=1)
+# ia_wom_df.columns = ['yearly_abortions', 'female_pop']
+# ia_wom_df['abortion_incidence'] = ia_wom_df['yearly_abortions']/ia_wom_df['female_pop'] * 1000
 
-x='y'
+# x='y'
 
 # ----------------------------------- Incidence of Complications in Labour --------------------------------------------
 # Todo: Confirm standard metrics of incidence for these complications to allow comparison
