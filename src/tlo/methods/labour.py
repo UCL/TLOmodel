@@ -208,15 +208,11 @@ class Labour (Module):
 
         'la_due_date_current_pregnancy': Property(Types.DATE, 'The date on which a newly pregnant woman is scheduled to'
                                                               ' go into labour'),
-        'la_labour_current_pregnancy': Property(Types.CATEGORICAL, 'not in labour, Term labour, Early Preterm Labour, '
-                                                                   'Late Preterm Labour, Post term labour',
-                              categories=['not_in_labour', 'term_labour', 'early_preterm_labour', 'late_preterm_labour',
-                                          'post_term_labour']),
         'la_current_labour_successful_induction': Property(Types.CATEGORICAL, 'Not Induced, Successful Induction, '
                                                                               'Failed Induction',
                                                            categories=['not_induced', 'successful_induction',
                                                                        'failed_induction']),
-        'la_still_birth_current_pregnancy': Property(Types.BOOL,'whether this womans most recent pregnancy has ended '
+        'la_still_birth_current_pregnancy': Property(Types.BOOL, 'whether this womans most recent pregnancy has ended '
                                                                 'in a stillbirth'),
         'la_parity': Property(Types.INT, 'total number of previous deliveries'),
         'la_total_deliveries_by_cs': Property(Types.INT, 'number of previous deliveries by caesarean section'),
@@ -228,7 +224,7 @@ class Labour (Module):
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
         'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
-        'la_maternal_death': Property(Types.BOOL,' whether the woman has died as a result of this pregnancy'), # DUMMY
+        'la_maternal_death': Property(Types.BOOL,' whether the woman has died as a result of this pregnancy'),  # DUMMY
         'la_maternal_death_date': Property(Types.DATE, 'date of death for a date in pregnancy')  # DUMMY
     }
 
@@ -256,13 +252,13 @@ class Labour (Module):
         params['rr_PL_OL_para1'] = dfd.loc['rr_PL_OL_para1', 'value']
         params['rr_PL_OL_age_less20'] = dfd.loc['rr_PL_OL_age_less20', 'value']
         params['prob_ptl'] = dfd.loc['prob_ptl', 'value']
-        params['prob_early_ptb'] = dfd.loc['prob_early_ptb', 'value']  # rough calc - should use 2014 global estimates?
+        params['prob_early_ptb'] = dfd.loc['prob_early_ptb', 'value']
         params['rr_early_ptb_age<20'] = dfd.loc['rr_early_ptb_age<20', 'value']
         params['rr_early_ptb_prev_ptb'] = dfd.loc['rr_early_ptb_prev_ptb', 'value']
         params['rr_early_ptb_anaemia'] = dfd.loc['rr_early_ptb_anaemia', 'value']
-        params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value'] # rough calc - should use 2014 global estimates?
+        params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value']
         params['rr_late_ptb_prev_ptb'] = dfd.loc['rr_late_ptb_prev_ptb', 'value']
-        params['prob_potl'] = dfd.loc['prob_potl', 'value']  # (incidence 32/1000 LBs)
+        params['prob_potl'] = dfd.loc['prob_potl', 'value']
         params['prob_ip_eclampsia'] = dfd.loc['prob_ip_eclampsia', 'value']
         params['prob_aph'] = dfd.loc['prob_aph', 'value']
         params['prob_ip_sepsis'] = dfd.loc['prob_ip_sepsis', 'value']
@@ -270,7 +266,7 @@ class Labour (Module):
         params['prob_uterine_rupture'] = dfd.loc['prob_uterine_rupture', 'value']
         params['rr_ur_grand_multip'] = dfd.loc['rr_ur_grand_multip', 'value']
         params['rr_ur_prev_cs'] = dfd.loc['rr_ur_prev_cs', 'value']
-        params['rr_ur_ref_ol'] = dfd.loc['rr_ur_ref_ol', 'value'] # REVIEW "obstructed but not referred"
+        params['rr_ur_ref_ol'] = dfd.loc['rr_ur_ref_ol', 'value']
         params['rr_ip_eclampsia_30_34'] = dfd.loc['rr_ip_eclampsia_30_34', 'value']
         params['rr_ip_eclampsia_35'] = dfd.loc['rr_ip_eclampsia_35', 'value']
         params['rr_ip_eclampsia_nullip'] = dfd.loc['rr_ip_eclampsia_nullip', 'value']
@@ -278,22 +274,22 @@ class Labour (Module):
         params['rr_ip_aph_noedu'] = dfd.loc['rr_ip_aph_noedu', 'value']
         params['rr_aph_pl_ol'] = dfd.loc['rr_aph_pl_ol', 'value']
         params['prob_cord_prolapse'] = dfd.loc['prob_cord_prolapse', 'value']
-        params['cfr_obstructed_labour'] = dfd.loc['cfr_obstructed_labour', 'value']  # dummy
+        params['cfr_obstructed_labour'] = dfd.loc['cfr_obstructed_labour', 'value']
         params['cfr_aph'] = dfd.loc['cfr_aph', 'value']
         params['cfr_eclampsia'] = dfd.loc['cfr_eclampsia', 'value']
         params['cfr_sepsis'] = dfd.loc['cfr_sepsis', 'value']
         params['cfr_uterine_rupture'] = dfd.loc['cfr_uterine_rupture', 'value']
-        params['prob_still_birth_obstructed_labour'] = dfd.loc['prob_still_birth_obstructed_labour', 'value']  # dummy
-        params['prob_still_birth_obstructed_labour_md'] = dfd.loc['prob_still_birth_obstructed_labour_md', 'value']  # dummy
+        params['prob_still_birth_obstructed_labour'] = dfd.loc['prob_still_birth_obstructed_labour', 'value']
+        params['prob_still_birth_obstructed_labour_md'] = dfd.loc['prob_still_birth_obstructed_labour_md', 'value']
         params['prob_still_birth_aph'] = dfd.loc['prob_still_birth_aph', 'value']
-        params['prob_still_birth_aph_md'] =dfd.loc['prob_still_birth_aph_md', 'value']
+        params['prob_still_birth_aph_md'] = dfd.loc['prob_still_birth_aph_md', 'value']
         params['prob_still_birth_sepsis'] = dfd.loc['prob_still_birth_sepsis', 'value']
         params['prob_still_birth_sepsis_md'] = dfd.loc['prob_still_birth_sepsis_md', 'value']
         params['prob_still_birth_ur'] = dfd.loc['prob_still_birth_ur', 'value']
         params['prob_still_birth_ur_md'] = dfd.loc['prob_still_birth_ur_md', 'value']
         params['prob_still_birth_eclampsia'] = dfd.loc['prob_still_birth_eclampsia', 'value']
         params['prob_still_birth_eclampsia_md'] = dfd.loc['prob_still_birth_eclampsia_md', 'value']
-        params['prob_pp_eclampsia'] =dfd.loc['prob_pp_eclampsia', 'value']
+        params['prob_pp_eclampsia'] = dfd.loc['prob_pp_eclampsia', 'value']
         params['prob_pph'] = dfd.loc['prob_pph', 'value']
         params['rr_pph_pl_ol'] = dfd.loc['rr_pph_pl_ol', 'value']
         params['prob_pp_sepsis'] = dfd.loc['prob_pp_sepsis', 'value']
@@ -305,30 +301,28 @@ class Labour (Module):
 
         # ================================= TREATMENT PARAMETERS =====================================================
 
-        params['prob_successful_induction'] = dfd.loc['prob_successful_induction', 'value']  # norwegien study
-        params['rr_maternal_sepsis_clean_delivery'] = dfd.loc['rr_maternal_sepsis_clean_delivery', 'value']  # dummy
-        params['rr_newborn_sepsis_clean_delivery'] = dfd.loc['rr_newborn_sepsis_clean_delivery', 'value'] # dummy
-        params['rr_sepsis_post_abx_prom'] = dfd.loc['rr_sepsis_post_abx_prom', 'value'] # dummy
-        params['rr_newborn_sepsis_proph_abx'] = dfd.loc['rr_newborn_sepsis_proph_abx', 'value'] # dummy
-        params['rr_pph_amtsl'] = dfd.loc['rr_pph_amtsl', 'value']  # cochrane (for SEVERE pph)
-        params['prob_cure_antibiotics'] = dfd.loc['prob_cure_antibiotics', 'value']  # dummy
+        params['prob_successful_induction'] = dfd.loc['prob_successful_induction', 'value']
+        params['rr_maternal_sepsis_clean_delivery'] = dfd.loc['rr_maternal_sepsis_clean_delivery', 'value']
+        params['rr_newborn_sepsis_clean_delivery'] = dfd.loc['rr_newborn_sepsis_clean_delivery', 'value']
+        params['rr_sepsis_post_abx_prom'] = dfd.loc['rr_sepsis_post_abx_prom', 'value']
+        params['rr_newborn_sepsis_proph_abx'] = dfd.loc['rr_newborn_sepsis_proph_abx', 'value']
+        params['rr_pph_amtsl'] = dfd.loc['rr_pph_amtsl', 'value']
+        params['prob_cure_antibiotics'] = dfd.loc['prob_cure_antibiotics', 'value']
         params['prob_cure_mgso4'] = dfd.loc['prob_cure_mgso4', 'value']
-        # probability taken from RR of 0.43for additional seizures (vs diazepam alone)
         params['prob_prevent_mgso4'] = dfd.loc['prob_prevent_mgso4', 'value']
-        # Risk reduction of eclampsia in women who have pre-eclampsia
         params['prob_cure_diazepam'] = dfd.loc['prob_cure_diazepam', 'value']
-        params['prob_cure_blood_transfusion'] = dfd.loc['prob_cure_blood_transfusion', 'value']  # dummy
-        params['prob_cure_oxytocin'] = dfd.loc['prob_cure_oxytocin', 'value'] # dummy
-        params['prob_cure_misoprostol'] = dfd.loc['prob_cure_misoprostol', 'value']  # dummy
-        params['prob_cure_uterine_massage'] = dfd.loc['prob_cure_uterine_massage', 'value']  # dummy
-        params['prob_cure_uterine_tamponade'] = dfd.loc['prob_cure_uterine_tamponade', 'value'] # dummy
-        params['prob_cure_uterine_ligation'] = dfd.loc['prob_cure_uterine_ligation', 'value'] # dummy
-        params['prob_cure_b_lynch'] = dfd.loc['prob_cure_b_lynch', 'value'] # dummy
-        params['prob_cure_hysterectomy'] = dfd.loc['prob_cure_hysterectomy', 'value']  # dummy
-        params['prob_cure_manual_removal'] = dfd.loc['prob_cure_manual_removal', 'value']  # dummy
-        params['prob_cure_uterine_repair'] = dfd.loc['prob_cure_uterine_repair', 'value']  # dummy
-        params['prob_deliver_ventouse'] = dfd.loc['prob_deliver_ventouse', 'value']  # dummy
-        params['prob_deliver_forceps'] = dfd.loc['prob_deliver_forceps', 'value']  # dummy
+        params['prob_cure_blood_transfusion'] = dfd.loc['prob_cure_blood_transfusion', 'value']
+        params['prob_cure_oxytocin'] = dfd.loc['prob_cure_oxytocin', 'value']
+        params['prob_cure_misoprostol'] = dfd.loc['prob_cure_misoprostol', 'value']
+        params['prob_cure_uterine_massage'] = dfd.loc['prob_cure_uterine_massage', 'value']
+        params['prob_cure_uterine_tamponade'] = dfd.loc['prob_cure_uterine_tamponade', 'value']
+        params['prob_cure_uterine_ligation'] = dfd.loc['prob_cure_uterine_ligation', 'value']
+        params['prob_cure_b_lynch'] = dfd.loc['prob_cure_b_lynch', 'value']
+        params['prob_cure_hysterectomy'] = dfd.loc['prob_cure_hysterectomy', 'value']
+        params['prob_cure_manual_removal'] = dfd.loc['prob_cure_manual_removal', 'value']
+        params['prob_cure_uterine_repair'] = dfd.loc['prob_cure_uterine_repair', 'value']
+        params['prob_deliver_ventouse'] = dfd.loc['prob_deliver_ventouse', 'value']
+        params['prob_deliver_forceps'] = dfd.loc['prob_deliver_forceps', 'value']
 
         # Here we will include DALY weights if applicable...
 
@@ -358,7 +352,6 @@ class Labour (Module):
 
     # ----------------------------------------- DEFAULTS ---------------------------------------------------------------
 
-        df.loc[df.sex == 'F', 'la_labour_current_pregnancy'] = 'not_in_labour'
         df.loc[df.sex == 'F', 'la_current_labour_successful_induction'] = 'not_induced'
         df.loc[df.sex == 'F', 'la_still_birth_current_pregnancy'] = False
         df.loc[df.sex == 'F', 'la_parity'] = 0
@@ -375,7 +368,7 @@ class Labour (Module):
 
 # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) --------------------------------
 
-        # !!!!!!!!!!!!!!!!1 THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         # Get and hold all the women who are eligible to become pregnant at baseline
         women_idx = df.index[(df.age_years >= 15) & (df.age_years <= 49) & df.is_alive & (df.sex == 'F')]
@@ -399,14 +392,14 @@ class Labour (Module):
         random_draw = pd.Series(rng.random_sample(size=len(pregnant_idx)),
                                 index=df.index[df.is_pregnant & df.is_alive])
 
-        # Randomly generate a number of weeks gestation between 1-39 for all pregnant women
+        # Randomly generate a number of weeks gestation between 1-39 for all pregnant women at baseline
         simdate = pd.Series(self.sim.date, index=pregnant_idx)
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
         dfx['gestational_age_in_weeks'] = (39 - 39 * dfx.random_draw)
         df.loc[pregnant_idx, 'ac_gestational_age'] = dfx.gestational_age_in_weeks.astype(int)
 
-        # Use this gestational age to calculate when the woman's baby was conceived
+        # Use gestational age to calculate when the woman's baby was conceived
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age_in_weeks'], unit='w')
 
         # Apply a due date of 9 months in the future from the date of conception for each woman
@@ -415,8 +408,8 @@ class Labour (Module):
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'la_due_date_current_pregnancy'] = dfx.due_date
 
-        # For women who are less than term gestation at baseline, we determine if they will go into preterm/post term
-        # or term labour
+        # For women whose gestation is less than 37 weeks at baseline, we determine if they will go into preterm/
+        # post term or term labour:
 
         # First we apply the risk of preterm birth to these women
         non_term_women = dfx.index[dfx.gestational_age_in_weeks < 36]
@@ -424,7 +417,7 @@ class Labour (Module):
         random_draw = pd.Series(rng.random_sample(size=len(non_term_women)),
                                 index=non_term_women)
 
-        dfx = pd.concat((eff_prob_ptl,random_draw), axis=1)
+        dfx = pd.concat((eff_prob_ptl, random_draw), axis=1)
         dfx.columns = ['eff_prob_ptl', 'random_draw']
         idx_ptb = dfx.index[dfx.eff_prob_ptl > dfx.random_draw]
         idx_no_ptb = dfx.index[dfx.eff_prob_ptl < dfx.random_draw]
@@ -442,7 +435,7 @@ class Labour (Module):
 
         # We then set there due date for somewhere between 24-33 weeks in the future from their contraception date
         random_e = pd.Series(self.rng.choice(range(24, 34), size=len(idx_e_ptl)), index=idx_e_ptl)
-        idx_e_ptl_concep= pd.Series(df.date_of_last_pregnancy, index=idx_e_ptl)
+        idx_e_ptl_concep = pd.Series(df.date_of_last_pregnancy, index=idx_e_ptl)
         dfx = pd.concat((idx_e_ptl_concep, random_e), axis=1)
         dfx.columns = ['idx_e_ptl_concep', 'random_e']
         dfx['due_date'] = dfx['idx_e_ptl_concep'] + pd.to_timedelta(dfx['random_e'], unit='w')
@@ -481,7 +474,7 @@ class Labour (Module):
 
 #  ----------------------------ASSIGNING PARITY AT BASELINE (DUMMY)-----------------------------------------------------
 
-        # !!!!!!!!!!!!!!!!1 THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # TODO: just check that TC isnt just doing the analysis but is also applying the parity at baseline
 
         # Get and hold all the women in the dataframe who between the ages of 15-24 years old
@@ -610,7 +603,6 @@ class Labour (Module):
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'la_due_date_current_pregnancy'] = pd.NaT
             df.at[child_id, 'la_current_labour_successful_induction'] = 'not_induced'
-            df.at[child_id, 'la_labour_current_pregnancy'] = 'not_in_labour'
             df.at[child_id, 'la_still_birth_current_pregnancy'] = False
             df.at[child_id, 'la_parity'] = 0
             df.at[child_id, 'la_total_deliveries_by_cs'] = 0
@@ -651,7 +643,8 @@ class Labour (Module):
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        # TODO: Issues 1.) DALYS are hard coded 2.) how will monthly sum of DALYS work for labour complications
+        # TODO: Issues 1.) DALYs wont run if theyre not hard coded
+        #  2.) how will monthly sum of DALYS work for labour complications (if variables are switched on/off)
 
         logger.info('This is Labour reporting my health values')
 
@@ -719,7 +712,7 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         m = self
 
         # First we determine this woman's risk of early preterm birth based on independent risk factors
-        if ~df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] <20):
+        if ~df.at[individual_id, 'la_has_previously_delivered_preterm'] & (df.at[individual_id, 'age_years'] < 20):
             rf1 = params['rr_early_ptb_age<20']
         else:
             rf1 = 1
@@ -729,21 +722,17 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
         else:
             rf2 = 1
 
-        # todo: include anaemia
-
         riskfactors = rf1 * rf2
         if riskfactors == 1:
             eff_prob_early_ptb = params['prob_early_ptb']
         else:
             eff_prob_early_ptb = riskfactors * params['prob_early_ptb']
 
-        # Then we determine her risk of late preterm birth based on independant risk factors
+        # Then we determine her risk of late preterm birth based on independent risk factors
         if df.at[individual_id, 'la_has_previously_delivered_preterm']:
             rf1 = params['rr_late_ptb_prev_ptb']
         else:
             rf1 = 1
-
-        # todo: include persistent malaria
 
         riskfactors = rf1
         if riskfactors == 1:
@@ -772,15 +761,14 @@ class LabourScheduler (Event, IndividualScopeEventMixin):
             random = self.sim.rng.random_sample(size=1)
             if random < params['prob_potl']:
                 # Risk factors?!
-                random = np.random.randint(42, 44, size=1)
+                random = np.random.randint(42, 46, size=1)
                 random = int(random)
                 df.at[individual_id, 'la_due_date_current_pregnancy'] = df.at[individual_id, 'date_of_last_pregnancy'] + \
                                                                         pd.Timedelta(random, unit='W')
                 due_date = df.at[individual_id, 'la_due_date_current_pregnancy']
 
-                # TODO: should all of these women automatically go into labour- how will we account for induction
-                # todo: we would just apply a higher risk of still birth to these women in these last few weeks if
-                #  they're not induced in time
+                # TODO: We need to add an increasing risk of still birth on women who go over due
+                #  (in the still birth module?)- would maybe need to be a weekly poll?
 
             else:
                 random = np.random.randint(37, 41, size=1)
@@ -871,14 +859,12 @@ class LabourEvent(Event, IndividualScopeEventMixin):
             if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
                 if 37 <= df.at[individual_id,'ac_gestational_age'] < 42:
                     mni[individual_id]['labour_state'] = 'TL'
-                # df.at[individual_id, 'la_labour_current_pregnancy'] = "term_labour"
 
                     logger.info('This is LabourEvent, person %d has now gone into term labour on date %s',
                                 individual_id, self.sim.date)
 
                 elif 24 <= df.at[individual_id,'ac_gestational_age'] < 34:
                     mni[individual_id]['labour_state'] = 'EPTL'
-                # df.at[individual_id, 'la_labour_current_pregnancy'] = "early_preterm_labour"
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.info('This is LabourEvent, person %d has now gone into early preterm labour on date %s',
@@ -893,7 +879,6 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                 elif df.at[individual_id,'ac_gestational_age'] > 41:
                     mni[individual_id]['labour_state'] = 'POTL'
-                # df.at[individual_id, 'la_labour_current_pregnancy'] = "post_term_labour"
 
                     logger.info('This is LabourEvent, person %d is now overdue labour and is post-term  on date %s',
                                 individual_id, self.sim.date)
@@ -902,7 +887,7 @@ class LabourEvent(Event, IndividualScopeEventMixin):
 
                 # TODO: Awaiting care seeking equation
 
-                prob = 0.73  # DUMMY- will just generate 2010 home birth rate
+                prob = 0.73
                 random = self.sim.rng.random_sample(size=1)
                 if (df.at[individual_id, 'la_current_labour_successful_induction'] == 'not_induced') & (random < prob):
                     mni[individual_id]['delivery_setting'] = 'FD'
