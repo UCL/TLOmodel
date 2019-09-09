@@ -25,8 +25,8 @@ def simulation():
     sim = Simulation(start_date=start_date)
     demography_module = demography.Demography(resourcefilepath=resourcefilepath)
     sim.register(demography_module)
-    core_module = contraception.Contraception(resourcefilepath=resourcefilepath)
-    sim.register(core_module)
+    contraception_module = contraception.Contraception(resourcefilepath=resourcefilepath)
+    sim.register(contraception_module)
     sim.seed_rngs(0)
     return sim
 
@@ -36,7 +36,7 @@ def test_run(simulation):
     simulation.simulate(end_date=end_date)
 
 
-def test_dypes(simulation):
+def test_dtypes(simulation):
     # check types of columns
     df = simulation.population.props
     orig = simulation.population.new_row
