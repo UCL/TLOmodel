@@ -26,10 +26,23 @@ def simulation():
 
 def __check_properties(df):
     assert not ((df.sex == 'M') & df.co_contraceptive != 'not_using').any()
+    assert not (df.age_years < 15 & df.co_contraceptive != 'not_using').any()
+
+
+def test_make_initial_population(simulation):
+    simulation.make_initial_population(n=popsize)
+
+
+def test_initial_population(simulation):
+    __check_properties(simulation.population.props)
 
 
 def test_run(simulation):
     simulation.simulate(end_date=end_date)
+
+
+def test_final_population(simulation):
+    __check_properties(simulation.population.props)
 
 
 def test_dtypes(simulation):
