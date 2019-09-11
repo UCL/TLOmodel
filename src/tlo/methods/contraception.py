@@ -436,7 +436,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                         self.sim.date,
                         {
                             'woman_index': woman,
-                            'birth_booked': df.at[woman, 'co_date_of_childbirth']
+                            'birth_booked': str(df.at[woman, 'co_date_of_childbirth'])
                         })
 
 
