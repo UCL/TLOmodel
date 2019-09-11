@@ -158,6 +158,10 @@ class Contraception(Module):
         df = population.props
 
         df.loc[df.is_alive, 'co_contraception'] = 'not_using'
+        df.loc[df.is_alive, 'co_date_of_childbirth'] = pd.NaT
+        df.loc[df.is_alive, 'is_pregnant'] = False
+        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
+        df.loc[df.is_alive, 'co_unintended_preg'] = False
 
         # Assign contraception method
         # 1. select females aged 15-49 from population, for current year
