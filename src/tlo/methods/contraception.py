@@ -5,11 +5,8 @@ please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Preg
 for conceptual diagram
 """
 import logging
-from collections import defaultdict
 
-import numpy as np
 import pandas as pd
-import math
 
 from pathlib import Path
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
@@ -82,7 +79,7 @@ class Contraception(Module):
         self.parameters['contraception_initiation2'] = workbook['irate2_']
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
 
-        self.parameters['contraception_failure'] = workbook['Failure']
+        self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         self.parameters['rr_fail_under25'] = 2.2
@@ -175,7 +172,6 @@ class Contraception(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-
         sim.schedule_event(ContraceptionSwitchingPoll(self), sim.date + DateOffset(months=0))
 
         # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (starts at month 0)
@@ -367,70 +363,44 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         logger.debug('Checking to see if anyone becomes pregnant whilst on contraception')
 
-        df = population.props  # get the population dataframe
-        m = self.module
+        df = population.props
+        p = self.module.parameters
         rng = self.module.rng
 
-        # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.co_contraception != 'not_using')]
+        prob_of_failure = p['contraception_failure']
 
-        # prepare the probabilities
-        c_worksheet = m.parameters['contraception_failure']
+        possible_to_fail = ((df.sex == 'F') &
+                            df.is_alive &
+                            df.age_years.between(self.age_low, self.age_high) &
+                            ~df.co_contraception.isin(['not_using', 'female_steralization']))
 
-        # add the probabilities and copy to each row of the sim population (population dataframe)
-        df_new = pd.concat([df, c_worksheet], axis=1)
-        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                       'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[
-            0, ['pill', 'IUD', 'injections',
-                'implant', 'male_condom',
-                'female_sterilization',
-                'other_modern',
-                'periodic_abstinence',
-                'withdrawal',
-                'other_traditional']].tolist()
-        probabilities = df_new.loc[
-            using_idx, ['age_years', 'is_pregnant', 'co_contraception', 'pill', 'IUD', 'injections', 'implant',
-                        'male_condom',
-                        'female_sterilization', 'other_modern', 'periodic_abstinence',
-                        'withdrawal', 'other_traditional']]
-        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
+        prob_of_failure = df.loc[possible_to_fail, 'co_contraception'].map(prob_of_failure)
 
         # apply increased risk of failure to under 25s
-        under25 = probabilities.index[probabilities.age_years.between(15, 25)]
-        probabilities.loc[under25, 'prob'] = probabilities['prob'] * m.parameters['rr_fail_under25']
+        prob_of_failure.loc[df.index[possible_to_fail & (df.age_years.between(15, 25))]] *= p['rr_fail_under25']
 
-        probabilities['1-prob'] = 1 - probabilities['prob']
-        probabilities['preg'] = 'preg'
+        # randomly select some individual's for contraceptive failure
+        random_draw = rng.random_sample(size=len(prob_of_failure))
+        women_co_failure = prob_of_failure.index[prob_of_failure > random_draw]
 
-        # apply the probabilities of failure for each contraception method
-        # to series which has index of all currently using
-        # need to use a for loop to loop through each method
-        for woman in using_idx:
-            her_p = np.asarray(probabilities.loc[woman, ['prob', '1-prob']], dtype='float64')
-            her_op = np.asarray(probabilities.loc[woman, ['preg', 'co_contraception']])
+        for woman in women_co_failure:
+            # this woman's contraception has failed - she is pregnant
+            df.at[woman, 'is_pregnant'] = True
+            df.at[woman, 'date_of_last_pregnancy'] = self.sim.date
+            df.at[woman, 'co_unintended_preg'] = True
 
-            her_method = rng.choice(her_op, p=her_p)
-            if her_method == 'preg':
-                df.loc[woman, 'is_pregnant'] = True
-                df.loc[woman, 'date_of_last_pregnancy'] = self.sim.date
-                df.loc[
-                    woman, 'co_unintended_preg'] = True # as these are contraceptive failures these pregnancies are unintended
-                # schedule the birth event for each newly pregnant woman (9 months plus/minus 2 wks)
-                df.loc[woman, 'co_date_of_childbirth'] = self.sim.date + DateOffset(months=9,
-                                                                                    weeks=-2 + 4 * rng.random_sample())
-                # Schedule the Birth
-                scheduled_birth_date = df.at[woman, 'co_date_of_childbirth']
-                birth = DelayedBirthEvent(self, mother_id=woman)
-                self.sim.schedule_event(birth, scheduled_birth_date)
+            # schedule date of birth for this pregnancy
+            date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
+            df.at[woman, 'co_date_of_childbirth'] =  date_of_birth
+            self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
 
-                # output some logging if any pregnancy (contraception failure)
-                logger.info('%s|fail_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman,
-                                'Preg': df.at[woman, 'is_pregnant'],
-                                'birth booked for': str(df.at[woman, 'co_date_of_childbirth'])
-                            })
+            # output some logging if any pregnancy (contraception failure)
+            logger.info('%s|fail_contraception|%s',
+                        self.sim.date,
+                        {
+                            'woman_index': woman,
+                            'birth_booked': df.at[woman, 'co_date_of_childbirth']
+                        })
 
 
 class Init2(RegularEvent, PopulationScopeEventMixin):
