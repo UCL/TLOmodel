@@ -30,6 +30,8 @@ def simulation():
     sim.seed_rngs(0)
     return sim
 
+def __check_properties(df):
+    assert not ((df.sex == 'M') & df.co_contraceptive != 'not_using').any()
 
 def test_run(simulation):
     simulation.make_initial_population(n=popsize)
