@@ -514,7 +514,9 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
             logger.info('%s|birth_booked|%s',
                         self.sim.date,
-                        date_of_birth)
+                        {
+                            'date': str(date_of_birth)
+                        })
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -538,8 +540,7 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         Assuming the person is still alive, we ask the simulation to create a new offspring.
         :param mother_id: the person the event happens to, i.e. the mother giving birth
         """
-        logger.info('%s|birth_occurring_to_mother|%d',
-                    self.sim.date, mother_id)
+        logger.info('%s|birth_occurring_to_mother|%s', self.sim.date, {'mother_id': mother_id})
 
         df = self.sim.population.props
 

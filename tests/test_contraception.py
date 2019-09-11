@@ -55,6 +55,7 @@ def test_dtypes(simulation):
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()
+    test_make_initial_population(simulation)
     test_run(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
