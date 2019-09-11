@@ -14,7 +14,7 @@ import math
 from pathlib import Path
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
-from tlo.methods.demography import Demography
+from tlo.util import transition_states
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -44,7 +44,7 @@ class Contraception(Module):
         'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
         'r_init1_age': Parameter(Types.REAL, 'proportioniate change in irate1 for each age in years'),    # from Fracpoly regression
         'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),     # from Fracpoly regression
-        'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s')
+        'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
 
@@ -79,21 +79,8 @@ class Contraception(Module):
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
-        self.parameters['contraception_initiation1'] = workbook[
-            'irate1_']  # 'irate_1_' sheet created manually as a work around to address to do point on line 39
-        # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
-
         self.parameters['contraception_initiation2'] = workbook['irate2_']
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
-
-        self.parameters['contraception_switching'] = workbook['Switching']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
-
-        self.parameters['contraception_switching_matrix'] = workbook['switching_matrix']
-        # this Excel sheet is from contraception switching matrix output from line 144 of 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
-
-        self.parameters['contraception_discontinuation'] = workbook['Discontinuation']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         self.parameters['contraception_failure'] = workbook['Failure']
         # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
@@ -102,10 +89,47 @@ class Contraception(Module):
         # From Guttmacher analysis - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
 
         self.parameters['r_init1_age'] = workbook['r_init1_age']
-        # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do: fracpoly: regress _d age_ // fracpoly exact age (better fitting model, higher F statistic) - see 'Initiation1 by age' worksheet, results are in 'r_init1_age' sheet
 
         self.parameters['r_discont_age'] = workbook['r_discont_age']
         # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age: - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
+
+        # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
+
+        # For ContraceptionSwitchingPoll.init1 -----------------------------------------------------
+
+        # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do: fracpoly: regress _d age_
+        # // fracpoly exact age (better fitting model, higher F statistic) - see 'Initiation1 by age' worksheet, results are in 'r_init1_age' sheet
+        c_multiplier = workbook['r_init1_age']
+        c_baseline = workbook['irate1_']   # 'irate_1_' sheet created manually as a work around to address to do point on line 39
+        # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
+        c_baseline = c_baseline.drop(columns=['not_using'])
+        c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
+        c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
+        c_adjusted = c_baseline + c_adjusted
+        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis = 1)
+        self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
+
+        # For ContraceptionSwitchingPoll.switch ----------------------------------------------------
+        switching_prob = workbook['Switching'].transpose()
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        switching_prob.columns = ['probability']
+        self.parameters['contraception_switching'] = switching_prob
+
+        switching_matrix = workbook['switching_matrix']
+        # this Excel sheet is from contraception switching matrix output from line 144 of 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+
+        switching_matrix = switching_matrix.set_index('switchfrom')
+        switching_matrix = switching_matrix.transpose()
+        self.parameters['contraception_switching_matrix'] = switching_matrix
+
+        # For ContraceptionSwitchingPoll.discontinue
+        c_baseline = workbook['Discontinuation']
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        c_multiplier = self.parameters['r_discont_age']
+        c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
+        c_adjusted = c_baseline.mul(c_multiplier.r_discont_age, axis='index')
+        c_adjusted = c_baseline + c_adjusted
+        self.parameters['contraception_discontinuation'] = c_adjusted.set_index(c_multiplier.age)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -151,14 +175,8 @@ class Contraception(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
-        # check all females not using contraception to determine if contraception starts i.e. category should change from 'not_using' (starts at month 0)
-        sim.schedule_event(Init1(self), sim.date + DateOffset(months=0))
 
-        # check all females using contraception to determine if contraception discontinues i.e. category should change to 'not_using' (starts at month 0)
-        sim.schedule_event(Discontinue(self), sim.date + DateOffset(months=0))
-
-        # check all females using contraception to determine if contraception Switches i.e. category should change from any method to a new method (not including 'not_using') (starts at month 0)
-        sim.schedule_event(Switch(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(ContraceptionSwitchingPoll(self), sim.date + DateOffset(months=0))
 
         # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (starts at month 0)
         sim.schedule_event(Fail(self), sim.date + DateOffset(months=0))
@@ -193,261 +211,142 @@ class Contraception(Module):
         df.at[mother_id, 'is_pregnant'] = False
 
 
-class Init1(RegularEvent, PopulationScopeEventMixin):
+class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
     """
-    This event looks across all women who are 'not_using' contraception to determine if they start using each
-    method according to initiation_rate1 (irate_1)
-    """
+    Switching contraception status for population
 
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
-        self.age_low = 15
-        self.age_high = 49
-
-    def apply(self, population):
-        logger.debug('Checking to see if anyone should start using contraception')
-
-        df = population.props  # get the population dataframe
-        m = self.module
-        rng = self.module.rng
-
-        # get the indices of the women from the population with the relevant characterisitcs
-        not_using_idx = df.index[(df.sex == 'F') &
-                                 df.is_alive &
-                                 df.age_years.between(self.age_low, self.age_high) &
-                                 ~df.is_pregnant &
-                                 (df.co_contraception == 'not_using')]
-
-        # prepare the probabilities
-        c_worksheet = m.parameters['contraception_initiation1']
-        c_worksheet2 = m.parameters['r_init1_age']
-
-        # add the probabilities and copy to each row of the sim population (population dataframe)
-        df_new = pd.concat([df, c_worksheet], axis=1)
-        df_new.loc[:, ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                       'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[
-            0, ['not_using', 'pill', 'IUD', 'injections',
-                'implant', 'male_condom',
-                'female_sterilization',
-                'other_modern',
-                'periodic_abstinence',
-                'withdrawal',
-                'other_traditional']].tolist()
-        probabilities = df_new.loc[
-            not_using_idx, ['age_years', 'co_contraception', 'not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                        'female_sterilization', 'other_modern', 'periodic_abstinence',
-                        'withdrawal', 'other_traditional']]
-
-        # get the proportioniate change in irate1 for each age in years, through merging with the r_init1_age data
-        len_before_merge = len(probabilities)
-        probabilities = probabilities.reset_index().merge(c_worksheet2,
-                                              left_on=['age_years'],
-                                              right_on=['age'],
-                                              how='left').set_index('person')
-        assert len(probabilities) == len_before_merge
-
-        ##c_probs = c_worksheet.loc[0].values.tolist()
-        c_names = c_worksheet.columns.tolist()
-
-        # adjust the probabilities of initiation1 of each method according to the proportionate change by age in years (which is based on the fracpoly regression parameters):
-        c_probs = probabilities[['pill', 'IUD', 'injections',
-                'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                'periodic_abstinence', 'withdrawal', 'other_traditional']]
-        c_probs_age_extra = probabilities[['pill', 'IUD', 'injections',
-                'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                'periodic_abstinence', 'withdrawal', 'other_traditional']].mul(probabilities['r_init1_age'], axis='index')
-        c_probs = c_probs + c_probs_age_extra
-        c_probs['not_using'] = 1 - c_probs.sum(axis=1)
-
-        # apply probabilities of initiation of each method to everyone (depends on their age)
-        # (note this includes 'not_using' i.e no initiation)
-        for woman in not_using_idx:
-            her_p = np.asarray(c_probs.loc[woman, :], dtype='float64')
-            her_op = np.asarray(c_probs.columns)
-
-            her_method = rng.choice(her_op, p=her_p)
-
-            df.loc[woman, 'co_contraception'] = her_method
-
-            # output some logging if any start of contraception
-            if her_method != 'not_using':
-                logger.info('%s|start_contraception1|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman,
-                                'age': df.at[woman, 'age_years'],
-                                'co_contraception': df.at[woman, 'co_contraception']
-                            })
-
-
-class Switch(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across all women who are using a contraception method to determine if they switch to another
-     method according to switching_rate, and then for those that switch directs towards a new method according to
-     switching_matrix
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
-        self.age_low = 15
-        self.age_high = 49
-
-    def apply(self, population):
-        logger.debug('Checking to see if anyone should switch contraception methods')
-
-        df = population.props  # get the population dataframe
-        m = self.module
-        rng = self.module.rng
-
-        # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.co_contraception != 'not_using') & (df.co_contraception != 'female_sterilization')]
-
-        # prepare the probabilities for Switch by method (i.e. any switch - different probability for each method)
-        c_worksheet = m.parameters['contraception_switching']
-
-        # add the probabilities of Switching and copy to each row of the sim population (population dataframe)
-        df_new = pd.concat([df, c_worksheet], axis=1)
-        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                       'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[
-            0, ['pill', 'IUD', 'injections',
-                'implant', 'male_condom',
-                'female_sterilization',
-                'other_modern',
-                'periodic_abstinence',
-                'withdrawal',
-                'other_traditional']].tolist()
-        probabilities = df_new.loc[
-            using_idx, ['co_contraception', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                        'female_sterilization', 'other_modern', 'periodic_abstinence',
-                        'withdrawal', 'other_traditional']]
-        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
-        probabilities['1-prob'] = 1 - probabilities['prob']
-        probabilities['switch'] = 'switch'  # for flagging those who switch from a method below
-
-        # prepare the switching matrix to determine which method the woman switches on to:
-        switch = m.parameters['contraception_switching_matrix']
-
-        # Get probabilities of switching to each method of contraception by co_contraception method
-        #       and merge the probabilities into each row in sim population - note set_index is needed to keep index
-        df_switch = probabilities.merge(switch, left_on=['co_contraception'], right_on=['switchfrom'],
-                                        how='left').set_index(probabilities.index)
-
-        # apply the probabilities of switching for each contraception method to series which has index of all
-        # currently using (not including female sterilization as can't switch from this)
-        # need to use a for loop to loop through each method
-        for woman in using_idx:
-            her_p = np.asarray(probabilities.loc[woman, ['prob', '1-prob']], dtype='float64')
-            her_op = np.asarray(probabilities.loc[woman, ['switch', 'co_contraception']])
-
-            her_method = rng.choice(her_op, p=her_p)
-
-            # Switch to new method according to switching matrix probs for current method if chosen to switch:
-            if her_method == 'switch':
-                # output some logging for contraception switch to new method
-                logger.info('%s|switchfrom_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman,
-                                'contraception switched from': df.at[woman, 'co_contraception']
-                            })
-
-                # apply probabilities of switching to each contraception type to sim population
-                # for woman2 in using_idx:
-                her_p2 = np.asarray(df_switch.loc[woman, ['pill_y', 'IUD_y', 'injections_y', 'implant_y',
-                                                          'male_condom_y', 'female_sterilization_y',
-                                                          'other_modern_y', 'periodic_abstinence_y', 'withdrawal_y',
-                                                          'other_traditional_y']], dtype='float64')
-
-                her_op2 = np.asarray(['pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                      'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                      'withdrawal', 'other_traditional'])
-
-                her_method2 = rng.choice(her_op2, p=her_p2)
-
-                df.loc[woman, 'co_contraception'] = her_method2
-
-                # output some logging for contraception switch to new method
-                logger.info('%s|switchto_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman,
-                                'contraception switched to': df.at[woman, 'co_contraception']
-                            })
-
-
-class Discontinue(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across all women who are using a contraception method to determine if they stop using it
+    This event looks across:
+    1) all women who are 'not_using' contraception to determine if they start using each method=
+    according to initiation_rate1 (irate_1)
+    2) all women who are using a contraception method to determine if they switch to another
+    method according to switching_rate, and then for those that switch directs towards a new method according to
+    switching_matrix
+    3) all women who are using a contraception method to determine if they stop using it
     according to discontinuation_rate
-    """
 
+    (Was previously in Init1, Switch, Discontinue events)
+    """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
+        super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = 15
         self.age_high = 49
 
     def apply(self, population):
-        logger.debug('Checking to see if anyone should stop using contraception')
+        df = population.props
 
-        df = population.props  # get the population dataframe
-        m = self.module
+        possible_co_users = ((df.sex == 'F') &
+                          df.is_alive &
+                          df.age_years.between(self.age_low, self.age_high) &
+                          ~df.is_pregnant)
+
+        currently_using_co = df.index[possible_co_users & ~df.co_contraception.isin(['not_using', 'female_steralization'])]
+        currently_not_using_co = df.index[possible_co_users & (df.co_contraception == 'not_using')]
+
+        # not using -> using
+        self.init1(df, currently_not_using_co)
+
+        # using A -> using B
+        self.switch(df, currently_using_co)
+
+        # using -> not using
+        self.discontinue(df, currently_using_co)
+
+    def init1(self, df: pd.DataFrame, individuals_not_using: pd.Index):
+        """check all females not using contraception to determine if contraception starts
+        i.e. category should change from 'not_using'
+        """
+        p = self.module.parameters
         rng = self.module.rng
 
-        # get the indices of the women from the population with the relevant characterisitcs
-        using_idx = df.index[(df.co_contraception != 'not_using')]
+        co_start_prob_by_age = p['contraception_initiation1']
 
-        # prepare the probabilities
-        c_worksheet = m.parameters['contraception_discontinuation']
-        c_worksheet2 = m.parameters['r_discont_age']
+        # all the contraceptive types we can randomly choose
+        co_types = list(co_start_prob_by_age.columns)
 
-        # add the probabilities and copy to each row of the sim population (population dataframe)
-        df_new = pd.concat([df, c_worksheet], axis=1)
-        df_new.loc[:, ['pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization', 'other_modern',
-                       'periodic_abstinence', 'withdrawal', 'other_traditional']] = df_new.loc[
-            0, ['pill', 'IUD', 'injections',
-                'implant', 'male_condom',
-                'female_sterilization',
-                'other_modern',
-                'periodic_abstinence',
-                'withdrawal',
-                'other_traditional']].tolist()
-        probabilities = df_new.loc[
-            using_idx, ['age_years', 'co_contraception', 'pill', 'IUD', 'injections', 'implant', 'male_condom',
-                        'female_sterilization', 'other_modern', 'periodic_abstinence',
-                        'withdrawal', 'other_traditional']]
+        def pick_random_contraceptive(age):
+            """random selects a contraceptive using probabilities for given age"""
+            return rng.choice(co_types, p=co_start_prob_by_age.loc[age])
 
-        # get the proportioniate change in drate for each age in years, through merging with the r_discont_age data
-        len_before_merge = len(probabilities)
-        probabilities = probabilities.reset_index().merge(c_worksheet2,
-                                              left_on=['age_years'],
-                                              right_on=['age'],
-                                              how='left').set_index('person')
-        assert len(probabilities) == len_before_merge
+        # select a random contraceptive for everyone not currently using
+        random_co = df.loc[individuals_not_using, 'age_years'].apply(pick_random_contraceptive)
 
-        probabilities['not_using'] = 'not_using'
-        probabilities['prob'] = probabilities.lookup(probabilities.index, probabilities['co_contraception'])
-        # adjust the probabilities of discontinuation according to the proportionate change by age in years (which is based on the fracpoly regression parameters):
-        probabilities['prob'] = probabilities['prob'] + (probabilities['prob']* probabilities['r_discont_age'])
-        probabilities['1-prob'] = 1 - probabilities['prob']
+        # get index of all those now using
+        now_using_co = random_co.index[random_co != 'not_using']
 
-        # apply the probabilities of discontinuation for each contraception method
-        # to series which has index of all currently using
-        # need to use a for loop to loop through each method
-        for woman in using_idx:
-            her_p = np.asarray(probabilities.loc[woman, ['prob', '1-prob']], dtype='float64')
-            her_op = np.asarray(probabilities.loc[woman, ['not_using', 'co_contraception']])
+        # only update entries for all those now using a contraceptive
+        df.loc[now_using_co, 'co_contraception'] = random_co[now_using_co]
 
-            her_method = rng.choice(her_op, p=her_p)
+        for woman in now_using_co:
+            logger.info('%s|start_contraception1|%s',
+                        self.sim.date,
+                        {
+                            'woman_index': woman,
+                            'age': df.at[woman, 'age_years'],
+                            'co_contraception': df.at[woman, 'co_contraception']
+                        })
 
-            df.loc[woman, 'co_contraception'] = her_method
-            # output some logging if any stop contraception
-            if her_method == 'not_using':
-                logger.info('%s|stop_contraception|%s',
-                            self.sim.date,
-                            {
-                                'woman_index': woman,
-                                'co_contraception': df.at[woman, 'co_contraception']
-                            })
+
+    def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
+        """check all females using contraception to determine if contraception Switches
+        i.e. category should change from any method to a new method (not including 'not_using')
+        """
+        p = self.module.parameters
+        rng = self.module.rng
+
+        switching_prob = p['contraception_switching']
+        switching_matrix = p['contraception_switching_matrix']
+
+        # get the probability of switching contraceptive for all those currently using
+        co_switch_prob = df.loc[individuals_using, 'co_contraception'].map(switching_prob.probability)
+
+        # randomly select some individuals to switch contraceptive
+        random_draw = rng.random_sample(size=len(individuals_using))
+        switch_co = co_switch_prob.index[co_switch_prob > random_draw]
+
+        # if no one is switching, exit
+        if switch_co.empty:
+            return
+
+        # select new contraceptive using switching matrix
+        new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
+        df.loc[switch_co, 'co_contraception'] = new_co
+
+        for woman in switch_co:
+            logger.info('%s|switchto_contraception|%s',
+                        self.sim.date,
+                        {
+                            'woman_index': woman,
+                            'contraception switched to': df.at[woman, 'co_contraception']
+                        })
+
+    def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
+        """check all females using contraception to determine if contraception discontinues
+        i.e. category should change to 'not_using'
+        """
+        p = self.module.parameters
+        rng = self.module.rng
+
+        c_adjustment = p['contraception_discontinuation']
+
+        def get_prob_discontinued(row):
+            """returns the probability of discontinuing contraceptive based on age and current
+            contraceptive"""
+            return c_adjustment.loc[row.age_years, row.co_contraception]
+
+        # get the probability of discontinuing for all currently using
+        discontinue_prob = df.loc[individuals_using].apply(get_prob_discontinued, axis=1)
+
+        # random choose some to discontinue
+        random_draw = rng.random_sample(size=len(individuals_using))
+        co_discontinue = discontinue_prob.index[discontinue_prob > random_draw]
+        df.loc[co_discontinue, 'co_contraception'] = 'not_using'
+
+        for woman in co_discontinue:
+            logger.info('%s|stop_contraception|%s',
+                        self.sim.date,
+                        {
+                            'woman_index': woman,
+                        })
 
 
 class Fail(RegularEvent, PopulationScopeEventMixin):
@@ -636,8 +535,12 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
         for female_id in newly_pregnant_ids:
-            logger.info('%s|female %d pregnant at age: %d', self.sim.date, female_id,
-                        females.at[female_id, 'age_years'])
+            logger.info('%s|pregnant_at_age|%s',
+                        self.sim.date,
+                        {
+                            'person_id': female_id,
+                            'age_years': females.at[female_id, 'age_years']
+                        })
 
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             date_of_birth = self.sim.date + DateOffset(months=9,
@@ -647,7 +550,9 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
                                     date_of_birth)
 
-            logger.info('birth booked for: %s', date_of_birth)
+            logger.info('%s|birth_booked|%s',
+                        self.sim.date,
+                        date_of_birth)
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin):
@@ -671,8 +576,8 @@ class DelayedBirthEvent(Event, IndividualScopeEventMixin):
         Assuming the person is still alive, we ask the simulation to create a new offspring.
         :param mother_id: the person the event happens to, i.e. the mother giving birth
         """
-
-        logger.info('%s|@@@@ A Birth is now occuring, to mother %s', self.sim.date, mother_id)
+        logger.info('%s|birth_occurring_to_mother|%d',
+                    self.sim.date, mother_id)
 
         df = self.sim.population.props
 
