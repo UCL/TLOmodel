@@ -76,7 +76,7 @@ class Contraception(Module):
 
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
-        self.parameters['contraception_initiation2'] = workbook['irate2_']
+        self.parameters['contraception_initiation2'] = workbook['irate2_'].loc[0]
         # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
 
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
@@ -179,7 +179,7 @@ class Contraception(Module):
 
         # check all women after birth to determine subsequent contraception method (including not_using) (starts at month 0)
         # This should only be called after birth, though should be repeated every month i.e. following new births every month
-        sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
+        # sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
 
         # check all population to determine if pregnancy should be triggered (repeats every month)
         sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
@@ -205,6 +205,27 @@ class Contraception(Module):
 
         # Reset the mother's is_pregnant status showing that she is no longer pregnant
         df.at[mother_id, 'is_pregnant'] = False
+
+        # Initiation of mother's contraception after birth (was previously Init2 event)
+        # Notes: decide what contraceptive method they have (including not_using, according to
+        # initiation_rate2 (irate_2)
+        # Note the irate2s are low as they are just for the month after pregnancy and
+        # then for the 99.48% who 'initiate' to 'not_using' (i.e. 1 - sum(irate2s))
+        # they are then subject to the usual irate1s per month
+        # - see Contraception-Pregnancy.pdf schematic
+        on_birth_co_probs: pd.Series = self.parameters['contraception_initiation2']
+
+        # sample a single row of the init2 probabilities (weighted by those same probabilities)
+        chosen_co = on_birth_co_probs.sample(n=1, weights=on_birth_co_probs, random_state=self.rng)
+
+        # the index of the row is the contraception type
+        df.at[mother_id, 'co_contraception'] = chosen_co.index[0]
+        logger.info('%s|post_birth_contraception|%s',
+                    self.sim.date,
+                    {
+                        'woman_index': mother_id,
+                        'co_contraception': df.at[mother_id, 'co_contraception']
+                    })
 
 
 class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
@@ -401,58 +422,6 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
                             'woman_index': woman,
                             'birth_booked': df.at[woman, 'co_date_of_childbirth']
                         })
-
-
-class Init2(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across all women who have given birth and decides what contraceptive method they then have
-    (including not_using, according to initiation_rate2 (irate_2)
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))  # runs every month
-        self.age_low = 15
-        self.age_high = 49
-
-    def apply(self, population):
-        logger.debug('Checking to see what contraception method women who have just given birth should have')
-
-        df = population.props  # get the population dataframe
-        m = self.module
-        rng = self.module.rng
-
-        # prepare the probabilities
-        c_worksheet = m.parameters['contraception_initiation2']
-        c_probs = c_worksheet.loc[0].values.tolist()
-        c_names = c_worksheet.columns.tolist()
-        # Note the irate2s are low as they are just for the month after pregnancy and
-        # 	then for the 99.48% who 'initiate' to 'not_using' (i.e. 1 - sum(irate2s))
-        # 	they are then subject to the usual irate1s per month
-        # 	- see Contraception-Pregnancy.pdf schematic
-
-        # get the indices of the women from the population with the relevant characterisitcs
-        # those who have just given birth within the last month
-        # the if statement below is to keep it running if there are no births within the last month
-        if df[((df.co_date_of_childbirth < self.sim.date) & (
-            df.co_date_of_childbirth > self.sim.date - DateOffset(months=1)))].empty == True:
-            pass
-        else:
-            birth_idx = df.index[((df.co_date_of_childbirth < self.sim.date) & (
-                    df.co_date_of_childbirth > self.sim.date - DateOffset(months=1)))]
-            # sample contraceptive method for everyone just given birth
-            sampled_method = pd.Series(rng.choice(c_names, p=c_probs, size=len(birth_idx), replace=True),
-                                       index=birth_idx)
-            # update contraception method for all women who have just given birth
-            df.loc[birth_idx, 'co_contraception'] = sampled_method[birth_idx]
-            # output some logging if any post-birth contraception
-            if len(birth_idx):
-                for woman_id in birth_idx:
-                    logger.info('%s|post_birth_contraception|%s',
-                                self.sim.date,
-                                {
-                                    'woman_index': woman_id,
-                                    'co_contraception': df.at[woman_id, 'co_contraception']
-                                })
 
 
 class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
