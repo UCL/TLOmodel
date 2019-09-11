@@ -5,12 +5,12 @@ please see Dropbox/Thanzi la Onse/05 - Resources/Model design/Contraception-Preg
 for conceptual diagram
 """
 import logging
+from pathlib import Path
 
 import pandas as pd
 
-from pathlib import Path
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, PopulationScopeEventMixin, IndividualScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
 
 logger = logging.getLogger(__name__)
@@ -39,8 +39,10 @@ class Contraception(Module):
         'contraception_switching_matrix': Parameter(Types.DATA_FRAME, 'switching_matrix'),
         'contraception_discontinuation': Parameter(Types.DATA_FRAME, 'Discontinuation'),
         'contraception_failure': Parameter(Types.DATA_FRAME, 'Failure'),
-        'r_init1_age': Parameter(Types.REAL, 'proportioniate change in irate1 for each age in years'),    # from Fracpoly regression
-        'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),     # from Fracpoly regression
+        # from Fracpoly regression:
+        'r_init1_age': Parameter(Types.REAL, 'proportioniate change in irate1 for each age in years'),
+        # from Fracpoly regression:
+        'r_discont_age': Parameter(Types.REAL, 'proportioniate change in drate for each age in years'),
         'rr_fail_under25': Parameter(Types.REAL, 'Increase in Failure rate for under-25s'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
@@ -56,9 +58,14 @@ class Contraception(Module):
         # These are the 11 categories of contraception ('not using' + 10 methods) from the DHS analysis of initiation,
         # discontinuation, failure and switching rates
         # 'other modern' includes Male sterilization, Female Condom, Emergency contraception
-        # 'other traditional' includes lactational amenohroea (LAM), standard days method (SDM), 'other traditional method'
-        # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch) with the one in ResourceFile_Contraception.xlsx
-        # (has 11 categories and one row for each age with baseline contraceptopn prevalences for each of the 11 categories)
+        # 'other traditional' includes
+        #   lactational amenohroea (LAM),
+        #   standard days method (SDM),
+        #   'other traditional method'
+        # Have replaced Age-spec fertility sheet in ResourceFile_DemographicData.xlsx (in this branch)
+        # with the one in ResourceFile_Contraception.xlsx
+        # (has 11 categories and one row for each age with baseline contraceptopn prevalences for
+        # each of the 11 categories)
         'co_date_of_childbirth': Property(Types.DATE, 'Due date of child for those who become pregnant'),
         'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
         'date_of_last_pregnancy': Property(Types.DATE,
@@ -77,43 +84,55 @@ class Contraception(Module):
         self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
 
         self.parameters['contraception_initiation2'] = workbook['irate2_'].loc[0]
-        # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is irate2_all.csv output from 'initiation rates_age_stcox.do'
+        # Stata analysis of DHS contraception calendar data
 
         self.parameters['contraception_failure'] = workbook['Failure'].loc[0]
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         self.parameters['rr_fail_under25'] = 2.2
-        # From Guttmacher analysis - do not apply to female steriliztion or male sterilization - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
+        # From Guttmacher analysis - do not apply to female steriliztion or male sterilization
+        # - note that as these are already 0 (see 'Failure' Excel sheet) the rate will remain 0
 
         self.parameters['r_init1_age'] = workbook['r_init1_age']
 
         self.parameters['r_discont_age'] = workbook['r_discont_age']
-        # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age: - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
+        # from Stata analysis Step 3.5 of discontinuation & switching rates_age.do: fracpoly: regress drate_allmeth age:
+        # - see 'Discontinuation by age' worksheet, results are in 'r_discont_age' sheet
 
         # =================== ARRANGE INPUTS FOR USE BY REGULAR EVENTS =============================
 
         # For ContraceptionSwitchingPoll.init1 -----------------------------------------------------
 
-        # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do: fracpoly: regress _d age_
-        # // fracpoly exact age (better fitting model, higher F statistic) - see 'Initiation1 by age' worksheet, results are in 'r_init1_age' sheet
+        # from Stata analysis line 250 of initiation rates_age_stcox_2005_2016_5yrPeriods.do:
+        # fracpoly: regress _d age_
+        # // fracpoly exact age (better fitting model, higher F statistic) - see 'Initiation1 by age'
+        # worksheet, results are in 'r_init1_age' sheet
         c_multiplier = workbook['r_init1_age']
-        c_baseline = workbook['irate1_']   # 'irate_1_' sheet created manually as a work around to address to do point on line 39
-        # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do' Stata analysis of DHS contraception calendar data
+
+        # 'irate_1_' sheet created manually as a work around to address to do point on line 39
+        c_baseline = workbook['irate1_']
+        # this Excel sheet is irate1_all.csv output from 'initiation rates_age_stcox.do'
+        # Stata analysis of DHS contraception calendar data
+
         c_baseline = c_baseline.drop(columns=['not_using'])
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
         c_adjusted = c_baseline.mul(c_multiplier.r_init1_age, axis='index')
         c_adjusted = c_baseline + c_adjusted
-        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis = 1)
+        c_adjusted['not_using'] = 1 - c_adjusted.sum(axis=1)
         self.parameters['contraception_initiation1'] = c_adjusted.set_index(c_multiplier.age)
 
         # For ContraceptionSwitchingPoll.switch ----------------------------------------------------
         switching_prob = workbook['Switching'].transpose()
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
         switching_prob.columns = ['probability']
         self.parameters['contraception_switching'] = switching_prob
 
         switching_matrix = workbook['switching_matrix']
-        # this Excel sheet is from contraception switching matrix output from line 144 of 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is from contraception switching matrix output from line 144 of
+        # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
 
         switching_matrix = switching_matrix.set_index('switchfrom')
         switching_matrix = switching_matrix.transpose()
@@ -121,7 +140,8 @@ class Contraception(Module):
 
         # For ContraceptionSwitchingPoll.discontinue
         c_baseline = workbook['Discontinuation']
-        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
+        # this Excel sheet is from contraception_failure_discontinuation_switching.csv output from
+        # 'failure discontinuation switching rates.do' Stata analysis of DHS contraception calendar data
         c_multiplier = self.parameters['r_discont_age']
         c_baseline = pd.concat([c_baseline] * len(c_multiplier), ignore_index=True)
         c_adjusted = c_baseline.mul(c_multiplier.r_discont_age, axis='index')
@@ -159,7 +179,8 @@ class Contraception(Module):
         df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(pick_contraceptive)
 
         # TODO: need to do it without above for loop:
-        # probabilities['p_list'] = probabilities.apply(lambda row: row[:].tolist(), axis=1)  # doesn't work as p_list is dtype['O'] (object) rather than float64
+        # doesn't work as p_list is dtype['O'] (object) rather than float64
+        # probabilities['p_list'] = probabilities.apply(lambda row: row[:].tolist(), axis=1)
         # categories = ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
         #              'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional']
         # random_choice = self.rng.choice(categories, size=len(df), p=probabilities['p_list'])
@@ -174,11 +195,14 @@ class Contraception(Module):
         """
         sim.schedule_event(ContraceptionSwitchingPoll(self), sim.date + DateOffset(months=0))
 
-        # check all females using contraception to determine if contraception fails i.e. woman becomes pregnant whilst using contraception (starts at month 0)
+        # check all females using contraception to determine if contraception fails i.e. woman becomes
+        # pregnant whilst using contraception (starts at month 0)
         sim.schedule_event(Fail(self), sim.date + DateOffset(months=0))
 
-        # check all women after birth to determine subsequent contraception method (including not_using) (starts at month 0)
-        # This should only be called after birth, though should be repeated every month i.e. following new births every month
+        # check all women after birth to determine subsequent contraception method (including not_using)
+        # (starts at month 0)
+        # This should only be called after birth, though should be repeated every month
+        # i.e. following new births every month
         # sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
 
         # check all population to determine if pregnancy should be triggered (repeats every month)
@@ -252,11 +276,12 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         possible_co_users = ((df.sex == 'F') &
-                          df.is_alive &
-                          df.age_years.between(self.age_low, self.age_high) &
-                          ~df.is_pregnant)
+                             df.is_alive &
+                             df.age_years.between(self.age_low, self.age_high) &
+                             ~df.is_pregnant)
 
-        currently_using_co = df.index[possible_co_users & ~df.co_contraception.isin(['not_using', 'female_steralization'])]
+        currently_using_co = df.index[possible_co_users &
+                                      ~df.co_contraception.isin(['not_using', 'female_steralization'])]
         currently_not_using_co = df.index[possible_co_users & (df.co_contraception == 'not_using')]
 
         # not using -> using
@@ -302,7 +327,6 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                             'co_contraception': df.at[woman, 'co_contraception']
                         })
 
-
     def switch(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception Switches
         i.e. category should change from any method to a new method (not including 'not_using')
@@ -333,7 +357,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
                         self.sim.date,
                         {
                             'woman_index': woman,
-                            'co_from': df.at[woman, 'co_contraception'] ,
+                            'co_from': df.at[woman, 'co_contraception'],
                             'co_to': new_co[woman]
                         })
 
@@ -412,7 +436,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
             # schedule date of birth for this pregnancy
             date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
-            df.at[woman, 'co_date_of_childbirth'] =  date_of_birth
+            df.at[woman, 'co_date_of_childbirth'] = date_of_birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
 
             # output some logging if any pregnancy (contraception failure)
@@ -457,9 +481,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         len_before_merge = len(females)
         females = females.reset_index().merge(fertility_schedule,
                                               left_on=['age_years'],
-                                              # TimC: got rid of 'contraception' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
+                                              # TimC: got rid of 'contraception' here as just one
+                                              # basefert_dhs per age (see new 'Age_spec fertility' sheet)
                                               right_on=['age'],
-                                              # TimC: got rid of 'cmeth' here as just one basefert_dhs per age (see new 'Age_spec fertility' sheet)
+                                              # TimC: got rid of 'cmeth' here as just one basefert_dhs per age
+                                              # (see new 'Age_spec fertility' sheet)
                                               how='inner').set_index('person')
         assert len(females) == len_before_merge
 
