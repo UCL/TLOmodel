@@ -182,14 +182,6 @@ class Contraception(Module):
 
         df.loc[females1549, 'co_contraception'] = df.loc[females1549, 'age_years'].apply(pick_contraceptive)
 
-        # TODO: need to do it without above for loop:
-        # doesn't work as p_list is dtype['O'] (object) rather than float64
-        # probabilities['p_list'] = probabilities.apply(lambda row: row[:].tolist(), axis=1)
-        # categories = ['not_using', 'pill', 'IUD', 'injections', 'implant', 'male_condom', 'female_sterilization',
-        #              'other_modern', 'periodic_abstinence', 'withdrawal', 'other_traditional']
-        # random_choice = self.rng.choice(categories, size=len(df), p=probabilities['p_list'])
-        # df.loc[females1549, 'co_contraception'].values[:] = random_choice
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -197,17 +189,12 @@ class Contraception(Module):
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
         """
+        # starting contraception, switching contraception metho, and stopping contraception:
         sim.schedule_event(ContraceptionSwitchingPoll(self), sim.date + DateOffset(months=0))
 
         # check all females using contraception to determine if contraception fails i.e. woman becomes
         # pregnant whilst using contraception (starts at month 0)
         sim.schedule_event(Fail(self), sim.date + DateOffset(months=0))
-
-        # check all women after birth to determine subsequent contraception method (including not_using)
-        # (starts at month 0)
-        # This should only be called after birth, though should be repeated every month
-        # i.e. following new births every month
-        # sim.schedule_event(Init2(self), sim.date + DateOffset(months=0))
 
         # check all population to determine if pregnancy should be triggered (repeats every month)
         sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
@@ -440,6 +427,7 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
 
             # schedule date of birth for this pregnancy
             date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
+            # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
             df.at[woman, 'co_date_of_childbirth'] = date_of_birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
 
@@ -518,6 +506,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
             # schedule the birth event for this woman (9 months plus/minus 2 wks)
             date_of_birth = self.sim.date + DateOffset(months=9,
                                                        weeks=-2 + 4 * self.module.rng.random_sample())
+            # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
 
             # Schedule the Birth
             self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
