@@ -309,15 +309,19 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
         # select new contraceptive using switching matrix
         new_co = transition_states(df.loc[switch_co, 'co_contraception'], switching_matrix, rng)
-        df.loc[switch_co, 'co_contraception'] = new_co
 
+        # log old -> new contraception types
         for woman in switch_co:
             logger.info('%s|switchto_contraception|%s',
                         self.sim.date,
                         {
                             'woman_index': woman,
-                            'contraception switched to': df.at[woman, 'co_contraception']
+                            'co_from': df.at[woman, 'co_contraception'] ,
+                            'co_to': new_co[woman]
                         })
+
+        # update contraception for all who switched
+        df.loc[switch_co, 'co_contraception'] = new_co
 
     def discontinue(self, df: pd.DataFrame, individuals_using: pd.Index):
         """check all females using contraception to determine if contraception discontinues
