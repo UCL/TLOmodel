@@ -1,7 +1,6 @@
 """
 This is the method for hypertension
 Developed by Mikaela Smit, October 2018
-
 """
 
 import logging
@@ -21,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 class HT(Module):
     """
     This is the Hypertension Module.
-    Version: August 2019
+    Version: September 2019
     The execution of all health systems hypertension are controlled through this modeule.
     in the model.
     """
