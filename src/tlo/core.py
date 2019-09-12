@@ -192,13 +192,13 @@ class Module:
 
         Goes through parameters dict self.PARAMETERS and updates the self.parameters with values
         Automatically updates the values of data types:
-            - Integers
-            - Real numbers
-            - Lists
-            - Categorical
-            - Strings
-            - Dates (Any numbers will be converted into dated without warnings)
-            - Booleans (Any input will be converted into a boolean without warnings)
+        - Integers
+        - Real numbers
+        - Lists
+        - Categorical
+        - Strings
+        - Dates (Any numbers will be converted into dated without warnings)
+        - Booleans (Any input will be converted into a boolean without warnings)
 
         Will also make the parameter_name the index of the resource DataFrame.
 
