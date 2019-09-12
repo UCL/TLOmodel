@@ -87,14 +87,16 @@ class HT(Module):
         p['HT_prevalence'] = workbook['prevalence2018']
         p['HT_incidence'] = workbook['incidence2018_plus']
 
-        HT_risk = workbook['parameters']
-        df = HT_risk.set_index('parameter')
-        p['prob_HT'] = df.at['prob_basic', 'value']
-        p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']],
-                                             [df.at['prob_htgivenbmi', 'value3']]],
-                                            index=['overweight', 'obese', 'morbidly obese'],
-                                            columns=['risk'])
-        p['prob_HTgivenDiab'] = df.at['prob_htgivendiabetes', 'value']
+        self.load_parameters_HT_risk(workbook['parameters'])
+
+        #HT_risk = workbook['parameters']
+        #df = HT_risk.set_index('parameter')
+        #p['prob_HT'] = df.at['prob_basic', 'value']
+        #p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']],
+        #                                    [df.at['prob_htgivenbmi', 'value3']]],
+        #                                   index=['overweight', 'obese', 'morbidly obese'],
+        #                                   columns=['risk'])
+        #p['prob_HTgivenDiab'] = df.at['prob_htgivendiabetes', 'value']
         p['prob_diagnosed'] = 0.5  # ToDO: remove once HSi activated
         p['prob_treated'] = 0.5
         p['prob_controlled'] = 0.5
