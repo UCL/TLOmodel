@@ -19,9 +19,9 @@ outputpath = ''
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# The resource file for demography module
-# assume Python console is started in the top-level TLOModel directory
-resourcefilepath = Path(os.path.dirname(__file__)) / '/Users/timothycolbourn/PycharmProjects/TLOmodel/resources'
+# The resource directory for modules
+# by default, this script runs in the same directory as this file
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 
 # %% Run the Simulation
