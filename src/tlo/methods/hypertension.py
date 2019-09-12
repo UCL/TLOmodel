@@ -140,6 +140,7 @@ class HT(Module):
 
         # 1. Define key variables
         df = population.props  # Shortcut to the data frame storing individual data
+        m = self
 
         # 2. Define default properties
         df.loc[df.is_alive, 'ht_risk'] = 1.0  # Default: no risk given pre-existing conditions
@@ -157,8 +158,8 @@ class HT(Module):
         # 3.1 Get corresponding risk
         ht_probability = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'], left_on=['age_years'],
                                                                       right_on=['age'], how='left')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.prob_HTgivenBMI.loc['overweight']['risk']
-        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] = self.prob_HTgivenDiab # TODO: reactivate once circular issue is sorted out
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi
+        df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
         alive_count = df.is_alive.sum()
 
         assert alive_count == len(ht_probability)
@@ -357,6 +358,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. Basic variables
         df = population.props
+        m = self
         rng = self.module.rng
 
         ht_total = (df.is_alive & df.ht_current_status).sum()
@@ -376,8 +378,9 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
                                                                                         right_on=['age'],
                                                                                         how='left').set_index(
                                                                                         'person')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] = self.module.parameters['prob_HTgivenBMI'].loc['overweight']['risk']
-        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] = self.module.parameters['prob_HTgivenDiab']  # TODO: update once diabetes is active and test it's linking
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi
+        df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
+
         ht_probability = ht_probability * df.loc[currently_ht_no, 'ht_risk']
         random_numbers = rng.random_sample(size=len(ht_probability))
         now_hypertensive = (ht_probability > random_numbers)
