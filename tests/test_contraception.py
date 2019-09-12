@@ -1,4 +1,6 @@
+import logging
 import os
+import tempfile
 import time
 from pathlib import Path
 
@@ -16,10 +18,8 @@ popsize = 200
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    demography_module = demography.Demography(resourcefilepath=resourcefilepath)
-    sim.register(demography_module)
-    contraception_module = contraception.Contraception(resourcefilepath=resourcefilepath)
-    sim.register(contraception_module)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
     return sim
 
@@ -27,6 +27,7 @@ def simulation():
 def __check_properties(df):
     assert not ((df.sex == 'M') & (df.co_contraception != 'not_using')).any()
     assert not ((df.age_years < 15) & (df.co_contraception != 'not_using')).any()
+    assert not ((df.sex == 'M') & df.is_pregnant).any()
 
 
 def test_make_initial_population(simulation):
