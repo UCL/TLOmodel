@@ -6,7 +6,7 @@ disease modules.
 """
 
 from enum import Enum, auto
-
+import json
 import numpy as np
 import pandas as pd
 
@@ -186,6 +186,62 @@ class Module:
         self.rng = np.random.RandomState()
         self.name = name or self.__class__.__name__
         self.sim = None
+
+    def load_parameters_from_dataframe(self, resource: pd.DataFrame):
+            """Automatically load parameters from resource dataframe, updating the class parameter dictionary
+
+            Goes through parameters dict self.PARAMETERS and updates the self.parameters with values
+            Automatically updates the values of data types:
+                - Integers
+                - Real numbers
+                - Lists
+                - Categorical
+                - Strings
+                - Dates (Any numbers will be converted into dated without warnings)
+                - Booleans (Any input will be converted into a boolean without warnings)
+
+            Will also make the parameter_name the index of the resource DataFrame.
+
+            :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
+            """
+            resource.set_index('parameter_name', inplace=True)
+            skipped_data_types = ('DATA_FRAME', 'SERIES')
+            # for each supported parameter, convert to the correct type
+            for parameter_name in resource.index[resource.index.notnull()]:
+                parameter_definition = self.PARAMETERS[parameter_name]
+
+                if parameter_definition.type_.name in skipped_data_types:
+                    continue
+
+                # For each parameter, raise error if the value can't be coerced
+                parameter_value = resource.loc[parameter_name, 'value']
+                error_message = (
+                    f"The value of '{parameter_value}' for parameter '{parameter_name}' "
+                    f"could not be parsed as a {parameter_definition.type_.name} data type"
+                )
+                if parameter_definition.python_type == list:
+                    try:
+                        # chose json.loads instead of save_eval
+                        # because it raises error instead of joining two strings without a comma
+                        parameter_value = json.loads(parameter_value)
+                        assert isinstance(parameter_value, list)
+                    except (json.decoder.JSONDecodeError, TypeError, AssertionError) as e:
+                        raise ValueError(error_message) from e
+                elif parameter_definition.python_type == pd.Categorical:
+                    categories = parameter_definition.categories
+                    assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
+                    parameter_value = pd.Categorical(parameter_value, categories=categories)
+                elif parameter_definition.type_.name == 'STRING':
+                    parameter_value = parameter_value.strip()
+                else:
+                    # All other data types, assign to the python_type defined in Parameter class
+                    try:
+                        parameter_value = parameter_definition.python_type(parameter_value)
+                    except Exception as e:
+                        raise ValueError(error_message) from e
+
+                # Save the values to the parameters
+                self.parameters[parameter_name] = parameter_value
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
