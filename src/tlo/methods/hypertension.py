@@ -87,7 +87,7 @@ class HT(Module):
         p['HT_prevalence'] = workbook['prevalence2018']
         p['HT_incidence'] = workbook['incidence2018_plus']
 
-        self.load_parameters_HT_risk(workbook['parameters'])
+        self.load_parameters_from_dataframe(workbook['parameters'])
 
         #HT_risk = workbook['parameters']
         #df = HT_risk.set_index('parameter')
