@@ -38,8 +38,8 @@ class HT(Module):
         'HT_prevalence': Parameter(Types.REAL, 'HT prevalence'),
         'HT_incidence': Parameter(Types.REAL, 'HT incidence'),
         'prob_ht_basic': Parameter(Types.REAL, 'Basic HTN probability'),
-        'prob_htgivenbmi': Parameter(Types.CATEGORICAL, 'HTN probability given BMI'),
-        'prob_htgivendiab': Parameter(Types.REAL, 'HTN probability given pre-existing diabetes'),
+        'prob_htgivenbmi': Parameter(Types.REAL, 'HTN probability given BMI'),
+        'prob_htgivendiabetes': Parameter(Types.REAL, 'HTN probability given pre-existing diabetes'),
         'initial_prevalence': Parameter(Types.REAL, 'Prevalence of hypertension as per data'),
 
         # 2. Define health care parameters                          #ToDO: remove part of this section when HSI activated
