@@ -690,8 +690,19 @@ class Hiv(Module):
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
         # Schedule the event that will launch the Behaviour change event
-        behav_change_event = HivLaunchBehavChangeEvent(self)
-        self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+        # behav_change_event = HivLaunchBehavChangeEvent(self)
+        # self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
+
+        def target_fn(person_id, population):
+            # Receives a person_id and returns True/False to indicate whether that person is to be included
+            return 15 <= population.at[person_id, 'age_years'] <= 50 and (not population.at[person_id, 'hv_inf'])
+
+        population_level_HSI_event = HSI_Hiv_PopulationWideBehaviourChange(self, target_fn=target_fn)
+
+        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=population_level_HSI_event,
+                                                            priority=0,
+                                                            topen=self.sim.date + DateOffset(months=12),
+                                                            tclose=None)
 
         # Schedule the event that will launch the PrEP event (2018 onwards)
         prep_event = HivLaunchPrepEvent(self)
