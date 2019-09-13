@@ -1390,53 +1390,86 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                                                                 tclose=None)
 
 
-class HSI_Hiv_BehaviourChange(Event, IndividualScopeEventMixin):
+# class HSI_Hiv_BehaviourChange(Event, IndividualScopeEventMixin):
+#     """
+#     This is a Health System Interaction Event - encompassing all behaviour change interventions
+#     """
+#
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#
+#         # Get a blank footprint, doesn't require any clinic time
+#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+#         the_appt_footprint['ConWithDCSA'] = 1  # This doesn't require any appt time, but throws error if blank
+#
+#         # Get the consumables required
+#         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+#         pkg_code1 = pd.unique(
+#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on female sex workers ',
+#                             'Intervention_Pkg_Code']
+#         )[0]
+#
+#         pkg_code2 = pd.unique(
+#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on male sex workers ',
+#                             'Intervention_Pkg_Code']
+#         )[0]
+#
+#         pkg_code3 = pd.unique(
+#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on men who have sex with men ',
+#                             'Intervention_Pkg_Code']
+#         )[0]
+#
+#         the_cons_footprint = {
+#             'Intervention_Package_Code': [pkg_code1, pkg_code2, pkg_code3],
+#             'Item_Code': []
+#         }
+#
+#         # Define the necessary information for an HSI
+#         self.TREATMENT_ID = 'Hiv_BehavChange'
+#         self.APPT_FOOTPRINT = the_appt_footprint
+#         self.CONS_FOOTPRINT = the_cons_footprint
+#         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+#         self.ALERT_OTHER_DISEASES = []
+#
+#     def apply(self, person_id):
+#         logger.debug('This is HSI_Hiv_BehaviourChange, a first appointment for person %d', person_id)
+#
+#         df = self.sim.population.props
+#
+#         df.at[person_id, 'hv_behaviour_change'] = True
+
+
+class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
     """
-    This is a Health System Interaction Event - encompassing all behaviour change interventions
+    This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
     """
 
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, target_fn=None):
+        super().__init__(module)
 
-        # Get a blank footprint, doesn't require any clinic time
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1  # This doesn't require any appt time, but throws error if blank
+        # If no "target_fn" is provided, then let this event pertain to everyone
+        if (target_fn is None):
+            def target_fn(person_id):
+                return True
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on female sex workers ',
-                            'Intervention_Pkg_Code']
-        )[0]
+        self.target_fn = target_fn
 
-        pkg_code2 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on male sex workers ',
-                            'Intervention_Pkg_Code']
-        )[0]
+        # # Define the necessary information for an HSI (Population level)
+        self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
 
-        pkg_code3 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on men who have sex with men ',
-                            'Intervention_Pkg_Code']
-        )[0]
+    def apply(self, population):
+        logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2, pkg_code3],
-            'Item_Code': []
-        }
+        # Label the relevant people as having had contact with the 'behaviour change' intervention
+        # NB. An alternative approach would be for, at this point, a property in the module to be changed.
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_BehavChange'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        # hv_behaviour_change
+        df = population.props
+        for person_id in df.index:
+            if self.target_fn(person_id, df):
+                df.at[person_id, 'hv_behaviour_change'] = True
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Hiv_BehaviourChange, a first appointment for person %d', person_id)
-
-        df = self.sim.population.props
-
-        df.at[person_id, 'hv_behaviour_change'] = True
+        # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
 
 
 class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
