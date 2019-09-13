@@ -758,7 +758,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
                 if active:
                     # random draw of days 0-365
                     # random_date = rng.choice(list(range(0, 365)), size=1, p=[(1 / 365)] * 365)
-                    random_date = rng.randint(low=0, high=365)
+                    random_date = rng.randint(low=0, high=182)
                     # convert days into years
                     random_days = pd.to_timedelta(random_date, unit='d')
 
@@ -1303,9 +1303,8 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
                 active = self.module.rng.rand() < prob_prog_child[person_id]
 
                 if active:
-                    # random draw of days 0-365
-                    # random_date = rng.choice(list(range(0, 365)), size=1, p=[(1 / 365)] * 365)
-                    random_date = rng.randint(low=0, high=365)
+                    # random draw of days 0-182
+                    random_date = rng.randint(low=0, high=182)
                     # convert days into years
                     random_days = pd.to_timedelta(random_date, unit='d')
 
