@@ -8,7 +8,7 @@ from tlo import Simulation, Date, Property
 from tlo.methods import demography, hypertension#, t2dm#, CVD
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
+end_date = Date(2011, 1, 1)
 popsize = 10
 
 
@@ -28,6 +28,8 @@ def simulation():
 
 
 def test_NCD_simulation(simulation):
+    # This is a test for ....
+    # it wikl fal
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
@@ -46,10 +48,10 @@ if __name__ == '__main__':
 
 
 def test_hypertension_adults(simulation):
-    # check all hypertensive individuals are adults
+    # check all hypertensive individuals are 18 years or over
     df = simulation.population.props
     HTN = df.loc[df.current_status]
-    is_adult = HTN.apply(lambda age_years: df.at.age_years > 17)
+    is_adult = HTN.apply(lambda age_years: df.at.age_years >= 18)
     assert is_adult.all()
 
 

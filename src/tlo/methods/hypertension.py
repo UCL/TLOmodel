@@ -15,6 +15,7 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 # TODO: change file path mac/window flex
 
 class HT(Module):
@@ -60,13 +61,13 @@ class HT(Module):
         # 2. Define health care properties
         'ht_diagnosis_date': Property(Types.DATE, 'Date of latest hypertension diagnosis'),
         'ht_diagnosis_status': Property(Types.CATEGORICAL, 'Status: N=No; Y=Yes',
-                                   categories=['N', 'C', 'P']),
+                                        categories=['N', 'C', 'P']),
         'ht_treatment_date': Property(Types.DATE, 'Date of latest hypertension treatment'),
         'ht_treatment_status': Property(Types.CATEGORICAL, 'Status: N=never; C=Current, P=Previous',
-                                    categories=['N', 'C', 'P']),
+                                        categories=['N', 'C', 'P']),
         'ht_control_date': Property(Types.DATE, 'Date of latest hypertension control'),
         'ht_control_status': Property(Types.CATEGORICAL, 'Status: N=No; Y=Yes',
-                                    categories=['N', 'C', 'P']),
+                                      categories=['N', 'C', 'P']),
     }
 
     def read_parameters(self, data_folder):
@@ -89,14 +90,14 @@ class HT(Module):
 
         self.load_parameters_from_dataframe(workbook['parameters'])
 
-        #HT_risk = workbook['parameters']
-        #df = HT_risk.set_index('parameter')
-        #p['prob_HT_basic'] = df.at['prob_basic', 'value']
-        #p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']],
+        # HT_risk = workbook['parameters']
+        # df = HT_risk.set_index('parameter')
+        # p['prob_HT_basic'] = df.at['prob_basic', 'value']
+        # p['prob_HTgivenBMI'] = pd.DataFrame([[df.at['prob_htgivenbmi', 'value']], [df.at['prob_htgivenbmi', 'value2']],
         #                                    [df.at['prob_htgivenbmi', 'value3']]],
         #                                   index=['overweight', 'obese', 'morbidly obese'],
         #                                   columns=['risk'])
-        #p['prob_HTgivenDiab'] = df.at['prob_htgivendiabetes', 'value']
+        # p['prob_HTgivenDiab'] = df.at['prob_htgivendiabetes', 'value']
         p['prob_diagnosed'] = 0.5  # ToDO: remove once HSi activated
         p['prob_treated'] = 0.5
         p['prob_controlled'] = 0.5
@@ -105,23 +106,39 @@ class HT(Module):
         HT_data = workbook['data']
         df = HT_data.set_index('index')
 
-        p['initial_prevalence'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'], df.at['b_35_45', 'value'], df.at['b_45_55', 'value'], df.at['b_55_65', 'value']],
-                                                'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'], df.at['b_35_45', 'min'], df.at['b_45_55', 'min'], df.at['b_55_65', 'min']],
-                                                'max95ci': [df.at['b_all', 'max'], df.at['b_25_35', 'max'], df.at['b_35_45', 'max'], df.at['b_45_55', 'max'], df.at['b_55_65', 'max']]
+        p['initial_prevalence'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
+                                                               df.at['b_35_45', 'value'], df.at['b_45_55', 'value'],
+                                                               df.at['b_55_65', 'value']],
+                                                'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'],
+                                                            df.at['b_35_45', 'min'], df.at['b_45_55', 'min'],
+                                                            df.at['b_55_65', 'min']],
+                                                'max95ci': [df.at['b_all', 'max'], df.at['b_25_35', 'max'],
+                                                            df.at['b_35_45', 'max'], df.at['b_45_55', 'max'],
+                                                            df.at['b_55_65', 'max']]
                                                 },
-                                                index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
+                                               index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
 
         p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
 
         logger.info('%s|ht_prevalence_data|%s',
-                     self.sim.date,
-                     {
-                         'total': [p['initial_prevalence'].loc['total', 'prevalence'],p['initial_prevalence'].loc['total', 'min95ci'],p['initial_prevalence'].loc['total', 'max95ci']],
-                         '25_to_35':  [p['initial_prevalence'].loc['25_to_35', 'prevalence'],p['initial_prevalence'].loc['25_to_35', 'min95ci'],p['initial_prevalence'].loc['25_to_35', 'max95ci']],
-                         '35_to_45': [p['initial_prevalence'].loc['35_to_45', 'prevalence'],p['initial_prevalence'].loc['35_to_45', 'min95ci'],p['initial_prevalence'].loc['35_to_45', 'max95ci']],
-                         '45_to_55': [p['initial_prevalence'].loc['45_to_55', 'prevalence'],p['initial_prevalence'].loc['45_to_55', 'min95ci'],p['initial_prevalence'].loc['45_to_55', 'max95ci']],
-                         '55_to_65': [p['initial_prevalence'].loc['55_to_65', 'prevalence'],p['initial_prevalence'].loc['55_to_65', 'min95ci'],p['initial_prevalence'].loc['55_to_65', 'prevalence']]
-                     })
+                    self.sim.date,
+                    {
+                        'total': [p['initial_prevalence'].loc['total', 'prevalence'],
+                                  p['initial_prevalence'].loc['total', 'min95ci'],
+                                  p['initial_prevalence'].loc['total', 'max95ci']],
+                        '25_to_35': [p['initial_prevalence'].loc['25_to_35', 'prevalence'],
+                                     p['initial_prevalence'].loc['25_to_35', 'min95ci'],
+                                     p['initial_prevalence'].loc['25_to_35', 'max95ci']],
+                        '35_to_45': [p['initial_prevalence'].loc['35_to_45', 'prevalence'],
+                                     p['initial_prevalence'].loc['35_to_45', 'min95ci'],
+                                     p['initial_prevalence'].loc['35_to_45', 'max95ci']],
+                        '45_to_55': [p['initial_prevalence'].loc['45_to_55', 'prevalence'],
+                                     p['initial_prevalence'].loc['45_to_55', 'min95ci'],
+                                     p['initial_prevalence'].loc['45_to_55', 'max95ci']],
+                        '55_to_65': [p['initial_prevalence'].loc['55_to_65', 'prevalence'],
+                                     p['initial_prevalence'].loc['55_to_65', 'min95ci'],
+                                     p['initial_prevalence'].loc['55_to_65', 'prevalence']]
+                    })
 
         logger.debug("Hypertension method: finished reading in parameters.  ")
 
@@ -156,8 +173,9 @@ class HT(Module):
 
         # 3. Assign prevalence as per data
         # 3.1 Get corresponding risk
-        ht_probability = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'], left_on=['age_years'],
-                                                                      right_on=['age'], how='left')['probability']
+        ht_probability = \
+        df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'], left_on=['age_years'],
+                                                            right_on=['age'], how='left')['probability']
         df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi
         df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
         alive_count = df.is_alive.sum()
@@ -166,7 +184,8 @@ class HT(Module):
 
         # 3.2 Assign prevalent cases of hypertension according to risk
         ht_probability = ht_probability * df.loc[df.is_alive, 'ht_risk']
-        random_numbers = self.rng.random_sample(size=alive_count)  # TODO: remove duplication later, 1st is not random, to test comment out dublicate line and look at logger.debug output below
+        random_numbers = self.rng.random_sample(
+            size=alive_count)  # TODO: remove duplication later, 1st is not random, to test comment out dublicate line and look at logger.debug output below
         random_numbers = self.rng.random_sample(size=alive_count)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_probability)
 
@@ -186,12 +205,12 @@ class HT(Module):
 
         logger.debug('Lets generate the random number check for hypertension. ')
         logger.debug({
-                        'Mean rand num in 18-25 yo': mean_randnum_18_25,
-                        'Mean rand num_in 25-35 yo': mean_randnum_25_35,
-                        'Mean rand num_in 35-45 yo': mean_randnum_35_45,
-                        'Mean rand num_in 45-55 yo': mean_randnum_45_55,
-                        'Mean_rand num_in over 55 yo': mean_randnum_over55
-                        })
+            'Mean rand num in 18-25 yo': mean_randnum_18_25,
+            'Mean rand num_in 25-35 yo': mean_randnum_25_35,
+            'Mean rand num_in 35-45 yo': mean_randnum_35_45,
+            'Mean rand num_in 45-55 yo': mean_randnum_45_55,
+            'Mean_rand num_in over 55 yo': mean_randnum_over55
+        })
 
         assert 0.4 < mean_randnum_18_25 < 0.6
         assert 0.4 < mean_randnum_25_35 < 0.6
@@ -306,7 +325,7 @@ class HT(Module):
 
         logger.debug("Hypertension method: finished defining on birth.  ")
 
-    def on_healthsystem_interaction(self, person_id, treatment_id): #TODO: update
+    def on_healthsystem_interaction(self, person_id, treatment_id):  # TODO: update
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
@@ -314,13 +333,13 @@ class HT(Module):
         logger.debug('This is Hypertension, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-    def on_hsi_alert(self, person_id, treatment_id):    #TODO: update
+    def on_hsi_alert(self, person_id, treatment_id):  # TODO: update
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
         pass
 
-    def report_daly_values(self):   #TODO: update
+    def report_daly_values(self):  # TODO: update
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
@@ -353,7 +372,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         # ToDO: need to add code from original if it bugs.
 
     def apply(self, population):
-
         logger.debug('Hypertension method: tracking the disease progression of the population.')
 
         # 1. Basic variables
@@ -373,11 +391,12 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 3. Handle new cases of hypertension
         # 3.1 First get relative risk
-        ht_probability = df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
-                                                                                        left_on=['age_years'],
-                                                                                        right_on=['age'],
-                                                                                        how='left').set_index(
-                                                                                        'person')['probability']
+        ht_probability = \
+        df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
+                                                                              left_on=['age_years'],
+                                                                              right_on=['age'],
+                                                                              how='left').set_index(
+            'person')['probability']
         df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi
         df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
 
@@ -418,7 +437,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             'Mean rand num_in 45-55 yo': rand_45_55,
             'Mean_rand num_in over 55 yo': rand_over55
         })
-
 
         # 3.3 If newly hypertensive
         df.loc[ht_idx, 'ht_current_status'] = True
@@ -463,6 +481,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
                         '45_to_55': prevalence_45to55,
                         '55_to_65': prevalence_55to65
                     })
+
 
 class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
