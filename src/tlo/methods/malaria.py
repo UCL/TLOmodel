@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 
 import pandas as pd
 
@@ -20,11 +21,14 @@ class Malaria(Module):
     PARAMETERS = {
         'mal_inc': Parameter(Types.REAL, 'monthly incidence of malaria in all ages'),
         'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
+        'clin_inc': Parameter(Types.REAL, 'data frame of clinical incidence by age, district, intervention coverage'),
+        'inf_inc': Parameter(Types.REAL, 'data frame of infection incidence by age, district, intervention coverage'),
+        'sev_inc': Parameter(Types.REAL, 'data frame of severe case incidence by age, district, intervention coverage'),
 
         'p_infection': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'stage': Parameter(
-            Types.CATEGORICAL, 'malaria stage'),
+            Types.CATEGORICAL, 'malaria stage', categories=['none', 'clinical', 'severe']),
         'sensitivity_rdt': Parameter(
             Types.REAL, 'Sensitivity of rdt'),
         'cfr': Parameter(
@@ -65,6 +69,10 @@ class Malaria(Module):
     }
 
     def read_parameters(self, data_folder):
+
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_malaria.xlsx', sheet_name='parameters')
+        self.load_parameters_from_dataframe(dfd)
+
         p = self.parameters
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
@@ -73,8 +81,10 @@ class Malaria(Module):
         # baseline characteristics
         p['mal_inc'] = workbook['incidence']
         p['interv'] = workbook['interventions']
+        p['clin_inc'] = workbook['clin_inc_age']
+        p['inf_inc'] = workbook['inf_age']
+        p['sev_inc'] = workbook['sev_age']
 
-        p['p_infection'] = 0.5
         p['stage'] = pd.DataFrame(
             data={
                 'level_of_symptoms': ['none',
@@ -82,12 +92,6 @@ class Malaria(Module):
                                       'severe'],
                 'probability': [0, 0.99, 0.01],
             })
-        p['sensitivity_rdt'] = 0.95
-        p['cfr'] = 0.15
-        p['dur_asym'] = 110  # how long will this be detectable in the blood??
-        p['dur_clin'] = 5
-        p['dur_clin_para'] = 195  # how long will this be detectable in the blood??
-        p['rr_hiv'] = 1.42
 
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
         if 'HealthBurden' in self.sim.modules.keys():
@@ -105,7 +109,53 @@ class Malaria(Module):
         df['ma_status'].values[:] = 'Uninf'  # default: never infected
         df['ma_date_infected'] = pd.NaT
 
-        # ----------------------------------- BASELINE CASES -----------------------------------
+        # ----------------------------------- INTERVENTION COVERAGE -----------------------------------
+        interv = p['interv']
+
+        # find annual intervention coverage levels rate for 2010
+        # TODO: replace with district-level estimates when available
+        itn_2010 = interv.loc[interv.Year == now.year, 'ITN_coverage'].values
+        irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values
+
+        # # get a list of random numbers between 0 and 1 for each person
+        # random_draw = self.rng.random_sample(size=len(df))
+        #
+        # # use the same random draws for itn and irs as having one increases likelihood of having other
+        # itn_idx = df.index[df.is_alive & (random_draw < itn_2010)]
+        # irs_idx = df.index[df.is_alive & (random_draw < irs_2010)]
+        #
+        # df.loc[itn_idx, 'itn_use'] = True
+        # df.loc[irs_idx, 'irs'] = True
+
+        # for each district and age, look up incidence estimate using itn_2010 and irs_2010
+        df_inf = df.merge(p['inf_inc'], left_on=['district', 'age_years'], right_on=['admin', 'age'], how='left')
+        df_clin = df.merge(p['clin_inc'], left_on=['district', 'age_years'], right_on=['admin', 'age'], how='left')
+        df_sev = df.merge(p['sev_inc'], left_on=['district', 'age_years'], right_on=['admin', 'age'], how='left')
+
+        # ----------------------------------- BASELINE INFECTION STATUS -----------------------------------
+        ## infected
+        eligible = df.index[df.is_alive]
+        risk_ml = pd.Series(0, index=df.index)
+        risk_ml.loc[df.is_alive] = 1  # applied to everyone
+        # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']
+
+        # weight the likelihood of being sampled by the relative risk
+        norm_p = pd.Series(risk_ml[eligible])
+        norm_p /= norm_p.sum()  # normalise
+        ml_idx = self.rng.choice(eligible, size=int(inc_2010 * (len(eligible))), replace=False,
+                                 p=norm_p)
+
+        df.loc[ml_idx, 'ma_status'] = 'Clin'
+
+        ## clinical - subset of infected
+
+        ## severe - subset of clinical
+
+
+
+
+
+
 
         inc = p['mal_inc']
 
@@ -130,22 +180,7 @@ class Malaria(Module):
         # random_days = pd.to_timedelta(random_date, unit='d')
         df.loc[ml_idx, 'ma_date_infected'] = now  # + random_days
 
-        # ----------------------------------- INTERVENTIONS -----------------------------------
-        interv = p['interv']
 
-        # find annual intervention coverage levels rate for 2010
-        itn_2010 = interv.loc[interv.Year == now.year, 'ITN_coverage'].values
-        irs_2010 = interv.loc[interv.Year == now.year, 'IRS_coverage'].values
-
-        # get a list of random numbers between 0 and 1 for each person
-        random_draw = self.rng.random_sample(size=len(df))
-
-        # use the same random draws for itn and irs as having one increases likelihood of having other
-        itn_idx = df.index[df.is_alive & (random_draw < itn_2010)]
-        irs_idx = df.index[df.is_alive & (random_draw < irs_2010)]
-
-        df.loc[itn_idx, 'itn_use'] = True
-        df.loc[irs_idx, 'irs'] = True
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
