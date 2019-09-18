@@ -12,11 +12,8 @@ from tlo import Date
 def mock_pop():
     class Population:
         def _create_props(self, n):
-            return pd.DataFrame(
-                {'col1': [1.0] * n,
-                 'col2': [''] * n,
-                 'col3': [[]] * n,
-                 'col4': [Date(0)] * n})
+            return pd.DataFrame({'col1': [1.0] * n, 'col2': [''] * n, 'col3': [[]] * n, 'col4': [Date(0)] * n})
+
     return Population()
 
 
@@ -24,21 +21,23 @@ def mock_pop():
 def mock_sim(mock_pop):
     class Simulation:
         population = mock_pop
+
     return Simulation()
 
 
 def test_show_changes(mock_sim):
     initial = pd.DataFrame(
-        {'col1': [1.0, 2.0],
-         'col2': ['a', 'b'],
-         'col3': [[], [1]],
-         'col4': [Date(2020, 1, 1), None]})
+        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
+    )
     initial.index.name = 'row'
     final = pd.DataFrame(
-        {'col1': [3.0, 2.0, 1.0],
-         'col2': ['a', 'c', ''],
-         'col3': [[2], [1], []],
-         'col4': [Date(2020, 1, 1), Date(2020, 1, 2), None]})
+        {
+            'col1': [3.0, 2.0, 1.0],
+            'col2': ['a', 'c', ''],
+            'col3': [[2], [1], []],
+            'col4': [Date(2020, 1, 1), Date(2020, 1, 2), None],
+        }
+    )
     final.index.name = 'row'
 
     changes = tlo.util.show_changes(mock_sim, initial, final)
@@ -46,22 +45,18 @@ def test_show_changes(mock_sim):
 
     assert len(changes.index) == len(final)
     assert html.count('color:  black;') == 7  # unchanged
-    assert html.count('color:  red;') == 5    # changed
+    assert html.count('color:  red;') == 5  # changed
     assert html.count('background-color:  yellow;') == 4  # final row
 
 
 def test_show_changes_same_size(mock_sim):
     initial = pd.DataFrame(
-        {'col1': [1.0, 2.0],
-         'col2': ['a', 'b'],
-         'col3': [[], [1]],
-         'col4': [Date(2020, 1, 1), None]})
+        {'col1': [1.0, 2.0], 'col2': ['a', 'b'], 'col3': [[], [1]], 'col4': [Date(2020, 1, 1), None]}
+    )
     initial.index.name = 'row'
     final = pd.DataFrame(
-        {'col1': [1.5, 2],
-         'col2': ['aa', 'b'],
-         'col3': [[], [1, 1]],
-         'col4': [Date(2020, 1, 2), None]})
+        {'col1': [1.5, 2], 'col2': ['aa', 'b'], 'col3': [[], [1, 1]], 'col4': [Date(2020, 1, 2), None]}
+    )
     final.index.name = 'row'
 
     changes = tlo.util.show_changes(mock_sim, initial, final)
@@ -69,7 +64,7 @@ def test_show_changes_same_size(mock_sim):
 
     assert len(changes.index) == len(final)
     assert html.count('color:  black;') == 4  # unchanged
-    assert html.count('color:  red;') == 4    # changed
+    assert html.count('color:  red;') == 4  # changed
     assert html.count('background-color:  yellow;') == 0
 
 
@@ -88,24 +83,17 @@ class TestTransitionsStates:
         prob_matrix["d"] = [0.0, 0.0, 0.3, 0.7]
         # columns are original state, rows are the new state
         all_states = prob_matrix.columns.tolist()
-        prob_matrix.rename(
-            index={
-                row_num: col_name
-                for row_num, col_name in zip(range(len(prob_matrix)), all_states)
-            }
-        )
+        prob_matrix.rename(index={row_num: col_name for row_num, col_name in zip(range(len(prob_matrix)), all_states)})
         self.prob_matrix = prob_matrix
 
         # default input data
-        self.input = pd.DataFrame({'state': self.states * 1_000,
-                                   'other_data_1': range(0, 4_000)})
+        self.input = pd.DataFrame({'state': self.states * 1_000, 'other_data_1': range(0, 4_000)})
 
         # default output data
-        nested_states = [                    # perfect ratio would be: [1000, 600, 1500, 900]
+        nested_states = [  # perfect ratio would be: [1000, 600, 1500, 900]
             list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1465, 919])
         ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                      'other_data_1': pd.Series(range(0, 4000))})
+        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
 
     def test_simple_case(self):
         """Simple case, should change to probabilities found per seed"""
@@ -122,11 +110,10 @@ class TestTransitionsStates:
 
     def test_state_doesnt_transition(self):
         """State d shouldn't transition at all"""
-        nested_states = [                    # perfect ratio would be: [1000, 600, 1400, 1000]
+        nested_states = [  # perfect ratio would be: [1000, 600, 1400, 1000]
             list(state * repeat) for state, repeat in zip(self.states, [1018, 598, 1384, 1000])
         ]
-        expected = pd.DataFrame({'state': sum(nested_states, []),
-                                 'other_data_1': pd.Series(range(0, 4000))})
+        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
         prob_matrix = self.prob_matrix.copy()
         prob_matrix['c'] = [0.0, 0.2, 0.8, 0.0]
         prob_matrix['d'] = [0.0, 0.0, 0.0, 1.0]
@@ -142,18 +129,14 @@ class TestTransitionsStates:
     def test_none_in_initial_state(self):
         """States start without any in state c"""
         # input
-        nested_states = [
-            list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])
-        ]
-        input = pd.DataFrame({'state': sum(nested_states, []),
-                              'other_data_1': pd.Series(range(0, 6000))})
+        nested_states = [list(state * repeat) for state, repeat in zip(self.states, [2000, 2000, 0, 2000])]
+        input = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
 
         # default output data
-        nested_states = [                    # perfect ratio would be: [2000, 800, 1800, 1400]
+        nested_states = [  # perfect ratio would be: [2000, 800, 1800, 1400]
             list(state * repeat) for state, repeat in zip(self.states, [2006, 760, 1853, 1381])
         ]
-        self.expected = pd.DataFrame({'state': sum(nested_states, []),
-                                      'other_data_1': pd.Series(range(0, 6000))})
+        self.expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 6000))})
         expected = self.expected.copy()
 
         # run the function
@@ -167,11 +150,10 @@ class TestTransitionsStates:
     def test_transition_removes_state(self):
         """Transition causes complete removal of a state a from the series"""
         new_states = list('bcd')
-        nested_states = [                    # perfect ratio would be: [1600, 1500, 900]
+        nested_states = [  # perfect ratio would be: [1600, 1500, 900]
             list(state * repeat) for state, repeat in zip(new_states, [1616, 1465, 919])
         ]
-        expected = pd.DataFrame({'state': sum(nested_states, []),
-                                 'other_data_1': pd.Series(range(0, 4000))})
+        expected = pd.DataFrame({'state': sum(nested_states, []), 'other_data_1': pd.Series(range(0, 4000))})
         prob_matrix = self.prob_matrix.copy()
         prob_matrix["a"] = [0.0, 1.0, 0.0, 0.0]
         prob_matrix["b"] = [0.0, 0.4, 0.6, 0.0]
