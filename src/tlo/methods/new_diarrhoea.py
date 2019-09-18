@@ -10,7 +10,6 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.methods import demography
-from tlo.methods.Childhood_interventions import HSI_ICCM
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -305,6 +304,7 @@ class NewDiarrhoea(Module):
         p['dhs_care_seeking_2010'] = 0.58
         p['IMCI_effectiveness_2010'] = 0.6
         p['r_death_diarrhoea'] = 0.3
+        p['case_fatality_rate'] = 0.1
 
         # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -336,80 +336,6 @@ class NewDiarrhoea(Module):
         df['continued_breastfeeding'] = False
 
         # # # # # # # # # # # # # PREVALENCE OF DIARRHOEA AT THE START OF SIMULATION 2010 # # # # # # # # # # # # #
-
-        df_under5 = df.age_years < 5 & df.is_alive
-        under5_idx = df.index[(df.age_years < 5) & df.is_alive]
-
-        # create dataframe of the probabilities of gi_diarrhoea_prev_state for children
-        # aged 0-11 months, HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding,
-        # no household handwashing, no access to clean water, no improved sanitation
-
-        p_dysentery_status = pd.Series(self.init_prop_diarrhoea_status[0], index=under5_idx)
-        p_watery_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[1], index=under5_idx)
-        p_persistent_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[2], index=under5_idx)
-
-        p_acute_diarrhoea = pd.concat([p_dysentery_status, p_watery_diarrhoea_status], axis=1)
-
-        # create probabilities of dysentery for all age under 5
-        p_acute_diarrhoea.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_acute_diarr_age12to23mo
-        p_acute_diarrhoea.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
-            *= self.rp_acute_diarr_age24to59mo
-        p_acute_diarrhoea.loc[(df.has_hiv == True) & df_under5] *= self.rp_acute_diarr_HIV
-        p_acute_diarrhoea.loc[(df.malnutrition == True) & df_under5] *= self.rp_acute_diarr_SAM
-        p_acute_diarrhoea.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_acute_diarr_excl_breast
-        p_acute_diarrhoea.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
-                              (df.age_exact_years < 2) & df.is_alive] *= self.rp_acute_diarr_cont_breast
-        p_acute_diarrhoea.loc[
-            (df.li_no_access_handwashing == False) & df_under5] *= self.rp_acute_diarr_HHhandwashing
-        p_acute_diarrhoea.loc[
-            (df.li_no_clean_drinking_water == False) & df_under5] *= self.rp_acute_diarr_clean_water
-        p_acute_diarrhoea.loc[
-            (df.li_unimproved_sanitation == False) & df_under5] *= self.rp_acute_diarr_improved_sanitation
-
-        # create probabilities of persistent diarrhoea for all age under 5
-        p_persistent_diarrhoea_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_persistent_diarrhoea_age12to23mo
-        p_persistent_diarrhoea_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
-            *= self.rp_persistent_diarrhoea_age24to59mo
-        p_persistent_diarrhoea_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_persistent_diarrhoea_HIV
-        p_persistent_diarrhoea_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_persistent_diarrhoea_SAM
-        p_persistent_diarrhoea_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) &
-                                          df.is_alive] *= self.rp_persistent_diarrhoea_excl_breast
-        p_persistent_diarrhoea_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
-                                          (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_persistent_diarrhoea_cont_breast
-        p_persistent_diarrhoea_status.loc[(df.li_no_clean_drinking_water == False) & df_under5] \
-            *= self.rp_persistent_diarrhoea_clean_water
-        p_persistent_diarrhoea_status.loc[(df.li_unimproved_sanitation == False) & df_under5] \
-            *= self.rp_persistent_diarrhoea_improved_sanitation
-
-        # randomly select some individuals to assign diarrhoeal disease status at the start of simulation
-        random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
-                                index=df.index[(df.age_years < 5) & df.is_alive])
-
-        # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([p_acute_diarrhoea, p_persistent_diarrhoea_status, random_draw],
-                        axis=1)
-        dfx.columns = ['p_dysentery', 'p_watery_diarrhoea', 'p_persistent_diarrhoea', 'random_draw']
-        dfx['p_none'] = 1 - (dfx.p_dysentery + dfx.p_watery_diarrhoea + dfx.p_persistent_diarrhoea)
-
-        idx_none = dfx.index[dfx.p_none > dfx.random_draw]
-        idx_dysentery = dfx.index[
-            (dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_dysentery) > dfx.random_draw)]
-        idx_watery_diarrhoea = dfx.index[((dfx.p_none + dfx.p_dysentery) < dfx.random_draw) &
-                                         (dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea) > dfx.random_draw]
-        idx_persistent_diarrhoea = dfx.index[
-            ((dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea) < dfx.random_draw) &
-            (dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea +
-             dfx.p_persistent_diarrhoea) > dfx.random_draw]
-
-        df.loc[idx_none, 'gi_diarrhoea_status'] = False
-        df.loc[idx_dysentery, 'gi_diarrhoea_acute_type'] = 'dysentery'
-        df.loc[idx_watery_diarrhoea, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
-        df.loc[idx_persistent_diarrhoea, 'gi_persistent_diarrhoea'] = True
-        df.loc[idx_dysentery | idx_watery_diarrhoea | idx_persistent_diarrhoea, 'gi_diarrhoea_status'] = True
 
         # # # # # # # # # DIAGNOSED AND TREATED BASED ON CARE SEEKING AND IMCI EFFECTIVENESS # # # # # # # # #
 
@@ -515,6 +441,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         m = self.module
         rng = m.rng
+        now = self.sim.date
+        p = self.module.parameters
 
         # SET DIARRHOEAL PROPERTIES BACK TO FALSE FOR THE EVENT
         df['gi_diarrhoea_status'] = False
@@ -738,6 +666,13 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                  & (dehydration_probs.loc[:, column] >= dehydration_probs.random_draw_b))]
             df.loc[dehydration_idx, 'gi_dehydration_status'] = column
 
+        # Log the acute diarrhoea information
+        for child in incident_acute_diarrhoea:
+            logger.info('%s|acute_diarrhoea|%s', df.at[child, 'date_of_onset_diarrhoea'],
+                        {'child_index': child, 'age': df.at[child, 'age_years'],
+                         'diarrhoea_type': df.at[child, 'gi_diarrhoea_acute_type'],
+                         'dehydration_present': df.at[child, 'gi_dehydration_status']})
+
         # # # # # # # # SYMPTOMS FROM ACUTE WATERY DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[under5_watery_diarrhoea_idx, 'di_diarrhoea_loose_watery_stools'] = True
         df.loc[under5_watery_diarrhoea_idx, 'di_blood_in_stools'] = False
@@ -751,7 +686,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR ACUTE WATERY DIARRHOEA
         # --------------------------------------------------------------------------------------------------------
-        watery_diarrhoea_symptoms = \
+        '''watery_diarrhoea_symptoms = \
             df.index[df.is_alive & (df.age_years < 5) & (df.di_diarrhoea_loose_watery_stools == True) &
                      (df.di_blood_in_stools == False) & df.di_diarrhoea_over14days == False]
 
@@ -784,6 +719,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=None
                                                                 )
+                                                                '''
 
         # # # # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # # # # #
 
@@ -818,6 +754,13 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # SET THE TIMELINE FOR PERSISTENT DIARRHOEA
         date_become_persistent = date_of_aquisition + DateOffset(weeks=2)
 
+        # Log the acute diarrhoea information
+        for child in persistent_diarr_idx:
+            logger.info('%s|persistent_diarrhoea|%s', date_become_persistent,
+                        {'child_index': child, 'age': df.at[child, 'age_years'],
+                         'persistent_diarrhoea': df.at[child, 'gi_persistent_diarrhoea'],
+                         'dehydration_present': df.at[child, 'gi_dehydration_status']})
+
         # # # # # # # # SYMPTOMS FROM PERSISTENT DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[persistent_diarr_idx, 'di_diarrhoea_loose_watery_stools'] = True
         df.loc[persistent_diarr_idx, 'di_blood_in_stools'] = True | False
@@ -826,7 +769,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR PERSISTENT DIARRHOEA
         # --------------------------------------------------------------------------------------------------------
-        persistent_diarrhoea_symptoms = \
+        '''persistent_diarrhoea_symptoms = \
             df.index[df.is_alive & (df.age_years < 5) & (df.di_diarrhoea_loose_watery_stools == True | False)
                      & df.di_diarrhoea_over14days == True]
 
@@ -841,24 +784,52 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=None
                                                                 )
+                                                                '''
 
-        sent_to_death_event = df.index[df.is_alive & (df.gi_diarrhoea_status is True) & (df.age_exact_years < 5)]
-        for individual in sent_to_death_event:
-            self.sim.schedule_event(DeathDiarrhoeaEvent(self.module, person_id=individual))
+        # schedule death events for severe diarrhoea
+        random_draw = rng.random_sample(size=len(df))
+        death = df.index[df.gi_diarrhoea_status & (df.date_of_onset_diarrhoea == now) &
+                         (random_draw < p['case_fatality_rate'])]
+        for child in death:
+            logger.debug(
+                'This is DiarrhoeaEvent, scheduling diarrhoea death for person %d',
+                child)
+
+            random_date = rng.randint(low=0, high=7)
+            random_days = pd.to_timedelta(random_date, unit='d')
+
+            death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
+                                              cause='diarrhoea')  # make that death event
+            self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
 
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, cause):
         super().__init__(module, person_id=person_id)
+        self.cause = cause
 
-    def apply(self, population):
-
-        df = population.props
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
         m = self.module
         rng = m.rng
 
+        logger.info('This is DeathDiarrhoeaEvent determining if person %d will die from their disease', person_id)
+
+        if df.at[person_id, 'is_alive']:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
+                                    self.sim.date)
+            df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
+
+        # Log the diarrhoea death information
+        logger.info('%s|persistent_diarrhoea|%s', self.sim.date,
+                    {'child_index': person_id, 'age': df.at[person_id, 'age_years'],
+                     'diarrhoea_death_cause': df.at[person_id, 'gi_persistent_diarrhoea'] |
+                                              df.at[person_id, 'gi_diarrhoea_acute_type'],
+                     'dehydration_level': df.at[person_id, 'gi_dehydration_status']})
+
         # for those who sough care and those who didnt sought care - recovery and death
 
+'''
         # ------------------------------------------------------------------------------------------------------
         # DEATH DUE TO ACUTE BLOODY DIARRHOEA - DYSENTERY
         # ------------------------------------------------------------------------------------------------------
@@ -967,3 +938,4 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
         for individual_id in death_this_period:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, 'NewDiarrhoea'),
                                     self.sim.date)
+'''

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
+from tlo.methods import demography, lifestyle, healthsystem, new_diarrhoea
 from tlo.methods.demography import make_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
@@ -19,15 +19,15 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-# assume Python console is started in the top-leve TLOModel directory
+# assume Python console is started in the top-level TLOModel directory
 resourcefilepath = Path("./resources")
 
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2031, 1, 1)  # so last full year of simulation will be 2030
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 3000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
@@ -44,6 +44,10 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(new_diarrhoea.NewDiarhoea(resourcefilepath=resourcefilepath))
+
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
@@ -54,19 +58,24 @@ fh.flush()
 # %% read the results
 output = parse_log_file(logfile)
 
-# %% Plot Population Size Over time:
+# %% Plot Incidence of Diarrhoea Over time:
 
 # Load Model Results
-pop_df = output["tlo.methods.demography"]["population"]
-Model_Years = pd.to_datetime(pop_df.date)
-Model_Pop = pop_df.total
+incidence_diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
+incidence_date = pd.to_datetime(incidence_diarrhoea_df.date)
+incidence_year = incidence_diarrhoea_df.date.dt.year
+diarrhoea_by_year = incidence_diarrhoea_df.groupby(['year'])['person_id'].size()
+
+diarrhoea_df = pd.concat((diarrhoea_by_year, birth_by_year), axis=1)
+
+Model_Pop = incidence_diarrhoea_df.total
 Model_Pop_Normalised = (
-    100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == "2010-01-01"])
+    100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[incidence_years == "2010-01-01"])
 )
 
 # Load Data
 Data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_DemographicData.xlsx",
+    Path(resourcefilepath) / 'ResourceFile_Childhood_Diarrhoea.xlsx',
     sheet_name="Interpolated Pop Structure",
 )
 Data_Pop = Data.groupby(by="year")["value"].sum()
@@ -76,7 +85,7 @@ Data_Pop_Normalised = (
     100 * Data_Pop / np.asarray(Data_Pop[(Data_Years == Date(2010, 1, 1))])
 )
 
-plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
+plt.plot(np.asarray(incidence_years), Model_Pop_Normalised)
 plt.plot(Data_Years, Data_Pop_Normalised)
 plt.title("Population Size")
 plt.xlabel("Year")
