@@ -667,6 +667,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[dehydration_idx, 'gi_dehydration_status'] = column
 
         # Log the acute diarrhoea information
+        diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
+
+        logger.info('%s|acute_diarrhoea|%s', self.sim.date,
+                    {'total': sum(diarrhoea_count),
+                     'AWD': diarrhoea_count['acute watery diarrhoea'],
+                     'acute_dysentery': diarrhoea_count['dysentery']
+                     })
+
         for child in incident_acute_diarrhoea:
             logger.info('%s|acute_diarrhoea|%s', df.at[child, 'date_of_onset_diarrhoea'],
                         {'child_index': child, 'age': df.at[child, 'age_years'],

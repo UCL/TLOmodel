@@ -20,8 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-level TLOModel directory
-resourcefilepath = Path("./resources")
-
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 
@@ -61,12 +60,28 @@ output = parse_log_file(logfile)
 # %% Plot Incidence of Diarrhoea Over time:
 
 # Load Model Results
-incidence_diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
-incidence_date = pd.to_datetime(incidence_diarrhoea_df.date)
-incidence_year = incidence_diarrhoea_df.date.dt.year
-diarrhoea_by_year = incidence_diarrhoea_df.groupby(['year'])['person_id'].size()
+diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
+Model_Years = pd.to_datetime(diarrhoea_df.date_of_onset_diarrhoea)
+Model_total = diarrhoea_df.total
+Model_AWD = diarrhoea_df.AWD
+Model_dysentery = diarrhoea_df.acute_dysentery
+diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
 
-diarrhoea_df = pd.concat((diarrhoea_by_year, birth_by_year), axis=1)
+ig, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_total)
+ax.plot(np.asarray(Model_Years), Model_AWD)
+ax.plot(np.asarray(Model_Years), Model_dysentery)
+
+plt.title("Incidence of Diarrhoea")
+plt.xlabel("Year")
+plt.ylabel("Number of children")
+plt.legend(['Total children under 5', 'Acute watery diarrhoea', 'Dysentery'])
+plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
+
+plt.show()
+
+
+diarrhoea_df = pd.concat((diarrhoea_by_year, year), axis=1)
 
 Model_Pop = incidence_diarrhoea_df.total
 Model_Pop_Normalised = (
