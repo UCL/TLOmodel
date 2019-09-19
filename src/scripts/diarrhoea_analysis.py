@@ -2,7 +2,6 @@
 import datetime
 import logging
 import os
-from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +9,6 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, lifestyle, healthsystem, new_diarrhoea
-from tlo.methods.demography import make_age_range_lookup
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -20,7 +18,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-level TLOModel directory
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resourcefilepath = "./resources/"
 
 # %% Run the Simulation
 
@@ -45,7 +43,7 @@ logging.getLogger().addHandler(fh)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-sim.register(new_diarrhoea.NewDiarhoea(resourcefilepath=resourcefilepath))
+sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
@@ -59,7 +57,7 @@ output = parse_log_file(logfile)
 
 # %% Plot Incidence of Diarrhoea Over time:
 
-# Load Model Results
+# Load Model Results on Acute diarrhoea type
 diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
 Model_Years = pd.to_datetime(diarrhoea_df.date_of_onset_diarrhoea)
 Model_total = diarrhoea_df.total
@@ -80,7 +78,38 @@ plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
 
 plt.show()
 
+# Load Model Results on attributable pathogens
+diarrhoea_patho_df = output['tlo.methods.new_diarrhoea']['diarrhoea_pathogens']
+Model_rotavirus = diarrhoea_patho_df.rotavirus
+Model_shigella = diarrhoea_patho_df.shigella
+Model_adenovirus = diarrhoea_patho_df.adenovirus
+Model_crypto = diarrhoea_patho_df.cryptosporidium
+Model_campylo = diarrhoea_patho_df.campylobacter
+Model_ETEC = diarrhoea_patho_df.ETEC
 
+ig1, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_rotavirus)
+ax.plot(np.asarray(Model_Years), Model_shigella)
+ax.plot(np.asarray(Model_Years), Model_adenovirus)
+
+plt.title("Diarrhoea attributable pathogens")
+plt.xlabel("Year")
+plt.ylabel("Number of children with pathogen-attributed diarrhoea ")
+plt.legend(['Total children under 5', 'Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC'])
+plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
+
+plt.show()
+
+
+'''
+diarrhoea_df_rotavirus = diarrhoea_df.rotavirus
+diarrhoea_df_shigella = diarrhoea_df.shigella
+diarrhoea_df_adenovirus = diarrhoea_df.adenovirus
+diarrhoea_df_crypto = diarrhoea_df.cryptosporidium
+diarrhoea_df_campylo = diarrhoea_df.campylobacter
+diarrhoea_df_ETEC = diarrhoea_df.ETEC
+
+pathogen_by_age = diarrhoea_patho_df.groupby(['age_years'])['person_id'].size()
 diarrhoea_df = pd.concat((diarrhoea_by_year, year), axis=1)
 
 Model_Pop = incidence_diarrhoea_df.total
@@ -336,3 +365,4 @@ death_by_cause = death_by_cause.rename(columns={"person_id": "num_deaths"})
 
 death_by_cause.plot.bar(stacked=True)
 plt.show()
+'''
