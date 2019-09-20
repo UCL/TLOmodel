@@ -48,10 +48,13 @@ class HypertensiveDisordersOfPregnancy(Module):
     }
 
     PROPERTIES = {
-        'hp_htn_preg': Property(Types.CATEGORICAL, 'None, Chronic Hypertension, Gestational Hypertension, Pre-eclampsia,'
-                                                   'Superimposed Pre-eclampsia',
-                                                   categories=['none', 'chronic_htn', 'gest_htn', 'pre_eclampsia',
-                                                               'sup_pre_eclamp']),
+        'hp_pre_eclampsia': Property(Types.CATEGORICAL, 'None, Early Pre-eclampsia (<33 wks), '
+                                                        'Late Pre-eclampsia (>33wks),',
+                                                   categories=['none', 'early_pre_eclamp', 'late_pre_eclamp']),
+        'hp_pre_eclamp_sev': Property(Types.CATEGORICAL, 'Severity of disease:None = N, Mild = M, Severe = S, '
+                                                         'Eclampsia = E',
+                                                   categories=['N', 'M', 'S', 'E']),
+        'hp_gest_htn': Property(Types.BOOL, 'whether this woman has developed gestational hypertension'),
         'hp_pe_specific_symptoms': Property(
             Types.CATEGORICAL, 'Level of symptoms for pre-eclampsia',
             categories=['none', 'headache normal vision', 'headache visual disturbance', 'neurological disturbance']),
@@ -83,7 +86,7 @@ class HypertensiveDisordersOfPregnancy(Module):
                                       'headache normal vision',
                                       'headache visual disturbance',
                                       'neurological disturbance'],
-                'probability': [0.25, 0.25, 0.25, 0.25]})
+                'probability': [0.30, 0.40, 0.20, 0.10]})  # DUMMY
         params['prob_pre_eclamp'] = dfd.loc['prob_pre_eclamp', 'value']
         params['rr_pre_eclamp_nulip'] = dfd.loc['rr_pre_eclamp_nulip', 'value']
         params['rr_pre_eclamp_chron_htn'] = dfd.loc['rr_pre_eclamp_chron_htn', 'value']
@@ -113,7 +116,9 @@ class HypertensiveDisordersOfPregnancy(Module):
         df = population.props  # a shortcut to the dataframe storing data for individiuals
         params = self.parameters
 
-        df.loc[df.sex == 'F', 'hp_htn_preg'] = 'none'
+        df.loc[df.sex == 'F', 'hp_pre_eclampsia'] = 'none'
+        df.loc[df.sex == 'F', 'hp_pre_eclamp_sev'] = 'N'
+        df.loc[df.sex == 'F', 'hp_gest_htn'] = False
         df.loc[df.sex == 'F', 'hp_prev_pre_eclamp'] = False
         df.loc[df.sex == 'F', 'hp_anti_htns'] = False
 
@@ -152,6 +157,10 @@ class HypertensiveDisordersOfPregnancy(Module):
         df.loc[idx_pe, 'hp_htn_preg'] = 'gest_htn'
 
         # TODO: symptom free?
+        # TODO: death schedule? or complication event...?
+
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
 
@@ -163,12 +172,11 @@ class HypertensiveDisordersOfPregnancy(Module):
         """
 
         # add the basic event
-        event = CongenitalAnomalyEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1))
+        event = HypertensiveDisordersOfPregnancyEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(months=1)) # TODO: will this capture the right people?
 
         # add an event to log to screen
-        sim.schedule_event(MockitisLoggingEvent(self), sim.date + DateOffset(months=6))
-
+        sim.schedule_event(HypertensiveDisordersOfPregnancyLoggingEvent(self), sim.date + DateOffset(months=6))
 
 
     def on_birth(self, mother_id, child_id):
@@ -184,29 +192,31 @@ class HypertensiveDisordersOfPregnancy(Module):
 
         # Initialise all the properties that this module looks after:
 
+        if df.at[child_id, 'sex'] == 'F':
+            df.at[child_id, 'hp_pre_eclampsia'] = 'none'
+            df.at[child_id, 'hp_pre_eclamp_sev'] = 'N'
+            df.at[child_id, 'hp_gest_htn'] = False
+            df.at[child_id, 'hp_prev_pre_eclamp'] = False
+            df.at[child_id, 'hp_anti_htns'] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is Mockitis, being alerted about a health system interaction '
+        logger.debug('This is HypertensiveDisordersOfPregnancy, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is mockitis reporting my health values')
+        logger.debug('This is HypertensiveDisordersOfPregnancy reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
         p = self.parameters
 
 
-class CongenitalAnomalyEvent(RegularEvent, PopulationScopeEventMixin):
+class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event is occurrs once durin
     """
@@ -215,14 +225,69 @@ class CongenitalAnomalyEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=1))
 
     def apply(self, population):
-
-        logger.debug('This is MockitisEvent, tracking the disease progression of the population.')
-
         df = population.props
+        params = self.module.parameters
+
+        logger.debug('This is HypertensiveDisodersOfPregnancy, managing the incidence of new cases in the pregnant'
+                     ' population.')
+
+        # 1.) NEW CASES PE/SPE
+
+        susceptible_women = df.index[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') &
+                                     (df.ac_gestational_age < 4)]  # do we allow gestational hypertension to become PE
+
+        eff_prob_pe = pd.Series(params['prob_pre_eclamp'], index=susceptible_women)
+
+        # RISK FACTORS:
+        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia =='none') & (df.la_parity == 0)] \
+            *= params['rr_pre_eclamp_nulip']
+        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & df.hp_prev_pre_eclamp] \
+            *= params['rr_pre_eclamp_prev_pe']
+
+        # TODO: chronic HTN (creating superimposed), BMI, DIABETES, TWINS
+
+        selected = susceptible_women[eff_prob_pe > self.module.rng.random_sample(size=len(eff_prob_pe))]
+        for person in selected:
+            diff = 20 - df.at[person, 'ac_gestational_age']  # Ensure onset is after 20 weeks gestation
+            time_until_onset = diff + np.random.exponential(scale=4, size=1)
+            days_till_pe = pd.to_timedelta(time_until_onset, unit='w')  # this is days for some reason
+            onset_date= self.sim.date + days_till_pe
+            self.sim.schedule_event(PreeclampsiaEvent(self.module, person, cause='pre_eclampsia'), onset_date)
+
+        # DISTRIBUTION FOR DATE OF ONSET? - if so this would be an individual event? (LISONKOVA ET AL FIGURE A?)
+        # TODO: should include late onset and early onset as outcomes are worse for early onset...(need evidence)
+
+# 2.) NEW CASES GH
+
+# 3.) PROGRESSION OF PE?--> ECLAMPSIA
+
+# 4.) CARE SEEKING (ADDITIONAL TO ANC?- undiagnosed but symptomatic?)
 
 
+class PreeclampsiaEvent (Event, IndividualScopeEventMixin):
+    """This event manages the onsent of pre-eclampsia in pregnant women previously determined as suceptible """
 
-class MockitisDeathEvent(Event, IndividualScopeEventMixin):
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        logger.info('This is PreeclampsiaEvent, person %d has developed pre-eclampsia during her pregnancy',
+                    individual_id)
+
+        if df.at[individual_id, 'ac_gestational_age'] <= 33:
+            df.at[individual_id, 'hp_pre_eclampsia'] = 'early_pre_eclamp'
+            df.at[individual_id,'hp_prev_pre_eclamp'] = True
+
+        if df.at[individual_id, 'ac_gestational_age'] > 33:
+            df.at[individual_id, 'hp_pre_eclampsia'] = 'late_pre_eclamp'
+            df.at[individual_id,'hp_prev_pre_eclamp'] = True
+
+        # care seeking here?
+
+class HypertensiveDisordersOfPregnancyDeathEvent(Event, IndividualScopeEventMixin):
     """
     This is the death event for mockitis
     """
@@ -241,208 +306,8 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(death, self.sim.date)
 
 
-# ---------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------
-# Health System Interaction Events
 
-class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-
-        logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
-                     person_id)
-
-        df = self.sim.population.props  # shortcut to the dataframe
-
-        if df.at[person_id, 'age_years'] >= 15:
-            logger.debug(
-                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: \
-                there should now be treatment for person %d',
-                person_id)
-            event = HSI_Mockitis_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-
-        else:
-            logger.debug(
-                '...This is HSI_Mockitis_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
-                person_id)
-
-            date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=2,
-                                                                topen=date_turns_15,
-                                                                tclose=date_turns_15 + DateOffset(months=12))
-
-
-class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is inititaed.
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-        logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
-        df = self.sim.population.props
-        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
-
-        if treatmentworks:
-            df.at[person_id, 'mi_is_infected'] = False
-            df.at[person_id, 'mi_status'] = 'P'
-
-            # (in this we nullify the death event that has been scheduled.)
-            df.at[person_id, 'mi_scheduled_date_death'] = pd.NaT
-
-            df.at[person_id, 'mi_date_cure'] = self.sim.date
-            df.at[person_id, 'mi_specific_symptoms'] = 'none'
-            df.at[person_id, 'mi_unified_symptom_code'] = 0
-            pass
-
-        # Create a follow-up appointment
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
-                                                            priority=2,
-                                                            topen=target_date_for_followup_appt,
-                                                            tclose=target_date_for_followup_appt + DateOffset(weeks=2)
-                                                            )
-
-
-class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitis is monitored.
-    (In practise, nothing happens!)
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
-        self.ALERT_OTHER_DISEASES = ['*']
-
-    def apply(self, person_id):
-        # There is a follow-up appoint happening now but it has no real effect!
-
-        # Create the next follow-up appointment....
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_hsi_event(followup_appt,
-                                                            priority=2,
-                                                            topen=target_date_for_followup_appt,
-                                                            tclose=target_date_for_followup_appt + DateOffset(weeks=2))
-
-
-# ---------------------------------------------------------------------------------
-
-
-class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class HypertensiveDisordersOfPregnancyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summmary of the numbers of people with respect to their 'mockitis status'
         """
@@ -454,24 +319,4 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
-        proportion_infected = infected_total / len(df)
 
-        mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
-                           self.sim.date - DateOffset(months=self.repeat))
-        infected_in_last_month = mask.sum()
-        mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
-        cured_in_last_month = mask.sum()
-
-        counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
-
-        logger.info('%s|summary|%s', self.sim.date,
-                    {
-                        'TotalInf': infected_total,
-                        'PropInf': proportion_infected,
-                        'PrevMonth': infected_in_last_month,
-                        'Cured': cured_in_last_month,
-                    })
-
-        logger.info('%s|status_counts|%s', self.sim.date, counts)
