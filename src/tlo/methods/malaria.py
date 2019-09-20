@@ -57,7 +57,9 @@ class Malaria(Module):
         'ma_unified_symptom_code': Property(Types.CATEGORICAL, 'level of symptoms on the standardised scale, 0-4',
                                             categories=[0, 1, 2, 3, 4]),
         'ma_district_edited': Property(
-            Types.STRING, 'edited districts to match with malaria data')
+            Types.STRING, 'edited districts to match with malaria data'),
+        'ma_age_edited': Property(
+            Types.REAL, 'age values redefined to match with malaria data')
 
     }
 
@@ -98,6 +100,7 @@ class Malaria(Module):
         df['ma_specific_symptoms'].values[:] = 'none'
         df['ma_unified_symptom_code'].values[:] = 0
         df['ma_district_edited'] = df['district_of_residence']
+        df['ma_age_edited'] = 0
 
         # ----------------------------------- RENAME DISTRICTS -----------------------------------
         # rename districts to match malaria data
@@ -136,26 +139,25 @@ class Malaria(Module):
 
         # for each district and age, look up incidence estimate using itn_2010 and irs_2010
         # create new age column with 0, 0.5, 1, 2, ...
-        df.age_edited = None
-        # df.age_edited = df.age_years
-        df.loc[df.age_exact_years.between(0, 0.5), 'age_edited'] = 0
-        df.loc[df.age_exact_years.between(0.5, 1), 'age_edited'] = 0.5
-        df.loc[(df.age_exact_years >= 1), 'age_edited'] = df.age_years[df.age_years >= 1]
-        assert (not pd.isnull(df['age_edited']).any())
+        df.loc[df.age_exact_years.between(0, 0.5), 'ma_age_edited'] = 0
+        df.loc[df.age_exact_years.between(0.5, 1), 'ma_age_edited'] = 0.5
+        df.loc[(df.age_exact_years >= 1), 'ma_age_edited'] = df.age_years[df.age_years >= 1]
+        assert (not pd.isnull(df['ma_age_edited']).any())
+        df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
-        df_inf = df.reset_index().merge(inf_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_inf = df.reset_index().merge(inf_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
                                         right_on=['admin', 'age'],
                                         how='left', indicator=True).set_index('person')
         df_inf['monthly_prob_inf'] = df_inf['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_inf['monthly_prob_inf']).any())
 
-        df_clin = df.reset_index().merge(clin_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_clin = df.reset_index().merge(clin_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
                                          right_on=['admin', 'age'],
                                          how='left').set_index('person')
         df_clin['monthly_prob_clin'] = df_clin['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_clin['monthly_prob_clin']).any())
 
-        df_sev = df.reset_index().merge(sev_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_sev = df.reset_index().merge(sev_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
                                         right_on=['admin', 'age'],
                                         how='left').set_index('person')
         df_sev['monthly_prob_sev'] = df_sev['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
@@ -243,6 +245,9 @@ class Malaria(Module):
         asym = df.index[df.ma_is_infected & (df.ma_specific_symptoms == 'none') & (df.ma_date_infected == now)]
 
         for person in df.loc[asym].index:
+            logger.debug(
+                'This is Malaria, scheduling parasite clearance for asymptomatic person %d', person)
+
             random_date = self.rng.randint(low=0, high=p['dur_asym'])
             random_days = pd.to_timedelta(random_date, unit='d')
 
@@ -253,6 +258,9 @@ class Malaria(Module):
         clin = df.index[(df.ma_specific_symptoms == 'clinical') & (df.ma_date_infected == now)]
 
         for person in df.loc[clin].index:
+            logger.debug(
+                'This is Malaria, scheduling parasite clearance and symptom end for symptomatic person %d', person)
+
             date_para = self.rng.randint(low=0, high=p['dur_clin_para'])
             date_para_days = pd.to_timedelta(date_para, unit='d')
 
@@ -275,7 +283,7 @@ class Malaria(Module):
         sim.schedule_event(event, sim.date + DateOffset(months=1))
 
         # add an event to log to screen - output on last day of each year
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
 
@@ -289,6 +297,7 @@ class Malaria(Module):
         df.at[child_id, 'ma_specific_symptoms'].values[:] = 'none'
         df.at[child_id, 'ma_unified_symptom_code'].values[:] = 0
         df.at[child_id, 'ma_district_edited'] = df['district_of_residence']
+        df.at[child_id, 'ma_age_edited'] = 0
 
         # ----------------------------------- RENAME DISTRICTS -----------------------------------
         # rename districts to match malaria data
@@ -356,35 +365,34 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         month = now.month
 
         inf_inc = p['inf_inc']
-        inf_inc_Jan2010 = inf_inc.loc[(inf_inc.month == 1) & (inf_inc.llin == itn_2010) & (inf_inc.irs == irs_2010)]
+        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.llin == itn_2010) & (inf_inc.irs == irs_2010)]
         clin_inc = p['clin_inc']
-        clin_inc_Jan2010 = clin_inc.loc[
-            (clin_inc.month == 1) & (clin_inc.llin == itn_2010) & (clin_inc.irs == irs_2010)]
+        clin_inc_month = clin_inc.loc[
+            (clin_inc.month == month) & (clin_inc.llin == itn_2010) & (clin_inc.irs == irs_2010)]
         sev_inc = p['sev_inc']
-        sev_inc_Jan2010 = sev_inc.loc[(sev_inc.month == 1) & (sev_inc.llin == itn_2010) & (sev_inc.irs == irs_2010)]
+        sev_inc_month = sev_inc.loc[(sev_inc.month == month) & (sev_inc.llin == itn_2010) & (sev_inc.irs == irs_2010)]
 
         # for each district and age, look up incidence estimate using itn_2010 and irs_2010
         # create new age column with 0, 0.5, 1, 2, ...
-        df.age_edited = None
-        # df.age_edited = df.age_years
-        df.loc[df.age_exact_years.between(0, 0.5), 'age_edited'] = 0
-        df.loc[df.age_exact_years.between(0.5, 1), 'age_edited'] = 0.5
-        df.loc[(df.age_exact_years >= 1), 'age_edited'] = df.age_years[df.age_years >= 1]
-        assert (not pd.isnull(df['age_edited']).any())
+        df.loc[df.age_exact_years.between(0, 0.5), 'ma_age_edited'] = 0
+        df.loc[df.age_exact_years.between(0.5, 1), 'ma_age_edited'] = 0.5
+        df.loc[(df.age_exact_years >= 1), 'ma_age_edited'] = df.age_years[df.age_years >= 1]
+        assert (not pd.isnull(df['ma_age_edited']).any())
+        df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
-        df_inf = df.reset_index().merge(inf_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_inf = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
                                         right_on=['admin', 'age'],
                                         how='left', indicator=True).set_index('person')
         df_inf['monthly_prob_inf'] = df_inf['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_inf['monthly_prob_inf']).any())
 
-        df_clin = df.reset_index().merge(clin_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_clin = df.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
                                          right_on=['admin', 'age'],
                                          how='left').set_index('person')
         df_clin['monthly_prob_clin'] = df_clin['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
         assert (not pd.isnull(df_clin['monthly_prob_clin']).any())
 
-        df_sev = df.reset_index().merge(sev_inc_Jan2010, left_on=['ma_district_edited', 'age_edited'],
+        df_sev = df.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
                                         right_on=['admin', 'age'],
                                         how='left').set_index('person')
         df_sev['monthly_prob_sev'] = df_sev['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
@@ -428,6 +436,9 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
             asym = df.index[(df.ma_specific_symptoms == 'none') & (df.ma_date_infected == now)]
 
             for person in df.loc[asym].index:
+                logger.debug(
+                    'This is Malaria Event, scheduling parasite clearance for asymptomatic person %d', person)
+
                 random_date = rng.randint(low=0, high=p['dur_asym'])
                 random_days = pd.to_timedelta(random_date, unit='d')
 
@@ -438,6 +449,10 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
             clin = df.index[(df.ma_specific_symptoms == 'clinical') & (df.ma_date_infected == now)]
 
             for person in df.loc[clin].index:
+                logger.debug(
+                    'This is Malaria Event, scheduling parasite clearance and symptom end for symptomatic person %d',
+                    person)
+
                 date_para = rng.randint(low=0, high=p['dur_clin_para'])
                 date_para_days = pd.to_timedelta(date_para, unit='d')
                 # print('date_para_days', date_para_days)
@@ -577,7 +592,7 @@ class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
         logger.debug('This is HSI_Malaria_rdt, rdt test for person %d', person_id)
 
         # check if diagnosed
-        if (df.at[person_id, 'ma_status'] != 'Uninfected'):
+        if df.at[person_id, 'ma_is_infected']:
 
             # ----------------------------------- SEVERE MALARIA -----------------------------------
 
@@ -875,7 +890,7 @@ class MalariaCureEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, 'is_alive']:
             df.at[person_id, 'ma_tx'] = False
 
-            df.at[person_id, 'ma_status'] = 'Uninf'
+            df.at[person_id, 'ma_is_infected'] = False
 
 
 class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
@@ -889,7 +904,7 @@ class MalariaParasiteClearanceEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if df.at[person_id, 'is_alive']:
-            df.at[person_id, 'ma_status'] = 'Uninf'
+            df.at[person_id, 'ma_is_infected'] = False
 
 
 class MalariaSympEndEvent(Event, IndividualScopeEventMixin):
@@ -913,7 +928,7 @@ class MalariaSympEndEvent(Event, IndividualScopeEventMixin):
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        self.repeat = 12
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -927,17 +942,17 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # incidence rate per 1000 person-years
         tmp = len(
             df.loc[df.is_alive & (df.ma_date_infected > (now - DateOffset(months=self.repeat)))])
-        pop = len(df[(df.ma_status == 'Uninf') & df.is_alive])
+        pop = len(df[df.is_alive])
 
         inc_1000py = (tmp / pop) * 1000
 
+        # incidence rate in 2-10 yr olds
         tmp2 = len(
             df.loc[df.is_alive & (df.age_years.between(2, 10)) & (
                 df.ma_date_infected > (now - DateOffset(months=self.repeat)))])
         pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
         inc_1000py_2_10 = (tmp2 / pop2_10) * 1000
 
-        # inc_1000py_hiv = (tmp / len(df[(df.ma_status == 'Uninf') & df.is_alive & df.hv_inf])) * 1000
         inc_1000py_hiv = 0  # if running without hiv/tb
 
         logger.info('%s|incidence|%s', now,
@@ -953,8 +968,8 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ RUNNING COUNTS ------------------------------------
 
-        counts = {'Uninf': 0, 'Asym': 0, 'Clin': 0}
-        counts.update(df.loc[df.is_alive, 'ma_status'].value_counts().to_dict())
+        counts = {'None': 0, 'clinical': 0, 'severe': 0}
+        counts.update(df.loc[df.is_alive, 'ma_specific_symptoms'].value_counts().to_dict())
 
         logger.info('%s|status_counts|%s', now, counts)
 
@@ -962,7 +977,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # clinical cases including severe
         # assume asymptomatic parasitaemia is too low to detect in surveys
-        child2_10_clin = len(df[df.is_alive & (df.ma_status == 'Clin') & (df.age_years.between(2, 10))])
+        child2_10_clin = len(df[df.is_alive & (df.ma_specific_symptoms == 'clinical') & (df.age_years.between(2, 10))])
 
         # population size - children
         child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
@@ -971,7 +986,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_prev = child2_10_clin / child2_10_pop if child2_10_pop else 0
 
         # prevalence of clinical including severe in all ages
-        total_clin = len(df[df.is_alive & (df.ma_status == 'Clin')])
+        total_clin = len(df[df.is_alive & (df.ma_specific_symptoms == 'clinical')])
         pop2 = len(df[df.is_alive])
         prev_clin = total_clin / pop2
 
@@ -985,11 +1000,11 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # prop on treatment, all ages
 
         # people who had treatment start date within last year
-        tx = len(df[df.is_alive & (df.ma_date_tx > (now - DateOffset(months=self.repeat)))])
+        tx = len(df[df.is_alive & df.ma_tx])
 
         # people who had malaria infection date within last year
         # includes asymp
-        denom = len(df[df.is_alive & (df.ma_date_infected > (now - DateOffset(months=self.repeat)))])
+        denom = len(df[df.is_alive & ((df.ma_specific_symptoms == 'clinical') | (df.ma_specific_symptoms == 'severe'))])
         tx_coverage = tx / denom if denom else 0
 
         logger.info('%s|tx_coverage|%s', now,
