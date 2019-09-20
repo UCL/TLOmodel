@@ -218,7 +218,8 @@ class HypertensiveDisordersOfPregnancy(Module):
 
 class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This event is occurrs once durin
+    This event occurs monthly and applies the incidence of pre-eclampsia to women at the beginning of their
+    pregnancies, scheduling the onset of their disease after 20 weeks gestation
     """
 
     def __init__(self, module):
@@ -228,17 +229,20 @@ class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMi
         df = population.props
         params = self.module.parameters
 
-        logger.debug('This is HypertensiveDisodersOfPregnancy, managing the incidence of new cases in the pregnant'
-                     ' population.')
+        logger.debug('This is HypertensiveDisordersOfPregnancy applying the incidence of hypertensive disorders to the'
+                     ' pregnant population.')
 
-        # 1.) NEW CASES PE/SPE
+        # =========================================== NEW CASES OF PRE-ECLAMPSIA =======================================
 
+        # First we select women who have been pregnant for less than 4 weeks
         susceptible_women = df.index[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') &
                                      (df.ac_gestational_age < 4)]  # do we allow gestational hypertension to become PE
 
+        # TODO: do we let GHTN become PE?
+
         eff_prob_pe = pd.Series(params['prob_pre_eclamp'], index=susceptible_women)
 
-        # RISK FACTORS:
+        # We then calculate and apply the risk of pre-eclampsia taking into account each womans risk factors
         eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia =='none') & (df.la_parity == 0)] \
             *= params['rr_pre_eclamp_nulip']
         eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & df.hp_prev_pre_eclamp] \
@@ -246,25 +250,31 @@ class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMi
 
         # TODO: chronic HTN (creating superimposed), BMI, DIABETES, TWINS
 
+        # For women who will develop pre-eclampsia we schedule disease onset randomly after 20 weeks gestation
         selected = susceptible_women[eff_prob_pe > self.module.rng.random_sample(size=len(eff_prob_pe))]
         for person in selected:
-            diff = 20 - df.at[person, 'ac_gestational_age']  # Ensure onset is after 20 weeks gestation
+            diff = 20 - df.at[person, 'ac_gestational_age']
             time_until_onset = diff + np.random.exponential(scale=4, size=1)
+            # TODO: Would be more accurate to draw from a distribution of incidence by GA (weeks?)
             days_till_pe = pd.to_timedelta(time_until_onset, unit='w')  # this is days for some reason
-            onset_date= self.sim.date + days_till_pe
-            self.sim.schedule_event(PreeclampsiaEvent(self.module, person, cause='pre_eclampsia'), onset_date)
+            onset_date = self.sim.date + days_till_pe
+            self.sim.schedule_event(PreeclampsiaAndGestationalHypertensionOnsetEvent(self.module, person,
+                                                                                     cause='pre_eclampsia'), onset_date)
 
-        # DISTRIBUTION FOR DATE OF ONSET? - if so this would be an individual event? (LISONKOVA ET AL FIGURE A?)
-        # TODO: should include late onset and early onset as outcomes are worse for early onset...(need evidence)
+# ========================================== PROGRESSION OF PRE-ECLAMPSIA ==============================================
 
-# 2.) NEW CASES GH
+        # Here should we look at women who are currently suffering from pre-eclampsia and apply a risk of them
+        # transitioning to more severe disease states?
 
-# 3.) PROGRESSION OF PE?--> ECLAMPSIA
+# ======================================== NEW CASES OF GESTATIONAL HYPERTENSION =======================================
+
+        # will also have to schedule to onset of GA as it doesnt onset till >20weeks
+
 
 # 4.) CARE SEEKING (ADDITIONAL TO ANC?- undiagnosed but symptomatic?)
 
 
-class PreeclampsiaEvent (Event, IndividualScopeEventMixin):
+class PreeclampsiaAndGestationalHypertensionOnsetEvent (Event, IndividualScopeEventMixin):
     """This event manages the onsent of pre-eclampsia in pregnant women previously determined as suceptible """
 
     def __init__(self, module, individual_id, cause):
@@ -276,16 +286,30 @@ class PreeclampsiaEvent (Event, IndividualScopeEventMixin):
 
         logger.info('This is PreeclampsiaEvent, person %d has developed pre-eclampsia during her pregnancy',
                     individual_id)
+        print(df.at[individual_id, 'ac_gestational_age'])
 
-        if df.at[individual_id, 'ac_gestational_age'] <= 33:
-            df.at[individual_id, 'hp_pre_eclampsia'] = 'early_pre_eclamp'
-            df.at[individual_id,'hp_prev_pre_eclamp'] = True
+        # Check this woman is still alive and remains pregnant at the time of pre-eclampsia onset
+        if df.at[individual_id,'is_alive'] & df.at[individual_id, 'is_pregnant']:
 
-        if df.at[individual_id, 'ac_gestational_age'] > 33:
-            df.at[individual_id, 'hp_pre_eclampsia'] = 'late_pre_eclamp'
-            df.at[individual_id,'hp_prev_pre_eclamp'] = True
+            # Select form of pre-eclampsia based on gestational age
+            if df.at[individual_id, 'ac_gestational_age'] <= 33:
+                df.at[individual_id, 'hp_pre_eclampsia'] = 'early_pre_eclamp'
+                df.at[individual_id,'hp_prev_pre_eclamp'] = True
 
-        # care seeking here?
+            if df.at[individual_id, 'ac_gestational_age'] > 33:
+                df.at[individual_id, 'hp_pre_eclampsia'] = 'late_pre_eclamp'
+                df.at[individual_id,'hp_prev_pre_eclamp'] = True
+
+            # Asses which symptoms this woman is experiencing becuase of her pre-eclampsia
+            level_of_symptoms = params['levels_pe_symptoms']
+            symptoms = self.module.rng.choice(level_of_symptoms.level_of_symptoms,
+                                       size=1,
+                                       p=level_of_symptoms.probability)
+            df.at[individual_id, 'hp_pe_specific_symptoms'] = symptoms
+
+        # TODO: CARE SEEKING (will that be an additional ANC, or the hospital?, depends on severity)
+        #  (OR SHOULD THIS BE IN THE MAIN EVENT)
+        # TODO
 
 class HypertensiveDisordersOfPregnancyDeathEvent(Event, IndividualScopeEventMixin):
     """
