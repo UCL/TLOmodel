@@ -7,11 +7,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent, Event, IndividualScopeEventMixin
 from tlo.methods import demography
-from tlo.methods.Chilldhood_interventions import HSI_ICCM
+from tlo.methods.Childhood_interventions import HSI_ICCM
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -149,7 +148,10 @@ class NewPneumonia(Module):
         'ri_pneumonia_pathogen_type': Property
         (Types.CATEGORICAL, 'bacterial or viral pathogen', categories=['bacterial', 'viral']
          ),
-        'ri_scheduled_date_death': Property(Types.DATE, 'date of death from pneumonia disease'),
+        'pneumonia_death_date': Property
+        (Types.DATE, 'date of death from pneumonia disease'
+         ),
+
         'has_hiv': Property(Types.BOOL, 'temporary property - has hiv'),
         'malnutrition': Property(Types.BOOL, 'temporary property - malnutrition status'),
         'exclusive_breastfeeding': Property(Types.BOOL, 'temporary property - exclusive breastfeeding upto 6 mo'),
@@ -192,26 +194,7 @@ class NewPneumonia(Module):
         p['rp_pneumonia_cont_breast'] = dfd.loc['rp_pneumonia_cont_breast', 'value1']
         p['rp_pneumonia_HHhandwashing'] = dfd.loc['rp_pneumonia_HHhandwashing', 'value1']
         p['rp_pneumonia_IAP'] = dfd.loc['rp_pneumonia_IAP', 'value1']
-        p['base_prev_severe_pneumonia'] = 0.4
-        p['rp_severe_pneum_agelt2mo'] = 1.3
-        p['rp_severe_pneum_age12to23mo'] = 0.8
-        p['rp_severe_pneum_age24to59mo'] = 0.5
-        p['rp_severe_pneum_HIV'] = 1.3
-        p['rp_severe_pneum_SAM'] = 1.3
-        p['rp_severe_pneum_excl_breast'] = 0.5
-        p['rp_severe_pneum_cont_breast'] = 0.7
-        p['rp_severe_pneum_HHhandwashing'] = 0.8
-        p['rp_severe_pneum_IAP'] = 1.1
-        p['base_prev_very_severe_pneumonia'] = 0.4
-        p['rp_very_severe_pneum_agelt2mo'] = 1.3
-        p['rp_very_severe_pneum_age12to23mo'] = 0.8
-        p['rp_very_severe_pneum_age24to59mo'] = 0.5
-        p['rp_very_severe_pneum_HIV'] = 1.3
-        p['rp_very_severe_pneum_SAM'] = 1.3
-        p['rp_very_severe_pneum_excl_breast'] = 0.5
-        p['rp_very_severe_pneum_cont_breast'] = 0.7
-        p['rp_very_severe_pneum_HHhandwashing'] = 0.8
-        p['rp_very_severe_pneum_IAP'] = 1.1
+
         p['base_incidence_pneumonia_by_RSV'] = [
             dfd.loc['base_incidence_pneumonia_by_RSV', 'value1'],
             dfd.loc['base_incidence_pneumonia_by_RSV', 'value2']
@@ -277,6 +260,13 @@ class NewPneumonia(Module):
         p['r_death_pneumonia'] = dfd.loc['r_death_pneumonia', 'value1']
         p['IMCI_effectiveness_2010'] = 0.5
         p['dhs_care_seeking_2010'] = 0.6
+        p['case_fatality_rate'] = 0.15
+
+        # DALY weights
+        if 'HealthBurden' in self.sim.modules.keys():
+            p['daly_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+            p['daly_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=47)
+            p['daly_very_severe_pneumonia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=46)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -303,73 +293,6 @@ class NewPneumonia(Module):
 
         df_under5 = df.age_years < 5 & df.is_alive
         under5_idx = df.index[df_under5]
-
-        # create data-frame of the probabilities of ri_pneumonia_status for children
-        # aged 2-11 months, HIV negative, no SAM, no indoor air pollution
-        p_pneumonia_status = pd.Series(self.init_prop_pneumonia_status[0], index=under5_idx)
-        p_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[1], index=under5_idx)
-        p_very_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[2], index=under5_idx)
-
-        # create probabilities of pneumonia for all age under
-        p_pneumonia_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_pneumonia_age12to23mo
-        p_pneumonia_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
-            *= self.rp_pneumonia_age24to59mo
-        p_pneumonia_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_pneumonia_HIV
-        p_pneumonia_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_pneumonia_SAM
-        p_pneumonia_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_pneumonia_excl_breast
-        p_pneumonia_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
-                               (df.age_exact_years < 2) & df.is_alive] *= self.rp_pneumonia_cont_breast
-        p_pneumonia_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_pneumonia_IAP
-
-        # create probabilities of severe pneumonia for all age under 5
-        p_sev_pneum_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_severe_pneum_agelt2mo
-        p_sev_pneum_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_severe_pneum_age12to23mo
-        p_sev_pneum_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
-            *= self.rp_severe_pneum_age24to59mo
-        p_sev_pneum_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_severe_pneum_HIV
-        p_sev_pneum_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_severe_pneum_SAM
-        p_sev_pneum_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_severe_pneum_excl_breast
-        p_sev_pneum_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
-                               (df.age_exact_years < 2) & df.is_alive] *= self.rp_severe_pneum_cont_breast
-        p_sev_pneum_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_severe_pneum_IAP
-
-        # create probabilities of very severe pneumonia for all age under 5
-        p_very_sev_pneum_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_very_severe_pneum_agelt2mo
-        p_very_sev_pneum_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
-            *= self.rp_very_severe_pneum_age12to23mo
-        p_very_sev_pneum_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
-            *= self.rp_very_severe_pneum_age24to59mo
-        p_very_sev_pneum_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_very_severe_pneum_HIV
-        p_very_sev_pneum_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_very_severe_pneum_SAM
-        p_very_sev_pneum_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
-            *= self.rp_very_severe_pneum_excl_breast
-        p_very_sev_pneum_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
-                                    (df.age_exact_years < 2) & df.is_alive] *= self.rp_very_severe_pneum_cont_breast
-        p_very_sev_pneum_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_very_severe_pneum_IAP
-
-        random_draw = pd.Series(rng.random_sample(size=len(under5_idx)), index=under5_idx)
-
-        # create a temporary dataframe called dfx to hold values of probabilities and random draw
-        dfx = pd.concat([p_pneumonia_status, p_sev_pneum_status, p_very_sev_pneum_status, random_draw], axis=1)
-        dfx.columns = ['p_pneumonia', 'p_severe_pneumonia', 'p_very_severe_pneumonia', 'random_draw']
-        dfx['p_none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia + dfx.p_very_severe_pneumonia)
-
-        idx_none = dfx.index[dfx.p_none > dfx.random_draw]
-        idx_pneumonia = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_pneumonia) > dfx.random_draw)]
-        idx_severe_pneumonia = dfx.index[((dfx.p_none + dfx.p_pneumonia) < dfx.random_draw) &
-                                         (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) > dfx.random_draw]
-        idx_very_severe_pneumonia = dfx.index[
-            ((dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) < dfx.random_draw) &
-            (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia + dfx.p_very_severe_pneumonia) > dfx.random_draw]
-
-        df.loc[idx_none, 'ri_pneumonia_severity'] = 'none'
-        df.loc[idx_pneumonia, 'ri_pneumonia_severity'] = 'pneumonia'
-        df.loc[idx_severe_pneumonia, 'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[idx_very_severe_pneumonia, 'ri_pneumonia_severity'] = 'very severe pneumonia'
 
         # # # # # # # # # DIAGNOSED AND TREATED BASED ON CARE SEEKING AND IMCI EFFECTIVENESS # # # # # # # # #
 
@@ -410,7 +333,7 @@ class NewPneumonia(Module):
 
         # add the basic event for pneumonia ---------------------------------------------------
         event_pneumonia = PneumoniaEvent(self)
-        sim.schedule_event(event_pneumonia, sim.date + DateOffset(months=3))
+        sim.schedule_event(event_pneumonia, sim.date + DateOffset(months=1))
 
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -439,6 +362,18 @@ class NewPneumonia(Module):
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug('This is pneumonia reporting my health values')
+        df = self.sim.population.props
+        p = self.parameters
+
+        health_values = df.loc[df.is_alive, 'ri_specific_symptoms'].map({
+            'none': 0,
+            'pneumonia':  p['daly_severe_pneumonia'],
+            'severe pneumonia': p['daly_severe_pneumonia'],
+            'very severe pneumonia': p['daly_very_severe_pneumonia']
+        })
+        health_values.name = 'Pneumonia Symptoms'  # label the cause of this disability
+
+        return health_values.loc[df.is_alive]  # returns the series
 
 
 class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
@@ -452,7 +387,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         """
         df = population.props
         m = self.module
-        rng = m.rng
+        rng = self.module.rng
+        p = self.module.parameters
+        now = self.sim.date
 
         # DEFAULTS
         df['ri_pneumonia_status'] = False
@@ -549,8 +486,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         infection_probs = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
         infection_probs = infection_probs.cumsum(axis=1)
         infection_probs.columns = ['prob_none', 'RSV', 'rhinovirus', 'hMPV', 'parainfluenza',
-                                   'streptococcus', 'hib', 'TB', 'staph', 'influenza',
-                                   'P. jirovecii']
+                                   'streptococcus', 'hib', 'TB', 'staph', 'influenza', 'P. jirovecii']
         infection_probs['random_draw_all'] = random_draw_all
 
         for i, column in enumerate(infection_probs.columns):
@@ -566,9 +502,9 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_to_infect, 'ri_pneumonia_status'] = True
 
         # assign status for any individuals that are infected
-        df.loc[(df.ri_pneumonia_status == True) & (df.age_exact_years < 0.1667),
+        df.loc[df.ri_pneumonia_status & (df.age_exact_years < 0.1667),
                'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[(df.ri_pneumonia_status == True) & (df.age_exact_years > 0.1667) & (
+        df.loc[df.ri_pneumonia_status & (df.age_exact_years > 0.1667) & (
             df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
 
         # NOTE: NON-SEVERE PNEUMONIA ONLY IN 2-59 MONTHS
@@ -577,8 +513,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
             (df.ri_pneumonia_severity == 'pneumonia') | (df.is_alive & (df.age_exact_years < 0.1667) &
                                                          (df.ri_pneumonia_severity == 'severe pneumonia'))]
 
-        # # # # # # # WHEN THEY GET THE DISEASE - DATE -----------------------------------------------------------
-
+        # ----------------------------------- WHEN THEY GET THE DISEASE - DATE  -----------------------------------
         random_draw_days = np.random.randint(0, 90, size=len(pn_current_pneumonia_idx))
         td = pd.to_timedelta(random_draw_days, unit='d')
         date_of_aquisition = self.sim.date + td
@@ -608,6 +543,13 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_difficult_breathing', 'random number']
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
         df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
+
+        # schedule self-cure if no treatment, no self-cure for severe cases
+
+        random_date = rng.randint(low=0, high=14, size=len(asym))
+        random_days = pd.to_timedelta(random_date, unit='d')
+
+
 
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR NON-SEVERE PNEUMONIA
@@ -832,14 +774,31 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # if doesn't seek care, probability of death and probability of recovery
 
         # schedule death events for very severe pneumonia
-        for child in pn_current_very_sev_pneum_idx:
-            death_event = DeathFromPneumoniaDisease(self.module, person_id=child)
-            self.sim.schedule_event(death_event, df.at[child, 'ri_scheduled_date_death'])
+        random_draw = rng.random_sample(size=len(df))
+        death = df.index[
+            (df.ri_pneumonia_severity == 'very severe pneumonia') & (df.date_of_acquiring_pneumonia == now) &
+            (random_draw < p['case_fatality_rate'])]
+
+        for child in death:
+            logger.debug(
+                'This is PneumoniaEvent, scheduling pneumonia death for person %d',
+                child)
+
+            random_date = rng.randint(low=0, high=7)
+            random_days = pd.to_timedelta(random_date, unit='d')
+
+            death_event = DeathFromPneumoniaDisease(self.module, person_id=child, cause='pneumonia')  # make that death event
+            self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
+
+        # for child in pn_current_very_sev_pneum_idx:
+          #  death_event = DeathFromPneumoniaDisease(self.module, person_id=child)
+           # self.sim.schedule_event(death_event, df.at[child, 'ri_scheduled_date_death'])
 
 
 class DeathFromPneumoniaDisease(Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, cause):
         super().__init__(module, person_id=person_id)
+        self.cause = cause
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -848,6 +807,11 @@ class DeathFromPneumoniaDisease(Event, IndividualScopeEventMixin):
 
         logger.info('This is DeathFromPneumoniaDisease Event determining if person %d will die from their disease',
                     person_id)
+
+        if df.at[person_id, 'is_alive']:
+            self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='pneumonia'),
+                                    self.sim.date)
+            df.at[person_id, 'pneumonia_death_date'] = self.sim.date
 
         eff_prob_death_pneumonia = \
             pd.Series(m.r_death_pneumonia,

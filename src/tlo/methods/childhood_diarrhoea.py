@@ -494,6 +494,82 @@ class ChildhoodDiarrhoea(Module):
         df_under5 = df.age_years < 5 & df.is_alive
         under5_idx = df.index[(df.age_years < 5) & df.is_alive]
 
+        # create dataframe of the probabilities of gi_diarrhoea_prev_state for children
+        # aged 0-11 months, HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding,
+        # no household handwashing, no access to clean water, no improved sanitation
+
+        p_dysentery_status = pd.Series(self.init_prop_diarrhoea_status[0], index=under5_idx)
+        p_watery_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[1], index=under5_idx)
+        p_persistent_diarrhoea_status = pd.Series(self.init_prop_diarrhoea_status[2], index=under5_idx)
+
+        p_acute_diarrhoea = pd.concat([p_dysentery_status, p_watery_diarrhoea_status], axis=1)
+
+        # create probabilities of dysentery for all age under 5
+        p_acute_diarrhoea.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_acute_diarr_age12to23mo
+        p_acute_diarrhoea.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
+            *= self.rp_acute_diarr_age24to59mo
+        p_acute_diarrhoea.loc[(df.has_hiv == True) & df_under5] *= self.rp_acute_diarr_HIV
+        p_acute_diarrhoea.loc[(df.malnutrition == True) & df_under5] *= self.rp_acute_diarr_SAM
+        p_acute_diarrhoea.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_acute_diarr_excl_breast
+        p_acute_diarrhoea.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
+                              (df.age_exact_years < 2) & df.is_alive] *= self.rp_acute_diarr_cont_breast
+        p_acute_diarrhoea.loc[
+            (df.li_no_access_handwashing == False) & df_under5] *= self.rp_acute_diarr_HHhandwashing
+        p_acute_diarrhoea.loc[
+            (df.li_no_clean_drinking_water == False) & df_under5] *= self.rp_acute_diarr_clean_water
+        p_acute_diarrhoea.loc[
+            (df.li_unimproved_sanitation == False) & df_under5] *= self.rp_acute_diarr_improved_sanitation
+
+        # create probabilities of persistent diarrhoea for all age under 5
+        p_persistent_diarrhoea_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_persistent_diarrhoea_age12to23mo
+        p_persistent_diarrhoea_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
+            *= self.rp_persistent_diarrhoea_age24to59mo
+        p_persistent_diarrhoea_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_persistent_diarrhoea_HIV
+        p_persistent_diarrhoea_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_persistent_diarrhoea_SAM
+        p_persistent_diarrhoea_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) &
+                                          df.is_alive] *= self.rp_persistent_diarrhoea_excl_breast
+        p_persistent_diarrhoea_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
+                                          (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_persistent_diarrhoea_cont_breast
+        p_persistent_diarrhoea_status.loc[(df.li_no_clean_drinking_water == False) & df_under5] \
+            *= self.rp_persistent_diarrhoea_clean_water
+        p_persistent_diarrhoea_status.loc[(df.li_unimproved_sanitation == False) & df_under5] \
+            *= self.rp_persistent_diarrhoea_improved_sanitation
+
+        # randomly select some individuals to assign diarrhoeal disease status at the start of simulation
+        random_draw = pd.Series(rng.random_sample(size=len(under5_idx)),
+                                index=df.index[(df.age_years < 5) & df.is_alive])
+
+        # create a temporary dataframe called dfx to hold values of probabilities and random draw
+        dfx = pd.concat([p_acute_diarrhoea, p_persistent_diarrhoea_status, random_draw],
+                        axis=1)
+        dfx.columns = ['p_dysentery', 'p_watery_diarrhoea', 'p_persistent_diarrhoea', 'random_draw']
+        dfx['p_none'] = 1 - (dfx.p_dysentery + dfx.p_watery_diarrhoea + dfx.p_persistent_diarrhoea)
+
+        idx_none = dfx.index[dfx.p_none > dfx.random_draw]
+        idx_dysentery = dfx.index[
+            (dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_dysentery) > dfx.random_draw)]
+        idx_watery_diarrhoea = dfx.index[((dfx.p_none + dfx.p_dysentery) < dfx.random_draw) &
+                                         (dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea) > dfx.random_draw]
+        idx_persistent_diarrhoea = dfx.index[
+            ((dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea) < dfx.random_draw) &
+            (dfx.p_none + dfx.p_dysentery + dfx.p_watery_diarrhoea +
+             dfx.p_persistent_diarrhoea) > dfx.random_draw]
+
+        df.loc[idx_none, 'gi_diarrhoea_status'] = False
+        df.loc[idx_dysentery, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        df.loc[idx_watery_diarrhoea, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+        df.loc[idx_persistent_diarrhoea, 'gi_persistent_diarrhoea'] = True
+        df.loc[idx_dysentery | idx_watery_diarrhoea | idx_persistent_diarrhoea, 'gi_diarrhoea_status'] = True
+        # =======================================================================================================#
+
+
+        df_under5 = df.age_years < 5 & df.is_alive
+        under5_idx = df.index[(df.age_years < 5) & df.is_alive]
+
         # create dataframe of the probabilities of ei_diarrhoea_status for children
         # aged 0-11 months, HIV negative, no SAM, not exclusively breastfeeding or continued breastfeeding,
         # no household handwashing, no access to clean water, no improved sanitation

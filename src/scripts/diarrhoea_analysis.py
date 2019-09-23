@@ -3,12 +3,13 @@ import datetime
 import logging
 import os
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, healthsystem, new_diarrhoea
+from tlo.methods import demography, lifestyle, new_diarrhoea
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -42,7 +43,7 @@ logging.getLogger().addHandler(fh)
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+# sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
@@ -57,23 +58,31 @@ output = parse_log_file(logfile)
 
 # %% Plot Incidence of Diarrhoea Over time:
 
+years = mdates.YearLocator()   # every year
+months = mdates.MonthLocator()  # every month
+years_fmt = mdates.DateFormatter('%Y')
+
 # Load Model Results on Acute diarrhoea type
 diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
-Model_Years = pd.to_datetime(diarrhoea_df.date_of_onset_diarrhoea)
+Model_Years = pd.to_datetime(diarrhoea_df.date)
 Model_total = diarrhoea_df.total
 Model_AWD = diarrhoea_df.AWD
 Model_dysentery = diarrhoea_df.acute_dysentery
-diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
+# diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
 
-ig, ax = plt.subplots()
+fig, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_total)
 ax.plot(np.asarray(Model_Years), Model_AWD)
 ax.plot(np.asarray(Model_Years), Model_dysentery)
 
+# format the ticks
+ax.xaxis.set_major_locator(years)
+ax.xaxis.set_major_formatter(years_fmt)
+
 plt.title("Incidence of Diarrhoea")
 plt.xlabel("Year")
-plt.ylabel("Number of children")
-plt.legend(['Total children under 5', 'Acute watery diarrhoea', 'Dysentery'])
+plt.ylabel("Number of diarrhoeal episodes")
+plt.legend(['Total diarrhoea', 'Acute watery diarrhoea', 'Dysentery'])
 plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
 
 plt.show()

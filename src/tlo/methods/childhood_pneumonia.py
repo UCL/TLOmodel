@@ -445,6 +445,105 @@ class ChildhoodPneumonia(Module):
         # --------------------------------------------------------------------------------------------------------
         # ------------------------- ASSIGN VALUES OF LRI - PNEUMONIA STATUS AT BASELINE --------------------------
         # --------------------------------------------------------------------------------------------------------
+        df_under5 = df.age_years < 5 & df.is_alive
+        under5_idx = df.index[df_under5]
+
+        # create data-frame of the probabilities of ri_pneumonia_status for children
+        # aged 2-11 months, HIV negative, no SAM, no indoor air pollution
+        p_pneumonia_status = pd.Series(self.init_prop_pneumonia_status[0], index=under5_idx)
+        p_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[1], index=under5_idx)
+        p_very_sev_pneum_status = pd.Series(self.init_prop_pneumonia_status[2], index=under5_idx)
+
+        # create probabilities of pneumonia for all age under
+        p_pneumonia_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_pneumonia_age12to23mo
+        p_pneumonia_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
+            *= self.rp_pneumonia_age24to59mo
+        p_pneumonia_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_pneumonia_HIV
+        p_pneumonia_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_pneumonia_SAM
+        p_pneumonia_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_pneumonia_excl_breast
+        p_pneumonia_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
+                               (df.age_exact_years < 2) & df.is_alive] *= self.rp_pneumonia_cont_breast
+        p_pneumonia_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_pneumonia_IAP
+
+        # create probabilities of severe pneumonia for all age under 5
+        p_sev_pneum_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_severe_pneum_agelt2mo
+        p_sev_pneum_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_severe_pneum_age12to23mo
+        p_sev_pneum_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
+            *= self.rp_severe_pneum_age24to59mo
+        p_sev_pneum_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_severe_pneum_HIV
+        p_sev_pneum_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_severe_pneum_SAM
+        p_sev_pneum_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_severe_pneum_excl_breast
+        p_sev_pneum_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
+                               (df.age_exact_years < 2) & df.is_alive] *= self.rp_severe_pneum_cont_breast
+        p_sev_pneum_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_severe_pneum_IAP
+
+        # create probabilities of very severe pneumonia for all age under 5
+        p_very_sev_pneum_status.loc[(df.age_exact_years < 0.1667) & df.is_alive] *= self.rp_very_severe_pneum_agelt2mo
+        p_very_sev_pneum_status.loc[(df.age_exact_years >= 1) & (df.age_exact_years < 2) & df.is_alive] \
+            *= self.rp_very_severe_pneum_age12to23mo
+        p_very_sev_pneum_status.loc[(df.age_exact_years >= 2) & (df.age_exact_years < 5) & df.is_alive] \
+            *= self.rp_very_severe_pneum_age24to59mo
+        p_very_sev_pneum_status.loc[(df.has_hiv == True) & df_under5] *= self.rp_very_severe_pneum_HIV
+        p_very_sev_pneum_status.loc[(df.malnutrition == True) & df_under5] *= self.rp_very_severe_pneum_SAM
+        p_very_sev_pneum_status.loc[(df.exclusive_breastfeeding == True) & (df.age_exact_years <= 0.5) & df.is_alive] \
+            *= self.rp_very_severe_pneum_excl_breast
+        p_very_sev_pneum_status.loc[(df.continued_breastfeeding == True) & (df.age_exact_years > 0.5) &
+                                    (df.age_exact_years < 2) & df.is_alive] *= self.rp_very_severe_pneum_cont_breast
+        p_very_sev_pneum_status.loc[(df.li_wood_burn_stove == False) & df_under5] *= self.rp_very_severe_pneum_IAP
+
+        random_draw = pd.Series(rng.random_sample(size=len(under5_idx)), index=under5_idx)
+
+        # create a temporary dataframe called dfx to hold values of probabilities and random draw
+        dfx = pd.concat([p_pneumonia_status, p_sev_pneum_status, p_very_sev_pneum_status, random_draw], axis=1)
+        dfx.columns = ['p_pneumonia', 'p_severe_pneumonia', 'p_very_severe_pneumonia', 'random_draw']
+        dfx['p_none'] = 1 - (dfx.p_pneumonia + dfx.p_severe_pneumonia + dfx.p_very_severe_pneumonia)
+
+        idx_none = dfx.index[dfx.p_none > dfx.random_draw]
+        idx_pneumonia = dfx.index[(dfx.p_none < dfx.random_draw) & ((dfx.p_none + dfx.p_pneumonia) > dfx.random_draw)]
+        idx_severe_pneumonia = dfx.index[((dfx.p_none + dfx.p_pneumonia) < dfx.random_draw) &
+                                         (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) > dfx.random_draw]
+        idx_very_severe_pneumonia = dfx.index[
+            ((dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia) < dfx.random_draw) &
+            (dfx.p_none + dfx.p_pneumonia + dfx.p_severe_pneumonia + dfx.p_very_severe_pneumonia) > dfx.random_draw]
+
+        df.loc[idx_none, 'ri_pneumonia_severity'] = 'none'
+        df.loc[idx_pneumonia, 'ri_pneumonia_severity'] = 'pneumonia'
+        df.loc[idx_severe_pneumonia, 'ri_pneumonia_severity'] = 'severe pneumonia'
+        df.loc[idx_very_severe_pneumonia, 'ri_pneumonia_severity'] = 'very severe pneumonia'
+
+        # # # # # # # # # DIAGNOSED AND TREATED BASED ON CARE SEEKING AND IMCI EFFECTIVENESS # # # # # # # # #
+
+        init_pneumonia_idx = df.index[df.is_alive & df.age_exact_years < 5 & (df.ri_pneumonia_status is True)]
+        random_draw = self.sim.rng.random_sample(size=len(init_pneumonia_idx))
+        prob_sought_care = pd.Series(self.dhs_care_seeking_2010, index=init_pneumonia_idx)
+        sought_care = prob_sought_care > random_draw
+        sought_care_idx = prob_sought_care.index[sought_care]
+
+        for i in sought_care_idx:
+            random_draw1 = self.sim.rng.random_sample(size=len(sought_care_idx))
+            diagnosed_and_treated = df.index[
+                df.is_alive & (random_draw1 < self.parameters['IMCI_effectiveness_2010'])
+                & (df.age_years < 5)]
+            df.at[diagnosed_and_treated[i], 'ri_pneumonia_status'] = False
+
+        # # # # # # # # # # ASSIGN RECOVERY AND DEATH TO BASELINE PNEUMONIA CASES # # # # # # # # # #
+
+        not_treated_pneumonia_idx = df.index[df.is_alive & df.age_exact_years < 5 & (df.ri_pneumonia_status is True)]
+        for i in not_treated_pneumonia_idx:
+            random_draw2 = self.sim.rng.random_sample(size=len(not_treated_pneumonia_idx))
+            death_pneumonia = df.index[
+                df.is_alive & (random_draw2 < self.parameters['r_death_pneumonia'])
+                & (df.age_years < 5)]
+            if death_pneumonia[i]:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, i, 'NewPneumonia'), self.sim.date)
+                df.at[i, 'ri_pneumonia_status'] = False
+            else:
+                df.at[i, 'ri_pneumonia_status'] = False
+# --------------------------------------------------------------------------------------------------------------------
 
         df_under5 = df.age_years < 5 & df.is_alive
         under5_idx = df.index[df_under5]

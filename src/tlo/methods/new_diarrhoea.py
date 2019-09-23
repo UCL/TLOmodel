@@ -378,7 +378,7 @@ class NewDiarrhoea(Module):
         sim.schedule_event(AcuteDiarrhoeaEvent(self), sim.date + DateOffset(months=1))
 
         # Register this disease module with the health system
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
         ''' # death event
         death_all_diarrhoea = DeathDiarrhoeaEvent(self)
@@ -688,9 +688,9 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      })
 
         for child in incident_acute_diarrhoea:
-            logger.info('%s|acute_diarrhoea|%s', df.at[child, 'date_of_onset_diarrhoea'],
-                        {'child_index': child, 'age': df.at[child, 'age_years'],
-                         'diarrhoea_type': df.at[child, 'gi_diarrhoea_acute_type'],
+            logger.info('%s|acute_diarrhoea|%s', self.sim.date,
+                        {'date': df.at[child, 'date_of_onset_diarrhoea'], 'child_index': child,
+                         'age': df.at[child, 'age_years'], 'diarrhoea_type': df.at[child, 'gi_diarrhoea_acute_type'],
                          'dehydration_present': df.at[child, 'gi_dehydration_status']})
 
         # # # # # # # # SYMPTOMS FROM ACUTE WATERY DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
@@ -702,6 +702,22 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[under5_dysentery_idx, 'di_diarrhoea_loose_watery_stools'] = True
         df.loc[under5_dysentery_idx, 'di_blood_in_stools'] = True
         df.loc[under5_dysentery_idx, 'di_diarrhoea_over14days'] = False
+
+        # TEMPORARY schedule death events for severe diarrhoea
+        random_draw = rng.random_sample(size=len(df))
+        death = df.index[df.gi_diarrhoea_status & (df.date_of_onset_diarrhoea == now) &
+                         (random_draw < p['case_fatality_rate'])]
+        for child in death:
+            logger.debug(
+                'This is DiarrhoeaEvent, scheduling diarrhoea death for person %d',
+                child)
+
+            random_date = rng.randint(low=0, high=7)
+            random_days = pd.to_timedelta(random_date, unit='d')
+
+            death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
+                                              cause='diarrhoea')  # make that death event
+            self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
 
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR ACUTE WATERY DIARRHOEA
@@ -742,7 +758,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                 '''
 
         # # # # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # # # # #
-
+'''
         dysentery_bec_persistent = pd.Series(m.prob_dysentery_become_persistent, index=under5_dysentery_idx)
         watery_diarr_bec_persistent = pd.Series(m.prob_watery_diarr_become_persistent,
                                                 index=under5_watery_diarrhoea_idx)
@@ -772,6 +788,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # SET THE TIMELINE FOR PERSISTENT DIARRHOEA
         date_become_persistent = date_of_aquisition + DateOffset(weeks=2)
+        
 
         # Log the acute diarrhoea information
         for child in persistent_diarr_idx:
@@ -800,7 +817,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             death_event = DeathDiarrhoeaEvent(self.module, person_id=child,
                                               cause='diarrhoea')  # make that death event
             self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
-
+'''
 
 '''
         # --------------------------------------------------------------------------------------------------------
@@ -844,8 +861,7 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
         # Log the diarrhoea death information
         logger.info('%s|persistent_diarrhoea|%s', self.sim.date,
                     {'child_index': person_id, 'age': df.at[person_id, 'age_years'],
-                     'diarrhoea_death_cause': df.at[person_id, 'gi_persistent_diarrhoea'] |
-                                              df.at[person_id, 'gi_diarrhoea_acute_type'],
+                     'diarrhoea_death_cause': df.at[person_id, 'gi_diarrhoea_acute_type'],
                      'dehydration_level': df.at[person_id, 'gi_dehydration_status']})
 
         # for those who sough care and those who didnt sought care - recovery and death

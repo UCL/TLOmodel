@@ -1,5 +1,6 @@
 import logging
 
+import pandas as pd
 from tlo import Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin
 
@@ -381,7 +382,151 @@ class HSI_IMNCI (Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         p = self.module.parameters
 
-        # # # # # ASSESS GENERAL DANGER SIGNS # # # # #
+        child_has_imci_severe_pneumonia = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                                   ((df.ri_pneumonia_severity == 'very severe pneumonia') |
+                                                    (df.ri_pneumonia_severity == 'severe pneumonia'))]
+
+        if child_has_imci_severe_pneumonia:
+            assess_and_classify_severe_pneum = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_correctly_classified_severe_pneumonia'],
+                                                              (1 - p['prob_correctly_classified_severe_pneumonia'])])
+            # this probability will be influenced by the signs and symptoms identified
+            # by the health worker, and the type of health provider
+
+            if assess_and_classify_severe_pneum[True]:
+                identify_treatment_severe_pneum = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correctly_identified_treatment'],
+                                                                  (1 - p['prob_correctly_identified_treatment'])])
+                if identify_treatment_severe_pneum[True]:
+                    # get the consumables and schedule referral
+                    severe_pneumonia_start_treatment = IMNCI_Severe_Pneumonia_Treatment(self.module, person_id=person_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(severe_pneumonia_start_treatment,
+                                                                        priority=1,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None
+                                                                        )
+            if assess_and_classify_severe_pneum[False]:
+                df.at[person_id, 'imci_misclassified'] = True
+                misclassified_categories = ['as no pneumonia', 'as non-severe pneumonia']
+                probabilities = [0.77, 0.23]
+                random_choice = self.sim.rng.choice(misclassified_categories,
+                                                    size=len(assess_and_classify_severe_pneum[False]), p=probabilities)
+                df['imci_misclassified_pneumonia'].values[:] = random_choice
+
+        child_has_imci_pneumonia = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                            (df.ri_pneumonia_severity == 'pneumonia')]
+        if child_has_imci_pneumonia:
+            assess_and_classify_pneumonia = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_correctly_classified_pneumonia'],
+                                                              (1 - p['prob_correctly_classified_pneumonia'])])
+            if assess_and_classify_pneumonia[True]:
+                identify_treatment_pneumonia = \
+                    self.sim.rng.choice([True, False], size=1, p=[p['prob_correctly_identified_treatment'],
+                                                                  (1 - p['prob_correctly_identified_treatment'])])
+                if identify_treatment_pneumonia[True]:
+                    # get the consumables for outpatient pneumonia
+                    pneumonia_start_treatment = IMNCI_Pneumonia_Treatment(self.module, person_id=person_id)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(pneumonia_start_treatment,
+                                                                        priority=1,
+                                                                        topen=self.sim.date,
+                                                                        tclose=None
+                                                                        )
+            if assess_and_classify_pneumonia[False]:
+                df.at[person_id, 'imci_misclassified'] = True
+                misclassified_categories = ['as no pneumonia', 'as severe pneumonia']
+                probabilities = [0.98, 0.2]
+                random_choice = self.sim.rng.choice(misclassified_categories,
+                                                    size=len(assess_and_classify_pneumonia[False]), p=probabilities)
+                df['imci_misclassified_pneumonia'].values[:] = random_choice
+
+        child_has_imci_pneumonia = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                            (df.ri_pneumonia_severity == 'pneumonia')]
+
+
+class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+        # Define the necessary information for an HSI
+        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            '....IMNCI_VerySevere_Pneumonia_Treatment: giving treatment for %d with very severe pneumonia',
+            person_id)
+
+        # schedule referral event
+        imci_severe_pneumonia_referral = Referral_Severe_Pneumonia_Treatment(self.module, person_id=person_id)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(imci_severe_pneumonia_referral,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None
+                                                            )
+
+
+class Referral_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+        # Define the necessary information for an HSI
+        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+
+class IMNCI_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+                                              'Treatment of severe pneumonia', 'Intervention_Pkg_Code'])[138]
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code1],
+            'Item_Code': []
+        }
+        # Define the necessary information for an HSI
+        # self.TREATMENT_ID = 'Sick_child_presents_for_care'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint  # self.sim.modules['HealthSystem'].get_blank_cons_footprint()
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+
+''' 
+     # # # # # ASSESS GENERAL DANGER SIGNS # # # # #
         if df.at[person_id, 'imci_any_general_danger_sign' == True]:
             if df.at[person_id, 'ds_convulsions']:
                 convulsions_identified_imci = \
@@ -409,8 +554,7 @@ class HSI_IMNCI (Event, IndividualScopeEventMixin):
                     df.at[person_id, 'imci_correctly_identified_general_danger_signs'] = True
                 if convulsions_identified_imci[False] & inability_to_drink_breastfeed_identified_imci[False] &\
                     vomits_everything_identified_imci[False] & unusually_sleepy_unconscious_identified_imci[False]:
-                    df.at[person_id, 'imci_correctly_identified_general_danger_signs'] = False
-
+                    df.at[person_id, 'imci_correctly_identified_general_danger_signs'] = False           
         # # # # # ASSESS COUGH OR DIFFICULT BREATHING # # # # #
         if df.at[person_id, 'cough' | 'difficult_breathing' | 'fast_breathing']: # any respiratory symptoms
             if df.at[person_id, 'pn_chest_indrawing']:
@@ -517,12 +661,6 @@ class HSI_IMNCI (Event, IndividualScopeEventMixin):
                         self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_persistent_diarrhoea'],
                                                                       (1 - p['prob_correct_id_persistent_diarrhoea'])])
 
-
-
-
-
-            if danger_sign_is_detected:
-
             will_CHW_ask_about_fever = self.module.rng.rand() < 0.5
             will_CHW_ask_about_cough = self.module.rng.rand() < 0.5
 
@@ -545,7 +683,7 @@ class HSI_IMNCI (Event, IndividualScopeEventMixin):
 
         # class follow_up_visit
 
-
+'''
 
 """  
         # stepone : work out if the child has 'malaria'
