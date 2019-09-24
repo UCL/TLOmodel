@@ -4,8 +4,8 @@ import time
 import pytest
 from pathlib import Path
 
-from tlo import Simulation, Date, Property
-from tlo.methods import demography, hypertension#, t2dm#, CVD
+from tlo import Simulation, Date
+from tlo.methods import demography, lifestyle, healthsystem, hypertension#, t2dm#, CVD
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
@@ -18,18 +18,17 @@ def disable_logging():
 
 @pytest.fixture(scope='module')
 def simulation():
-    demography_resource_path = Path(os.path.dirname(__file__)) / '../resources'
-    hypertension_resource_path = Path(os.path.dirname(__file__)) / '../resources'
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
-    sim.register(demography.Demography(resourcefilepath=demography_resource_path))
-    sim.register(hypertension.HT(resourcefilepath=hypertension_resource_path))
-    sim.seed_rngs(1)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(lifestyle.Lifestyle)
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
+    sim.seed_rngs(0)
     return sim
 
 
 def test_NCD_simulation(simulation):
-    # This is a test for ....
-    # it wikl fal
     simulation.make_initial_population(n=popsize)
     simulation.simulate(end_date=end_date)
 
@@ -39,12 +38,6 @@ def test_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    simulation = simulation()
-    test_NCD_simulation(simulation)
-
 
 
 def test_hypertension_adults(simulation):

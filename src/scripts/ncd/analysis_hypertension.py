@@ -58,7 +58,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
-sim.register(hypertension.HT(resourcefilepath=resourcefilepath))
+sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
 # sim.register(t2dm.T2DM(resourcefilepath=resourcefilepath))
 
 

@@ -18,11 +18,11 @@ logger.setLevel(logging.DEBUG)
 
 # TODO: change file path mac/window flex
 
-class HT(Module):
+class Hypertension(Module):
     """
     This is the Hypertension Module.
     Version: September 2019
-    The execution of all health systems hypertension are controlled through this modeule.
+    The execution of all health systems hypertension are controlled through this module.
     in the model.
     """
 
@@ -34,6 +34,9 @@ class HT(Module):
         logger.info('----------------------------------------------------------------------')
 
     PARAMETERS = {
+
+        # Here we declare parameters for this module. Each parameter has a name, data type,
+        # and longer description.
 
         # 1. Define risk factor parameters
         'HT_prevalence': Parameter(Types.REAL, 'HT prevalence'),
@@ -51,6 +54,12 @@ class HT(Module):
     }
 
     PROPERTIES = {
+
+        # Next we declare the properties of individuals that this module provides.
+        # Again each has a name, type and description.
+
+        # Note that all properties must have a two letter prefix that identifies them to this module.
+
         # 1. Define disease properties
         'ht_risk': Property(Types.REAL, 'HTN risk given pre-existing condition or risk factors'),
         'ht_date': Property(Types.DATE, 'Date of latest hypertensive episode'),
