@@ -13,6 +13,9 @@ from tlo.methods import demography, healthburden, healthsystem, lifestyle, hyper
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 # TODO: adapt to NCD analysis
+# TODO: add check that there is HTN
+# TODO: add check that HTN is in right prevalence
+# TODO: plot data versus model
 
 # Where will output go
 outputpath = ""
@@ -90,33 +93,6 @@ prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data"]
 Data_Prev_total = prev_data_df.total
 
 plt.plot(np.asarray(Model_Years), Model_Prev_total)
-
-
-# Generate Data
-time = [0, 1, 2, 3]
-position = [0, 100, 200, 300]
-
-plt.plot(time, position)
-plt.xlabel('Time (hr)')
-plt.ylabel('Position (km)')
-
-
-time = [1, 2, 3, 4]
-y1 = [1, 2, 3, 4]
-y2 = [1, 2, 3, 4]
-
-# Plot things...
-plt.plot(time, y1, 'b-')
-plt.plot(time, y2, 'g-')
-
-plt.show()
-
-time = [0, 1, 2, 3]
-position = [0, 100, 200, 300]
-
-plt.plot(time, position)
-plt.xlabel('Time (hr)')
-plt.ylabel('Position (km)')
 
 #plt.plot(np.asarray(Model_Years), Model_Prev_total, Data_Prev_total)   #TODO: need to fix code to plot data versus code
 

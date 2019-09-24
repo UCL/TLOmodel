@@ -40,7 +40,7 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_hypertension_adults(simulation):
+def test_hypertension_adults(simulation):       #TODO: need to check with Asif that this test age across time (not just during seeding)
     # check all hypertensive individuals are 18 years or over
     df = simulation.population.props
     HTN = df.loc[df.current_status]
