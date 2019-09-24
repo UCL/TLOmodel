@@ -91,6 +91,33 @@ Data_Prev_total = prev_data_df.total
 
 plt.plot(np.asarray(Model_Years), Model_Prev_total)
 
+
+# Generate Data
+time = [0, 1, 2, 3]
+position = [0, 100, 200, 300]
+
+plt.plot(time, position)
+plt.xlabel('Time (hr)')
+plt.ylabel('Position (km)')
+
+
+time = [1, 2, 3, 4]
+y1 = [1, 2, 3, 4]
+y2 = [1, 2, 3, 4]
+
+# Plot things...
+plt.plot(time, y1, 'b-')
+plt.plot(time, y2, 'g-')
+
+plt.show()
+
+time = [0, 1, 2, 3]
+position = [0, 100, 200, 300]
+
+plt.plot(time, position)
+plt.xlabel('Time (hr)')
+plt.ylabel('Position (km)')
+
 #plt.plot(np.asarray(Model_Years), Model_Prev_total, Data_Prev_total)   #TODO: need to fix code to plot data versus code
 
 plt.show()
