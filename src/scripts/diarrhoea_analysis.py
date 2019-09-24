@@ -2,6 +2,7 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -18,8 +19,8 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-# assume Python console is started in the top-level TLOModel directory
-resourcefilepath = "./resources/"
+# Work out the resource path from the path of the analysis file
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../resources'
 
 # %% Run the Simulation
 
@@ -89,6 +90,7 @@ plt.show()
 
 # Load Model Results on attributable pathogens
 diarrhoea_patho_df = output['tlo.methods.new_diarrhoea']['diarrhoea_pathogens']
+
 Model_rotavirus = diarrhoea_patho_df.rotavirus
 Model_shigella = diarrhoea_patho_df.shigella
 Model_adenovirus = diarrhoea_patho_df.adenovirus
@@ -100,12 +102,16 @@ ig1, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_rotavirus)
 ax.plot(np.asarray(Model_Years), Model_shigella)
 ax.plot(np.asarray(Model_Years), Model_adenovirus)
+ax.plot(np.asarray(Model_Years), Model_crypto)
+ax.plot(np.asarray(Model_Years), Model_campylo)
+ax.plot(np.asarray(Model_Years), Model_ETEC)
+
 
 plt.title("Diarrhoea attributable pathogens")
 plt.xlabel("Year")
 plt.ylabel("Number of children with pathogen-attributed diarrhoea ")
-plt.legend(['Total children under 5', 'Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC'])
-plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
+plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC'])
+plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf')
 
 plt.show()
 
