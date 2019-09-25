@@ -13,7 +13,7 @@ from tlo.methods import demography, healthburden, healthsystem, lifestyle, hyper
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 # TODO: adapt to NCD analysis
-# TODO: add check that there is HTN
+# TODO: add check that there is HTN >0
 # TODO: add check that HTN is in right prevalence
 # TODO: plot data versus model
 
@@ -31,7 +31,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2011, month=12, day=31)
-popsize = 100
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -86,10 +86,22 @@ Model_Pop = pop_df.total
 Model_Pop_Normalised = (
      100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == "2010-01-01"])
 )
+
+plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
+
 prev_df = output["tlo.methods.hypertension"]["ht_prevalence"]
+Model_Years = pd.to_datetime(prev_df.date)
 Model_Prev_total = prev_df.total
 
-prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data"]
+plt.plot(np.asarray(Model_Years), Model_Prev_total)
+
+prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_2"]
+
+Model_Years = pd.to_datetime(prev_data_df.date)
+Model_Prev_Data_total = prev_data_df.total
+
+plt.plot(np.asarray(Model_Years), Model_Prev_Data_total)
+
 Data_Prev_total = prev_data_df.total
 
 plt.plot(np.asarray(Model_Years), Model_Prev_total)
