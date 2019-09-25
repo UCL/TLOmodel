@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-# TODO: change file path mac/window flex
+# TODO: Asif/Stef to check if file path is mac/window flexible
 
 class Hypertension(Module):
     """
@@ -37,7 +37,7 @@ class Hypertension(Module):
         # Here we declare parameters for this module. Each parameter has a name, data type,
         # and longer description.
 
-        # 1. Define risk factor parameters
+        # 1. Define epidemiological parameters
         'HT_prevalence': Parameter(Types.REAL, 'HT prevalence'),
         'HT_incidence': Parameter(Types.REAL, 'HT incidence'),
         'prob_ht_basic': Parameter(Types.REAL, 'Basic HTN probability'),
@@ -45,10 +45,7 @@ class Hypertension(Module):
         'prob_htgivendiabetes': Parameter(Types.REAL, 'HTN probability given pre-existing diabetes'),
         'initial_prevalence': Parameter(Types.REAL, 'Prevalence of hypertension as per data'),
 
-        # 2. Define health care parameters                          #ToDO: remove part of this section when HSI activated
-        'prob_diagnosed': Parameter(Types.REAL, 'Probability of being diagnosed'),
-        'prob_treated': Parameter(Types.REAL, 'Probability of being treated'),
-        'prob_controlled': Parameter(Types.REAL, 'Probability achieving control on medication'),
+        # 2. Define health care parameters #ToDO: to add all the HSI parameters here later
         'dalywt_ht': Parameter(Types.REAL, 'DALY weighting for hypertension')
     }
 
@@ -66,7 +63,7 @@ class Hypertension(Module):
         'ht_historic_status': Property(Types.CATEGORICAL, 'Historical status: N=never; C=Current, P=Previous',
                                        categories=['N', 'C', 'P']),
 
-        # 2. Define health care properties
+        # 2. Define health care properties  #ToDO: to add more if needed once HSi coded
         'ht_diagnosis_date': Property(Types.DATE, 'Date of latest hypertension diagnosis'),
         'ht_diagnosis_status': Property(Types.CATEGORICAL, 'Status: N=No; Y=Yes',
                                         categories=['N', 'C', 'P']),
@@ -94,18 +91,19 @@ class Hypertension(Module):
                                  sheet_name=None)
 
         p = self.parameters
-        p['HT_prevalence'] = workbook['prevalence2018']              # reads in prevalence parameters
-        p['HT_incidence'] = workbook['incidence2018_plus']           # reads in incidence parameters
+        p['HT_prevalence'] = workbook['prevalence2018']  # reads in prevalence parameters
+        p['HT_incidence'] = workbook['incidence2018_plus']  # reads in incidence parameters
 
         self.load_parameters_from_dataframe(workbook['parameters'])  # reads in parameters
 
-        p['dalywt_ht'] = 0.0    # assigns DALYs as none assigned in the daly excel for hypertension
+        p['dalywt_ht'] = 0.0  # assigns DALYs as none assigned in the daly excel for hypertension
 
         HT_data = workbook['data']  # reads in data
-        df = HT_data.set_index('index')  # Sets index
+        df = HT_data.set_index('index')  # sets index
 
-        # TODO: Asif to see if we can do this shorter and if right loc.
+        # TODO: Asif/Stef to see if we can do the below shorter.
 
+        # Read in prevalence data from file and put into model df
         p['initial_prevalence'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
                                                                df.at['b_35_45', 'value'], df.at['b_45_55', 'value'],
                                                                df.at['b_55_65', 'value']],
@@ -121,34 +119,6 @@ class Hypertension(Module):
         p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
         p['initial_prevalence'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
         p['initial_prevalence'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
-
-        logger.info('%s|ht_prevalence_data|%s',
-                    self.sim.date,
-                    {
-                        'total': [p['initial_prevalence'].loc['total', 'prevalence'],
-                                  p['initial_prevalence'].loc['total', 'min95ci'],
-                                  p['initial_prevalence'].loc['total', 'max95ci']],
-                        '25_to_35': [p['initial_prevalence'].loc['25_to_35', 'prevalence'],
-                                     p['initial_prevalence'].loc['25_to_35', 'min95ci'],
-                                     p['initial_prevalence'].loc['25_to_35', 'max95ci']],
-                        '35_to_45': [p['initial_prevalence'].loc['35_to_45', 'prevalence'],
-                                     p['initial_prevalence'].loc['35_to_45', 'min95ci'],
-                                     p['initial_prevalence'].loc['35_to_45', 'max95ci']],
-                        '45_to_55': [p['initial_prevalence'].loc['45_to_55', 'prevalence'],
-                                     p['initial_prevalence'].loc['45_to_55', 'min95ci'],
-                                     p['initial_prevalence'].loc['45_to_55', 'max95ci']],
-                        '55_to_65': [p['initial_prevalence'].loc['55_to_65', 'prevalence'],
-                                     p['initial_prevalence'].loc['55_to_65', 'min95ci'],
-                                     p['initial_prevalence'].loc['55_to_65', 'max95ci']]
-                    })
-
-        logger.info('%s|ht_prevalence_data_2|%s',
-                    self.sim.date,
-                    {
-                        'total': [p['initial_prevalence'].loc['total', 'prevalence']],
-                        'total_min:': [p['initial_prevalence'].loc['total', 'min95ci']],
-                        'total_max': [p['initial_prevalence'].loc['total', 'max95ci']]
-                    })
 
         logger.debug("Hypertension method: finished reading in parameters.  ")
 
@@ -183,34 +153,41 @@ class Hypertension(Module):
 
         # 3. Assign prevalence as per data
         # 3.1 Get corresponding risk
-        ht_probability = \
-        df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'], left_on=['age_years'],
-                                                            right_on=['age'], how='left')['probability']
+        ht_probability = df.loc[df.is_alive, ['ht_risk', 'age_years']].merge(self.parameters['HT_prevalence'],
+                                                                             left_on=['age_years'], right_on=['age'],
+                                                                             how='left')['probability']
+        # TODO: update with BMI once merged to master
         df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi
-        #df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes  # TODO: add after circular declaration has been fixed with Asif
-        alive_count = df.is_alive.sum()
+        # TODO: add diabetes risk after circular declaration has been fixed with Asif/Stef
+        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
 
+        # 3.2. Define key variables
+        alive_count = df.is_alive.sum()
         assert alive_count == len(ht_probability)
 
         # 3.2 Assign prevalent cases of hypertension according to risk
         ht_probability = ht_probability * df.loc[df.is_alive, 'ht_risk']
-        random_numbers = self.rng.random_sample(
-            size=alive_count)  # TODO: remove duplication later, 1st is not random, to test comment out dublicate line and look at logger.debug output below
+
+        # TODO: remove duplication later. Asif and Stef: when the model runs with 1st random_number, numbers are not
+        # TODO: [cont] random (younger and older age group is always very high. Even if seed is changed. When executing
+        # TODO: [cont] a second time this is fine. Once fixed remove excess code up to below note.
+        # and look at logger.debug output below
+        random_numbers = self.rng.random_sample(size=alive_count)
         random_numbers = self.rng.random_sample(size=alive_count)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_probability)
 
-        # Check random numbers      #TODO: CHECK WITH ASIF AND TIM and remove later
+        # Check random numbers      #TODO: Remove from here ...
         logger.debug('Lets generate the random number check for hypertension')
 
-        pop_over_18 = df.loc[df['age_years'] > 17].index
+        pop_over_18 = df.index[(df.age_years >= 18) & (df.age_years < 25)]
         mean_randnum_18_25 = random_numbers[pop_over_18].mean()
-        pop_over_25_35 = df.index[df.age_years > 24 & (df.age_years < 35)]
+        pop_over_25_35 = df.index[(df.age_years >= 25) & (df.age_years < 35)]
         mean_randnum_25_35 = random_numbers[pop_over_25_35].mean()
-        pop_over_35_45 = df.index[df.age_years > 34 & (df.age_years < 45)]
+        pop_over_35_45 = df.index[(df.age_years >= 35) & (df.age_years < 45)]
         mean_randnum_35_45 = random_numbers[pop_over_35_45].mean()
-        pop_over_45_55 = df.index[df.age_years > 44 & (df.age_years < 55)]
+        pop_over_45_55 = df.index[(df.age_years >= 45) & (df.age_years < 55)]
         mean_randnum_45_55 = random_numbers[pop_over_45_55].mean()
-        pop_over_55 = df.loc[df['age_years'] > 55].index
+        pop_over_55 = df.index[df['age_years'] >= 55]
         mean_randnum_over55 = random_numbers[pop_over_55].mean()
 
         logger.debug('Lets generate the random number check for hypertension. ')
@@ -228,18 +205,16 @@ class Hypertension(Module):
         assert 0.4 < mean_randnum_45_55 < 0.6
         assert 0.4 < mean_randnum_over55 < 0.6
 
-        # TODO: remove up to here
+        # TODO: ... to here
 
-        # Count adults with hypertension by age group
-        count_ht_all = len(df[df.is_alive & df.ht_current_status])
-
-        # 3.4. Set relevant properties of those with prevalent hypertension
+        # 3.3. Assign relevant properties amongst those hypertensive
+        count_ht_all = len(df[df.is_alive & df.ht_current_status])  # Count all people with hypertension
         ht_years_ago = np.array([1] * count_ht_all)
         infected_td_ago = pd.to_timedelta(ht_years_ago, unit='y')
         df.loc[df.is_alive & df.ht_current_status, 'ht_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.ht_current_status, 'ht_historic_status'] = 'C'
 
-        # Register this disease module with the health system       #TODO: TO DO LATER
+        # 4. Register this disease module with the health system  #TODO: TO DO LATER
         # self.sim.modules['HealthSystem'].register_disease_module(self)
 
         logger.debug("Hypertension method: finished initialising population.  ")
@@ -263,8 +238,9 @@ class Hypertension(Module):
 
         # 2. Launch the repeating event that will store statistics about hypertension
         sim.schedule_event(HTLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(HTLoggingValidationEvent(self), sim.date + DateOffset(days=0))
 
-        # 3. Schedule the outreach event... # ToDo: need to test this with HT!
+        # 3. Schedule the outreach event  # ToDo: need to test this with HT!
         # outreach_event = HT_LaunchOutreachEvent(self)
         # self.sim.schedule_event(outreach_event, self.sim.date+36)
 
@@ -310,14 +286,12 @@ class Hypertension(Module):
         pass
 
     def report_daly_values(self):  # TODO: update
-        # This must send back a dataframe that reports on the HealthStates for all individuals over
+        # This must send back a data frame that reports on the HealthStates for all individuals over
         # the past year
 
         logger.debug('Hypertension method: reporting health values')
 
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        p = self.parameters
+        df = self.sim.population.props  # shortcut to population properties data frame
 
         health_values = df.loc[df.is_alive, 'ht_specific_symptoms'].map({
             'N': 0,
@@ -332,72 +306,70 @@ class Hypertension(Module):
 class HTEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event is occurring regularly and controls the disease process of Hypertension.
+    It assigns new cases of hypertension and defines all related variables (e.g. date of hypertension)
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
 
-        logger.debug('Hypertension method: This is a HTN Event')
-
-        # ToDO: need to add code from original if it bugs.
+        logger.debug('Hypertension method: This is a hypertension Event')
 
     def apply(self, population):
+
         logger.debug('Hypertension method: tracking the disease progression of the population.')
 
         # 1. Basic variables
         df = population.props
-        m = self
-        rng = self.module.rng
-
-        ht_total = (df.is_alive & df.ht_current_status).sum()
+        m = self.module
+        rng = m.rng
 
         # 2. Get (and hold) index of people with and w/o hypertension
-        currently_ht_yes = df[df.ht_current_status & df.is_alive].index
-        currently_ht_no = df[~df.ht_current_status & df.is_alive].index
-        age_index = df.loc[currently_ht_no, ['age_years']]
-        alive_count = df.is_alive.sum()
+        currently_ht_yes = df[df.ht_current_status & df.is_alive].index  # holds all people with hypertension
+        currently_ht_no = df[~df.ht_current_status & df.is_alive].index  # hold all people w/o hypertension
+        age_index = df.loc[currently_ht_no, ['age_years']]  # looks up age index of those w/o hypertension
+        alive_count = df.is_alive.sum()  # counts all those with hypertension
 
-        assert alive_count == len(currently_ht_yes) + len(currently_ht_no)
+        assert alive_count == len(currently_ht_yes) + len(currently_ht_no)  # checks that we didn't loose anyone
 
         # 3. Handle new cases of hypertension
         # 3.1 First get relative risk
-        ht_probability = \
-        df.loc[currently_ht_no, ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
-                                                                              left_on=['age_years'],
-                                                                              right_on=['age'],
-                                                                              how='left').set_index(
-            'person')['probability']
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.module.prob_htgivenbmi
-       # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
+        ht_probability = df.loc[currently_ht_no,
+                                ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
+                                left_on=['age_years'], right_on=['age'], how='left').set_index('person')['probability']
+        df['ht_risk'] = 1.0  # Reset risk for all people
+        # TODO: update with BMI once merged to master
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi  #Adjust risk if overwt
+        # TODO: add diabetes risk after circular declaration has been fixed with Asif/Stef
+        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= m.prob_htgivendiabetes
 
-        ht_probability = ht_probability * df.loc[currently_ht_no, 'ht_risk']
-        random_numbers = rng.random_sample(size=len(ht_probability))
-        now_hypertensive = (ht_probability > random_numbers)
-        ht_idx = currently_ht_no[now_hypertensive]
+        ht_probability = ht_probability * df.loc[currently_ht_no, 'ht_risk']  # look up updated risk of hypertension
+        random_numbers = rng.random_sample(size=len(ht_probability))  # get random numbers
+        now_hypertensive = (ht_probability > random_numbers)  # assign new hypertensive cases as per incidence and risk
+        ht_idx = currently_ht_no[now_hypertensive]  # hold id of those with new hypertension
 
-        # Check random numbers      #TODO: CHECK WITH TIM and remove later
+        # Check random numbers      #TODO: Remove from here ... (not petty code - just for testing)
         # random_numbers_df = random_numbers, index = currently_ht_no
         randnum_holder = pd.DataFrame(data=random_numbers, index=currently_ht_no, columns=['nr'])
 
-        over_18 = age_index.index[age_index.age_years > 17]
-        rand_18_25 = randnum_holder.loc[over_18]
-        rand_18_25 = rand_18_25.mean()
+        pop_over_18 = age_index.index[(age_index.age_years >= 18) & (age_index.age_years < 25)]
+        rand_18_25 = (randnum_holder.loc[pop_over_18]).mean()
+        rand_18_25_mean = rand_18_25.mean()
 
-        over_25_35 = age_index.index[age_index.age_years > 24 & (age_index.age_years < 35)]
-        rand_25_35 = randnum_holder.loc[over_25_35]
-        rand_25_35 = rand_25_35.mean()
+        pop_over_25_35 = age_index.index[(age_index.age_years >= 25) & (age_index.age_years < 35)]
+        rand_25_35 = (randnum_holder.loc[pop_over_25_35]).mean()
+        rand_25_35_mean = rand_25_35.mean()
 
-        over_35_45 = age_index.index[age_index.age_years > 34 & (age_index.age_years < 45)]
-        rand_35_45 = randnum_holder.loc[over_35_45]
-        rand_35_45 = rand_35_45.mean()
+        pop_over_35_45 = age_index.index[(age_index.age_years >= 35) & (age_index.age_years < 45)]
+        rand_35_45 = (randnum_holder.loc[pop_over_35_45]).mean()
+        rand_35_45_mean = rand_35_45.mean()
 
-        over_45_55 = age_index.index[age_index.age_years > 44 & (age_index.age_years < 55)]
-        rand_45_55 = randnum_holder.loc[over_45_55]
-        rand_45_55 = rand_45_55.mean()
+        pop_over_45_55 = age_index.index[(age_index.age_years >= 45) & (age_index.age_years < 55)]
+        rand_45_55 = (randnum_holder.loc[pop_over_45_55]).mean()
+        rand_45_55_mean = rand_45_55.mean()
 
-        over_55 = age_index.loc[age_index['age_years'] > 55].index
-        rand_over55 = randnum_holder.loc[over_55]
-        rand_over55 = rand_over55.mean()
+        pop_over_55 = age_index.index[(age_index.age_years >= 55)]
+        rand_over55 = (randnum_holder.loc[pop_over_55]).mean()
+        rand_over55_mean = rand_over55.mean()
 
         logger.debug('Lets generate the random number check for incident hypertension. ')
         logger.debug({
@@ -408,49 +380,18 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             'Mean_rand num_in over 55 yo': rand_over55
         })
 
-        # 3.3 If newly hypertensive
+        assert 0.4 < rand_18_25_mean < 0.6
+        assert 0.4 < rand_25_35_mean < 0.6
+        assert 0.4 < rand_35_45_mean < 0.6
+        assert 0.4 < rand_45_55_mean < 0.6
+        assert 0.4 < rand_over55_mean < 0.6
+
+        # TODO: ... to here
+
+        # 3.2 Assign variables amongst those newly hypertensive
         df.loc[ht_idx, 'ht_current_status'] = True
         df.loc[ht_idx, 'ht_historic_status'] = 'C'
         df.loc[ht_idx, 'ht_date'] = self.sim.date
-
-        # TODO: check it we want to log evert new event also?
-
-        # 3.2. Calculate prevalence
-        # Count adults in different age groups
-        adults_count_overall = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 65)])
-        adults_count_25to35 = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 35)])
-        adults_count_35to45 = len(df[(df.is_alive) & (df.age_years > 34) & (df.age_years < 45)])
-        adults_count_45to55 = len(df[(df.is_alive) & (df.age_years > 44) & (df.age_years < 55)])
-        adults_count_55to65 = len(df[(df.is_alive) & (df.age_years > 54) & (df.age_years < 65)])
-
-        assert adults_count_overall == adults_count_25to35 + adults_count_35to45 + adults_count_45to55 + adults_count_55to65
-
-        # Count adults with hypertension by age group
-        count = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 24) & (df.age_years < 65)])
-        count_25to35 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 24) & (df.age_years < 35)])
-        count_35to45 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 34) & (df.age_years < 45)])
-        count_45to55 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 44) & (df.age_years < 55)])
-        count_55to65 = len(df[(df.is_alive) & (df.ht_current_status) & (df.age_years > 54) & (df.age_years < 65)])
-
-        assert count == count_25to35 + count_35to45 + count_45to55 + count_55to65
-
-        # Calculate overall and age-specific prevalence
-        prevalence_overall = (count / adults_count_overall) * 100
-        prevalence_25to35 = (count_25to35 / adults_count_25to35) * 100
-        prevalence_35to45 = (count_35to45 / adults_count_35to45) * 100
-        prevalence_45to55 = (count_45to55 / adults_count_45to55) * 100
-        prevalence_55to65 = (count_55to65 / adults_count_55to65) * 100
-
-        # 3.1 Log prevalence compared to data
-        logger.info('%s|ht_prevalence|%s',
-                    self.sim.date,
-                    {
-                        'total': prevalence_overall,
-                        '25_to_35': prevalence_25to35,
-                        '35_to_45': prevalence_35to45,
-                        '45_to_55': prevalence_45to55,
-                        '55_to_65': prevalence_55to65
-                    })
 
 
 class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
@@ -727,22 +668,21 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         groups used in the data to ensure the model is running well.
         """
 
-        self.repeat = 1         # run this event every year
+        self.repeat = 12  # run this event every year
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # get some summary statistics
+        # This code will calculate the prevalence and log it
+
         df = population.props
-        # TODO: update to always log the prevalence, every month?
 
-        # 3.3. Calculate prevalence     #TODO: use groupby
-        count_byage = df[df.is_alive].groupby('age_range').size()
-        count_htbyage = df[df.is_alive & (df.ht_current_status)].groupby('age_range').size()
-        prevalence_htbyage = (count_htbyage / count_byage) *100
+        # 1 Calculate prevalence
+        count_by_age = df[df.is_alive].groupby('age_range').size()
+        count_ht_by_age = df[df.is_alive & (df.ht_current_status)].groupby('age_range').size()
+        prevalence_ht_by_age = (count_ht_by_age / count_by_age) * 100
 
-        # 3.4 Log prevalence
-        logger.info('%s|ht_prevalence|%s', self.sim.date,
-                        prevalence_htbyage.to_dict())
+        # 2 Log prevalence
+        logger.info('%s|ht_prevalence|%s', self.sim.date, prevalence_ht_by_age.to_dict())
 
 
 class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
@@ -753,20 +693,18 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         groups used throughout the model.
         """
 
-        self.repeat = 1         # run this event every year
+        self.repeat = 12  # run this event every year # TODO: only run this for the first 5 years for validation
         super().__init__(module, frequency=DateOffset(months=self.repeat))
-        # TODO: only run this for the first 5 years for validation
 
     def apply(self, population):
-
-        # Logs the prevalence for the first 5 years from the data. Assumption is that Hypertension prevalence
-        # will remain stable over the first 5 years
+        # This code logs the prevalence for the first 5 years from the data and the model. Assumption is that Hypertension prevalence
+        # will remain stable over the first 5 years and thus equal to 2010 data
 
         df = population.props
-        p = self.parameters
+        p = self.module.parameters
 
         # Log the data every year (for plotting)        # TODO: see if we can shorten this code
-        logger.info('%s|ht_prevalence_data_2|%s',
+        logger.info('%s|ht_prevalence_data_validation|%s',
                     self.sim.date,
                     {
                         'total': [p['initial_prevalence'].loc['total', 'prevalence']],
@@ -786,7 +724,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
                         '55_to_65_max': [p['initial_prevalence'].loc['55_to_65', 'max95ci']]
                     })
 
-        # 3.3. Calculate prevalence     #TODO: use groupby
+        # 3.3. Calculate prevalence     #TODO: use groupby (make new cats)
         adults_count_all = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 65)])
         adults_count_25to35 = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 35)])
         adults_count_35to45 = len(df[df.is_alive & (df.age_years > 34) & (df.age_years < 45)])
@@ -818,7 +756,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         assert prevalence_55to65 > 0
 
         # 3.4 Log prevalence
-        logger.info('%s|ht_prevalence|%s',
+        logger.info('%s|ht_prevalence_model_validation|%s',
                     self.sim.date,
                     {
                         'total': prevalence_overall,
@@ -827,4 +765,3 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
                         '45_to_55': prevalence_45to55,
                         '55_to_65': prevalence_55to65
                     })
-
