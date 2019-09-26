@@ -504,7 +504,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # assign status for any individuals that are infected
         df.loc[df.ri_pneumonia_status & (df.age_exact_years < 0.1667),
                'ri_pneumonia_severity'] = 'severe pneumonia'
-        df.loc[df.ri_pneumonia_status & (df.age_exact_years > 0.1667) & (
+        df.loc[df.ri_pneumonia_status & (df.age_exact_years >= 0.1667) & (
             df.age_years < 5), 'ri_pneumonia_severity'] = 'pneumonia'
 
         # NOTE: NON-SEVERE PNEUMONIA ONLY IN 2-59 MONTHS
@@ -544,12 +544,21 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
         df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
 
-        # schedule self-cure if no treatment, no self-cure for severe cases
+        pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_pathogen').size()
 
-        random_date = rng.randint(low=0, high=14, size=len(asym))
-        random_days = pd.to_timedelta(random_date, unit='d')
-
-
+        logger.info('%s|pneumonia_pathogens|%s', self.sim.date,
+                    {'total': sum(pathogen_count),
+                     'RSV': pathogen_count['RSV'],
+                     'rhinovirus': pathogen_count['rhinovirus'],
+                     'hMPV': pathogen_count['hMPV'],
+                     'parainfluenza': pathogen_count['parainfluenza'],
+                     'strep': pathogen_count['streptococcus'],
+                     'hib': pathogen_count['hib'],
+                     'TB': pathogen_count['TB'],
+                     'staph': pathogen_count['staphylococcus'],
+                     'influenza': pathogen_count['influenza'],
+                     'P.jirovecii': pathogen_count['P. jirovecii'],
+                     })
 
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR NON-SEVERE PNEUMONIA

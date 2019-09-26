@@ -97,6 +97,7 @@ Model_adenovirus = diarrhoea_patho_df.adenovirus
 Model_crypto = diarrhoea_patho_df.cryptosporidium
 Model_campylo = diarrhoea_patho_df.campylobacter
 Model_ETEC = diarrhoea_patho_df.ETEC
+# pathogen_by_age = diarrhoea_patho_df.groupby(['years'])['person_id'].size()
 
 ig1, ax = plt.subplots()
 ax.plot(np.asarray(Model_Years), Model_rotavirus)
@@ -106,25 +107,63 @@ ax.plot(np.asarray(Model_Years), Model_crypto)
 ax.plot(np.asarray(Model_Years), Model_campylo)
 ax.plot(np.asarray(Model_Years), Model_ETEC)
 
-
 plt.title("Diarrhoea attributable pathogens")
 plt.xlabel("Year")
-plt.ylabel("Number of children with pathogen-attributed diarrhoea ")
+plt.ylabel("Number of pathogen-attributed diarrhoea episodes")
 plt.legend(['Rotavirus', 'Shigella', 'Adenovirus', 'Cryptosporidium', 'Campylobacter', 'ETEC'])
 plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf')
 
 plt.show()
 
+# Load Model Results on death from diarrhoea
+death_df = output['tlo.methods.new_diarrhoea']['death_diarrhoea']
+deaths_df_date = pd.to_datetime(death_df.date)
+death_df_year = death_df.date.dt.year
+death_by_cause = death_df.groupby(['year'])['person_id'].size()
+death_by_cause = death_by_cause.reset_index()
+death_by_cause.index = death_by_cause['year']
+death_by_cause.drop(columns='year', inplace=True)
+death_by_cause = death_by_cause.rename(columns={'person_id': 'num_deaths'})
+
+death_by_cause.plot.bar(stacked=True)
+plt.title(" Total diarrhoea deaths per Year")
+plt.show()
 
 '''
-diarrhoea_df_rotavirus = diarrhoea_df.rotavirus
-diarrhoea_df_shigella = diarrhoea_df.shigella
-diarrhoea_df_adenovirus = diarrhoea_df.adenovirus
-diarrhoea_df_crypto = diarrhoea_df.cryptosporidium
-diarrhoea_df_campylo = diarrhoea_df.campylobacter
-diarrhoea_df_ETEC = diarrhoea_df.ETEC
+ig2, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_death)
+ax.plot(np.asarray(Model_Years), Model_death1)
+ax.plot(np.asarray(Model_Years), Model_death2)
 
-pathogen_by_age = diarrhoea_patho_df.groupby(['age_years'])['person_id'].size()
+plt.title("Diarrhoea deaths")
+plt.xlabel("Year")
+plt.ylabel("Number of children died from diarrhoea")
+plt.legend(['AWD', 'persistent', 'dehydration'])
+plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf')
+
+plt.show()
+'''
+'''
+# Load Model Results on persistent diarrhoea
+df = sim.population.props
+diarrhoea_persist_df = output['tlo.methods.new_diarrhoea']['persistent_diarrhoea']
+#Model_Years = pd.to_datetime(diarrhoea_persist_df.logging_persistent_date)
+Model_persistent = diarrhoea_persist_df.persistent_diarrhoea
+persistent_by_type = diarrhoea_persist_df.groupby([df.gi_diarrhoea_acute_type])['person_id'].size()
+
+ig2, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), persistent_by_type)
+
+plt.title("Persistent Diarrhoea")
+plt.xlabel("Year")
+plt.ylabel("Number of children with persistent diarrhoea")
+# plt.legend([])
+plt.savefig(outputpath + 'Persistent Diarrhoea ' + datestamp + '.pdf')
+
+plt.show()
+'''
+
+'''
 diarrhoea_df = pd.concat((diarrhoea_by_year, year), axis=1)
 
 Model_Pop = incidence_diarrhoea_df.total
@@ -366,18 +405,4 @@ plt.ylabel("Age at Death")
 plt.savefig(outputpath + "Deaths" + datestamp + ".pdf")
 plt.show()
 
-# %% Plot deaths by cause:
-
-deaths_df = output["tlo.methods.demography"]["death"]
-deaths_df["date"] = pd.to_datetime(deaths_df["date"])
-deaths_df["year"] = deaths_df["date"].dt.year
-death_by_cause = deaths_df.groupby(["year", "cause"])["person_id"].size()
-
-death_by_cause = death_by_cause.reset_index()
-death_by_cause.index = death_by_cause["year"]
-death_by_cause.drop(columns="year", inplace=True)
-death_by_cause = death_by_cause.rename(columns={"person_id": "num_deaths"})
-
-death_by_cause.plot.bar(stacked=True)
-plt.show()
 '''
