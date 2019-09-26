@@ -37,7 +37,10 @@ class PregnancySupervisor(Module):
             Types.REAL, 'relative risk of miscarriage for women who is between 31 and 34 years old'),
         'rr_miscarriage_grav4': Parameter(
             Types.REAL, 'relative risk of miscarriage for women who has a gravidity of greater than 4'),
-
+        'rr_pre_eclamp_nulip': Parameter(
+            Types.REAL, 'relative risk of pre-eclampsia in nuliparous women'),
+        'rr_pre_eclamp_prev_pe': Parameter(
+            Types.REAL, 'relative risk of pre- eclampsia in women who have previous suffered from pre-eclampsia'),
     }
 
     PROPERTIES = {
@@ -70,21 +73,28 @@ class PregnancySupervisor(Module):
         params['rr_miscarriage_35'] = dfd['parameter_values'].loc['rr_miscarriage_35', 'value']
         params['rr_miscarriage_3134'] = dfd['parameter_values'].loc['rr_miscarriage_3134', 'value']
         params['rr_miscarriage_grav4'] = dfd['parameter_values'].loc['rr_miscarriage_grav4', 'value']
+        params['rr_pre_eclamp_nulip'] = dfd['parameter_values'].loc['rr_pre_eclamp_nulip', 'value']
+        params['rr_pre_eclamp_prev_pe'] = dfd['parameter_values'].loc['rr_pre_eclamp_prev_pe', 'value']
 
 
-#        if 'HealthBurden' in self.sim.modules.keys():
+    #        if 'HealthBurden' in self.sim.modules.keys():
 #            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
+
 
     def initialise_population(self, population):
 
         df = population.props
 
         df.loc[df.sex == 'F', 'ps_gestational_age'] = 0
-
+        df.loc[df.sex == 'F', 'ps_total_miscarriages'] = 0
+        df.loc[df.sex == 'F', 'ps_total_induced_abortion'] = 0
+        df.loc[df.sex == 'F', 'ps_still_birth_current_pregnancy'] = False
+        df.loc[df.sex == 'F', 'ps_pre_eclampsia'] = False
+        df.loc[df.sex == 'F', 'ps_gest_htn'] = False
+        df.loc[df.sex == 'F', 'ps_gest_diab'] = False
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         """
         event = PregnancySupervisorEvent
         sim.schedule_event(event(self),
@@ -105,6 +115,13 @@ class PregnancySupervisor(Module):
 
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'ps_gestational_age'] = 0
+            df.at[child_id, 'ps_total_miscarriages'] = 0
+            df.at[child_id, 'ps_total_induced_abortion'] = 0
+            df.at[child_id, 'ps_still_birth_current_pregnancy'] = False
+            df.at[child_id, 'ps_pre_eclampsia'] = False
+            df.at[child_id, 'ps_gest_htn'] = False
+            df.at[child_id, 'ps_gest_diab'] = False
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -131,7 +148,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        params= self.module.parameters
+        params = self.module.parameters
 
     # =========================== GESTATIONAL AGE UPDATE FOR ALL PREGNANT WOMEN ========================================
         gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
@@ -147,6 +164,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gd_risk = params['prob_pregnancy_factors']['risk_g_diab']
 
     # =========================== MONTH 1 RISK APPLICATION ========================================
+        # TODO: align moths correclty with weeks- unsure of best way
+        # TODO:
 
         month_1_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 4)]
 
@@ -166,9 +185,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['random_draw', 'eff_prob_miscarriage']
         idx_mc = dfx.index[dfx.eff_prob_miscarriage > dfx.random_draw]
 
-        df.loc[idx_mc, 'ps_total_miscarriages'] = +1 # Could this be a function
+        df.loc[idx_mc, 'ps_total_miscarriages'] = +1  # Could this be a function
         df.loc[idx_mc, 'is_pregnant'] = False
-        df.loc[idx_mc, 'ps_gestational_age'] = 0
+        df.loc[idx_mc, 'ps_gestational_age'] = 0 #Complications?
 
     # =========================== MONTH 2 RISK APPLICATION ========================================
 
@@ -197,11 +216,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     # =========================== MONTH 10 RISK APPLICATION ========================================
         month_10_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 40)]
-
-
-
-
-
 
 
 class PregnancySupervisorLoggingEvent(RegularEvent, PopulationScopeEventMixin):
