@@ -30,7 +30,6 @@ class AntenatalCare(Module):
     }
 
     PROPERTIES = {
-        'ac_gestational_age': Property(Types.INT, 'current gestational age of this womans pregnancy in weeks'),
         'ac_total_anc_visits': Property(Types.INT, 'rolling total of antenatal visits this woman has attended during '
                                                    'her pregnancy'),
 
@@ -56,7 +55,6 @@ class AntenatalCare(Module):
 
         df = population.props
 
-        df.loc[df.sex == 'F', 'ac_gestational_age'] = 0
         df.loc[df.sex == 'F', 'ac_total_anc_visits'] = 0
 
         # Todo: We may (will) need to apply a number of previous ANC visits to women pregnant at baseline?
@@ -67,9 +65,6 @@ class AntenatalCare(Module):
         """Get ready for simulation start.
 
         """
-        event = GestationUpdateEvent
-        sim.schedule_event(event(self),
-                           sim.date + DateOffset(days=0))
 
         event = AntenatalCareSeeking(self)
         sim.schedule_event(event, sim.date + DateOffset(weeks=8))
@@ -90,7 +85,6 @@ class AntenatalCare(Module):
         df = self.sim.population.props
 
         if df.at[child_id, 'sex'] == 'F':
-            df.at[child_id, 'ac_gestational_age'] = 0
             df.at[child_id, 'ac_total_anc_visits'] = 0
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -106,23 +100,6 @@ class AntenatalCare(Module):
     #    logger.debug('This is mockitis reporting my health values')
     #    df = self.sim.population.props  # shortcut to population properties dataframe
     #    p = self.parameters
-
-
-class GestationUpdateEvent(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event updates the ac_gestational_age for the pregnant population based on the current simulation date
-    """
-
-    def __init__(self, module,):
-        super().__init__(module, frequency=DateOffset(weeks=1))
-
-    def apply(self, population):
-        df = population.props
-
-        gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
-        gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
-
-        df.loc[df.is_pregnant, 'ac_gestational_age'] = gestation_in_weeks.astype(int)
 
 
 class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
