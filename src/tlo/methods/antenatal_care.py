@@ -120,7 +120,7 @@ class GestationUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
-        gestation_in_weeks = gestation_in_days/ np.timedelta64(1, 'W')
+        gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
 
         df.loc[df.is_pregnant, 'ac_gestational_age'] = gestation_in_weeks.astype(int)
 
