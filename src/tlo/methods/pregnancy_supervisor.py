@@ -45,6 +45,7 @@ class PregnancySupervisor(Module):
 
     PROPERTIES = {
         'ps_gestational_age': Property(Types.INT, 'current gestational age of this womans pregnancy in weeks'),
+        'ps_ectopic_pregnancy': Property(Types.BOOL), 'Whether this womans pregnancy is ectopic'
         'ps_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
         'ps_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
         'ps_still_birth_current_pregnancy': Property(Types.BOOL, 'whether this woman has experienced a still birth'),
@@ -155,6 +156,16 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         df.loc[df.is_pregnant, 'ps_gestational_age'] = gestation_in_weeks.astype(int)
 
+    # =============================================== ECTOPIC PREGNANCY ===============================================
+        newly_pregnant_idx= df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 1)]
+
+        # Apply incidence of ectopic pregnancy (turn off normal pregnancy variable)
+        # at week one?- will need symptoms for care seeking etc? (unruptured vs ruptured?)
+
+    # =========================== MULTIPLES ========================================
+        # here we could apply risk of multiples? in first week?
+
+
     # ============================= DF SHORTCUTS ======================================================================
         misc_risk = params['prob_pregnancy_factors']['risk_miscarriage']
         ia_risk = params['prob_pregnancy_factors']['risk_abortion']
@@ -187,10 +198,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_mc, 'ps_total_miscarriages'] = +1  # Could this be a function
         df.loc[idx_mc, 'is_pregnant'] = False
-        df.loc[idx_mc, 'ps_gestational_age'] = 0 #Complications?
+        df.loc[idx_mc, 'ps_gestational_age'] = 0  # Complications?
 
     # =========================== MONTH 2 RISK APPLICATION ========================================
-
         month_2_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 8)]
 
     # =========================== MONTH 3 RISK APPLICATION ========================================
