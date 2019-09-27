@@ -27,8 +27,8 @@ class PregnancySupervisor(Module):
 
     PARAMETERS = {
         'prob_pregnancy_factors': Parameter(
-            Types.DATA_FRAME, 'Data frame containing probabilities of key outcomes/complications associate with the antenatal'
-                        'period'),
+            Types.DATA_FRAME, 'Data frame containing probabilities of key outcomes/complications associate with the '
+                              'antenatal period'),
         'rr_miscarriage_prevmiscarriage': Parameter(
             Types.REAL, 'relative risk of miscarriage for women who have previously miscarried'),
         'rr_miscarriage_35': Parameter(
@@ -50,6 +50,15 @@ class PregnancySupervisor(Module):
     PROPERTIES = {
         'ps_gestational_age': Property(Types.INT, 'current gestational age of this womans pregnancy in weeks'),
         'ps_ectopic_pregnancy': Property(Types.BOOL, 'Whether this womans pregnancy is ectopic'),
+        'ps_ectopic_symptoms': Property(
+            Types.CATEGORICAL, 'Level of symptoms for ectopic pregnancy',
+            categories=['none', 'abdominal pain', 'abdominal pain plus bleeding', 'shock']),
+        # TODO: review in light of new symptom tracker
+        'ps_ep_unified_symptom_code': Property(
+            Types.CATEGORICAL,
+            'Level of symptoms on the standardised scale (governing health-care seeking): '
+            '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
+            categories=[0, 1, 2, 3, 4]),
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
         'ps_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
@@ -94,6 +103,8 @@ class PregnancySupervisor(Module):
 
         df.loc[df.sex == 'F', 'ps_gestational_age'] = 0
         df.loc[df.sex == 'F', 'ps_ectopic_pregnancy'] = False
+        df.loc[df.sex == 'F', 'ps_ectopic_symptoms'] = 'none'
+        df.loc[df.sex == 'F', 'ps_ep_unified_symptom_code'] = 0
         df.loc[df.sex == 'F', 'ps_multiple_pregnancy'] = False
         df.loc[df.sex == 'F', 'ps_total_miscarriages'] = 0
         df.loc[df.sex == 'F', 'ps_total_induced_abortion'] = 0
@@ -101,6 +112,7 @@ class PregnancySupervisor(Module):
         df.loc[df.sex == 'F', 'ps_pre_eclampsia'] = False
         df.loc[df.sex == 'F', 'ps_gest_htn'] = False
         df.loc[df.sex == 'F', 'ps_gest_diab'] = False
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -125,6 +137,8 @@ class PregnancySupervisor(Module):
         if df.at[child_id, 'sex'] == 'F':
             df.at[child_id, 'ps_gestational_age'] = 0
             df.at[child_id, 'ps_ectopic_pregnancy'] = False
+            df.at[child_id, 'ps_ectopic_symptoms'] = 'none'
+            df.at[child_id, 'ps_ep_unified_symptom_code'] = 0
             df.at[child_id, 'ps_multiple_pregnancy'] = False
             df.at[child_id, 'ps_total_miscarriages'] = 0
             df.at[child_id, 'ps_total_induced_abortion'] = 0
