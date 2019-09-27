@@ -397,13 +397,13 @@ class Labour (Module):
         dfx = pd.concat((simdate, random_draw), axis=1)
         dfx.columns = ['simdate', 'random_draw']
         dfx['gestational_age_in_weeks'] = (39 - 39 * dfx.random_draw)
-        df.loc[pregnant_idx, 'ac_gestational_age'] = dfx.gestational_age_in_weeks.astype(int)
+        df.loc[pregnant_idx, 'ps_gestational_age'] = dfx.gestational_age_in_weeks.astype(int)
 
         # Use gestational age to calculate when the woman's baby was conceived
         dfx['la_conception_date'] = dfx['simdate'] - pd.to_timedelta(dfx['gestational_age_in_weeks'], unit='w')
 
         # Apply a due date of 9 months in the future from the date of conception for each woman
-        dfx['due_date_mth'] = 39 - df['ac_gestational_age']
+        dfx['due_date_mth'] = 39 - df['ps_gestational_age']
         dfx['due_date'] = dfx['simdate'] + pd.to_timedelta(dfx['due_date_mth'], unit='w')
         df.loc[pregnant_idx, 'date_of_last_pregnancy'] = dfx.la_conception_date
         df.loc[pregnant_idx, 'la_due_date_current_pregnancy'] = dfx.due_date
@@ -857,27 +857,27 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['induced_labour'] = True
 
             if df.at[individual_id, 'is_pregnant'] & df.at[individual_id, 'is_alive']:
-                if 37 <= df.at[individual_id,'ac_gestational_age'] < 42:
+                if 37 <= df.at[individual_id,'ps_gestational_age'] < 42:
                     mni[individual_id]['labour_state'] = 'TL'
 
                     logger.info('This is LabourEvent, person %d has now gone into term labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif 24 <= df.at[individual_id,'ac_gestational_age'] < 34:
+                elif 24 <= df.at[individual_id,'ps_gestational_age'] < 34:
                     mni[individual_id]['labour_state'] = 'EPTL'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.info('This is LabourEvent, person %d has now gone into early preterm labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif 37 > df.at[individual_id,'ac_gestational_age'] >= 34:
+                elif 37 > df.at[individual_id,'ps_gestational_age'] >= 34:
                     mni[individual_id]['labour_state'] = 'LPTL'
                     df.at[individual_id, 'la_has_previously_delivered_preterm'] = True
 
                     logger.info('This is LabourEvent, person %d has now gone into late preterm labour on date %s',
                                 individual_id, self.sim.date)
 
-                elif df.at[individual_id,'ac_gestational_age'] > 41:
+                elif df.at[individual_id,'ps_gestational_age'] > 41:
                     mni[individual_id]['labour_state'] = 'POTL'
 
                     logger.info('This is LabourEvent, person %d is now overdue labour and is post-term  on date %s',
@@ -1166,7 +1166,7 @@ class BirthEvent(Event, IndividualScopeEventMixin):
             ~df.at[mother_id,'la_still_birth_current_pregnancy']:
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'la_parity'] += 1
-            df.at[mother_id,'ac_gestational_age'] = 0
+            df.at[mother_id, 'ps_gestational_age'] = 0
             df.at[mother_id, 'is_pregnant'] = False
             df.at[mother_id,'date_of_last_pregnancy'] = pd.NaT
 

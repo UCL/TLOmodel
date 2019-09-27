@@ -170,77 +170,8 @@ class AbortionAndMiscarriage(Module):
         # Todo: Have yet to confirm this runs as HealthBurden is not registered presently
 
 
-class CheckIfNewlyPregnantWomanWillMiscarry(Event, IndividualScopeEventMixin):
-    """This event checks if a woman who is newly pregnant will experience a miscarriage. """
-
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
-
-    def apply(self, individual_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
-
-        # First we identify if a newly pregnant woman has any risk factors that predispose her to a miscarriage
-        if (df.at[individual_id, 'am_total_miscarriages'] >= 1) & (df.at[individual_id, 'age_years'] <= 30) & \
-           (df.at[individual_id, 'la_parity'] < 1 > 3):
-            rf1 = params['rr_miscarriage_prevmiscarriage']
-        else:
-            rf1 = 1
-
-        if (df.at[individual_id, 'am_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] >= 35) & \
-           (df.at[individual_id, 'la_parity'] < 1 > 3):
-            rf2 = params['rr_miscarriage_35']
-        else:
-            rf2 = 1
-
-        if (df.at[individual_id, 'am_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] >= 31) & \
-           (df.at[individual_id, 'age_years'] <= 34) & (df.at[individual_id,'la_parity'] < 1 > 3):
-            rf3 = params['rr_miscarriage_3134']
-        else:
-            rf3 = 1
-
-        if (df.at[individual_id, 'am_total_miscarriages'] == 0) & (df.at[individual_id, 'age_years'] <= 30) & \
-           (df.at[individual_id, 'la_parity'] >= 1 <= 3):
-            rf4 = params['rr_miscarriage_grav4']
-        else:
-            rf4 = 1
-
-        # Next we multiply the baseline rate of miscarriage in the reference population who are absent of riskfactors
-        # by the product of the relative rates for any risk factors this mother may have
-        riskfactors = rf1 * rf2 * rf3 * rf4
-
-        if riskfactors == 1:
-            eff_cumu_risk_miscarriage = params['cumu_risk_miscarriage']
-        else:
-            eff_cumu_risk_miscarriage = riskfactors * params['cumu_risk_miscarriage']
-
-        # Finally a random draw is used to determine if this woman will experience a miscarriage for this pregnancy
-        random = self.sim.rng.random_sample(size=1)
-        if random < eff_cumu_risk_miscarriage:
-
-            # If a newly pregnant woman will miscarry her pregnancy, a random date within 24 weeks of conception is
-            # generated, the date of miscarriage is scheduled for this day
-
-            # (N.b malawi date of viability is 28 weeks, we using 24 as cut off to allow for very PTB.)
-
-            random_draw = self.sim.rng.exponential(scale=0.5, size=1)  # Todo: confirm the correct value for the scale
-            random_days = pd.to_timedelta(random_draw[0] * 168, unit='d')
-            miscarriage_date = self.sim.date + random_days
-
-            self.sim.schedule_event(MiscarriageAndPostMiscarriageComplicationsEvent(self.module, individual_id,
-                                                                                    cause='post miscarriage'),
-                                    miscarriage_date)
-
-            # And for women who do not have a miscarriage we move them to labour scheduler to determine at what
-            # gestation they will go into labour
-
-        else:
-            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], individual_id, cause='pregnancy')
-                                    , self.sim.date)
-
-
 class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEventMixin):
+    # TODO: THIS ISNT BEING SCHEDULED YET.
 
     """reset a woman's pregnancy properties as she has miscarried. Also calculates risk of complications following
      miscarriage """
@@ -259,7 +190,7 @@ class MiscarriageAndPostMiscarriageComplicationsEvent(Event, IndividualScopeEven
             df.at[individual_id, 'am_total_miscarriages'] = +1
             df.at[individual_id, 'am_date_most_recent_miscarriage'] = self.sim.date
 
-            df.at[individual_id, 'ac_gestational_age'] = 0
+            df.at[individual_id, 'ps_gestational_age'] = 0
 
             logger.info('This is MiscarriageAndPostMiscarriageComplicationsEvent, person %d has experienced a '
                         'miscarriage on date %s and is no longer pregnant', individual_id, self.sim.date)
@@ -300,26 +231,26 @@ class InducedAbortionEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
 
         # First we create an index of all the women who have become pregnant in the previous 6 months
-        pregnant_past_six_mths = df.index[df.is_pregnant & df.is_alive & (df.ac_gestational_age <= 27) &
-                                          (df.date_of_last_pregnancy > self.sim.start_date)]
+#        pregnant_past_six_mths = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age <= 27) &
+#                                          (df.date_of_last_pregnancy > self.sim.start_date)]
 
         # We then apply the risk of induced abortion to these women
-        incidence_abortion = pd.Series(params['incidence_induced_abortion'], index=pregnant_past_six_mths)
+#        incidence_abortion = pd.Series(params['incidence_induced_abortion'], index=pregnant_past_six_mths)
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_six_mths)),
-                                index=df.index[df.is_pregnant & df.is_alive &
-                                               (df.ac_gestational_age <= 27) &
-                                               (df.date_of_last_pregnancy > self.sim.start_date)])
+#        random_draw = pd.Series(self.module.rng.random_sample(size=len(pregnant_past_six_mths)),
+#                                index=df.index[df.is_pregnant & df.is_alive &
+#                                               (df.ps_gestational_age <= 27) &
+#                                               (df.date_of_last_pregnancy > self.sim.start_date)])
 
-        dfx = pd.concat([incidence_abortion, random_draw], axis=1)
-        dfx.columns = ['incidence_abortion', 'random_draw']
-        idx_induced_abortion = dfx.index[dfx.incidence_abortion > dfx.random_draw]
+#        dfx = pd.concat([incidence_abortion, random_draw], axis=1)
+#        dfx.columns = ['incidence_abortion', 'random_draw']
+#        idx_induced_abortion = dfx.index[dfx.incidence_abortion > dfx.random_draw]
 
         # For women who will undergo induced abortion we reset their pregnancy properties and update the data frame
-        df.loc[idx_induced_abortion, 'is_pregnant'] = False
-        df.loc[idx_induced_abortion, 'am_total_induced_abortion'] = +1
-        df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date  # (is this needed)
-        df.loc[idx_induced_abortion, 'ac_gestational_age'] = 0
+#        df.loc[idx_induced_abortion, 'is_pregnant'] = False
+#        df.loc[idx_induced_abortion, 'am_total_induced_abortion'] = +1
+#        df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date  # (is this needed)
+#        df.loc[idx_induced_abortion, 'ps_gestational_age'] = 0
 
         # Todo: Please see SBA master sheet for epi queires
         # Todo: Apply safety level and complications

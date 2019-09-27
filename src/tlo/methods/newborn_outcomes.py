@@ -415,7 +415,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
         # TODO: consider applying the incidence of motor impairment, cognitive impairment , retinopathy (CP?) to allow
         #  for DALY counting
 
-        if df.at[individual_id, 'nb_early_preterm'] & (df.at[mother_id,'ac_gestational_age'] < 32):
+        if df.at[individual_id, 'nb_early_preterm'] & (df.at[mother_id,'ps_gestational_age'] < 32):
             # LINKED WITH <32 weeks gest & VLBW/LBW (maybe exclude others)
             rf1 = 1
             riskfactors = rf1
