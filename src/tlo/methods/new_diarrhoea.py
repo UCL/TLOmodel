@@ -44,6 +44,22 @@ class NewDiarrhoea(Module):
             Parameter(Types.LIST,
                       'incidence of diarrhoea caused by ST-ETEC in age groups 0-11, 12-23, 24-59 months'
                       ),
+        'base_incidence_diarrhoea_by_sapovirus':
+            Parameter(Types.LIST,
+                      'incidence of diarrhoea caused by sapovirus in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_incidence_diarrhoea_by_norovirus':
+            Parameter(Types.LIST,
+                      'incidence of diarrhoea caused by norovirus in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_incidence_diarrhoea_by_astrovirus':
+            Parameter(Types.LIST,
+                      'incidence of diarrhoea caused by astrovirus in age groups 0-11, 12-23, 24-59 months'
+                      ),
+        'base_incidence_diarrhoea_by_tEPEC':
+            Parameter(Types.LIST,
+                      'incidence of diarrhoea caused by tEPEC in age groups 0-11, 12-23, 24-59 months'
+                      ),
         'rr_gi_diarrhoea_HHhandwashing':
             Parameter(Types.REAL, 'relative rate of diarrhoea with household handwashing with soap'
                       ),
@@ -155,7 +171,8 @@ class NewDiarrhoea(Module):
         'gi_diarrhoea_status': Property(Types.BOOL, 'symptomatic infection - diarrhoea disease'),
         'gi_diarrhoea_pathogen': Property(Types.CATEGORICAL, 'attributable pathogen for diarrhoea',
                                           categories=['rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
-                                                      'campylobacter', 'ST-ETEC']),
+                                                      'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus',
+                                                      'astrovirus', 'tEPEC']),
         'gi_diarrhoea_acute_type': Property(Types.CATEGORICAL, 'clinical acute diarrhoea type',
                                             categories=['dysentery', 'acute watery diarrhoea']),
         'gi_dehydration_status': Property(Types.CATEGORICAL, 'dehydration status',
@@ -173,6 +190,8 @@ class NewDiarrhoea(Module):
         # symptoms of diarrhoea for care seeking
         'di_diarrhoea_loose_watery_stools': Property(Types.BOOL, 'diarrhoea symptoms - loose or watery stools'),
         'di_blood_in_stools': Property(Types.BOOL, 'dysentery symptoms - blood in the stools'),
+        'di_dehydration_present': Property(Types.BOOL, 'diarrhoea symptoms - dehydration'),
+        'di_fever': Property(Types.BOOL, 'diarrhoea symptoms - associated fever'),
         'di_diarrhoea_over14days': Property(Types.BOOL, 'persistent diarrhoea - diarrhoea for 14 days or more'),
         'di_any_general_danger_sign': Property
         (Types.BOOL,
@@ -269,6 +288,11 @@ class NewDiarrhoea(Module):
             dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value2'],
             dfd.loc['base_incidence_diarrhoea_by_ETEC', 'value3']
             ]
+        p['base_incidence_diarrhoea_by_sapovirus'] = [0.005, 0.005, 0.005]
+        p['base_incidence_diarrhoea_by_norovirus'] = [0.005, 0.005, 0.005]
+        p['base_incidence_diarrhoea_by_astrovirus'] = [0.005, 0.005, 0.005]
+        p['base_incidence_diarrhoea_by_EPEC'] = [0.005, 0.005, 0.005]
+
         p['rr_gi_diarrhoea_HHhandwashing'] = dfd.loc['rr_gi_diarrhoea_HHhandwashing', 'value1']
         p['rr_gi_diarrhoea_improved_sanitation'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
         p['rr_gi_diarrhoea_clean_water'] = dfd.loc['rr_gi_diarrhoea_improved_sanitation', 'value1']
@@ -283,6 +307,43 @@ class NewDiarrhoea(Module):
         p['crypto_AWD'] = dfd.loc['proportion_AWD_by_crypto', 'value1']
         p['campylo_AWD'] = dfd.loc['proportion_AWD_by_campylo', 'value1']
         p['ETEC_AWD'] = dfd.loc['proportion_AWD_by_ETEC', 'value1']
+        p['sapovirus_AWD'] = dfd.loc['proportion_AWD_by_sapovirus', 'value1']
+        p['norovirus_AWD'] = dfd.loc['proportion_AWD_by_norovirus', 'value1']
+        p['astrovirus_AWD'] = dfd.loc['proportion_AWD_by_astrovirus', 'value1']
+        p['EPEC_AWD'] = dfd.loc['proportion_AWD_by_EPEC', 'value1']
+        # pathogens causing fever
+        p['rotavirus_fever'] = dfd.loc['fever_by_rotavirus', 'value1']
+        p['shigella_fever'] = dfd.loc['fever_by_shigella', 'value1']
+        p['adenovirus_fever'] = dfd.loc['fever_by_adenovirus', 'value1']
+        p['crypto_fever'] = dfd.loc['fever_by_crypto', 'value1']
+        p['campylo_fever'] = dfd.loc['fever_by_campylo', 'value1']
+        p['ETEC_fever'] = dfd.loc['fever_by_ETEC', 'value1']
+        p['sapovirus_fever'] = dfd.loc['fever_by_sapovirus', 'value1']
+        p['norovirus_fever'] = dfd.loc['fever_by_norovirus', 'value1']
+        p['astrovirus_fever'] = dfd.loc['fever_by_astrovirus', 'value1']
+        p['EPEC_fever'] = dfd.loc['fever_by_EPEC', 'value1']
+        # pathogens causing vomiting
+        p['rotavirus_vomiting'] = dfd.loc['vomiting_by_rotavirus', 'value1']
+        p['shigella_vomiting'] = dfd.loc['vomiting_by_shigella', 'value1']
+        p['adenovirus_vomiting'] = dfd.loc['vomiting_by_adenovirus', 'value1']
+        p['crypto_vomiting'] = dfd.loc['vomiting_by_crypto', 'value1']
+        p['campylo_vomiting'] = dfd.loc['vomiting_by_campylo', 'value1']
+        p['ETEC_vomiting'] = dfd.loc['vomiting_by_ETEC', 'value1']
+        p['sapovirus_vomiting'] = dfd.loc['vomiting_by_sapovirus', 'value1']
+        p['norovirus_vomiting'] = dfd.loc['vomiting_by_norovirus', 'value1']
+        p['astrovirus_vomiting'] = dfd.loc['vomiting_by_astrovirus', 'value1']
+        p['EPEC_vomiting'] = dfd.loc['vomiting_by_EPEC', 'value1']
+        # pathogens causing dehydration
+        p['rotavirus_dehydration'] = dfd.loc['dehydration_by_rotavirus', 'value1']
+        p['shigella_dehydration'] = dfd.loc['dehydration_by_shigella', 'value1']
+        p['adenovirus_dehydration'] = dfd.loc['dehydration_by_adenovirus', 'value1']
+        p['crypto_dehydration'] = dfd.loc['dehydration_by_crypto', 'value1']
+        p['campylo_dehydration'] = dfd.loc['dehydration_by_campylo', 'value1']
+        p['ETEC_dehydration'] = dfd.loc['dehydration_by_ETEC', 'value1']
+        p['sapovirus_dehydration'] = dfd.loc['dehydration_by_sapovirus', 'value1']
+        p['norovirus_dehydration'] = dfd.loc['dehydration_by_norovirus', 'value1']
+        p['astrovirus_dehydration'] = dfd.loc['dehydration_by_astrovirus', 'value1']
+        p['EPEC_dehydration'] = dfd.loc['dehydration_by_EPEC', 'value1']
         # parameters for acute diarrhoea becoming persistent
         p['prob_dysentery_become_persistent'] = dfd.loc['prob_dysentery_become_persistent', 'value1']
         p['prob_watery_diarr_become_persistent'] = dfd.loc['prob_watery_diarr_become_persistent', 'value1']
@@ -490,6 +551,22 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarrhoea_ETEC1 = pd.Series(m.base_incidence_diarrhoea_by_ETEC[1], index=df.index[no_diarrhoea1])
         diarrhoea_ETEC2 = pd.Series(m.base_incidence_diarrhoea_by_ETEC[2], index=df.index[no_diarrhoea2])
 
+        diarrhoea_sapovirus0 = pd.Series(m.base_incidence_diarrhoea_by_sapovirus[0], index=df.index[no_diarrhoea0])
+        diarrhoea_sapovirus1 = pd.Series(m.base_incidence_diarrhoea_by_sapovirus[1], index=df.index[no_diarrhoea1])
+        diarrhoea_sapovirus2 = pd.Series(m.base_incidence_diarrhoea_by_sapovirus[2], index=df.index[no_diarrhoea2])
+
+        diarrhoea_norovirus0 = pd.Series(m.base_incidence_diarrhoea_by_norovirus[0], index=df.index[no_diarrhoea0])
+        diarrhoea_norovirus1 = pd.Series(m.base_incidence_diarrhoea_by_norovirus[1], index=df.index[no_diarrhoea1])
+        diarrhoea_norovirus2 = pd.Series(m.base_incidence_diarrhoea_by_norovirus[2], index=df.index[no_diarrhoea2])
+
+        diarrhoea_astrovirus0 = pd.Series(m.base_incidence_diarrhoea_by_astrovirus[0], index=df.index[no_diarrhoea0])
+        diarrhoea_astrovirus1 = pd.Series(m.base_incidence_diarrhoea_by_astrovirus[1], index=df.index[no_diarrhoea1])
+        diarrhoea_astrovirus2 = pd.Series(m.base_incidence_diarrhoea_by_astrovirus[2], index=df.index[no_diarrhoea2])
+
+        diarrhoea_EPEC0 = pd.Series(m.base_incidence_diarrhoea_by_EPEC[0], index=df.index[no_diarrhoea0])
+        diarrhoea_EPEC1 = pd.Series(m.base_incidence_diarrhoea_by_EPEC[1], index=df.index[no_diarrhoea1])
+        diarrhoea_EPEC2 = pd.Series(m.base_incidence_diarrhoea_by_EPEC[2], index=df.index[no_diarrhoea2])
+
         # concatenating plus sorting
         eff_prob_rotavirus = pd.concat([diarrhoea_rotavirus0, diarrhoea_rotavirus1, diarrhoea_rotavirus2], axis=0).sort_index()
         eff_prob_shigella = pd.concat([diarrhoea_shigella0, diarrhoea_shigella1, diarrhoea_shigella2], axis=0).sort_index()
@@ -497,9 +574,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_crypto = pd.concat([diarrhoea_crypto0, diarrhoea_crypto1, diarrhoea_crypto2], axis=0).sort_index()
         eff_prob_campylo = pd.concat([diarrhoea_campylo0, diarrhoea_campylo1, diarrhoea_campylo2], axis=0).sort_index()
         eff_prob_ETEC = pd.concat([diarrhoea_ETEC0, diarrhoea_ETEC1, diarrhoea_ETEC2], axis=0).sort_index()
+        eff_prob_sapovirus = pd.concat([diarrhoea_sapovirus0, diarrhoea_sapovirus1, diarrhoea_sapovirus2], axis=0).sort_index()
+        eff_prob_norovirus = pd.concat([diarrhoea_norovirus0, diarrhoea_norovirus1, diarrhoea_norovirus2], axis=0).sort_index()
+        eff_prob_astrovirus = pd.concat([diarrhoea_astrovirus0, diarrhoea_astrovirus1, diarrhoea_astrovirus2], axis=0).sort_index()
+        eff_prob_EPEC = pd.concat([diarrhoea_EPEC0, diarrhoea_EPEC1, diarrhoea_EPEC2], axis=0).sort_index()
 
         eff_prob_all_pathogens = pd.concat([eff_prob_rotavirus, eff_prob_shigella, eff_prob_adenovirus,
-                                            eff_prob_crypto, eff_prob_campylo, eff_prob_ETEC], axis=1)
+                                            eff_prob_crypto, eff_prob_campylo, eff_prob_ETEC, eff_prob_sapovirus,
+                                            eff_prob_norovirus, eff_prob_astrovirus, eff_prob_EPEC], axis=1)
 
         eff_prob_all_pathogens.loc[no_diarrhoea_under5 & df.li_no_access_handwashing == False] \
             *= m.rr_gi_diarrhoea_HHhandwashing
@@ -522,7 +604,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         infection_probs = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
         infection_probs = infection_probs.cumsum(axis=1)
         infection_probs.columns = ['prob_none', 'rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
-                                   'campylobacter', 'ST-ETEC']
+                                   'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus', 'astrovirus', 'tEPEC']
         infection_probs['random_draw_all'] = random_draw_all
 
         for i, column in enumerate(infection_probs.columns):
@@ -544,8 +626,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         date_of_aquisition = self.sim.date + adding_days
         df.loc[incident_acute_diarrhoea, 'date_of_onset_diarrhoea'] = date_of_aquisition
 
+        # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
-
         logger.info('%s|diarrhoea_pathogens|%s', self.sim.date,
                     {'total': sum(pathogen_count),
                      'rotavirus': pathogen_count['rotavirus'],
@@ -554,10 +636,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'cryptosporidium': pathogen_count['cryptosporidium'],
                      'campylobacter': pathogen_count['campylobacter'],
                      'ETEC': pathogen_count['ST-ETEC'],
+                     'sapovirus': pathogen_count['sapovirus'],
+                     'norovirus': pathogen_count['norovirus'],
+                     'tEPEC': pathogen_count['tEPEC'],
                      })
 
         # ----------------- ASSIGN WHETHER IT IS DYSENTERY OR ACUTE WATERY DIARRHOEA ---------------------
-
+        # ----------------- ASSIGN SYMPTOMS OF FEVER, VOMITING AND DEHYDRATION ---------------------
+        # ROTAVIRUS ---------------------------------------------------
         diarr_rotavirus_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'rotavirus'] & incident_acute_diarrhoea
         p_acute_watery_rotavirus = pd.Series(self.module.rotavirus_AWD, index=diarr_rotavirus_idx)
@@ -567,8 +653,24 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diarr_rota_AWD_idx, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
         diarr_rota_dysentery = p_acute_watery_rotavirus < random_draw
         diarr_rota_dysentery_idx = p_acute_watery_rotavirus.index[diarr_rota_dysentery]
-        df.loc[diarr_rota_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        df.loc[diarr_rota_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery' # TODO:add blood in stools as a symptom
+        # fever
+        p_fever_rotavirus = pd.Series(self.module.rotavirus_fever, index=diarr_rotavirus_idx)
+        diarr_rota_fever = p_fever_rotavirus >= random_draw
+        diarr_rota_fever_idx = p_fever_rotavirus.index[diarr_rota_fever]
+        df.loc[diarr_rota_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_rotavirus = pd.Series(self.module.rotavirus_vomiting, index=diarr_rotavirus_idx)
+        diarr_rota_vomiting = p_vomiting_rotavirus >= random_draw
+        diarr_rota_vomiting_idx = p_vomiting_rotavirus.index[diarr_rota_vomiting]
+        df.loc[diarr_rota_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_rotavirus = pd.Series(self.module.rotavirus_dehydration, index=diarr_rotavirus_idx)
+        diarr_rota_dehydration = p_dehydration_rotavirus >= random_draw
+        diarr_rota_dehydration_idx = p_dehydration_rotavirus.index[diarr_rota_dehydration]
+        df.loc[diarr_rota_dehydration_idx, 'di_dehydration_present'] = True
 
+        # SHIGELLA ---------------------------------------------------
         diarr_shigella_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'shigella'] & incident_acute_diarrhoea
         p_acute_watery_shigella = pd.Series(self.module.shigella_AWD, index=diarr_shigella_idx)
@@ -579,7 +681,23 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_shigella_dysentery = p_acute_watery_shigella < random_draw1
         diarr_shigella_dysentery_idx = p_acute_watery_shigella.index[diarr_shigella_dysentery]
         df.loc[diarr_shigella_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_shigella = pd.Series(self.module.shigella_fever, index=diarr_shigella_idx)
+        diarr_shigella_fever = p_fever_shigella >= random_draw1
+        diarr_shigella_fever_idx = p_fever_shigella.index[diarr_shigella_fever]
+        df.loc[diarr_shigella_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_shigella = pd.Series(self.module.shigella_vomiting, index=diarr_shigella_idx)
+        diarr_shigella_vomiting = p_vomiting_shigella >= random_draw1
+        diarr_shigella_vomiting_idx = p_vomiting_shigella.index[diarr_shigella_vomiting]
+        df.loc[diarr_shigella_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_shigella = pd.Series(self.module.shigella_dehydration, index=diarr_shigella_idx)
+        diarr_shigella_dehydration = p_dehydration_shigella >= random_draw1
+        diarr_shigella_dehydration_idx = p_dehydration_shigella.index[diarr_shigella_dehydration]
+        df.loc[diarr_shigella_dehydration_idx, 'di_dehydration_present'] = True
 
+        # ADENOVIRUS ---------------------------------------------------
         diarr_adenovirus_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'adenovirus'] & incident_acute_diarrhoea
         p_acute_watery_adeno = pd.Series(self.module.adenovirus_AWD, index=diarr_adenovirus_idx)
@@ -590,7 +708,23 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_adeno_dysentery = p_acute_watery_adeno < random_draw2
         diarr_adeno_dysentery_idx = p_acute_watery_adeno.index[diarr_adeno_dysentery]
         df.loc[diarr_adeno_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_adenovirus = pd.Series(self.module.adenovirus_fever, index=diarr_adenovirus_idx)
+        diarr_adeno_fever = p_fever_adenovirus >= random_draw2
+        diarr_adeno_fever_idx = p_fever_adenovirus.index[diarr_adeno_fever]
+        df.loc[diarr_adeno_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_adenovirus = pd.Series(self.module.adenovirus_vomiting, index=diarr_adenovirus_idx)
+        diarr_adeno_vomiting = p_vomiting_adenovirus >= random_draw2
+        diarr_adeno_vomiting_idx = p_vomiting_adenovirus.index[diarr_adeno_vomiting]
+        df.loc[diarr_adeno_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_adenovirus = pd.Series(self.module.adenovirus_dehydration, index=diarr_adenovirus_idx)
+        diarr_adeno_dehydration = p_dehydration_adenovirus >= random_draw2
+        diarr_adeno_dehydration_idx = p_dehydration_adenovirus.index[diarr_adeno_dehydration]
+        df.loc[diarr_adeno_dehydration_idx, 'di_dehydration_present'] = True
 
+        # CRYPTOSPORIDIUM ---------------------------------------------------
         diarr_crypto_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'cryptosporidium'] & incident_acute_diarrhoea
         p_acute_watery_crypto = pd.Series(self.module.crypto_AWD, index=diarr_crypto_idx)
@@ -601,7 +735,23 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_crypto_dysentery = p_acute_watery_crypto < random_draw3
         diarr_crypto_dysentery_idx = p_acute_watery_crypto.index[diarr_crypto_dysentery]
         df.loc[diarr_crypto_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_crypto = pd.Series(self.module.crypto_fever, index=diarr_crypto_idx)
+        diarr_crypto_fever = p_fever_crypto >= random_draw3
+        diarr_crypto_fever_idx = p_fever_crypto.index[diarr_crypto_fever]
+        df.loc[diarr_crypto_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_crypto = pd.Series(self.module.crypto_vomiting, index=diarr_crypto_idx)
+        diarr_crypto_vomiting = p_vomiting_crypto >= random_draw3
+        diarr_crypto_vomiting_idx = p_vomiting_crypto.index[diarr_crypto_vomiting]
+        df.loc[diarr_crypto_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_crypto = pd.Series(self.module.crypto_dehydration, index=diarr_crypto_idx)
+        diarr_crypto_dehydration = p_dehydration_crypto >= random_draw3
+        diarr_crypto_dehydration_idx = p_dehydration_crypto.index[diarr_crypto_dehydration]
+        df.loc[diarr_crypto_dehydration_idx, 'di_dehydration_present'] = True
 
+        # CAMPYLOBACTER ---------------------------------------------------
         diarr_campylo_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'campylobacter'] & incident_acute_diarrhoea
         p_acute_watery_campylo = pd.Series(self.module.campylo_AWD, index=diarr_campylo_idx)
@@ -612,7 +762,23 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_campylo_dysentery = p_acute_watery_campylo < random_draw4
         diarr_campylo_dysentery_idx = p_acute_watery_campylo.index[diarr_campylo_dysentery]
         df.loc[diarr_campylo_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_campylo = pd.Series(self.module.campylo_fever, index=diarr_campylo_idx)
+        diarr_campylo_fever = p_fever_campylo >= random_draw4
+        diarr_campylo_fever_idx = p_fever_campylo.index[diarr_campylo_fever]
+        df.loc[diarr_campylo_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_campylo = pd.Series(self.module.campylo_vomiting, index=diarr_campylo_idx)
+        diarr_campylo_vomiting = p_vomiting_campylo >= random_draw4
+        diarr_campylo_vomiting_idx = p_vomiting_campylo.index[diarr_campylo_vomiting]
+        df.loc[diarr_campylo_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_campylo = pd.Series(self.module.campylo_dehydration, index=diarr_campylo_idx)
+        diarr_campylo_dehydration = p_dehydration_campylo >= random_draw4
+        diarr_campylo_dehydration_idx = p_dehydration_campylo.index[diarr_campylo_dehydration]
+        df.loc[diarr_campylo_dehydration_idx, 'di_dehydration_present'] = True
 
+        # ST-ETEC ---------------------------------------------------
         diarr_ETEC_idx = \
             df.index[df.gi_diarrhoea_pathogen == 'ST-ETEC'] & incident_acute_diarrhoea
         p_acute_watery_ETEC = pd.Series(self.module.ETEC_AWD, index=diarr_ETEC_idx)
@@ -623,6 +789,129 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarr_ETEC_dysentery = p_acute_watery_ETEC < random_draw5
         diarr_ETEC_dysentery_idx = p_acute_watery_ETEC.index[diarr_ETEC_dysentery]
         df.loc[diarr_ETEC_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_ETEC = pd.Series(self.module.ETEC_fever, index=diarr_ETEC_idx)
+        diarr_ETEC_fever = p_fever_ETEC >= random_draw5
+        diarr_ETEC_fever_idx = p_fever_ETEC.index[diarr_ETEC_fever]
+        df.loc[diarr_ETEC_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_ETEC = pd.Series(self.module.ETEC_vomiting, index=diarr_ETEC_idx)
+        diarr_ETEC_vomiting = p_vomiting_ETEC >= random_draw5
+        diarr_ETEC_vomiting_idx = p_vomiting_ETEC.index[diarr_ETEC_vomiting]
+        df.loc[diarr_ETEC_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_ETEC = pd.Series(self.module.ETEC_dehydration, index=diarr_ETEC_idx)
+        diarr_ETEC_dehydration = p_dehydration_ETEC >= random_draw5
+        diarr_ETEC_dehydration_idx = p_dehydration_ETEC.index[diarr_ETEC_dehydration]
+        df.loc[diarr_ETEC_dehydration_idx, 'di_dehydration_present'] = True
+
+        # SAPOVIRUS ---------------------------------------------------
+        diarr_sapovirus_idx = \
+            df.index[df.gi_diarrhoea_pathogen == 'sapovirus'] & incident_acute_diarrhoea
+        p_acute_watery_sapovirus = pd.Series(self.module.sapovirus_AWD, index=diarr_sapovirus_idx)
+        random_draw6 = pd.Series(rng.random_sample(size=len(diarr_sapovirus_idx)), index=diarr_sapovirus_idx)
+        diarr_sapovirus_AWD = p_acute_watery_sapovirus >= random_draw6
+        diarr_sapovirus_AWD_idx = p_acute_watery_sapovirus.index[diarr_sapovirus_AWD]
+        df.loc[diarr_sapovirus_AWD_idx, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+        diarr_sapovirus_dysentery = p_acute_watery_sapovirus < random_draw6
+        diarr_sapovirus_dysentery_idx = p_acute_watery_sapovirus.index[diarr_sapovirus_dysentery]
+        df.loc[diarr_sapovirus_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_sapovirus = pd.Series(self.module.sapovirus_fever, index=diarr_sapovirus_idx)
+        diarr_sapo_fever = p_fever_sapovirus >= random_draw6
+        diarr_sapo_fever_idx = p_fever_sapovirus.index[diarr_sapo_fever]
+        df.loc[diarr_sapo_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_sapovirus = pd.Series(self.module.sapovirus_vomiting, index=diarr_sapovirus_idx)
+        diarr_sapo_vomiting = p_vomiting_sapovirus >= random_draw6
+        diarr_sapo_vomiting_idx = p_vomiting_sapovirus.index[diarr_sapo_vomiting]
+        df.loc[diarr_sapo_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_sapovirus = pd.Series(self.module.sapovirus_dehydration, index=diarr_sapovirus_idx)
+        diarr_sapo_dehydration = p_dehydration_sapovirus >= random_draw6
+        diarr_sapo_dehydration_idx = p_dehydration_sapovirus.index[diarr_sapo_dehydration]
+        df.loc[diarr_sapo_dehydration_idx, 'di_dehydration_present'] = True
+
+        # NOROVIRUS ---------------------------------------------------
+        diarr_norovirus_idx = \
+            df.index[df.gi_diarrhoea_pathogen == 'norovirus'] & incident_acute_diarrhoea
+        p_acute_watery_norovirus = pd.Series(self.module.norovirus_AWD, index=diarr_norovirus_idx)
+        random_draw7 = pd.Series(rng.random_sample(size=len(diarr_norovirus_idx)), index=diarr_norovirus_idx)
+        diarr_norovirus_AWD = p_acute_watery_norovirus >= random_draw7
+        diarr_norovirus_AWD_idx = p_acute_watery_norovirus.index[diarr_norovirus_AWD]
+        df.loc[diarr_norovirus_AWD_idx, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+        diarr_norovirus_dysentery = p_acute_watery_norovirus < random_draw7
+        diarr_norovirus_dysentery_idx = p_acute_watery_norovirus.index[diarr_norovirus_dysentery]
+        df.loc[diarr_norovirus_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_norovirus = pd.Series(self.module.norovirus_fever, index=diarr_norovirus_idx)
+        diarr_noro_fever = p_fever_norovirus >= random_draw7
+        diarr_noro_fever_idx = p_fever_norovirus.index[diarr_noro_fever]
+        df.loc[diarr_noro_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_norovirus = pd.Series(self.module.norovirus_vomiting, index=diarr_norovirus_idx)
+        diarr_noro_vomiting = p_vomiting_norovirus >= random_draw7
+        diarr_noro_vomiting_idx = p_vomiting_norovirus.index[diarr_noro_vomiting]
+        df.loc[diarr_noro_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_norovirus = pd.Series(self.module.norovirus_dehydration, index=diarr_norovirus_idx)
+        diarr_noro_dehydration = p_dehydration_norovirus >= random_draw7
+        diarr_noro_dehydration_idx = p_dehydration_norovirus.index[diarr_noro_dehydration]
+        df.loc[diarr_noro_dehydration_idx, 'di_dehydration_present'] = True
+
+        # ASTROVIRUS ---------------------------------------------------
+        diarr_astrovirus_idx = \
+            df.index[df.gi_diarrhoea_pathogen == 'norovirus'] & incident_acute_diarrhoea
+        p_acute_watery_astrovirus = pd.Series(self.module.astrovirus_AWD, index=diarr_astrovirus_idx)
+        random_draw8 = pd.Series(rng.random_sample(size=len(diarr_astrovirus_idx)), index=diarr_astrovirus_idx)
+        diarr_astrovirus_AWD = p_acute_watery_astrovirus >= random_draw8
+        diarr_astrovirus_AWD_idx = p_acute_watery_astrovirus.index[diarr_astrovirus_AWD]
+        df.loc[diarr_astrovirus_AWD_idx, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+        diarr_astrovirus_dysentery = p_acute_watery_astrovirus < random_draw8
+        diarr_astrovirus_dysentery_idx = p_acute_watery_astrovirus.index[diarr_astrovirus_dysentery]
+        df.loc[diarr_astrovirus_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_astrovirus = pd.Series(self.module.astrovirus_fever, index=diarr_astrovirus_idx)
+        diarr_astro_fever = p_fever_astrovirus >= random_draw8
+        diarr_astro_fever_idx = p_fever_astrovirus.index[diarr_astro_fever]
+        df.loc[diarr_astro_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_astrovirus = pd.Series(self.module.astrovirus_vomiting, index=diarr_astrovirus_idx)
+        diarr_astro_vomiting = p_vomiting_astrovirus >= random_draw8
+        diarr_astro_vomiting_idx = p_vomiting_astrovirus.index[diarr_astro_vomiting]
+        df.loc[diarr_astro_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_astrovirus = pd.Series(self.module.astrovirus_dehydration, index=diarr_astrovirus_idx)
+        diarr_astro_dehydration = p_dehydration_astrovirus >= random_draw8
+        diarr_astro_dehydration_idx = p_dehydration_astrovirus.index[diarr_astro_dehydration]
+        df.loc[diarr_astro_dehydration_idx, 'di_dehydration_present'] = True
+
+        # tEPEC ---------------------------------------------------
+        diarr_EPEC_idx = \
+            df.index[df.gi_diarrhoea_pathogen == 'tEPEC'] & incident_acute_diarrhoea
+        p_acute_watery_EPEC = pd.Series(self.module.EPEC_AWD, index=diarr_EPEC_idx)
+        random_draw9 = pd.Series(rng.random_sample(size=len(diarr_EPEC_idx)), index=diarr_EPEC_idx)
+        diarr_EPEC_AWD = p_acute_watery_EPEC >= random_draw9
+        diarr_EPEC_AWD_idx = p_acute_watery_EPEC.index[diarr_EPEC_AWD]
+        df.loc[diarr_EPEC_AWD_idx, 'gi_diarrhoea_acute_type'] = 'acute watery diarrhoea'
+        diarr_EPEC_dysentery = p_acute_watery_EPEC < random_draw9
+        diarr_EPEC_dysentery_idx = p_acute_watery_EPEC.index[diarr_EPEC_dysentery]
+        df.loc[diarr_EPEC_dysentery_idx, 'gi_diarrhoea_acute_type'] = 'dysentery'
+        # fever
+        p_fever_EPEC = pd.Series(self.module.astrovirus_fever, index=diarr_EPEC_idx)
+        diarr_EPEC_fever = p_fever_EPEC >= random_draw9
+        diarr_EPEC_fever_idx = p_fever_EPEC.index[diarr_EPEC_fever]
+        df.loc[diarr_EPEC_fever_idx, 'di_sympt_fever'] = True
+        # vomiting
+        p_vomiting_EPEC = pd.Series(self.module.EPEC_vomiting, index=diarr_EPEC_idx)
+        diarr_EPEC_vomiting = p_vomiting_EPEC >= random_draw9
+        diarr_EPEC_vomiting_idx = p_vomiting_EPEC.index[diarr_EPEC_vomiting]
+        df.loc[diarr_EPEC_vomiting_idx, 'di_sympt_vomiting'] = True
+        # dehydration
+        p_dehydration_EPEC = pd.Series(self.module.EPEC_dehydration, index=diarr_EPEC_idx)
+        diarr_EPEC_dehydration = p_dehydration_EPEC >= random_draw9
+        diarr_EPEC_dehydration_idx = p_dehydration_EPEC.index[diarr_EPEC_dehydration]
+        df.loc[diarr_EPEC_dehydration_idx, 'di_dehydration_present'] = True
 
         # # # # # # # # # # # # ASSIGN DEHYDRATION LEVELS FOR ACUTE WATERY DIARRHOEA # # # # # # # # # # # #
         under5_watery_diarrhoea_idx = df.index[df.gi_diarrhoea_acute_type == 'acute watery diarrhoea'] & incident_acute_diarrhoea
