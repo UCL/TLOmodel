@@ -903,7 +903,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list (will become a heapq).
         # This will hold events that cannot occur today before they are added back to the heapq
         hold_over = list()
-
+        # t
         # 1) Get the events that are due today:
         list_of_event_due_today = list()
 
