@@ -615,7 +615,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
         dfx = dfx.cumsum(axis=1)
         dfx.columns = ['prob_none', 'rotavirus', 'shigella', 'adenovirus', 'cryptosporidium',
-                                   'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus', 'astrovirus', 'tEPEC']
+                       'campylobacter', 'ST-ETEC', 'sapovirus', 'norovirus', 'astrovirus', 'tEPEC']
         dfx['random_draw_all'] = random_draw_all
 
         for i, column in enumerate(dfx.columns):
@@ -987,14 +987,6 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                          'dehydration_present': df.at[child, 'gi_dehydration_status']})
 
         # # # # # # # # SYMPTOMS FROM ACUTE WATERY DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
-        df.loc[incident_acute_diarrhoea, 'di_diarrhoea_loose_watery_stools'] = True
-        df.loc[incident_acute_diarrhoea, 'di_blood_in_stools'] = False
-        df.loc[incident_acute_diarrhoea, 'di_diarrhoea_over14days'] = False
-
-        # # # # # # # # SYMPTOMS FROM DYSENTERY # # # # # # # # # # # # # # # # # # # # # # #
-        df.loc[under5_dysentery_idx, 'di_diarrhoea_loose_watery_stools'] = True
-        df.loc[under5_dysentery_idx, 'di_blood_in_stools'] = True
-        df.loc[under5_dysentery_idx, 'di_diarrhoea_over14days'] = False
 
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR ACUTE WATERY DIARRHOEA
@@ -1036,21 +1028,22 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # # # # #
         # Probability of prolonged diarrhoea (over 7 days)
-        # EPEC
-        p_prolonged_diarr_EPEC = pd.Series(self.module.EPEC_prolonged_diarr, index=diarr_EPEC_idx)
-        random_draw_a = pd.Series(rng.random_sample(size=len(diarr_EPEC_idx)), index=diarr_EPEC_idx)
-        prolonged_diarr_EPEC = p_prolonged_diarr_EPEC >= random_draw_a
-
         p_prolonged_diarr_rota = pd.Series(self.module.rotavirus_prolonged_diarr, index=diarr_rotavirus_idx)
-        random_draw_a = pd.Series(rng.random_sample(size=len(diarr_EPEC_idx)), index=diarr_rotavirus_idx)
-        prolonged_diarr_rota = p_prolonged_diarr_rota >= random_draw_a
-
         p_prolonged_diarr_shigella = pd.Series(self.module.shigella_prolonged_diarr, index=diarr_shigella_idx)
-        random_draw_a = pd.Series(rng.random_sample(size=len(diarr_shigella_idx)), index=diarr_shigella_idx)
-        prolonged_diarr_shigella = p_prolonged_diarr_shigella >= random_draw_a
+        p_prolonged_diarr_adenovirus = pd.Series(self.module.adenovirus_prolonged_diarr, index=diarr_adenovirus_idx)
+        p_prolonged_diarr_crypto = pd.Series(self.module.crypto_prolonged_diarr, index=diarr_crypto_idx)
+        p_prolonged_diarr_campylo = pd.Series(self.module.campylo_prolonged_diarr, index=diarr_campylo_idx)
+        p_prolonged_diarr_ETEC = pd.Series(self.module.ETEC_prolonged_diarr, index=diarr_ETEC_idx)
+        p_prolonged_diarr_sapovirus = pd.Series(self.module.sapovirus_prolonged_diarr, index=diarr_sapovirus_idx)
+        p_prolonged_diarr_norovirus = pd.Series(self.module.norovirus_prolonged_diarr, index=diarr_norovirus_idx)
+        p_prolonged_diarr_EPEC = pd.Series(self.module.EPEC_prolonged_diarr, index=diarr_EPEC_idx)
 
-        becoming_persistent = pd.concat([prolonged_diarr_rota, prolonged_diarr_shigella, prolonged_diarr_EPEC],
-                                        axis=0).sort_index()
+        # those diarrhoea cases who were prolonged, prob of becoming persistent # TODO: prolonged vs persistent
+        becoming_persistent = \
+            pd.concat([p_prolonged_diarr_rota, p_prolonged_diarr_shigella, p_prolonged_diarr_adenovirus,
+                       p_prolonged_diarr_crypto, p_prolonged_diarr_campylo, p_prolonged_diarr_ETEC,
+                       p_prolonged_diarr_sapovirus, p_prolonged_diarr_norovirus, p_prolonged_diarr_EPEC],
+                      axis=0).sort_index()
 
         becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
             *= m.rr_bec_persistent_age12to23
@@ -1067,11 +1060,10 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & df.continued_breastfeeding == True & (df.age_exact_years > 0.5) &
             (df.age_exact_years < 2)] *= m.rr_bec_persistent_cont_breast
 
-        # incident_acute_diarrhoea = df.index[df.is_alive & df.gi_diarrhoea_status & (df.age_exact_years < 5)]
-        random_draw_c = pd.Series(self.sim.rng.random_sample(size=len(becoming_persistent)),
-                                  index=becoming_persistent.index)
+        random_draw = pd.Series(self.sim.rng.random_sample(size=len(becoming_persistent)),
+                                index=becoming_persistent.index)
 
-        persistent_diarr = becoming_persistent > random_draw_c
+        persistent_diarr = becoming_persistent > random_draw
         persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
         df.loc[persistent_diarr_idx, 'gi_persistent_diarrhoea'] = True
 
