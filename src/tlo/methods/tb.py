@@ -1776,22 +1776,10 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Ipt'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVEL = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1805,6 +1793,21 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         # schedule end date of ipt after six months
         self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
     """
@@ -1819,21 +1822,9 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_IptHiv'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1848,6 +1839,18 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
         # schedule end date of ipt after six months and repeat call to HS for another prescription
         self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):
 
