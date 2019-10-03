@@ -60,3 +60,5 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
+
+# TODO: demonstrate the role of the squeee factors-- force overloading etc
