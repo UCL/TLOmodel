@@ -1,7 +1,7 @@
 import heapq as hp
 import logging
 from pathlib import Path
-
+import inspect
 import numpy as np
 import pandas as pd
 
@@ -205,8 +205,7 @@ class HealthSystem(Module):
         :param tclose: the latest date at which the hsi event should run
         """
 
-        #TODO: Enforce there being only one accepted facility level
-        #TODO: Add a check that this appointment is feasible with the configuration of officers
+        #TODO: Consider adding a check that this appointment is feasible with the configuration of officers
 
         logger.debug('HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
                      hsi_event.TREATMENT_ID, hsi_event.target)
@@ -215,12 +214,11 @@ class HealthSystem(Module):
 
         if type(hsi_event.target) is tlo.population.Population:  # check if hsi_event is this population-scoped
             # This is a poulation-scoped HSI event.
-            # It does not need APPT, CONS, ACCEPTED_FACILITY_LEVELS and ALERT_OTHER_DISEASES defined
+            # It does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES defined
 
             assert 'TREATMENT_ID' in dir(hsi_event)
             assert 'APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
-            assert 'CONS_FOOTPRINT' not in dir(hsi_event)
-            assert 'ACCEPTED_FACILITY_LEVELS' not in dir(hsi_event)
+            assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
             assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
 
         else:
@@ -232,23 +230,14 @@ class HealthSystem(Module):
 
             # Correct formated APPT_FOOTPRINT
             assert 'APPT_FOOTPRINT' in dir(hsi_event)
-            assert set(hsi_event.APPT_FOOTPRINT.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
-            # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
-            assert all(
-                np.asarray([(hsi_event.APPT_FOOTPRINT[k]) for k in hsi_event.APPT_FOOTPRINT.keys()]) >= 0)
-            assert not all(value == 0 for value in hsi_event.APPT_FOOTPRINT.values())
+            self.check_appt_footprint_format(hsi_event.APPT_FOOTPRINT)
 
-
-            # That it has an 'ACCEPTED_FACILITY_LEVELS' attribute (a list of Ok facility levels of a '*'
-            # If it a list with one element '*' in it, then update that with all the facility levels
-            assert 'ACCEPTED_FACILITY_LEVELS' in dir(hsi_event)
-            assert type(hsi_event.ACCEPTED_FACILITY_LEVELS) is list
-            assert len(hsi_event.ACCEPTED_FACILITY_LEVELS) > 0
-            all_fac_levels = list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
-            if hsi_event.ACCEPTED_FACILITY_LEVELS[0] == '*':
-                # replace the '*' with all the facility_levels being used
-                hsi_event.ACCEPTED_FACILITY_LEVELS = all_fac_levels
-            assert set(hsi_event.ACCEPTED_FACILITY_LEVELS).issubset(set(all_fac_levels))
+            # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
+            # (Integer specificying the facility level at which HSI_Event must occur)
+            assert 'ACCEPTED_FACILITY_LEVEL' in dir(hsi_event)
+            assert type(hsi_event.ACCEPTED_FACILITY_LEVEL) is int
+            assert hsi_event.ACCEPTED_FACILITY_LEVEL in \
+                   list(pd.unique(self.parameters['Facilities_For_Each_District']['Facility_Level']))
 
             # That it has a list for the other disease that will be alerted when it is run and that this make sense
             assert 'ALERT_OTHER_DISEASES' in dir(hsi_event)
@@ -258,6 +247,13 @@ class HealthSystem(Module):
                 if not (hsi_event.ALERT_OTHER_DISEASES[0] == '*'):
                     for d in hsi_event.ALERT_OTHER_DISEASES:
                         assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
+
+            # Check that it contains a did_not_run() function
+            assert 'did_not_run' in dir(hsi_event)
+
+            # Check that this can accept the squeeze argument
+            assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.apply).args
+
 
         # 2) Check topen, tclose and priority
 
@@ -326,8 +322,21 @@ class HealthSystem(Module):
                 self.sim.date,
                 hsi_event.TREATMENT_ID)
 
-    def broadcast_healthsystem_interaction(self, hsi_event):
+    def check_appt_footprint_format(self, appt_footprint):
+        """
+        This function runs some checks on the appt_footprint to ensure it is the right format
+        :return: None
+        """
 
+        assert set(appt_footprint.keys()) == set(self.parameters['Appt_Types_Table']['Appt_Type_Code'])
+        # All sensible numbers for the number of appointments requested (no negative and at least one appt required)
+
+        assert all(
+            np.asarray([(appt_footprint[k]) for k in appt_footprint.keys()]) >= 0)
+
+        assert not all(value == 0 for value in appt_footprint.values())
+
+    def broadcast_healthsystem_interaction(self, hsi_event):
         """
         This will alert disease modules than a treatment_id is occurring to a particular person.
         :param hsi_event: the health system interaction event
@@ -516,11 +525,12 @@ class HealthSystem(Module):
             the_appt_footprint = actual_appt_footprint
 
 
-        # Get the health_facilities available to this person (based on their district), and which are accepted by the
-        # hsi_event.ACCEPTED_FACILITY_LEVELS:
+        # Get the (one) health_facilities available to this person (based on their district), which is accepted by the
+        # hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility_id = fac_per_district.loc[(fac_per_district['District'] == the_district) &
-                                                                fac_per_district['Facility_Level'].isin(
-                                                                    hsi_event.ACCEPTED_FACILITY_LEVELS)]['Facility_ID'].values[0]
+                                               (fac_per_district['Facility_Level']==hsi_event.ACCEPTED_FACILITY_LEVEL),\
+                                               'Facility_ID'].values[0]
+
 
         the_facility_level = mfl.loc[mfl['Facility_ID']==the_facility_id,'Facility_Level'].values[0]
 
@@ -611,35 +621,44 @@ class HealthSystem(Module):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # 0) Check the format of the cons_req_as_footprint:
 
-            # TODO: Checks on the structure of the cons_footprint (refactor)
+        # Format is as follows:
+        #     * dict with two keys; Intervention_Package_Code and Item_Code
+        #     * For each, there is list of dicts, each dict giving code (i.e. package_code or item_code):quantity
+        #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
+        #     e.g.
+        #     cons_footprint = {
+        #                 'Intervention_Package_Code': [{my_pkg_code:1}],
+        #                 'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
+        #     }
 
-            # Format is as follows:
-            #     * dict with two keys; Intervention_Package_Code and Item_Code
-            #     * the value for each is a list of dict
-            #     * each dict gives code (package_code or item_code):quantity
-            #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
-            #
-            #     e.g.
-            #     cons_footprint = {
-            #                 'Intervention_Package_Code': [{my_pkg_code:1}],
-            #                 'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
-            #     }
+        # check basic formatting
+        assert 'Intervention_Package_Code' in cons_req_as_footprint
+        assert 'Item_Code' in cons_req_as_footprint
+        assert type(cons_req_as_footprint['Intervention_Package_Code']) is list
+        assert type(cons_req_as_footprint['Item_Code']) is list
 
-            # Check the CONS FOOTPRINT
-            # assert 'CONS_FOOTPRINT' in dir(hsi_event)
-            # assert type(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']) == list
-            # assert type(hsi_event.CONS_FOOTPRINT['Item_Code']) == list
-            # consumables = self.parameters['Consumables']
-            # assert (hsi_event.CONS_FOOTPRINT['Intervention_Package_Code'] == []) or (
-            #     set(hsi_event.CONS_FOOTPRINT['Intervention_Package_Code']).issubset(
-            #         consumables['Intervention_Pkg_Code']))
-            # assert (hsi_event.CONS_FOOTPRINT['Item_Code'] == []) or (
-            #     set(hsi_event.CONS_FOOTPRINT['Item_Code']).issubset(consumables['Item_Code']))
+        # check that consumables being required are in the database:
+        consumables = self.parameters['Consumables']
+
+        for pkg in cons_req_as_footprint['Intervention_Package_Code']:
+            pkg_code = list(pkg.keys())[0]
+            pkg_quant =  list(pkg.values())[0]
+            assert pkg_code in consumables['Intervention_Pkg_Code']
+            assert type(pkg_quant) is int
+            assert pkg_quant > 0
+
+        for itm in cons_req_as_footprint['Item_Code']:
+            itm_code = list(itm.keys())[0]
+            itm_quant =  list(itm.values())[0]
+            assert itm_code in consumables['Item_Code']
+            assert type(itm_quant) is int
+            assert itm_quant > 0
+
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
         # 0) Get information about the hsi_event
-        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVELS
+        the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         the_treatment_id = hsi_event.TREATMENT_ID
         the_person_id = hsi_event.target
 
@@ -648,7 +667,7 @@ class HealthSystem(Module):
         n_items_req = len(items_req)
 
         # 2) Determine if these are available at the relevant facility level
-        select_col = 'Available_Facility_Level_' + str(the_facility_level[0])
+        select_col = 'Available_Facility_Level_' + str(the_facility_level)
         availability = pd.DataFrame(data={'Available':self.cons_item_code_availability_today[select_col].copy()})
         items_req=items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
         assert len(items_req) == n_items_req
@@ -758,27 +777,27 @@ class HealthSystem(Module):
         return consumables_as_individual_items
 
 
-
-
-    def log_hsi_event(self, hsi_event, actual_appt_footprint, squeeze_factor):
+    def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None):
         """
         This will write to the log with a record that this HSI event has occured.
-        If this is an individual-level HSI event, it will also record the appointment footprint
+        If this is an individual-level HSI event, it will also record the actual appointment footprint
         :param hsi_event: The hsi event (containing the initial expectations of footprints)
-        :param actual_appt_footprint: The actual appt footprint to log
+        :param actual_appt_footprint: The actual appt footprint to log (if individual event)
+        :param squeeze_factor: The squueze factor (if individual event)
         """
 
         if type(hsi_event.target) is tlo.population.Population:
-            # Population HSI-Event:
-
+            # Population HSI-Event
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
             log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
             log_info['Person_ID'] = -1  # Junk code
-            log_info['Squeeze_Factor'] = squeeze_factor
+            log_info['Squeeze_Factor'] = 0
 
         else:
             # Individual HSI-Event:
+            assert actual_appt_footprint is not None
+            assert squeeze_factor is not None
 
             appts = actual_appt_footprint
             log_info = dict()
@@ -861,7 +880,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         * The resources used are 'occupied' (if individual level HSI event)
         * Other disease modules are alerted of the occurence of the HSI event (if individual level HSI event)
 
-    At this point, we can have multiple types of assumption regarding how these capabilities are modelled.
+    Here is where we can have multiple types of assumption regarding how these capabilities are modelled.
     """
 
     def __init__(self, module: HealthSystem):
@@ -903,93 +922,101 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list (will become a heapq).
         # This will hold events that cannot occur today before they are added back to the heapq
         hold_over = list()
-        # t
+
         # 1) Get the events that are due today:
-        list_of_event_due_today = list()
+        list_of_individual_hsi_event_tuples_due_today = list()
+        list_of_population_hsi_event_tuples_due_today = list()
 
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
             # Read the tuple and assemble into a dict 'next_event'
+
+            # Structure of tuple is:
             # Pos 0: priority,
             # Pos 1: topen,
             # Pos 2: hsi_event_queue_counter,
             # Pos 3: tclose,
             # Pos 4: the hsi_event itself
 
-            next_event = {
-                'priority': next_event_tuple[0],
-                'topen': next_event_tuple[1],
-                'tclose': next_event_tuple[3],
-                'object': next_event_tuple[4]}
+            event = next_event_tuple[4]
 
-            event = next_event['object']
 
-            if self.sim.date > next_event['tclose']:
-                # The event has expired, do nothing more
+            if self.sim.date > next_event_tuple[3]:
+                # The event has expired (after tclose), do nothing more
                 pass
 
-            elif self.sim.date < next_event['topen']:
-                # The event is not yet due, add to the hold-over list
+            elif self.sim.date < next_event_tuple[1]:
+                # The event is not yet due (before topen), add to the hold-over list
                 hp.heappush(hold_over, next_event_tuple)
 
-                if next_event['priority'] == 2:
+                if next_event_tuple[0] == 2:
+                    # Check the priority
                     # If the next event is not due and has low priority, then stop looking through the heapq
                     # as all other events will also not be due.
                     break
 
             else:
-                # The event is now due to run today
-                # Assemble the set of events that are due to run today
-                # The list is ordered by priority and then due date.
-                list_of_event_due_today.append(next_event['object'])
+                # The event is now due to run today.
+                # Add it to the list of events due today (individual or population level)
+                # NB. These list is ordered by priority and then due date
+
+                is_pop_level_hsi_event = type(event.target) is tlo.population.Population
+                if is_pop_level_hsi_event:
+                    list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
+                else:
+                    list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
 
 
-        # <<>>><<>>) Add back to the HSI_EVENT_QUEUE heapq all those events which are eligible to run but which did not
-        while len(hold_over) > 0:
-            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
+        # 2) Run population-level HSI events
+        while len(list_of_population_hsi_event_tuples_due_today)>0:
+            pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
 
+            pop_level_hsi_event = pop_level_hsi_event_tuple[4]
+            pop_level_hsi_event.run()
+            self.module.log_hsi_event(hsi_event=event)
 
-        # 2) Get the capabilities that are available today and prepare dataframe to store all the calls for today
+        # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
 
         # dataframe to store all the calls to the healthsystem today
-        all_calls_today = pd.DataFrame(index=current_capabilities.index)
+        df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(index=current_capabilities.index)
 
-        if len(list_of_event_due_today)>0:
+        if len(list_of_individual_hsi_event_tuples_due_today)>0:
 
-            # 3) Examine total call on health officers time from the HSI events that are due today
+            # 4) Examine total call on health officers time from the HSI events that are due today
 
-            # For all events in 'list_of_event_due_today', expand the appt-footprint of the event into give the demands on
+            # For all events in 'list_of_individual_hsi_event_tuples_due_today', expand the appt-footprint of the event into give the demands on
             #  each officer-type in each facility_id. [Name of columns is the position in the list of event_due_today)
 
-            for ev_num in np.arange(0, len(list_of_event_due_today)):
-                call = self.module.get_appt_footprint_as_time_request(list_of_event_due_today[ev_num])
-                call_df = pd.DataFrame(data={ev_num:call})
-                all_calls_today = all_calls_today.merge(call_df,
+            for ev_num in np.arange(0, len(list_of_individual_hsi_event_tuples_due_today)):
+                # get footprint of hsi event
+                footprint_of_individual_level_hsi_event = self.module.get_appt_footprint_as_time_request(hsi_event=(list_of_individual_hsi_event_tuples_due_today[ev_num][4]))
+
+                # append it to the dataframe (TODO: using merge, could use record
+                df_footprints_of_all_individual_level_hsi_event = df_footprints_of_all_individual_level_hsi_event.merge(pd.DataFrame(data={ev_num:footprint_of_individual_level_hsi_event}),
                                                         right_index=True,
                                                         left_index=True,
                                                         how='left')
-            all_calls_today = all_calls_today.fillna(0)
-            # TODO: ASSERT THAT MERGE IS NOT causing rows to be added to the dataframe because there are duplictae indicies in the cal
 
+            df_footprints_of_all_individual_level_hsi_event = df_footprints_of_all_individual_level_hsi_event.fillna(0)
+            assert len(df_footprints_of_all_individual_level_hsi_event) == len(list_of_individual_hsi_event_tuples_due_today)
 
-            # 4) Estimate Squeeze-Factors for today
-
+            # 5) Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints==0:
                 # For Mode 0 (no Contraints), the squeeze factors are all zero.
-                squeeze_factor_per_hsi_event = [0] * len(all_calls_today.columns)
+                squeeze_factor_per_hsi_event = [0] * len(df_footprints_of_all_individual_level_hsi_event.columns)
 
             else:
                 # For Other Modes, the squeeze factors must be computed
                 squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                                                                all_calls_today = all_calls_today,
+                                                                all_calls_today = df_footprints_of_all_individual_level_hsi_event,
                                                                 current_capabilities = current_capabilities)
 
 
-            # 5) For each event, determine if run or not, and run if so.
-            for ev_num in np.arange(0, len(list_of_event_due_today)):
-                event = list_of_event_due_today[ev_num]
+            # 6) For each event, determine if run or not, and run if so.
+            for ev_num in np.arange(0, len(list_of_individual_hsi_event_tuples_due_today)):
+                event = list_of_individual_hsi_event_tuples_due_today[ev_num][4]
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
                 ok_to_run = (self.module.mode_appt_constraints==0)  \
@@ -1009,10 +1036,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     if (actual_appt_footprint is not None):
                         # The returned footprint is different to the expected footprint: so must update load factors
 
-                        # TODO; Check on the format of appt_footprint (refactor)
+                        # check its formatting:
+                        self.module.check_appt_footprint_format(actual_appt_footprint)
+
+                        # Update load factors:
                         updated_call = self.module.get_appt_footprint_as_time_request(event, actual_appt_footprint)
-                        all_calls_today.loc[updated_call.index, ev_num] = updated_call
-                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(all_calls_today = all_calls_today,
+                        df_footprints_of_all_individual_level_hsi_event.loc[updated_call.index, ev_num] = updated_call
+                        squeeze_factor_per_hsi_event = self.get_squeeze_factors(all_calls_today = df_footprints_of_all_individual_level_hsi_event,
                                                                                 current_capabilities = current_capabilities)
                     else:
                         # no actual footprint is returned so take the initial declaration as the actual
@@ -1024,14 +1054,23 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                               squeeze_factor = squeeze_factor)
 
                 else:
-                    # Do not run, add to the hold-over queue
-                    # TODO
-                    pass
+                    # Do not run,
+                    # Call did_not_run for the hsi_event
+                    event.did_not_run()
+
+                    # add to the hold-over queue
+                    hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
 
-        # 6) After completing routine for the day, log total usage of the facilities
+
+        # 7) Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run
+        while len(hold_over) > 0:
+            hp.heappush(self.module.HSI_EVENT_QUEUE, hp.heappop(hold_over))
+
+
+        # 8) After completing routine for the day, log total usage of the facilities
         self.module.log_current_capabilities(current_capabilities= current_capabilities,
-                                             all_calls_today = all_calls_today)
+                                             all_calls_today = df_footprints_of_all_individual_level_hsi_event)
 
         # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
 
