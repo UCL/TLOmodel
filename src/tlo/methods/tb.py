@@ -991,7 +991,7 @@ class HSI_TbScreening(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL =0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_TbScreening, a screening appointment for person %d', person_id)
 
         df = self.sim.population.props
@@ -1043,7 +1043,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Tb_SputumTest, a first appointment for person %d', person_id)
 
         # log the consumables being used
@@ -1201,7 +1201,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("This is HSI_Tb_XpertTest giving xpert test for person %d", person_id)
 
         df = self.sim.population.props
@@ -1363,7 +1363,7 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1428,7 +1428,7 @@ class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1493,7 +1493,7 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1558,7 +1558,7 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['tb'].parameters
@@ -1624,7 +1624,7 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['tb'].parameters
@@ -1692,7 +1692,7 @@ class HSI_Tb_FollowUp(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         # nothing needs to happen here, just log the appt
         logger.debug("Follow up appt for tb case %d", person_id)
 
@@ -1782,7 +1782,7 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("Starting IPT for person %d", person_id)
 
         df = self.sim.population.props
@@ -1828,7 +1828,7 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("Starting IPT for HIV+ person %d", person_id)
 
         df = self.sim.population.props

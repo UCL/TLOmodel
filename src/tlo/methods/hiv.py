@@ -1223,7 +1223,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             'This is HSI_Hiv_PresentsForCareWithSymptoms, giving a test in the first appointment for person %d',
             person_id)
@@ -1287,7 +1287,7 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Hiv_InfantScreening, a first appointment for infant %d', person_id)
 
         df = self.sim.population.props
@@ -1361,7 +1361,7 @@ class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
         # # Define the necessary information for an HSI (Population level)
         self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
 
-    def apply(self, population):
+    def apply(self, population, squeeze_factor):
         logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
 
         # Label the relevant people as having had contact with the 'behaviour change' intervention
@@ -1392,7 +1392,7 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             'This is HSI_Hiv_OutreachIndividual, giving a test in the first appointment for person %d',
             person_id)
@@ -1453,7 +1453,7 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             'This is HSI_Hiv_Prep, giving a test and PrEP for person %d', person_id)
 
@@ -1528,7 +1528,7 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Hiv_StartInfantProphylaxis: initiating treatment for person %d', person_id)
 
         df = self.sim.population.props
@@ -1578,7 +1578,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Hiv_StartInfantTreatment: initiating treatment for person %d', person_id)
 
         # ----------------------------------- ASSIGN ART ADHERENCE PROPERTIES -----------------------------------
@@ -1696,7 +1696,7 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         logger.debug('This is HSI_Hiv_StartTreatment: initiating treatment for person %d', person_id)
 
@@ -1825,7 +1825,7 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             '....This is Hiv_TreatmentMonitoring: giving a viral load test to person %d',
             person_id)
@@ -1867,7 +1867,7 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         date_repeat_prescription = self.sim.date + DateOffset(months=3)
 
         logger.debug(
