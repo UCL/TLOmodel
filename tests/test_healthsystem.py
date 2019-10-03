@@ -93,39 +93,11 @@ def test_run_with_healthsystem_interventions_off():
     check_dtypes(sim)
 
 
-def test_run_with_healthsystem_interventions_on():
+def test_run_with_healthsystem_interventions_on_no_constraints():
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
-    # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-
-    # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-
-def test_run_with_healthsystem_interventions_on_but_no_capabilities():
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
 
@@ -133,8 +105,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           # this effectively removes capabilities of HS:
-                                           capabilities_coefficient=0.0))
+                                           mode_appt_constraints=0))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -142,20 +113,51 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
+
     check_dtypes(sim)
 
-    # read the results
-    fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+# TODO: pytests need to run with different modes in place with and without any capabilities
+# def test_run_with_healthsystem_interventions_on_but_no_capabilities():
+#     f = tempfile.NamedTemporaryFile(dir='.')
+#     fh = logging.FileHandler(f.name)
+#     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+#     fh.setFormatter(fr)
+#     logging.getLogger().addHandler(fh)
+#
+#     # Establish the simulation object
+#     sim = Simulation(start_date=start_date)
+#     sim.seed_rngs(0)
+#     # Define the service availability
+#     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+#
+#     # Register the appropriate modules
+#     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+#     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+#                                            service_availability=service_availability,
+#                                            # this effectively removes capabilities of HS:
+#                                            capabilities_coefficient=0.0,
+#                                            mode_appt_constraints=2))
+#     sim.register(lifestyle.Lifestyle())
+#     sim.register(mockitis.Mockitis())
+#     sim.register(chronicsyndrome.ChronicSyndrome())
+#
+#     # Run the simulation and flush the logger
+#     sim.make_initial_population(n=popsize)
+#     sim.simulate(end_date=end_date)
+#     check_dtypes(sim)
+#
+#     # read the results
+#     fh.flush()
+#     output = parse_log_file(f.name)
+#     f.close()
+#
+#     # check that there have been no HSI events (due to there being no capabilities)
+#     assert 'HSI_Event' not in output['tlo.methods.healthsystem'], 'one'
+#     assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
+#     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
 
-    # check that there have been no HSI events (due to there being no capabilities)
-    assert 'HSI_Event' not in output['tlo.methods.healthsystem'], 'one'
-    assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
-    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
 
-
-def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_appt_constraints():
+def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_constraints():
     f = tempfile.NamedTemporaryFile(dir='.')
     fh = logging.FileHandler(f.name)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
@@ -176,7 +178,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
                                            # this effectively remove capabilities of HS:
                                            capabilities_coefficient=0.0,
                                            # ... but this says ignore any constraints:
-                                           ignore_appt_constraints=True))
+                                           mode_appt_constraints=0))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
