@@ -1062,6 +1062,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # add to the hold-over queue
                     hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
+                    # TODO: log that the event did not run
 
 
         # 7) Add back to the HSI_EVENT_QUEUE heapq all those events which are still eligible to run but which did not run
