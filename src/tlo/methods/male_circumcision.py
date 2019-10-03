@@ -191,23 +191,11 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['MinorSurg'] = 1  # This requires one out patient
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'Male circumcision ', 'Intervention_Pkg_Code'])[
-                0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Circumcision'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
+        self.ACCEPTED_FACILITY_LEVELS = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -217,6 +205,23 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'mc_is_circumcised'] = True
         df.at[person_id, 'mc_date_circumcised'] = self.sim.date
+
+        # log the consumbales being used:
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[consumables['Intervention_Pkg'] == 'Male circumcision ', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 
 class CircumcisionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
