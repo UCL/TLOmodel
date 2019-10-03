@@ -78,7 +78,6 @@ class Skeleton(Module):
 
         If this is a disease module, register this disease module with the healthsystem:
         self.sim.modules['HealthSystem'].register_disease_module(self)
-
         """
 
         raise NotImplementedError
@@ -197,24 +196,27 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
         #   - update to reflect the appointments that are required
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
 
-        # Define the call on resources of this treatment event: Consumables
-        #   - get a blank consumables footprint
-        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        #   - update with any consumables that are needed. Look in ResourceFile_Consumables.csv
 
-        # Define the facilities at which this event can occur
-        #   - this will find all the available facility levels
-        the_accepted_facility_levels = \
-            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-                           ['Facility_Level']))
+        # Define the facilities at which this event can occur (only one is allowed)
+        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
+        #                            ['Facility_Level']))
+        the_accepted_facility_level = 0
+
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = the_accepted_facility_levels
+        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
         """ Do the action that take place in this health system interaction. """
+        pass
+
+    def did_not_run(self):
+        """
+        Do any action that is neccessary when the health system interaction is not run.
+        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities
+
+        """
         pass
