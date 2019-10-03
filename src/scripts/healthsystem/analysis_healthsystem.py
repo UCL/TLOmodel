@@ -45,7 +45,8 @@ service_availability = ['*']
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       service_availability=service_availability))
+                                       service_availability=service_availability,
+                                       mode_appt_constraints=0))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
