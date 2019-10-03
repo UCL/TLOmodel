@@ -209,8 +209,10 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
-        """ Do the action that take place in this health system interaction. """
+    def apply(self, person_id, squeeze_factor):
+        """
+        Do the action that take place in this health system interaction, in light of squeeze_factor
+        """
         pass
 
     def did_not_run(self):

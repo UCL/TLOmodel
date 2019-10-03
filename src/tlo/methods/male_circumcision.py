@@ -198,7 +198,7 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVELS = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Circumcision_PresentsForCare, a first appointment for person %d', person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
