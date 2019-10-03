@@ -1217,22 +1217,9 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one outpatient appt
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = \
-            pd.unique(
-                consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
-                0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -1242,6 +1229,20 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
             person_id)
 
         df = self.sim.population.props
+
+        # Log the use of the HIV test:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = \
+            pd.unique(
+                consumables.loc[
+                    consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code'])[
+                0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
 
         df.at[person_id, 'hv_ever_tested'] = True
         df.at[person_id, 'hv_date_tested'] = self.sim.date
@@ -1263,6 +1264,9 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
+    def did_not_run(self):
+        pass
+
 
 
 class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
@@ -1277,24 +1281,10 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Peds'] = 1  # This requires one infant hiv appt
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
-        item_code2 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
-        item_code3 = pd.unique(consumables.loc[consumables['Items'] == 'HIV EIA Elisa test', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [item_code1, item_code2, item_code3]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TestingInfant'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1332,6 +1322,25 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
                                                                 priority=2,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
+
+
+        # log the consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        item_code1 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Blood collecting tube, 5 ml', 'Item_Code'])[0]
+        item_code2 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Gloves, exam, latex, disposable, pair', 'Item_Code'])[0]
+        item_code3 = pd.unique(consumables.loc[consumables['Items'] == 'HIV EIA Elisa test', 'Item_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [],
+            'Item_Code': [{item_code1:1}, {item_code2:1}, {item_code3:1}]
+        }
+
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 
 class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
@@ -1377,22 +1386,10 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
         the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code']
-        )[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1422,7 +1419,23 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
+        # log the consumables
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code']
+        )[0]
 
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+
+
+    def did_not_run(self):
+        pass
 
 class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
 
@@ -1434,28 +1447,10 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
         the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code1 = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code']
-        )[0]
-
-        item_code1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tenofovir(TDF) / Emtricitabine(FTC), tablet, 300 / 200 mg',
-                            'Item_Code']
-        )[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': [item_code1]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Prep'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1489,6 +1484,28 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
         else:
             df.at[person_id, 'hv_on_art'] = 2
 
+        # Log the consumbales being used:
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code1 = pd.unique(
+            consumables.loc[consumables['Intervention_Pkg'] == 'HIV Testing Services', 'Intervention_Pkg_Code']
+        )[0]
+
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Tenofovir(TDF) / Emtricitabine(FTC), tablet, 300 / 200 mg',
+                            'Item_Code']
+        )[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': [{item_code1:1}]
+        }
+
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
     """
@@ -1504,22 +1521,11 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         the_appt_footprint['Peds'] = 1  # This requires one outpatient appt
         the_appt_footprint['Under5OPD'] = 1  # general child outpatient appt
 
-        # TODO: get the correct consumables listing cotrim + NVP/AZT
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'PMTCT',
-                                              'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1536,6 +1542,22 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
         # schedule end date of ARVs after 6-12 weeks
         self.sim.schedule_event(HivARVEndEvent(self, person_id), self.sim.date + DateOffset(weeks=12))
 
+        # Log consumbales being used:
+        # TODO: get the correct consumables listing cotrim + NVP/AZT
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] == 'PMTCT',
+                                              'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+
+    def did_not_run(self):
+        pass
 
 class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
     """
@@ -1550,24 +1572,10 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Peds'] = 1  # This requires one out patient appt
         the_appt_footprint['Under5OPD'] = 1  # hiv-specific appt type
 
-        # TODO: get the correct consumables listing, ART + cotrim
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'PMTCT', 'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[
-                                  consumables[
-                                      'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1651,6 +1659,23 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
                                                                 tclose=None
                                                                 )
 
+        # log consumables being used
+        # TODO: get the correct consumables listing, ART + cotrim
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] == 'PMTCT', 'Intervention_Pkg_Code'])[0]
+        pkg_code2 = pd.unique(consumables.loc[
+                                  consumables[
+                                      'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
     """
@@ -1665,20 +1690,10 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # hiv-specific appt type
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [item_code1]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1775,7 +1790,20 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
                                                                 topen=now,
                                                                 tclose=None
                                                                 )
+        # log consumbales being used:
 
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        item_code1 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [],
+            'Item_Code': [{item_code1:1}]
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
     """
@@ -1790,22 +1818,11 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
         the_appt_footprint['LabMolec'] = 1  # This requires one lab appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'Viral Load', 'Intervention_Pkg_Code'])[
-            0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVELS = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1813,6 +1830,21 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
             '....This is Hiv_TreatmentMonitoring: giving a viral load test to person %d',
             person_id)
 
+        # log consumables being used:
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(consumables.loc[consumables[
+                                                  'Intervention_Pkg'] == 'Viral Load', 'Intervention_Pkg_Code'])[
+            0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 # TODO: find ART in consumables, how long is prescription for?
 # schedule next Tx in 3 months
@@ -1829,21 +1861,10 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
         # TODO need a pharmacy appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [],
-            'Item_Code': [item_code1]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Treatment'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVELS = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1861,7 +1882,20 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
                                                             topen=date_repeat_prescription,
                                                             tclose=date_repeat_prescription + DateOffset(weeks=2)
                                                             )
+        # log the consumables being used;
+        # Get the consumables required
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        item_code1 = \
+            pd.unique(consumables.loc[consumables['Items'] == 'Adult First line 1A d4T-based', 'Item_Code'])[0]
 
+        the_cons_footprint = {
+            'Intervention_Package_Code': [],
+            'Item_Code': [{item_code1:1}]
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+
+    def did_not_run(self):
+        pass
 
 # ---------------------------------------------------------------------------
 #   Transitions on/off treatment
