@@ -1220,7 +1220,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1822,7 +1822,7 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = 1
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -1864,7 +1864,7 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Treatment'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = 0
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
