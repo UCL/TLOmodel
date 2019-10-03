@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods import demography, tb
 
 logger = logging.getLogger(__name__)
@@ -1201,7 +1201,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 # TODO: add PrEP
 
-class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
+class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the
@@ -1242,7 +1242,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,cons_req_as_footprint=the_cons_footprint)
 
         df.at[person_id, 'hv_ever_tested'] = True
         df.at[person_id, 'hv_date_tested'] = self.sim.date
@@ -1269,7 +1269,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
 
 
 
-class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
+class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
     """
@@ -1337,13 +1337,14 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
             'Item_Code': [{item_code1:1}, {item_code2:1}, {item_code3:1}]
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
 
-class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
+class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin):
     """
     This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
     """
@@ -1376,7 +1377,7 @@ class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
         # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
 
 
-class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
+class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1430,14 +1431,15 @@ class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
 
 
     def did_not_run(self):
         pass
 
-class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
+class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1502,12 +1504,12 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
             'Item_Code': [{item_code1:1}]
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
     def did_not_run(self):
         pass
 
-class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
+class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv prophylaxis for infants
     cotrim 6 mths + NVP/AZT 6-12 weeks
@@ -1553,13 +1555,13 @@ class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
+class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment for infants + cotrim
     """
@@ -1672,12 +1674,12 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
     def did_not_run(self):
         pass
 
-class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
+class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start hiv treatment
     """
@@ -1800,12 +1802,13 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [],
             'Item_Code': [{item_code1:1}]
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
+class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for hiv viral load monitoring once on treatment
     """
@@ -1841,14 +1844,14 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
     def did_not_run(self):
         pass
 
 # TODO: find ART in consumables, how long is prescription for?
 # schedule next Tx in 3 months
-class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
+class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for hiv repeat prescriptions once on treatment
     """
@@ -1892,7 +1895,8 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [],
             'Item_Code': [{item_code1:1}]
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass

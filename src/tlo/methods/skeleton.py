@@ -5,7 +5,7 @@ A skeleton template for disease methods.
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
+class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
     like this.
     It must begin HSI_<Module_Name>_Description

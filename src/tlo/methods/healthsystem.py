@@ -252,7 +252,7 @@ class HealthSystem(Module):
             assert 'did_not_run' in dir(hsi_event)
 
             # Check that this can accept the squeeze argument
-            assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.apply).args
+            assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
 
 
         # 2) Check topen, tclose and priority
@@ -643,14 +643,14 @@ class HealthSystem(Module):
         for pkg in cons_req_as_footprint['Intervention_Package_Code']:
             pkg_code = list(pkg.keys())[0]
             pkg_quant =  list(pkg.values())[0]
-            assert pkg_code in consumables['Intervention_Pkg_Code']
+            assert pkg_code in consumables['Intervention_Pkg_Code'].values
             assert type(pkg_quant) is int
             assert pkg_quant > 0
 
         for itm in cons_req_as_footprint['Item_Code']:
             itm_code = list(itm.keys())[0]
             itm_quant =  list(itm.values())[0]
-            assert itm_code in consumables['Item_Code']
+            assert itm_code in consumables['Item_Code'].values
             assert type(itm_quant) is int
             assert itm_quant > 0
 
@@ -968,13 +968,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
 
 
-        # 2) Run population-level HSI events
+        # 2) Run all population-level HSI events
         while len(list_of_population_hsi_event_tuples_due_today)>0:
             pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
 
             pop_level_hsi_event = pop_level_hsi_event_tuple[4]
-            pop_level_hsi_event.run()
-            self.module.log_hsi_event(hsi_event=event)
+            pop_level_hsi_event.run(squeeze_factor=0)
+            self.module.log_hsi_event(hsi_event=pop_level_hsi_event)
 
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
@@ -1000,7 +1000,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                                         how='left')
 
             df_footprints_of_all_individual_level_hsi_event = df_footprints_of_all_individual_level_hsi_event.fillna(0)
-            assert len(df_footprints_of_all_individual_level_hsi_event) == len(list_of_individual_hsi_event_tuples_due_today)
+            assert len(df_footprints_of_all_individual_level_hsi_event.columns) == len(list_of_individual_hsi_event_tuples_due_today)
+            assert df_footprints_of_all_individual_level_hsi_event.index.equals(current_capabilities.index)
 
             # 5) Estimate Squeeze-Factors for today
             if self.module.mode_appt_constraints==0:

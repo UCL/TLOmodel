@@ -58,6 +58,8 @@ class HSI_Event:
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
+        # TODO: make better use of templating for the HSI events (to incl. information that is required for each HSI Event?)
+
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""
         pass
@@ -67,7 +69,9 @@ class HSI_Event:
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
 
-
+    def did_not_run(self):
+        """ Code that is called when this event is due but it is not run."""
+        pass
 
 
 class RegularEvent(Event):
