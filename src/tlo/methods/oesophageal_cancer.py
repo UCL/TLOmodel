@@ -8,7 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -514,7 +514,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                 # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSIoStartTreatmentLowGradeOesDysplasia(self.module, person_id)
+                hsi_present_for_care = HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
@@ -572,7 +572,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-class HSIoStartTreatmentLowGradeOesDysplasia(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is appointment at which someone with low grade oes dysplasia is treated.
@@ -585,100 +585,88 @@ class HSIoStartTreatmentLowGradeOesDysplasia(Event, IndividualScopeEventMixin):
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Get the consumables required
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "low_grade_dysplasia"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentHighGradeOesDysplasia(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentHighGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_high_grade_oes_dysplasia"
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "high_grade_dysplasia"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage1OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage1"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage2OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage2"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage3OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
         # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage3"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date

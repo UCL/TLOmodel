@@ -27,8 +27,7 @@ def simulation():
     sim.register(lifestyle.Lifestyle())
     sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           ignore_appt_constraints=True,
-                                           ignore_cons_constraints=True))
+                                           mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(depression.Depression(resourcefilepath=resourcefilepath))

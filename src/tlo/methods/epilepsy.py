@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods import demography
 
 # todo: code specific clinic visits
@@ -450,7 +450,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
 
-class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
+class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -469,11 +469,10 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 0  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 

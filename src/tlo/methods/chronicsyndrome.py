@@ -495,7 +495,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         pass
 
 
-class HSI_ChronicSyndrome_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
+class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin):
     """
     This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
     ChronicSyndrome
@@ -507,7 +507,7 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(Event, PopulationScopeEv
         # Define the necessary information for a Population level HSI
         self.TREATMENT_ID = 'ChronicSyndrome_PopulationWideBehaviourChange'
 
-    def apply(self, population):
+    def apply(self, population, squeeze_factor):
         logger.debug('This is HSI_ChronicSyndrome_PopulationWideBehaviourChange')
 
         # As an example, we will reduce the chance of acquisition per year (due to behaviour change)

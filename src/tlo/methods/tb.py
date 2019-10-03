@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -972,7 +972,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 #   Testing
 # ---------------------------------------------------------------------------
 
-class HSI_TbScreening(Event, IndividualScopeEventMixin):
+class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is the screening event that occurs before a sputum smear test or xpert is offered
@@ -1024,7 +1024,7 @@ class HSI_TbScreening(Event, IndividualScopeEventMixin):
     def did_not_run(self):
         pass
 
-class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
+class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
     """
     This is a sputum test for presumptive tb cases
     """
@@ -1058,7 +1058,8 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
 
         df = self.sim.population.props
@@ -1180,7 +1181,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
     def did_not_run(self):
         pass
 
-class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
+class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - tb xpert test
         """
@@ -1334,7 +1335,8 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
@@ -1345,7 +1347,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
 # the consumables at treatment initiation include the cost for the full course of treatment
 # so the follow-up appts don't need to account for consumables, just appt time
 
-class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1405,12 +1407,13 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1470,12 +1473,13 @@ class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb-mdr treatment
     """
@@ -1535,12 +1539,13 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
+class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1601,12 +1606,13 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
+class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1666,7 +1672,8 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
@@ -1674,7 +1681,7 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Follow-up appts
 # ---------------------------------------------------------------------------
-class HSI_Tb_FollowUp(Event, IndividualScopeEventMixin):
+class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1764,7 +1771,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
 #   IPT
 # ---------------------------------------------------------------------------
 # TODO consumables should be IPT for non-HIV+
-class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
+class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - give ipt to contacts of tb cases for 6 months
         """
@@ -1804,12 +1811,13 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
 
-class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
+class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - give ipt to hiv+ persons
         called by hiv module when starting ART (adults and children)
@@ -1850,7 +1858,8 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):
 

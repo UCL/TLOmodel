@@ -7,7 +7,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -182,7 +182,7 @@ class CircumcisionEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 
 
-class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
+class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -195,7 +195,7 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Circumcision'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = 0
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -218,7 +218,8 @@ class HSI_Circumcision_PresentsForCare(Event, IndividualScopeEventMixin):
             'Intervention_Package_Code': [{pkg_code1:1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].get_consumables(the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
+                                                                                 cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
