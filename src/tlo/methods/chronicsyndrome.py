@@ -22,6 +22,7 @@ class ChronicSyndrome(Module):
         - Piggy-backing appointments
         - Reporting two sets of DALY weights with specific labels
         - Usual HSI behaviour
+        - Population-wide HSI event
     """
 
     PARAMETERS = {
@@ -175,6 +176,14 @@ class ChronicSyndrome(Module):
         # Schedule the event that will launch the Outreach event
         outreach_event = ChronicSyndrome_LaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=6))
+
+        # Schedule the occurance of a population wide change in risk that goes through the health system:
+        popwide_hsi_event = HSI_ChronicSyndrome_PopulationWideBehaviourChange(self)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(popwide_hsi_event,
+                                                            priority=1,
+                                                            topen=self.sim.date,
+                                                            tclose=None)
+        logger.debug('The population wide HSI event has been scheduled succesfully!')
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -336,7 +345,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
     """
     This is the event that is run by ChronicSyndrome and it is the Outreach Event.
     It will now submit the individual HSI events that occur when each individual is met.
-    (i.e. Any large campaign is composed of many individual outreach events).
+    (i.e. Any large campaign that involves contct with individual is composed of many individual outreach events).
     """
 
     def __init__(self, module):
@@ -361,7 +370,6 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-
 class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
@@ -380,7 +388,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1]  # Can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -405,6 +413,9 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
             df.at[person_id, 'cs_specific_symptoms'] = 'none'
             df.at[person_id, 'cs_unified_symptom_code'] = 0
 
+    def did_not_run(self):
+        logger.debug('HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
+        pass
 
 class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
     """
@@ -430,7 +441,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         appt_footprint['ConWithDCSA'] = 0.5
         self.APPT_FOOTPRINT = appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVELS = [0] # Can occur at facility-level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0 # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -478,6 +489,30 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
 
         return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_ChronicSyndrome_Outreach_Individual: did not run')
+        pass
+
+
+class HSI_ChronicSyndrome_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
+    """
+    This is a Population-Wide Health System Interaction Event - will change the variables to do with risk for
+    ChronicSyndrome
+    """
+
+    def __init__(self, module):
+        super().__init__(module)
+
+        # Define the necessary information for a Population level HSI
+        self.TREATMENT_ID = 'ChronicSyndrome_PopulationWideBehaviourChange'
+
+    def apply(self, population):
+        logger.debug('This is HSI_ChronicSyndrome_PopulationWideBehaviourChange')
+
+        # As an example, we will reduce the chance of acquisition per year (due to behaviour change)
+        self.module.parameters['p_acquisition_per_year'] = self.module.parameters['p_acquisition_per_year'] * 0.5
+
 
 
 # ---------------------------------------------------------------------------------

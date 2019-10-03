@@ -368,7 +368,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 0     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -401,6 +401,10 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
                                                                 topen=date_turns_15,
                                                                 tclose=date_turns_15 + DateOffset(months=12))
 
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
+        pass
+
 
 class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -421,7 +425,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -457,6 +461,10 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2)
                                                             )
 
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_StartTreatment: did not run')
+        pass
+
 
 class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
@@ -478,7 +486,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 1   # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -498,7 +506,9 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
                                                             priority=2,
                                                             topen=target_date_for_followup_appt,
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2))
-
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
+        pass
 
 # ---------------------------------------------------------------------------------
 
