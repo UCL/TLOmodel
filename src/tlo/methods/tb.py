@@ -1817,7 +1817,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Tb_XpertTest'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
+        self.ACCEPTED_FACILITY_LEVELS = ['*']
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
     def apply(self, person_id):
