@@ -367,9 +367,6 @@ class Tb(Module):
 
         # print(active)
 
-        # sample some active cases as mdr-tb
-        idx = pd.Series(None, index=df.loc[active_idx].index)
-
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
 
@@ -379,7 +376,9 @@ class Tb(Module):
             # if some mdr-cases
             if not idx.isnull().all():
 
-                for person_id in active_idx[~idx]:
+                drug_susc = [x for x in active_idx if x != idx]
+
+                for person_id in drug_susc:
                     # print(person_id)
                     # random draw of days 0-365
                     random_day = self.rng.randint(low=0, high=364)
@@ -1801,7 +1800,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBFollowUp'] = 1
-        the_appt_footprint['LabSero'] = 1
+        the_appt_footprint['LabTBMicro'] = 1
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
