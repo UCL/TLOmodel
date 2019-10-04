@@ -87,13 +87,27 @@ Model_Pop_Normalised = (
      100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == "2010-01-01"])
 )
 
+
 plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
 
+
+# Load hypertension data and plot it
 prev_df = output["tlo.methods.hypertension"]["ht_prevalence"]
 Model_Years = pd.to_datetime(prev_df.date)
 Model_Prev_total = prev_df.total
 
 plt.plot(np.asarray(Model_Years), Model_Prev_total)
+
+
+# Load validation date
+val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]
+val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validation"]
+Plot_Years = pd.to_datetime(val_data_df.date)  # Dates from either will work, they are identical
+
+
+
+
+
 
 prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_2"]
 
