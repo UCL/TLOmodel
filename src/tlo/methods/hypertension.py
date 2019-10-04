@@ -680,6 +680,7 @@ class HTLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         count_by_age = df[df.is_alive].groupby('age_range').size()
         count_ht_by_age = df[df.is_alive & (df.ht_current_status)].groupby('age_range').size()
         prevalence_ht_by_age = (count_ht_by_age / count_by_age) * 100
+        prevalence_ht_by_age.fillna(0, inplace=True)
 
         # 2 Log prevalence
         logger.info('%s|ht_prevalence|%s', self.sim.date, prevalence_ht_by_age.to_dict())
