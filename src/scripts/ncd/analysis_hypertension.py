@@ -77,50 +77,66 @@ fh.flush()
 output = parse_log_file(logfile)
 
 # -----------------------------------------------------------------
-# Plot output
+# Plot and check output
 
-# Load Population and normalise
-pop_df = output["tlo.methods.demography"]["population"]
-Model_Years = pd.to_datetime(pop_df.date)
-Model_Pop = pop_df.total
-Model_Pop_Normalised = (
-     100 * np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == "2010-01-01"])
-)
+# Load overall prevalence model and prevalence data
+val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]   # Load the existing data
+val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validation"] #Load the model data
+Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
+Data_total = val_data_df.total  # Pick out overall prevalence from data
+Data_min = val_data_df.total_min # Pick out min CI
+Data_max = val_data_df.total_max # Pick out max CI
+Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
+Model_total = val_model_df.total    # Pick out overall prevalence from model
+
+# Check there is hypertension and the righ prevalence
+#TODO: check still robust
+print(Model_total>0)        #TODO: want to use assert but not workign with series
+print(Data_min<Model_total)
+print(Data_max<Model_total)
+
+plt.plot(np.asarray(Data_Years), Data_total, label='Date')
+plt.plot(np.asarray(Model_Years), Data_min, label='Min 95% CI')
+plt.plot(np.asarray(Model_Years), Data_max, label='Max 95% CI')
+plt.plot(np.asarray(Model_Years), Model_total, label='Model')
+plt.title("Overall prevalence: data vs model")
+plt.xlabel("Years")
+plt.ylabel("Prevalence")
+plt.gca().set_xlim(Date(2010,1,1), Date(2011,1,1))
+plt.gca().set_ylim(0,100)
+plt.gca().legend(loc='lower right', bbox_to_anchor=(1.4, 0.5))
+
+plt.show()
 
 
-plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
+# Repeat but as scatter graph
+Data_Years = (2010, 2011)   #ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
+
+plt.scatter(Data_Years, Data_total, label='Date')
+plt.scatter(Data_Years, Data_min, label='Min 95% CI')
+plt.scatter(Data_Years, Data_max, label='Max 95% CI')
+plt.scatter(Data_Years, Model_total, label='Model')
+plt.title("Overall prevalence: data vs model")
+plt.xlabel("Years")
+plt.ylabel("Prevalence")
+plt.xticks(np.arange(min(Data_Years), max(Data_Years)+1))
+plt.gca().set_ylim(0,100)
+plt.gca().legend(loc='lower right', bbox_to_anchor=(1.4, 0.5))
+plt.show()
 
 
-# Load hypertension data and plot it
-prev_df = output["tlo.methods.hypertension"]["ht_prevalence"]
-Model_Years = pd.to_datetime(prev_df.date)
-Model_Prev_total = prev_df.total
+# Load and plot overall age-specific model vs data
+#TODO: Write below
+Data_total = val_data_df.total  # Pick out overall prevalence from data
+Data_min = val_data_df.total_min # Pick out min CI
+Data_max = val_data_df.total_max # Pick out max CI
+Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
+Model_total = val_model_df.total    # Pick out overall prevalence from model
 
-plt.plot(np.asarray(Model_Years), Model_Prev_total)
-
-
-# Load validation date
-val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]
-val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validation"]
-Plot_Years = pd.to_datetime(val_data_df.date)  # Dates from either will work, they are identical
-
-
-
-
-
-
-prev_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_2"]
-
-Model_Years = pd.to_datetime(prev_data_df.date)
-Model_Prev_Data_total = prev_data_df.total
-
-plt.plot(np.asarray(Model_Years), Model_Prev_Data_total)
-
-Data_Prev_total = prev_data_df.total
-
-plt.plot(np.asarray(Model_Years), Model_Prev_total)
-
-#plt.plot(np.asarray(Model_Years), Model_Prev_total, Data_Prev_total)   #TODO: need to fix code to plot data versus code
+plt.plot(np.asarray(Data_Years), Data_total)
+plt.plot(np.asarray(Model_Years), Data_min)
+plt.plot(np.asarray(Model_Years), Data_max)
+plt.plot(np.asarray(Model_Years), Model_total)
 
 plt.show()
 

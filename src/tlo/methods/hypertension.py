@@ -705,24 +705,29 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
 
         # Log the data every year (for plotting)        # TODO: see if we can shorten this code
+        logger.info('%s|test|%s',
+                    self.sim.date,
+                    {
+                        'total': p['initial_prevalence'].loc['total', 'prevalence']})
+
         logger.info('%s|ht_prevalence_data_validation|%s',
                     self.sim.date,
                     {
-                        'total': [p['initial_prevalence'].loc['total', 'prevalence']],
-                        'total_min:': [p['initial_prevalence'].loc['total', 'min95ci']],
-                        'total_max': [p['initial_prevalence'].loc['total', 'max95ci']],
-                        '25_to_35': [p['initial_prevalence'].loc['25_to_35', 'prevalence']],
-                        '25_to_35_min': [p['initial_prevalence'].loc['25_to_35', 'min95ci']],
-                        '25_to_35_max': [p['initial_prevalence'].loc['25_to_35', 'max95ci']],
-                        '35_to_45': [p['initial_prevalence'].loc['35_to_45', 'prevalence']],
-                        '35_to_45_min': [p['initial_prevalence'].loc['35_to_45', 'min95ci']],
-                        '35_to_45_max': [p['initial_prevalence'].loc['35_to_45', 'max95ci']],
-                        '45_to_55': [p['initial_prevalence'].loc['45_to_55', 'prevalence']],
-                        '45_to_55_min': [p['initial_prevalence'].loc['45_to_55', 'min95ci']],
-                        '45_to_55_max': [p['initial_prevalence'].loc['45_to_55', 'max95ci']],
-                        '55_to_65': [p['initial_prevalence'].loc['55_to_65', 'prevalence']],
-                        '55_to_65_min': [p['initial_prevalence'].loc['55_to_65', 'min95ci']],
-                        '55_to_65_max': [p['initial_prevalence'].loc['55_to_65', 'max95ci']]
+                        'total': p['initial_prevalence'].loc['total', 'prevalence'],
+                        'total_min': p['initial_prevalence'].loc['total', 'min95ci'],
+                        'total_max': p['initial_prevalence'].loc['total', 'max95ci'],
+                        '25_to_35': p['initial_prevalence'].loc['25_to_35', 'prevalence'],
+                        '25_to_35_min': p['initial_prevalence'].loc['25_to_35', 'min95ci'],
+                        '25_to_35_max': p['initial_prevalence'].loc['25_to_35', 'max95ci'],
+                        '35_to_45': p['initial_prevalence'].loc['35_to_45', 'prevalence'],
+                        '35_to_45_min': p['initial_prevalence'].loc['35_to_45', 'min95ci'],
+                        '35_to_45_max': p['initial_prevalence'].loc['35_to_45', 'max95ci'],
+                        '45_to_55': p['initial_prevalence'].loc['45_to_55', 'prevalence'],
+                        '45_to_55_min': p['initial_prevalence'].loc['45_to_55', 'min95ci'],
+                        '45_to_55_max': p['initial_prevalence'].loc['45_to_55', 'max95ci'],
+                        '55_to_65': p['initial_prevalence'].loc['55_to_65', 'prevalence'],
+                        '55_to_65_min': p['initial_prevalence'].loc['55_to_65', 'min95ci'],
+                        '55_to_65_max': p['initial_prevalence'].loc['55_to_65', 'max95ci']
                     })
 
         # 3.3. Calculate prevalence     #TODO: use groupby (make new cats)
