@@ -693,16 +693,16 @@ class Hiv(Module):
         # behav_change_event = HivLaunchBehavChangeEvent(self)
         # self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
 
-        def target_fn(person_id, population):
-            # Receives a person_id and returns True/False to indicate whether that person is to be included
-            return 15 <= population.at[person_id, 'age_years'] <= 50 and (not population.at[person_id, 'hv_inf'])
-
-        population_level_HSI_event = HSI_Hiv_PopulationWideBehaviourChange(self, target_fn=target_fn)
-
-        self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=population_level_HSI_event,
-                                                            priority=0,
-                                                            topen=self.sim.date + DateOffset(months=12),
-                                                            tclose=None)
+        # def target_fn(person_id, population):
+        #     # Receives a person_id and returns True/False to indicate whether that person is to be included
+        #     return 15 <= population.at[person_id, 'age_years'] <= 50 and (not population.at[person_id, 'hv_inf'])
+        #
+        # population_level_HSI_event = HSI_Hiv_PopulationWideBehaviourChange(self, target_fn=target_fn)
+        #
+        # self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=population_level_HSI_event,
+        #                                                     priority=0,
+        #                                                     topen=self.sim.date + DateOffset(months=12),
+        #                                                     tclose=None)
 
         # Schedule the event that will launch the PrEP event (2018 onwards)
         prep_event = HivLaunchPrepEvent(self)
@@ -1450,37 +1450,37 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
 #         df.at[person_id, 'hv_behaviour_change'] = True
 
 
-class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
-    """
-    This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
-    """
-
-    def __init__(self, module, target_fn=None):
-        super().__init__(module)
-
-        # If no "target_fn" is provided, then let this event pertain to everyone
-        if (target_fn is None):
-            def target_fn(person_id):
-                return True
-
-        self.target_fn = target_fn
-
-        # # Define the necessary information for an HSI (Population level)
-        self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
-
-    def apply(self, population):
-        logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
-
-        # Label the relevant people as having had contact with the 'behaviour change' intervention
-        # NB. An alternative approach would be for, at this point, a property in the module to be changed.
-
-        # hv_behaviour_change
-        df = population.props
-        for person_id in df.index:
-            if self.target_fn(person_id, df):
-                df.at[person_id, 'hv_behaviour_change'] = True
-
-        # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
+# class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
+#     """
+#     This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
+#     """
+#
+#     def __init__(self, module, target_fn=None):
+#         super().__init__(module)
+#
+#         # If no "target_fn" is provided, then let this event pertain to everyone
+#         if (target_fn is None):
+#             def target_fn(person_id):
+#                 return True
+#
+#         self.target_fn = target_fn
+#
+#         # # Define the necessary information for an HSI (Population level)
+#         self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
+#
+#     def apply(self, population):
+#         logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
+#
+#         # Label the relevant people as having had contact with the 'behaviour change' intervention
+#         # NB. An alternative approach would be for, at this point, a property in the module to be changed.
+#
+#         # hv_behaviour_change
+#         df = population.props
+#         for person_id in df.index:
+#             if self.target_fn(person_id, df):
+#                 df.at[person_id, 'hv_behaviour_change'] = True
+#
+#         # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
 
 
 class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
