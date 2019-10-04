@@ -26,7 +26,9 @@ class Mockitis(Module):
         'p_infection': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'level_of_symptoms': Parameter(
-            Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
+            Types.CATEGORICAL,
+            'Level of symptoms that the individual will have',
+            categories=['low', 'high']),
         'p_cure': Parameter(
             Types.REAL, 'Probability that a treatment is successful in curing the individual'),
         'initial_prevalence': Parameter(
