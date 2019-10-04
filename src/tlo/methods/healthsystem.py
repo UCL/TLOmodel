@@ -514,16 +514,16 @@ class HealthSystem(Module):
 
                         # Impose the footprint for each one of the types being requested
                         for this_officer_type in time_requested['Officer_Type_Code'].values.tolist():
-                            print(hsi_event.TREATMENT_ID)
-                            print('time_requested[Officer_Type_Code].values: ',
-                                  time_requested['Officer_Type_Code'].values)
-                            # print('consumables: ', consumables_used)
-                            print('try_fac_id: ', try_fac_id)
-                            print('this_officer_type: ', this_officer_type)
-                            print('current_capabilities: ', current_capabilities.loc[
-                                (current_capabilities['Facility_ID'] == try_fac_id) &
-                                (current_capabilities['Officer_Type_Code'] == this_officer_type),
-                                'Minutes_Remaining_Today'])
+                            # print(hsi_event.TREATMENT_ID)
+                            # print('time_requested[Officer_Type_Code].values: ',
+                            #       time_requested['Officer_Type_Code'].values)
+                            # # print('consumables: ', consumables_used)
+                            # print('try_fac_id: ', try_fac_id)
+                            # print('this_officer_type: ', this_officer_type)
+                            # print('current_capabilities: ', current_capabilities.loc[
+                            #     (current_capabilities['Facility_ID'] == try_fac_id) &
+                            #     (current_capabilities['Officer_Type_Code'] == this_officer_type),
+                            #     'Minutes_Remaining_Today'])
 
                             old_mins_remaining = \
                                 current_capabilities.loc[
