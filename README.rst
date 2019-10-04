@@ -21,6 +21,8 @@ Installation
 ============
 
 To get started quickly, we recommend using Anaconda Python, and installing within a fresh environment.
+Please use the `Installation Guide <https://github.com/UCL/TLOmodel/wiki/Installation>`_ or, if
+you prefer, you can carry out the setup using the command line:
 
 ::
 
@@ -33,6 +35,7 @@ This will install the software in 'editable' mode, so any changes you make to th
 After the initial install, each time you wish to use the model simply activate the environment::
 
     conda activate tlo
+
 
 Documentation
 =============
