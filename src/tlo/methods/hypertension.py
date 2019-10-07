@@ -7,6 +7,7 @@ import logging
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -16,6 +17,40 @@ logger.setLevel(logging.DEBUG)
 
 
 # TODO: Asif/Stef to check if file path is mac/window flexible
+
+def make_hypertension_age_range_lookup(min_age, max_age, range_size):
+    """Generates and returns a dictionary mapping age (in years) to age range
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+
+    def chunks(items, n):
+        """Takes a list and divides it into parts of size n"""
+        for index in range(0, len(items), n):
+            yield items[index:index + n]
+
+    # split all the ages from min to limit (100 years) into 5 year ranges
+    parts = chunks(range(min_age, max_age), range_size)
+
+    # any ages >= 100 are in the '100+' category
+    # TODO: would be good to have those younger than 25 in 25- instead or just other
+    default_category = '%d+' % max_age
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
+
+    # loop over each range and map all ages falling within the range to the range
+    for part in parts:
+        start = part.start
+        end = part.stop - 1
+        value = '%s-%s' % (start, end)
+        ranges.append(value)
+        for i in range(start, part.stop):
+            lookup[i] = value
+
+    ranges.append(default_category)
+    return ranges, lookup
+
 
 class Hypertension(Module):
     """
@@ -28,9 +63,15 @@ class Hypertension(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
         logger.info('----------------------------------------------------------------------')
         logger.info("Running hypertension.  ")
         logger.info('----------------------------------------------------------------------')
+
+    htn_age_range_categories, htn_age_range_lookup = make_hypertension_age_range_lookup(25, 65, 10)
+
+    # We should have 4 age range categories
+    assert len(htn_age_range_categories) == 5
 
     PARAMETERS = {
 
@@ -57,6 +98,8 @@ class Hypertension(Module):
         # Note that all properties must have a two letter prefix that identifies them to this module.
 
         # 1. Define disease properties
+        'ht_age_range': Property(Types.CATEGORICAL, 'The age range categories for hypertension validation use',
+                                 categories=htn_age_range_categories),
         'ht_risk': Property(Types.REAL, 'HTN risk given pre-existing condition or risk factors'),
         'ht_date': Property(Types.DATE, 'Date of latest hypertensive episode'),
         'ht_current_status': Property(Types.BOOL, 'Current hypertension status'),
@@ -150,6 +193,7 @@ class Hypertension(Module):
         df.loc[df.is_alive, 'ht_treatment_status'] = 'N'  # Default: no one is treated
         df.loc[df.is_alive, 'ht_control_date'] = pd.NaT  # Default: no one is controlled
         df.loc[df.is_alive, 'ht_control_status'] = 'N'  # Default: no one is controlled
+        # TODO: note that ht_age_range has not been given default
 
         # 3. Assign prevalence as per data
         # 3.1 Get corresponding risk
@@ -164,6 +208,7 @@ class Hypertension(Module):
         # 3.2. Define key variables
         alive_count = df.is_alive.sum()
         assert alive_count == len(ht_probability)
+        df.loc[df.is_alive, 'ht_age_range'] = df.loc[df.is_alive, 'age_years'].map(self.htn_age_range_lookup)
 
         # 3.2 Assign prevalent cases of hypertension according to risk
         ht_probability = ht_probability * df.loc[df.is_alive, 'ht_risk']
