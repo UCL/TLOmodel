@@ -89,33 +89,21 @@ Data_max = val_data_df.total_max # Pick out max CI
 Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
 Model_total = val_model_df.total    # Pick out overall prevalence from model
 
-# Check there is hypertension and the righ prevalence
+
+# Check there is hypertension if it comapres to data
 #TODO: check still robust
-print(Model_total>0)        #TODO: want to use assert but not workign with series
-print(Data_min<Model_total)
-print(Data_max<Model_total)
-
-plt.plot(np.asarray(Data_Years), Data_total, label='Date')
-plt.plot(np.asarray(Model_Years), Data_min, label='Min 95% CI')
-plt.plot(np.asarray(Model_Years), Data_max, label='Max 95% CI')
-plt.plot(np.asarray(Model_Years), Model_total, label='Model')
-plt.title("Overall prevalence: data vs model")
-plt.xlabel("Years")
-plt.ylabel("Prevalence")
-plt.gca().set_xlim(Date(2010,1,1), Date(2011,1,1))
-plt.gca().set_ylim(0,100)
-plt.gca().legend(loc='lower right', bbox_to_anchor=(1.4, 0.5))
-
-plt.show()
+print("Is there hypertension in the model: ", Model_total>0)        #TODO: want to use assert but not workign with series
+print("Is the prevalence of hypertension above the min 95% CI of the data: ", Data_min<Model_total)
+print("Is the prevalence of hypertension above the min 95% CI of the data: ", Data_max<Model_total)
 
 
-# Repeat but as scatter graph
-Data_Years = (2010, 2011)   #ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
+# Scatter graph of overall prevalence data vs model
+Plot_Years = (2010, 2011)   #ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
 
-plt.scatter(Data_Years, Data_total, label='Date')
-plt.scatter(Data_Years, Data_min, label='Min 95% CI')
-plt.scatter(Data_Years, Data_max, label='Max 95% CI')
-plt.scatter(Data_Years, Model_total, label='Model')
+plt.scatter(Plot_Years, Data_total, label='Data', color = 'k')
+plt.scatter(Plot_Years, Data_min, label='Min 95% CI', color = 'grey')
+plt.scatter(Plot_Years, Data_max, label='Max 95% CI', color = 'grey')
+plt.scatter(Plot_Years, Model_total, label='Model')
 plt.title("Overall prevalence: data vs model")
 plt.xlabel("Years")
 plt.ylabel("Prevalence")
@@ -126,19 +114,53 @@ plt.show()
 
 
 # Load and plot overall age-specific model vs data
-#TODO: Write below
-Data_total = val_data_df.total  # Pick out overall prevalence from data
-Data_min = val_data_df.total_min # Pick out min CI
-Data_max = val_data_df.total_max # Pick out max CI
-Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
-Model_total = val_model_df.total    # Pick out overall prevalence from model
+# Generate a dataframe, clean index and populating it from outputAs above retrive corresponding output and plot.
+# TODO: see if there is a fast way of coding this
+Plot_AgeGroups = ('25 to 35', '35 to 45', '45 to 55', '55 to 65')
+df = val_data_df
+df2 = val_model_df
+df.index = Plot_Years
+df2.index = Plot_Years
 
-plt.plot(np.asarray(Data_Years), Data_total)
-plt.plot(np.asarray(Model_Years), Data_min)
-plt.plot(np.asarray(Model_Years), Data_max)
-plt.plot(np.asarray(Model_Years), Model_total)
+Data_Age = pd.DataFrame(index=Data_Years, columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'], data=df[['age25to35', 'age35to45', 'age45to55', 'age55to65']].values)
+Data_Age_min = pd.DataFrame(index=Data_Years, columns=['Age25to35_min', 'Age35to45_min', 'Age45to55_min', 'Age55to65_min'], data=df[['age25to35_min', 'age35to45_min', 'age45to55_min', 'age55to65_min']].values)
+Data_Age_max = pd.DataFrame(index=Data_Years, columns=['Age25to35_max', 'Age35to45_max', 'Age45to55_max', 'Age55to65_max'], data=df[['age25to35_max', 'age35to45_max', 'age45to55_max', 'age55to65_max']].values)
+Model_Age = pd.DataFrame(index=Data_Years, columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'], data=df2[['25to35', '35to45', '45to55', '55to65']].values)
+
+# Clean by year
+# 2010
+Data_Age_2010 = pd.DataFrame(Data_Age.loc[2010]).transpose()
+Data_Age_min_2010 = pd.DataFrame(Data_Age_min.loc[2010]).transpose()
+Data_Age_max_2010 = pd.DataFrame(Data_Age_max.loc[2010]).transpose()
+Model_Age_2010 = pd.DataFrame(Model_Age.loc[2010]).transpose()
+
+# 2011 onwards - only model needed
+Model_Age_2011 = pd.DataFrame(Model_Age.loc[2011]).transpose()
+
+
+#Plot the whole lot
+plt.scatter(Plot_AgeGroups, Data_Age_2010, label='Data by age', color='k')
+plt.scatter(Plot_AgeGroups, Data_Age_min_2010, label='Min 95% CI data by age', color='grey')
+plt.scatter(Plot_AgeGroups, Data_Age_max_2010, label='Max 95% CI data by age', color='grey')
+plt.scatter(Plot_AgeGroups, Model_Age_2010, label='Model by age - 2010', color='red')
+plt.scatter(Plot_AgeGroups, Model_Age_2011, label='Model by age - 2011', color='orange')
+
+plt.title("Age-specific prevalence: data vs model")
+plt.xlabel("Age Groups")
+plt.ylabel("Prevalence")
+plt.gca().set_ylim(0,100)
+plt.gca().legend(loc='lower right', bbox_to_anchor=(0.45, 0.65))
 
 plt.show()
+
+
+
+
+
+
+
+
+
 
 
 
