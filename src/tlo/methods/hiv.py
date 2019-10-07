@@ -1192,32 +1192,30 @@ class HivLaunchBehavChangeEvent(Event, PopulationScopeEventMixin):
 
 
 class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
-    """
-    this is all behaviour change interventions that will reduce risk of HIV
-    """
 
     def __init__(self, module):
         super().__init__(module)
 
     def apply(self, population):
         df = self.sim.population.props
-        # params = self.module.parameters  # this is causing errors from 2011 onwards
         params = self.sim.modules['Hiv'].parameters
 
         # Find the person_ids who are going to get prep
         # open to fsw only
         if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 10:
+
             gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
                 frac=params['fsw_prep']).index
 
-            for person_id in gets_prep:
-                # make the outreach event
-                prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
+            if gets_prep:
+                for person_id in gets_prep:
+                    # make the outreach event
+                    prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(prep_event,
-                                                                    priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=12))
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(prep_event,
+                                                                        priority=0,
+                                                                        topen=self.sim.date,
+                                                                        tclose=self.sim.date + DateOffset(weeks=12))
 
         # schedule next prep launch event
         next_prep_event = HivLaunchPrepEvent(self.module)
