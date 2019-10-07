@@ -29,8 +29,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-popsize = 10000
+end_date = Date(2018, 12, 31)
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -90,7 +90,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath + "LogFile" + datestamp + ".log"
 output = parse_log_file(logfile)
 
-# output = parse_log_file('./src/scripts/tb/LogFile__2019_09_05FULL_RUN.log')
+# output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
 # create new folder with today's date
 datestamp2 = datetime.date.today().strftime("%Y_%m_%d")

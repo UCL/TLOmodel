@@ -376,33 +376,29 @@ class Tb(Module):
             # if some mdr-cases
             if not idx.isnull().all():
 
-                drug_susc = [x for x in active_idx if x != idx]
-
-                for person_id in drug_susc:
+                for person_id in active_idx:
                     # print(person_id)
                     # random draw of days 0-365
                     random_day = self.rng.randint(low=0, high=364)
                     pd_day = now + pd.to_timedelta(random_day, unit='d')
 
-                    logger.debug(
-                        'This is Tb, scheduling active disease for person %d on date %s',
-                        person_id, pd_day)
+                    # if not sampled for mdr, schedule onset active drug-susceptible
+                    if person_id not in idx:
 
-                    # schedule active disease
-                    self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
+                        logger.debug(
+                            'This is Tb, scheduling active disease for person %d on date %s',
+                            person_id, pd_day)
 
-                for person_id in idx:
-                    # print(person_id)
-                    # random draw of days 0-365
-                    random_day = self.rng.randint(low=0, high=364)
-                    pd_day = now + pd.to_timedelta(random_day, unit='d')
+                        # schedule active disease
+                        self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
 
-                    logger.debug(
-                        'This is Tb, scheduling mdr-active disease for person %d on date %s',
-                        person_id, pd_day)
+                    else:
+                        logger.debug(
+                            'This is Tb, scheduling mdr-active disease for person %d on date %s',
+                            person_id, pd_day)
 
-                    # schedule active disease
-                    self.sim.schedule_event(TbMdrActiveEvent(self, person_id), pd_day)
+                        # schedule active disease
+                        self.sim.schedule_event(TbMdrActiveEvent(self, person_id), pd_day)
 
             # if no mdr cases have been sampled
             else:
@@ -553,7 +549,8 @@ class Tb(Module):
 # ---------------------------------------------------------------------------
 #   TB infection event
 # ---------------------------------------------------------------------------
-
+# TODO should transmission be limited within each district?
+# TODO age/sex distribution for new cases?
 class TbEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb infection events
     """
@@ -2975,19 +2972,16 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ------------------------------------ INCIDENCE ------------------------------------
         # total number of new active cases in last year - susc + mdr
+        # may have died in the last year but still counted as active case for the year
         new_tb_cases = len(
-            df[(df.tb_inf.str.contains('active')) &
-               df.is_alive & (
-                   df.tb_date_active < (now - DateOffset(months=self.repeat)))])
+            df[(df.tb_date_active < (now - DateOffset(months=self.repeat)))])
 
         # incidence per 100k
         inc100k = (new_tb_cases / len(df[df.is_alive])) * 100000
 
-        # percentage of TB cases who are HIV-positive
+        # percentage of active TB cases in the last year who are HIV-positive
         inc_active_hiv = len(
-            df[(df.tb_inf.str.contains('active')) &
-               df.is_alive & (
-                   df.tb_date_active < (now - DateOffset(months=self.repeat))) & df.hv_inf])
+            df[(df.tb_date_active < (now - DateOffset(months=self.repeat))) & df.hv_inf])
 
         prop_hiv = inc_active_hiv / new_tb_cases if new_tb_cases else 0
 
@@ -2995,10 +2989,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         inc100k_hiv = (inc_active_hiv / len(df[df.is_alive])) * 100000
 
         # proportion of new active cases that are mdr-tb
+        # technically this is EVER HAD MDR doesn't mean the last episode necessarily
         inc_active_mdr = len(
-            df[(df.tb_inf.str.contains('active_mdr')) &
-               df.is_alive & (
-                   df.tb_date_active < (now - DateOffset(months=self.repeat)))])
+            df[df.tb_ever_tb_mdr & (df.tb_date_active < (now - DateOffset(months=self.repeat)))])
 
         if new_tb_cases > 0:
             prop_inc_active_mdr = inc_active_mdr / new_tb_cases
