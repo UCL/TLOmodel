@@ -252,7 +252,7 @@ class InducedAbortionEvent(RegularEvent, PopulationScopeEventMixin):
 #        df.loc[idx_induced_abortion, 'am_date_most_recent_abortion'] = self.sim.date  # (is this needed)
 #        df.loc[idx_induced_abortion, 'ps_gestational_age'] = 0
 
-        # Todo: Please see SBA master sheet for epi queires
+        # Todo: Please see ANC master sheet for epi queires
         # Todo: Apply safety level and complications
         # Todo : schedule care seeking for HSI and schedule death event
 
