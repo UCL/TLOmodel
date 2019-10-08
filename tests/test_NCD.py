@@ -21,7 +21,7 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle)
+    sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
@@ -40,7 +40,8 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_hypertension_adults(simulation):       #TODO: need to check with Asif that this test age across time (not just during seeding)
+def test_hypertension_adults(simulation):
+    #TODO: need to check with Asif that this test age across time (not just during seeding)
     # check all hypertensive individuals are 18 years or over
     df = simulation.population.props
     HTN = df.loc[df.current_status]
