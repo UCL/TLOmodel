@@ -5,74 +5,122 @@ Developed by Mikaela Smit, October 2018
 """
 
 import logging
-
+from pathlib import Path
 import numpy as np
 import pandas as pd
+from collections import defaultdict
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# Read in data
-file_path = 'resources/ResourceFile_Method_T2DM.xlsx'
-method_T2DM_data = pd.read_excel(file_path, sheet_name=None, header=0)
-T2DM_prevalence, T2DM_incidence, T2DM_risk, T2DM_data = method_T2DM_data['prevalence2018'], method_T2DM_data['incidence2018_plus'], \
-                                                        method_T2DM_data['parameters'], method_T2DM_data['data']
-
-# TODO: Read in 95% CI from file?
-# TODO: Update weight to BMI AND ADAPT TO UPDATED CODE FOR WEIGHT!
-# TODO: Triple check that DALYs are correct
+# TODO: Asif/Stef to check if file path is mac/window flexible
+# TODO: circular declaration with diabetes to be addressed
+# TODO: Update weight to BMI
 # ToDO: Update complication, symptoms and QALYs in line with DALY file
 # TODO: how to handle symptoms and how specific to be - develop
 # TODO: What about Qaly for mild symptoms (urination, tiredness etc), nephrology, amputation, and NOTE: severe vision impairmenet and blindness same qaly so only one
 
 
-class T2DM(Module):
-    """
-    This is type 2 diabetes.
-    It demonstrates the following behaviours in respect of the healthsystem module:
-
-    - Declaration of TREATMENT_ID
-    - Registration of the disease module
-    - Reading DALY weights and reporting daly values related to this disease
-    - Health care seeking
-    - Running an "outreach" event
+def make_t2dm_age_range_lookup(min_age, max_age, range_size):
+    """Generates and returns a dictionary mapping age (in years) to age range
+    as per data for validation (i.e. 25-35, 35-45, etc until 65)
     """
 
-    logger.info('Type 2 Diabetes mellitus method is running.  ')
+    def chunks(items, n):
+        """Takes a list and divides it into parts of size n"""
+        for index in range(0, len(items), n):
+            yield items[index:index + n]
+
+    # split all the ages from min to limit (100 years) into 5 year ranges
+    parts = chunks(range(min_age, max_age), range_size)
+
+    # any ages >= 100 are in the '100+' category
+    # TODO: would be good to have those younger than 25 in 25- instead or just other
+    default_category = '%d+' % max_age
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
+
+    # loop over each range and map all ages falling within the range to the range
+    for part in parts:
+        start = part.start
+        end = part.stop - 1
+        value = '%s-%s' % (start, end)
+        ranges.append(value)
+        for i in range(start, part.stop):
+            lookup[i] = value
+
+    ranges.append(default_category)
+    return ranges, lookup
+
+
+class Type2DiabetesMellitus(Module):
+    """
+    This is type 2 diabetes mellitus.
+    Version October 2019
+    The execution of all health system related interaction for type 2 diabetes mellitus are controlled through
+    this module.
+    """
+
+    def __init__(self, name=None, resourcefilepath=None):
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
+        logger.info('----------------------------------------------------------------------')
+        logger.info("Running type 2 diabetes mellitus.  ")
+        logger.info('----------------------------------------------------------------------')
+
+    d2_age_range_categories, d2_age_range_lookup = make_t2dm_age_range_lookup(25, 65, 10)
+
+    # We should have 4 age range categories
+    assert len(d2_age_range_categories) == 5
 
     PARAMETERS = {
 
-        # 1. Risk parameters
-        'prob_T2DM_basic': Parameter(Types.REAL,               'Probability of T2DM given no pre-existing condition'),
-        'prob_T2DMgivenBMI': Parameter(Types.REAL,             'Probability of getting T2DM given being BMI'),
-        'prob_T2DMgivenHT': Parameter(Types.REAL,              'Probability of getting T2DM given pre-existing hypertension'),
-        'prob_T2DMgivenGD': Parameter(Types.REAL,              'Probability of getting T2DM given pre-existing gestational diabetes'),
-        #'prob_T2DMgivenFamHis': Parameter(Types.REAL,          'Probability of getting T2DM given family history'),
-        'prob_RetinoComp': Parameter(Types.REAL,               'Probability of developing retinopathy'),
-        'prob_NephroComp': Parameter(Types.REAL,               'Probability of developing diabetic nephropathy'),
-        'prob_NeuroComp': Parameter(Types.REAL,                'Probability of developing peripheral neuropathy'),
-        'prob_death': Parameter(Types.REAL,                    'Probability of dying'),
+        # Here we declare parameters for this module. Each parameter has a name, data type,
+        # and longer description.
 
-        # 2. Health care parameters
-        'prob_diag': Parameter(Types.REAL,                     'Probability of being diagnosed'),
-        'prob_treat': Parameter(Types.REAL,                    'Probability of being treated'),
-        'prob_contr': Parameter(Types.REAL,                    'Probability achieving normal glucose levels on medication'),
-        'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Level of symptoms that the individual will have'),
+        # Define epidemiological parameters
+        'D2_prevalence': Parameter(Types.REAL, 'T2DM prevalence'),
+        'D2_incidence': Parameter(Types.REAL, 'T2DM incidence'),
+        'prob_t2dm_basic': Parameter(Types.REAL, 'Basic T2DM probability'),
+        'prob_t2dmgivenbmi': Parameter(Types.REAL, 'T2DM probability given being BMI'),
+        'prob_t2dmgivenht': Parameter(Types.REAL, 'T2DM probability given pre-existing hypertension'),
+        'prob_t2dmgivengd': Parameter(Types.REAL, 'T2DM probability given pre-existing gestational diabetes'),
+        'initial_prevalence_d2': Parameter(Types.REAL, 'Prevalence of T2DM as per data'),
+
+        # Define disease progression parameters
+        'prob_RetinoComp': Parameter(Types.REAL, 'Probability of developing retinopathy'),
+        'prob_NephroComp': Parameter(Types.REAL, 'Probability of developing diabetic nephropathy'),
+        'prob_NeuroComp': Parameter(Types.REAL, 'Probability of developing peripheral neuropathy'),
+        'prob_death': Parameter(Types.REAL, 'Probability of dying'),
+
+        # Define health care parameters
+        # TODO: update after HSI events
+        # TODO: update with DALY weights
+        'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Severity of symptoms that the individual will have'),
         'dalywt_mild_retino': Parameter(Types.REAL,            'DALY weighting for mild retinopathy'),
         'dalywt_severe_retino': Parameter(Types.REAL,          'DALY weighting for severe retinopathy'),
         'dalywt_uncomplicated': Parameter(Types.REAL,          'DALY weighting for uncomplicated diabetic'),
         'dalywt_neuropathy': Parameter(Types.REAL,             'DALY weighting for neuropathy'),
-
     }
 
     PROPERTIES = {
+
+        # Next we declare the properties of individuals that this module provides.
+        # Again each has a name, type and description.
+
+        # Note that all properties must have a two letter prefix that identifies them to this module.
+
         # ToDo: Update symptoms name
 
-        # 1. Disease properties
+        # Define disease properties
+        'd2_age_range': Property(Types.CATEGORICAL, 'The age range categories for hypertension validation use',
+                                 categories=d2_age_range_categories),
         'd2_risk': Property(Types.REAL,                       'Risk of T2DM given pre-existing condition and risk'),
         'd2_date': Property(Types.DATE,                       'Date of latest T2DM'),
         'd2_current_status': Property(Types.BOOL,             'Current T2DM status'),
@@ -80,7 +128,7 @@ class T2DM(Module):
                                                                  categories=['N', 'C', 'P']),
         'd2_death_date': Property(Types.DATE,                 'Date of scheduled death of infected individual'),
 
-        # 2. Health care properties
+        # Define health care properties  #ToDO: to add more if needed once HSi coded
         'd2_diag_date': Property(Types.DATE,                  'Date of latest T2DM diagnosis'),
         'd2_diag_status': Property(Types.CATEGORICAL,         'Status: N=No; Y=Yes',
                                                                  categories=['N', 'Y']),
@@ -90,6 +138,7 @@ class T2DM(Module):
         'd2_contr_date': Property(Types.DATE,                 'Date of latest T2DM control'),
         'd2_contr_status': Property(Types.CATEGORICAL,        'Status: N=No; Y=Yes',
                                                                  categories=['N', 'Y']),
+        # TODO: update symptoms
         'd2_specific_symptoms': Property(Types.CATEGORICAL,   'Level of symptoms for T2DM specifically',
                                                                  categories=['none', 'mild sneezing', 'coughing and irritable', 'extreme emergency']),
         'd2_unified_symptom_code': Property(Types.CATEGORICAL,'Level of symptoms on the standardised scale (governing health-care seeking): '
@@ -98,55 +147,77 @@ class T2DM(Module):
     }
 
     def read_parameters(self, data_folder):
+        """
+        Reads in parameter values from file.
+
+        Loads the 'Method_T2DM' file containing all parameter values for diabetes type 2 method
+
+        :param data_folder: path of a folder supplied to the Simulation containing data files.
+        """
+
+        logger.debug('Type 2 Diabetes Mellitus method: reading in parameters.  ')
+
+        # Reads in the parameters for hypertension from  file
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Method_T2DM.xlsx',
+                                 sheet_name=None)
 
         p = self.parameters
-        df = T2DM_risk.set_index('parameter')
-        p['prob_T2DM_basic'] = df.at['prob_basic', 'value']
-        p['prob_T2DMgivenBMI'] = pd.DataFrame([[df.at['prob_d2givenbmi', 'value']]],
-                                            index=['overweight'],
-                                            columns=['risk'])
-        p['prob_T2DMgivenHT'] = df.at['prob_d2givenht', 'value']
-        #p['prob_T2DMgivenFamHis'] = pd.DataFrame([[df.at['prob_d2givenfamhis', 'value']]],
-        #                            index=['family history'],
-        #                            columns=['risk'])
-        p['prob_diag']          = 0.5
-        p['prob_treat']         = 0.5
-        p['prob_contr']         = 0.5
-        p['level_of_symptoms']  = pd.DataFrame(data={'level_of_symptoms':
-                                      ['none',
-                                      'mild',
-                                      'moderate',
-                                      'extreme emergency'],
-                                      'probability': [0.25, 0.25, 0.25, 0.25]
-                                    })
-        df = T2DM_data.set_index('index')
-        p['initial_prevalence'] = pd.DataFrame([[df.at['b_all', 'value']], [df.at['b_25_35', 'value']], [df.at['b_35_45', 'value']], [df.at['b_45_55', 'value']], [df.at['b_55_65', 'value']]],
-                                                index = ['both sexes', '25 to 35', '35 to 45', '45 to 55', '55 to 65'],
-                                                columns = ['prevalence'])
-        p['initial_prevalence'].loc[:, 'prevalence'] *= 100  # Convert to %
+        p['D2_prevalence'] = workbook['prevalence2018']  # reads in prevalence parameters
+        p['D2_incidence'] = workbook['incidence2018_plus']  # reads in incidence parameters
 
-        #Get the DALY weight that diabetes type 2 will us from the weight database
+        self.load_parameters_from_dataframe(workbook['parameters'])  # reads in parameters
+
+        D2_data = workbook['data']  # reads in data
+        df = D2_data.set_index('index')  # sets index
+
+        # TODO: Asif/Stef to see if we can do the below shorter.
+
+        # Read in prevalence data from file and put into model df
+        p['initial_prevalence_d2'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
+                                                                  df.at['b_35_45', 'value'], df.at['b_45_55', 'value'],
+                                                                  df.at['b_55_65', 'value']],
+                                                   'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'],
+                                                               df.at['b_35_45', 'min'], df.at['b_45_55', 'min'],
+                                                               df.at['b_55_65', 'min']],
+                                                   'max95ci': [df.at['b_all', 'max'], df.at['b_25_35', 'max'],
+                                                               df.at['b_35_45', 'max'], df.at['b_45_55', 'max'],
+                                                               df.at['b_55_65', 'max']]
+                                                   },
+                                                  index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
+
+        p['initial_prevalence_d2'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+        p['initial_prevalence_d2'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
+        p['initial_prevalence_d2'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
+
+        # Get the DALY weight that diabetes type 2 will us from the weight database
+        # TODO: check mapping of DALY to states of T2DM
         if 'HealthBurden' in self.sim.modules.keys():
             p['qalywt_mild_retino']   = self.sim.modules['HealthBurden'].get_daly_weight(967)
             p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(977)
             p['qalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
             p['qalywt_neuropathy']    = self.sim.modules['HealthBurden'].get_daly_weight(970)
 
+        logger.debug("Type 2 Diabetes Mellitus method: finished reading in parameters.  ")
+
 
     def initialise_population(self, population):
-        """Set our property values for the initial population.
+        """
+        Assigns default values and prevalent cases of type 2 diabetes mellitus for the initial population.
 
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
+        This method is called by the simulation and is responsible for assigning default values for every individuals of
+        those properties 'owned' by the module, i.e. those declared in the PROPERTIES dictionary above.
+        It also assigns prevalent values of type 2 diabetes mellitus at the start of the model.
 
         :param population: the population of individuals
         """
 
-        # 1. Define key variables
-        df = population.props                               # Shortcut to the data frame storing individual data
+        logger.debug('Type 2 Diabetes Mellitus method: initialising population.  ')
 
-        # 2. Disease and health care properties
+        # Define key variables
+        df = population.props                               # Shortcut to the data frame storing individual data
+        m = self
+
+        # Define default properties
         df.loc[df.is_alive,'d2_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
         df.loc[df.is_alive,'d2_current_status'] = False     # Default setting: no one has T2DM
         df.loc[df.is_alive,'d2_historic_status'] = 'N'      # Default setting: no one has T2DM
@@ -160,127 +231,109 @@ class T2DM(Module):
         df.loc[df.is_alive,'d2_contr_status'] = 'N'         # Default setting: no one is controlled
         df.loc[df.is_alive,'d2_specific_symptoms'] = 'none' # Default setting: no one has symptoms
         df.loc[df.is_alive,'d2_unified_symptom_code'] = 0   # Default setting: no one has symptoms
+        # TODO: note that d2_age_range has not been given default
 
-        # 3. Assign prevalence as per data
+        # Assign prevalence as per data
+        # Get corresponding risk
+        d2_probability = df.loc[df.is_alive, ['d2_risk', 'age_years']].merge(self.parameters['D2_prevalence'],
+                                                                             left_on=['age_years'], right_on=['age'],
+                                                                             how='left')['probability']
+        # TODO: update with BMI once merged to master
+        df.loc[df.is_alive & df.li_overwt, 'd2_risk'] *= m.prob_htgivenbmi
+        # TODO: add hypertension risk after circular declaration has been fixed with Asif/Stef
+        # df.loc[df.is_alive & df.ht_current_status, 'd2_risk'] *= self.prob_d2givenht
+        # TODO complete with other risk factors
+
+        # Define key variables
         alive_count = df.is_alive.sum()
+        assert alive_count == len(d2_probability)
+        df.loc[df.is_alive, 'd2_age_range'] = df.loc[df.is_alive, 'age_years'].map(self.d2_age_range_lookup)
 
-        # ToDO: Re-add this later after testing T2DM alone
-        # 3.1 First get relative risk for T2DM
-        t2dm_prob = df.loc[df.is_alive, ['d2_risk', 'age_years']].merge(T2DM_prevalence, left_on=['age_years'], right_on=['age'],
-                                                                      how='left')['probability']
-        # df.loc[df.is_alive & ~df.d2_current_status, 'd2_risk'] = self.prob_T2DM_basic  # Basic risk, no pre-existing conditions
-        # df.loc[df.is_alive & df.d2_current_status, 'd2_risk'] = self.prob_T2DMgivenHC  # Risk if pre-existing high cholesterol
-        assert alive_count == len(t2dm_prob)
-        t2dm_prob = t2dm_prob * df.loc[df.is_alive, 'd2_risk']
+        # Assign prevalent cases of hypertension according to risk
+        d2_probability = d2_probability * df.loc[df.is_alive, 'd2_risk']
+
+        # TODO: remove duplication later. Asif and Stef: when the model runs with 1st random_number, numbers are not
+        # TODO: [cont] random (younger and older age group is always very high. Even if seed is changed. When executing
+        # TODO: [cont] a second time this is fine. Once fixed remove excess code up to below note.
         random_numbers = self.rng.random_sample(size=alive_count)
         random_numbers = self.rng.random_sample(size=alive_count)
-        df.loc[df.is_alive, 'd2_current_status'] = (random_numbers < t2dm_prob)
+        df.loc[df.is_alive, 'd2_current_status'] = (random_numbers < d2_probability)
 
-        # Check random numbers      #TODO: CHECK WITH TIM and remove later
-        over_18 = df.loc[df['age_years'] > 17].index
-        a = random_numbers[over_18].mean()
+        # Check random numbers      # TODO: Remove from here ...
+        logger.debug('Lets generate the random number check for type 2 diabetes mellitus')
 
-        over_25_35 = df.index[df.age_years > 24 & (df.age_years < 35)]
-        b = random_numbers[over_25_35].mean()
+        pop_over_18 = df.index[(df.age_years >= 18) & (df.age_years < 25)]
+        mean_randnum_18_25 = random_numbers[pop_over_18].mean()
+        pop_over_25_35 = df.index[(df.age_years >= 25) & (df.age_years < 35)]
+        mean_randnum_25_35 = random_numbers[pop_over_25_35].mean()
+        pop_over_35_45 = df.index[(df.age_years >= 35) & (df.age_years < 45)]
+        mean_randnum_35_45 = random_numbers[pop_over_35_45].mean()
+        pop_over_45_55 = df.index[(df.age_years >= 45) & (df.age_years < 55)]
+        mean_randnum_45_55 = random_numbers[pop_over_45_55].mean()
+        pop_over_55 = df.index[df['age_years'] >= 55]
+        mean_randnum_over55 = random_numbers[pop_over_55].mean()
 
-        over_35_45 = df.index[df.age_years > 34 & (df.age_years < 45)]
-        c = random_numbers[over_35_45].mean()
+        logger.debug('Lets generate the random number check for type 2 diabetes mellitus. ')
+        logger.debug({
+            'Mean rand num in 18-25 yo': mean_randnum_18_25,
+            'Mean rand num_in 25-35 yo': mean_randnum_25_35,
+            'Mean rand num_in 35-45 yo': mean_randnum_35_45,
+            'Mean rand num_in 45-55 yo': mean_randnum_45_55,
+            'Mean_rand num_in over 55 yo': mean_randnum_over55
+        })
 
-        over_45_55 = df.index[df.age_years > 44 & (df.age_years < 55)]
-        d = random_numbers[over_45_55].mean()
+        assert 0.4 < mean_randnum_18_25 < 0.6
+        assert 0.4 < mean_randnum_25_35 < 0.6
+        assert 0.4 < mean_randnum_35_45 < 0.6
+        assert 0.4 < mean_randnum_45_55 < 0.6
+        assert 0.4 < mean_randnum_over55 < 0.6
 
-        over_55 = df.loc[df['age_years'] > 55].index
-        e = random_numbers[over_55].mean()
+        # TODO: ... to here
 
-        print("\n", "Lets generate the random number check for T2DM: ",
-              "\n", "A: ", a,
-              "\n", "B: ", b,
-              "\n", "C: ", c,
-              "\n", "D: ", d,
-              "\n", "e: ", e, "\n")
+        # Assign relevant properties amongst those hypertensive
+        count_d2_all = len(df[df.is_alive & df.d2_current_status])  # Count all people with type 2 diabetes mellitus
+        d2_years_ago = np.array([1] * count_d2_all)
+        infected_td_ago = pd.to_timedelta(d2_years_ago, unit='y')
+        df.loc[df.is_alive & df.d2_current_status, 'd2_date'] = self.sim.date - infected_td_ago
+        df.loc[df.is_alive & df.d2_current_status, 'd2_historic_status'] = 'C'
 
-        # 3.2. Calculate prevalence
-        # Count adults in different age groups
-        adults_count_overall = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 65)])
-        adults_count_25to35 = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 35)])
-        adults_count_35to45 = len(df[(df.is_alive) & (df.age_years > 34) & (df.age_years < 45)])
-        adults_count_45to55 = len(df[(df.is_alive) & (df.age_years > 44) & (df.age_years < 55)])
-        adults_count_55to65 = len(df[(df.is_alive) & (df.age_years > 54) & (df.age_years < 65)])
-
-        assert adults_count_overall == adults_count_25to35 + adults_count_35to45 + adults_count_45to55 + adults_count_55to65
-
-        # Count adults with T2DM by age group
-        count_all = len(df[(df.is_alive) & (df.d2_current_status)])
-        count = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 24) & (df.age_years < 65)])
-        count_25to35 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 24) & (df.age_years < 35)])
-        count_35to45 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 34) & (df.age_years < 45)])
-        count_45to55 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 44) & (df.age_years < 55)])
-        count_55to65 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 54) & (df.age_years < 65)])
-
-        assert count == count_25to35 + count_35to45 + count_45to55 + count_55to65
-
-        # Calculate overall and age-specific prevalence
-        prevalence_overall = (count / adults_count_overall) * 100
-        prevalence_25to35 = (count_25to35 / adults_count_25to35) * 100
-        prevalence_35to45 = (count_35to45 / adults_count_35to45) * 100
-        prevalence_45to55 = (count_45to55 / adults_count_45to55) * 100
-        prevalence_55to65 = (count_55to65 / adults_count_55to65) * 100
-
-        # 3.1 Log prevalence compared to data
-        df2 = self.parameters['initial_prevalence']
-        print("\n", "Prevalent T2DM has been assigned"
-                    "\n", "MODEL: ",
-              "\n", "both sexes: ", prevalence_overall, "%",
-              "\n", "25 to 35: ", prevalence_25to35, "%",
-              "\n", "35 to 45: ", prevalence_35to45, "%",
-              "\n", "45 to 55: ", prevalence_45to55, "%",
-              "\n", "55 to 65: ", prevalence_55to65, "%",
-              "\n", "DATA: ", df2)
-
-        # 3.2. Calculate prevalence
-        #count = df.d2_current_status.sum()
-        #prevalence = (count / alive_count) * 100
-
-        # 4. Assign level of symptoms
-        #level_of_symptoms = self.parameters['level_of_symptoms']
-        #symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
+        # Assign level of symptoms # TODO: complete this section
+        # level_of_symptoms = self.parameters['level_of_symptoms']
+        # symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
         #                           size=T2DM_count,
         #                           p=level_of_symptoms.probability)
-        #df.loc[df.d2_current_status, 'd2_specific_symptoms'] = symptoms
+        # df.loc[df.d2_current_status, 'd2_specific_symptoms'] = symptoms
 
-        # 5. Set date of death # TODO: correct this to parameter not distribution and bbelow in event
-        death_years_ahead = np.random.exponential(scale=20, size=count)
-        death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        # Set date of death # TODO: complete this section
+        death_years_ahead = np.random.exponential(scale=20, size=count_d2_all)
+        death_d2_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
-        # 6. Set relevant properties of those with prevalent T2DM
-        t2dm_years_ago = 1
-        infected_td_ago = pd.to_timedelta(t2dm_years_ago * 365.25, unit='d')
-        df.loc[df.is_alive & df.d2_current_status, 'd2_date'] = self.sim.date - infected_td_ago # TODO: check with Tim if we should make it more 'realistic'. Con: this still allows us  to check prevalent cases against data, no severity diff with t
-        df.loc[df.is_alive & df.d2_current_status, 'd2_historic_status'] = 'C'
-        #df.loc[df.is_alive & df.d2_current_status, 'd2_death_date'] = self.sim.date + death_td_ahead
+        # Register this disease module with the health system  #TODO: TO DO LATER
+        # self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        #print("\n", "Population has been initialised, prevalent T2DM cases have been assigned.  "
-        #      "\n", "Prevalence of T2DM is: ", prevalence, "%", "\n")
-
+        logger.debug("Type 2 Diabetes Mellitus method: finished initialising population.  ")
 
     def initialise_simulation(self, sim):
+        """
+        Get ready for simulation start.
 
-        """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
+        This method is called just before the main simulation begins, and after all
+        parameters have been read in and prevalent hypertension has been assigned.
         It is a good place to add initial events to the event queue.
+
+        :param sim: simulation
         """
 
-        # 1. Add  basic event
-        event = T2DMEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(years=1)) # ToDo: looks like this is running every month instead of every year
+        logger.debug("Type 2 Diabetes Mellitus method: initialising simulation.  ")
 
-        # 2. Add an event to log to screen
-        sim.schedule_event(T2DMLoggingEvent(self), sim.date + DateOffset(years=5))
+        # Add  basic event
+        event = Type2DiabetesMellitusEvent(self)
+        sim.schedule_event(event, sim.date + DateOffset(years=1))
 
-        # 3. Add shortcut to the data frame
-        df = sim.population.props
+        # Launch the repeating event that will store statistics about type 2 diabetes mellitus
+        sim.schedule_event(Type2DiabetesMellitusLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(Type2DiabetesMellitusLoggingValidationEvent(self), sim.date + DateOffset(days=0))
+
 
         # add the death event of infected individuals # TODO: could be used for testing later
         # schedule the mockitis death event
@@ -296,6 +349,8 @@ class T2DM(Module):
         # event = HypOutreachEvent(self, 'this_module_only')
         # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
+        logger.debug("Type 2 Diabetes Mellitus method: finished initialising simulation.  ")
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
 
@@ -305,6 +360,8 @@ class T2DM(Module):
         :param child_id: the ID for the new child
         """
 
+        logger.debug("Type 2 Diabetes Mellitus method: on birth is being defined.  ")
+
         df = self.sim.population.props
         df.at[child_id, 'd2_risk'] = 1.0                        # Default setting: no risk given pre-existing conditions
         df.at[child_id, 'd2_current_status'] = False            # Default setting: no one has T2DM
@@ -313,8 +370,8 @@ class T2DM(Module):
         df.at[child_id, 'd2_death_date'] = pd.NaT               # Default setting: no one has T2DM
         df.at[child_id, 'd2_diag_date'] = pd.NaT                # Default setting: no one is diagnosed
         df.at[child_id, 'd2_diag_status'] = 'N'                 # Default setting: no one is diagnosed
-        df.at[child_id, 'd2_diag_date'] = pd.NaT                # Default setting: no one is treated
-        df.at[child_id, 'd2_diag_status'] = 'N'                 # Default setting: no one is treated
+        df.at[child_id, 'd2_treat_date'] = pd.NaT                # Default setting: no one is treated
+        df.at[child_id, 'd2_treat_status'] = 'N'                 # Default setting: no one is treated
         df.at[child_id, 'd2_contr_date'] = pd.NaT               # Default setting: no one is controlled
         df.at[child_id, 'd2_contr_status'] = 'N'                # Default setting: no one is controlled
         df.loc[df.is_alive, 'd2_specific_symptoms'] = 'none'    # Default setting: no one has symptoms
@@ -329,12 +386,18 @@ class T2DM(Module):
                      'person %d for: %s', person_id, treatment_id)
 
 
+    def on_hsi_alert(self, person_id, treatment_id):  # TODO: update
+        """
+        This is called whenever there is an HSI event commissioned by one of the other disease modules.
+        """
+        pass
 
-    def report_qaly_values(self):
+
+    def report_daly_values(self):  # TODO: update whole section
         # This must send back a dataframe that reports on the HealthStates for all individuals over
         # the past year
 
-        # logger.debug('This is T2DM reporting my health values')
+        logger.debug('Type 2 Diabetes Mellitus: reporting  health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
 
@@ -350,27 +413,21 @@ class T2DM(Module):
         return health_values.loc[df.is_alive]
 
 
-class T2DMEvent(RegularEvent, PopulationScopeEventMixin):
+class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
     """
-    This event is occurring regularly at one monthly intervals and controls the infection process
-    and onset of symptoms of Mockitis.
+    This event is occurring regularly and controls the infection process of type 2 diabetes mellitus.
+    It assigns new cases of diabetes and defines all related variables (e.g. date of diabetes)
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1)) # TODO: change time scale if needed
-        self.prob_T2DM_basic = module.parameters['prob_T2DM_basic']
-        #self.prob_T2DMgivenWeight = module.parameters['prob_T2DMgivenWeight']
-        #self.prob_T2DMgivenHT = module.parameters['prob_T2DMgivenHT']
-        #self.prob_T2DMgivenGD = module.parameters['prob_T2DMgivenGD']
-        #self.prob_T2DMgivenFamHis = module.parameters['prob_T2DMgivenFamHis']
-        self.prob_treat = module.parameters['prob_treat']
 
-        # ToDO: need to add code from original if it bugs.
+        logger.debug('Type 2 Diabetes mellitus method: This is a type 2 diabetes mellitus Event')
 
     def apply(self, population):
 
-        logger.debug('This is T2DMEvent, tracking the disease progression of the population.')
+        logger.debug('Type 2 diabetes mellitus method: tracking the disease progression in the population.')
 
         # 1. Basic variables
         df = population.props
