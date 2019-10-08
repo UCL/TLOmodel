@@ -827,23 +827,12 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
 
         # First by age
         count_by_age_val = df[df.is_alive].groupby('ht_age_range').size()
-        count_ht_by_age_val = df[df.is_alive & (df.ht_current_status)].groupby('ht_age_range').size()
+        count_ht_by_age_val = df[df.is_alive & df.ht_current_status].groupby('ht_age_range').size()
         prevalence_ht_by_age_val = (count_ht_by_age_val / count_by_age_val) * 100
         prevalence_ht_by_age_val.fillna(0, inplace=True)
 
         # Then overall
         prevalence_ht_all_val = count_ht_by_age_val[0:4].sum() / count_by_age_val[0:4].sum() * 100
-
-        # Merge into one for logging
-        prevalence_val = pd.DataFrame(index=['total', '25to35', '35to45', '45to55', '55to65'], columns=['data'])
-        prevalence_val.at['total', 'data'] = prevalence_ht_all_val
-        prevalence_val.at['25to35', 'data'] = prevalence_ht_by_age_val.iloc[0]
-        prevalence_val.at['35to45', 'data'] = prevalence_ht_by_age_val.iloc[1]
-        prevalence_val.at['45to55', 'data'] = prevalence_ht_by_age_val.iloc[2]
-        prevalence_val.at['55to65', 'data'] = prevalence_ht_by_age_val.iloc[3]
-        prevalence_val.columns = ['']
-
-        # TODO: can this be shortened and how can it be logged in correct format?
 
         # 3.4 Log prevalence
         logger.info('%s|ht_prevalence_model_validation_2|%s', self.sim.date,
