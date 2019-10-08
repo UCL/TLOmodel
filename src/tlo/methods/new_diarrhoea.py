@@ -381,7 +381,15 @@ class NewDiarrhoea(Module):
         p['dhs_care_seeking_2010'] = 0.58
         p['IMCI_effectiveness_2010'] = 0.6
         p['r_death_diarrhoea'] = 0.3
-        p['case_fatality_rate_AWD'] = 0.1
+        p['prob_prolonged_to_persistent_diarr'] = 0.2866
+        p['case_fatality_rate_AWD'] = dfd.loc['case_fatality_rate_AWD', 'value1']
+        p['case_fatality_rate_dysentery'] = dfd.loc['case_fatality_rate_dysentery', 'value1']
+        p['case_fatality_rate_persistent'] = dfd.loc['case_fatality_rate_persistent', 'value1']
+        p['rr_diarr_death_age12to23mo'] = dfd.loc['rr_diarr_death_age12to23mo', 'value1']
+        p['rr_diarr_death_age24to59mo'] = dfd.loc['rr_diarr_death_age24to59mo', 'value1']
+        p['rr_diarr_death_dehydration'] = dfd.loc['rr_diarr_death_dehydration', 'value1']
+        p['rr_diarr_death_HIV'] = dfd.loc['rr_diarr_death_HIV', 'value1']
+        p['rr_diarr_death_SAM'] = dfd.loc['rr_diarr_death_SAM', 'value1']
 
         # DALY weights
         if 'HealthBurden' in self.sim.modules.keys():
@@ -402,6 +410,8 @@ class NewDiarrhoea(Module):
         # DEFAULTS
         df['gi_diarrhoea_status'] = False
         df['gi_diarrhoea_acute_type'] = np.nan
+        df['gi_diarrhoea_type'] = np.nan
+        df['gi_persistent_diarrhoea'] = np.nan
         df['gi_dehydration_status'] = 'no dehydration'
         df['date_of_onset_diarrhoea'] = pd.NaT
         df['gi_recovered_date'] = pd.NaT
@@ -526,6 +536,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df['gi_diarrhoea_acute_type'] = np.nan
         df['gi_persistent_diarrhoea'] = False
         df['gi_dehydration_status'] = 'no dehydration'
+        df['di_dehydration_present'] = False
         df['date_of_onset_diarrhoea'] = pd.NaT
         df['gi_recovered_date'] = pd.NaT
         df['gi_diarrhoea_death_date'] = pd.NaT
@@ -859,12 +870,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'AWD': diarrhoea_count['acute watery diarrhoea'],
                      'acute_dysentery': diarrhoea_count['dysentery']
                      })
-        for child in incident_acute_diarrhoea:
+
+        '''for child in incident_acute_diarrhoea:
             logger.info('%s|acute_diarrhoea_child|%s', self.sim.date,
                         {'date': df.at[child, 'date_of_onset_diarrhoea'].strftime('%Y-%m-%d %H:%M:%S'),
                          'child_index': child,
                          'age': df.at[child, 'age_years'], 'diarrhoea_type': df.at[child, 'gi_diarrhoea_acute_type'],
                          'dehydration_present': df.at[child, 'gi_dehydration_status']})
+                         '''
 
         # # # # # # # # # # # # # # ASSIGN SYMPTOMS ASSOCIATED WITH EACH PATHOGENS # # # # # # # # # # # # # #
         # ROTAVIRUS
@@ -1068,72 +1081,73 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # ---------------------------------------------------------------------------------------------------
         # # # # # # # # # # # # # # # # ACUTE DIARRHOEA BECOMING PERSISTENT # # # # # # # # # # # # # # # # #
 
-        # # # # # # FIRST ASSIGN THE PROBABILITY OF PROLONGED DIARRHOEA (over 7 days) # # # # # #
+        # # # # # # FIRST ASSIGN THE PROBABILITY OF PROLONGED DIARRHOEA (over 7 days) BY PATHOGEN # # # # # #
         # # # ROTAVIRUS # # #
         p_prolonged_diarr_rota = pd.Series(self.module.rotavirus_prolonged_diarr, index=diarr_rotavirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_rotavirus_idx)), index=diarr_rotavirus_idx)
         ProD_rota = p_prolonged_diarr_rota > random_draw
-        ProD_rota_idx = p_prolonged_diarr_rota[ProD_rota]
+        ProD_rota_idx = p_prolonged_diarr_rota.index[ProD_rota]
         df.loc[ProD_rota_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # SHIGELLA # # #
         p_prolonged_diarr_shigella = pd.Series(self.module.shigella_prolonged_diarr, index=diarr_shigella_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_shigella_idx)), index=diarr_shigella_idx)
         ProD_shigella = p_prolonged_diarr_shigella > random_draw
-        ProD_shigella_idx = p_prolonged_diarr_shigella[ProD_shigella]
+        ProD_shigella_idx = p_prolonged_diarr_shigella.index[ProD_shigella]
         df.loc[ProD_shigella_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # ADENOVIRUS # # #
         p_prolonged_diarr_adeno = pd.Series(self.module.adenovirus_prolonged_diarr, index=diarr_adenovirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_adenovirus_idx)), index=diarr_adenovirus_idx)
         ProD_adeno = p_prolonged_diarr_adeno > random_draw
-        ProD_adeno_idx = p_prolonged_diarr_adeno[ProD_adeno]
+        ProD_adeno_idx = p_prolonged_diarr_adeno.index[ProD_adeno]
         df.loc[ProD_adeno_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # CRYPTOSPORIDIUM # # #
         p_prolonged_diarr_crypto = pd.Series(self.module.crypto_prolonged_diarr, index=diarr_crypto_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_crypto_idx)), index=diarr_crypto_idx)
         ProD_crypto = p_prolonged_diarr_crypto > random_draw
-        ProD_crypto_idx = p_prolonged_diarr_crypto[ProD_crypto]
+        ProD_crypto_idx = p_prolonged_diarr_crypto.index[ProD_crypto]
         df.loc[ProD_crypto_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # CAMPYLOBACTER # # #
         p_prolonged_diarr_campylo = pd.Series(self.module.campylo_prolonged_diarr, index=diarr_campylo_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_campylo_idx)), index=diarr_campylo_idx)
         ProD_campylo = p_prolonged_diarr_campylo > random_draw
-        ProD_campylo_idx = p_prolonged_diarr_campylo[ProD_campylo]
+        ProD_campylo_idx = p_prolonged_diarr_campylo.index[ProD_campylo]
         df.loc[ProD_campylo_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # ST-ETEC # # #
         p_prolonged_diarr_ETEC = pd.Series(self.module.ETEC_prolonged_diarr, index=diarr_ETEC_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_ETEC_idx)), index=diarr_ETEC_idx)
         ProD_ETEC = p_prolonged_diarr_ETEC > random_draw
-        ProD_ETEC_idx = p_prolonged_diarr_ETEC[ProD_ETEC]
+        ProD_ETEC_idx = p_prolonged_diarr_ETEC.index[ProD_ETEC]
         df.loc[ProD_ETEC_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # SAPOVIRUS # # #
         p_prolonged_diarr_sapo = pd.Series(self.module.sapovirus_prolonged_diarr, index=diarr_sapovirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_sapovirus_idx)), index=diarr_sapovirus_idx)
         ProD_sapo = p_prolonged_diarr_sapo > random_draw
-        ProD_sapo_idx = p_prolonged_diarr_sapo[ProD_sapo]
+        ProD_sapo_idx = p_prolonged_diarr_sapo.index[ProD_sapo]
         df.loc[ProD_sapo_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # NOROVIRUS # # #
         p_prolonged_diarr_noro = pd.Series(self.module.norovirus_prolonged_diarr, index=diarr_norovirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_norovirus_idx)), index=diarr_norovirus_idx)
         ProD_noro = p_prolonged_diarr_noro > random_draw
-        ProD_noro_idx = p_prolonged_diarr_noro[ProD_noro]
+        ProD_noro_idx = p_prolonged_diarr_noro.index[ProD_noro]
         df.loc[ProD_noro_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # ASTROVIRUS # # #
         p_prolonged_diarr_astro = pd.Series(self.module.astrovirus_prolonged_diarr, index=diarr_astrovirus_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_astrovirus_idx)), index=diarr_astrovirus_idx)
         ProD_astro = p_prolonged_diarr_astro > random_draw
-        ProD_astro_idx = p_prolonged_diarr_astro[ProD_astro]
+        ProD_astro_idx = p_prolonged_diarr_astro.index[ProD_astro]
         df.loc[ProD_astro_idx, 'gi_diarrhoea_type'] = 'prolonged'
         # # # EPEC # # #
         p_prolonged_diarr_EPEC = pd.Series(self.module.EPEC_prolonged_diarr, index=diarr_EPEC_idx)
         random_draw = pd.Series(rng.random_sample(size=len(diarr_EPEC_idx)), index=diarr_EPEC_idx)
         ProD_EPEC = p_prolonged_diarr_EPEC > random_draw
-        ProD_EPEC_idx = p_prolonged_diarr_EPEC[ProD_EPEC]
+        ProD_EPEC_idx = p_prolonged_diarr_EPEC.index[ProD_EPEC]
         df.loc[ProD_EPEC_idx, 'gi_diarrhoea_type'] = 'prolonged'
 
         # TODO: add the effects of risk factors for prolonged - exclusive breastfeed, young age
 
         # # # # # # NEXT ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
-        ProD_idx = df.index[(df.gi_diarrhoea_type == 'prolonged') & df.is_alive & df.age_exact_years < 5]
+        ProD_idx = df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'prolonged') & df.is_alive &
+                            (df.age_exact_years < 5)]
         becoming_persistent = pd.Series(self.module.prob_prolonged_to_persistent_diarr, index=ProD_idx)
 
         becoming_persistent.loc[df.is_alive & (df.age_exact_years >= 1) & (df.age_exact_years < 2)] \
@@ -1159,13 +1173,18 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[persistent_diarr_idx, 'gi_diarrhoea_type'] = 'persistent'
 
         # # # # # # PERSISTENT DIARRHOEA OR SEVERE PERSISTENT DIARRHOEA # # # # # #
-        if df.gi_diarrhoea_type == 'persistent' & (df.gi_dehydration_status == 'no dehydration'):
-            df.loc[persistent_diarr_idx, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
-        if df.gi_diarrhoea_type == 'persistent' & (df.gi_dehydration_status != 'no dehydration'):
-            df.loc[persistent_diarr_idx, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+        severe_persistent_diarr = \
+            df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
+                     (df.gi_dehydration_status != 'no dehydration')]
+        df.loc[severe_persistent_diarr, 'gi_persistent_diarrhoea'] = 'severe persistent diarrhoea'
+
+        just_persistent_diarr = \
+            df.index[df.gi_diarrhoea_status & (df.gi_diarrhoea_type == 'persistent') &
+                     (df.gi_dehydration_status == 'no dehydration')]
+        df.loc[just_persistent_diarr, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
 
         # Log the acute diarrhoea information
-        for child in persistent_diarr_idx:
+        '''for child in persistent_diarr_idx:
             # SET THE TIMELINE FOR PERSISTENT DIARRHOEA
             date_become_persistent = df.loc[child, 'date_of_onset_diarrhoea'] + DateOffset(weeks=2)
             logging_persistent_date = date_become_persistent.strftime('%Y-%m-%d %H:%M:%S')
@@ -1173,6 +1192,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                         {'child_index': child, 'age': df.at[child, 'age_years'],
                          'persistent_diarrhoea': df.at[child, 'gi_persistent_diarrhoea'],
                          'dehydration_present': df.at[child, 'gi_dehydration_status']})
+                         '''
 
         # # # # # # # # SYMPTOMS FROM PERSISTENT DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[persistent_diarr_idx, 'di_diarrhoea_over14days'] = True
@@ -1200,20 +1220,25 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # # # # # # ASSIGN DEATH PROBABILITIES BASED ON DEHYDRATION, CO-MORBIDITIES AND DIARRHOEA TYPE # # # # # #
         # case-fatality rates by diarrhoea clinical type
+        AWD_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                     (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
+        dysentery_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                     (df.gi_diarrhoea_acute_type == 'dysentery') & (df.gi_diarrhoea_type != 'persistent')]
+        persistent_diarr_idx = \
+            df.index[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                     (df.gi_diarrhoea_type == 'persistent')]
+
         cfr_AWD = \
-            pd.Series(m.case_fatality_rate_AWD,
-                      index=df.index[incident_acute_diarrhoea & (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea')
-                                     & (df.gi_diarrhoea_type != 'persistent')])
+            pd.Series(m.case_fatality_rate_AWD, index=AWD_idx)
         cfr_dysentery = \
-            pd.Series(m.case_fatality_rate_dysentery,
-                      index=df.index[incident_acute_diarrhoea & (df.gi_diarrhoea_acute_type == 'dysentery')
-                                     & (df.gi_diarrhoea_type != 'persistent')])
+            pd.Series(m.case_fatality_rate_dysentery, index=dysentery_idx)
         cfr_persistent_diarr = \
-            pd.Series(m.case_fatality_rate_persistent,
-                      index=df.index[incident_acute_diarrhoea & (df.gi_diarrhoea_type == 'persistent')])
+            pd.Series(m.case_fatality_rate_persistent, index=persistent_diarr_idx)
 
         # added effects of risk factors for death
-        eff_prob_death_diarr = pd.concat([cfr_AWD, cfr_dysentery, cfr_persistent_diarr], axis=1)
+        eff_prob_death_diarr = pd.concat([cfr_AWD, cfr_dysentery, cfr_persistent_diarr], axis=0).sort_index()
         eff_prob_death_diarr.loc[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_exact_years >= 1) &
                                  (df.age_exact_years < 2)] *= m.rr_diarr_death_age12to23mo
         eff_prob_death_diarr.loc[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_exact_years >= 2) &
@@ -1225,9 +1250,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO:add dehydration, add other co-morbidities
 
         random_draw_death = \
-            pd.Series(self.sim.rng.random_sample(size=len(df.is_alive & (df.gi_diarrhoea_status == True) &
-                                                          (df.age_exact_years < 5))),
-                      index=df.index[df.is_alive & (df.gi_diarrhoea_status == True) & (df.age_exact_years < 5)])
+            pd.Series(self.sim.rng.random_sample(size=len(eff_prob_death_diarr)), index=eff_prob_death_diarr.index)
+
         death_from_diarr = eff_prob_death_diarr > random_draw_death
         death_from_diarr_idx = eff_prob_death_diarr.index[death_from_diarr]
         for child in death_from_diarr_idx:
