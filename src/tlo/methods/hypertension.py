@@ -361,7 +361,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug('Hypertension method: This is a hypertension Event')
 
     def apply(self, population):
-
         logger.debug('Hypertension method: tracking the disease progression of the population.')
 
         # 1. Basic variables
@@ -381,10 +380,13 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         # 3.1 First get relative risk
         ht_probability = df.loc[currently_ht_no,
                                 ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
-                                left_on=['age_years'], right_on=['age'], how='left').set_index('person')['probability']
+                                                                              left_on=['age_years'],
+                                                                              right_on=['age'],
+                                                                              how='left').set_index('person')[
+            'probability']
         df['ht_risk'] = 1.0  # Reset risk for all people
         # TODO: update with BMI once merged to master
-        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi  #Adjust risk if overwt
+        df.loc[df.is_alive & df.li_overwt, 'ht_risk'] *= m.prob_htgivenbmi  # Adjust risk if overwt
         # TODO: add diabetes risk after circular declaration has been fixed with Asif/Stef
         # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= m.prob_htgivendiabetes
 
@@ -583,11 +585,12 @@ class HSI_HT_Refer_Individual(Event, IndividualScopeEventMixin):
 #
 #         # Get the consumables required
 #         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-#         pkg_code1 = pd.unique(consumables.loc[consumables[
-#                                                   'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
+#         pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+# 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
 #             0]
 #         pkg_code2 = pd.unique(consumables.loc[consumables[
-#                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
+#                                                   'Intervention_Pkg'] ==
+# 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
 #             0]
 #
 #         item_code1 = \
@@ -660,11 +663,12 @@ class HSI_HT_Refer_Individual(Event, IndividualScopeEventMixin):
 #
 #         # Get the consumables required
 #         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-#         pkg_code1 = pd.unique(consumables.loc[consumables[
-#                                                   'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
+#         pkg_code1 = pd.unique(consumables.loc[consumables['Intervention_Pkg'] ==
+# 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
 #             0]
 #         pkg_code2 = pd.unique(consumables.loc[consumables[
-#                                                   'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
+#                                                   'Intervention_Pkg'] ==
+# 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
 #             0]
 #
 #         item_code1 = \
@@ -822,7 +826,6 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: remove up to here
 
-
         # 3.3. Calculate prevalence from the model using groupby instead
         # TODO: use groupby (make new cats) below instead - check it is working
 
@@ -843,6 +846,3 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
                      '45to55': prevalence_ht_by_age_val.iloc[2],
                      '55to65': prevalence_ht_by_age_val.iloc[3]
                      })
-
-        a=3
-
