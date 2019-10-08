@@ -17,6 +17,7 @@ logger.setLevel(logging.DEBUG)
 
 
 # TODO: Asif/Stef to check if file path is mac/window flexible
+# TODO: circular declaration with diabetes to be addressed
 
 def make_hypertension_age_range_lookup(min_age, max_age, range_size):
     """Generates and returns a dictionary mapping age (in years) to age range
