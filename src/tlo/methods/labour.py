@@ -1336,11 +1336,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_obstructed_labour_md']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_obstructed_labour']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
         if mni[individual_id]['eclampsia_ip']:
             random = self.sim.rng.random_sample(size=1)
@@ -1353,11 +1355,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_eclampsia_md']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_eclampsia']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
         # if df.at[individual_id, 'la_aph']:
         if mni[individual_id]['APH']:
@@ -1371,11 +1375,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_aph_md']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_aph']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
         # if df.at[individual_id, 'la_sepsis']:
         if mni[individual_id]['sepsis_ip']:
@@ -1389,11 +1395,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_sepsis_md']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_sepsis']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
         # if df.at[individual_id, 'la_uterine_rupture']:
         if mni[individual_id]['UR']:
@@ -1407,11 +1415,13 @@ class LabourDeathEvent (Event, IndividualScopeEventMixin):
                 if random < params['prob_still_birth_ur_md']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
             else:
                 random = self.sim.rng.random_sample(size=1)
                 if random < params['prob_still_birth_ur']:
                     df.at[individual_id, 'la_still_birth_current_pregnancy'] = True
                     mni[individual_id]['stillbirth_in_labour'] = True
+                    df.at[individual_id, 'ps_previous_stillbirth'] = True
 
             # Schedule death for women who die in labour
 
