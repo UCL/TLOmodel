@@ -18,5 +18,4 @@ shutil.copy('/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la O
 # Import and copy file for hypertension:
 shutil.copy('/Users/mc1405/Dropbox/Projects - ongoing/Malawi Project/Thanzi la Onse/04 - Methods Repository/Method_T2DM.xlsx', '/Users/mc1405/PycharmProjects/TLOmodel/resources/'+'ResourceFile_Method_T2DM.xlsx')
 
-a=3; # TODO remove this dummy line. For now file does not fun without adding breakpoint at this line.
 

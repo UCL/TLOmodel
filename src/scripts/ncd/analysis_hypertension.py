@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
@@ -83,8 +82,8 @@ output = parse_log_file(logfile)
 # Load overall prevalence model and prevalence data
 val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]    # Load the existing data
 val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validation"]
-val_model_df2 = output["tlo.methods.hypertension"]["ht_prevalence_model_validation_2"]# Load the model data
-# TODO: I do not get the same numbers out for the moel output using groupby. Need to check and redo plotting code
+val_model_df2 = output["tlo.methods.hypertension"]["ht_prevalence_model_validation_2"] # Load the model data
+# TODO: I do not get the same numbers out for the model output using groupby. Need to check and redo plotting code
 Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
 Data_total = val_data_df.total    # Pick out overall prevalence from data
 Data_min = val_data_df.total_min  # Pick out min CI
@@ -98,7 +97,7 @@ Model_total = val_model_df.total  # Pick out overall prevalence from model
 # TODO: will have to refit once all BMI cats are there so prevalence is actually in line with data - ignore for now
 print("Is there hypertension in the model:", "\n", Model_total > 0)
 print("Is the prevalence of hypertension above the min 95% CI of the data: ", "\n", Data_min < Model_total)
-print("Is the prevalence of hypertension above the min 95% CI of the data: ", "\n", Data_max < Model_total)
+print("Is the prevalence of hypertension above the min 95% CI of the data: ", "\n", Data_max > Model_total)
 
 
 # Scatter graph of overall prevalence data vs model
@@ -111,7 +110,6 @@ plt.scatter(Plot_Years, Model_total, label='Model', color='red')
 plt.title("Overall prevalence: data vs model")
 plt.xlabel("Years")
 plt.ylabel("Prevalence")
-#plt.xticks(np.arange(min(Data_Years), max(Data_Years)+1))
 plt.gca().set_ylim(0, 100)
 plt.gca().legend(loc='lower right', bbox_to_anchor=(1.4, 0.5))
 plt.show()
