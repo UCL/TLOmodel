@@ -3,7 +3,9 @@ import logging
 import os
 from pathlib import Path
 import pandas as pd
+import numpy as np
 import time
+import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -30,7 +32,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2018, 12, 31)
-popsize = 100000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -92,63 +94,95 @@ output = parse_log_file(logfile)
 
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
-# create new folder with today's date
-datestamp2 = datetime.date.today().strftime("%Y_%m_%d")
-path = "Z:Thanzi la Onse/model_outputs/" + datestamp2
-if not os.path.exists(path):
-    os.makedirs(path)
-
 ## HIV
-inc = output['tlo.methods.hiv']['hiv_infected']
-prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
-prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
-prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
-tx = output['tlo.methods.hiv']['hiv_treatment']
-fsw = output['tlo.methods.hiv']['hiv_fsw']
-mort = output['tlo.methods.hiv']['hiv_mortality']
 
-inc_path = os.path.join(path, "hiv_inc_new.csv")
-inc.to_csv(inc_path, header=True)
+# model outputs
+m_hiv = output['tlo.methods.hiv']['hiv_infected']
+m_hiv_prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
+m_hiv_prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
+m_hiv_prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
+m_hiv_tx = output['tlo.methods.hiv']['hiv_treatment']
+m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
+m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
+m_years = pd.to_datetime(m_hiv.date)
 
-prev_m_path = os.path.join(path, "hiv_prev_m.csv")
-prev_m.to_csv(prev_m_path, header=True)
+# import HIV data
+hiv_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_HIV.xlsx",
+    sheet_name="unaids_estimates",
+)
 
-prev_f_path = os.path.join(path, "hiv_prev_f.csv")
-prev_f.to_csv(prev_f_path, header=True)
+plt.plot(np.asarray(hiv_data.year), hiv_data.prevalence_adults)
+plt.plot(m_years, m_hiv.hiv_adult_inc_percent)
+plt.title("HIV adult prevalence")
+plt.xlabel("Year")
+plt.ylabel("Prevalence (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2018, 1, 1))
+plt.legend(["Data", "Model"])
+plt.savefig(outputpath + "hiv_prev_adult" + datestamp + ".pdf")
+plt.show()
 
-prev_child_path = os.path.join(path, "hiv_prev_child.csv")
-prev_child.to_csv(prev_child_path, header=True)
+##########################################################################################################
+## send outputs to csv files
+##########################################################################################################
 
-tx_path = os.path.join(path, "hiv_tx_new.csv")
-tx.to_csv(tx_path, header=True)
-
-fsw_path = os.path.join(path, "hiv_fsw_new.csv")
-fsw.to_csv(fsw_path, header=True)
-
-mort_path = os.path.join(path, "hiv_mort_new.csv")
-mort.to_csv(mort_path, header=True)
-
-# TB
-tb_inc = output['tlo.methods.tb']['tb_incidence']
-tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
-tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
-tb_prev = output['tlo.methods.tb']['tb_prevalence']
-tb_mort = output['tlo.methods.tb']['tb_mortality']
-
-tb_inc_path = os.path.join(path, "tb_inc.csv")
-tb_inc.to_csv(tb_inc_path, header=True)
-
-tb_prev_m_path = os.path.join(path, "tb_prev_m.csv")
-tb_prev_m.to_csv(tb_prev_m_path, header=True)
-
-tb_prev_f_path = os.path.join(path, "tb_prev_f.csv")
-tb_prev_f.to_csv(tb_prev_f_path, header=True)
-
-tb_prev_path = os.path.join(path, "tb_prev.csv")
-tb_prev.to_csv(tb_prev_path, header=True)
-
-tb_mort_path = os.path.join(path, "tb_mort.csv")
-tb_mort.to_csv(tb_mort_path, header=True)
+# create new folder with today's date
+# datestamp2 = datetime.date.today().strftime("%Y_%m_%d")
+# path = "Z:Thanzi la Onse/model_outputs/" + datestamp2
+# if not os.path.exists(path):
+#     os.makedirs(path)
+#
+# ## HIV
+# inc = output['tlo.methods.hiv']['hiv_infected']
+# prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
+# prev_f = output['tlo.methods.hiv']['hiv_adult_prev_f']
+# prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
+# tx = output['tlo.methods.hiv']['hiv_treatment']
+# fsw = output['tlo.methods.hiv']['hiv_fsw']
+# mort = output['tlo.methods.hiv']['hiv_mortality']
+#
+# inc_path = os.path.join(path, "hiv_inc_new.csv")
+# inc.to_csv(inc_path, header=True)
+#
+# prev_m_path = os.path.join(path, "hiv_prev_m.csv")
+# prev_m.to_csv(prev_m_path, header=True)
+#
+# prev_f_path = os.path.join(path, "hiv_prev_f.csv")
+# prev_f.to_csv(prev_f_path, header=True)
+#
+# prev_child_path = os.path.join(path, "hiv_prev_child.csv")
+# prev_child.to_csv(prev_child_path, header=True)
+#
+# tx_path = os.path.join(path, "hiv_tx_new.csv")
+# tx.to_csv(tx_path, header=True)
+#
+# fsw_path = os.path.join(path, "hiv_fsw_new.csv")
+# fsw.to_csv(fsw_path, header=True)
+#
+# mort_path = os.path.join(path, "hiv_mort_new.csv")
+# mort.to_csv(mort_path, header=True)
+#
+# # TB
+# tb_inc = output['tlo.methods.tb']['tb_incidence']
+# tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
+# tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
+# tb_prev = output['tlo.methods.tb']['tb_prevalence']
+# tb_mort = output['tlo.methods.tb']['tb_mortality']
+#
+# tb_inc_path = os.path.join(path, "tb_inc.csv")
+# tb_inc.to_csv(tb_inc_path, header=True)
+#
+# tb_prev_m_path = os.path.join(path, "tb_prev_m.csv")
+# tb_prev_m.to_csv(tb_prev_m_path, header=True)
+#
+# tb_prev_f_path = os.path.join(path, "tb_prev_f.csv")
+# tb_prev_f.to_csv(tb_prev_f_path, header=True)
+#
+# tb_prev_path = os.path.join(path, "tb_prev.csv")
+# tb_prev.to_csv(tb_prev_path, header=True)
+#
+# tb_mort_path = os.path.join(path, "tb_mort.csv")
+# tb_mort.to_csv(tb_mort_path, header=True)
 
 # deaths_df = output['tlo.methods.demography']['death']
 # deaths_df['date'] = pd.to_datetime(deaths_df['date'])
