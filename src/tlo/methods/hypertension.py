@@ -743,13 +743,15 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
-        # This code logs the prevalence for the first 5 years from the data and the model. Assumption is that Hypertension prevalence
-        # will remain stable over the first 5 years and thus equal to 2010 data
+        # This code logs the prevalence for the first 5 years from the data and the model.
+        # Assumption is that Hypertension prevalence will remain stable over 5 years and thus equal to 2010 data
 
         df = population.props
         p = self.module.parameters
 
-        # Log the data every year (for plotting)        # TODO: see if we can shorten this code
+        # Log the data every year (for plotting)
+        # TODO: Can this codebelow be shorten (i.e. read in the whole frame?
+        # TODO: Can this be logged only first year
         logger.info('%s|test|%s',
                     self.sim.date,
                     {
@@ -775,7 +777,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
                         'age55to65_max': p['initial_prevalence'].loc['55_to_65', 'max95ci']
                     })
 
-        # 3.3. Calculate prevalence     #TODO: use groupby (make new cats)
+        # 3.3. Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
         adults_count_all = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 65)])
         adults_count_25to35 = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 35)])
         adults_count_35to45 = len(df[df.is_alive & (df.age_years > 34) & (df.age_years < 45)])
@@ -806,7 +808,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         assert prevalence_45to55 > 0
         assert prevalence_55to65 > 0
 
-        # 3.4 Log prevalence
+        # 3.4 Log prevalence from the model
         logger.info('%s|ht_prevalence_model_validation|%s',
                     self.sim.date,
                     {
@@ -816,3 +818,41 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
                         '45to55': prevalence_45to55,
                         '55to65': prevalence_55to65
                     })
+
+        # TODO: remove up to here
+
+
+        # 3.3. Calculate prevalence from the model using groupby instead
+        # TODO: use groupby (make new cats) below instead - check it is working
+
+        # First by age
+        count_by_age_val = df[df.is_alive].groupby('ht_age_range').size()
+        count_ht_by_age_val = df[df.is_alive & (df.ht_current_status)].groupby('ht_age_range').size()
+        prevalence_ht_by_age_val = (count_ht_by_age_val / count_by_age_val) * 100
+        prevalence_ht_by_age_val.fillna(0, inplace=True)
+
+        # Then overall
+        prevalence_ht_all_val = count_ht_by_age_val[0:4].sum() / count_by_age_val[0:4].sum() * 100
+
+        # Merge into one for logging
+        prevalence_val = pd.DataFrame(index=['total', '25to35', '35to45', '45to55', '55to65'], columns=['data'])
+        prevalence_val.at['total', 'data'] = prevalence_ht_all_val
+        prevalence_val.at['25to35', 'data'] = prevalence_ht_by_age_val.iloc[0]
+        prevalence_val.at['35to45', 'data'] = prevalence_ht_by_age_val.iloc[1]
+        prevalence_val.at['45to55', 'data'] = prevalence_ht_by_age_val.iloc[2]
+        prevalence_val.at['55to65', 'data'] = prevalence_ht_by_age_val.iloc[3]
+        prevalence_val.columns = ['']
+
+        # TODO: can this be shortened and how can it be logged in correct format?
+
+        # 3.4 Log prevalence
+        logger.info('%s|ht_prevalence_model_validation_2|%s', self.sim.date,
+                    {'total': prevalence_ht_all_val,
+                     '25to35': prevalence_ht_by_age_val.iloc[0],
+                     '35to45': prevalence_ht_by_age_val.iloc[1],
+                     '45to55': prevalence_ht_by_age_val.iloc[2],
+                     '55to65': prevalence_ht_by_age_val.iloc[3]
+                     })
+
+        a=3
+
