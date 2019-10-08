@@ -5,7 +5,6 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 import time
-import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -84,6 +83,9 @@ print("--- %s seconds ---" % (time.time() - start_time))
 # %% read the results
 import datetime
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 from tlo.analysis.utils import parse_log_file
 
@@ -112,14 +114,16 @@ hiv_data = pd.read_excel(
     sheet_name="unaids_estimates",
 )
 
-plt.plot(np.asarray(hiv_data.year), hiv_data.prevalence_adults)
+data_years = pd.to_datetime(hiv_data.year, format="%Y")
+
+plt.plot(data_years, hiv_data.prevalence_adults)
 plt.plot(m_years, m_hiv.hiv_adult_inc_percent)
 plt.title("HIV adult prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2018, 1, 1))
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
-plt.savefig(outputpath + "hiv_prev_adult" + datestamp + ".pdf")
+# plt.savefig(outputpath + "hiv_prev_adult" + datestamp + ".pdf")
 plt.show()
 
 ##########################################################################################################
