@@ -48,6 +48,13 @@ def test_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
+def __check_properties(df):
+    assert not ((df.sex == 'M') & (df.hv_sexual_risk != 'sex_work')).any()
+    assert not ((df.hv_number_tests >= 1) & ~df.hv_ever_tested).any()
+
+    assert not (df.mc_is_circumcised & (df.sex == 'F')).any()
+
+
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()

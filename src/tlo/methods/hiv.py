@@ -1207,7 +1207,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
             gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
                 frac=params['fsw_prep']).index
 
-            if gets_prep:
+            if len(gets_prep) >= 1:
                 for person_id in gets_prep:
                     # make the outreach event
                     prep_event = HSI_Hiv_Prep(self.module, person_id=person_id)
