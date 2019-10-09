@@ -30,8 +30,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 500
+end_date = Date(2025, 12, 31)
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -106,7 +106,9 @@ m_hiv_prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
 m_hiv_tx = output['tlo.methods.hiv']['hiv_treatment']
 m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
 m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
+
 m_hiv_years = pd.to_datetime(m_hiv.date)
+hiv_art_cov_percent = m_hiv_tx.hiv_coverage_adult_art * 100
 
 # import HIV data
 hiv_data = pd.read_excel(
@@ -121,6 +123,7 @@ m_tb_inc = output['tlo.methods.tb']['tb_incidence']
 m_tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
 m_tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
 m_tb_prev = output['tlo.methods.tb']['tb_prevalence']
+m_tb_treatment = output['tlo.methods.tb']['tb_treatment']
 m_tb_mort = output['tlo.methods.tb']['tb_mortality']
 m_tb_years = pd.to_datetime(m_tb_inc.date)
 
@@ -140,7 +143,7 @@ plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
 plt.title("HIV adult prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
-plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # HIV incidence
@@ -172,8 +175,29 @@ plt.xlabel("Year")
 plt.ylabel("Prevalence")
 plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
+
+# HIV treatment coverage
+plt.subplot(325)  # numrows, numcols, fignum
+plt.plot(data_years, hiv_data.art_coverage_adult)
+plt.plot(m_hiv_years, hiv_art_cov_percent)
+plt.title("ART coverage (%)")
+plt.xlabel("Year")
+plt.ylabel("Coverage (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Data", "Model"])
+
+# TB treatment coverage
+plt.subplot(326)  # numrows, numcols, fignum
+# plt.plot(tb_data_years, tb_data.prevalence_all_ages)
+plt.plot(m_tb_years, m_tb_treatment.tbTreat)
+plt.title("TB treatment coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Model"])
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
+
 
 ##########################################################################################################
 ## send outputs to csv files
