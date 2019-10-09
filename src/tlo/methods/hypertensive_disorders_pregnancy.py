@@ -127,16 +127,16 @@ class HypertensiveDisordersOfPregnancy(Module):
         # ============================= PRE-ECLAMPSIA/SUPER IMPOSED PE (at baseline) ===================================
 
         # First we apply the baseline prevalence of pre-eclampsia to women who are pregnant at baseline
-        preg_women = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F')]  # TODO: limit to GA >20 weeks
+        preg_women = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.ps_gestational_age > 20)]
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women)), index=preg_women)
 
         eff_prob_pe = pd.Series(params['base_prev_pe'], index=preg_women)
         dfx = pd.concat((random_draw, eff_prob_pe), axis=1)
         dfx.columns = ['random_draw', 'eff_prob_pe']
-        idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]  # TODO: create 2 indexes (with and without hypertension)
+        idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]
 
-        df.loc[idx_pe, 'hp_htn_preg'] = 'pre_eclampsia'
-        df.loc[idx_pe, 'hp_prev_pre_eclamp'] = True
+        df.loc[idx_pe, 'ps_pre_eclampsia'] = True
+        df.loc[idx_pe, 'ps_prev_pre_eclamp'] = True
 
         # next we assign level of symptoms to women who have pre-eclampsia
         level_of_symptoms = params['levels_pe_symptoms']
@@ -144,16 +144,18 @@ class HypertensiveDisordersOfPregnancy(Module):
                                    size=len(idx_pe),
                                    p=level_of_symptoms.probability)
         df.loc[idx_pe, 'hp_pe_specific_symptoms'] = symptoms    # TODO: oedema?
+
         # ============================= GESTATIONAL HYPERTENSION (at baseline) ========================================
 
-        preg_women_no_pe = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & (df.hp_htn_preg =='none')]  # TODO: limit to GA >20 weeks
+        preg_women_no_pe = df.index[df.is_alive & df.is_pregnant & (df.sex == 'F') & ~df.ps_pre_eclampsia &
+                                    (df.ps_gestational_age > 20)]
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women_no_pe)), index=preg_women_no_pe)
 
         eff_prob_gh = pd.Series(params['base_prev_gest_htn'], index=preg_women_no_pe)
         dfx = pd.concat((random_draw, eff_prob_gh), axis=1)
         dfx.columns = ['random_draw', 'eff_prob_gh']
         idx_pe = dfx.index[dfx.eff_prob_gh > dfx.random_draw]
-        df.loc[idx_pe, 'hp_htn_preg'] = 'gest_htn'
+        df.loc[idx_pe, 'ps_gest_htn'] = True
 
         # TODO: symptom free?
         # TODO: death schedule? or complication event...?
@@ -171,8 +173,8 @@ class HypertensiveDisordersOfPregnancy(Module):
         """
 
         # add the basic event
-        event = HypertensiveDisordersOfPregnancyEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1)) # TODO: will this capture the right people?
+#        event = HypertensiveDisordersOfPregnancyEvent(self)
+#        sim.schedule_event(event, sim.date + DateOffset(months=1)) # TODO: will this capture the right people?
 
         # add an event to log to screen
         sim.schedule_event(HypertensiveDisordersOfPregnancyLoggingEvent(self), sim.date + DateOffset(months=6))
@@ -234,41 +236,41 @@ class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMi
         # ===================== NEW CASES OF PRE-ECLAMPSIA & GESTATIONAL HYPERTENSION ==================================
 
         # First we select women who have been pregnant for less than 4 weeks a
-        susceptible_women = df.index[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & ~df.hp_htn_preg
-                                     (df.ac_gestational_age < 4)]  # do we allow gestational hypertension to become PE
+#        susceptible_women = df.index[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & ~df.hp_htn_preg
+#                                     (df.ac_gestational_age < 4)]  # do we allow gestational hypertension to become PE
 
         # TODO: We should code the progession of GHTN to PE
 
-        eff_prob_pe = pd.Series(params['prob_pre_eclamp'], index=susceptible_women)
+#        eff_prob_pe = pd.Series(params['prob_pre_eclamp'], index=susceptible_women)
 
         # We then calculate and apply the risk of pre-eclampsia taking into account each womans risk factors
-        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia =='none') & (df.la_parity == 0)] \
-            *= params['rr_pre_eclamp_nulip']
-        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & df.hp_prev_pre_eclamp] \
-            *= params['rr_pre_eclamp_prev_pe']
+#        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia =='none') & (df.la_parity == 0)] \
+#            *= params['rr_pre_eclamp_nulip']
+#        eff_prob_pe.loc[df.is_alive & df.is_pregnant & (df.hp_pre_eclampsia == 'none') & df.hp_prev_pre_eclamp] \
+#            *= params['rr_pre_eclamp_prev_pe']
 
         # TODO: chronic HTN (creating superimposed), BMI, DIABETES, TWINS, ? maternal PE
         # TODO: consider independent risk factors for Gest HTN
 
-        # We create an index of women who will develop pre-eclampsia and those who wont
-        random_draw = self.module.rng.random_sample(size=len(eff_prob_pe))
-        dfx = pd.concat((random_draw, eff_prob_pe), axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_pe']
-        idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]
-        idx_suscept_gh = dfx.index[dfx.eff_prob_pe < dfx.random_draw]
+#        # We create an index of women who will develop pre-eclampsia and those who wont
+#        random_draw = self.module.rng.random_sample(size=len(eff_prob_pe))
+#        dfx = pd.concat((random_draw, eff_prob_pe), axis=1)
+#        dfx.columns = ['random_draw', 'eff_prob_pe']
+#        idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]
+#       idx_suscept_gh = dfx.index[dfx.eff_prob_pe < dfx.random_draw]
 
         # For women who wont develop pre-eclampsia we determine if they will develop gestational hypertension
-        selected_gh = idx_suscept_gh[params['prob_gest_htn'] > self.module.rng.random_sample(size=len(idx_suscept_gh))]
+#        selected_gh = idx_suscept_gh[params['prob_gest_htn'] > self.module.rng.random_sample(size=len(idx_suscept_gh))]
 
         # We schedule the onset of these diseases after 20 weeks of gestation, in keeping with the aetiology
-        for person in idx_pe & selected_gh:
-            diff = 20 - df.at[person, 'ac_gestational_age']
-            time_until_onset = diff + np.random.exponential(scale=4, size=1)
-            # TODO: Would be more accurate to draw from a distribution of incidence by GA (weeks?)
-            days_till_pe = pd.to_timedelta(time_until_onset, unit='w')  # this is days for some reason
-            onset_date = self.sim.date + days_till_pe
-            self.sim.schedule_event(PreeclampsiaAndGestationalHypertensionOnsetEvent(self.module, person,
-                                                                                     cause='pre_eclampsia'), onset_date)
+#        for person in idx_pe & selected_gh:
+#            diff = 20 - df.at[person, 'ac_gestational_age']
+#            time_until_onset = diff + np.random.exponential(scale=4, size=1)
+#            # TODO: Would be more accurate to draw from a distribution of incidence by GA (weeks?)
+#            days_till_pe = pd.to_timedelta(time_until_onset, unit='w')  # this is days for some reason
+#            onset_date = self.sim.date + days_till_pe
+#            self.sim.schedule_event(PreeclampsiaAndGestationalHypertensionOnsetEvent(self.module, person,
+#                                                                                     cause='pre_eclampsia'), onset_date)
 
 # ========================================== PROGRESSION OF PRE-ECLAMPSIA ==============================================
 
@@ -280,7 +282,6 @@ class HypertensiveDisordersOfPregnancyEvent(RegularEvent, PopulationScopeEventMi
 
 # 4.) CARE SEEKING (ADDITIONAL TO ANC?- undiagnosed but symptomatic?)
 
-
 class PreeclampsiaAndGestationalHypertensionOnsetEvent (Event, IndividualScopeEventMixin):
     """This event manages the onsent of pre-eclampsia in pregnant women previously determined as suceptible """
 
@@ -291,32 +292,34 @@ class PreeclampsiaAndGestationalHypertensionOnsetEvent (Event, IndividualScopeEv
         df = self.sim.population.props
         params = self.module.parameters
 
-        logger.info('This is PreeclampsiaEvent, person %d has developed pre-eclampsia during her pregnancy',
-                    individual_id)
-        print(df.at[individual_id, 'ac_gestational_age'])
+#        logger.info('This is PreeclampsiaEvent, person %d has developed pre-eclampsia during her pregnancy',
+#                    individual_id)
+#        print(df.at[individual_id, 'ac_gestational_age'])
 
         # Check this woman is still alive and remains pregnant at the time of pre-eclampsia onset
-        if df.at[individual_id,'is_alive'] & df.at[individual_id, 'is_pregnant']:
+#        if df.at[individual_id,'is_alive'] & df.at[individual_id, 'is_pregnant']:
 
             # Select form of pre-eclampsia based on gestational age
-            if df.at[individual_id, 'ac_gestational_age'] <= 33:
-                df.at[individual_id, 'hp_pre_eclampsia'] = 'early_pre_eclamp'
-                df.at[individual_id,'hp_prev_pre_eclamp'] = True
+#            if df.at[individual_id, 'ac_gestational_age'] <= 33:
+#                df.at[individual_id, 'hp_pre_eclampsia'] = 'early_pre_eclamp'
+#                df.at[individual_id,'hp_prev_pre_eclamp'] = True
 
-            if df.at[individual_id, 'ac_gestational_age'] > 33:
-                df.at[individual_id, 'hp_pre_eclampsia'] = 'late_pre_eclamp'
-                df.at[individual_id,'hp_prev_pre_eclamp'] = True
+#            if df.at[individual_id, 'ac_gestational_age'] > 33:
+#                df.at[individual_id, 'hp_pre_eclampsia'] = 'late_pre_eclamp'
+#                df.at[individual_id,'hp_prev_pre_eclamp'] = True
 
             # Asses which symptoms this woman is experiencing becuase of her pre-eclampsia
-            level_of_symptoms = params['levels_pe_symptoms']
-            symptoms = self.module.rng.choice(level_of_symptoms.level_of_symptoms,
-                                       size=1,
-                                       p=level_of_symptoms.probability)
-            df.at[individual_id, 'hp_pe_specific_symptoms'] = symptoms
+#            level_of_symptoms = params['levels_pe_symptoms']
+#            symptoms = self.module.rng.choice(level_of_symptoms.level_of_symptoms,
+#                                       size=1,
+#                                       p=level_of_symptoms.probability)
+#            df.at[individual_id, 'hp_pe_specific_symptoms'] = symptoms
 
         # TODO: CARE SEEKING (will that be an additional ANC, or the hospital?, depends on severity)
         #  (OR SHOULD THIS BE IN THE MAIN EVENT)
         # TODO: if we apply risk at the beggining how will we consider interventions that reduce risk? (calcium)
+
+
 
 class HypertensiveDisordersOfPregnancyDeathEvent(Event, IndividualScopeEventMixin):
     """
@@ -330,11 +333,11 @@ class HypertensiveDisordersOfPregnancyDeathEvent(Event, IndividualScopeEventMixi
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'mi_status'] == 'C':
+#        if df.at[person_id, 'mi_status'] == 'C':
 
             # Fire the centralised death event:
-            death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
-            self.sim.schedule_event(death, self.sim.date)
+#            death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
+#            self.sim.schedule_event(death, self.sim.date)
 
 
 

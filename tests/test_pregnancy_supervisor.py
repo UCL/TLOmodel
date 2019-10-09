@@ -12,7 +12,7 @@ workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 1000
+popsize = 3000
 
 
 @pytest.fixture(autouse=True)
