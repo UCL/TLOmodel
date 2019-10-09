@@ -85,6 +85,7 @@ import datetime
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from tlo import Date
 
 
 from tlo.analysis.utils import parse_log_file
@@ -97,7 +98,6 @@ output = parse_log_file(logfile)
 # output = parse_log_file('./src/scripts/tb/LogFile__2019_10_04.log')
 
 ## HIV
-
 # model outputs
 m_hiv = output['tlo.methods.hiv']['hiv_infected']
 m_hiv_prev_m = output['tlo.methods.hiv']['hiv_adult_prev_m']
@@ -106,7 +106,7 @@ m_hiv_prev_child = output['tlo.methods.hiv']['hiv_child_prev_m']
 m_hiv_tx = output['tlo.methods.hiv']['hiv_treatment']
 m_hiv_fsw = output['tlo.methods.hiv']['hiv_fsw']
 m_hiv_mort = output['tlo.methods.hiv']['hiv_mortality']
-m_years = pd.to_datetime(m_hiv.date)
+m_hiv_years = pd.to_datetime(m_hiv.date)
 
 # import HIV data
 hiv_data = pd.read_excel(
@@ -116,31 +116,64 @@ hiv_data = pd.read_excel(
 
 data_years = pd.to_datetime(hiv_data.year, format="%Y")
 
+# TB
+m_tb_inc = output['tlo.methods.tb']['tb_incidence']
+m_tb_prev_m = output['tlo.methods.tb']['tb_propActiveTbMale']
+m_tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
+m_tb_prev = output['tlo.methods.tb']['tb_prevalence']
+m_tb_mort = output['tlo.methods.tb']['tb_mortality']
+m_tb_years = pd.to_datetime(m_tb_inc.date)
+
+tb_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_TB.xlsx",
+    sheet_name="WHO_estimates",
+)
+tb_data_years = pd.to_datetime(tb_data.year, format="%Y")
+
+## FIGURES
 plt.figure(1)
 
 # HIV prevalence
 plt.subplot(321)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.prevalence_adults)
-plt.plot(m_years, m_hiv.ad_prev)
+plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
 plt.title("HIV adult prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
 plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
-# plt.savefig(outputpath + "hiv_prev_adult" + datestamp + ".pdf")
-plt.show()
 
 # HIV incidence
 plt.subplot(322)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.incidence_adults_percent)
-plt.plot(m_years, m_hiv.hiv_adult_inc_percent)
-plt.title("HIV adult incidence")
+plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
+plt.title("HIV adult incidence (%)")
 plt.xlabel("Year")
 plt.ylabel("Incidence (%)")
 plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
-# plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
+
+# TB incidence
+plt.subplot(323)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.incidence_per_100k)
+plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
+plt.title("TB case incidence/100k")
+plt.xlabel("Year")
+plt.ylabel("Incidence (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Data", "Model"])
+
+# TB prevalence
+plt.subplot(324)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.prevalence_all_ages)
+plt.plot(m_tb_years, m_tb_prev.tbPropActive)
+plt.title("TB prevalence")
+plt.xlabel("Year")
+plt.ylabel("Prevalence")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Data", "Model"])
 plt.show()
+# plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
 
 ##########################################################################################################
 ## send outputs to csv files
