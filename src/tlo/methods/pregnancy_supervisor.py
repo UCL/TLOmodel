@@ -130,6 +130,7 @@ class PregnancySupervisor(Module):
         df.loc[df.sex == 'F', 'ps_still_birth_current_pregnancy'] = False
         df.loc[df.sex == 'F', 'ps_previous_stillbirth'] = False
         df.loc[df.sex == 'F', 'ps_pre_eclampsia'] = False
+        df.loc[df.sex == 'F', 'ps_prev_pre_eclamp'] = False
         df.loc[df.sex == 'F', 'ps_gest_htn'] = False
         df.loc[df.sex == 'F', 'ps_gest_diab'] = False
         df.loc[df.sex == 'F', 'ps_prev_gest_diab'] = False
@@ -165,6 +166,7 @@ class PregnancySupervisor(Module):
             df.at[child_id, 'ps_still_birth_current_pregnancy'] = False
             df.at[child_id, 'ps_previous_stillbirth'] = False
             df.at[child_id, 'ps_pre_eclampsia'] = False
+            df.at[child_id, 'ps_prev_pre_eclamp'] = False
             df.at[child_id, 'ps_gest_htn'] = False
             df.at[child_id, 'ps_gest_diab'] = False
             df.at[child_id, 'ps_prev_gest_diab'] = False
@@ -419,8 +421,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = pd.Series(self.module.rng.random_sample(size=len(month_5_idx)),
                                 index=month_5_idx)
-        dfx = pd.concat([random_draw, eff_prob_miscarriage], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_miscarriage']
+        eclamp_stat = pd.Series(df.ps_pre_eclampsia,index=month_5_idx)
+        htn_stat= pd.Series(df.ps_gest_htn,index=month_5_idx)
+
+        dfx = pd.concat([random_draw, eff_prob_miscarriage, eclamp_stat, htn_stat], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_miscarriage', 'eclamp_stat', 'htn_stat']
         idx_mc = dfx.index[dfx.eff_prob_miscarriage > dfx.random_draw]
         idx_ac = dfx.index[dfx.eff_prob_miscarriage < dfx.random_draw]
 
@@ -436,7 +441,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         dfx = pd.concat([random_draw, eff_prob_abortion], axis=1)
         dfx.columns = ['random_draw', 'eff_prob_abortion']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
-        idx_preg_continues = dfx.index[dfx.eff_prob_abortion < dfx.random_draw]
+
+        # Here we create an index of women who will remain pregnant and are not already suffering from
+        # pre-eclampsia/hypertension
+        at_risk_pregnancies_idx = dfx.index[dfx.eff_prob_abortion < dfx.random_draw & ~dfx.eclamp_stat &
+                                            ~dfx.htn_stat]
 
         df.loc[idx_ia, 'ps_total_induced_abortion'] = +1  # Could this be a function
         df.loc[idx_ia, 'is_pregnant'] = False
@@ -444,14 +453,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
 
         # PRE-ECLAMPSIA
-        eff_prob_pre_eclamp = pd.Series(pe_risk[5], index=idx_preg_continues)
+
+        eff_prob_pre_eclamp = pd.Series(pe_risk[5], index=at_risk_pregnancies_idx)
         eff_prob_pre_eclamp.loc[df.is_alive & df.is_pregnant & (df.la_parity == 0)]\
             *= params['rr_pre_eclamp_nulip']
         eff_prob_pre_eclamp.loc[df.is_alive & df.is_pregnant & df.ps_prev_pre_eclamp]\
             *= params['rr_pre_eclamp_prev_pe']
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_preg_continues)),
-                                index=idx_preg_continues)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(at_risk_pregnancies_idx)),
+                                index=at_risk_pregnancies_idx)
         dfx = pd.concat([random_draw, eff_prob_pre_eclamp], axis=1)
         dfx.columns = ['random_draw', 'eff_prob_pre_eclamp']
         idx_pe = dfx.index[dfx.eff_prob_pre_eclamp > dfx.random_draw]
@@ -473,7 +483,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         #  progression of states from one to another
 
         # GESTATIONAL DIABETES
-        eff_prob_pre_gestdiab = pd.Series(gd_risk[5], index=idx_preg_continues)
+        eff_prob_pre_gestdiab = pd.Series(gd_risk[5], index=at_risk_pregnancies_idx)
 
         eff_prob_pre_gestdiab.loc[df.is_alive & df.is_pregnant & df.ps_previous_stillbirth] \
             *= params['rr_gest_diab_stillbirth']
@@ -481,7 +491,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
             *= params['rr_gest_diab_prevdiab']  # confirm if this is all diabetes or just previous GDM
         # additional risk factors  :overweight, chronic htn
 
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_preg_continues)), index=idx_preg_continues)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(at_risk_pregnancies_idx)),
+                                index=at_risk_pregnancies_idx)
         dfx = pd.concat([random_draw, eff_prob_pre_gestdiab], axis=1)
         dfx.columns = ['random_draw', 'eff_prob_pre_gestdiab']
         idx_gh = dfx.index[dfx.eff_prob_pre_gestdiab > dfx.random_draw]
@@ -495,8 +506,23 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         month_6_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 24)]
         # todo: they shouldnt have the condition- so change indexes?
 
+        # PRE ECLAMPSIA
+        # GESTATIONAL HYPERTENSION
+        # GESTATIONAL DIABETES
         # STILL BIRTH RISK
-        # TODO: this should consider
+
+        eff_prob_stillbirth = pd.Series(sb_risk[6], index= month_6_idx)
+
+        # Todo: also consider seperating early and late still births (causation is different)
+        # TODO: (risk factors) this will require close work, impact of conditions, on top of baseline risk etc etc
+
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(month_6_idx)), index=month_6_idx)
+        dfx = pd.concat([random_draw, eff_prob_stillbirth], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_stillbirth']
+        idx_sb = dfx.index[dfx.eff_prob_stillbirth > dfx.random_draw]
+
+        df.loc[idx_sb, 'ps_still_birth_current_pregnancy'] = True
+        df.loc[idx_sb, 'ps_previous_stillbirth'] = True
 
     # =========================== MONTH 7 RISK APPLICATION ========================================
         month_7_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 28)]
