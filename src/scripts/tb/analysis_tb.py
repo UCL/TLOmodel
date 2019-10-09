@@ -30,8 +30,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
-popsize = 5000
+end_date = Date(2012, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -116,14 +116,30 @@ hiv_data = pd.read_excel(
 
 data_years = pd.to_datetime(hiv_data.year, format="%Y")
 
+plt.figure(1)
+
+# HIV prevalence
+plt.subplot(321)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.prevalence_adults)
-plt.plot(m_years, m_hiv.hiv_adult_inc_percent)
+plt.plot(m_years, m_hiv.ad_prev)
 plt.title("HIV adult prevalence")
 plt.xlabel("Year")
 plt.ylabel("Prevalence (%)")
 plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
 # plt.savefig(outputpath + "hiv_prev_adult" + datestamp + ".pdf")
+plt.show()
+
+# HIV incidence
+plt.subplot(322)  # numrows, numcols, fignum
+plt.plot(data_years, hiv_data.incidence_adults_percent)
+plt.plot(m_years, m_hiv.hiv_adult_inc_percent)
+plt.title("HIV adult incidence")
+plt.xlabel("Year")
+plt.ylabel("Incidence (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Data", "Model"])
+# plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
 plt.show()
 
 ##########################################################################################################
