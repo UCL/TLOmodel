@@ -113,6 +113,10 @@ class Tb(Module):
         'tb_high_risk_distr': Parameter(Types.LIST, 'list of ten high-risk districts'),
         'ipt_contact_cov': Parameter(Types.REAL, 'coverage of IPT among contacts of TB cases in high-risk districts'),
 
+        'bcg_coverage_year': Parameter(Types.REAL, 'bcg coverage estimates in children <1 years by calendar year'),
+        'initial_bcg_coverage': Parameter(Types.REAL, 'bcg coverage by age in baseline population'),
+
+
         # daly weights, no daly weight for latent tb
         'daly_wt_susc_tb':
             Parameter(Types.REAL, 'Drug-susecptible tuberculosis, not HIV infected'),
@@ -170,6 +174,7 @@ class Tb(Module):
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
         'tb_date_death': Property(Types.DATE, 'date of tb death'),
         'tb_date_death_occurred': Property(Types.DATE, 'date of tb death'),
+        'tb_bcg': Property(Types.BOOL, 'received BCG vaccination')
     }
 
     def read_parameters(self, data_folder):
@@ -252,6 +257,10 @@ class Tb(Module):
         params['tb_high_risk_distr'] = workbook['IPTdistricts']
         params['ipt_contact_cov'] = self.param_list.loc['ipt_contact_cov', 'value1']
 
+        params['bcg_coverage_year'] = workbook['BCG']
+        params['initial_bcg_coverage'] = workbook['BCG_baseline']
+
+
         # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_susc_tb'] = self.sim.modules['HealthBurden'].get_daly_weight(
@@ -280,6 +289,7 @@ class Tb(Module):
         """
         df = population.props
         now = self.sim.date
+        params = self.parameters
 
         # set-up baseline population
         df['tb_inf'].values[:] = 'uninfected'
@@ -310,6 +320,9 @@ class Tb(Module):
         df['tb_date_ipt'] = pd.NaT
         df['tb_date_death'] = pd.NaT
         df['tb_date_death_occurred'] = pd.NaT
+        df['tb_bcg'] = False
+
+        self.bcg(population)  # assign bcg vaccine to baseline population
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
@@ -328,10 +341,18 @@ class Tb(Module):
 
         assert df_tbprob.prob_latent_tb.isna().sum() == 0  # check there is a probability for every individual
 
+        # assign risk of latent tb
+        risk_tb = pd.Series(1, index=df.index)
+        risk_tb.loc[df.is_alive & df.bcg & df.age_years < 10] *= params['rr_bcg_inf']
+
+        # sample 10% prev, weight the likelihood of being sampled by the relative risk
+        norm_p = pd.Series(risk_tb)
+        norm_p /= norm_p.sum()  # normalise
+
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_tbprob))
+        tb_idx = df_tbprob.index[df.is_alive & ((df_tbprob.prob_latent_tb * norm_p) < random_draw)]
 
-        tb_idx = df_tbprob.index[df.is_alive & (df_tbprob.prob_latent_tb > random_draw)]
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
         df.loc[tb_idx, 'tb_stage'] = 'latent'
@@ -357,15 +378,17 @@ class Tb(Module):
 
         assert df_active_prob.prob_active_tb.isna().sum() == 0  # check there is a probability for every individual
 
+        # assign risk of latent tb
+        risk_active = pd.Series(1, index=df.index)
+        risk_active.loc[df.is_alive & df.bcg & df.age_years < 10] *= params['rr_tb_bcg']
+
+        # sample 10% prev, weight the likelihood of being sampled by the relative risk
+        norm_p = pd.Series(risk_active)
+        norm_p /= norm_p.sum()  # normalise
+
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
-
-        # all new active cases
-        active_idx = df_active_prob[
-            df_active_prob.is_alive & (df_active_prob.tb_inf == 'uninfected') & (
-                random_draw < df_active_prob.prob_active_tb)].index
-
-        # print(active)
+        active_idx = df_active_prob.index[df.is_alive & ((df_active_prob.prob_active_tb * norm_p) < random_draw)]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -429,6 +452,31 @@ class Tb(Module):
 
                 # schedule active disease
                 self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
+
+    def bcg(self, population):
+        """ Assign BCG vaccination to baseline population
+        """
+        df = population.props
+        params = self.parameters
+
+        bcg_cov = params['initial_bcg_coverage']
+
+        df_bcg = df.merge(bcg_cov, left_on=['age_years'],
+                          right_on=['Age'],
+                          how='left')
+
+        # fill missing values with 0 (only relevant for age 80+)
+        df_bcg['bcg_coverage'] = df_bcg['bcg_coverage'].fillna(0)
+        assert df_bcg.bcg_coverage.isna().sum() == 0  # check there is a probability for every individual
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = self.rng.random_sample(size=len(df_bcg))
+
+        # probability of bcg > random number, assign bcg = True
+        bcg_idx = df_bcg.index[
+            df.is_alive & (random_draw < df_bcg.bcg_coverage)]
+
+        df.loc[bcg_idx, 'tb_bcg'] = True
 
     def initialise_simulation(self, sim):
 
@@ -3116,6 +3164,19 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'tbTreat': percent_treated,
                         'tbTreatAdult': percent_treated_adult,
                         'tbTreatChild': percent_treated_child
+                    })
+
+        # ------------------------------------ BCG ------------------------------------
+        # bcg vaccination coverage in <1 year old children
+        bcg = len(df[df.is_alive & df.tb_bcg & (df.age_years <= 1)])
+        infants = len(df[df.is_alive & (df.age_years <= 1)])
+
+        coverage = (bcg / infants) * 100
+        assert coverage <= 100
+
+        logger.info('%s|tb_bcg|%s', now,
+                    {
+                        'tbCoverage': coverage,
                     })
 
         # ------------------------------------ MORTALITY ------------------------------------
