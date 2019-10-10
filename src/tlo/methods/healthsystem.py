@@ -551,7 +551,7 @@ class HealthSystem(Module):
             (appt_times['Facility_Level'] == the_facility_level & appt_times.Appt_Type_Code.isin(appts_with_duration)),
             ['Officer_Type_Code', 'Time_Taken']]
 
-        df_appt_footprint.set_index('FacilityID_' + the_facility_id.astype(str) + '_Officer_' +
+        df_appt_footprint = df_appt_footprint.set_index('FacilityID_' + the_facility_id.astype(str) + '_Officer_' +
                                     df_appt_footprint['Officer_Type_Code'].astype(str))
 
         # Create Series of summed required time for each officer type
