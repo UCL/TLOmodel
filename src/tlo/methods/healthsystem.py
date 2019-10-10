@@ -502,7 +502,6 @@ class HealthSystem(Module):
         # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
         return 1.0
 
-    @profile
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
@@ -552,7 +551,8 @@ class HealthSystem(Module):
             (appt_times['Facility_Level'] == the_facility_level & appt_times.Appt_Type_Code.isin(appts_with_duration)),
             ['Officer_Type_Code', 'Time_Taken']]
 
-        df_appt_footprint['Officer_Type_Code'].apply(lambda x: f'FacilityID_{the_facility_id}_{x}')
+        df_appt_footprint.set_index('FacilityID_' + the_facility_id.astype(str) + '_Officer_' +
+                                    df_appt_footprint['Officer_Type_Code'].astype(str))
 
         # Create Series of summed required time for each officer type
         appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
