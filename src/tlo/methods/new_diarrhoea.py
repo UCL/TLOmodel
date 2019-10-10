@@ -666,6 +666,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'ETEC': pathogen_count['ST-ETEC'],
                      'sapovirus': pathogen_count['sapovirus'],
                      'norovirus': pathogen_count['norovirus'],
+                     'astrovirus': pathogen_count['astrovirus'],
                      'tEPEC': pathogen_count['tEPEC'],
                      })
 
@@ -863,13 +864,20 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
         # ----------------------------------------------------------------------------------------------------------
 
-        # Log the acute diarrhoea information
+        ''' # Log the acute diarrhoea information
         diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
         logger.info('%s|acute_diarrhoea|%s', self.sim.date,
                     {'total': sum(diarrhoea_count),
                      'AWD': diarrhoea_count['acute watery diarrhoea'],
                      'acute_dysentery': diarrhoea_count['dysentery']
                      })
+        any_dehydration = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_dehydration_status').size()
+        logger.info('%s|dehydration_levels|%s', self.sim.date,
+                    {'total': sum(any_dehydration),
+                     'some': any_dehydration['some dehydration'],
+                     'severe': any_dehydration['severe dehydration']
+                     })
+                     '''
 
         '''for child in incident_acute_diarrhoea:
             logger.info('%s|acute_diarrhoea_child|%s', self.sim.date,
@@ -1183,16 +1191,30 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.gi_dehydration_status == 'no dehydration')]
         df.loc[just_persistent_diarr, 'gi_persistent_diarrhoea'] = 'persistent diarrhoea'
 
+        # -----------------------------------------------------------------------------------------------------
+        AWD_cases = \
+            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                   (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
+        dysentery_cases = \
+            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                   (df.gi_diarrhoea_acute_type == 'dysentery') & (df.gi_diarrhoea_type != 'persistent')]
+        persistent_diarr_cases = \
+            df.loc[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                   (df.gi_diarrhoea_type == 'persistent')]
+
+        clinical_types = pd.concat([AWD_cases, dysentery_cases, persistent_diarr_cases], axis=0).sort_index()
+
+        logger.info('%s|clinical_diarrhoea_type|%s', self.sim.date,
+                    {
+                     'AWD': AWD_cases.size(),
+                     'dysentery': sum(dysentery_cases),
+                     'persistent': sum(persistent_diarr_cases)
+                    })
         # Log the acute diarrhoea information
-        '''for child in persistent_diarr_idx:
+        # for child in persistent_diarr_idx:
             # SET THE TIMELINE FOR PERSISTENT DIARRHOEA
-            date_become_persistent = df.loc[child, 'date_of_onset_diarrhoea'] + DateOffset(weeks=2)
-            logging_persistent_date = date_become_persistent.strftime('%Y-%m-%d %H:%M:%S')
-            logger.info('%s|persistent_diarrhoea|%s', logging_persistent_date,
-                        {'child_index': child, 'age': df.at[child, 'age_years'],
-                         'persistent_diarrhoea': df.at[child, 'gi_persistent_diarrhoea'],
-                         'dehydration_present': df.at[child, 'gi_dehydration_status']})
-                         '''
+            # date_become_persistent = df.loc[child, 'date_of_onset_diarrhoea'] + DateOffset(weeks=2)
+            # logging_persistent_date = date_become_persistent.strftime('%Y-%m-%d %H:%M:%S')
 
         # # # # # # # # SYMPTOMS FROM PERSISTENT DIARRHOEA # # # # # # # # # # # # # # # # # # # # # # #
         df.loc[persistent_diarr_idx, 'di_diarrhoea_over14days'] = True
@@ -1219,7 +1241,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                                                                      '''
 
         # # # # # # ASSIGN DEATH PROBABILITIES BASED ON DEHYDRATION, CO-MORBIDITIES AND DIARRHOEA TYPE # # # # # #
-        # case-fatality rates by diarrhoea clinical type
+        # mortality rates by diarrhoea clinical type
         AWD_idx = \
             df.index[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
                      (df.gi_diarrhoea_acute_type == 'acute watery diarrhoea') & (df.gi_diarrhoea_type != 'persistent')]
@@ -1231,11 +1253,11 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      (df.gi_diarrhoea_type == 'persistent')]
 
         cfr_AWD = \
-            pd.Series(m.case_fatality_rate_AWD, index=AWD_idx)
+            pd.Series(0.5, index=AWD_idx)
         cfr_dysentery = \
-            pd.Series(m.case_fatality_rate_dysentery, index=dysentery_idx)
+            pd.Series(0.15, index=dysentery_idx)
         cfr_persistent_diarr = \
-            pd.Series(m.case_fatality_rate_persistent, index=persistent_diarr_idx)
+            pd.Series(0.35, index=persistent_diarr_idx)
 
         # added effects of risk factors for death
         eff_prob_death_diarr = pd.concat([cfr_AWD, cfr_dysentery, cfr_persistent_diarr], axis=0).sort_index()
@@ -1296,9 +1318,11 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
                                     self.sim.date)
             df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
             # Log the diarrhoea death information
-            logger.info('%s|death_diarrhoea|%s', self.sim.date,
+            '''logger.info('%s|death_diarrhoea|%s', self.sim.date,
                         {'date': df.at[person_id, 'gi_diarrhoea_death_date'],
-                         'child': person_id
+                         'child': person_id,
+                         'type': df.at[person_id, 'gi_diarrhoea_type']
                          })
 
         # death_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
+'''

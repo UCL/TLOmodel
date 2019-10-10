@@ -20,12 +20,12 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # Work out the resource path from the path of the analysis file
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../resources'
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 3000
 
 # add file handler for the purpose of logging
@@ -56,13 +56,11 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
-
 '''
-
+# -----------------------------------------------------------------------------------
 # Load Model Results on Acute diarrhoea type
 diarrhoea_df = output['tlo.methods.new_diarrhoea']['acute_diarrhoea']
 Model_Years = pd.to_datetime(diarrhoea_df.date)
-
 Model_total = diarrhoea_df.total
 Model_AWD = diarrhoea_df.AWD
 Model_dysentery = diarrhoea_df.acute_dysentery
@@ -73,10 +71,6 @@ ax.plot(np.asarray(Model_Years), Model_total)
 ax.plot(np.asarray(Model_Years), Model_AWD)
 ax.plot(np.asarray(Model_Years), Model_dysentery)
 
-# format the ticks
-ax.xaxis.set_major_locator(years)
-ax.xaxis.set_major_formatter(years_fmt)
-
 plt.title("Incidence of Diarrhoea")
 plt.xlabel("Year")
 plt.ylabel("Number of diarrhoeal episodes")
@@ -84,12 +78,8 @@ plt.legend(['Total diarrhoea', 'Acute watery diarrhoea', 'Dysentery'])
 plt.savefig(outputpath + 'Diarrhoea incidence' + datestamp + '.pdf')
 
 plt.show()
-
-# plot over time
-years = mdates.YearLocator()   # every year
-months = mdates.MonthLocator()  # every month
-years_fmt = mdates.DateFormatter('%Y')
 '''
+# -----------------------------------------------------------------------------------
 # %% Plot Incidence of Diarrhoea Over time:
 years = mdates.YearLocator()   # every year
 months = mdates.MonthLocator()  # every month
@@ -117,6 +107,10 @@ ax.plot(np.asarray(Model_Years), Model_adenovirus)
 ax.plot(np.asarray(Model_Years), Model_crypto)
 ax.plot(np.asarray(Model_Years), Model_campylo)
 ax.plot(np.asarray(Model_Years), Model_ETEC)
+ax.plot(np.asarray(Model_Years), Model_sapovirus)
+ax.plot(np.asarray(Model_Years), Model_norovirus)
+ax.plot(np.asarray(Model_Years), Model_astrovirus)
+ax.plot(np.asarray(Model_Years), Model_EPEC)
 
 # format the ticks
 ax.xaxis.set_major_locator(years)
@@ -131,8 +125,55 @@ plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf'
 
 plt.show()
 
-''' 
-Load Model Results on death from diarrhoea
+# -----------------------------------------------------------------------------------
+'''
+# Load Model Results on Dehydration
+dehydration_df = output['tlo.methods.new_diarrhoea']['dehydration_levels']
+Model_Years = pd.to_datetime(dehydration_df.date)
+Model_any_dehydration = dehydration_df.total
+Model_some_dehydration = dehydration_df.some
+Model_severe_dehydration = dehydration_df.severe
+# diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
+
+fig1, ax = plt.subplots()
+# ax.plot(np.asarray(Model_Years), Model_any_dehydration) # TODO: remove the 'no dehydration'
+ax.plot(np.asarray(Model_Years), Model_some_dehydration)
+ax.plot(np.asarray(Model_Years), Model_severe_dehydration)
+
+plt.title("Incidence of Diarrhoea with dehydration")
+plt.xlabel("Year")
+plt.ylabel("Number of diarrhoeal episodes with dehydration")
+plt.legend(['some dehydration', 'severe dehydration'])
+plt.savefig(outputpath + 'Dehydration incidence' + datestamp + '.pdf')
+
+plt.show()
+'''
+# -----------------------------------------------------------------------------------
+# Load Model Results on clinical types of diarrhoea
+clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']
+Model_Years = pd.to_datetime(clinical_type_df.date)
+Model_total = clinical_type_df.total
+Model_AWD = clinical_type_df.AWD
+Model_dysentery = clinical_type_df.dysentery
+Model_persistent = clinical_type_df.persistent
+# diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
+
+fig2, ax = plt.subplots()
+ax.plot(np.asarray(Model_Years), Model_total)
+ax.plot(np.asarray(Model_Years), Model_AWD)
+ax.plot(np.asarray(Model_Years), Model_dysentery)
+ax.plot(np.asarray(Model_Years), Model_persistent)
+
+plt.title("Total clinical diarrhoea")
+plt.xlabel("Year")
+plt.ylabel("Number of diarrhoea episodes")
+plt.legend(['total diarrhoea', 'acute watery diarrhoea', 'dysentery', 'persistent diarrhoea'])
+plt.savefig(outputpath + '3 clinical diarrhoea types' + datestamp + '.pdf')
+
+plt.show()
+
+'''
+# Load Model Results on death from diarrhoea
 death_df = output['tlo.methods.new_diarrhoea']['death_diarrhoea']
 deaths_df_date = pd.to_datetime(death_df.date)
 death_df_year = death_df.date.dt.year
@@ -146,7 +187,6 @@ death_by_cause.plot.bar(stacked=True)
 plt.title(" Total diarrhoea deaths per Year")
 plt.show()
 '''
-
 
 '''
 ig2, ax = plt.subplots()
