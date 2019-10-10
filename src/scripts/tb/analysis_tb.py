@@ -125,6 +125,8 @@ m_tb_prev_f = output['tlo.methods.tb']['tb_propActiveTbFemale']
 m_tb_prev = output['tlo.methods.tb']['tb_prevalence']
 m_tb_treatment = output['tlo.methods.tb']['tb_treatment']
 m_tb_mort = output['tlo.methods.tb']['tb_mortality']
+m_tb_bcg = output['tlo.methods.tb']['tb_bcg']
+
 m_tb_years = pd.to_datetime(m_tb_inc.date)
 
 tb_data = pd.read_excel(
@@ -137,7 +139,7 @@ tb_data_years = pd.to_datetime(tb_data.year, format="%Y")
 plt.figure(1)
 
 # HIV prevalence
-plt.subplot(321)  # numrows, numcols, fignum
+plt.subplot(331)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.prevalence_adults)
 plt.plot(m_hiv_years, m_hiv.hiv_prev_adult)
 plt.title("HIV adult prevalence")
@@ -147,7 +149,7 @@ plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # HIV incidence
-plt.subplot(322)  # numrows, numcols, fignum
+plt.subplot(332)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.incidence_adults_percent)
 plt.plot(m_hiv_years, m_hiv.hiv_adult_inc_percent)
 plt.title("HIV adult incidence (%)")
@@ -157,7 +159,7 @@ plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
 
 # TB incidence
-plt.subplot(323)  # numrows, numcols, fignum
+plt.subplot(333)  # numrows, numcols, fignum
 plt.plot(tb_data_years, tb_data.incidence_per_100k)
 plt.plot(m_tb_years, m_tb_inc.tbIncActive100k)
 plt.title("TB case incidence/100k")
@@ -167,7 +169,7 @@ plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
 
 # TB prevalence
-plt.subplot(324)  # numrows, numcols, fignum
+plt.subplot(334)  # numrows, numcols, fignum
 plt.plot(tb_data_years, tb_data.prevalence_all_ages)
 plt.plot(m_tb_years, m_tb_prev.tbPropActive)
 plt.title("TB prevalence")
@@ -177,7 +179,7 @@ plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
 
 # HIV treatment coverage
-plt.subplot(325)  # numrows, numcols, fignum
+plt.subplot(335)  # numrows, numcols, fignum
 plt.plot(data_years, hiv_data.art_coverage_adult)
 plt.plot(m_hiv_years, hiv_art_cov_percent)
 plt.title("ART coverage (%)")
@@ -187,7 +189,7 @@ plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Data", "Model"])
 
 # TB treatment coverage
-plt.subplot(326)  # numrows, numcols, fignum
+plt.subplot(336)  # numrows, numcols, fignum
 # plt.plot(tb_data_years, tb_data.prevalence_all_ages)
 plt.plot(m_tb_years, m_tb_treatment.tbTreat)
 plt.title("TB treatment coverage")
@@ -195,6 +197,16 @@ plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
 plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
 plt.legend(["Model"])
+
+# BCG coverage
+plt.subplot(337)  # numrows, numcols, fignum
+plt.plot(tb_data_years, tb_data.bcg_coverage)
+plt.plot(m_tb_years, m_tb_treatment.tbCoverage)
+plt.title("BCG coverage")
+plt.xlabel("Year")
+plt.ylabel("Coverage (%)")
+plt.gca().set_xlim(Date(2010, 1, 1), Date(2022, 1, 1))
+plt.legend(["Data", "Model"])
 plt.show()
 # plt.savefig(outputpath + "hiv_inc_adult" + datestamp + ".pdf")
 
