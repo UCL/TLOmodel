@@ -126,28 +126,26 @@ plt.savefig(outputpath + 'Diarrhoea attributable pathogens' + datestamp + '.pdf'
 plt.show()
 
 # -----------------------------------------------------------------------------------
-'''
 # Load Model Results on Dehydration
 dehydration_df = output['tlo.methods.new_diarrhoea']['dehydration_levels']
 Model_Years = pd.to_datetime(dehydration_df.date)
 Model_any_dehydration = dehydration_df.total
-Model_some_dehydration = dehydration_df.some
-Model_severe_dehydration = dehydration_df.severe
+# Model_some_dehydration = dehydration_df.some
+# Model_severe_dehydration = dehydration_df.severe
 # diarrhoea_by_year = diarrhoea_df.groupby(['year'])['person_id'].size()
 
 fig1, ax = plt.subplots()
 # ax.plot(np.asarray(Model_Years), Model_any_dehydration) # TODO: remove the 'no dehydration'
-ax.plot(np.asarray(Model_Years), Model_some_dehydration)
-ax.plot(np.asarray(Model_Years), Model_severe_dehydration)
+ax.plot(np.asarray(Model_Years), Model_any_dehydration)
+# ax.plot(np.asarray(Model_Years), Model_severe_dehydration)
 
 plt.title("Incidence of Diarrhoea with dehydration")
 plt.xlabel("Year")
 plt.ylabel("Number of diarrhoeal episodes with dehydration")
-plt.legend(['some dehydration', 'severe dehydration'])
+plt.legend(['any dehydration'])
 plt.savefig(outputpath + 'Dehydration incidence' + datestamp + '.pdf')
 
 plt.show()
-'''
 # -----------------------------------------------------------------------------------
 # Load Model Results on clinical types of diarrhoea
 clinical_type_df = output['tlo.methods.new_diarrhoea']['clinical_diarrhoea_type']

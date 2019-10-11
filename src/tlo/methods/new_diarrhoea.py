@@ -864,20 +864,18 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[diarr_severe_dehydration, 'gi_dehydration_status'] = 'severe dehydration'
         # ----------------------------------------------------------------------------------------------------------
 
-        ''' # Log the acute diarrhoea information
+        # Log the acute diarrhoea information
         diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
         logger.info('%s|acute_diarrhoea|%s', self.sim.date,
                     {'total': sum(diarrhoea_count),
                      'AWD': diarrhoea_count['acute watery diarrhoea'],
                      'acute_dysentery': diarrhoea_count['dysentery']
                      })
-        any_dehydration = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_dehydration_status').size()
+        any_dehydration = df[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
+                                 (df.gi_dehydration_status != 'no dehydration')]
         logger.info('%s|dehydration_levels|%s', self.sim.date,
-                    {'total': sum(any_dehydration),
-                     'some': any_dehydration['some dehydration'],
-                     'severe': any_dehydration['severe dehydration']
+                    {'total': len(any_dehydration),
                      })
-                     '''
 
         '''for child in incident_acute_diarrhoea:
             logger.info('%s|acute_diarrhoea_child|%s', self.sim.date,
@@ -1205,10 +1203,10 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         clinical_types = pd.concat([AWD_cases, dysentery_cases, persistent_diarr_cases], axis=0).sort_index()
 
         logger.info('%s|clinical_diarrhoea_type|%s', self.sim.date,
-                    {
-                     'AWD': AWD_cases.size(),
-                     'dysentery': sum(dysentery_cases),
-                     'persistent': sum(persistent_diarr_cases)
+                    {'total': len(clinical_types),
+                     'AWD': len(AWD_cases),
+                     'dysentery': len(dysentery_cases),
+                     'persistent': len(persistent_diarr_cases)
                     })
         # Log the acute diarrhoea information
         # for child in persistent_diarr_idx:
