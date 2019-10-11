@@ -343,15 +343,15 @@ class Tb(Module):
 
         # assign risk of latent tb
         risk_tb = pd.Series(1, index=df.index)
-        risk_tb.loc[df.is_alive & df.bcg & df.age_years < 10] *= params['rr_bcg_inf']
+        risk_tb.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
 
-        # sample 10% prev, weight the likelihood of being sampled by the relative risk
+        # weight the likelihood of being sampled by the relative risk
         norm_p = pd.Series(risk_tb)
         norm_p /= norm_p.sum()  # normalise
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_tbprob))
-        tb_idx = df_tbprob.index[df.is_alive & ((df_tbprob.prob_latent_tb * norm_p) < random_draw)]
+        tb_idx = df_tbprob.index[df.is_alive & (random_draw < (df_tbprob.prob_latent_tb * norm_p))]
 
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
@@ -380,15 +380,15 @@ class Tb(Module):
 
         # assign risk of latent tb
         risk_active = pd.Series(1, index=df.index)
-        risk_active.loc[df.is_alive & df.bcg & df.age_years < 10] *= params['rr_tb_bcg']
+        risk_active.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_tb_bcg']
 
-        # sample 10% prev, weight the likelihood of being sampled by the relative risk
+        # weight the likelihood of being sampled by the relative risk
         norm_p = pd.Series(risk_active)
         norm_p /= norm_p.sum()  # normalise
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
-        active_idx = df_active_prob.index[df.is_alive & ((df_active_prob.prob_active_tb * norm_p) < random_draw)]
+        active_idx = df_active_prob.index[df.is_alive & (random_draw < (df_active_prob.prob_active_tb * norm_p))]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -502,6 +502,7 @@ class Tb(Module):
         """Initialise our properties for a newborn individual.
         """
         df = self.sim.population.props
+        now = self.sim.date
 
         df.at[child_id, 'tb_inf'] = 'uninfected'
         df.at[child_id, 'tb_date_active'] = pd.NaT
@@ -529,6 +530,7 @@ class Tb(Module):
         df.at[child_id, 'tb_date_ipt'] = pd.NaT
         df.at[child_id, 'tb_date_death'] = pd.NaT
         df.at[child_id, 'tb_date_death_occurred'] = pd.NaT
+        df.at[child_id, 'tb_bcg'] = False
 
         # if mother is diagnosed with TB, give IPT to infant
         if df.at[mother_id, 'tb_diagnosed']:
@@ -538,6 +540,14 @@ class Tb(Module):
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(weeks=4)
                                                                 )
+
+        # assign bcg according to current coverage
+        bcg_cov_yr = self.parameters['bcg_coverage_year']
+
+        bcg_curr_yr = (bcg_cov_yr.loc[bcg_cov_yr.Year == now.year, ['bcg_coverage']]).values[0] / 100
+
+        if (self.sim.rng.random_sample(size=1) < bcg_curr_yr):
+            df.at[child_id, 'tb_bcg'] = True
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -652,24 +662,32 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_tb_new = pd.Series(0, index=df.index)
         prob_tb_new.loc[df.is_alive & (df.tb_inf == 'uninfected')] = force_of_infection
 
-        is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
-        new_case = is_newly_infected[is_newly_infected].index
-        # print('new tb case', new_case)
+        # assign risk of latent tb
+        risk_tb = pd.Series(1, index=df.index)
+        risk_tb.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
 
-        df.loc[new_case, 'tb_inf'] = 'latent_susc_new'
-        df.loc[new_case, 'tb_date_latent'] = now
-        df.loc[new_case, 'tb_stage'] = 'latent'
-        df.loc[new_case, 'tb_unified_symptom_code'] = 0
+        # weight the likelihood of being sampled by the relative risk
+        norm_p = pd.Series(risk_tb)
+        norm_p /= norm_p.sum()  # normalise
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = rng.random_sample(size=len(df))
+
+        tb_idx = df.index[df.is_alive & (random_draw < (prob_tb_new * norm_p))]
+
+        df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
+        df.loc[tb_idx, 'tb_date_latent'] = now
+        df.loc[tb_idx, 'tb_stage'] = 'latent'
+        df.loc[tb_idx, 'tb_unified_symptom_code'] = 0
 
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
         # pop at risk = latent_susc_tx and latent_mdr (new & tx)
-        prob_tb_new = pd.Series(0, index=df.index)
-        prob_tb_new.loc[(df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains(
+        prob_tb_reinf = pd.Series(0, index=df.index)
+        prob_tb_reinf.loc[(df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains(
             'latent_mdr') & df.is_alive] = force_of_infection
 
-        repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
-        repeat_case = repeat_infected[repeat_infected].index
+        repeat_case = df.index[df.is_alive & (random_draw < (prob_tb_reinf * norm_p))]
 
         # unchanged status, high risk of relapse as if just recovered
         df.loc[repeat_case, 'tb_inf'] = 'latent_susc_tx'
@@ -768,7 +786,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog_child.loc[df.is_alive & (df.age_years.between(2, 5))] = params['prog_2_5yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
-        # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']
+        prob_prog_child.loc[df.is_alive & df.tb_bcg & df.age_years <= 10] *= params['rr_tb_bcg']
         prob_prog_child.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_child']
 
         dur_ipt_inf = pd.to_timedelta(params['dur_prot_ipt_infant'], unit='d')
@@ -1201,22 +1219,32 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_tb_new.loc[
             df.is_alive & (df.tb_inf == 'uninfected')] = force_of_infection  # print('prob_tb_new: ', prob_tb_new)
 
-        is_newly_infected = prob_tb_new > rng.rand(len(prob_tb_new))
-        new_case = is_newly_infected[is_newly_infected].index
-        df.loc[new_case, 'tb_inf'] = 'latent_mdr_new'
-        df.loc[new_case, 'tb_date_latent'] = now
-        df.loc[new_case, 'tb_stage'] = 'latent'
-        df.loc[new_case, 'tb_unified_symptom_code'] = 0
+        # assign risk of latent tb
+        risk_tb = pd.Series(1, index=df.index)
+        risk_tb.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
+
+        # weight the likelihood of being sampled by the relative risk
+        norm_p = pd.Series(risk_tb)
+        norm_p /= norm_p.sum()  # normalise
+
+        # get a list of random numbers between 0 and 1 for each infected individual
+        random_draw = rng.random_sample(size=len(df))
+
+        tb_idx = df.index[df.is_alive & (random_draw < (prob_tb_new * norm_p))]
+
+        df.loc[tb_idx, 'tb_inf'] = 'latent_mdr_new'
+        df.loc[tb_idx, 'tb_date_latent'] = now
+        df.loc[tb_idx, 'tb_stage'] = 'latent'
+        df.loc[tb_idx, 'tb_unified_symptom_code'] = 0
 
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
         # pop at risk = latent_mdr_secondary, latent_susc (primary & secondary)
-        prob_tb_new = pd.Series(0, index=df.index)
-        prob_tb_new.loc[(df.tb_inf == 'latent_mdr_tx') | df['tb_inf'].str.contains(
+        prob_tb_reinf = pd.Series(0, index=df.index)
+        prob_tb_reinf.loc[(df.tb_inf == 'latent_mdr_tx') | df['tb_inf'].str.contains(
             'latent_susc') & df.is_alive] = force_of_infection
 
-        repeat_infected = prob_tb_new > rng.rand(len(prob_tb_new))
-        repeat_case = repeat_infected[repeat_infected].index
+        repeat_case = df.index[df.is_alive & (random_draw < (prob_tb_reinf * norm_p))]
 
         # unchanged status, high risk of relapse as if just recovered
         df.loc[repeat_case, 'tb_inf'] = 'latent_mdr_tx'
@@ -1316,7 +1344,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog_child.loc[df.is_alive & (df.age_years.between(2, 5))] = params['prog_2_5yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(5, 10))] = params['prog_5_10yr']
         prob_prog_child.loc[df.is_alive & (df.age_years.between(10, 15))] = params['prog_10yr']
-        # prob_prog_child.loc[df.xxxx] *= params['rr_tb_bcg']
+        prob_prog_child.loc[df.tb_bcg & df.age_years < 10] *= params['rr_tb_bcg']
         prob_prog_child.loc[(df.hv_on_art == 2)] *= params['rr_tb_art_child']
 
         # ipt - protection against active disease for one yr (6-month regimen)
@@ -3171,12 +3199,14 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         bcg = len(df[df.is_alive & df.tb_bcg & (df.age_years <= 1)])
         infants = len(df[df.is_alive & (df.age_years <= 1)])
 
-        coverage = (bcg / infants) * 100
+        coverage = ((bcg / infants) * 100) if infants else 0
         assert coverage <= 100
 
         logger.info('%s|tb_bcg|%s', now,
                     {
-                        'tbCoverage': coverage,
+                        'tbNumInfantsBcg': bcg,
+                        'tbNumInfantsEligibleBcg': infants,
+                        'tbBcgCoverage': coverage,
                     })
 
         # ------------------------------------ MORTALITY ------------------------------------

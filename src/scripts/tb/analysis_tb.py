@@ -10,6 +10,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
+    contraception,
     healthburden,
     healthsystem,
     hiv,
@@ -30,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 12, 31)
-popsize = 5000
+end_date = Date(2015, 12, 31)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -53,6 +54,7 @@ service_availability = ["*"]
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_appt_constraints=True,
                                        ignore_cons_constraints=True,
@@ -70,9 +72,10 @@ for name in logging.root.manager.loggerDict:
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
 logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
 # logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
+# logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
 # Run the simulation and flush the logger
-sim.seed_rngs(0)
+sim.seed_rngs(10)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
@@ -201,7 +204,7 @@ plt.legend(["Model"])
 # BCG coverage
 plt.subplot(337)  # numrows, numcols, fignum
 plt.plot(tb_data_years, tb_data.bcg_coverage)
-plt.plot(m_tb_years, m_tb_treatment.tbCoverage)
+plt.plot(m_tb_years, m_tb_bcg.tbBcgCoverage)
 plt.title("BCG coverage")
 plt.xlabel("Year")
 plt.ylabel("Coverage (%)")
