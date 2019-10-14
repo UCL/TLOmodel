@@ -549,7 +549,7 @@ class HealthSystem(Module):
         appts_with_duration = [appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0]
         df_appt_footprint = appt_times.loc[
             (appt_times['Facility_Level'] == the_facility_level & appt_times.Appt_Type_Code.isin(appts_with_duration)),
-            ['Officer_Type_Code', 'Time_Taken']]
+            ['Officer_Type_Code', 'Time_Taken']].copy()
 
         df_appt_footprint = df_appt_footprint.set_index('FacilityID_' + the_facility_id.astype(str) + '_Officer_' +
                                     df_appt_footprint['Officer_Type_Code'].astype(str))
