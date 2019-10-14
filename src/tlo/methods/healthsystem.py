@@ -967,7 +967,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 else:
                     list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
 
-
         # 2) Run all population-level HSI events
         while len(list_of_population_hsi_event_tuples_due_today)>0:
             pop_level_hsi_event_tuple = list_of_population_hsi_event_tuples_due_today.pop()
@@ -979,44 +978,41 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # 3) Get the capabilities that are available today and prepare dataframe to store all the calls for today
         current_capabilities = self.module.get_capabilities_today()
 
-        # dataframe to store all the calls to the healthsystem today
-        df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(index=current_capabilities.index)
-
-        if len(list_of_individual_hsi_event_tuples_due_today)>0:
-
+        if not list_of_individual_hsi_event_tuples_due_today:
+            # empty dataframe for logging
+            df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(index=current_capabilities.index)
+        else:
             # 4) Examine total call on health officers time from the HSI events that are due today
 
             # For all events in 'list_of_individual_hsi_event_tuples_due_today', expand the appt-footprint of the event into give the demands on
             #  each officer-type in each facility_id. [Name of columns is the position in the list of event_due_today)
 
-            for ev_num in np.arange(0, len(list_of_individual_hsi_event_tuples_due_today)):
-                # get footprint of hsi event
-                footprint_of_individual_level_hsi_event = self.module.get_appt_footprint_as_time_request(hsi_event=(list_of_individual_hsi_event_tuples_due_today[ev_num][4]))
+            footprints_of_all_individual_level_hsi_event = {
+                event_number: self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
+                for event_number, event_tuple in enumerate(list_of_individual_hsi_event_tuples_due_today)
+            }
 
-                # append it to the dataframe (TODO: using merge, could use record
-                df_footprints_of_all_individual_level_hsi_event = df_footprints_of_all_individual_level_hsi_event.merge(pd.DataFrame(data={ev_num:footprint_of_individual_level_hsi_event}),
-                                                        right_index=True,
-                                                        left_index=True,
-                                                        how='left')
+            # dataframe to store all the calls to the healthsystem today
+            df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(footprints_of_all_individual_level_hsi_event,
+                                                                           index=current_capabilities.index)
+            df_footprints_of_all_individual_level_hsi_event.fillna(0, inplace=True)
 
-            df_footprints_of_all_individual_level_hsi_event = df_footprints_of_all_individual_level_hsi_event.fillna(0)
             assert len(df_footprints_of_all_individual_level_hsi_event.columns) == len(list_of_individual_hsi_event_tuples_due_today)
             assert df_footprints_of_all_individual_level_hsi_event.index.equals(current_capabilities.index)
 
             # 5) Estimate Squeeze-Factors for today
-            if self.module.mode_appt_constraints==0:
-                # For Mode 0 (no Contraints), the squeeze factors are all zero.
+            if self.module.mode_appt_constraints == 0:
+                # For Mode 0 (no Constraints), the squeeze factors are all zero.
                 squeeze_factor_per_hsi_event = [0] * len(df_footprints_of_all_individual_level_hsi_event.columns)
-
             else:
                 # For Other Modes, the squeeze factors must be computed
                 squeeze_factor_per_hsi_event = self.module.get_squeeze_factors(
-                                                                all_calls_today = df_footprints_of_all_individual_level_hsi_event,
-                                                                current_capabilities = current_capabilities)
-
+                    all_calls_today=df_footprints_of_all_individual_level_hsi_event,
+                    current_capabilities=current_capabilities
+                )
 
             # 6) For each event, determine if run or not, and run if so.
-            for ev_num in np.arange(0, len(list_of_individual_hsi_event_tuples_due_today)):
+            for ev_num in range(len(list_of_individual_hsi_event_tuples_due_today)):
                 event = list_of_individual_hsi_event_tuples_due_today[ev_num][4]
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]
 
@@ -1031,7 +1027,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if ok_to_run:
 
                     # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor = squeeze_factor)
+                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
                     # Check if the HSI event returned updated appt_footprint
                     if (actual_appt_footprint is not None):
