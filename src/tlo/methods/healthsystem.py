@@ -602,7 +602,7 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-
+    @profile
     def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
@@ -727,7 +727,7 @@ class HealthSystem(Module):
 
         return output
 
-
+    @profile
     def get_consumables_as_individual_items(self, cons_footprint):
         """
         This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
@@ -741,31 +741,35 @@ class HealthSystem(Module):
         # Load the data on consumables
         consumables = self.parameters['Consumables']
 
-        # Create empty dataframe for storing the items used in the cons_footprint
-        consumables_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code' , 'Quantity_Of_Item', 'Expected_Units_Per_Case'])
-
+        individual_consumables = []
         # Get the individual items in each package:
-        if not cons['Intervention_Package_Code'] == []:
-            for p_dict in cons['Intervention_Package_Code']:
-                package_code = int(list(p_dict.keys())[0])
-                quantity_of_packages = int(list(p_dict.values())[0])
-                items = consumables.loc[
-                    consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']]
-                items['Quantity_Of_Item'] = items['Expected_Units_Per_Case'] * quantity_of_packages
-                items['Package_Code']=package_code
-                consumables_as_individual_items = consumables_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(drop=True)
-
+        for p_dict in cons['Intervention_Package_Code']:
+            package_code = int(list(p_dict.keys())[0])
+            quantity_of_packages = int(list(p_dict.values())[0])
+            items = consumables.loc[
+                consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']
+            ].to_dict(orient='records')
+            for item in items:
+                item['Quantity_Of_Item'] = item['Expected_Units_Per_Case'] * quantity_of_packages
+                item['Package_Code'] = package_code
+                individual_consumables.append(item)
 
         # Add in any additional items that have been specified seperately:
-        if not cons['Item_Code'] == []:
-            for i_dict in cons['Item_Code']:
-                item_code = int(list(i_dict.keys())[0])
-                quantity_of_item = int(list(i_dict.values())[0])
-                items = pd.DataFrame(data={'Item_Code': item_code, 'Package_Code': np.nan, 'Quantity_Of_Item': quantity_of_item}, index=[0])
-                consumables_as_individual_items = consumables_as_individual_items.append(items, ignore_index=True, sort=False).reset_index(
-                    drop=True)
+        for i_dict in cons['Item_Code']:
+            item_code = int(list(i_dict.keys())[0])
+            quantity_of_item = int(list(i_dict.values())[0])
+            item = {'Item_Code': item_code, 'Package_Code': np.nan,
+                     'Quantity_Of_Item': quantity_of_item, 'Expected_Units_Per_Case': np.nan}
+            individual_consumables.append(item)
 
-        consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
+        consumables_as_individual_items = pd.DataFrame.from_dict(individual_consumables)
+
+        try:
+            consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
+        except KeyError:
+            # No data from cons['Intervention_Package_Code'] or cons['Item_Code']
+            # Maybe this should never happen? If so then can remove the try and except and have the error
+            consumables_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code', 'Quantity_Of_Item'])
 
         # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
             # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
