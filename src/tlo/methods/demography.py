@@ -283,7 +283,7 @@ class Demography(Module):
         df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
-        # Log all births (live and still):
+        # Log all births (live and intrapartum stillbirth): #todo: this isnt counting antepartum stillbirth
         logger.info('%s|on_birth|%s',
                         self.sim.date,
                     {
@@ -292,7 +292,7 @@ class Demography(Module):
                         'mother_age': df.at[mother_id, 'age_years']
                     })
         # Log only live births:
-        if ~df.at[child_id,'la_still_birth_current_pregnancy']:
+        if ~df.at[mother_id,'la_intrapartum_still_birth']:
             logger.info('%s|live_births|%s',
                         self.sim.date,
                     {
