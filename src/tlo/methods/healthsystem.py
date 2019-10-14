@@ -602,7 +602,6 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
-    @profile
     def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
@@ -680,18 +679,20 @@ class HealthSystem(Module):
             items_req_to_log['Available'] = items_req_to_log['Available']>0     # restore to bool after sum in grouby()
 
             # Get the the cost of the each consumable item (could not do this merge until after model run)
-            items_req_to_log = items_req_to_log.merge(self.parameters['Consumables_Cost_List'],
-                                                                how='left',
-                                                                on='Item_Code',
-                                                                left_index=True
-                                                                )
+            consumable_costs = self.parameters['Consumables_Cost_List'].copy()
+            consumable_costs.set_index('Item_Code', inplace=True)
+
+            items_req_to_log = items_req_to_log.merge(consumable_costs,
+                                                      how='left',
+                                                      left_index=True,
+                                                      right_index=True)
 
             # Compute total cost (limiting to those items which were available)
             total_cost = items_req_to_log.loc[items_req_to_log['Available'],['Quantity_Of_Item','Unit_Cost']].prod(axis=1).sum()
 
             # Enter to the log
 
-            items_req_to_log = items_req_to_log.drop(['Item_Code','Package_Code'], axis=1)  # drop from log for neatness
+            items_req_to_log = items_req_to_log.drop(['Package_Code'], axis=1)  # drop from log for neatness
 
             log_consumables = items_req_to_log.to_dict()
             log_consumables['TREATMENT_ID'] = the_treatment_id
