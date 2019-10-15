@@ -6,7 +6,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.methods import demography, lifestyle, labour,newborn_outcomes, healthburden, healthsystem, antenatal_care,\
-    abortion_and_miscarriage, hypertensive_disorders_pregnancy
+    abortion_and_miscarriage
 
 workbook_name = 'demography.xlsx'
 
@@ -36,14 +36,12 @@ def simulation():
     nb_module = newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath)
     anc_module = antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath)
     am_module = abortion_and_miscarriage.AbortionAndMiscarriage(resourcefilepath=resourcefilepath)
-    hdp_module = hypertensive_disorders_pregnancy.HypertensiveDisordersOfPregnancy(resourcefilepath=resourcefilepath)
 
     sim.register(core_module)
     sim.register(lab_module)
     sim.register(nb_module)
     sim.register(anc_module)
     sim.register(am_module)
-    sim.register(hdp_module)
 
     sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
