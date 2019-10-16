@@ -8,7 +8,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import Event, HSI_Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -249,7 +249,7 @@ class tb(Module):
         # allocate some latent infections as mdr-tb
         if len(df[df.is_alive & (df.tb_inf == 'latent_susc_primary')]) > 10:
             idx_c = df[df.is_alive & (df.tb_inf == 'latent_susc_primary')].sample(
-                frac=self.parameters['prop_mdr2010']).index
+                frac=self.parameters['prop_mdr2010'], random_state=self.rng).index
 
             df.loc[idx_c, 'tb_inf'] = 'latent_mdr_primary'  # change to mdr-tb
             df.loc[idx_c, 'tb_specific_symptoms'] = 'latent'
@@ -261,7 +261,7 @@ class tb(Module):
         frac_active_tb = active_tb_prob_year.loc[
             (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == 0), 'incidence_per_capita']
 
-        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb).index
+        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb, random_state=self.rng).index
         # print(active)
         df.loc[active, 'tb_inf'] = 'active_susc_primary'
         df.loc[active, 'tb_date_active'] = now
@@ -271,7 +271,7 @@ class tb(Module):
         # allocate some active infections as mdr-tb
         if len(active) > 10:
             idx_c = df[df.is_alive & (df.tb_inf == 'active_susc_primary')].sample(
-                frac=self.parameters['prop_mdr2010']).index
+                frac=self.parameters['prop_mdr2010'], random_state=self.rng).index
 
             df.loc[idx_c, 'tb_inf'] = 'active_mdr_primary'
             df.loc[idx_c, 'tb_specific_symptoms'] = 'active'
@@ -464,7 +464,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
+                frac=params['prop_fast_progressor'], random_state=self.sim.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_susc_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -763,7 +763,7 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_mdr_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
+                frac=params['prop_fast_progressor'], random_state=self.sim.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_mdr_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -1168,7 +1168,8 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                                 ~df.ever_tb &
                                 ~df.ever_tb_mdr &
                                 df.is_alive &
-                                df.district_of_residence == district].sample(n=5, replace=False).index
+                                df.district_of_residence == district].sample(n=5, replace=False,
+                                                                             random_state=self.sim.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1242,7 +1243,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                                 df.is_alive &
                                 df.district_of_residence == district].sample(
                     n=5,
-                    replace=False).index
+                    replace=False, random_state=self.sim.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
