@@ -263,6 +263,16 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, Individua
                     'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
 
 
+class HSI_AntenatalCare_PresentsDuringEmergency(Event, IndividualScopeEventMixin):  # ??Name
+    """
+    This is a Health System Interaction Event.
+    This is event manages care for a woman who presents to a facility during pregnancy with a pregnancy related
+    emergency.
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Handles Antenatal Care logging"""
 
