@@ -334,7 +334,7 @@ class hiv(Module):
         df = population.props
 
         fsw = df[df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat != 2)].sample(
-            frac=self.parameters['proportion_female_sex_workers']).index
+            frac=self.parameters['proportion_female_sex_workers'], random_state=self.rng).index
 
         df.loc[fsw, 'hv_sexual_risk'] = 'sex_work'
 
@@ -506,17 +506,17 @@ class hiv(Module):
         # if condition not added, error with small numbers to sample
         if len(df[df.is_alive & (df.hv_on_art == 2) & (df.age_years.between(0, 14))]) > 5:
             idx_c = df[df.is_alive & (df.hv_on_art == 2) & (df.age_years.between(0, 14))].sample(
-                frac=(1 - self.parameters['vls_child'])).index
+                frac=(1 - self.parameters['vls_child']), random_state=self.rng).index
             df.loc[idx_c, 'hv_on_art'] = 1  # change to non=adherent
 
         if len(df[df.is_alive & (df.hv_on_art == 2) & (df.sex == 'M') & (df.age_years.between(15, 64))]) > 5:
             idx_m = df[df.is_alive & (df.hv_on_art == 2) & (df.sex == 'M') & (df.age_years.between(15, 64))].sample(
-                frac=(1 - self.parameters['vls_m'])).index
+                frac=(1 - self.parameters['vls_m']), random_state=self.rng).index
             df.loc[idx_m, 'hv_on_art'] = 1  # change to non=adherent
 
         if len(df[df.is_alive & (df.hv_on_art == 2) & (df.sex == 'F') & (df.age_years.between(15, 64))]) > 5:
             idx_f = df[df.is_alive & (df.hv_on_art == 2) & (df.sex == 'F') & (df.age_years.between(15, 64))].sample(
-                frac=(1 - self.parameters['vls_f'])).index
+                frac=(1 - self.parameters['vls_f']), random_state=self.rng).index
             df.loc[idx_f, 'hv_on_art'] = 1  # change to non=adherent
 
     def initial_pop_deaths_children(self, population):
@@ -1180,7 +1180,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
         # open to fsw only
         if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 10:
             gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
-                frac=params['fsw_prep']).index
+                frac=params['fsw_prep'], random_state=self.sim.rng).index
 
             for person_id in gets_prep:
                 # make the outreach event
@@ -1950,7 +1950,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
         # currently placeholder value=0 for all ages until data arrives
         if len(df[df.is_alive & (df.hv_on_art == 2)]) > 1:
             poor = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_high_to_low_art']).index
+                frac=params['prob_high_to_low_art'], random_state=self.sim.rng).index
 
             df.loc[poor, 'hv_on_art'] = 1
 
@@ -2021,7 +2021,7 @@ class HivArtPoorToGoodAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
         # this is probably going to be driven by symptoms worsening
         if len(df[df.is_alive & (df.hv_on_art == 1)]) > 1:
             good = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_low_to_high_art']).index
+                frac=params['prob_low_to_high_art'], random_state=self.sim.rng).index
 
             df.loc[good, 'hv_on_art'] = 2
 
@@ -2040,7 +2040,7 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
 
         if len(df[df.is_alive & (df.hv_on_art != 0)]) > 1:
             off_art = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_off_art']).index
+                frac=params['prob_off_art'], random_state=self.sim.rng).index
 
             df.loc[off_art, 'hv_on_art'] = 0
 
@@ -2113,7 +2113,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         # transition those already fsw back to low risk
         if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 1:
             remove = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
-                frac=params['fsw_transition']).index
+                frac=params['fsw_transition'], random_state=self.sim.rng).index
 
             df.loc[remove, 'hv_sexual_risk'] = 'low'
 
@@ -2133,7 +2133,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
             recruit = int((params['proportion_female_sex_workers'] - prop) * eligible)
             fsw_new = df[
                 df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat != 2)].sample(
-                n=recruit).index
+                n=recruit, random_state=self.sim.rng).index
             df.loc[fsw_new, 'hv_sexual_risk'] = 'sex_work'
 
 
