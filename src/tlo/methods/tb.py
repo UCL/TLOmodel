@@ -115,7 +115,7 @@ class Tb(Module):
 
         'bcg_coverage_year': Parameter(Types.REAL, 'bcg coverage estimates in children <1 years by calendar year'),
         'initial_bcg_coverage': Parameter(Types.REAL, 'bcg coverage by age in baseline population'),
-
+        'presump_testing': Parameter(Types.REAL, 'probability of an individual without tb requesting tb test'),
 
         # daly weights, no daly weight for latent tb
         'daly_wt_susc_tb':
@@ -259,7 +259,7 @@ class Tb(Module):
 
         params['bcg_coverage_year'] = workbook['BCG']
         params['initial_bcg_coverage'] = workbook['BCG_baseline']
-
+        params['presump_testing'] = self.param_list.loc['presump_testing', 'value1']
 
         # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
@@ -487,6 +487,8 @@ class Tb(Module):
         sim.schedule_event(TbMdrEvent(self), sim.date + DateOffset(months=12))
         sim.schedule_event(TbMdrRelapseEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(TbMdrSelfCureEvent(self), sim.date + DateOffset(months=1))
+
+        sim.schedule_event(NonTbSymptomsEvent(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=1))
 
@@ -737,7 +739,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
             fast = pd.Series(data=False, index=df.loc[idx].index)
 
             for i in df.index[idx]:
-                fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
+                fast[i] = rng.rand() < params['prop_fast_progressor']
 
             # need to scale the prob of progressing to active so overall pop prob of progression = params['prog_active']
             # mean / scale = scaling factor
@@ -763,7 +765,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
             for person_id in idx[~fast]:
                 # print('slow', person_id)
                 # decide if person will develop active tb
-                active = self.module.rng.rand() < prob_prog_scaled[person_id]
+                active = rng.rand() < prob_prog_scaled[person_id]
 
                 if active:
                     # randomly select date of onset of active disease
@@ -815,7 +817,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
             for person_id in prog:
                 # decide if person will develop active tb
-                active = self.module.rng.rand() < prob_prog_child[person_id]
+                active = rng.rand() < prob_prog_child[person_id]
 
                 if active:
                     # random draw of days 0-365
@@ -831,6 +833,35 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
                     # schedule active disease
                     self.sim.schedule_event(TbActiveEvent(self.module, person_id), sch_date)
+
+
+class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
+    """ symptom onset and healthcare seeking of people with tb-like symptoms but no active tb infection
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))  # every 1 month
+
+    def apply(self, population):
+        params = self.module.parameters
+        rng = self.module.rng
+
+        df = population.props
+
+        # select proportion of eligible non-tb patients to test for tb
+        test_non_tb = df.index[(rng.random_sample(size=len(df)) < params['presump_testing']) & df.is_alive & ~(
+            df.tb_inf.str.contains('active'))]
+
+        # schedule tb screening and test
+        if test_non_tb:
+            for person in test_non_tb:
+                logger.debug('This is TbActiveEvent, scheduling HSI_Tb_Screening for person %d', person)
+
+                event = HSI_Tb_Screening(self.module, person_id=person)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=2,
+                                                                    topen=self.sim.date + DateOffset(weeks=2),
+                                                                    tclose=None)
 
 
 class TbActiveEvent(Event, IndividualScopeEventMixin):
@@ -898,9 +929,8 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
                 event = HSI_Tb_Screening(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=2,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(weeks=2)
-                                                                    )
+                                                                    topen=self.sim.date + DateOffset(weeks=2),
+                                                                    tclose=None)
             else:
                 logger.debug(
                     'This is TbActiveEvent, person %d is not seeking care', person_id)
@@ -995,7 +1025,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
         for i in df.loc[relapse_tx_complete].index:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+            seeks_care[i] = rng.rand() < prob
 
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
@@ -1021,7 +1051,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
 
         for i in df.loc[relapse_tx_incomplete].index:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+            seeks_care[i] = rng.rand() < prob
 
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
@@ -1304,7 +1334,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             fast = pd.Series(data=False, index=df.loc[idx].index)
 
             for i in df.index[idx]:
-                fast[i] = self.module.rng.rand() < params['prop_fast_progressor']
+                fast[i] = rng.rand() < params['prop_fast_progressor']
 
             # print('fast', fast)
 
@@ -1321,7 +1351,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
             for person_id in idx[~fast]:
                 # print('slow', person_id)
                 # decide if person will develop active tb
-                active = self.module.rng.rand() < prob_prog[person_id]
+                active = rng.rand() < prob_prog[person_id]
 
                 if active:
                     # randomly select date of onset of active disease
@@ -1372,7 +1402,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
 
             for person_id in prog:
                 # decide if person will develop active tb
-                active = self.module.rng.rand() < prob_prog_child[person_id]
+                active = rng.rand() < prob_prog_child[person_id]
 
                 if active:
                     # random draw of days 0-182
@@ -1520,7 +1550,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_complete].index)
         for i in df.loc[relapse_tx_complete].index:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+            seeks_care[i] = rng.rand() < prob
 
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
@@ -1544,7 +1574,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         seeks_care = pd.Series(data=False, index=df.loc[relapse_tx_incomplete].index)
         for i in df.loc[relapse_tx_incomplete].index:
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=2)
-            seeks_care[i] = self.module.rng.rand() < prob
+            seeks_care[i] = rng.rand() < prob
 
         if seeks_care.sum() > 0:
             for person_index in seeks_care.index[seeks_care]:
@@ -1589,7 +1619,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # self-cure - move from active to latent_secondary, make sure it's not the ones that just became active
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         # hiv-negative
         self_cure = df[
@@ -1750,16 +1780,16 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         # active tb, hiv-negative
         if (df.at[person_id, 'tb_stage'] == 'active_pulm') and not df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
-                                                                      (1 - params['prop_smear_positive'])])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
+                                                                         (1 - params['prop_smear_positive'])])
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
                 df.at[person_id, 'tb_diagnosed'] = True
 
         # hiv+, 80% of smear tests will be negative - extrapulmonary
         elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
-                                                                      (1 - params['prop_smear_positive_hiv'])])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
+                                                                         (1 - params['prop_smear_positive_hiv'])])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
@@ -1911,7 +1941,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         # they will present back to the health system with some delay (2-4 weeks)
         if df.at[person_id, 'tb_inf'].startswith("active"):
 
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[0.9, 0.1])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[0.9, 0.1])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_xpert_test'] = True
@@ -2722,32 +2752,32 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
 
             # new case
             if df.at[person_id, 'tb_inf'] == 'active_susc_new':
-                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_new']
+                cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_new']
 
             # previously treated case
             if df.at[person_id, 'tb_inf'] == 'active_susc_prev':
-                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_prev']
+                cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_prev']
 
             # hiv+
             if df.at[person_id, 'hv_inf']:
-                cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_hiv']
+                cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_hiv']
 
         # if drug-susceptible and extrapulmonary
         if df.at[person_id, 'tb_stage'] == 'active_pulm':
-            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_extra']
+            cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_extra']
 
         # if under 5 years old
         if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
             person_id, 'tb_stage'] == 'active_pulm' \
             and (df.at[person_id, 'age_exact_years'] < 4):
-            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_0_4']
+            cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_0_4']
 
         # if between 5-14 years old
         if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
             person_id, 'tb_stage'] == 'active_pulm' \
             and (df.at[person_id, 'age_exact_years'] > 4) \
             and (df.at[person_id, 'age_exact_years'] < 15):
-            cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_5_14']
+            cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_5_14']
 
         # if cured change properties
         if cured:
@@ -2804,7 +2834,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
         # after six months of treatment, stop
         df.at[person_id, 'tb_treated_mdr'] = False
 
-        cured = self.sim.rng.random_sample(size=1) < params['prob_tx_success_mdr']
+        cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_mdr']
 
         if cured:
             df.at[person_id, 'tb_inf'] = 'latent_mdr_tx'
