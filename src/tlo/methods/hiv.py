@@ -424,7 +424,7 @@ class Hiv(Module):
         df = population.props
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.rng.random_sample(size=len(df))
 
         # probability of baseline population ever testing for HIV
         test_index_male = df.index[
@@ -469,7 +469,7 @@ class Hiv(Module):
         assert df_art.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_art))
+        random_draw = self.rng.random_sample(size=len(df_art))
 
         # ----------------------------------- ART - CHILDREN -----------------------------------
 
@@ -757,7 +757,7 @@ class Hiv(Module):
         # ----------------------------------- MTCT - PREGNANCY -----------------------------------
 
         #  TRANSMISSION DURING PREGNANCY / DELIVERY
-        random_draw = self.sim.rng.random_sample(size=1)
+        random_draw = self.rng.random_sample(size=1)
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
@@ -895,6 +895,8 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         risk_hiv.loc[(df.li_ed_lev == '3')] *= params['rr_edlevel_secondary']  # li_ed_lev=3 secondary and higher
         risk_hiv.loc[df.hv_behaviour_change] *= params['rr_behaviour_change']
 
+        risk_hiv.loc[df.hv_inf] *= 0  # if already infected remove risk
+
         # infective if: hv_inf & hv_on_art = none (0) or poor (1)
         infective = len(df.index[df.is_alive & df.hv_inf & (df.age_years >= 15) & (df.hv_on_art != 2)])
         # print('infective', infective)
@@ -981,7 +983,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # mother NOT ON ART & child NOT ON ART
-        i1 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+        i1 = df.index[(self.module.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_bf_untreated'])
                       & df.is_alive
                       & ~df.hv_inf
@@ -991,7 +993,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                       & (df.hv_mother_art != 2)]
 
         # mother ON ART & assume child on azt/nvp
-        i2 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+        i2 = df.index[(self.module.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_bf_untreated'])
                       & df.is_alive
                       & ~df.hv_inf
@@ -1009,8 +1011,8 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- TIME OF DEATH -----------------------------------
         # assign slow progressor
         if len(new_inf):
-            time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                   size=len(new_inf)) * params[
+            time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                                      size=len(new_inf)) * params[
                                   'weibull_scale_mort_infant_slow_progressor']
 
             time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
@@ -1075,7 +1077,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_unified_symptom_code'] = 2
 
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
-            seeks_care = self.sim.rng.random_sample() < prob
+            seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
                 logger.debug(
@@ -1109,7 +1111,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_unified_symptom_code'] = 3
 
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
-            seeks_care = self.sim.rng.random_sample() < prob
+            seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
                 logger.debug(
@@ -1760,7 +1762,7 @@ class HSI_Hiv_StartInfantTreatment(Event, IndividualScopeEventMixin):
 
             if (not df.at[person_id, 'hv_on_art'] == 0
                 and not (df.at[person_id, 'tb_inf'].startswith('active'))
-                and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
+                and (self.module.rng.random_sample(size=1) < params['hiv_art_ipt'])):
                 logger.debug(
                     '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                     person_id, self.sim.date)
@@ -1886,11 +1888,11 @@ class HSI_Hiv_StartTreatment(Event, IndividualScopeEventMixin):
         district = df.at[person_id, 'district_of_residence']
 
         if (district in params['tb_high_risk_distr'].values) & (self.sim.date.year > 2012) & (
-            self.module.rng.rand() < params['hiv_art_ipt']):
+            self.sim.modules['Hiv'].rng.rand() < params['hiv_art_ipt']):
 
             if not df.at[person_id, 'hv_on_art'] == 0 and not (
                 df.at[person_id, 'tb_inf'].startswith('active')) and (
-                self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
+                self.sim.modules['Hiv'].rng.random_sample(size=1) < params['hiv_art_ipt']):
                 logger.debug(
                     '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                     person_id, now)
@@ -2053,15 +2055,15 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                                  person)
 
                     if df.at[person, 'age_years'] < 3:
-                        time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                               size=1) * params[
+                        time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                                                  size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
 
                     else:
-                        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
-                                                          size=1) * \
+                        death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
+                                                             size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
 
@@ -2145,15 +2147,15 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                                  person)
 
                     if df.at[person, 'age_years'] < 3:
-                        time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                               size=1) * params[
+                        time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                                                                  size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
 
                     else:
-                        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
-                                                          size=1) * \
+                        death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
+                                                             size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
 
