@@ -12,7 +12,6 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 class HealthSystem(Module):
     """
     This is the Health System Module
@@ -153,7 +152,7 @@ class HealthSystem(Module):
         # (For now, let this be a random number, but in future it may be properly informed based on \
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
-        df['hs_dist_to_facility'] = self.sim.rng.uniform(0.01, 5.00, len(df))
+        df['hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, len(df))
 
     def initialise_simulation(self, sim):
 
@@ -492,7 +491,6 @@ class HealthSystem(Module):
         # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
         return 1.0
 
-
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
@@ -537,24 +535,18 @@ class HealthSystem(Module):
 
         # Transform the treatment footprint into a demand for time for officers of each type, for this
         # facility level (it varies by facility level)
-        time_requested_by_officer = pd.DataFrame(columns=['Officer_Type_Code', 'Time_Taken'])
-        for this_appt_type in appt_types:
-            if the_appt_footprint[this_appt_type] > 0:
-                time_req_for_this_appt = appt_times.loc[(appt_times['Appt_Type_Code'] == this_appt_type) &
-                                                        (appt_times['Facility_Level'] == the_facility_level),
-                                                        ['Officer_Type_Code',
-                                                         'Time_Taken']].copy().reset_index(drop=True)
-                time_requested_by_officer = pd.concat([time_requested_by_officer, time_req_for_this_appt])
+        appts_with_duration = [appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0]
+        df_appt_footprint = appt_times.loc[
+            (appt_times['Facility_Level'] == the_facility_level) & appt_times.Appt_Type_Code.isin(appts_with_duration),
+            ['Officer_Type_Code', 'Time_Taken']].copy()
 
+        # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
+        df_appt_footprint.set_index(
+            f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint["Officer_Type_Code"].astype(str),
+            inplace=True)
 
-        # Create Series with index that contains the Facility_ID and the Officer_Types
-        df_appt_footprint = time_requested_by_officer.copy()
-        df_appt_footprint = df_appt_footprint.set_index('FacilityID_' + the_facility_id.astype(str) + '_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str))
-
-        appt_footprint_as_time_request = df_appt_footprint['Time_Taken']
-
-        # sum time required of different officer types
-        appt_footprint_as_time_request = appt_footprint_as_time_request.groupby(level=0).sum()
+        # Create Series of summed required time for each officer type
+        appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
 
         # TODO: ADD assertion that some time is requested (UNLESS POPULATION LEVEL???)
         # TODO: ADD assertion that indicies are unique.
