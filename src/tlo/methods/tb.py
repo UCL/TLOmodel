@@ -464,7 +464,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor'], random_state=self.sim.rng).index
+                frac=params['prop_fast_progressor'], random_state=self.module.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_susc_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -569,7 +569,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         #         'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
 
         # ----------------------------------- RELAPSE -----------------------------------
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         # relapse after treatment completion, tb_date_treated + six months
         relapse_tx_complete = df[
@@ -763,7 +763,7 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_mdr_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor'], random_state=self.sim.rng).index
+                frac=params['prop_fast_progressor'], random_state=self.module.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_mdr_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -955,7 +955,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # self-cure - move from active to latent_secondary, make sure it's not the ones that just became active
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         self_cure = df[df['tb_inf'].str.contains('active_mdr') & df.is_alive & (
             df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
@@ -1076,7 +1076,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         # active tb, hiv-negative
         if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
                                                                       (1 - params['prop_smear_positive'])])
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
@@ -1084,7 +1084,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         # hiv+, 80% of smear tests will be negative - extrapulmonary
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active') and df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
                                                                       (1 - params['prop_smear_positive_hiv'])])
 
             if diagnosed:
@@ -1169,7 +1169,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                                 ~df.ever_tb_mdr &
                                 df.is_alive &
                                 df.district_of_residence == district].sample(n=5, replace=False,
-                                                                             random_state=self.sim.rng).index
+                                                                             random_state=self.module.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1219,7 +1219,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
         # they will present back to the health system with some delay (2-4 weeks)
         if df.at[person_id, 'tb_inf'].startswith("active"):
 
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[0.9, 0.1])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[0.9, 0.1])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_xpert_test'] = True
@@ -1243,7 +1243,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                                 df.is_alive &
                                 df.district_of_residence == district].sample(
                     n=5,
-                    replace=False, random_state=self.sim.rng).index
+                    replace=False, random_state=self.module.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1728,7 +1728,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
         # if drug-susceptible then probability of successful treatment for both primary and secondary
         if df.at[person_id, 'tb_inf'].startswith("active_susc"):
 
-            cured = self.sim.rng.random_sample(size=1) < params['prob_treatment_success']
+            cured = self.module.rng.random_sample(size=1) < params['prob_treatment_success']
 
             if cured:
                 df.at[person_id, 'tb_inf'] = 'latent_susc_secondary'

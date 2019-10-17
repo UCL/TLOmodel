@@ -429,7 +429,7 @@ class hiv(Module):
         df = population.props
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         # probability of baseline population ever testing for HIV
         test_index_male = df.index[
@@ -474,7 +474,7 @@ class hiv(Module):
         assert df_art.prop_coverage.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for the whole population
-        random_draw = self.sim.rng.random_sample(size=len(df_art))
+        random_draw = self.module.rng.random_sample(size=len(df_art))
 
         # ----------------------------------- ART - CHILDREN -----------------------------------
 
@@ -763,7 +763,7 @@ class hiv(Module):
         # ----------------------------------- MTCT - PREGNANCY -----------------------------------
 
         #  TRANSMISSION DURING PREGNANCY / DELIVERY
-        random_draw = self.sim.rng.random_sample(size=1)
+        random_draw = self.module.rng.random_sample(size=1)
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
@@ -986,7 +986,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # mother NOT ON ART & child NOT ON ART
-        i1 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+        i1 = df.index[(self.module.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_bf_untreated'])
                       & df.is_alive
                       & ~df.hv_inf
@@ -996,7 +996,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
                       & (df.hv_mother_art != 2)]
 
         # mother ON ART & assume child on azt/nvp
-        i2 = df.index[(self.sim.rng.random_sample(size=len(df)) < params[
+        i2 = df.index[(self.module.rng.random_sample(size=len(df)) < params[
             'monthly_prob_mtct_bf_untreated'])
                       & df.is_alive
                       & ~df.hv_inf
@@ -1014,7 +1014,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- TIME OF DEATH -----------------------------------
         # assign slow progressor
         if len(new_inf):
-            time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+            time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                    size=len(new_inf)) * params[
                                   'weibull_scale_mort_infant_slow_progressor']
             time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
@@ -1079,7 +1079,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_unified_symptom_code'] = 2
 
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
-            seeks_care = self.sim.rng.random_sample() < prob
+            seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
                 logger.debug(
@@ -1113,7 +1113,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_unified_symptom_code'] = 3
 
             prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
-            seeks_care = self.sim.rng.random_sample() < prob
+            seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
                 logger.debug(
@@ -1180,7 +1180,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
         # open to fsw only
         if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 10:
             gets_prep = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
-                frac=params['fsw_prep'], random_state=self.sim.rng).index
+                frac=params['fsw_prep'], random_state=self.module.rng).index
 
             for person_id in gets_prep:
                 # make the outreach event
@@ -1647,7 +1647,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if (not df.at[person_id, 'hv_on_art'] == 0
                 and not (df.at[person_id, 'tb_inf'].startswith('active'))
-                and (self.sim.rng.random_sample(size=1) < params['hiv_art_ipt'])):
+                and (self.module.rng.random_sample(size=1) < params['hiv_art_ipt'])):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, self.sim.date)
@@ -1779,7 +1779,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # ----------------------------------- SCHEDULE IPT START -----------------------------------
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
                 df.at[person_id, 'tb_inf'].startswith('active')) and (
-                self.sim.rng.random_sample(size=1) < params['hiv_art_ipt']):
+                self.module.rng.random_sample(size=1) < params['hiv_art_ipt']):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
                 person_id, now)
@@ -1950,7 +1950,7 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
         # currently placeholder value=0 for all ages until data arrives
         if len(df[df.is_alive & (df.hv_on_art == 2)]) > 1:
             poor = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_high_to_low_art'], random_state=self.sim.rng).index
+                frac=params['prob_high_to_low_art'], random_state=self.module.rng).index
 
             df.loc[poor, 'hv_on_art'] = 1
 
@@ -1962,13 +1962,13 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
                                  person)
 
                     if df.at[person, 'age_years'] < 3:
-                        time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                        time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                                size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
-                        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
+                        death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                           size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
@@ -2021,7 +2021,7 @@ class HivArtPoorToGoodAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
         # this is probably going to be driven by symptoms worsening
         if len(df[df.is_alive & (df.hv_on_art == 1)]) > 1:
             good = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_low_to_high_art'], random_state=self.sim.rng).index
+                frac=params['prob_low_to_high_art'], random_state=self.module.rng).index
 
             df.loc[good, 'hv_on_art'] = 2
 
@@ -2040,7 +2040,7 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
 
         if len(df[df.is_alive & (df.hv_on_art != 0)]) > 1:
             off_art = df[df.is_alive & (df.hv_on_art == 2)].sample(
-                frac=params['prob_off_art'], random_state=self.sim.rng).index
+                frac=params['prob_off_art'], random_state=self.module.rng).index
 
             df.loc[off_art, 'hv_on_art'] = 0
 
@@ -2052,13 +2052,13 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
                                  person)
 
                     if df.at[person, 'age_years'] < 3:
-                        time_death_slow = self.sim.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
+                        time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
                                                                size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
-                        death_date = self.sim.rng.weibull(a=params['weibull_shape_mort_adult'],
+                        death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
                                                           size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
@@ -2113,7 +2113,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
         # transition those already fsw back to low risk
         if len(df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')]) > 1:
             remove = df[df.is_alive & (df.sex == 'F') & (df.hv_sexual_risk == 'sex_work')].sample(
-                frac=params['fsw_transition'], random_state=self.sim.rng).index
+                frac=params['fsw_transition'], random_state=self.module.rng).index
 
             df.loc[remove, 'hv_sexual_risk'] = 'low'
 
@@ -2133,7 +2133,7 @@ class FswEvent(RegularEvent, PopulationScopeEventMixin):
             recruit = int((params['proportion_female_sex_workers'] - prop) * eligible)
             fsw_new = df[
                 df.is_alive & (df.sex == 'F') & (df.age_years.between(15, 49)) & (df.li_mar_stat != 2)].sample(
-                n=recruit, random_state=self.sim.rng).index
+                n=recruit, random_state=self.module.rng).index
             df.loc[fsw_new, 'hv_sexual_risk'] = 'sex_work'
 
 

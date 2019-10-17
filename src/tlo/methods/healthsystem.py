@@ -163,7 +163,7 @@ class HealthSystem(Module):
         # (For now, let this be a random number, but in future it may be properly informed based on \
         #  population density distribitions)
         # Note that this characteritic is inherited from mother to child.
-        df['hs_dist_to_facility'] = self.sim.rng.uniform(0.01, 5.00, len(df))
+        df['hs_dist_to_facility'] = self.rng.uniform(0.01, 5.00, len(df))
 
     def initialise_simulation(self, sim):
 
@@ -889,7 +889,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module: HealthSystem):
         super().__init__(module, frequency=DateOffset(days=1))
 
-    @profile
     def apply(self, population):
 
         logger.debug('HealthSystemScheduler>> I will now determine what calls on resource will be met today: %s',
