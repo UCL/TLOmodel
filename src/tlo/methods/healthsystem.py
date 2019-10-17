@@ -1,4 +1,3 @@
-import builtins
 import heapq as hp
 import logging
 from pathlib import Path
@@ -12,16 +11,6 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-
-try:
-    profile = builtins.profile
-except AttributeError:
-    # No line profiler being used, make a dummy decorator function
-    def profile(func):
-        return func
-# TODO: remove profile after final profiling?
-
 
 class HealthSystem(Module):
     """
