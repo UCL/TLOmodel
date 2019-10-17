@@ -472,8 +472,8 @@ class HealthSystem(Module):
 
             e.g.
             cons_footprint = {
-                        'Intervention_Package_Code': [{my_pkg_code:1}],
-                        'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
+                        'Intervention_Package_Code': [{my_pkg_code: 1}],
+                        'Item_Code': [{my_item_code: 10}, {another_item_code: 1}]
             }
         """
 
@@ -619,8 +619,8 @@ class HealthSystem(Module):
         #     * the codes within each list must be unique and valid codes, quantities must be integer values >0
         #     e.g.
         #     cons_footprint = {
-        #                 'Intervention_Package_Code': [{my_pkg_code:1}],
-        #                 'Item_Code': [{'my_item_code':10, 'another_item_code':1}]
+        #                 'Intervention_Package_Code': [{my_pkg_code: 1}],
+        #                 'Item_Code': [{my_item_code: 10}, {another_item_code: 1}]
         #     }
 
         # check basic formatting
@@ -633,15 +633,14 @@ class HealthSystem(Module):
         consumables = self.parameters['Consumables']
 
         for pkg in cons_req_as_footprint['Intervention_Package_Code']:
-            pkg_code = list(pkg.keys())[0]
-            pkg_quant =  list(pkg.values())[0]
+            # dict only ever has one item so we only want the key and the value
+            (pkg_code, pkg_quant), = pkg.items()
             assert pkg_code in consumables['Intervention_Pkg_Code'].values
             assert type(pkg_quant) is int
             assert pkg_quant > 0
 
         for itm in cons_req_as_footprint['Item_Code']:
-            itm_code = list(itm.keys())[0]
-            itm_quant =  list(itm.values())[0]
+            (itm_code, itm_quant), = itm.items()
             assert itm_code in consumables['Item_Code'].values
             assert type(itm_quant) is int
             assert itm_quant > 0
@@ -700,14 +699,15 @@ class HealthSystem(Module):
         packages_availability = dict()
         if not cons_req_as_footprint['Intervention_Package_Code'] == []:
             for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
-                package_code = int(list(p_dict.keys())[0])
+                # dict only ever has one item so we only want the key and ignore the value
+                (package_code, _val), = p_dict.items()
                 packages_availability[int(package_code)] = bool(items_req.loc[items_req['Package_Code'] == float(package_code), 'Available'].all())
 
         # Iterate through the individual items that were requested
         items_availability=dict()
         if not cons_req_as_footprint['Item_Code'] == []:
             for i_dict in cons_req_as_footprint['Item_Code']:
-                item_code = int(list(i_dict.keys())[0])
+                (item_code, _val), = i_dict.items()
                 # check if *all* items in this package are available
                 items_availability[int(item_code)]=bool(items_req.loc[items_req['Item_Code']==item_code,'Available'].values[0])
 
@@ -736,8 +736,7 @@ class HealthSystem(Module):
         individual_consumables = []
         # Get the individual items in each package:
         for p_dict in cons['Intervention_Package_Code']:
-            package_code = int(list(p_dict.keys())[0])
-            quantity_of_packages = int(list(p_dict.values())[0])
+            (package_code, quantity_of_packages), = p_dict.items()
             items = consumables.loc[
                 consumables['Intervention_Pkg_Code'] == package_code, ['Item_Code', 'Expected_Units_Per_Case']
             ].to_dict(orient='records')
@@ -748,8 +747,7 @@ class HealthSystem(Module):
 
         # Add in any additional items that have been specified seperately:
         for i_dict in cons['Item_Code']:
-            item_code = int(list(i_dict.keys())[0])
-            quantity_of_item = int(list(i_dict.values())[0])
+            (item_code, quantity_of_item), = i_dict.items()
             item = {'Item_Code': item_code, 'Package_Code': np.nan,
                     'Quantity_Of_Item': quantity_of_item, 'Expected_Units_Per_Case': np.nan}
             individual_consumables.append(item)
