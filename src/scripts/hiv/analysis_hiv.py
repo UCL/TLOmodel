@@ -25,7 +25,6 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
 popsize = 5000
@@ -70,7 +69,6 @@ sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 fh.flush()
 # fh.close()
-
 
 # %% read the results
 
