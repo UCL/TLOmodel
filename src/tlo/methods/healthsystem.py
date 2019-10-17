@@ -704,14 +704,14 @@ class HealthSystem(Module):
                         log_consumables)
 
         # 4) Format outcome into the CONS_FOOTPRINT format for return to HSI event
-        # Itterate through the packages that were requested
+        # Iterate through the packages that were requested
         packages_availability = dict()
         if not cons_req_as_footprint['Intervention_Package_Code'] == []:
             for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
                 package_code = int(list(p_dict.keys())[0])
                 packages_availability[int(package_code)] = bool(items_req.loc[items_req['Package_Code'] == float(package_code), 'Available'].all())
 
-        # Itterate therough the individual items that were requested
+        # Iterate through the individual items that were requested
         items_availability=dict()
         if not cons_req_as_footprint['Item_Code'] == []:
             for i_dict in cons_req_as_footprint['Item_Code']:
@@ -728,7 +728,6 @@ class HealthSystem(Module):
 
         return output
 
-    @profile
     def get_consumables_as_individual_items(self, cons_footprint):
         """
         This will look at the CONS_FOOTPRINT of an HSI Event and return a dataframe with the individual items that
@@ -760,7 +759,7 @@ class HealthSystem(Module):
             item_code = int(list(i_dict.keys())[0])
             quantity_of_item = int(list(i_dict.values())[0])
             item = {'Item_Code': item_code, 'Package_Code': np.nan,
-                     'Quantity_Of_Item': quantity_of_item, 'Expected_Units_Per_Case': np.nan}
+                    'Quantity_Of_Item': quantity_of_item, 'Expected_Units_Per_Case': np.nan}
             individual_consumables.append(item)
 
         consumables_as_individual_items = pd.DataFrame.from_dict(individual_consumables)
@@ -769,8 +768,7 @@ class HealthSystem(Module):
             consumables_as_individual_items = consumables_as_individual_items.drop('Expected_Units_Per_Case', axis=1)
         except KeyError:
             # No data from cons['Intervention_Package_Code'] or cons['Item_Code']
-            # Maybe this should never happen? If so then can remove the try and except and have the error
-            consumables_as_individual_items = pd.DataFrame(columns=['Item_Code', 'Package_Code', 'Quantity_Of_Item'])
+            raise ValueError("No packages or individual items requested")
 
         # confirm that Item_Code is returned as an int, Package_Code and Expected_Units_Per_Case as float
             # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
@@ -780,7 +778,6 @@ class HealthSystem(Module):
         consumables_as_individual_items['Quantity_Of_Item'] = consumables_as_individual_items['Quantity_Of_Item'].astype(float)
 
         return consumables_as_individual_items
-
 
     def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None):
         """
