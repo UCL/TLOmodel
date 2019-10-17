@@ -137,8 +137,9 @@ class HealthSystem(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Consumables.csv'
         )
 
-        self.parameters['Consumables_Cost_List'] = (self.parameters['Consumables'][['Item_Code', 'Unit_Cost']]) \
-            .drop_duplicates().reset_index(drop=True)
+        self.parameters['Consumables_Cost_List'] = (
+            self.parameters['Consumables'][['Item_Code', 'Unit_Cost']]
+                .drop_duplicates().set_index('Item_Code'))
 
         caps = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv'
@@ -679,8 +680,7 @@ class HealthSystem(Module):
             items_req_to_log['Available'] = items_req_to_log['Available']>0     # restore to bool after sum in grouby()
 
             # Get the the cost of the each consumable item (could not do this merge until after model run)
-            consumable_costs = self.parameters['Consumables_Cost_List'].copy()
-            consumable_costs.set_index('Item_Code', inplace=True)
+            consumable_costs = self.parameters['Consumables_Cost_List']
 
             items_req_to_log = items_req_to_log.merge(consumable_costs,
                                                       how='left',
