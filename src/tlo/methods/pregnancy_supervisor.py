@@ -1089,20 +1089,39 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         progress_disease(current_sev_pe, 'eclampsia', params['r_eclampsia_severe_pe'])
         progress_disease(current_sev_pe, 'HELLP', params['r_hellp_severe_pe'])  # does double counting make sense
 
+        current_mild_pe.isin(current_sev_pe)  # from stef use this to get index
 
         # Todo: do we have risk factors for progression? Are women less likley to progress if theyre on anti HTNs?
         # Todo: discuss with Tim C if we need to apply symptoms IF we know that severe and > are all symptomatic?
         #  Or do we just apply a code
         # TODO: consider progression to CV event (mainly stroke)
 
-        # Care Seeking
+        # Dummy Care Seeking
+        # need to get new onset cases
         prob_seek_care_spe = 0.6
-        prob_seek_care_ec
-        prob_seek_care_hellp
+        prob_seek_care_ec = 0.8
+        prob_seek_care_hellp = 0.8
+
+
         # how do we deal with care seeking in the context of eclampsia (woman in incapacitated)
         # what about progression to HELLP?
 
+class PregnancyDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    This is the death event for mockitis
+    """
 
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+
+        # do we schedule all women who dont seek treatment to come to this event and apply CFR
+        # AND then schedule women who do seek treatment here in light of treatment failure?
+
+        #HELLP is largely going to be untreated here?
+        # Eclampsia is a good one and should be resolved.
 
 
 class PregnancySupervisorLoggingEvent(RegularEvent, PopulationScopeEventMixin):
