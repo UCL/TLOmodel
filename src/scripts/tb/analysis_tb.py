@@ -70,7 +70,7 @@ for name in logging.root.manager.loggerDict:
         logging.getLogger(name).setLevel(logging.WARNING)
 
 logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
-logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.tb").setLevel(logging.DEBUG)
 # logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
 
