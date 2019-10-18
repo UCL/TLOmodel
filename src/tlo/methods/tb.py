@@ -614,6 +614,7 @@ class Tb(Module):
 # ---------------------------------------------------------------------------
 # TODO should transmission be limited within each district?
 # TODO add relative infectiousness for those on poor tx [prop tx failure]
+# TODO rel inf for smear negative - weight inf by prop smear negative
 # TODO age/sex distribution for new cases?
 class TbEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb infection events
@@ -911,7 +912,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             # for each person determine whether they will seek care on symptom change
             # prob_care = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=2)
-
+            # TODO: calibrate / input these data from MOH reports
             # this will be removed once healthcare seeking model is in place
             prob_care = 0.47
             if now.year == 2013:
@@ -1202,6 +1203,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 # TODO should transmission be limited within each district?
 # TODO add relative infectiousness for those on poor tx [prop tx failure]
+# TODO rel inf for smear negative - weight inf by prop smear negative
 # TODO age/sex distribution for new cases?
 class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb-mdr infection events
@@ -1739,6 +1741,8 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(TbCheckXray(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
 
+# TODO results returned after 24 hours, so delay any further events for 24hrs
+# TOTO if smear negative result, could give antibiotics and wait one week
 class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
     """
     This is a sputum test for presumptive tb cases
