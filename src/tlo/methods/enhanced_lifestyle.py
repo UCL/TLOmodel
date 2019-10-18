@@ -231,8 +231,15 @@ class Lifestyle(Module):
         'li_no_access_handwashing': Property(Types.BOOL, 'no_access_handwashing - no water, no soap, no other '
                                                          'cleaning agent - as in DHS'),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
-        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
-    }
+        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
+        # Added in. TODO: Check these
+        'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'), # not in method excel
+        'li_date_acquire_improved_sanitation': Property(Types.DATE, 'date transition to urban'),
+        'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
+        'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
+        'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
+        'li_on_con': Property(Types.BOOL, 'on contraceptive'),
+     }
 
 
     def read_parameters(self, data_folder):
@@ -809,6 +816,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))
+        assert isinstance(module, Lifestyle)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1153,6 +1161,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Lifestyle)
 
     def apply(self, population):
         """Apply this event to the population.
