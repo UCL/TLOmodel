@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)
@@ -37,7 +37,7 @@ def test_run_with_healthsystem_and_healthburden_no_intvs():
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -57,7 +57,7 @@ def test_run_with_healthsystem_and_healthburden_intvs_on():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 

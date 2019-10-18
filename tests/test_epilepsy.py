@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, epilepsy, healthburden, healthsystem, lifestyle
+from tlo.methods import demography, epilepsy, healthburden, healthsystem, enhanced_lifestyle
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -24,8 +24,7 @@ def simulation():
     sim = Simulation(start_date=start_date)
 
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
-
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            ignore_appt_constraints=True,
                                            ignore_cons_constraints=True))
