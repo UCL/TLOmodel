@@ -72,7 +72,8 @@ class Tb(Module):
         # mortality
         'monthly_prob_tb_mortality': Parameter(Types.REAL, 'mortality rate with active tb'),
         'monthly_prob_tb_mortality_hiv': Parameter(Types.REAL, 'mortality from tb with concurrent HIV'),
-        'mortality_cotrim': Parameter(Types.REAL, 'mreduction in mortality rates due to cotrimoxazole prophylaxis'),
+        'mort_cotrim': Parameter(Types.REAL, 'reduction in mortality rates due to cotrimoxazole prophylaxis'),
+        'mort_tx': Parameter(Types.REAL, 'reduction in mortality rates due to effective tb treatment'),
 
         # relative risks of progression to active disease
         'rr_tb_bcg': Parameter(Types.REAL,
@@ -189,77 +190,78 @@ class Tb(Module):
         # baseline
         params['prop_active_2010'], params['prop_latent_2010'] = workbook['PropActive2010Updated'], workbook[
             'Latent_TB_prob']
-        params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value1']
+        params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value']
 
         # natural history
-        params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value1']
-        params['rel_inf_smear_ng'] = self.param_list.loc['rel_inf_smear_ng', 'value1']
-        params['rr_bcg_inf'] = self.param_list.loc['rr_bcg_inf', 'value1']
-        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value1']
+        params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value']
+        params['rel_inf_smear_ng'] = self.param_list.loc['rel_inf_smear_ng', 'value']
+        params['rr_bcg_inf'] = self.param_list.loc['rr_bcg_inf', 'value']
+        params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value']
         params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc[
-            'monthly_prob_relapse_tx_incomplete', 'value1']
-        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value1']
-        params['rr_relapse_hiv'] = self.param_list.loc['rr_relapse_hiv', 'value1']
+            'monthly_prob_relapse_tx_incomplete', 'value']
+        params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value']
+        params['rr_relapse_hiv'] = self.param_list.loc['rr_relapse_hiv', 'value']
 
         # progression
-        params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value1']
-        params['prog_active'] = self.param_list.loc['prog_active', 'value1']
-        params['prog_1yr'] = self.param_list.loc['progr_1yr', 'value1']
-        params['prog_1_2yr'] = self.param_list.loc['progr_1_2yr', 'value1']
-        params['prog_2_5yr'] = self.param_list.loc['progr_2_5yr', 'value1']
-        params['prog_5_10yr'] = self.param_list.loc['progr_5_10yr', 'value1']
-        params['prog_10yr'] = self.param_list.loc['progr_10yr', 'value1']
-        params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value1']
-        params['monthly_prob_self_cure_hiv'] = self.param_list.loc['monthly_prob_self_cure_hiv', 'value1']
+        params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value']
+        params['prog_active'] = self.param_list.loc['prog_active', 'value']
+        params['prog_1yr'] = self.param_list.loc['progr_1yr', 'value']
+        params['prog_1_2yr'] = self.param_list.loc['progr_1_2yr', 'value']
+        params['prog_2_5yr'] = self.param_list.loc['progr_2_5yr', 'value']
+        params['prog_5_10yr'] = self.param_list.loc['progr_5_10yr', 'value']
+        params['prog_10yr'] = self.param_list.loc['progr_10yr', 'value']
+        params['monthly_prob_self_cure'] = self.param_list.loc['monthly_prob_self_cure', 'value']
+        params['monthly_prob_self_cure_hiv'] = self.param_list.loc['monthly_prob_self_cure_hiv', 'value']
 
         # clinical features
         params['pulm_tb'] = workbook['pulm_tb']
-        params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value1']
-        params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value1']
+        params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value']
+        params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value']
 
         # mortality
-        params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value1']
-        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['monthly_prob_tb_mortality_hiv', 'value1']
-        params['mortality_cotrim'] = self.param_list.loc['mortality_cotrim', 'value1']
+        params['monthly_prob_tb_mortality'] = self.param_list.loc['monthly_prob_tb_mortality', 'value']
+        params['monthly_prob_tb_mortality_hiv'] = self.param_list.loc['monthly_prob_tb_mortality_hiv', 'value']
+        params['mort_cotrim'] = self.param_list.loc['mort_cotrim', 'value']
+        params['mort_tx'] = self.param_list.loc['mort_tx', 'value']
 
         # relative risks of progression to active disease
-        params['rr_tb_bcg'] = self.param_list.loc['rr_tb_bcg', 'value1']
-        params['rr_tb_hiv'] = self.param_list.loc['rr_tb_hiv', 'value1']
-        params['rr_tb_aids'] = self.param_list.loc['rr_tb_aids', 'value1']
-        params['rr_tb_art_adult'] = self.param_list.loc['rr_tb_art_adult', 'value1']
-        params['rr_tb_art_child'] = self.param_list.loc['rr_tb_art_child', 'value1']
-        params['rr_tb_overweight'] = self.param_list.loc['rr_tb_overweight', 'value1']
-        params['rr_tb_obese'] = self.param_list.loc['rr_tb_obese', 'value1']
-        params['rr_tb_diabetes1'] = self.param_list.loc['rr_tb_diabetes1', 'value1']
-        params['rr_tb_alcohol'] = self.param_list.loc['rr_tb_alcohol', 'value1']
-        params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value1']
+        params['rr_tb_bcg'] = self.param_list.loc['rr_tb_bcg', 'value']
+        params['rr_tb_hiv'] = self.param_list.loc['rr_tb_hiv', 'value']
+        params['rr_tb_aids'] = self.param_list.loc['rr_tb_aids', 'value']
+        params['rr_tb_art_adult'] = self.param_list.loc['rr_tb_art_adult', 'value']
+        params['rr_tb_art_child'] = self.param_list.loc['rr_tb_art_child', 'value']
+        params['rr_tb_overweight'] = self.param_list.loc['rr_tb_overweight', 'value']
+        params['rr_tb_obese'] = self.param_list.loc['rr_tb_obese', 'value']
+        params['rr_tb_diabetes1'] = self.param_list.loc['rr_tb_diabetes1', 'value']
+        params['rr_tb_alcohol'] = self.param_list.loc['rr_tb_alcohol', 'value']
+        params['rr_tb_smoking'] = self.param_list.loc['rr_tb_smoking', 'value']
 
-        params['dur_prot_ipt'] = self.param_list.loc['dur_prot_ipt', 'value1']
-        params['dur_prot_ipt_infant'] = self.param_list.loc['dur_prot_ipt_infant', 'value1']
-        params['rr_ipt_adult'] = self.param_list.loc['rr_ipt_adult', 'value1']
-        params['rr_ipt_child'] = self.param_list.loc['rr_ipt_child', 'value1']
-        params['rr_ipt_adult_hiv'] = self.param_list.loc['rr_ipt_adult_hiv', 'value1']
-        params['rr_ipt_child_hiv'] = self.param_list.loc['rr_ipt_child_hiv', 'value1']
-        params['rr_ipt_art_adult'] = self.param_list.loc['rr_ipt_art_adult', 'value1']
-        params['rr_ipt_art_child'] = self.param_list.loc['rr_ipt_art_child', 'value1']
+        params['dur_prot_ipt'] = self.param_list.loc['dur_prot_ipt', 'value']
+        params['dur_prot_ipt_infant'] = self.param_list.loc['dur_prot_ipt_infant', 'value']
+        params['rr_ipt_adult'] = self.param_list.loc['rr_ipt_adult', 'value']
+        params['rr_ipt_child'] = self.param_list.loc['rr_ipt_child', 'value']
+        params['rr_ipt_adult_hiv'] = self.param_list.loc['rr_ipt_adult_hiv', 'value']
+        params['rr_ipt_child_hiv'] = self.param_list.loc['rr_ipt_child_hiv', 'value']
+        params['rr_ipt_art_adult'] = self.param_list.loc['rr_ipt_art_adult', 'value']
+        params['rr_ipt_art_child'] = self.param_list.loc['rr_ipt_art_child', 'value']
 
         # health system interactions
-        params['prop_fail_xpert'] = self.param_list.loc['prop_fail_xpert', 'value1']
-        params['prob_tx_success_new'] = self.param_list.loc['prob_tx_success_new', 'value1']
-        params['prob_tx_success_prev'] = self.param_list.loc['prob_tx_success_prev', 'value1']
-        params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value1']
-        params['prob_tx_success_mdr'] = self.param_list.loc['prob_tx_success_mdr', 'value1']
-        params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value1']
-        params['prob_tx_success_0_4'] = self.param_list.loc['prob_tx_success_0_4', 'value1']
-        params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value1']
+        params['prop_fail_xpert'] = self.param_list.loc['prop_fail_xpert', 'value']
+        params['prob_tx_success_new'] = self.param_list.loc['prob_tx_success_new', 'value']
+        params['prob_tx_success_prev'] = self.param_list.loc['prob_tx_success_prev', 'value']
+        params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value']
+        params['prob_tx_success_mdr'] = self.param_list.loc['prob_tx_success_mdr', 'value']
+        params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value']
+        params['prob_tx_success_0_4'] = self.param_list.loc['prob_tx_success_0_4', 'value']
+        params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value']
         params['followup_times'] = workbook['followup']
 
         params['tb_high_risk_distr'] = workbook['IPTdistricts']
-        params['ipt_contact_cov'] = self.param_list.loc['ipt_contact_cov', 'value1']
+        params['ipt_contact_cov'] = self.param_list.loc['ipt_contact_cov', 'value']
 
         params['bcg_coverage_year'] = workbook['BCG']
         params['initial_bcg_coverage'] = workbook['BCG_baseline']
-        params['presump_testing'] = self.param_list.loc['presump_testing', 'value1']
+        params['presump_testing'] = self.param_list.loc['presump_testing', 'value']
 
         # get the DALY weight that this module will use from the weight database
         if 'HealthBurden' in self.sim.modules.keys():
@@ -491,6 +493,7 @@ class Tb(Module):
         sim.schedule_event(NonTbSymptomsEvent(self), sim.date + DateOffset(months=1))
 
         sim.schedule_event(TbDeathEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(TbMdrDeathEvent(self), sim.date + DateOffset(months=1))
 
         # Logging
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(days=0))
@@ -610,6 +613,7 @@ class Tb(Module):
 #   TB infection event
 # ---------------------------------------------------------------------------
 # TODO should transmission be limited within each district?
+# TODO add relative infectiousness for those on poor tx [prop tx failure]
 # TODO age/sex distribution for new cases?
 class TbEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb infection events
@@ -853,9 +857,9 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
             df.tb_inf.str.contains('active'))]
 
         # schedule tb screening and test
-        if test_non_tb:
+        if len(test_non_tb):
             for person in test_non_tb:
-                logger.debug('This is TbActiveEvent, scheduling HSI_Tb_Screening for person %d', person)
+                logger.debug('This is NonTbSymptomsEvent, scheduling HSI_Tb_Screening for person %d', person)
 
                 event = HSI_Tb_Screening(self.module, person_id=person)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1150,6 +1154,7 @@ class TbCheckXray(Event, IndividualScopeEventMixin):
                                                                 )
 
 
+# TODO change this to multiplier for hiv-TB
 class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb self-cure events
     """
@@ -1195,7 +1200,9 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   TB MDR infection event
 # ---------------------------------------------------------------------------
-
+# TODO should transmission be limited within each district?
+# TODO add relative infectiousness for those on poor tx [prop tx failure]
+# TODO age/sex distribution for new cases?
 class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb-mdr infection events
     """
@@ -1605,6 +1612,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
                 'This is TbMdrRelapseEvent, there are no new relapse cases seeking care')
 
 
+# TODO change this to multiplier for hiv-TB
 class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
     """ tb-mdr self-cure events
     """
@@ -2986,8 +2994,10 @@ class TbIptEndEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
+
 class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
-    """The regular event that kills people.
+    """The regular event that kills people with active drug-susceptible tb
+    HIV-positive deaths due to TB counted as HIV deaths
     """
 
     def __init__(self, module):
@@ -2999,19 +3009,25 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
         rng = self.module.rng
 
-        # only active infections result in death, no deaths on treatment
+        # ---------------------------------- TB DEATHS - HIV-NEGATIVE ------------------------------------
+        # only active infections result in death
         mortality_rate = pd.Series(0, index=df.index)
 
-        # hiv-negative
-        mortality_rate.loc[df['tb_inf'].str.contains('active') & ~df.hv_inf & (
+        # hiv-negative, tb untreated
+        mortality_rate.loc[df['tb_inf'].str.contains('active_susc') & ~df.hv_inf & (
             ~df.tb_on_treatment | ~df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
             'monthly_prob_tb_mortality']
 
-        # hiv-negative on cotrim - shouldn't be any
-        mortality_rate.loc[df['tb_inf'].str.contains('active') & ~df.hv_inf & (
+        # hiv-negative on cotrim - shouldn't be any, tb untreated
+        mortality_rate.loc[df['tb_inf'].str.contains('active_susc') & ~df.hv_inf & (
             ~df.tb_on_treatment | ~df.tb_treated_mdr) & df.hv_on_cotrim] = params[
                                                                                'monthly_prob_tb_mortality'] * params[
-                                                                               'mortality_cotrim']
+                                                                               'mort_cotrim']
+
+        # hiv-negative, tb treated
+        mortality_rate.loc[df['tb_inf'].str.contains('active_susc') & ~df.hv_inf & (
+            df.tb_on_treatment | df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
@@ -3029,20 +3045,117 @@ class TbDeathEvent(RegularEvent, PopulationScopeEventMixin):
                 df.at[person, 'tb_date_death'] = now
 
         # ---------------------------------- HIV-TB DEATHS ------------------------------------
-
         # only active infections result in death, no deaths on treatment
         mort_hiv = pd.Series(0, index=df.index)
 
-        # hiv-positive
-        mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-            ~df.tb_on_treatment | ~df.tb_treated_mdr) & ~df.hv_on_cotrim] = params[
+        # hiv-positive, untreated
+        mort_hiv.loc[df['tb_inf'].str.contains('active_susc') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art != 2) & ~df.hv_on_cotrim] = params[
             'monthly_prob_tb_mortality_hiv']
 
-        # hiv-positive on cotrim
-        mort_hiv.loc[df['tb_inf'].str.contains('active') & df.hv_inf & (
-            ~df.tb_on_treatment | ~df.tb_treated_mdr) &
+        # hiv-positive, on ART
+        mort_hiv.loc[df['tb_inf'].str.contains('active_susc') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art == 2) & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality']
+
+        # hiv-positive on cotrim and not ART - shouldn't happen
+        mort_hiv.loc[df['tb_inf'].str.contains('active_susc') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art != 2) &
                      df.hv_on_cotrim] = params['monthly_prob_tb_mortality_hiv'] * \
-                                        params['mortality_cotrim']
+                                        params['mort_cotrim']
+
+        # Generate a series of random numbers, one per individual
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < mortality_rate)
+        # print('deaths: ', deaths)
+        will_die = (df[deaths]).index
+
+        for person in will_die:
+            if df.at[person, 'is_alive']:
+                df.at[person, 'tb_date_death_occurred'] = self.sim.date
+
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='hiv'),
+                                        now)
+                df.at[person, 'tb_date_death'] = now
+
+
+class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
+    """The regular event that kills people with active MDR tb
+    HIV-positive deaths due to TB counted as HIV deaths
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+
+    def apply(self, population):
+        params = self.module.parameters
+        df = population.props
+        now = self.sim.date
+        rng = self.module.rng
+
+        # ---------------------------------- TB DEATHS - HIV-NEGATIVE ------------------------------------
+        # only active infections result in death
+        mortality_rate = pd.Series(0, index=df.index)
+
+        # hiv-negative, tb untreated
+        mortality_rate.loc[
+            df['tb_inf'].str.contains('active_mdr') & ~df.hv_inf & ~df.tb_treated_mdr & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality']
+
+        # hiv-negative on cotrim - shouldn't be any, tb untreated
+        mortality_rate.loc[
+            df['tb_inf'].str.contains('active_mdr') & ~df.hv_inf & ~df.tb_treated_mdr & df.hv_on_cotrim] = params[
+                                                                                                               'monthly_prob_tb_mortality'] * \
+                                                                                                           params[
+                                                                                                               'mort_cotrim']
+
+        # hiv-negative, tb treated
+        mortality_rate.loc[
+            df['tb_inf'].str.contains('active_mdr') & ~df.hv_inf & df.tb_treated_mdr & ~df.hv_on_cotrim] = params[
+                                                                                                               'monthly_prob_tb_mortality'] * \
+                                                                                                           params[
+                                                                                                               'mort_tx']
+
+        # Generate a series of random numbers, one per individual
+        probs = rng.rand(len(df))
+        deaths = df.is_alive & (probs < mortality_rate)
+        # print('deaths: ', deaths)
+        will_die = (df[deaths]).index
+        # print('will_die: ', will_die)
+
+        for person in will_die:
+            if df.at[person, 'is_alive']:
+                df.at[person, 'tb_date_death_occurred'] = self.sim.date
+
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id=person, cause='tb'),
+                                        now)
+                df.at[person, 'tb_date_death'] = now
+
+        # ---------------------------------- HIV-TB DEATHS ------------------------------------
+        # only active infections result in death, no deaths on treatment
+        mort_hiv = pd.Series(0, index=df.index)
+
+        # hiv-positive no ART, tb untreated
+        mort_hiv.loc[df['tb_inf'].str.contains('active_mdr') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art != 2) & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality_hiv']
+
+        # hiv-positive on ART, tb untreated
+        mort_hiv.loc[df['tb_inf'].str.contains('active_mdr') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art == 2) & ~df.hv_on_cotrim] = params[
+            'monthly_prob_tb_mortality']
+
+        # hiv-positive on cotrim and ART, tb untreated
+        mort_hiv.loc[df['tb_inf'].str.contains('active_mdr') & df.hv_inf & (
+            ~df.tb_on_treatment | ~df.tb_treated_mdr) & (df.hv_on_art == 2) &
+                     df.hv_on_cotrim] = params['monthly_prob_tb_mortality_hiv'] * \
+                                        params['mort_cotrim']
+
+        # hiv-positive no ART, tb treated
+        mort_hiv.loc[df['tb_inf'].str.contains('active_mdr') & df.hv_inf & df.tb_treated_mdr & (
+                df.hv_on_art == 2) & ~df.hv_on_cotrim] = params[
+                                                             'monthly_prob_tb_mortality'] * \
+                                                         params['mort_tx']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))
