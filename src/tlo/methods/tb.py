@@ -988,7 +988,7 @@ class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Testing'
         self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL =0
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
     def apply(self, person_id, squeeze_factor):
@@ -1021,8 +1021,10 @@ class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
                                                             priority=1,
                                                             topen=self.sim.date,
                                                             tclose=None)
+
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1055,12 +1057,12 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -1077,7 +1079,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
         # active tb, hiv-negative
         if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not df.at[person_id, 'hv_inf']:
             diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
-                                                                      (1 - params['prop_smear_positive'])])
+                                                                         (1 - params['prop_smear_positive'])])
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
                 df.at[person_id, 'tb_diagnosed'] = True
@@ -1085,7 +1087,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
         # hiv+, 80% of smear tests will be negative - extrapulmonary
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active') and df.at[person_id, 'hv_inf']:
             diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
-                                                                      (1 - params['prop_smear_positive_hiv'])])
+                                                                         (1 - params['prop_smear_positive_hiv'])])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
@@ -1110,7 +1112,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-             df.at[person_id, 'age_years'] < 15)):
+                df.at[person_id, 'age_years'] < 15)):
             # request child treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1122,7 +1124,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-             df.at[person_id, 'age_years'] >= 15)):
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1134,7 +1136,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-             df.at[person_id, 'age_years'] < 15)):
+                df.at[person_id, 'age_years'] < 15)):
             # request child retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentChild for person %d", person_id)
 
@@ -1146,7 +1148,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-             df.at[person_id, 'age_years'] >= 15)):
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentAdult for person %d", person_id)
 
@@ -1179,8 +1181,10 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=None)
+
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1333,14 +1337,16 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 # ---------------------------------------------------------------------------
 #   Treatment
@@ -1405,14 +1411,16 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1471,14 +1479,16 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1537,14 +1547,16 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1604,14 +1616,16 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1670,14 +1684,16 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 # ---------------------------------------------------------------------------
 #   Follow-up appts
@@ -1706,6 +1722,8 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
+
+
 # ---------------------------------------------------------------------------
 #   Cure
 # ---------------------------------------------------------------------------
@@ -1809,14 +1827,16 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1856,11 +1876,13 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):
 

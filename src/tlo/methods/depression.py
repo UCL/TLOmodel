@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.methods import demography
 
 logger = logging.getLogger(__name__)
@@ -512,7 +512,6 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
         self.APPT_FOOTPRINT = the_appt_footprint
@@ -534,6 +533,7 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         df.at[person_id, 'de_on_antidepr'] = True
 
         # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
+
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):

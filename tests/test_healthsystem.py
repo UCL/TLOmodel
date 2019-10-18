@@ -116,7 +116,9 @@ def test_run_with_healthsystem_interventions_on_no_constraints():
 
     check_dtypes(sim)
 
-# TODO: rewrite pytests for all the different modes  need to run with different modes in place with and without any capabilities
+# TODO: rewrite pytests for all the different modes
+#  need to run with different modes in place with and without any capabilities
+
 # def test_run_with_healthsystem_interventions_on_but_no_capabilities():
 #     f = tempfile.NamedTemporaryFile(dir='.')
 #     fh = logging.FileHandler(f.name)

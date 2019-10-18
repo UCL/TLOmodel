@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import Event, HSI_Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, tb
 
 logger = logging.getLogger(__name__)
@@ -767,25 +767,25 @@ class hiv(Module):
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and (df.at[child_id, 'hv_mother_art'] != 2)
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and (df.at[child_id, 'hv_mother_art'] != 2)
                 and (((now - df.at[mother_id, 'hv_date_inf']) / np.timedelta64(1, 'M')) < 9)):
             df.at[child_id, 'hv_inf'] = True
 
         # mother has existing infection, mother NOT ON ART
         if ((random_draw < params['prob_mtct_untreated'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and not df.at[child_id, 'hv_inf']
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and not df.at[child_id, 'hv_inf']
                 and (df.at[child_id, 'hv_mother_art'] != 2)):
             df.at[child_id, 'hv_inf'] = True
 
         #  mother has existing infection, mother ON ART
         if ((random_draw < params['prob_mtct_treated'])
-                and df.at[child_id, 'is_alive']
-                and df.at[child_id, 'hv_mother_inf_by_birth']
-                and not df.at[child_id, 'hv_inf']
+            and df.at[child_id, 'is_alive']
+            and df.at[child_id, 'hv_mother_inf_by_birth']
+            and not df.at[child_id, 'hv_inf']
                 and (df.at[child_id, 'hv_mother_art'] == 2)):
             df.at[child_id, 'hv_inf'] = True
 
@@ -1017,7 +1017,7 @@ class HivMtctEvent(RegularEvent, PopulationScopeEventMixin):
         # assign slow progressor
         if len(new_inf):
             time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                   size=len(new_inf)) * params[
+                                                      size=len(new_inf)) * params[
                                   'weibull_scale_mort_infant_slow_progressor']
             time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
             df.loc[new_inf, 'hv_proj_date_death'] = now + time_death_slow
@@ -1247,10 +1247,12 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
         df.at[person_id, 'hv_ever_tested'] = True
         df.at[person_id, 'hv_date_tested'] = self.sim.date
@@ -1272,9 +1274,9 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                                                                 priority=1,
                                                                 topen=self.sim.date,
                                                                 tclose=None)
+
     def did_not_run(self):
         pass
-
 
 
 class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
@@ -1332,7 +1334,6 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
-
         # log the consumables being used:
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         item_code1 = \
@@ -1343,11 +1344,12 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1:1}, {item_code2:1}, {item_code3:1}]
+            'Item_Code': [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}]
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
@@ -1439,16 +1441,16 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
-
-
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
 
@@ -1512,14 +1514,17 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
-            'Item_Code': [{item_code1:1}]
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': [{item_code1: 1}]
         }
 
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+
     def did_not_run(self):
         pass
+
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1535,7 +1540,6 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Peds'] = 1  # This requires one outpatient appt
         the_appt_footprint['Under5OPD'] = 1  # general child outpatient appt
-
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
@@ -1565,14 +1569,16 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
                                               'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1604,9 +1610,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
 
         df.at[person_id, 'hv_on_cotrim'] = True
 
-        if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] < 15)):
+        if df.at[person_id, 'is_alive'] and df.at[person_id, 'hv_diagnosed'] and df.at[person_id, 'age_years'] < 15:
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                               params['vls_child']])
 
@@ -1660,7 +1664,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
         # df.at[person_id, 'tb_inf'].startswith("active"):
 
         if (not df.at[person_id, 'hv_on_art'] == 0
-                and not (df.at[person_id, 'tb_inf'].startswith('active'))
+            and not (df.at[person_id, 'tb_inf'].startswith('active'))
                 and (self.module.rng.random_sample(size=1) < params['hiv_art_ipt'])):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
@@ -1685,13 +1689,16 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
                                       'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}, {pkg_code2:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+
     def did_not_run(self):
         pass
+
 
 class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1726,20 +1733,20 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # condition: not already on art
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
+            and df.at[person_id, 'hv_diagnosed']
                 and (df.at[person_id, 'age_years'] < 15)):
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_child']),
                                                                               params['vls_child']])
 
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] >= 15)
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] >= 15)
                 and (df.at[person_id, 'sex'] == 'M')):
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_m']), params['vls_m']])
 
         if (df.at[person_id, 'is_alive']
-                and df.at[person_id, 'hv_diagnosed']
-                and (df.at[person_id, 'age_years'] >= 15)
+            and df.at[person_id, 'hv_diagnosed']
+            and (df.at[person_id, 'age_years'] >= 15)
                 and (df.at[person_id, 'sex'] == 'F')):
             df.at[person_id, 'hv_on_art'] = self.module.rng.choice([1, 2], p=[(1 - params['vls_f']), params['vls_f']])
 
@@ -1791,7 +1798,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # ----------------------------------- SCHEDULE IPT START -----------------------------------
         if not df.at[person_id, 'hv_on_art'] == 0 and not (
-                df.at[person_id, 'tb_inf'].startswith('active')) and (
+            df.at[person_id, 'tb_inf'].startswith('active')) and (
                 self.module.rng.random_sample(size=1) < params['hiv_art_ipt']):
             logger.debug(
                 '....This is HSI_Hiv_StartTreatment: scheduling IPT for person %d on date %s',
@@ -1813,13 +1820,15 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1:1}]
+            'Item_Code': [{item_code1: 1}]
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1834,7 +1843,6 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['LabMolec'] = 1  # This requires one lab appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
-
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
@@ -1855,13 +1863,16 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
             0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [{pkg_code1:1}],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+
     def did_not_run(self):
         pass
+
 
 # TODO: find ART in consumables, how long is prescription for?
 # schedule next Tx in 3 months
@@ -1908,13 +1919,15 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [{item_code1:1}]
+            'Item_Code': [{item_code1: 1}]
         }
-        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(hsi_event=self,
-                                                                                 cons_req_as_footprint=the_cons_footprint)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
 
     def did_not_run(self):
         pass
+
 
 # ---------------------------------------------------------------------------
 #   Transitions on/off treatment
@@ -1981,13 +1994,13 @@ class HivArtGoodToPoorAdherenceEvent(RegularEvent, PopulationScopeEventMixin):
 
                     if df.at[person, 'age_years'] < 3:
                         time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                               size=1) * params[
+                                                                  size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
                         death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
-                                                          size=1) * \
+                                                             size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
 
@@ -2073,13 +2086,13 @@ class HivTransitionOffArtEvent(RegularEvent, PopulationScopeEventMixin):
 
                     if df.at[person, 'age_years'] < 3:
                         time_death_slow = self.module.rng.weibull(a=params['weibull_shape_mort_infant_slow_progressor'],
-                                                               size=1) * params[
+                                                                  size=1) * params[
                                               'weibull_scale_mort_infant_slow_progressor']
                         time_death_slow = pd.to_timedelta(time_death_slow[0] * 365.25, unit='d')
                         df.at[person, 'hv_proj_date_death'] = self.sim.date + time_death_slow
                     else:
                         death_date = self.module.rng.weibull(a=params['weibull_shape_mort_adult'],
-                                                          size=1) * \
+                                                             size=1) * \
                                      np.exp(self.module.log_scale(df.at[person, 'age_years']))
                         death_date = pd.to_timedelta(death_date * 365.25, unit='d')
 

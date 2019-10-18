@@ -506,6 +506,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
                                                             priority=2,
                                                             topen=target_date_for_followup_appt,
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2))
+
     def did_not_run(self):
         logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
         pass
