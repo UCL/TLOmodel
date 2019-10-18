@@ -26,54 +26,40 @@ class ChronicSyndrome(Module):
     """
 
     PARAMETERS = {
-        'p_acquisition': Parameter(
-            Types.REAL,
-            'Probability that an uninfected individual becomes infected'),
+        'p_acquisition': Parameter(Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'level_of_symptoms': Parameter(
-            Types.CATEGORICAL,
-            'Level of symptoms that the individual will have',
-            categories=['low', 'high']),
-        'p_cure': Parameter(
-            Types.REAL,
-            'Probability that a treatment is succesful in curing the individual'),
-        'initial_prevalence': Parameter(
-            Types.REAL,
-            'Prevalence of the disease in the initial population'),
+            Types.CATEGORICAL, 'Level of symptoms that the individual will have', categories=['low', 'high']
+        ),
+        'p_cure': Parameter(Types.REAL, 'Probability that a treatment is succesful in curing the individual'),
+        'initial_prevalence': Parameter(Types.REAL, 'Prevalence of the disease in the initial population'),
         'prob_dev_severe_symptoms_per_year': Parameter(
-            Types.REAL,
-            'Probability per year of severe symptoms developing'),
+            Types.REAL, 'Probability per year of severe symptoms developing'
+        ),
         'prob_severe_symptoms_seek_emergency_care': Parameter(
-            Types.REAL,
-            'Probability that an individual will seak emergency care on developing extreme illneess'),
-        'daly_wt_ill': Parameter(
-            Types.REAL, 'DALY weight for being ill caused by Chronic Syndrome')
+            Types.REAL, 'Probability that an individual will seak emergency care on developing extreme illneess'
+        ),
+        'daly_wt_ill': Parameter(Types.REAL, 'DALY weight for being ill caused by Chronic Syndrome'),
     }
 
     PROPERTIES = {
-        'cs_has_cs': Property(
-            Types.BOOL, 'Current status of mockitis'),
+        'cs_has_cs': Property(Types.BOOL, 'Current status of mockitis'),
         'cs_status': Property(
-            Types.CATEGORICAL,
-            'Historical status: N=never; C=currently 2; P=previously',
-            categories=['N', 'C', 'P']),
-        'cs_date_acquired': Property(
-            Types.DATE,
-            'Date of latest infection'),
-        'cs_scheduled_date_death': Property(
-            Types.DATE,
-            'Date of scheduled death of infected individual'),
-        'cs_date_cure': Property(
-            Types.DATE,
-            'Date an infected individual was cured'),
+            Types.CATEGORICAL, 'Historical status: N=never; C=currently 2; P=previously', categories=['N', 'C', 'P']
+        ),
+        'cs_date_acquired': Property(Types.DATE, 'Date of latest infection'),
+        'cs_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
+        'cs_date_cure': Property(Types.DATE, 'Date an infected individual was cured'),
         'cs_specific_symptoms': Property(
             Types.CATEGORICAL,
             'Level of symptoms for chronic syndrome specifically',
-            categories=['none', 'extreme illness']),
+            categories=['none', 'extreme illness'],
+        ),
         'cs_unified_symptom_code': Property(
             Types.CATEGORICAL,
             'Level of symptoms on the standardised scale (governing health-care seeking): '
             '0=None; 1=Mild; 2=Moderate; 3=Severe; 4=Extreme_Emergency',
-            categories=[0, 1, 2, 3, 4])
+            categories=[0, 1, 2, 3, 4],
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -84,10 +70,8 @@ class ChronicSyndrome(Module):
         self.parameters['p_cure'] = 0.10
         self.parameters['initial_prevalence'] = 0.30
         self.parameters['level_of_symptoms'] = pd.DataFrame(
-            data={
-                'level_of_symptoms': ['none', 'extreme illness'],
-                'probability': [0.95, 0.05]
-            })
+            data={'level_of_symptoms': ['none', 'extreme illness'], 'probability': [0.95, 0.05]}
+        )
         self.parameters['prob_dev_severe_symptoms_per_year'] = 0.50
         self.parameters['prob_severe_symptoms_seek_emergency_care'] = 0.95
 
@@ -127,9 +111,9 @@ class ChronicSyndrome(Module):
         acquired_count = df.cs_has_cs.sum()
 
         # Assign level of symptoms
-        symptoms = self.rng.choice(p['level_of_symptoms']['level_of_symptoms'],
-                                   size=acquired_count,
-                                   p=p['level_of_symptoms']['probability'])
+        symptoms = self.rng.choice(
+            p['level_of_symptoms']['level_of_symptoms'], size=acquired_count, p=p['level_of_symptoms']['probability']
+        )
         df.loc[df.cs_has_cs, 'cs_specific_symptoms'] = symptoms
 
         # date acquired cs
@@ -179,10 +163,9 @@ class ChronicSyndrome(Module):
 
         # Schedule the occurance of a population wide change in risk that goes through the health system:
         popwide_hsi_event = HSI_ChronicSyndrome_PopulationWideBehaviourChange(self)
-        self.sim.modules['HealthSystem'].schedule_hsi_event(popwide_hsi_event,
-                                                            priority=1,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            popwide_hsi_event, priority=1, topen=self.sim.date, tclose=None
+        )
         logger.debug('The population wide HSI event has been scheduled succesfully!')
 
     def on_birth(self, mother_id, child_id):
@@ -209,8 +192,11 @@ class ChronicSyndrome(Module):
         This is called whenever there is an HSI event commissioned by one of the other disease modules.
         """
 
-        logger.debug('This is ChronicSyndrome, being alerted about a health system interaction '
-                     'person %d for: %s', person_id, treatment_id)
+        logger.debug(
+            'This is ChronicSyndrome, being alerted about a health system interaction ' 'person %d for: %s',
+            person_id,
+            treatment_id,
+        )
 
         # To simulate a "piggy-backing" appointment, whereby additional treatment and test are done
         # for another disease, schedule another appointment (with smaller resources than a full appointmnet)
@@ -224,10 +210,9 @@ class ChronicSyndrome(Module):
             for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
                 piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                piggy_back_dx_at_appt, priority=0, topen=self.sim.date, tclose=None
+            )
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -243,17 +228,11 @@ class ChronicSyndrome(Module):
         # different types of disability.
 
         health_values_1 = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
-            {
-                'none': 0,
-                'extreme illness': self.parameters['daly_wt_ill']
-            })
+            {'none': 0, 'extreme illness': self.parameters['daly_wt_ill']}
+        )
         health_values_1.name = 'Extreme Illness'
 
-        health_values_2 = df.loc[df.is_alive, 'cs_specific_symptoms'].map(
-            {
-                'none': 0,
-                'extreme illness': 0.05
-            })
+        health_values_2 = df.loc[df.is_alive, 'cs_specific_symptoms'].map({'none': 0, 'extreme illness': 0.05})
         health_values_2.name = 'Extra Terrible'
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
@@ -287,9 +266,11 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
             death_years_ahead = rng.exponential(scale=20, size=now_acquired.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-            symptoms = rng.choice(p['level_of_symptoms']['level_of_symptoms'],
-                                  size=now_acquired.sum(),
-                                  p=p['level_of_symptoms']['probability'])
+            symptoms = rng.choice(
+                p['level_of_symptoms']['level_of_symptoms'],
+                size=now_acquired.sum(),
+                p=p['level_of_symptoms']['probability'],
+            )
 
             df.loc[newcases_idx, 'cs_has_cs'] = True
             df.loc[newcases_idx, 'cs_status'] = 'C'
@@ -305,9 +286,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.schedule_event(death_event, df.at[person_index, 'cs_scheduled_date_death'])
 
         # 3) Handle progression to severe symptoms
-        curr_cs_not_severe = df.index[df.cs_has_cs &
-                                      df.is_alive &
-                                      (df.cs_specific_symptoms != 'extreme illness')]
+        curr_cs_not_severe = df.index[df.cs_has_cs & df.is_alive & (df.cs_specific_symptoms != 'extreme illness')]
 
         become_severe = rng.random_sample(size=len(curr_cs_not_severe)) < p['prob_dev_severe_symptoms_per_year'] / 12
         become_severe_idx = curr_cs_not_severe[become_severe]
@@ -321,10 +300,9 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
                 if seeks_care:
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=1,
-                                                                        topen=self.sim.date,
-                                                                        tclose=None)
+                    self.sim.modules['HealthSystem'].schedule_hsi_event(
+                        event, priority=1, topen=self.sim.date, tclose=None
+                    )
 
 
 class ChronicSyndromeDeathEvent(Event, IndividualScopeEventMixin):
@@ -360,15 +338,15 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
             # make the outreach event (let this disease module be alerted about it, and also Mockitis)
             outreach_event_for_individual = HSI_ChronicSyndrome_Outreach_Individual(self.module, person_id=person_id)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(outreach_event_for_individual,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                outreach_event_for_individual, priority=1, topen=self.sim.date, tclose=None
+            )
 
 
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
+
 
 class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -394,11 +372,11 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
     def apply(self, person_id, squeeze_factor):
         logger.debug(
             "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: We are now ready to treat this person %d.",
-            person_id)
+            person_id,
+        )
         logger.debug(
-            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.",
-            squeeze_factor)
-
+            "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.", squeeze_factor
+        )
 
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -416,6 +394,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
     def did_not_run(self):
         logger.debug('HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
         pass
+
 
 class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMixin):
     """
@@ -441,7 +420,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         appt_footprint['ConWithDCSA'] = 0.5
         self.APPT_FOOTPRINT = appt_footprint
 
-        self.ACCEPTED_FACILITY_LEVEL = 0 # Can occur at facility-level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -450,39 +429,40 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # Do here whatever happens during an outreach event with an individual
         # ~~~~~~~~~~~~~~~~~~~~~~
 
-
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for adults',
+                'Intervention_Pkg_Code',
+            ]
+        )[0]
+        pkg_code2 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'MDR notification among previously treated patients',
+                'Intervention_Pkg_Code',
+            ]
+        )[0]
 
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
+        item_code1 = pd.unique(
+            consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code']
+        )[0]
         item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
 
         consumables_needed = {
-            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2:4}],
-            'Item_Code': [{item_code1:1}, {item_code2:10}]
+            'Intervention_Package_Code': [{pkg_code1: 1}, {pkg_code2: 4}],
+            'Item_Code': [{item_code1: 1}, {item_code2: 10}],
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                                                                            hsi_event = self,
-                                                                            cons_req_as_footprint=consumables_needed)
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
 
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code1]:
             logger.debug('PkgCode1 is available, so use it.')
         else:
-            logger.debug('PkgCode1 is not available, so can''t use it.')
-
-
-
+            logger.debug('PkgCode1 is not available, so can' 't use it.')
 
         # Return the actual footprints
         actual_appt_footprint = self.APPT_FOOTPRINT  # The actual time take is double what is expected
@@ -512,7 +492,6 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationSco
 
         # As an example, we will reduce the chance of acquisition per year (due to behaviour change)
         self.module.parameters['p_acquisition_per_year'] = self.module.parameters['p_acquisition_per_year'] * 0.5
-
 
 
 # ---------------------------------------------------------------------------------

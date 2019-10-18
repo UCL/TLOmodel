@@ -35,7 +35,6 @@ class Event:
         self.post_apply_hook()
 
 
-
 class HSI_Event:
     """Base HSI event class, from which all others inherit.
 
@@ -58,7 +57,8 @@ class HSI_Event:
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
-        # TODO: make better use of templating for the HSI events (to incl. information that is required for each HSI Event?)
+        # TODO: make better use of templating for the HSI events
+        #  (to incl. information that is required for each HSI Event?)
 
     def post_apply_hook(self):
         """Do any required processing after apply() completes."""

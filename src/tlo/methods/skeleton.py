@@ -2,10 +2,9 @@
 A skeleton template for disease methods.
 
 """
-import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
 from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
@@ -196,12 +195,10 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         #   - update to reflect the appointments that are required
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
 
-
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
         #                            ['Facility_Level']))
         the_accepted_facility_level = 0
-
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
