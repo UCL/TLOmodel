@@ -4,7 +4,6 @@ Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
 import logging
-import numpy as np
 import datetime
 
 import pandas as pd
@@ -27,7 +26,7 @@ class Lifestyle(Module):
     """
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath: Path = resourcefilepath
 
     PARAMETERS = {
 
@@ -36,11 +35,11 @@ class Lifestyle(Module):
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of '
-                                                                                           'bmi categories for urban '
-                                                                                           'men age 15-29 with not high'
-                                                                                           'sugar, not tobacco, '
-                                                                                           'wealth level 1'),
+        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(
+            Types.LIST,
+            'List of probabilities of  bmi categories '
+            'for urban men age 15-29 with not high sugar, not tobacco, wealth level 1'
+        ),
         'init_or_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
         'init_or_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
         'init_or_higher_bmi_high_sugar': Parameter(Types.REAL, 'odds ratio higher BMI if high sugar intake'),
@@ -270,10 +269,9 @@ class Lifestyle(Module):
         'li_on_con': Property(Types.BOOL, 'on contraceptive'), # remove to be used by contraception module?
      }
 
-
     def read_parameters(self, data_folder):
         p = self.parameters
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+        dfd = pd.read_excel(self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx',
                             sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
         # TODO: assume just use the spreadsheet value but check
@@ -665,9 +663,9 @@ class Lifestyle(Module):
         dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
 
         # for each row, make a choice
-        dfxx['bmi_cat'] = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
+        bmi_cat = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
 
-        df.loc[age_ge15_idx, 'li_bmi'] = dfxx['bmi_cat']
+        df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -1072,7 +1070,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
         n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
         n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
-        n_agege15_urban = (df.is_alive & (df.age_years >= 15) & df.li_urban).sum()
+        n_agege15_urban = (df.is_alive & (df.age_years >= 15) & df.li_urban).sum() # TODO: check if this should start off as zero, seems wrong
         n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
         n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
         n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()

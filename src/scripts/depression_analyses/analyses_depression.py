@@ -7,7 +7,7 @@ import os
 # import numpy as np
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, depression, healthburden, healthsystem, lifestyle
+from tlo.methods import demography, depression, healthburden, healthsystem, enhanced_lifestyle
 
 # Where will output go
 outputpath = './src/scripts/depression_analyses/'
@@ -44,7 +44,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_appt_constraints=True,
                                        ignore_cons_constraints=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(depression.Depression(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger

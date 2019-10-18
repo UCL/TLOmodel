@@ -7,7 +7,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -42,7 +42,7 @@ def test_run_with_healthsystem_no_interventions_defined():
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -60,7 +60,7 @@ def test_run_with_healthsystem_and_healthburden():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -81,7 +81,7 @@ def test_run_with_healthsystem_interventions_off():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -105,7 +105,7 @@ def test_run_with_healthsystem_interventions_on():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -135,7 +135,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities():
                                            service_availability=service_availability,
                                            # this effectively removes capabilities of HS:
                                            capabilities_coefficient=0.0))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -177,7 +177,8 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_a
                                            capabilities_coefficient=0.0,
                                            # ... but this says ignore any constraints:
                                            ignore_appt_constraints=True))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
