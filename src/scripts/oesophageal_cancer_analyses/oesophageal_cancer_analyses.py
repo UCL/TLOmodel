@@ -5,7 +5,13 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthburden, healthsystem, enhanced_lifestyle, oesophageal_cancer
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    oesophageal_cancer,
+)
 
 # import matplotlib.pyplot as plt
 # import numpy as np

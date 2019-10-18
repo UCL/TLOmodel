@@ -7,7 +7,7 @@ import os
 # import numpy as np
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, depression, healthburden, healthsystem, enhanced_lifestyle
+from tlo.methods import demography, depression, enhanced_lifestyle, healthburden, healthsystem
 
 # Where will output go
 outputpath = './src/scripts/depression_analyses/'

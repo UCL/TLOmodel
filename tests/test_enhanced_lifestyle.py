@@ -2,11 +2,12 @@
 import logging
 import os
 import time
+from pathlib import Path
 
 import pytest
+
 from tlo import Date, Simulation
 from tlo.methods import demography, enhanced_lifestyle
-from pathlib import Path
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
@@ -17,6 +18,7 @@ popsize = 10000
 def disable_logging():
     logging.disable(logging.INFO)
 
+
 @pytest.fixture(scope='module')
 def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -25,6 +27,7 @@ def simulation():
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
     return sim
+
 
 def __check_properties(df):
     # no one under 15 can be overweight, low exercise, tobacco, excessive alcohol, married
@@ -72,7 +75,6 @@ def test_dypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
 
 
 if __name__ == '__main__':
