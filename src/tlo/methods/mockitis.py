@@ -254,6 +254,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Mockitis)
 
     def apply(self, population):
 
@@ -333,6 +334,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -360,6 +362,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -416,6 +419,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -477,6 +481,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -521,6 +526,7 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # run this event every month
         self.repeat = 6
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Mockitis)
 
     def apply(self, population):
         # get some summary statistics
