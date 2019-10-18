@@ -48,7 +48,9 @@ class Lifestyle(Module):
         'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
         'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
         'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
-
+        'init_or_higher_bmi_per_higher_wealth_level': Parameter(
+            Types.REAL, 'odds ratio for higher initial bmi category per higher wealth level'
+        ),
         'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
         'init_p_high_salt_urban': Parameter(Types.REAL, 'initital proportion with high salt intake'),
         'init_or_high_salt_rural': Parameter(Types.REAL, 'odds ratio high salt if rural'),
@@ -119,6 +121,29 @@ class Lifestyle(Module):
         'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
                                                                                 'access_handwashing per lower wealth '
                                                                                 'level'),
+        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
+        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
+        'init_rp_some_ed_per_higher_wealth': Parameter(
+            Types.REAL,
+            'relative prevalence of some education at baseline per higher wealth level'
+        ),
+        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
+        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
+        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
+        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
+        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
+        # Note: Added this to the properties and parameters tab of the resource file excel (init_rp_some_ed_agege60)
+        # Did have a value in the parameter_values tabs but may need updating in other documents?
+        'init_rp_some_ed_agege60': Parameter(Types.REAL,
+                                             'relative prevalence of some education at baseline age age 60+'),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(
+            Types.REAL,
+            'relative prevalence of secondary education per higher wealth level'
+        ),
 
     # ------------ parameters relating to updating of property values over time ------------------------
 
@@ -131,7 +156,7 @@ class Lifestyle(Module):
         'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
         'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
         'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
-        'rr_higher_bmi_per_higher_wealth_level': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
+        'rr_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
                                                                  'wealth level'),
         'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
                                                           'intake'),
@@ -192,7 +217,11 @@ class Lifestyle(Module):
         'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
                                                        'wood_burn_stove true to false'),
         'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                      'no_access_handwashing true to false')
+                                                      'no_access_handwashing true to false'),
+        # Added these fields to the properties and parameters tab as above,
+        # TODO: add in descriptions for these parameters
+        'rr_not_low_ex_pop_advice_exercise': Parameter(Types.REAL, 'TODO: value for this'),
+        'rr_not_ex_alc_pop_advice_alcohol': Parameter(Types.REAL, 'TODO: value for this'),
     }
 
     # Properties of individuals that this module provides.
@@ -232,153 +261,23 @@ class Lifestyle(Module):
                                                          'cleaning agent - as in DHS'),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
-        # Added in. TODO: Check these
-        'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'), # not in method excel
+        # Added in. TODO: Check these are the correct descriptions
+        'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_improved_sanitation': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
-        'li_on_con': Property(Types.BOOL, 'on contraceptive'),
+        'li_on_con': Property(Types.BOOL, 'on contraceptive'), # remove to be used by contraception module?
      }
 
 
     def read_parameters(self, data_folder):
         p = self.parameters
-
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
                             sheet_name='parameter_values')
-
-        dfd.set_index('parameter_name', inplace=True)
-
-        p['init_p_urban'] = dfd.loc['init_p_urban', 'value1']
-        p['init_p_wealth_urban'] = \
-                    [dfd.loc['init_p_wealth_urban', 'value1'], dfd.loc['init_p_wealth_urban', 'value2'],
-                     dfd.loc['init_p_wealth_urban', 'value3'], dfd.loc['init_p_wealth_urban', 'value4'],
-                     dfd.loc['init_p_wealth_urban', 'value5']]
-        p['init_p_wealth_rural'] = \
-                    [dfd.loc['init_p_wealth_rural', 'value1'], dfd.loc['init_p_wealth_rural', 'value2'],
-                     dfd.loc['init_p_wealth_rural', 'value3'], dfd.loc['init_p_wealth_rural', 'value4'],
-                     dfd.loc['init_p_wealth_rural', 'value5']]
-        p['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1'] = \
-                    [dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value1'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value2'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value3'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value4'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value5']]
-        p['init_or_higher_bmi_f'] = dfd.loc['init_or_higher_bmi_f', 'value1']
-        p['init_or_higher_bmi_rural'] = dfd.loc['init_or_higher_bmi_rural', 'value1']
-        p['init_or_higher_bmi_high_sugar'] = dfd.loc['init_or_higher_bmi_high_sugar', 'value1']
-        p['init_or_higher_bmi_age3049'] = dfd.loc['init_or_higher_bmi_age3049', 'value1']
-        p['init_or_higher_bmi_agege50'] = dfd.loc['init_or_higher_bmi_agege50', 'value1']
-        p['init_or_higher_bmi_tob'] = dfd.loc['init_or_higher_bmi_tob', 'value1']
-        p['init_or_higher_bmi_per_higher_wealth_level'] = dfd.loc['init_or_higher_bmi_per_higher_wealth_level', 'value1']
-        p['init_p_high_sugar'] = dfd.loc['init_p_high_sugar', 'value1']
+        self.load_parameters_from_dataframe(dfd)
+        # TODO: assume just use the spreadsheet value but check
         p['init_p_high_salt_urban'] = 0.2 # dfd.loc['init_p_high_salt_urban', 'value1'],
-        p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
-        p['init_p_low_ex_urban_m'] = dfd.loc['init_p_low_ex_urban_m', 'value1']
-        p['init_or_low_ex_rural'] = dfd.loc['init_or_low_ex_rural', 'value1']
-        p['init_or_low_ex_f'] = dfd.loc['init_or_low_ex_f', 'value1']
-        p['init_p_ex_alc_m'] = dfd.loc['init_p_ex_alc_m', 'value1']
-        p['init_p_ex_alc_f'] = dfd.loc['init_p_ex_alc_f', 'value1']
-        p['init_p_tob_age1519_m_wealth1'] = dfd.loc['init_p_tob_age1519_m_wealth1', 'value1']
-        p['init_or_tob_f'] = dfd.loc['init_or_tob_f', 'value1']
-        p['init_or_tob_age2039_m'] = dfd.loc['init_or_tob_age2039_m', 'value1']
-        p['init_or_tob_agege40_m'] = dfd.loc['init_or_tob_agege40_m', 'value1']
-        p['init_or_tob_wealth2'] = dfd.loc['init_or_tob_wealth2', 'value1']
-        p['init_or_tob_wealth3'] = dfd.loc['init_or_tob_wealth3', 'value1']
-        p['init_or_tob_wealth4'] = dfd.loc['init_or_tob_wealth4', 'value1']
-        p['init_or_tob_wealth5'] = dfd.loc['init_or_tob_wealth5', 'value1']
-        p['init_dist_mar_stat_age1520'] = [dfd.loc['init_dist_mar_stat_age1520', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age1520', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age1520', 'value3']]
-        p['init_dist_mar_stat_age2030'] = [dfd.loc['init_dist_mar_stat_age2030', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age2030', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age2030', 'value3']]
-        p['init_dist_mar_stat_age3040'] = [dfd.loc['init_dist_mar_stat_age3040', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age3040', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age3040', 'value3']]
-        p['init_dist_mar_stat_age4050'] = [dfd.loc['init_dist_mar_stat_age4050', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age4050', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age4050', 'value3']]
-        p['init_dist_mar_stat_age5060'] = [dfd.loc['init_dist_mar_stat_age5060', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age5060', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age5060', 'value3']]
-        p['init_dist_mar_stat_agege60'] = [dfd.loc['init_dist_mar_stat_agege60', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_agege60', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_agege60', 'value3']]
-        p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1']
-        p['init_rp_some_ed_age0513'] = dfd.loc['init_rp_some_ed_age0513', 'value1']
-        p['init_rp_some_ed_age1320'] = dfd.loc['init_rp_some_ed_age1320', 'value1']
-        p['init_rp_some_ed_age2030'] = dfd.loc['init_rp_some_ed_age2030', 'value1']
-        p['init_rp_some_ed_age3040'] = dfd.loc['init_rp_some_ed_age3040', 'value1']
-        p['init_rp_some_ed_age4050'] = dfd.loc['init_rp_some_ed_age4050', 'value1']
-        p['init_rp_some_ed_age5060'] = dfd.loc['init_rp_some_ed_age5060', 'value1']
-        p['init_rp_some_ed_agege60'] = dfd.loc['init_rp_some_ed_agege60', 'value1']
-        p['init_rp_some_ed_per_higher_wealth'] = dfd.loc['init_rp_some_ed_per_higher_wealth', 'value1']
-        p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1']
-        p['init_rp_some_ed_sec_age1320'] = dfd.loc['init_rp_some_ed_sec_age1320', 'value1']
-        p['init_rp_some_ed_sec_age3040'] = dfd.loc['init_rp_some_ed_sec_age3040', 'value1']
-        p['init_rp_some_ed_sec_age4050'] = dfd.loc['init_rp_some_ed_sec_age4050', 'value1']
-        p['init_rp_some_ed_sec_age5060'] = dfd.loc['init_rp_some_ed_sec_age5060', 'value1']
-        p['init_rp_some_ed_sec_agege60'] = dfd.loc['init_rp_some_ed_sec_agege60', 'value1']
-        p['init_rp_some_ed_sec_per_higher_wealth'] = dfd.loc['init_rp_some_ed_sec_per_higher_wealth', 'value1']
-        p['init_p_unimproved_sanitation_urban'] = dfd.loc['init_p_unimproved_sanitation_urban', 'value1']
-        p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1']
-        p['init_p_no_clean_drinking_water_urban'] = dfd.loc['init_p_no_clean_drinking_water_urban', 'value1']
-        p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1']
-        p['init_p_wood_burn_stove_urban'] = dfd.loc['init_p_wood_burn_stove_urban', 'value1']
-        p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1']
-        p['init_p_no_access_handwashing_wealth1'] = dfd.loc['init_p_no_access_handwashing_wealth1', 'value1']
-        p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1']
-
-        p['r_urban'] = dfd.loc['r_urban', 'value1']
-        p['r_rural'] = dfd.loc['r_rural', 'value1']
-        p['r_higher_bmi'] = dfd.loc['r_higher_bmi', 'value1']
-        p['rr_higher_bmi_urban'] = dfd.loc['rr_higher_bmi_urban', 'value1']
-        p['rr_higher_bmi_f'] = dfd.loc['rr_higher_bmi_f', 'value1']
-        p['rr_higher_bmi_age3049'] = dfd.loc['rr_higher_bmi_age3049', 'value1']
-        p['rr_higher_bmi_agege50'] = dfd.loc['rr_higher_bmi_agege50', 'value1']
-        p['rr_higher_bmi_tob'] = dfd.loc['rr_higher_bmi_tob', 'value1']
-        p['rr_higher_bmi_per_higher_wealth'] = dfd.loc['rr_higher_bmi_per_higher_wealth', 'value1']
-        p['rr_higher_bmi_high_sugar'] = dfd.loc['rr_higher_bmi_high_sugar', 'value1']
-        p['r_lower_bmi'] = dfd.loc['r_lower_bmi', 'value1']
-        p['rr_lower_bmi_pop_advice_weight'] = dfd.loc['rr_lower_bmi_pop_advice_weight', 'value1']
-        p['rr_lower_bmi_tob'] = dfd.loc['rr_lower_bmi_tob', 'value1']
-        p['r_high_salt_urban'] = dfd.loc['r_high_salt_urban', 'value1']
-        p['rr_high_salt_rural'] = dfd.loc['rr_high_salt_rural', 'value1']
-        p['r_not_high_salt'] = dfd.loc['r_not_high_salt', 'value1']
-        p['rr_not_high_salt_pop_advice_salt'] = dfd.loc['rr_not_high_salt_pop_advice_salt', 'value1']
-        p['r_high_sugar'] = dfd.loc['r_high_sugar', 'value1']
-        p['r_not_high_sugar'] = dfd.loc['r_not_high_sugar', 'value1']
-        p['rr_not_high_sugar_pop_advice_sugar'] = dfd.loc['rr_not_high_sugar_pop_advice_sugar', 'value1']
-        p['r_low_ex'] = dfd.loc['r_low_ex', 'value1']
-        p['r_not_low_ex'] = dfd.loc['r_not_low_ex', 'value1']
-        p['rr_not_low_ex_pop_advice_exercise'] = dfd.loc['rr_not_low_ex_pop_advice_exercise', 'value1']
-        p['rr_low_ex_f'] = dfd.loc['rr_low_ex_f', 'value1']
-        p['rr_low_ex_urban'] = dfd.loc['rr_low_ex_urban', 'value1']
-        p['r_tob'] = dfd.loc['r_tob', 'value1']
-        p['r_not_tob'] = dfd.loc['r_not_tob', 'value1']
-        p['rr_tob_f'] = dfd.loc['rr_tob_f', 'value1']
-        p['rr_tob_age2039'] = dfd.loc['rr_tob_age2039', 'value1']
-        p['rr_tob_agege40'] = dfd.loc['rr_tob_agege40', 'value1']
-        p['rr_tob_wealth'] = dfd.loc['rr_tob_wealth', 'value1']
-        p['rr_not_tob_pop_advice_tobacco'] = dfd.loc['rr_not_tob_pop_advice_tobacco', 'value1']
-        p['r_ex_alc'] = dfd.loc['r_ex_alc', 'value1']
-        p['r_not_ex_alc'] = dfd.loc['r_not_ex_alc', 'value1']
-        p['rr_ex_alc_f'] = dfd.loc['rr_ex_alc_f', 'value1']
-        p['rr_not_ex_alc_pop_advice_alcohol'] = dfd.loc['rr_not_ex_alc_pop_advice_alcohol', 'value1']
-        p['r_mar'] = dfd.loc['r_mar', 'value1']
-        p['r_div_wid'] = dfd.loc['r_div_wid', 'value1']
-        p['r_stop_ed'] = dfd.loc['r_stop_ed', 'value1']
-        p['rr_stop_ed_lower_wealth'] = dfd.loc['rr_stop_ed_lower_wealth', 'value1']
-        p['p_ed_primary'] = dfd.loc['p_ed_primary', 'value1']
-        p['rp_ed_primary_higher_wealth'] = dfd.loc['rp_ed_primary_higher_wealth', 'value1']
-        p['p_ed_secondary'] = dfd.loc['p_ed_secondary', 'value1']
-        p['rp_ed_secondary_higher_wealth'] = dfd.loc['rp_ed_secondary_higher_wealth', 'value1']
-        p['r_improved_sanitation'] = dfd.loc['r_improved_sanitation', 'value1']
-        p['r_clean_drinking_water'] = dfd.loc['r_clean_drinking_water', 'value1']
-        p['r_non_wood_burn_stove'] = dfd.loc['r_non_wood_burn_stove', 'value1']
-        p['r_access_handwashing'] = dfd.loc['r_access_handwashing', 'value1']
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -661,12 +560,12 @@ class Lifestyle(Module):
         rural_idx = df.index[df.is_alive & ~df.li_urban]
 
         # allocate wealth level for urban
-        df.loc[urban_idx, 'li_wealth'] = np.random.choice(
+        df.loc[urban_idx, 'li_wealth'] = rng.choice(
             [1, 2, 3, 4, 5], size=len(urban_idx), p=m.init_p_wealth_urban
         )
 
         # allocate wealth level for rural
-        df.loc[rural_idx, 'li_wealth'] = np.random.choice(
+        df.loc[rural_idx, 'li_wealth'] = rng.choice(
             [1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural
         )
 
