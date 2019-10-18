@@ -1,7 +1,8 @@
 import heapq as hp
+import inspect
 import logging
 from pathlib import Path
-import inspect
+
 import numpy as np
 import pandas as pd
 
