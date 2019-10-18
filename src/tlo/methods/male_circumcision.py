@@ -7,7 +7,7 @@ import os
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import HSI_Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -215,6 +215,7 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint
         )
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass

@@ -1063,6 +1063,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -1343,6 +1344,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1417,6 +1419,7 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1485,6 +1488,7 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1553,6 +1557,7 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1622,6 +1627,7 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1690,6 +1696,7 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1833,6 +1840,7 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1882,6 +1890,7 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):

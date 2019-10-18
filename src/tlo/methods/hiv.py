@@ -1254,6 +1254,8 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
 
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
         df.at[person_id, 'hv_ever_tested'] = True
         df.at[person_id, 'hv_date_tested'] = self.sim.date
         df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
@@ -1350,6 +1352,7 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1447,6 +1450,7 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1521,6 +1525,7 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1575,6 +1580,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1695,6 +1701,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1825,6 +1832,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1869,6 +1877,7 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
@@ -1924,6 +1933,7 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self,
             cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
     def did_not_run(self):
         pass
