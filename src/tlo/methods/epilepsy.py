@@ -4,7 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, HSI_Event
+from tlo.events import HSI_Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 
 # todo: code specific clinic visits
