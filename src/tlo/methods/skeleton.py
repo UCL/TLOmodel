@@ -137,6 +137,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Skeleton)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -162,6 +163,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # run this event every year
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Skeleton)
 
     def apply(self, population):
         # Make some summary statitics
@@ -188,6 +190,7 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Skeleton)
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' footprint:

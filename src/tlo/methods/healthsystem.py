@@ -754,9 +754,9 @@ class HealthSystem(Module):
         #       Non-null package_code must be coerced to int before use.
         consumables_as_individual_items['Item_Code'] = consumables_as_individual_items['Item_Code'].astype(int)
         consumables_as_individual_items['Package_Code'] = consumables_as_individual_items['Package_Code'].astype(float)
-        consumables_as_individual_items['Quantity_Of_Item'] = consumables_as_individual_items[
-            'Quantity_Of_Item'
-        ].astype(float)
+        consumables_as_individual_items['Quantity_Of_Item'] = (
+            consumables_as_individual_items['Quantity_Of_Item'].astype(float)
+        )
 
         return consumables_as_individual_items
 

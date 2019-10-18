@@ -246,6 +246,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, ChronicSyndrome)
 
     def apply(self, population):
         df = population.props
@@ -328,6 +329,7 @@ class ChronicSyndrome_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module)
+        assert isinstance(module, ChronicSyndrome)
 
     def apply(self, population):
         df = self.sim.population.props
@@ -357,6 +359,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, ChronicSyndrome)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -408,6 +411,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, ChronicSyndrome)
 
         logger.debug('Outreach event being created.')
 
@@ -483,6 +487,7 @@ class HSI_ChronicSyndrome_PopulationWideBehaviourChange(HSI_Event, PopulationSco
 
     def __init__(self, module):
         super().__init__(module)
+        assert isinstance(module, ChronicSyndrome)
 
         # Define the necessary information for a Population level HSI
         self.TREATMENT_ID = 'ChronicSyndrome_PopulationWideBehaviourChange'
@@ -505,6 +510,7 @@ class ChronicSyndromeLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # run this event every month
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, ChronicSyndrome)
 
     def apply(self, population):
         pass
