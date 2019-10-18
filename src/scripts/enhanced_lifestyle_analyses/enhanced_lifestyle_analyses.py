@@ -2,12 +2,12 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from pathlib import Path
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography
@@ -47,11 +47,8 @@ sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
-
 # this will make sure that the logging file is complete
 fh.flush()
-
 
 # %% read the results
 output = parse_log_file(logfile)
@@ -67,6 +64,7 @@ Model_Pop_Normalised = 100 * np.asarray(Model_Pop) / np.asarray(
     Model_Pop[Model_Years == '2010-01-01'])
 
 # Load Data
+resourcefile_demography = resourcefilepath / "ResourceFile_Lifestyle_Enhanced.xlsx"
 Data = pd.read_excel(resourcefile_demography, sheet_name='Interpolated Pop Structure')
 Data_Pop = Data.groupby(by='year')['value'].sum()
 Data_Years = Data.groupby(by='year')['year'].mean()

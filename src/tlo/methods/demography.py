@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)

@@ -5,7 +5,14 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis
+from tlo.methods import (
+    chronicsyndrome,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    mockitis,
+)
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 start_date = Date(2010, 1, 1)

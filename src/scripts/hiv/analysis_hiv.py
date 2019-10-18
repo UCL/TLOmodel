@@ -5,10 +5,10 @@ import os
 from tlo import Date, Simulation
 from tlo.methods import (
     demography,
+    enhanced_lifestyle,
     healthburden,
     healthsystem,
     hiv,
-    enhanced_lifestyle,
     male_circumcision,
     tb,
 )
