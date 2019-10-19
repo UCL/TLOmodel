@@ -1192,7 +1192,8 @@ class BirthEvent(Event, IndividualScopeEventMixin):
             self.sim.do_birth(mother_id)
             df.at[mother_id, 'is_pregnant'] = False
 
-        # Todo:
+        # Todo: ALL DISEASES OF PREGNANCY NEED TO BE SWITCHED OFF FOLLOWING BIRHT (some do carry on effects
+        #  post partum...?)
 
 class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
 
