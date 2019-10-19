@@ -1089,7 +1089,28 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         progress_disease(current_sev_pe, 'eclampsia', params['r_eclampsia_severe_pe'])
         progress_disease(current_sev_pe, 'HELLP', params['r_hellp_severe_pe'])  # does double counting make sense
 
-        current_mild_pe.isin(current_sev_pe)  # from stef use this to get index
+        post_transition_mpe = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'mild_pe') &
+                                  ~df.la_currently_in_labour]
+        post_transition_spe = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'severe_pe') &
+                                  ~df.la_currently_in_labour]
+        post_transition_ec = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'eclampsia') &
+                                  ~df.la_currently_in_labour]
+        post_transition_hellp = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'help') &
+                                  ~df.la_currently_in_labour]
+
+        after_transition_mild_pe = current_ghtn.isin(post_transition_mpe) # gives a boolean for each
+        after_transition_sev_pe  = current_mild_pe.isin(post_transition_spe)
+        after_transition_eclampsia = current_sev_pe.isin(post_transition_ec)
+        after_transition_hellp  = current_sev_pe.isin(post_transition_hellp)
+
+        if after_transition_mild_pe.any():
+            print('cooooey')
+
+
+
+        print(after_transition_mild_pe)
+        print(after_transition_sev_pe)
+
 
         # Todo: do we have risk factors for progression? Are women less likley to progress if theyre on anti HTNs?
         # Todo: discuss with Tim C if we need to apply symptoms IF we know that severe and > are all symptomatic?
