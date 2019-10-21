@@ -656,6 +656,7 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
 
         # log information on attributable pathogens
         pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_pathogen').size()
+        under5 = df[df.is_alive & df.age_years.between(0, 5)]
         logger.info('%s|diarrhoea_pathogens|%s', self.sim.date,
                     {'total': sum(pathogen_count),
                      'rotavirus': pathogen_count['rotavirus'],
@@ -668,6 +669,20 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'norovirus': pathogen_count['norovirus'],
                      'astrovirus': pathogen_count['astrovirus'],
                      'tEPEC': pathogen_count['tEPEC'],
+                     })
+        # incidence rate by pathogen
+        logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
+                    {'total': (sum(pathogen_count) * 4 * 100) / len(under5),
+                     'rotavirus': (pathogen_count['rotavirus'] * 4 * 100) / len(under5),
+                     'shigella': (pathogen_count['shigella'] * 4 * 100) / len(under5),
+                     'adenovirus': (pathogen_count['adenovirus'] * 4 * 100) / len(under5),
+                     'cryptosporidium': (pathogen_count['cryptosporidium'] * 4 * 100) / len(under5),
+                     'campylobacter': (pathogen_count['campylobacter'] * 4 * 100) / len(under5),
+                     'ETEC': (pathogen_count['ST-ETEC'] * 4 * 100) / len(under5),
+                     'sapovirus': (pathogen_count['sapovirus'] * 4 * 100) / len(under5),
+                     'norovirus': (pathogen_count['norovirus'] * 4 * 100) / len(under5),
+                     'astrovirus': (pathogen_count['astrovirus'] * 4 * 100) / len(under5),
+                     'tEPEC': (pathogen_count['tEPEC'] * 4 * 100) / len(under5),
                      })
 
         # ------------------------------------------------------------------------------------------------------
@@ -876,14 +891,6 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|dehydration_levels|%s', self.sim.date,
                     {'total': len(any_dehydration),
                      })
-
-        '''for child in incident_acute_diarrhoea:
-            logger.info('%s|acute_diarrhoea_child|%s', self.sim.date,
-                        {'date': df.at[child, 'date_of_onset_diarrhoea'].strftime('%Y-%m-%d %H:%M:%S'),
-                         'child_index': child,
-                         'age': df.at[child, 'age_years'], 'diarrhoea_type': df.at[child, 'gi_diarrhoea_acute_type'],
-                         'dehydration_present': df.at[child, 'gi_dehydration_status']})
-                         '''
 
         # # # # # # # # # # # # # # ASSIGN SYMPTOMS ASSOCIATED WITH EACH PATHOGENS # # # # # # # # # # # # # #
         # ROTAVIRUS
@@ -1306,8 +1313,6 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
-        m = self.module
-        rng = m.rng
 
         logger.info('This is DeathDiarrhoeaEvent determining if person %d will die from their disease', person_id)
 
@@ -1315,12 +1320,8 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
                                     self.sim.date)
             df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
+            '''death_count = sum(person_id)
             # Log the diarrhoea death information
-            '''logger.info('%s|death_diarrhoea|%s', self.sim.date,
-                        {'date': df.at[person_id, 'gi_diarrhoea_death_date'],
-                         'child': person_id,
-                         'type': df.at[person_id, 'gi_diarrhoea_type']
-                         })
-
-        # death_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
-'''
+            logger.info('%s|death_diarrhoea|%s', self.sim.date,
+                        {'death': sum(death_count)
+                         })'''

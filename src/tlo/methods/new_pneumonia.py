@@ -403,7 +403,7 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # # # # # # # # # # # # # # PNEUMONIA INCIDENCE BY ATTRIBUTABLE PATHOGEN # # # # # # # # # # # # # #
 
         no_pneumonia0 = df.is_alive & (df.ri_pneumonia_status == False) & (df.age_exact_years < 1)
-        no_pneumonia1 = df.is_alive & (df.ri_pneumonia_status == False) &\
+        no_pneumonia1 = df.is_alive & (df.ri_pneumonia_status == False) & \
                         (df.age_exact_years >= 1) & (df.age_exact_years < 5)
         no_pneumonia_under5 = df.is_alive & (df.ri_pneumonia_status == False) & (df.age_years < 5)
         current_no_pneumonia = df.index[no_pneumonia_under5]
@@ -483,21 +483,21 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         # cumulative sum to determine which pathogen is the cause of pneumonia
         random_draw_all = pd.Series(rng.random_sample(size=len(current_no_pneumonia)), index=current_no_pneumonia)
         eff_prob_none = 1 - eff_prob_all_pathogens.sum(axis=1)
-        infection_probs = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
-        infection_probs = infection_probs.cumsum(axis=1)
-        infection_probs.columns = ['prob_none', 'RSV', 'rhinovirus', 'hMPV', 'parainfluenza',
-                                   'streptococcus', 'hib', 'TB', 'staph', 'influenza', 'P. jirovecii']
-        infection_probs['random_draw_all'] = random_draw_all
+        dfx = pd.concat([eff_prob_none, eff_prob_all_pathogens], axis=1)
+        dfx = dfx.cumsum(axis=1)
+        dfx.columns = ['prob_none', 'RSV', 'rhinovirus', 'hMPV', 'parainfluenza',
+                       'streptococcus', 'hib', 'TB', 'staph', 'influenza', 'P. jirovecii']
+        dfx['random_draw_all'] = random_draw_all
 
-        for i, column in enumerate(infection_probs.columns):
+        for i, column in enumerate(dfx.columns):
             # go through each pathogen and assign the pathogen and status
             if column in ('prob_none', 'random_draw_all'):
                 # skip probability of none and random draw columns
                 continue
 
-            idx_to_infect = infection_probs.index[
-                ((infection_probs.iloc[:, i - 1] < infection_probs.random_draw_all)
-                 & (infection_probs.loc[:, column] >= infection_probs.random_draw_all))]
+            idx_to_infect = dfx.index[
+                ((dfx.iloc[:, i - 1] < dfx.random_draw_all)
+                 & (dfx.loc[:, column] >= dfx.random_draw_all))]
             df.loc[idx_to_infect, 'ri_pneumonia_pathogen'] = column
             df.loc[idx_to_infect, 'ri_pneumonia_status'] = True
 
@@ -518,6 +518,38 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         td = pd.to_timedelta(random_draw_days, unit='d')
         date_of_aquisition = self.sim.date + td
         df.loc[pn_current_pneumonia_idx, 'date_of_acquiring_pneumonia'] = date_of_aquisition
+
+        # log the information on attributable pathogens
+        pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_pathogen').size()
+        under5 = df[df.is_alive & df.age_years.between(0, 5)]
+        logger.info('%s|pneumonia_pathogens|%s', self.sim.date,
+                    {'total': sum(pathogen_count),
+                     'RSV': pathogen_count['RSV'],
+                     'rhinovirus': pathogen_count['rhinovirus'],
+                     'hMPV': pathogen_count['hMPV'],
+                     'parainfluenza': pathogen_count['parainfluenza'],
+                     'strep': pathogen_count['streptococcus'],
+                     'hib': pathogen_count['hib'],
+                     'TB': pathogen_count['TB'],
+                     'staph': pathogen_count['staphylococcus'],
+                     'influenza': pathogen_count['influenza'],
+                     'jirovecii': pathogen_count['P. jirovecii'],
+                     })
+
+        # incidence rate by pathogen
+        logger.info('%s|diarr_incidence_by_patho|%s', self.sim.date,
+                    {'total': (sum(pathogen_count) * 4 * 100) / len(under5),
+                     'RSV': (pathogen_count['RSV'] * 4 * 100) / len(under5),
+                     'rhinovirus': (pathogen_count['rhinovirus'] * 4 * 100) / len(under5),
+                     'hMPV': (pathogen_count['hMPV'] * 4 * 100) / len(under5),
+                     'parainfluenza': (pathogen_count['parainfluenza'] * 4 * 100) / len(under5),
+                     'strep': (pathogen_count['streptococcus'] * 4 * 100) / len(under5),
+                     'hib': (pathogen_count['hib'] * 4 * 100) / len(under5),
+                     'TB': (pathogen_count['TB'] * 4 * 100) / len(under5),
+                     'staph': (pathogen_count['staph'] * 4 * 100) / len(under5),
+                     'influenza': (pathogen_count['influenza'] * 4 * 100) / len(under5),
+                     'jirovecii': (pathogen_count['P. jirovecii'] * 4 * 100) / len(under5),
+                     })
 
         # # # # # # # # # # # # # # # # # # SYMPTOMS FROM NON-SEVERE PNEUMONIA # # # # # # # # # # # # # # # # # #
         # fast breathing
@@ -543,22 +575,6 @@ class PneumoniaEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['eff_prob_difficult_breathing', 'random number']
         idx_difficult_breathing = dfx.index[dfx.eff_prob_difficult_breathing > random_draw]
         df.loc[idx_difficult_breathing, 'pn_difficult_breathing'] = True
-
-        pathogen_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('ri_pneumonia_pathogen').size()
-
-        logger.info('%s|pneumonia_pathogens|%s', self.sim.date,
-                    {'total': sum(pathogen_count),
-                     'RSV': pathogen_count['RSV'],
-                     'rhinovirus': pathogen_count['rhinovirus'],
-                     'hMPV': pathogen_count['hMPV'],
-                     'parainfluenza': pathogen_count['parainfluenza'],
-                     'strep': pathogen_count['streptococcus'],
-                     'hib': pathogen_count['hib'],
-                     'TB': pathogen_count['TB'],
-                     'staph': pathogen_count['staphylococcus'],
-                     'influenza': pathogen_count['influenza'],
-                     'P.jirovecii': pathogen_count['P. jirovecii'],
-                     })
 
         # --------------------------------------------------------------------------------------------------------
         # SEEKING CARE FOR NON-SEVERE PNEUMONIA
