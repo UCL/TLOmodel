@@ -273,6 +273,34 @@ class HSI_AntenatalCare_PresentsDuringEmergency(Event, IndividualScopeEventMixin
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['AntenatalFirst'] = 1
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Basic ANC',
+                                             'Intervention_Pkg_Code'])[0] #change
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [pkg_code],
+            'Item_Code': []
+        }
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.CONS_FOOTPRINT = the_cons_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+        print(person_id, 'has had an emergency')
+
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Handles Antenatal Care logging"""
 
