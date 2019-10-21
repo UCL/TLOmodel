@@ -24,17 +24,29 @@ class Tb(Module):
         self.resourcefilepath = resourcefilepath
 
     PARAMETERS = {
-        # baseline population
+
+        # workbooks
         'prop_latent_2010': Parameter(Types.REAL,
                                       'Proportion of population with latent tb in 2010'),
         'prop_active_2010': Parameter(Types.REAL,
                                       'Proportion of population with active tb in 2010'),
+        'pulm_tb': Parameter(Types.REAL, 'probability of pulmonary tb'),
+        'followup_times': Parameter(Types.INT, 'times(weeks) tb treatment monitoring required after tx start'),
+
+        'tb_high_risk_distr': Parameter(Types.LIST, 'list of ten high-risk districts'),
+        'ipt_contact_cov': Parameter(Types.REAL, 'coverage of IPT among contacts of TB cases in high-risk districts'),
+
+        'bcg_coverage_year': Parameter(Types.REAL, 'bcg coverage estimates in children <1 years by calendar year'),
+        'initial_bcg_coverage': Parameter(Types.REAL, 'bcg coverage by age in baseline population'),
+
+        # baseline population
         'prop_mdr2010': Parameter(Types.REAL,
                                   'Proportion of active tb cases with multidrug resistance in 2010'),
 
         # natural history
         'transmission_rate': Parameter(Types.REAL, 'TB transmission rate, calibrated'),
         'rel_inf_smear_ng': Parameter(Types.REAL, 'relative infectiousness of tb in hiv+ compared with hiv-'),
+        'rel_inf_poor_tx': Parameter(Types.REAL, 'relative infectiousness of tb in treated people with poor adherence'),
         'rr_bcg_inf': Parameter(Types.REAL, 'relative risk of tb infection with bcg vaccination'),
         'monthly_prob_relapse_tx_complete': Parameter(Types.REAL,
                                                       'monthly probability of relapse once treatment complete'),
@@ -44,10 +56,19 @@ class Tb(Module):
                                                'monthly probability of relapse 2 years after treatment complete'),
         'rr_relapse_hiv': Parameter(Types.REAL,
                                     'relative risk of relapse for HIV-positive people'),
+        'r_trans_mdr': Parameter(Types.REAL, 'relative transmissibility of MDR compared with drug-susceptible TB'),
+        'p_mdr_new': Parameter(Types.REAL, 'probability of MDR emergence per treatment course – new patients'),
+        'p_mdr_retreat': Parameter(Types.REAL,
+                                   'multiplier for probability of MDR emergence per treatment course – re-treatment'),
+        'p_mdr_tx_fail': Parameter(Types.REAL,
+                                   'multiplier for probability of MDR emergence per treatment course – treatment failure'),
+
 
         # progression
         'prop_fast_progressor': Parameter(Types.REAL,
                                           'Proportion of infections that progress directly to active stage'),
+        'prop_fast_progressor_hiv': Parameter(Types.REAL,
+                                              'proportion of HIV+ people not on ART progressing directly to active TB disease after infection'),
         'prog_active': Parameter(Types.REAL,
                                  'risk of progressing to active tb within two years'),
         'prog_1yr': Parameter(Types.REAL,
@@ -64,7 +85,6 @@ class Tb(Module):
         'monthly_prob_self_cure_hiv': Parameter(Types.REAL, 'monthly probability of self-cure in plhiv'),
 
         # clinical features
-        'pulm_tb': Parameter(Types.REAL, 'probability of pulmonary tb'),
         'prop_smear_positive': Parameter(Types.REAL, 'proportion of new active cases that will be smear-positive'),
         'prop_smear_positive_hiv': Parameter(Types.REAL,
                                              'proportion of hiv+ active tb cases that will be smear-positive'),
@@ -101,7 +121,12 @@ class Tb(Module):
         'rr_ipt_art_child': Parameter(Types.REAL, 'relative risk of active TB with IPT and ART in children'),
 
         # health system interactions
-        'prop_fail_xpert': Parameter(Types.REAL, 'proportion of active TB cases not detected with Xpert'),
+        'sens_xpert': Parameter(Types.REAL, 'sensitivity of Xpert test'),
+        'sens_sputum_pos': Parameter(Types.REAL, 'sensitivity of sputum smear microscopy in sputum positive cases'),
+        'sens_sputum_neg': Parameter(Types.REAL, 'sensitivity of sputum smear microscopy in sputum negative cases'),
+        'sens_clinical': Parameter(Types.REAL, 'sensitivity of clinical diagnosis in detecting active TB'),
+        'spec_clinical': Parameter(Types.REAL, 'specificity of clinical diagnosis in detecting TB'),
+
         'prob_tx_success_new': Parameter(Types.REAL, 'Probability of treatment success for new TB cases'),
         'prob_tx_success_prev': Parameter(Types.REAL, 'Probability of treatment success for previously treated cases'),
         'prob_tx_success_hiv': Parameter(Types.REAL, 'Probability of treatment success for PLHIV'),
@@ -109,13 +134,16 @@ class Tb(Module):
         'prob_tx_success_extra': Parameter(Types.REAL, 'Probability of treatment success for extrapulmonary TB cases'),
         'prob_tx_success_0_4': Parameter(Types.REAL, 'Probability of treatment success for children aged 0-4 years'),
         'prob_tx_success_5_14': Parameter(Types.REAL, 'Probability of treatment success for children aged 5-14 years'),
-        'followup_times': Parameter(Types.INT, 'times(weeks) tb treatment monitoring required after tx start'),
 
-        'tb_high_risk_distr': Parameter(Types.LIST, 'list of ten high-risk districts'),
-        'ipt_contact_cov': Parameter(Types.REAL, 'coverage of IPT among contacts of TB cases in high-risk districts'),
+        'prop_ltfu_tx': Parameter(Types.REAL, 'Proportion lost to follow-up during initial treatment'),
+        'prop_ltfu_retx': Parameter(Types.REAL, 'Proportion lost to follow-up during retreatment'),
+        'rate_testing_tb': Parameter(Types.REAL,
+                                     'rate of presenting for TB screening and testing for people with active TB'),
+        'rr_testing_non_tb': Parameter(Types.REAL,
+                                       'rate ratio of presenting for TB screening and testing for people without active TB compared with ative TB cases'),
+        'rate_testing_hiv': Parameter(Types.REAL,
+                                      'rate of presenting for TB screening and testing for HIV-positive people with active TB'),
 
-        'bcg_coverage_year': Parameter(Types.REAL, 'bcg coverage estimates in children <1 years by calendar year'),
-        'initial_bcg_coverage': Parameter(Types.REAL, 'bcg coverage by age in baseline population'),
         'presump_testing': Parameter(Types.REAL, 'probability of an individual without tb requesting tb test'),
 
         # daly weights, no daly weight for latent tb
@@ -183,28 +211,43 @@ class Tb(Module):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_TB.xlsx'), sheet_name=None)
-
         params = self.parameters
+
+        # workbooks
+        params['prop_active_2010'], params['prop_latent_2010'] = workbook['PropActive2010Updated'], workbook[
+            'Latent_TB_prob']
+        params['pulm_tb'] = workbook['pulm_tb']
+        params['followup_times'] = workbook['followup']
+        params['tb_high_risk_distr'] = workbook['IPTdistricts']
+        params['ipt_contact_cov'] = workbook['ipt_coverage']
+        params['bcg_coverage_year'] = workbook['BCG']
+        params['initial_bcg_coverage'] = workbook['BCG_baseline']
+
+        # parameter list from workbook 'parameters'
         params['param_list'] = workbook['parameters']
         self.param_list.set_index("parameter", inplace=True)
 
         # baseline
-        params['prop_active_2010'], params['prop_latent_2010'] = workbook['PropActive2010Updated'], workbook[
-            'Latent_TB_prob']
         params['prop_mdr2010'] = self.param_list.loc['prop_mdr2010', 'value']
 
         # natural history
         params['transmission_rate'] = self.param_list.loc['transmission_rate', 'value']
         params['rel_inf_smear_ng'] = self.param_list.loc['rel_inf_smear_ng', 'value']
+        params['rel_inf_poor_tx'] = self.param_list.loc['rel_inf_poor_tx', 'value']
         params['rr_bcg_inf'] = self.param_list.loc['rr_bcg_inf', 'value']
         params['monthly_prob_relapse_tx_complete'] = self.param_list.loc['monthly_prob_relapse_tx_complete', 'value']
         params['monthly_prob_relapse_tx_incomplete'] = self.param_list.loc[
             'monthly_prob_relapse_tx_incomplete', 'value']
         params['monthly_prob_relapse_2yrs'] = self.param_list.loc['monthly_prob_relapse_2yrs', 'value']
         params['rr_relapse_hiv'] = self.param_list.loc['rr_relapse_hiv', 'value']
+        params['r_trans_mdr'] = self.param_list.loc['r_trans_mdr', 'value']
+        params['p_mdr_new'] = self.param_list.loc['p_mdr_new', 'value']
+        params['p_mdr_retreat'] = self.param_list.loc['p_mdr_retreat', 'value']
+        params['p_mdr_tx_fail'] = self.param_list.loc['p_mdr_tx_fail', 'value']
 
         # progression
         params['prop_fast_progressor'] = self.param_list.loc['prop_fast_progressor', 'value']
+        params['prop_fast_progressor_hiv'] = self.param_list.loc['prop_fast_progressor_hiv', 'value']
         params['prog_active'] = self.param_list.loc['prog_active', 'value']
         params['prog_1yr'] = self.param_list.loc['progr_1yr', 'value']
         params['prog_1_2yr'] = self.param_list.loc['progr_1_2yr', 'value']
@@ -215,7 +258,6 @@ class Tb(Module):
         params['monthly_prob_self_cure_hiv'] = self.param_list.loc['monthly_prob_self_cure_hiv', 'value']
 
         # clinical features
-        params['pulm_tb'] = workbook['pulm_tb']
         params['prop_smear_positive'] = self.param_list.loc['prop_smear_positive', 'value']
         params['prop_smear_positive_hiv'] = self.param_list.loc['prop_smear_positive_hiv', 'value']
 
@@ -247,7 +289,11 @@ class Tb(Module):
         params['rr_ipt_art_child'] = self.param_list.loc['rr_ipt_art_child', 'value']
 
         # health system interactions
-        params['prop_fail_xpert'] = self.param_list.loc['prop_fail_xpert', 'value']
+        params['sens_xpert'] = self.param_list.loc['sens_xpert', 'value']
+        params['sens_sputum_pos'] = self.param_list.loc['sens_sputum_pos', 'value']
+        params['sens_sputum_neg'] = self.param_list.loc['sens_sputum_neg', 'value']
+        params['sens_clinical'] = self.param_list.loc['sens_clinical', 'value']
+        params['spec_clinical'] = self.param_list.loc['spec_clinical', 'value']
         params['prob_tx_success_new'] = self.param_list.loc['prob_tx_success_new', 'value']
         params['prob_tx_success_prev'] = self.param_list.loc['prob_tx_success_prev', 'value']
         params['prob_tx_success_hiv'] = self.param_list.loc['prob_tx_success_hiv', 'value']
@@ -255,13 +301,13 @@ class Tb(Module):
         params['prob_tx_success_extra'] = self.param_list.loc['prob_tx_success_extra', 'value']
         params['prob_tx_success_0_4'] = self.param_list.loc['prob_tx_success_0_4', 'value']
         params['prob_tx_success_5_14'] = self.param_list.loc['prob_tx_success_5_14', 'value']
-        params['followup_times'] = workbook['followup']
 
-        params['tb_high_risk_distr'] = workbook['IPTdistricts']
-        params['ipt_contact_cov'] = workbook['ipt_coverage']
+        params['prop_ltfu_tx'] = self.param_list.loc['prop_ltfu_tx', 'value']
+        params['prop_ltfu_retx'] = self.param_list.loc['prop_ltfu_retx', 'value']
+        params['rate_testing_tb'] = self.param_list.loc['rate_testing_tb', 'value']
+        params['rr_testing_non_tb'] = self.param_list.loc['rr_testing_non_tb', 'value']
+        params['rate_testing_hiv'] = self.param_list.loc['rate_testing_hiv', 'value']
 
-        params['bcg_coverage_year'] = workbook['BCG']
-        params['initial_bcg_coverage'] = workbook['BCG_baseline']
         params['presump_testing'] = self.param_list.loc['presump_testing', 'value']
 
         # get the DALY weight that this module will use from the weight database
