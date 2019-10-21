@@ -1098,30 +1098,22 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         post_transition_hellp = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'help') &
                                   ~df.la_currently_in_labour]
 
-        after_transition_mild_pe = current_ghtn.isin(post_transition_mpe) # gives a boolean for each
+        # Todo: do we have risk factors for progression? Are women less likley to progress if theyre on anti HTNs?
+
+        after_transition_mild_pe = current_ghtn.isin(post_transition_mpe)  # gives a boolean for each
         after_transition_sev_pe  = current_mild_pe.isin(post_transition_spe)
         after_transition_eclampsia = current_sev_pe.isin(post_transition_ec)
         after_transition_hellp  = current_sev_pe.isin(post_transition_hellp)
 
-        if after_transition_mild_pe.any():
-            print('cooooey')
-
-
-
-        print(after_transition_mild_pe)
-        print(after_transition_sev_pe)
-
-
-        # Todo: do we have risk factors for progression? Are women less likley to progress if theyre on anti HTNs?
         # Todo: discuss with Tim C if we need to apply symptoms IF we know that severe and > are all symptomatic?
         #  Or do we just apply a code
         # TODO: consider progression to CV event (mainly stroke)
 
         # Dummy Care Seeking
         # need to get new onset cases
-        prob_seek_care_spe = 0.6
-        prob_seek_care_ec = 0.8
-        prob_seek_care_hellp = 0.8
+        # prob_seek_care_spe = 0.6
+        # prob_seek_care_ec = 0.8
+        # prob_seek_care_hellp = 0.8
 
 
         # how do we deal with care seeking in the context of eclampsia (woman in incapacitated)
