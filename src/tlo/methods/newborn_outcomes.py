@@ -30,8 +30,10 @@ class NewbornOutcomes(Module):
             Types.REAL, 'baseline incidence of low birth weight for neonates'),
         'base_incidence_sga': Parameter(
             Types.REAL, 'baseline incidence of small for gestational age for neonates'),
-        'prob_cba': Parameter(
+        'prob_congenital_ba': Parameter(
             Types.REAL, 'baseline probability of a neonate being born with a congenital anomaly'),
+        'prob_cba_type': Parameter(
+            Types.REAL, 'Probability of types of CBA'),
         'prob_early_onset_neonatal_sepsis': Parameter(
             Types.REAL, 'baseline probability of a neonate developing sepsis following birth'),
         'prob_resp_depression': Parameter(
@@ -75,7 +77,10 @@ class NewbornOutcomes(Module):
                                                  'gestation)'),
         'nb_late_preterm': Property(Types.BOOL, 'whether this neonate has been born late preterm (34-36 weeks '
                                                 'gestation)'),
-        'nb_congenital_anomaly': Property(Types.BOOL, 'whether this neonate has been born with a congenital anomaly'),
+        'nb_congenital_anomaly': Property(Types.CATEGORICAL, 'Congenital Anomalies: None, Orthopedic, Gastrointestinal,'
+                                                             'Neurological, Cosmetic, Other',
+                                          # May need more specificity
+                                          categories=['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']),
         'nb_early_onset_neonatal_sepsis': Property(Types.BOOL, 'whether his neonate has developed neonatal sepsis'
                                                                ' following birth'),
         'nb_respiratory_depression ': Property(Types.BOOL, 'whether this neonate has been born asphyxiated and apneic '
@@ -124,20 +129,22 @@ class NewbornOutcomes(Module):
 
         params['base_incidence_low_birth_weight'] = dfd.loc['base_incidence_low_birth_weight', 'value']
         # dummy (DHS prevalence 12%)
-        params['base_incidence_sga'] = dfd.loc['base_incidence_sga', 'value']  # dummy
-        params['prob_early_onset_neonatal_sepsis'] = dfd.loc['prob_early_onset_neonatal_sepsis', 'value']  # DUMMY
-        params['prob_resp_depression'] = dfd.loc['prob_resp_depression', 'value']  # DUMMY
-        params['prob_encephalopathy'] = dfd.loc['prob_encephalopathy', 'value']  # DUMMY  # DUMMY
+        params['base_incidence_sga'] = dfd.loc['base_incidence_sga', 'value']
+        params['prob_congenital_ba'] = dfd.loc['prob_congenital_ba', 'value']
+        params['prob_cba_type'] = dfd.loc['prob_cba_type', 'value']
+        params['prob_early_onset_neonatal_sepsis'] = dfd.loc['prob_early_onset_neonatal_sepsis', 'value']
+        params['prob_resp_depression'] = dfd.loc['prob_resp_depression', 'value']
+        params['prob_encephalopathy'] = dfd.loc['prob_encephalopathy', 'value']
         params['prob_ivh_preterm'] = dfd.loc['prob_ivh_preterm', 'value']
         params['prob_nec_preterm'] = dfd.loc['prob_nec_preterm', 'value']
         params['prob_nrds_preterm'] = dfd.loc['prob_nrds_preterm', 'value']
-        params['prob_early_breastfeeding_hb'] = dfd.loc['prob_early_breastfeeding_hb', 'value']  # DHS 2015
-        params['prob_early_breastfeeding_hf'] = dfd.loc['prob_early_breastfeeding_hf', 'value']  # DHS 2015
-        params['prob_facility_offers_kmc'] = dfd.loc['prob_facility_offers_kmc', 'value']  # DHS 2015
-        params['prob_successful_resuscitation'] = dfd.loc['prob_successful_resuscitation', 'value']  # DUMMY
-        params['cfr_neonatal_sepsis'] = dfd.loc['cfr_neonatal_sepsis', 'value'] # DUMMY
-        params['cfr_enceph_mild_mod'] = dfd.loc['cfr_enceph_mild_mod', 'value']  # DUMMY
-        params['cfr_enceph_severe'] = dfd.loc['cfr_enceph_severe', 'value']  # DUMMY
+        params['prob_early_breastfeeding_hb'] = dfd.loc['prob_early_breastfeeding_hb', 'value']
+        params['prob_early_breastfeeding_hf'] = dfd.loc['prob_early_breastfeeding_hf', 'value']
+        params['prob_facility_offers_kmc'] = dfd.loc['prob_facility_offers_kmc', 'value']
+        params['prob_successful_resuscitation'] = dfd.loc['prob_successful_resuscitation', 'value']
+        params['cfr_neonatal_sepsis'] = dfd.loc['cfr_neonatal_sepsis', 'value']
+        params['cfr_enceph_mild_mod'] = dfd.loc['cfr_enceph_mild_mod', 'value']
+        params['cfr_enceph_severe'] = dfd.loc['cfr_enceph_severe', 'value']
 
 
         if 'HealthBurden' in self.sim.modules.keys():
@@ -177,7 +184,7 @@ class NewbornOutcomes(Module):
 
         df['nb_early_preterm'] = False
         df['nb_late_preterm'] = False
-        df['nb_congenital_anomaly'] = False
+        df['nb_congenital_anomaly'] = 'none'
         df['nb_early_onset_neonatal_sepsis'] = False
         df['nb_respiratory_depression '] = False
         df['nb_hypoxic_ischemic_enceph'] = False
@@ -205,11 +212,12 @@ class NewbornOutcomes(Module):
     def on_birth(self, mother_id, child_id):
 
         df = self.sim.population.props
+        params = self.parameters
         mni = self.sim.modules['Labour'].mother_and_newborn_info
 
         df.at[child_id, 'nb_early_preterm'] = False
         df.at[child_id, 'nb_late_preterm'] = False
-        df.at[child_id, 'nb_congenital_anomaly'] = False
+        df.at[child_id, 'nb_congenital_anomaly'] = 'none'
         df.at[child_id, 'nb_early_onset_neonatal_sepsis'] = False
         df.at[child_id, 'nb_respiratory_depression '] = False
         df.at[child_id, 'nb_hypoxic_ischemic_enceph'] = False
@@ -237,9 +245,17 @@ class NewbornOutcomes(Module):
             df.at[child_id, 'nb_early_preterm'] = False
             df.at[child_id, 'nb_late_preterm'] = False
 
+        # Here we apply the prevalence of congenital birth anomalies in infants who have survived to delivery
+
         if df.at[child_id, 'is_alive'] & ~mni[mother_id]['stillbirth_in_labour']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                                          cause='newborn outcomes event'), self.sim.date)
+ #           random = self.sim.rng.random_sample(size=1) #todo: fix this
+ #           if random < params['prob_congenital_ba']:
+ #               etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
+ #               probabilities = params['prob_cba_type']
+ #               random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
+ #               df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -559,14 +575,14 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
                 logger.info(
                     'Neonate %d has died from severe encephalopathy', individual_id)
 
-        if df.at[individual_id, 'nb_congenital_anomaly']: # will this live here?
-            random = self.sim.rng.random_sample()
-            if random < params['cfr_cba']:
-                df.at[individual_id, 'nb_death_after_birth'] = True
-                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
+#        if df.at[individual_id, 'nb_congenital_anomaly']: # will this live here?
+#            random = self.sim.rng.random_sample()
+#            if random < params['cfr_cba']:
+#                df.at[individual_id, 'nb_death_after_birth'] = True
+#                df.at[individual_id, 'nb_death_after_birth_date'] = self.sim.date
 
-                logger.info(
-                    'Neonate %d has died from a congenital birth anomaly', individual_id)
+#                logger.info(
+#                    'Neonate %d has died from a congenital birth anomaly', individual_id)
 
         # Schedule the death of any newborns who have died from their complications, whilst cause of death is recorded
         # as "neonatal complications" we will have contributory factors recorded as the properties of newborns
@@ -574,7 +590,6 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[individual_id, 'nb_death_after_birth']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause="neonatal complications"), self.sim.date)
-
 
             logger.info('This is NewbornDeathEvent scheduling a death for person %d on date %s who died due to '
                         ' complications following birth', individual_id, self.sim.date)

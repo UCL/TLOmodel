@@ -11,6 +11,8 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods import antenatal_care
+
 
 
 logger = logging.getLogger(__name__)
@@ -212,6 +214,7 @@ class PregnancySupervisor(Module):
         df.loc[idx_gd, 'ps_gest_diab'] = True
         df.loc[idx_gd, 'ps_prev_gest_diab'] = True
 
+        # Todo: congenital anomalies at baseline?
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -288,7 +291,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         pregnant_idx = df.index[df.is_alive & df.is_pregnant]
         df.loc[pregnant_idx, 'ps_gestational_age'] = gestation_in_weeks.astype(int)
 
-    # ===================================== ECTOPIC PREGNANCY/ MULTIPLES ===============================================
+    # ===================================== ECTOPIC PREGNANCY MULTIPLES ===============================================
         # Here we look at all the newly pregnant women (1 week gestation) and apply the risk of this pregnancy being
         # ectopic
         newly_pregnant_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 1)]
@@ -305,6 +308,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: symptoms (rupture etc), care seeking, (onset), what HSI will this interact with
         # TODO: do we reset pregnancy information (is_preg, due_date)- will these women still present to ANC?
 
+    # =========================================  MULTIPLES =============================================================
+
         # If implantation is normal we apply the risk this pregnancy may be multiple gestation
         eff_prob_multiples = pd.Series(params['prob_multiples'], index=idx_mp)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_mp)),
@@ -316,6 +321,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_mp_t, 'ps_multiple_pregnancy'] = True
         # TODO: simulation code will need to generate 2 children- presumably calculated risks in labour will be the
         #  same for all babies
+
+    # =================================  CONGENITAL BIRTH ANOMALIES ====================================================
+        # Here we apply the risk of this woman carrying a fetus with a congenital birth anomaly (this only includes
+        # survivable anomalies as non survival anomalies will cconstitutea proportion of miscarriage and stillbirth
+        # rates)
+
+        #todo: consider if this makes sense that we apply CA, but they could still miscarry/be still born. In which case
+        # should it not just be applied on birth?
+
 
     # ============================= DF SHORTCUTS =======================================================================
 
@@ -1078,7 +1092,8 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
                                   ~df.la_currently_in_labour]
         current_sev_pe = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'severe_pe') &
                                  ~df.la_currently_in_labour]
-        
+
+        # Now we apply the probability that women will progress from one disease stage/type to another
         def progress_disease(index, next_stage, r_next_stage):
             eff_prob_next_stage = pd.Series(r_next_stage, index=index)
             selected = index[eff_prob_next_stage > self.module.rng.random_sample(size=len(eff_prob_next_stage))]
@@ -1089,6 +1104,7 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         progress_disease(current_sev_pe, 'eclampsia', params['r_eclampsia_severe_pe'])
         progress_disease(current_sev_pe, 'HELLP', params['r_hellp_severe_pe'])  # does double counting make sense
 
+        # To determine who has progressed, we index all women by disease stage/type
         post_transition_mpe = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'mild_pe') &
                                   ~df.la_currently_in_labour]
         post_transition_spe = df.index[df.is_alive & df.is_pregnant & (df.ps_htn_disorder_preg == 'severe_pe') &
@@ -1100,10 +1116,61 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Todo: do we have risk factors for progression? Are women less likley to progress if theyre on anti HTNs?
 
-        after_transition_mild_pe = current_ghtn.isin(post_transition_mpe)  # gives a boolean for each
-        after_transition_sev_pe  = current_mild_pe.isin(post_transition_spe)
-        after_transition_eclampsia = current_sev_pe.isin(post_transition_ec)
-        after_transition_hellp  = current_sev_pe.isin(post_transition_hellp)
+        # and we create a new index for each disease group containing women who have progressed
+        # after_transition_mild_pe = current_ghtn[current_ghtn.isin(post_transition_mpe)] # might not need this?
+        after_transition_sev_pe = current_mild_pe[current_mild_pe.isin(post_transition_spe)]
+        after_transition_eclampsia = current_sev_pe[current_sev_pe.isin(post_transition_ec)]
+        after_transition_hellp = current_sev_pe[current_sev_pe.isin(post_transition_hellp)]
+
+        # (Dummy care seeking)
+        prob_seek_care_spe = pd.Series(0.6, index=after_transition_sev_pe)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(after_transition_sev_pe)),
+                                index=after_transition_sev_pe)
+        dfx = pd.concat([random_draw, prob_seek_care_spe], axis=1)
+        dfx.columns = ['random_draw', 'prob_seek_care_spe']
+        idx_care_seeker = dfx.index[dfx.prob_seek_care_spe > dfx.random_draw]
+
+        # For those women who will seek care we schedule the appropriate HSI with a high priority, starting with severe
+        # pre-eclampsia
+        for person in idx_care_seeker:  # todo: can we do this without a for loop
+            care_seeking_date = self.sim.date
+            event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,  # ????
+                                                                topen=care_seeking_date,
+                                                                tclose=None)
+
+        # Then we schedule care seeking for women with new onset eclampsia
+        prob_seek_care_ec = pd.Series(0.8, index=after_transition_eclampsia)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(after_transition_eclampsia)),
+                                index=after_transition_eclampsia)
+        dfx = pd.concat([random_draw, prob_seek_care_ec], axis=1)
+        dfx.columns = ['random_draw', 'prob_seek_care_ec']
+        idx_care_seeker = dfx.index[dfx.prob_seek_care_ec > dfx.random_draw]
+
+        for person in idx_care_seeker:
+                care_seeking_date = self.sim.date
+                event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=1,  # ????
+                                                                topen=care_seeking_date,
+                                                                tclose=None)
+
+        # Then we schedule care seeking for women with new onset HELLP
+        prob_seek_care_hellp = pd.Series(0.8, index=after_transition_eclampsia)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(after_transition_eclampsia)),
+                                index=after_transition_eclampsia)
+        dfx = pd.concat([random_draw, prob_seek_care_hellp], axis=1)
+        dfx.columns = ['random_draw', 'prob_seek_care_hellp']
+        idx_care_seeker = dfx.index[dfx.prob_seek_care_hellp > dfx.random_draw]
+
+        for person in idx_care_seeker:
+                care_seeking_date = self.sim.date
+                event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=1,  # ????
+                                                                    topen=care_seeking_date,
+                                                                    tclose=None)
 
         # Todo: discuss with Tim C if we need to apply symptoms IF we know that severe and > are all symptomatic?
         #  Or do we just apply a code
@@ -1111,11 +1178,6 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Dummy Care Seeking
         # need to get new onset cases
-        # prob_seek_care_spe = 0.6
-        # prob_seek_care_ec = 0.8
-        # prob_seek_care_hellp = 0.8
-
-
         # how do we deal with care seeking in the context of eclampsia (woman in incapacitated)
         # what about progression to HELLP?
 
