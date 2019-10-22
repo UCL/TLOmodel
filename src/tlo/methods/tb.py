@@ -2838,36 +2838,29 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
 
         # ADULTS: if drug-susceptible and pulmonary tb:
         # prob of tx success
-        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
-            person_id, 'tb_stage'] == 'active_pulm' \
-            and (df.at[person_id, 'age_exact_years'] >= 15):
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and \
+            (df.at[person_id, 'age_exact_years'] >= 15):
 
             # new case
-            if df.at[person_id, 'tb_inf'] == 'active_susc_new':
+            if df.at[person_id, 'tb_inf'] == 'active_susc_new' and not df.at[person_id, 'hv_inf']:
                 cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_new']
 
             # previously treated case
-            if df.at[person_id, 'tb_inf'] == 'active_susc_prev':
+            elif df.at[person_id, 'tb_inf'] == 'active_susc_prev' and not df.at[person_id, 'hv_inf']:
                 cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_prev']
 
             # hiv+
-            if df.at[person_id, 'hv_inf']:
+            elif df.at[person_id, 'hv_inf']:
                 cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_hiv']
 
-        # if drug-susceptible and extrapulmonary
-        if df.at[person_id, 'tb_stage'] == 'active_pulm':
-            cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_extra']
-
         # if under 5 years old
-        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
-            person_id, 'tb_stage'] == 'active_pulm' \
-            and (df.at[person_id, 'age_exact_years'] < 4):
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and \
+            (df.at[person_id, 'age_exact_years'] < 4):
             cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_0_4']
 
         # if between 5-14 years old
-        if df.at[person_id, 'tb_inf'].startswith("active_susc") and df.at[
-            person_id, 'tb_stage'] == 'active_pulm' \
-            and (df.at[person_id, 'age_exact_years'] > 4) \
+        if df.at[person_id, 'tb_inf'].startswith("active_susc") and \
+            (df.at[person_id, 'age_exact_years'] > 4) \
             and (df.at[person_id, 'age_exact_years'] < 15):
             cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_5_14']
 
@@ -2896,23 +2889,6 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             # add back-up check if xpert is not available, then schedule sputum smear
             self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
-        # else if mdr, tx will fail - schedule xpert and check xpert
-        if df.at[person_id, 'tb_inf'].startswith("active_mdr"):
-            df.at[person_id, 'tb_treatment_failure'] = True
-
-            # request a repeat / Xpert test - follow-up
-            # this will include drug-susceptible treatment failures and mdr-tb cases
-            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
-
-            # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-
-            # add back-up check if xpert is not available, then schedule sputum smear
-            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
-
 
 class TbCureMdrEvent(Event, IndividualScopeEventMixin):
 
@@ -2925,7 +2901,6 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.sim.modules['Tb'].parameters
 
-        # after six months of treatment, stop
         df.at[person_id, 'tb_treated_mdr'] = False
 
         cured = self.module.rng.random_sample(size=1) < params['prob_tx_success_mdr']
