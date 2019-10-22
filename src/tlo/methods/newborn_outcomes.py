@@ -250,12 +250,14 @@ class NewbornOutcomes(Module):
         if df.at[child_id, 'is_alive'] & ~mni[mother_id]['stillbirth_in_labour']:
             self.sim.schedule_event(newborn_outcomes.NewbornOutcomeEvent(self.sim.modules['NewbornOutcomes'], child_id,
                                                                          cause='newborn outcomes event'), self.sim.date)
- #           random = self.sim.rng.random_sample(size=1) #todo: fix this
- #           if random < params['prob_congenital_ba']:
- #               etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
- #               probabilities = params['prob_cba_type']
- #               random_choice = self.sim.rng.choice(etiology, size=1, p=probabilities)
- #               df.at[child_id, 'nb_congenital_anomaly'] = random_choice
+            random = self.sim.rng.random_sample(size=1)
+            # todo: this should read from parameters files but isnt for some reason
+            if random < params['prob_congenital_ba']:
+                #  etiology = ['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other']
+                #  probabilities = params['prob_cba_type']
+                random_choice = self.sim.rng.choice(['none', 'ortho', 'gastro', 'neuro', 'cosmetic', 'other'], size=1,
+                                                    p=[0, 0.36, 0.13, 0.25, 0.03, 0.23])
+                df.at[child_id, 'nb_congenital_anomaly'] = random_choice
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
