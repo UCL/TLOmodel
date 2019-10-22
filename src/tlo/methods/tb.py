@@ -2035,11 +2035,12 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         df.at[person_id, 'tb_diagnosed'] = False
         df.at[person_id, 'tb_diagnosed_mdr'] = False  # default
 
-        # a further 10% of TB cases fail to be diagnosed with Xpert (smear-negative + sensitivity of test)
+        # a further 15% of TB cases fail to be diagnosed with Xpert (sensitivity of test)
         # they will present back to the health system with some delay (2-4 weeks)
         if df.at[person_id, 'tb_inf'].startswith("active"):
 
-            diagnosed = self.module.rng.choice([True, False], size=1, p=[0.9, 0.1])
+            diagnosed = self.module.rng.choice([True, False], size=1,
+                                               p=[params['sens_xpert'], (1 - params['sens_xpert'])])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_xpert_test'] = True
@@ -2047,6 +2048,8 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
 
                 if df.at[person_id, 'tb_inf'].startswith('active_mdr'):
                     df.at[person_id, 'tb_diagnosed_mdr'] = True
+
+            # ----------------------------------- REFERRALS FOR IPT -----------------------------------
 
             # if diagnosed, trigger ipt outreach event for all paediatric contacts of case
             district = df.at[person_id, 'district_of_residence']
@@ -2078,21 +2081,15 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                                             tclose=None)
 
             else:
-                # Request the health system to give repeat xpert test
+                # Request the health system for screening again in 2 weeks if still symptomatic
                 logger.debug("This is HSI_Tb_XpertTest with negative result for person %d", person_id)
 
-                # Request the health system to give another xpert test if tb still suspected
-                # TODO do a symptom check here - decide if repeat testing
-                # currently, random prob of still being presumptive tb case
-                if self.module.rng.rand() < 0.5:
-                    secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
-                                                                        priority=1,
-                                                                        topen=self.sim.date,
-                                                                        tclose=None)
-
-                    # add back-up check if xpert is not available, then schedule sputum smear
-                    self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
+                followup = HSI_Tb_SputumTest(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(followup,
+                                                                    priority=1,
+                                                                    topen=self.sim.date + DateOffset(
+                                                                        weeks=2),
+                                                                    tclose=None)
 
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
         if (df.at[person_id, 'tb_diagnosed'] &
@@ -2194,7 +2191,7 @@ class HSI_Tb_Xray(Event, IndividualScopeEventMixin):
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one paediatric outpatient appt
-        the_appt_footprint['DiagRadio'] = 1  # This requires onex-ray appt
+        the_appt_footprint['DiagRadio'] = 1  # This requires one x-ray appt
 
         # Get the consumables required
         # TODO note this package includes treatment, only want the x-ray
