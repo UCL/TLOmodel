@@ -60,6 +60,8 @@ class PregnancySupervisor(Module):
             Types.REAL, 'relative risk of gestational diabetes in women who suffer from chronic hypertension'),
         'prob_ectopic_pregnancy': Parameter(
             Types.REAL, 'probability that a womans current pregnancy is ectopic'),
+        'level_of_symptoms_ep': Parameter(
+            Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
         'prob_multiples': Parameter(
             Types.REAL, 'probability that a woman is currently carrying more than one pregnancy'),
         'r_mild_pe_gest_htn': Parameter(
@@ -133,6 +135,14 @@ class PregnancySupervisor(Module):
         params['rr_gest_diab_prevdiab'] = dfd['parameter_values'].loc['rr_gest_diab_prevdiab', 'value']
         params['rr_gest_diab_chron_htn'] = dfd['parameter_values'].loc['rr_gest_diab_chron_htn', 'value']
         params['prob_ectopic_pregnancy'] = dfd['parameter_values'].loc['prob_ectopic_pregnancy', 'value']
+        params['level_of_symptoms_ep'] = pd.DataFrame(
+            data={
+                'level_of_symptoms_ep': ['none',
+                                         'abdominal pain',
+                                         'abdominal pain plus bleeding',
+                                         'shock'],
+                'probability': [0.25, 0.25, 0.25, 0.25]  # DUMMY
+            })
         params['prob_multiples'] = dfd['parameter_values'].loc['prob_multiples', 'value']
         params['r_mild_pe_gest_htn'] = dfd['parameter_values'].loc['r_mild_pe_gest_htn', 'value']
         params['r_severe_pe_mild_pe'] = dfd['parameter_values'].loc['r_severe_pe_mild_pe', 'value']
@@ -141,7 +151,6 @@ class PregnancySupervisor(Module):
 
     #        if 'HealthBurden' in self.sim.modules.keys():
 #            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
-
 
     def initialise_population(self, population):
 
@@ -180,12 +189,7 @@ class PregnancySupervisor(Module):
         df.loc[idx_pe, 'ps_htn_disorder_preg'] = 'mild_pe'  # TODO: consider applying prevelance of severe PE
         df.loc[idx_pe, 'ps_prev_pre_eclamp'] = True
 
-        # next we assign level of symptoms to women who have pre-eclampsia
-    #    level_of_symptoms = params['levels_pe_symptoms']
-    #    symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
-    #                               size=len(idx_pe),
-    #                               p=level_of_symptoms.probability)
-    #    df.loc[idx_pe, 'hp_pe_specific_symptoms'] = symptoms  # TODO: oedema?
+        # TODO: Review symptoms of mild-pe, may not apply
 
         # ============================= GESTATIONAL HYPERTENSION (at baseline) ========================================
 
@@ -203,7 +207,7 @@ class PregnancySupervisor(Module):
         df.loc[idx_pe, 'ps_htn_disorder_preg'] = 'gest_htn'
 
         # ============================= GESTATIONAL DIABETES (at baseline) ========================================
-        # Finally we apply the prevelance of gestational diabetes in the pregnant population
+        # Finally we apply the prevalence of gestational diabetes in the pregnant population
 
         random_draw = pd.Series(self.sim.rng.random_sample(size=len(preg_women)), index=preg_women)
 
@@ -213,8 +217,6 @@ class PregnancySupervisor(Module):
         idx_gd = dfx.index[dfx.eff_prob_gd > dfx.random_draw]
         df.loc[idx_gd, 'ps_gest_diab'] = True
         df.loc[idx_gd, 'ps_prev_gest_diab'] = True
-
-        # Todo: congenital anomalies at baseline?
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -291,9 +293,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         pregnant_idx = df.index[df.is_alive & df.is_pregnant]
         df.loc[pregnant_idx, 'ps_gestational_age'] = gestation_in_weeks.astype(int)
 
-    # ===================================== ECTOPIC PREGNANCY MULTIPLES ===============================================
+    # ===================================== ECTOPIC PREGNANCY & MULTIPLES ==============================================
         # Here we look at all the newly pregnant women (1 week gestation) and apply the risk of this pregnancy being
-        # ectopic
+        # ectopic, progression and care seeking and managed in a seperate event
         newly_pregnant_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 1)]
         eff_prob_ectopic = pd.Series(params['prob_ectopic_pregnancy'], index=newly_pregnant_idx)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(newly_pregnant_idx)),
@@ -303,10 +305,9 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         idx_ep = dfx.index[dfx.eff_prob_ectopic > dfx.random_draw]
         idx_mp = dfx.index[dfx.eff_prob_ectopic < dfx.random_draw]
 
-        df.loc[idx_ep, 'ps_ectopic_pregnancy'] = True
-
-        # TODO: symptoms (rupture etc), care seeking, (onset), what HSI will this interact with
-        # TODO: do we reset pregnancy information (is_preg, due_date)- will these women still present to ANC?
+        df.loc[idx_ep, 'ps_ectopic_pregnancy'] = True # Todo: should we switch off 'is_pregnant'?
+        df.loc[idx_ep, 'la_due_date_current_pregnancy'] = pd.NaT
+        df.loc[idx_ep, 'ps_ectopic_symptoms'] = 'none'
 
     # =========================================  MULTIPLES =============================================================
 
@@ -320,16 +321,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_mp_t, 'ps_multiple_pregnancy'] = True
         # TODO: simulation code will need to generate 2 children- presumably calculated risks in labour will be the
-        #  same for all babies
-
-    # =================================  CONGENITAL BIRTH ANOMALIES ====================================================
-        # Here we apply the risk of this woman carrying a fetus with a congenital birth anomaly (this only includes
-        # survivable anomalies as non survival anomalies will cconstitutea proportion of miscarriage and stillbirth
-        # rates)
-
-        #todo: consider if this makes sense that we apply CA, but they could still miscarry/be still born. In which case
-        # should it not just be applied on birth?
-
+        #  same for all babies?
 
     # ============================= DF SHORTCUTS =======================================================================
 
@@ -340,12 +332,22 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gh_risk = params['prob_pregnancy_factors']['risk_g_htn']
         gd_risk = params['prob_pregnancy_factors']['risk_g_diab']
 
-    # =========================== MONTH 1 RISK APPLICATION =============================================================
+    # ========================== MONTH 1 ECTOPIC PREGNANCY SYMPTOMS/CARESEEKING =======================================
+        # First we look at all women whose pregnancy is ectopic and determine if they will experience symptoms
+        ectopic_month_1 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age == 4)]
+
+        level_of_symptoms_ep = params['level_of_symptoms_ep']
+        symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
+                                               size=len(ectopic_month_1),
+                                               p=[0.5,0.3,0.2,0]) # todo: parameters for probabilties as per mockitis
+        df.loc[ectopic_month_1, 'ps_ectopic_symptoms'] = symptoms
+
+        # Todo: CARE SEEKING
+
+        # ================================= MONTH 1 PREGNANCY RISKS ====================================================
+
         # Here we look at all the women who have reached one month gestation and apply the risk of early pregnancy loss
-
-        # Todo: congenital anomalies? - link to miscarraige/stillbirth etc
-
-        month_1_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 4)]
+        month_1_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 4)]
 
         # MISCARRIAGE
         eff_prob_miscarriage = pd.Series(misc_risk[1], index=month_1_idx)
@@ -377,12 +379,24 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: seems unlikely there will be any complications of pregnancy loss within the first month (but consider)
         # Todo: whats the best way to log this information
 
-    # =========================== MONTH 2 RISK APPLICATION =============================================================
+        # ========================== MONTH 2 ECTOPIC PREGNANCY SYMPTOMS/CARESEEKING ====================================
+
+        # First we look at all women whose pregnancy is ectopic and determine if they will experience symptoms
+        ectopic_month_2 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age == 8) &
+                                   (df.ps_ectopic_symptoms =='none')]
+
+        level_of_symptoms_ep = params['level_of_symptoms_ep']
+        symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
+                                          size=len(ectopic_month_2),
+                                          p=[0.2, 0.3, 0.3, 0.2])  # todo: parameters for probabilties as per mockitis
+        df.loc[ectopic_month_2, 'ps_ectopic_symptoms'] = symptoms
+
         # Here we apply to risk of adverse pregnancy outcomes for month 2 including miscarriage and induced abortion.
         # Todo: need to know the incidence of induced abortion for GA 8 weeks to determine if its worth while
 
+        # ======================================= MONTH 2 PREGNANCY RISKS ==============================================
         # MISCARRIAGE:
-        month_2_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 8)]
+        month_2_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 8)]
 
         eff_prob_miscarriage = pd.Series(misc_risk[2], index=month_2_idx)
         eff_prob_miscarriage.loc[df.is_alive & df.is_pregnant & (df.ps_total_miscarriages >= 1)] \
@@ -429,9 +443,22 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: risk factors for Induced abortion? Or blanket prevelance? Should link to unwanted pregnancy
         # TODO: Incidence of complications, symptoms of complications and care seeking (HSI?)
+        # safe vs unsafe
 
-    # =========================== MONTH 3 RISK APPLICATION =============================================================
-        month_3_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 13)]
+    # ========================= MONTH 3 ECTOPIC PREGNANCY SYMPTOMS/CARESEEKING =========================================
+        ectopic_month_3 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age ==13) &
+                                   (df.ps_ectopic_symptoms =='none')]
+
+        level_of_symptoms_ep = params['level_of_symptoms_ep']
+        symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
+                                          size=len(ectopic_month_3),
+                                          p=[0, 0.2, 0.4, 0.3])  # todo: parameters for probabilities as per mockitis
+        df.loc[ectopic_month_3, 'ps_ectopic_symptoms'] = symptoms
+
+        month_3_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 13)]
+
+        # Todo: need an end point for EP, point at which rupture WILL occur
+    # ======================================= MONTH 3 PREGNANCY RISKS ==============================================
 
         # MISCARRIAGE
         eff_prob_miscarriage = pd.Series(misc_risk[3], index=month_3_idx)
@@ -477,7 +504,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
 
     # =========================== MONTH 4 RISK APPLICATION =============================================================
-        month_4_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 17)]
+        month_4_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 17)]
 
         # MISCARRIAGE
         eff_prob_miscarriage = pd.Series(misc_risk[4], index=month_4_idx)
@@ -526,7 +553,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Here we begin to apply the risk of developing complications which present later in pregnancy including
         # pre-eclampsia, gestational hypertension and gestational diabetes
 
-        month_5_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 22)]
+        month_5_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 22)]
 
         # MISCARRIAGE
         eff_prob_miscarriage = pd.Series(misc_risk[5], index=month_5_idx)
@@ -619,8 +646,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[idx_pe, 'ps_htn_disorder_preg'] = 'gest_htn'
 
-        # Todo: review difference in risk factors between GH and PE, there will be overlap. Also need to consider
-        #  progression of states from one to another
+        # Todo: review difference in risk factors between GH and PE, there will be overlap.
 
         # GESTATIONAL DIABETES
         eff_prob_pre_gestdiab = pd.Series(gd_risk[5], index=at_risk_gd)
@@ -647,7 +673,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     # =========================== MONTH 6 RISK APPLICATION =============================================================
         # From month 6 it is possible women could be in labour at the time of this event so we exclude them
-        month_6_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 27) &
+        month_6_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 27) &
                                ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
@@ -740,7 +766,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_gh, 'ps_prev_gest_diab'] = True
 
     # =========================== MONTH 7 RISK APPLICATION =============================================================
-        month_7_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 31)&
+        month_7_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 31)&
                                ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
@@ -822,7 +848,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_gh, 'ps_prev_gest_diab'] = True
 
     # =========================== MONTH 8 RISK APPLICATION =============================================================
-        month_8_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 35)&
+        month_8_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 35)&
                                ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
@@ -904,7 +930,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_gh, 'ps_prev_gest_diab'] = True
 
     # =========================== MONTH 9 RISK APPLICATION =============================================================
-        month_9_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 40)&
+        month_9_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 40)&
                                ~df.la_currently_in_labour]
 
         # STILL BIRTH RISK
@@ -986,7 +1012,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_gh, 'ps_prev_gest_diab'] = True
 
     # =========================== MONTH 10 RISK APPLICATION ============================================================
-        month_10_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 44) &
+        month_10_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 44) &
                                ~df.la_currently_in_labour]   # TODO: should we look weekly at post term women?
 
         # STILL BIRTH RISK
@@ -1080,9 +1106,12 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # n.b. consesus is that pre-eclampsia and GHTN are distinct diseases, women who present with GHTN and progress
-        # to pre-eclampsia are likley  pre-eclamptic women pre onset. We will include progression here under than
-        # assumption
+        #Todo: could we progress ectopic pregnancy here?
+
+        #todo: similarly should we progress potential complicated/late abortions, miscarriage, stillbirth here?
+        # or too compliccated as we loose the index
+
+        # ============================= PROGRESSION OF HYPERTENSIVE DISEASES ==========================================
 
         # Here we look at all the women who are suffering from a hypertensive disorder of pregnancy and determine if
         # they will progress to a more severe form of the disease
@@ -1176,10 +1205,6 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         #  Or do we just apply a code
         # TODO: consider progression to CV event (mainly stroke)
 
-        # Dummy Care Seeking
-        # need to get new onset cases
-        # how do we deal with care seeking in the context of eclampsia (woman in incapacitated)
-        # what about progression to HELLP?
 
 class PregnancyDeathEvent(Event, IndividualScopeEventMixin):
     """
