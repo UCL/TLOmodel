@@ -1743,54 +1743,58 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
 
         # check across all disease modules if patient has: cough, fever, night sweat, weight loss
         # if any of the above conditions are present, label as presumptive tb case and request appropriate test
+        if df.at[person_id, 'tb_symptoms']:
 
-        # hiv-negative adults or undiagnosed hiv-positive
-        if (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
-            df.at[person_id, 'age_exact_years'] >= 5) and not (df.at[person_id, 'hv_diagnosed']):
+            # hiv-negative adults or undiagnosed hiv-positive
+            if (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
+                df.at[person_id, 'age_exact_years'] >= 5) and not (df.at[person_id, 'hv_diagnosed']):
 
-            logger.debug("This is HSI_TbScreening scheduling sputum test for person %d", person_id)
+                logger.debug("This is HSI_TbScreening scheduling sputum test for person %d", person_id)
 
-            test = HSI_Tb_SputumTest(self.module, person_id=person_id)
+                test = HSI_Tb_SputumTest(self.module, person_id=person_id)
 
-            # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_hsi_event(test,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(test,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
-        # hiv-positive adults, diagnosed only
-        elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
-            df.at[person_id, 'age_exact_years'] >= 5) and (df.at[person_id, 'hv_diagnosed']):
+            # hiv-positive adults, diagnosed only
+            elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
+                df.at[person_id, 'age_exact_years'] >= 5) and (df.at[person_id, 'hv_diagnosed']):
 
-            logger.debug("This is HSI_TbScreening scheduling xpert test for person %d", person_id)
+                logger.debug("This is HSI_TbScreening scheduling xpert test for person %d", person_id)
 
-            test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+                test = HSI_Tb_XpertTest(self.module, person_id=person_id)
 
-            # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_hsi_event(test,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(test,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
-            # add back-up check if xpert is not available, then schedule sputum smear
-            self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
+                # add back-up check if xpert is not available, then schedule sputum smear
+                self.sim.schedule_event(TbCheckXpert(self.module, person_id), self.sim.date + DateOffset(weeks=2))
 
-        # if child <5 schedule chest x-ray for diagnosis and add check if x-ray not available
-        elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
-            df.at[person_id, 'age_exact_years'] < 5):
+            # if child <5 schedule chest x-ray for diagnosis and add check if x-ray not available
+            elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and (
+                df.at[person_id, 'age_exact_years'] < 5):
 
-            logger.debug("This is HSI_TbScreening scheduling chest xray for person %d", person_id)
+                logger.debug("This is HSI_TbScreening scheduling chest xray for person %d", person_id)
 
-            test = HSI_Tb_Xray(self.module, person_id=person_id)
+                test = HSI_Tb_Xray(self.module, person_id=person_id)
 
-            # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_hsi_event(test,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                # Request the health system to give xpert test
+                self.sim.modules['HealthSystem'].schedule_hsi_event(test,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
-            # add back-up check if chest x-ray is not available, then treat if still symptomatic
-            self.sim.schedule_event(TbCheckXray(self.module, person_id), self.sim.date + DateOffset(weeks=2))
+                # add back-up check if chest x-ray is not available, then treat if still symptomatic
+                self.sim.schedule_event(TbCheckXray(self.module, person_id), self.sim.date + DateOffset(weeks=2))
+
+        # else:
+        # footprint will be nothing - no action as appt won't actually occur if no symptoms
 
 
 # TODO results returned after 24 hours, so delay any further events for 24hrs
@@ -1867,51 +1871,11 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
             # add back-up check if xpert is not available, then schedule sputum smear
             self.sim.schedule_event(TbCheckXpert(self.module, person_id), (self.sim.date + DateOffset(weeks=4)))
 
-
-
-
-
-
-        # active tb, hiv-negative
-        if (df.at[person_id, 'tb_stage'] == 'active_pulm') and not df.at[person_id, 'hv_inf']:
-            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
-                                                                         (1 - params['prop_smear_positive'])])
-            if diagnosed:
-                df.at[person_id, 'tb_result_smear_test'] = True
-                df.at[person_id, 'tb_diagnosed'] = True
-
-        # hiv+, 80% of smear tests will be negative - extrapulmonary
-        elif (df.at[person_id, 'tb_stage'] == 'active_pulm') and df.at[person_id, 'hv_inf']:
-            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
-                                                                         (1 - params['prop_smear_positive_hiv'])])
-
-            if diagnosed:
-                df.at[person_id, 'tb_result_smear_test'] = True
-                df.at[person_id, 'tb_diagnosed'] = True
-
-        # ----------------------------------- REFERRALS FOR SECONDARY TESTING -----------------------------------
-
-        # remaining 20% of active cases and negative cases referred for xpert testing
-        # schedule xpert testing
-        if not df.at[person_id, 'tb_diagnosed']:
-            logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_XpertTest for person %d on date %s", person_id,
-                         (self.sim.date + DateOffset(days=1)))
-
-            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
-
-            # Request the health system to give xpert test
-            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
-                                                                priority=1,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=None)
-
-            # add back-up check if xpert is not available, then schedule sputum smear
-            self.sim.schedule_event(TbCheckXpert(self.module, person_id), (self.sim.date + DateOffset(weeks=2)))
-
         # ----------------------------------- REFERRALS FOR TREATMENT -----------------------------------
 
-        if (df.at[person_id, 'tb_diagnosed'] & (
-            df.at[person_id, 'tb_inf'] == 'active_susc_new') & (
+        if (df.at[person_id, 'tb_diagnosed'] & ((
+                                                    df.at[person_id, 'tb_inf'] == 'active_susc_new') | (
+                                                    df.at[person_id, 'tb_inf'] == 'active_mdr_new')) & (
             df.at[person_id, 'age_years'] < 15)):
             # request child treatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
@@ -1922,8 +1886,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=None)
 
-        if (df.at[person_id, 'tb_diagnosed'] & (
-            df.at[person_id, 'tb_inf'] == 'active_susc_new') & (
+        if (df.at[person_id, 'tb_diagnosed'] & ((
+                                                    df.at[person_id, 'tb_inf'] == 'active_susc_new') | (
+                                                    df.at[person_id, 'tb_inf'] == 'active_mdr_new')) & (
             df.at[person_id, 'age_years'] >= 15)):
             # request adult treatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
@@ -1934,8 +1899,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=None)
 
-        if (df.at[person_id, 'tb_diagnosed'] & (
-            df.at[person_id, 'tb_inf'] == 'active_susc_tx') & (
+        if (df.at[person_id, 'tb_diagnosed'] & ((
+                                                    df.at[person_id, 'tb_inf'] == 'active_susc_tx') | (
+                                                    df.at[person_id, 'tb_inf'] == 'active_mdr_tx')) & (
             df.at[person_id, 'age_years'] < 15)):
             # request child retreatment
             logger.debug("This is HSI_Tb_SputumTest scheduling HSI_Tb_RetreatmentChild for person %d", person_id)
@@ -1946,8 +1912,9 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=None)
 
-        if (df.at[person_id, 'tb_diagnosed'] & (
-            df.at[person_id, 'tb_inf'] == 'active_susc_tx') & (
+        if (df.at[person_id, 'tb_diagnosed'] & ((
+                                                    df.at[person_id, 'tb_inf'] == 'active_susc_tx') | (
+                                                    df.at[person_id, 'tb_inf'] == 'active_mdr_tx')) & (
             df.at[person_id, 'age_years'] >= 15)):
 
             # request adult retreatment
