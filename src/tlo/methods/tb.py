@@ -204,7 +204,8 @@ class Tb(Module):
         'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
         'tb_date_death': Property(Types.DATE, 'date of tb death'),
         'tb_date_death_occurred': Property(Types.DATE, 'date of tb death'),
-        'tb_bcg': Property(Types.BOOL, 'received BCG vaccination')
+        'tb_bcg': Property(Types.BOOL, 'received BCG vaccination'),
+        'tb_symptoms': Property(Types.BOOL, 'tb-like symptoms present')
     }
 
     def read_parameters(self, data_folder):
@@ -371,6 +372,7 @@ class Tb(Module):
         df['tb_date_death'] = pd.NaT
         df['tb_date_death_occurred'] = pd.NaT
         df['tb_bcg'] = False
+        df['tb_symptoms'] = False
 
         self.bcg(population)  # assign bcg vaccine to baseline population
 
@@ -585,6 +587,7 @@ class Tb(Module):
         df.at[child_id, 'tb_date_death'] = pd.NaT
         df.at[child_id, 'tb_date_death_occurred'] = pd.NaT
         df.at[child_id, 'tb_bcg'] = False
+        df.at[child_id, 'tb_symptoms'] = False
 
         # if mother is diagnosed with TB, give IPT to infant
         if df.at[mother_id, 'tb_diagnosed']:
@@ -906,6 +909,8 @@ class NonTbSymptomsEvent(RegularEvent, PopulationScopeEventMixin):
         test_non_tb = df.index[(rng.random_sample(size=len(df)) < params['presump_testing']) & df.is_alive & ~(
             df.tb_inf.str.contains('active'))]
 
+        df.loc[test_non_tb, 'tb_symptoms'] = True
+
         # schedule tb screening and test
         if len(test_non_tb):
             for person in test_non_tb:
@@ -935,6 +940,7 @@ class TbActiveEvent(Event, IndividualScopeEventMixin):
 
             df.at[person_id, 'tb_date_active'] = self.sim.date
             df.at[person_id, 'tb_unified_symptom_code'] = 2
+            df.at[person_id, 'tb_symptoms'] = True
 
             # check if new infection or re-infection
             # latent_susc_new or latent_susc_tx
@@ -1067,6 +1073,7 @@ class TbRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_unified_symptom_code'] = 2
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
         # relapse after complete treatment course - refer for xpert testing
@@ -1223,6 +1230,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
         self_cure = df[
@@ -1231,6 +1239,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, on art
         self_cure = df[
@@ -1239,6 +1248,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
 
 # ---------------------------------------------------------------------------
@@ -1489,6 +1499,7 @@ class TbMdrActiveEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'tb_on_ipt'] or not df.at[person_id, 'tb_on_treatment']:
 
             df.at[person_id, 'tb_date_active'] = self.sim.date
+            df.at[person_id, 'tb_symptoms'] = True
 
             # check if new infection or re-infection
             # latent_susc_new or latent_susc_tx
@@ -1589,6 +1600,7 @@ class TbMdrRelapseEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_ever_tb'] = True
         df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_stage'] = 'active_pulm'
         df.loc[relapse_tx_complete | relapse_tx_incomplete, 'tb_unified_symptom_code'] = 2
+        df.loc[relapse_tx_complete | relapse_tx_incomplete | relapse_tx_2yrs, 'tb_symptoms'] = True
 
         # ----------------------------------- RELAPSE CASES SEEKING CARE -----------------------------------
 
@@ -1675,6 +1687,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, not on art
         self_cure = df[
@@ -1683,6 +1696,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
         # hiv-positive, on art
         self_cure = df[
@@ -1691,6 +1705,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[self_cure, 'tb_inf'] = 'latent_susc_new'
         df.loc[self_cure, 'tb_stage'] = 'latent'
         df.loc[self_cure, 'tb_unified_symptom_code'] = 0
+        df.loc[self_cure, 'tb_symptoms'] = False
 
 
 # ---------------------------------------------------------------------------
@@ -1826,6 +1841,36 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         df.at[person_id, 'tb_diagnosed'] = False
 
         # ----------------------------------- OUTCOME OF TEST -----------------------------------
+
+        # if smear-positive, sensitivity is 1
+        if (df.at[person_id, 'tb_stage'] == 'active_pulm') and df.at[person_id, 'tb_smear']:
+
+            df.at[person_id, 'tb_result_smear_test'] = True
+            df.at[person_id, 'tb_diagnosed'] = True
+
+        # if smear-negative or tb-negative
+        else:
+            # give antibiotics (not implemented here) and repeat visit in 2 weeks if symptomatic
+            logger.debug("This is HSI_Tb_SputumTest scheduling repeat HSI_Tb_SputumTest for person %d on date %s",
+                         person_id,
+                         (self.sim.date + DateOffset(days=14)))
+
+            # schedule xpert testing
+            secondary_test = HSI_Tb_XpertTest(self.module, person_id=person_id)
+
+            # Request the health system to give xpert test
+            self.sim.modules['HealthSystem'].schedule_hsi_event(secondary_test,
+                                                                priority=1,
+                                                                topen=self.sim.date + DateOffset(weeks=2),
+                                                                tclose=None)
+
+            # add back-up check if xpert is not available, then schedule sputum smear
+            self.sim.schedule_event(TbCheckXpert(self.module, person_id), (self.sim.date + DateOffset(weeks=4)))
+
+
+
+
+
 
         # active tb, hiv-negative
         if (df.at[person_id, 'tb_stage'] == 'active_pulm') and not df.at[person_id, 'hv_inf']:
@@ -2869,6 +2914,8 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_stage'] = 'latent'
             df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
+            df.at[person_id, 'tb_symptoms'] = False
+
 
         else:
             df.at[person_id, 'tb_treatment_failure'] = True
@@ -2925,6 +2972,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_stage'] = 'latent'
             df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
+            df.at[person_id, 'tb_symptoms'] = False
 
         else:
             df.at[person_id, 'tb_treatment_failure'] = True
