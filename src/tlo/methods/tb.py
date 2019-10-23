@@ -215,7 +215,7 @@ class Tb(Module):
         params = self.parameters
 
         # workbooks
-        params['prop_active_2010'], params['prop_latent_2010'] = workbook['PropActive2010Updated'], workbook[
+        params['prop_active_2010'], params['prop_latent_2010'] = workbook['cases2010district'], workbook[
             'Latent_TB_prob']
         params['pulm_tb'] = workbook['pulm_tb']
         params['followup_times'] = workbook['followup']
@@ -419,28 +419,13 @@ class Tb(Module):
             df.loc[idx_c, 'tb_stage'] = 'latent'
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~ ACTIVE ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        # select probability of active infection
-        # merge in dataframe of age/sex-distributed values
-        prop_active = active_tb_data.loc[active_tb_data.Year == now.year, ['Age', 'Sex', 'prob_active_tb']]
-        df_active_prob = df.merge(prop_active, left_on=['age_years', 'sex'], right_on=['Age', 'Sex'], how='left')
-
-        # fill missing values with 0 (only relevant for age 80+)
-        df_active_prob['prob_active_tb'] = df_active_prob['prob_active_tb'].fillna(0)
-
-        assert df_active_prob.prob_active_tb.isna().sum() == 0  # check there is a probability for every individual
-
-        # assign risk of latent tb
-        risk_active = pd.Series(1, index=df.index)
-        risk_active.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_tb_bcg']
-
-        # weight the likelihood of being sampled by the relative risk
-        norm_p = pd.Series(risk_active)
-        norm_p /= norm_p.sum()  # normalise
+        # prob of active case by district
+        df_active_prob = df.merge(active_tb_data, left_on=['district_of_residence'], right_on=['district'], how='left')
+        assert df_active_prob.proportion_active.isna().sum() == 0  # check there is a probability for every individual
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
-        active_idx = df_active_prob.index[df.is_alive & (random_draw < (df_active_prob.prob_active_tb * norm_p))]
+        active_idx = df_active_prob.index[df.is_alive & (random_draw < df_active_prob.prob_active_tb)]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -505,6 +490,7 @@ class Tb(Module):
                 # schedule active disease
                 self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
 
+    # TODO check they haven't got active tb before giving bcg
     def bcg(self, population):
         """ Assign BCG vaccination to baseline population
         """
@@ -686,6 +672,21 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
+        # districts = (df['district_of_residence'].unique())
+        # smear_pos = pd.Series(0, index=districts)
+        # smear_neg = pd.Series(0, index=districts)
+        # foi = pd.Series(0, index=districts)
+        #
+        # if len(df[df['tb_inf'].str.contains('active_susc') & df.is_alive]) > 1:
+        #
+        #     test = df[df['tb_inf'].str.contains('active_susc') &
+        #         df.is_alive].groupby(['tb_smear', 'district_of_residence']).size().to_frame(
+        #         'count').reset_index().merge(
+        #         pd.DataFrame(list(districts), columns=['district']),
+        #         left_on=['district_of_residence'],
+        #         right_on=['district'],
+        #         how='right').fillna(value=0)
+
 
         # infectious people are active_pulm
         # hiv-positive and hiv-negative
@@ -1797,8 +1798,6 @@ class HSI_Tb_Screening(Event, IndividualScopeEventMixin):
         # footprint will be nothing - no action as appt won't actually occur if no symptoms
 
 
-# TODO results returned after 24 hours, so delay any further events for 24hrs
-# TOTO if smear negative result, could give antibiotics and wait one week
 class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
     """
     This is a sputum test for presumptive tb cases
@@ -2872,6 +2871,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
             df.at[person_id, 'tb_symptoms'] = False
+            df.at[person_id, 'tb_smear'] = False
 
 
         else:
@@ -2912,6 +2912,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'tb_unified_symptom_code'] = 1
             df.at[person_id, 'tb_treatment_failure'] = False
             df.at[person_id, 'tb_symptoms'] = False
+            df.at[person_id, 'tb_smear'] = False
 
         else:
             df.at[person_id, 'tb_treatment_failure'] = True
