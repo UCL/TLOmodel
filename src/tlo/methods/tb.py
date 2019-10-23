@@ -425,7 +425,7 @@ class Tb(Module):
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = self.rng.random_sample(size=len(df_active_prob))
-        active_idx = df_active_prob.index[df.is_alive & (random_draw < df_active_prob.prob_active_tb)]
+        active_idx = df_active_prob.index[df.is_alive & (random_draw < df_active_prob.proportion_active)]
 
         # if >10 active cases, sample some mdr cases
         if len(active_idx) > 10:
@@ -490,9 +490,9 @@ class Tb(Module):
                 # schedule active disease
                 self.sim.schedule_event(TbActiveEvent(self, person_id), pd_day)
 
-    # TODO check they haven't got active tb before giving bcg
     def bcg(self, population):
         """ Assign BCG vaccination to baseline population
+        may have already been assigned active TB, should be ok as bcg not 100% protective
         """
         df = population.props
         params = self.parameters
@@ -687,6 +687,9 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         #         right_on=['district'],
         #         how='right').fillna(value=0)
 
+        # test = df[df['tb_inf'].str.contains('active_susc') &
+        #     df.is_alive].groupby(['tb_smear', 'district_of_residence']).count().fillna(value=0)
+        #
 
         # infectious people are active_pulm
         # hiv-positive and hiv-negative
