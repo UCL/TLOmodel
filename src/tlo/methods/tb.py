@@ -672,11 +672,8 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
-        # districts = (df['district_of_residence'].unique())
-        # smear_pos = pd.Series(0, index=districts)
-        # smear_neg = pd.Series(0, index=districts)
-        # foi = pd.Series(0, index=districts)
-        #
+        districts = (df['district_of_residence'].unique())
+
         # if len(df[df['tb_inf'].str.contains('active_susc') & df.is_alive]) > 1:
         #
         #     test = df[df['tb_inf'].str.contains('active_susc') &
@@ -689,7 +686,42 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # test = df[df['tb_inf'].str.contains('active_susc') &
         #     df.is_alive].groupby(['tb_smear', 'district_of_residence']).count().fillna(value=0)
-        #
+
+        # smear-positive cases by district
+        df['tmp'] = pd.Series(0, index=df.index)
+        df.loc[df.is_alive & df['tb_inf'].str.contains('active_susc') & df.tb_smear, 'tmp'] = 1
+        smear_pos = df.groupby(['district_of_residence'])[['tmp']].sum().fillna(value=0)
+
+        # smear-negative cases by district
+        df['tmp2'] = pd.Series(0, index=df.index)
+        df.loc[df.is_alive & df['tb_inf'].str.contains('active_susc') & ~df.tb_smear, 'tmp2'] = 1
+        smear_neg = df.groupby(['district_of_residence'])[['tmp2']].sum().fillna(value=0)
+
+        # uninfected cases by district
+        df['tmp3'] = pd.Series(0, index=df.index)
+        df.loc[df.is_alive & (df.tb_inf == 'uninfected'), 'tmp3'] = 1
+        uninfected = df.groupby(['district_of_residence'])[['tmp3']].sum().fillna(value=0)
+
+        # population by district
+        df['tmp4'] = pd.Series(0, index=df.index)
+        df.loc[df.is_alive, 'tmp4'] = 1
+        pop = df.groupby(['district_of_residence'])[['tmp4']].sum().fillna(value=0)
+
+        # calculate foi by district
+        foi = pd.Series(0, index=districts)
+
+        foi = (params['transmission_rate'] * smear_pos *
+               (smear_neg * params['rel_inf_smear_ng']) *
+               uninfected) / pop
+
+
+
+
+
+
+
+
+
 
         # infectious people are active_pulm
         # hiv-positive and hiv-negative
