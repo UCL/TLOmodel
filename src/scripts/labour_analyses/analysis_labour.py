@@ -10,8 +10,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem, abortion_and_miscarriage,\
-    antenatal_care
+from tlo.methods import demography, labour, lifestyle, newborn_outcomes, healthsystem, antenatal_care
 
 # Where will output go - by default, wherever this script is run
 #outputpath = './src/scripts/analyses_labour/'
@@ -52,7 +51,6 @@ sim.register(labour.Labour(resourcefilepath=resourcefilepath))
 sim.register(newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(antenatal_care.AntenatalCare(resourcefilepath=resourcefilepath))
-sim.register(abortion_and_miscarriage.AbortionAndMiscarriage(resourcefilepath=resourcefilepath))
 
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)

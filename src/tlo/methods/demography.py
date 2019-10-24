@@ -15,7 +15,7 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import labour, abortion_and_miscarriage
+from tlo.methods import labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
