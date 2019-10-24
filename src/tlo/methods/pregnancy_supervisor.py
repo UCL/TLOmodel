@@ -149,8 +149,8 @@ class PregnancySupervisor(Module):
         params['r_eclampsia_severe_pe'] = dfd['parameter_values'].loc['r_eclampsia_severe_pe', 'value']
         params['r_hellp_severe_pe'] = dfd['parameter_values'].loc['r_hellp_severe_pe', 'value']
 
-    #        if 'HealthBurden' in self.sim.modules.keys():
-#            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
+        if 'HealthBurden' in self.sim.modules.keys():
+            params['daly_wt_abortive_outcome'] = self.sim.modules['HealthBurden'].get_daly_weight(352)
 
     def initialise_population(self, population):
 
@@ -265,11 +265,37 @@ class PregnancySupervisor(Module):
         logger.debug('This is PregnancySupervisor, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-#    def report_daly_values(self):
+    def report_daly_values(self):
 
-    #    logger.debug('This is mockitis reporting my health values')
-    #    df = self.sim.population.props  # shortcut to population properties dataframe
-    #    p = self.parameters
+        #TODO: this is copied from old module will need reviewing
+        logger.debug('This is Abortion and Miscarriage reporting my health values')
+        df = self.sim.population.props
+        params = self.parameters
+
+        one_month_prior = self.sim.date - pd.to_timedelta(1, unit='m')
+
+        recent_abortion = df.index[df.is_alive & (df.am_total_induced_abortion == 1) &
+                               (df.am_date_most_recent_abortion > one_month_prior)]
+
+        recent_miscarriage = df.index[df.is_alive & (df.am_total_miscarriages == 1) &
+                                  (df.am_date_most_recent_miscarriage > one_month_prior)]
+
+        health_values_1 = df.loc[recent_abortion, 'ps_total_induced_abortion'].map(
+        {
+            0: 0,
+            1: params['daly_wt_abortive_outcome']
+        })
+        health_values_2 = df.loc[recent_miscarriage, 'ps_total_miscarriages'].map(
+        {
+            0: 0,
+            1: params['daly_wt_abortive_outcome']
+        })
+
+        health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
+
+        return health_values_df
+
+    # Todo: Have yet to confirm this runs as HealthBurden is not registered presently
 
 
 class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
@@ -339,7 +365,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         level_of_symptoms_ep = params['level_of_symptoms_ep']
         symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
                                                size=len(ectopic_month_1),
-                                               p=[0.5,0.3,0.2,0]) # todo: parameters for probabilties as per mockitis
+                                               p=[0.3, 0.5, 0.2, 0]) # todo: parameters for probabilties as per mockitis
         df.loc[ectopic_month_1, 'ps_ectopic_symptoms'] = symptoms
 
         # Todo: CARE SEEKING
@@ -388,7 +414,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         level_of_symptoms_ep = params['level_of_symptoms_ep']
         symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
                                           size=len(ectopic_month_2),
-                                          p=[0.2, 0.3, 0.3, 0.2])  # todo: parameters for probabilties as per mockitis
+                                          p=[0.1, 0.2, 0.4, 0.3])  # todo: parameters for probabilties as per mockitis
         df.loc[ectopic_month_2, 'ps_ectopic_symptoms'] = symptoms
 
         # Here we apply to risk of adverse pregnancy outcomes for month 2 including miscarriage and induced abortion.
@@ -648,7 +674,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Todo: review difference in risk factors between GH and PE, there will be overlap.
 
-        # GESTATIONAL DIABETES
+        # GESTATIONAL DIABETES #todo:exclude current diabetics
         eff_prob_pre_gestdiab = pd.Series(gd_risk[5], index=at_risk_gd)
 
         eff_prob_pre_gestdiab.loc[df.is_alive & df.is_pregnant & df.ps_previous_stillbirth] \
@@ -1163,7 +1189,7 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         # pre-eclampsia
         for person in idx_care_seeker:  # todo: can we do this without a for loop
             care_seeking_date = self.sim.date
-            event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+            event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????
                                                                 topen=care_seeking_date,
@@ -1179,23 +1205,23 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person in idx_care_seeker:
                 care_seeking_date = self.sim.date
-                event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=1,  # ????
                                                                 topen=care_seeking_date,
                                                                 tclose=None)
 
         # Then we schedule care seeking for women with new onset HELLP
-        prob_seek_care_hellp = pd.Series(0.8, index=after_transition_eclampsia)
-        random_draw = pd.Series(self.module.rng.random_sample(size=len(after_transition_eclampsia)),
-                                index=after_transition_eclampsia)
+        prob_seek_care_hellp = pd.Series(0.8, index=after_transition_hellp)
+        random_draw = pd.Series(self.module.rng.random_sample(size=len(after_transition_hellp)),
+                                index=after_transition_hellp)
         dfx = pd.concat([random_draw, prob_seek_care_hellp], axis=1)
         dfx.columns = ['random_draw', 'prob_seek_care_hellp']
         idx_care_seeker = dfx.index[dfx.prob_seek_care_hellp > dfx.random_draw]
 
         for person in idx_care_seeker:
                 care_seeking_date = self.sim.date
-                event = antenatal_care.HSI_AntenatalCare_PresentsDuringEmergency(self.module, person_id=person)
+                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=1,  # ????
                                                                     topen=care_seeking_date,
