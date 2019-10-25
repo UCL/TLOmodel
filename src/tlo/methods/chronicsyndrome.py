@@ -29,6 +29,9 @@ class ChronicSyndrome(Module):
         - Reporting two sets of DALY weights with specific labels
         - Usual HSI behaviour
         - Population-wide HSI event
+        - On-the-fly consumables access
+        - Returning an update footprint
+        - Receiving a 'squeeze factor'
     """
 
     PARAMETERS = {
@@ -387,18 +390,25 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
             "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.", squeeze_factor
         )
 
-        df = self.sim.population.props
-        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-        if treatmentworks:
-            df.at[person_id, 'cs_has_cs'] = False
-            df.at[person_id, 'cs_status'] = 'P'
+        if squeeze_factor < 0.5
+            # If squeeze factor is not too large:
+            logger.debug("Treatment will be provided.")
+            df = self.sim.population.props
+            treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-            # (in this we nullify the death event that has been scheduled.)
-            df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
-            df.at[person_id, 'cs_date_cure'] = self.sim.date
-            df.at[person_id, 'cs_specific_symptoms'] = 'none'
-            df.at[person_id, 'cs_unified_symptom_code'] = 0
+            if treatmentworks:
+                df.at[person_id, 'cs_has_cs'] = False
+                df.at[person_id, 'cs_status'] = 'P'
+
+                # (in this we nullify the death event that has been scheduled.)
+                df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
+                df.at[person_id, 'cs_date_cure'] = self.sim.date
+                df.at[person_id, 'cs_specific_symptoms'] = 'none'
+                df.at[person_id, 'cs_unified_symptom_code'] = 0
+        else:
+            # Squeeze factor is too large
+            logger.debug("Treatment will not be provided due to squeeze factor.")
 
     def did_not_run(self):
         logger.debug('HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')
@@ -474,7 +484,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         else:
             logger.debug('PkgCode1 is not available, so can' 't use it.')
 
-        # Return the actual footprints
+        # Return the actual appt footprints
         actual_appt_footprint = self.APPT_FOOTPRINT  # The actual time take is double what is expected
         actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
 
