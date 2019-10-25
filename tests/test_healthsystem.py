@@ -269,11 +269,12 @@ def test_run_in_mode_1_with_no_capacity():
 
     # Do the checks
     check_dtypes(sim)
-
-    # assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
-    # assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    # assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
-    # check_dtypes(sim)
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
+    assert hsi_events['did_run'].all()
+    assert (hsi_events.loc[hsi_events['Person_ID']>=0,'Squeeze_Factor']==100.0).all()
+    assert (hsi_events.loc[hsi_events['Person_ID']<0,'Squeeze_Factor']==0.0).all()
+    check_dtypes(sim)
 
 
 def test_run_in_mode_2_with_capacity():
@@ -321,9 +322,9 @@ def test_run_in_mode_2_with_capacity():
     check_dtypes(sim)
 
 
-#TODO; this one
 def test_run_in_mode_2_with_no_capacity():
-    # No events should run and the log should contain events not having run
+    # No individual level events should run and the log should contain events with a flag showing that all individual
+    # events did not run. Population level events should have run.
     # (Mode 2 -> hard constraints)
 
     # Get ready for temporary log-file
@@ -361,7 +362,8 @@ def test_run_in_mode_2_with_no_capacity():
     f.close()
 
     # Do the checks
-    # assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
-    # assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    # assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
-    # check_dtypes(sim)
+    hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
+    assert (hsi_events.loc[hsi_events['Person_ID']>=0,'did_run']==False).all()  # Individual level
+    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']==0.0).all()
+    assert (hsi_events.loc[hsi_events['Person_ID']<0,'did_run']==True).all()  # Population level
+    check_dtypes(sim)
