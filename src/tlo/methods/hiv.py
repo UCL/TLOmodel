@@ -837,8 +837,8 @@ class hiv(Module):
             piggy_back_dx_at_appt.TREATMENT_ID = 'Hiv_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint
-            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
@@ -1233,7 +1233,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1302,7 +1302,7 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TestingInfant'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1411,7 +1411,7 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1475,7 +1475,7 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Prep'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1554,7 +1554,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1608,7 +1608,7 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1729,7 +1729,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -1860,7 +1860,7 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
@@ -1907,7 +1907,7 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Treatment'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 

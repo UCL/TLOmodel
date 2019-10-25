@@ -21,7 +21,7 @@ popsize = 10
 
 
 # Simply test whether the system runs under multiple configurations of the healthsystem
-# The Mockitits and ChronicSyndrome module test all aspects of the healthsystem module.
+# NB. Running the dummy Mockitits and ChronicSyndrome modules test all aspects of the healthsystem module.
 
 @pytest.fixture(autouse=True)
 def disable_logging():
@@ -35,7 +35,7 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthsystem_no_interventions_defined():
+def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
@@ -51,60 +51,28 @@ def test_run_with_healthsystem_no_interventions_defined():
     check_dtypes(sim)
 
 
-def test_run_with_healthsystem_and_healthburden():
+def test_run_no_interventions_allowed():
+    # There should be no events run or scheduled
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
     sim.seed_rngs(0)
 
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
-
-    # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    check_dtypes(sim)
-
-
-def test_run_with_healthsystem_interventions_off():
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
-
-    # Define the service availability
+    # Define the service availability as null
     service_availability = []
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability))
-    sim.register(lifestyle.Lifestyle())
-    sim.register(mockitis.Mockitis())
-    sim.register(chronicsyndrome.ChronicSyndrome())
-
-    # Run the simulation and flush the logger
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-
-    assert sim.modules['HealthSystem'].hsi_event_queue_counter == 0
-    check_dtypes(sim)
-
-
-def test_run_with_healthsystem_interventions_on_no_constraints():
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
-
-    # Define the service availability
-    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
-
-    # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
                                            mode_appt_constraints=0))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
@@ -113,53 +81,24 @@ def test_run_with_healthsystem_interventions_on_no_constraints():
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
-
     check_dtypes(sim)
 
-# TODO: rewrite pytests for all the different modes
-#  need to run with different modes in place with and without any capabilities
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
 
-# def test_run_with_healthsystem_interventions_on_but_no_capabilities():
-#     f = tempfile.NamedTemporaryFile(dir='.')
-#     fh = logging.FileHandler(f.name)
-#     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-#     fh.setFormatter(fr)
-#     logging.getLogger().addHandler(fh)
-#
-#     # Establish the simulation object
-#     sim = Simulation(start_date=start_date)
-#     sim.seed_rngs(0)
-#     # Define the service availability
-#     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
-#
-#     # Register the appropriate modules
-#     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-#     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-#                                            service_availability=service_availability,
-#                                            # this effectively removes capabilities of HS:
-#                                            capabilities_coefficient=0.0,
-#                                            mode_appt_constraints=2))
-#     sim.register(lifestyle.Lifestyle())
-#     sim.register(mockitis.Mockitis())
-#     sim.register(chronicsyndrome.ChronicSyndrome())
-#
-#     # Run the simulation and flush the logger
-#     sim.make_initial_population(n=popsize)
-#     sim.simulate(end_date=end_date)
-#     check_dtypes(sim)
-#
-#     # read the results
-#     fh.flush()
-#     output = parse_log_file(f.name)
-#     f.close()
-#
-#     # check that there have been no HSI events (due to there being no capabilities)
-#     assert 'HSI_Event' not in output['tlo.methods.healthsystem'], 'one'
-#     assert 'Consumables' not in output['tlo.methods.healthsystem'], 'two'
-#     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0).all(), 'three'
+    # Do the checks
+    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']==0.0).all()
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
+    check_dtypes(sim)
 
 
-def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_constraints():
+def test_run_in_mode_0_with_capacity():
+    # Events should run and there be no squeeze factors
+    # (Mode 0 -> No Constraints)
+
+    # Get ready for temporary log-file
     f = tempfile.NamedTemporaryFile(dir='.')
     fh = logging.FileHandler(f.name)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
@@ -177,9 +116,7 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_c
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           # this effectively remove capabilities of HS:
-                                           capabilities_coefficient=0.0,
-                                           # ... but this says ignore any constraints:
+                                           capabilities_coefficient=1.0,
                                            mode_appt_constraints=0))
     sim.register(lifestyle.Lifestyle())
     sim.register(mockitis.Mockitis())
@@ -195,5 +132,236 @@ def test_run_with_healthsystem_interventions_on_but_no_capabilities_and_ignore_c
     output = parse_log_file(f.name)
     f.close()
 
-    # check that there have been some HSI events having occured
-    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    check_dtypes(sim)
+
+def test_run_in_mode_0_no_capacity():
+    # Every events should run (no did_not_run)
+    # (Mode 0 -> No Constraints)
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=0))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    check_dtypes(sim)
+
+
+def test_run_in_mode_1_with_capacity():
+    # All events should run with some zero squeeze factors
+    # (Mode 1 -> elastic constraints)
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=1))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    check_dtypes(sim)
+
+
+#TODO; This one!
+def test_run_in_mode_1_with_no_capacity():
+    # Events should run but with high squeeze factors
+    # (Mode 1 -> elastic constraints)
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=1))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
+
+    # Do the checks
+    check_dtypes(sim)
+
+    # assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    # assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    # assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    # check_dtypes(sim)
+
+
+def test_run_in_mode_2_with_capacity():
+    # All events should run
+    # (Mode 2 -> hard constraints)
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
+
+    # Do the checks
+    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    check_dtypes(sim)
+
+
+#TODO; this one
+def test_run_in_mode_2_with_no_capacity():
+    # No events should run and the log should contain events not having run
+    # (Mode 2 -> hard constraints)
+
+    # Get ready for temporary log-file
+    f = tempfile.NamedTemporaryFile(dir='.')
+    fh = logging.FileHandler(f.name)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().addHandler(fh)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+    sim.seed_rngs(0)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=0.0,
+                                           mode_appt_constraints=2))
+    sim.register(lifestyle.Lifestyle())
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f.name)
+    f.close()
+
+    # Do the checks
+    # assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    # assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    # assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    # check_dtypes(sim)

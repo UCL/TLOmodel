@@ -588,7 +588,7 @@ class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScop
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -607,7 +607,7 @@ class HSI_OesCancer_StartTreatmentHighGradeOesDysplasia(HSI_Event, IndividualSco
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_high_grade_oes_dysplasia"
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -625,7 +625,7 @@ class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEven
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -643,7 +643,7 @@ class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEven
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
@@ -662,7 +662,7 @@ class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEven
         # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
