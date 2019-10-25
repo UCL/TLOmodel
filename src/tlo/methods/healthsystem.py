@@ -195,9 +195,10 @@ class HealthSystem(Module):
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
-        if type(hsi_event.target) is tlo.population.Population:  # check if hsi_event is this population-scoped
-            # This is a poulation-scoped HSI event.
-            # It does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES defined
+        if type(hsi_event.target) is tlo.population.Population:  # check if hsi_event is population-scoped
+            # This is a population-scoped HSI event...
+            # ... So it needs TREATMENT_ID
+            # ... But it does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES, or did_not_run().
 
             assert 'TREATMENT_ID' in dir(hsi_event)
             assert 'APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
@@ -238,7 +239,7 @@ class HealthSystem(Module):
             # Check that this can accept the squeeze argument
             assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
 
-        # 2) Check topen, tclose and priority
+        # 2) Check that topen, tclose and priority are valid
 
         # If there is no specified tclose time then set this is after the end of the simulation
         if tclose is None:
@@ -761,7 +762,7 @@ class HealthSystem(Module):
 
         return consumables_as_individual_items
 
-    def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None):
+    def log_hsi_event(self, hsi_event, actual_appt_footprint=None, squeeze_factor=None, did_run=True):
         """
         This will write to the log with a record that this HSI event has occured.
         If this is an individual-level HSI event, it will also record the actual appointment footprint
@@ -791,6 +792,8 @@ class HealthSystem(Module):
             }  # remove the appt-types with zeros
             log_info['Person_ID'] = hsi_event.target
             log_info['Squeeze_Factor'] = squeeze_factor
+
+        log_info['did_run'] = did_run
 
         logger.info('%s|HSI_Event|%s', self.sim.date, log_info)
 
@@ -1035,7 +1038,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     # Write to the log
                     self.module.log_hsi_event(
-                        hsi_event=event, actual_appt_footprint=actual_appt_footprint, squeeze_factor=squeeze_factor
+                        hsi_event=event,
+                        actual_appt_footprint=actual_appt_footprint,
+                        squeeze_factor=squeeze_factor,
+                        did_run=True
                     )
 
                 else:
@@ -1046,7 +1052,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # add to the hold-over queue
                     hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
-                    # TODO: log that the event did not run
+                    # Log that the event did not run
+                    self.module.log_hsi_event(
+                        hsi_event=event,
+                        actual_appt_footprint=event.APPT_FOOTPRINT,
+                        squeeze_factor=squeeze_factor,
+                        did_run=False
+                    )
+
+
 
         # 7) Add back to the HSI_EVENT_QUEUE heapq all those events
         # which are still eligible to run but which did not run

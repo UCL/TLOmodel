@@ -391,7 +391,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         )
 
 
-        if squeeze_factor < 0.5
+        if squeeze_factor < 0.5:
             # If squeeze factor is not too large:
             logger.debug("Treatment will be provided.")
             df = self.sim.population.props
