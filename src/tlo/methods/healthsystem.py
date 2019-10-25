@@ -802,7 +802,11 @@ class HealthSystem(Module):
                 k: v for k, v in appts.items() if v
             }  # remove the appt-types with zeros
             log_info['Person_ID'] = hsi_event.target
-            log_info['Squeeze_Factor'] = squeeze_factor
+
+            if squeeze_factor == np.inf:
+                log_info['Squeeze_Factor'] = 100.0  # arbitrarily high value to replace infinity
+            else:
+                log_info['Squeeze_Factor'] = squeeze_factor
 
         log_info['did_run'] = did_run
 
