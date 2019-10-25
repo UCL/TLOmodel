@@ -216,8 +216,8 @@ class ChronicSyndrome(Module):
             piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
-            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 piggy_back_dx_at_appt, priority=0, topen=self.sim.date, tclose=None
@@ -377,7 +377,7 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
-        self.APPT_FOOTPRINT = the_appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at any facility level
         self.ALERT_OTHER_DISEASES = []
 
@@ -438,7 +438,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
         # APPP_FOOTPRINT: outreach event takes small amount of time for DCSA
         appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         appt_footprint['ConWithDCSA'] = 0.5
-        self.APPT_FOOTPRINT = appt_footprint
+        self.EXPECTED_APPT_FOOTPRINT = appt_footprint
 
         self.ACCEPTED_FACILITY_LEVEL = 0  # Can occur at facility-level 0
         self.ALERT_OTHER_DISEASES = ['*']
@@ -485,7 +485,7 @@ class HSI_ChronicSyndrome_Outreach_Individual(HSI_Event, IndividualScopeEventMix
             logger.debug('PkgCode1 is not available, so can' 't use it.')
 
         # Return the actual appt footprints
-        actual_appt_footprint = self.APPT_FOOTPRINT  # The actual time take is double what is expected
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
         actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
 
         return actual_appt_footprint

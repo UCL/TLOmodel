@@ -185,8 +185,6 @@ class HealthSystem(Module):
         :param tclose: the latest date at which the hsi event should run
         """
 
-        # TODO: Consider adding a check that this appointment is feasible with the configuration of officers
-
         logger.debug(
             'HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
             hsi_event.TREATMENT_ID,
@@ -201,7 +199,7 @@ class HealthSystem(Module):
             # ... But it does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES, or did_not_run().
 
             assert 'TREATMENT_ID' in dir(hsi_event)
-            assert 'APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
+            assert 'EXPECTED_APPT_FOOTPRINT_FOOTPRINT' not in dir(hsi_event)
             assert 'ACCEPTED_FACILITY_LEVEL' not in dir(hsi_event)
             assert 'ALERT_OTHER_DISEASES' not in dir(hsi_event)
 
@@ -212,9 +210,9 @@ class HealthSystem(Module):
             # Correctly formatted footprint
             assert 'TREATMENT_ID' in dir(hsi_event)
 
-            # Correct formated APPT_FOOTPRINT
-            assert 'APPT_FOOTPRINT' in dir(hsi_event)
-            self.check_appt_footprint_format(hsi_event.APPT_FOOTPRINT)
+            # Correct formated EXPECTED_APPT_FOOTPRINT
+            assert 'EXPECTED_APPT_FOOTPRINT' in dir(hsi_event)
+            self.check_appt_footprint_format(hsi_event.EXPECTED_APPT_FOOTPRINT)
 
             # That it has an 'ACCEPTED_FACILITY_LEVEL' attribute
             # (Integer specificying the facility level at which HSI_Event must occur)
@@ -273,15 +271,26 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) Manipulate the priority level
+        # 4) Check that event (if individual level) is able to run with this configuration of officers
+        # (ie. Check that this does demand officers that are never available at a particular facility)
+        if not type(hsi_event.target) is tlo.population.Population:
+            # dealing with an individual level event
+            caps = self.parameters['Daily_Capabilities']
+            footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
+            footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day']>0).all()
+            if not footprint_is_possible:
+                logger.warning("The expected footprint is not possible with the configuration of officers.")
 
+
+        #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
         if self.ignore_priority:
             priority = 0  # set all event to priority 0
         # This is where could attach a different priority score according to the treatment_id (and other things)
         # in order to examine the influence of the prioritisation score.
 
-        # 5) If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
+
+        # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
 
             # Create a tuple to go into the heapq
@@ -309,6 +318,8 @@ class HealthSystem(Module):
                 self.sim.date,
                 hsi_event.TREATMENT_ID,
             )
+
+
 
     def check_appt_footprint_format(self, appt_footprint):
         """
@@ -503,7 +514,7 @@ class HealthSystem(Module):
         # Get the appt_footprint
         if actual_appt_footprint is None:
             # use the appt_footprint in the hsi_event
-            the_appt_footprint = hsi_event.APPT_FOOTPRINT
+            the_appt_footprint = hsi_event.EXPECTED_APPT_FOOTPRINT
         else:
             # use the actual_appt_provided
             the_appt_footprint = actual_appt_footprint
@@ -1033,8 +1044,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             current_capabilities=current_capabilities,
                         )
                     else:
-                        # no actual footprint is returned so take the initial declaration as the actual
-                        actual_appt_footprint = event.APPT_FOOTPRINT
+                        # no actual footprint is returned so take the expected initial declaration as the actual
+                        actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
 
                     # Write to the log
                     self.module.log_hsi_event(
@@ -1055,7 +1066,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Log that the event did not run
                     self.module.log_hsi_event(
                         hsi_event=event,
-                        actual_appt_footprint=event.APPT_FOOTPRINT,
+                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         squeeze_factor=squeeze_factor,
                         did_run=False
                     )
