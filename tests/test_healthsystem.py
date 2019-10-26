@@ -364,7 +364,7 @@ def test_run_in_mode_2_with_no_capacity():
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-    assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'] == False).all()  # Individual level
+    assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
-    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run'] == True).all()  # Population level
+    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level
     check_dtypes(sim)
