@@ -7,7 +7,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+from tlo.methods import chronicsyndrome, demography, healthsystem, lifestyle, mockitis
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -89,7 +89,7 @@ def test_run_no_interventions_allowed():
     f.close()
 
     # Do the checks
-    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']==0.0).all()
+    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
     check_dtypes(sim)
 
@@ -133,10 +133,11 @@ def test_run_in_mode_0_with_capacity():
     f.close()
 
     # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
     check_dtypes(sim)
+
 
 def test_run_in_mode_0_no_capacity():
     # Every events should run (no did_not_run)
@@ -177,9 +178,9 @@ def test_run_in_mode_0_no_capacity():
     f.close()
 
     # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
     check_dtypes(sim)
 
 
@@ -222,13 +223,13 @@ def test_run_in_mode_1_with_capacity():
     f.close()
 
     # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
     check_dtypes(sim)
 
 
-#TODO; This one!
+# TODO; This one!
 def test_run_in_mode_1_with_no_capacity():
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -269,11 +270,11 @@ def test_run_in_mode_1_with_no_capacity():
 
     # Do the checks
     check_dtypes(sim)
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
     assert hsi_events['did_run'].all()
-    assert (hsi_events.loc[hsi_events['Person_ID']>=0,'Squeeze_Factor']==100.0).all()
-    assert (hsi_events.loc[hsi_events['Person_ID']<0,'Squeeze_Factor']==0.0).all()
+    assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'Squeeze_Factor'] == 100.0).all()
+    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
     check_dtypes(sim)
 
 
@@ -316,9 +317,9 @@ def test_run_in_mode_2_with_capacity():
     f.close()
 
     # Do the checks
-    assert len(output['tlo.methods.healthsystem']['HSI_Event'])>0
+    assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
-    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor']==0.0).all()
+    assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
     check_dtypes(sim)
 
 
@@ -363,7 +364,7 @@ def test_run_in_mode_2_with_no_capacity():
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-    assert (hsi_events.loc[hsi_events['Person_ID']>=0,'did_run']==False).all()  # Individual level
-    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall']==0.0).all()
-    assert (hsi_events.loc[hsi_events['Person_ID']<0,'did_run']==True).all()  # Population level
+    assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'] == False).all()  # Individual level
+    assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
+    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run'] == True).all()  # Population level
     check_dtypes(sim)

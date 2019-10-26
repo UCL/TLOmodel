@@ -1,9 +1,9 @@
 import logging
 import os
-import pandas as pd
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -76,25 +76,25 @@ def test_run_with_healthburden_with_dummy_diseases():
 
     # Do the checks
     # correctly configured index (outputs on 31st decemnber in each year of simulation for each age/sex group)
-    dalys=output['tlo.methods.healthburden']['DALYS']
+    dalys = output['tlo.methods.healthburden']['DALYS']
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES
     sex_index = ['M', 'F']
     year_index = list(range(start_date.year, end_date.year + 1))
-    correct_multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index], names=['sex', 'age_range', 'year'])
-    dalys['year']=pd.to_datetime(dalys['date']).dt.year
+    correct_multi_index = pd.MultiIndex.from_product([sex_index, age_index, year_index],
+                                                     names=['sex', 'age_range', 'year'])
+    dalys['year'] = pd.to_datetime(dalys['date']).dt.year
     assert (pd.to_datetime(dalys['date']).dt.month == 12).all()
     assert (pd.to_datetime(dalys['date']).dt.day == 31).all()
-    output_multi_index = dalys.set_index(['sex','age_range','year']).index
+    output_multi_index = dalys.set_index(['sex', 'age_range', 'year']).index
     assert output_multi_index.equals(correct_multi_index)
 
     # check that there is a YLD for each module registered
-    yld_colnames= list()
+    yld_colnames = list()
     for colname in list(dalys.columns):
         if 'YLD' in colname:
             yld_colnames.append(colname)
 
-    module_names_in_output=set()
+    module_names_in_output = set()
     for yld_colname in yld_colnames:
-        module_names_in_output.add(yld_colname.split('_',2)[1])
-    assert module_names_in_output == {'Mockitis','ChronicSyndrome'}
-
+        module_names_in_output.add(yld_colname.split('_', 2)[1])
+    assert module_names_in_output == {'Mockitis', 'ChronicSyndrome'}
