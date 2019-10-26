@@ -277,10 +277,9 @@ class HealthSystem(Module):
             # dealing with an individual level event
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day']>0).all()
+            footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
-
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -288,7 +287,6 @@ class HealthSystem(Module):
             priority = 0  # set all event to priority 0
         # This is where could attach a different priority score according to the treatment_id (and other things)
         # in order to examine the influence of the prioritisation score.
-
 
         # If all is correct and the hsi event is allowed then add this request to the queue of HSI_EVENT_QUEUE
         if allowed:
@@ -318,8 +316,6 @@ class HealthSystem(Module):
                 self.sim.date,
                 hsi_event.TREATMENT_ID,
             )
-
-
 
     def check_appt_footprint_format(self, appt_footprint):
         """
@@ -673,8 +669,7 @@ class HealthSystem(Module):
             # Compute total cost (limiting to those items which were available)
             total_cost = (
                 items_req_to_log.loc[items_req_to_log['Available'], ['Quantity_Of_Item', 'Unit_Cost']]
-                .prod(axis=1)
-                .sum()
+                .prod(axis=1).sum()
             )
 
             # Enter to the log
@@ -1074,8 +1069,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         squeeze_factor=squeeze_factor,
                         did_run=False
                     )
-
-
 
         # 7) Add back to the HSI_EVENT_QUEUE heapq all those events
         # which are still eligible to run but which did not run

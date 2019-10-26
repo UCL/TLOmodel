@@ -217,7 +217,8 @@ class ChronicSyndrome(Module):
 
             # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
             for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] * 0.25
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
+                                                                         key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 piggy_back_dx_at_appt, priority=0, topen=self.sim.date, tclose=None
@@ -389,7 +390,6 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         logger.debug(
             "This is HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: The squeeze-factor is %d.", squeeze_factor
         )
-
 
         if squeeze_factor < 0.5:
             # If squeeze factor is not too large:

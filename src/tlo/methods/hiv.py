@@ -838,7 +838,8 @@ class hiv(Module):
 
             # Arbitrarily reduce the size of appt footprint
             for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] * 0.25
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
+                                                                         key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
