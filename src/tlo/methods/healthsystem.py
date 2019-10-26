@@ -670,7 +670,7 @@ class HealthSystem(Module):
             total_cost = (
                 items_req_to_log.loc[items_req_to_log['Available'], ['Quantity_Of_Item', 'Unit_Cost']]
                 .prod(axis=1).sum()
-            )
+            );
 
             # Enter to the log
 
