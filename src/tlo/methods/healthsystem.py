@@ -231,9 +231,6 @@ class HealthSystem(Module):
                     for d in hsi_event.ALERT_OTHER_DISEASES:
                         assert d in self.sim.modules['HealthSystem'].registered_disease_modules.keys()
 
-            # Check that it contains a did_not_run() function
-            assert 'did_not_run' in dir(hsi_event)
-
             # Check that this can accept the squeeze argument
             assert 'squeeze_factor' in inspect.getfullargspec(hsi_event.run).args
 
@@ -1127,4 +1124,3 @@ class HSI_Event:
         """Make the event happen."""
         self.apply(self.target, squeeze_factor)
         self.post_apply_hook()
-
