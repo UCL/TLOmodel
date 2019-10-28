@@ -1081,3 +1081,54 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         )
 
         # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
+
+
+class HSI_Event:
+    """Base HSI event class, from which all others inherit.
+
+    Concrete subclasses should also inherit from one of the EventMixin classes
+    defined below, and implement at least an `apply` and `did_not_run` method.
+    """
+
+    def __init__(self, module, *args, **kwargs):
+        """Create a new event.
+
+        Note that just creating an event does not schedule it to happen; that
+        must be done by calling Simulation.schedule_event.
+
+        :param module: the module that created this event.
+            All subclasses of Event take this as the first argument in their
+            constructor, but may also take further keyword arguments.
+        """
+        self.module = module
+        self.sim = module.sim
+        self.target = None  # Overwritten by the mixin
+        # This is needed so mixin constructors are called
+        super().__init__(*args, **kwargs)
+
+        # TODO: make better use of templating for the HSI events
+        #  (to incl. information that is required for each HSI Event?)
+
+    def apply(self, *args, **kwargs):
+        """Apply this event to the population.
+
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
+    def did_not_run(self, *args, **kwargs):
+        """Called when this event is due but it is not run.
+
+        Must be implemented by subclasses.
+        """
+        raise NotImplementedError
+
+    def post_apply_hook(self):
+        """Do any required processing after apply() completes."""
+        pass
+
+    def run(self, squeeze_factor):
+        """Make the event happen."""
+        self.apply(self.target, squeeze_factor)
+        self.post_apply_hook()
+

@@ -6,11 +6,11 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import (
     Event,
-    HSI_Event,
     IndividualScopeEventMixin,
     PopulationScopeEventMixin,
     RegularEvent,
 )
+from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.demography import InstantaneousDeath
 
 logger = logging.getLogger(__name__)
