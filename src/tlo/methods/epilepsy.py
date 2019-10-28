@@ -5,8 +5,8 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.healthsystem import HSI_Event
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 # todo: code specific clinic visits
 
