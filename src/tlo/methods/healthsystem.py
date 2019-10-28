@@ -535,7 +535,7 @@ class HealthSystem(Module):
 
         # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
         df_appt_footprint.set_index(
-            f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint["Officer_Type_Code"].astype(str), inplace=True
+            f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
         )
 
         # Create Series of summed required time for each officer type
@@ -649,7 +649,7 @@ class HealthSystem(Module):
         n_items_req = len(items_req)
 
         # 2) Determine if these are available at the relevant facility level
-        select_col = 'Available_Facility_Level_' + str(the_facility_level)
+        select_col = f'Available_Facility_Level_{the_facility_level}'
         availability = pd.DataFrame(data={'Available': self.cons_item_code_availability_today[select_col].copy()})
         items_req = items_req.merge(availability, left_on='Item_Code', right_index=True, how='left')
         assert len(items_req) == n_items_req
@@ -688,19 +688,19 @@ class HealthSystem(Module):
         packages_availability = dict()
         if not cons_req_as_footprint['Intervention_Package_Code'] == []:
             for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
-                # dict only ever has one item so we only want the key and ignore the value
-                (package_code, _val), = p_dict.items()
-                packages_availability[int(package_code)] = bool(
-                    items_req.loc[items_req['Package_Code'] == float(package_code), 'Available'].all()
+                # dict only ever has one item so we only want the key
+                package_code, = p_dict.keys()
+                packages_availability[package_code] = (
+                    items_req.loc[items_req['Package_Code'] == package_code, 'Available'].all()
                 )
 
         # Iterate through the individual items that were requested
         items_availability = dict()
         if not cons_req_as_footprint['Item_Code'] == []:
             for i_dict in cons_req_as_footprint['Item_Code']:
-                (item_code, _val), = i_dict.items()
+                item_code, = i_dict.keys()
                 # check if *all* items in this package are available
-                items_availability[int(item_code)] = bool(
+                items_availability[item_code] = (
                     items_req.loc[items_req['Item_Code'] == item_code, 'Available'].values[0]
                 )
 
@@ -761,10 +761,6 @@ class HealthSystem(Module):
         # NB. package_code is held as float as may as np.nan's in and known issuse that pandas cannot handle this
         #       Non-null package_code must be coerced to int before use.
         consumables_as_individual_items['Item_Code'] = consumables_as_individual_items['Item_Code'].astype(int)
-        consumables_as_individual_items['Package_Code'] = consumables_as_individual_items['Package_Code'].astype(float)
-        consumables_as_individual_items['Quantity_Of_Item'] = (
-            consumables_as_individual_items['Quantity_Of_Item'].astype(float)
-        )
 
         return consumables_as_individual_items
 
