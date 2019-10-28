@@ -17,7 +17,7 @@ logger.setLevel(logging.INFO)
 class HealthSystem(Module):
     """
     This is the Health System Module
-    Version: May 2019
+    Version: September 2019
     The execution of all health systems interactions are controlled through this module.
     """
 
@@ -193,7 +193,7 @@ class HealthSystem(Module):
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
-        if type(hsi_event.target) is tlo.population.Population:  # check if hsi_event is population-scoped
+        if isinstance(hsi_event.target, tlo.population.Population):  # check if hsi_event is population-scoped
             # This is a population-scoped HSI event...
             # ... So it needs TREATMENT_ID
             # ... But it does not need APPT, CONS, ACCEPTED_FACILITY_LEVEL and ALERT_OTHER_DISEASES, or did_not_run().
@@ -297,7 +297,7 @@ class HealthSystem(Module):
             # Pos 4: the hsi_event itself
 
             new_request = (priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
-            self.hsi_event_queue_counter = self.hsi_event_queue_counter + 1
+            self.hsi_event_queue_counter += 1
 
             hp.heappush(self.HSI_EVENT_QUEUE, new_request)
 
@@ -770,7 +770,7 @@ class HealthSystem(Module):
         :param squeeze_factor: The squueze factor (if individual event)
         """
 
-        if type(hsi_event.target) is tlo.population.Population:
+        if isinstance(hsi_event.target, tlo.population.Population):
             # Population HSI-Event
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
@@ -786,9 +786,10 @@ class HealthSystem(Module):
             appts = actual_appt_footprint
             log_info = dict()
             log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+            # key appointment types that are non-zero
             log_info['Number_By_Appt_Type_Code'] = {
-                k: v for k, v in appts.items() if v
-            }  # remove the appt-types with zeros
+                key: val for key, val in appts.items() if val
+            }
             log_info['Person_ID'] = hsi_event.target
 
             if squeeze_factor == np.inf:
@@ -822,17 +823,15 @@ class HealthSystem(Module):
         summary = comparison.groupby('Facility_ID')[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
 
         # Compute Fraction of Time Used Across All Facilities
+        fraction_time_used_across_all_facilities = 0.0  # no capabilities or nan arising
         if summary['Total_Minutes_Per_Day'].sum() > 0:
-            Fraction_Time_Used_Across_All_Facilities = (
+            fraction_time_used_across_all_facilities = (
                 summary['Minutes_Used'].sum() / summary['Total_Minutes_Per_Day'].sum()
             )
-        else:
-            Fraction_Time_Used_Across_All_Facilities = 0.0  # in the case of there being no capabilities and nan arising
 
         # Compute Fraction of Time Used In Each Facility
-        summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
-        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].replace([np.inf, -np.inf], 0.0)
-        summary['Fraction_Time_Used'] = summary['Fraction_Time_Used'].fillna(0.0)
+        summary['Fraction_Time_Used'] = (summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
+                                         .replace([np.inf, -np.inf], 0.0)).fillna(0.0)
 
         # Put out to the logger
         logger.debug('-------------------------------------------------')
@@ -843,7 +842,7 @@ class HealthSystem(Module):
         logger.debug('-------------------------------------------------')
 
         log_capacity = dict()
-        log_capacity['Frac_Time_Used_Overall'] = Fraction_Time_Used_Across_All_Facilities
+        log_capacity['Frac_Time_Used_Overall'] = fraction_time_used_across_all_facilities
         log_capacity['Frac_Time_Used_By_Facility_ID'] = summary['Fraction_Time_Used'].to_dict()
 
         logger.info('%s|Capacity|%s', self.sim.date, log_capacity)
@@ -1044,7 +1043,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         hsi_event=event,
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
-                        did_run=True
+                        did_run=True,
                     )
 
                 else:
@@ -1060,7 +1059,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         hsi_event=event,
                         actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
                         squeeze_factor=squeeze_factor,
-                        did_run=False
+                        did_run=False,
                     )
 
         # 7) Add back to the HSI_EVENT_QUEUE heapq all those events
