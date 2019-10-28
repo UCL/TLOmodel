@@ -85,18 +85,18 @@ class Type2DiabetesMellitus(Module):
         # and longer description.
 
         # Define epidemiological parameters
-        'D2_prevalence': Parameter(Types.REAL, 'T2DM prevalence'),
-        'D2_incidence': Parameter(Types.REAL, 'T2DM incidence'),
-        'prob_t2dm_basic': Parameter(Types.REAL, 'Basic T2DM probability'),
-        'prob_t2dmgivenbmi': Parameter(Types.REAL, 'T2DM probability given being BMI'),
-        'prob_t2dmgivenht': Parameter(Types.REAL, 'T2DM probability given pre-existing hypertension'),
-        'prob_t2dmgivengd': Parameter(Types.REAL, 'T2DM probability given pre-existing gestational diabetes'),
+        'd2_prevalence': Parameter(Types.REAL, 'T2DM prevalence'),
+        'd2_incidence': Parameter(Types.REAL, 'T2DM incidence'),
+        'prob_d2_basic': Parameter(Types.REAL, 'Basic T2DM probability'),
+        'prob_d2givenbmi': Parameter(Types.REAL, 'T2DM probability given being BMI'),
+        'prob_d2givenht': Parameter(Types.REAL, 'T2DM probability given pre-existing hypertension'),
+        'prob_d2givengd': Parameter(Types.REAL, 'T2DM probability given pre-existing gestational diabetes'),
         'initial_prevalence_d2': Parameter(Types.REAL, 'Prevalence of T2DM as per data'),
 
         # Define disease progression parameters
-        'prob_RetinoComp': Parameter(Types.REAL, 'Probability of developing retinopathy'),
-        'prob_NephroComp': Parameter(Types.REAL, 'Probability of developing diabetic nephropathy'),
-        'prob_NeuroComp': Parameter(Types.REAL, 'Probability of developing peripheral neuropathy'),
+        'prob_retinocomp': Parameter(Types.REAL, 'Probability of developing retinopathy'),
+        'prob_nephrocomp': Parameter(Types.REAL, 'Probability of developing diabetic nephropathy'),
+        'prob_neurocomp': Parameter(Types.REAL, 'Probability of developing peripheral neuropathy'),
         'prob_death': Parameter(Types.REAL, 'Probability of dying'),
 
         # Define health care parameters
@@ -162,8 +162,8 @@ class Type2DiabetesMellitus(Module):
                                  sheet_name=None)
 
         p = self.parameters
-        p['D2_prevalence'] = workbook['prevalence2018']  # reads in prevalence parameters
-        p['D2_incidence'] = workbook['incidence2018_plus']  # reads in incidence parameters
+        p['d2_prevalence'] = workbook['prevalence2018']  # reads in prevalence parameters
+        p['d2_incidence'] = workbook['incidence2018_plus']  # reads in incidence parameters
 
         self.load_parameters_from_dataframe(workbook['parameters'])  # reads in parameters
 
@@ -235,7 +235,7 @@ class Type2DiabetesMellitus(Module):
 
         # Assign prevalence as per data
         # Get corresponding risk
-        d2_probability = df.loc[df.is_alive, ['d2_risk', 'age_years']].merge(self.parameters['D2_prevalence'],
+        d2_probability = df.loc[df.is_alive, ['d2_risk', 'age_years']].merge(self.parameters['d2_prevalence'],
                                                                              left_on=['age_years'], right_on=['age'],
                                                                              how='left')['probability']
         # TODO: update with BMI once merged to master
@@ -416,7 +416,7 @@ class Type2DiabetesMellitus(Module):
 class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
     """
-    This event is occurring regularly and controls the infection process of type 2 diabetes mellitus.
+    This event is occurring regularly and controls the disease process of type 2 diabetes mellitus.
     It assigns new cases of diabetes and defines all related variables (e.g. date of diabetes)
     """
 
@@ -431,174 +431,83 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
         # 1. Basic variables
         df = population.props
+        m = self.module
         rng = self.module.rng
 
-        t2dm_total = (df.is_alive & df.d2_current_status).sum()
-
         # 2. Get (and hold) index of people with and w/o T2DM
-        currently_t2dm_yes = df[df.d2_current_status & df.is_alive].index
-        currently_t2dm_no = df[~df.d2_current_status & df.is_alive].index
-        age_index = df.loc[currently_t2dm_no, ['age_years']]
-        alive_count = df.is_alive.sum()
+        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # holds all people with t2dm
+        currently_d2_no = df[~df.d2_current_status & df.is_alive].index  # hold all people w/o t2dm
+        age_index = df.loc[currently_d2_no, ['age_years']]  # looks up age index of those w/o t2dm
+        alive_count = df.is_alive.sum()  # counts all those with t2dm
 
-        assert alive_count == len(currently_t2dm_yes) + len(currently_t2dm_no)
-
-        # Calculate population prevalence
-        if df.is_alive.sum():
-            prevalence = len(currently_t2dm_yes) / (
-                len(currently_t2dm_yes) + len(currently_t2dm_no))
-        else:
-            prevalence = 0
-
-        # Calculate STEP prevalence
-        #adults_count_overall = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 65)])
-        #count = len(df[(df.is_alive) & (df.t2dm_current_status) & (df.age_years > 24) & (df.age_years < 65)])
-        #prevalence_overall = (count / adults_count_overall) * 100
-
-        #print("\n", "We are about to assign new T2DM cases. The time is: ", self.sim.date,
-        #      "\n", "Population prevalence of T2DM is: ", prevalence,
-        #      "\n", "Adult prevalence in STEP age-brackets is: ", prevalence_overall, "\n")
+        assert alive_count == len(currently_d2_yes) + len(currently_d2_no)  # checks that we didn't loose anyone
 
         # 3. Handle new cases of T2DM
         # 3.1 First get relative risk
-        t2dm_prob = df.loc[currently_t2dm_no, ['age_years', 'd2_risk']].reset_index().merge(T2DM_incidence,
-                                            left_on=['age_years'], right_on=['age'], how='left').set_index(
-                                            'person')['probability']
-        # df.loc[df.is_alive & ~df.hc_current_status, 'd2_risk'] = self.prob_T2DM_basic  # Basic risk, no pre-existing conditions
-        # df.loc[df.is_alive & df.hc_current_status, 'd2_risk'] = self.prob_T2DMgivenHC  # Risk if pre-existing high cholesterol
-        assert len(currently_t2dm_no) == len(t2dm_prob)
-        t2dm_prob = t2dm_prob * df.loc[currently_t2dm_no, 'd2_risk']
-        random_numbers = rng.random_sample(size=len(t2dm_prob))
-        now_T2DM = (t2dm_prob > random_numbers)
-        t2dm_idx = currently_t2dm_no[now_T2DM]
+        d2_probability = df.loc[currently_d2_no,
+                         ['age_years', 'd2_risk']].reset_index().merge(self.module.parameters['d2_incidence'],
+                                                                       left_on=['age_years'],
+                                                                       right_on=['age'],
+                                                                       how='left').set_index('person')['probability']
+        df['d2_risk'] - 1.0 # Reset risk for all people
+        # TODO: update with BMI once merged to master
+        df.loc[df.is_alive & df.li_overwt, 'd2_risk'] *= m.prob_d2givenbmi  # Adjust risk if overwt
+        # TODO: add hypertension and GD once cricular declaration has been fixed with Asif/Stef and GD is coded
+        # df.loc[df.is_alive & ~df.hc_current_status, 'd2_risk'] = self.prob_d2_basic  # Adjust risk if hypertension
+        # df.loc[df.is_alive & df.gd_current_status, 'd2_risk'] = self.prob_d2givengd  # Adjust risk if gestational diabetes
 
-        # Check random numbers      #TODO: CHECK WITH TIM and remove later
-        #random_numbers_df = random_numbers, index = currently_t2dm_no
-        aaa = pd.DataFrame(data=random_numbers, index=currently_t2dm_no, columns=['nr'])
+        d2_probability = d2_probability * df.loc[currently_d2_no, 'd2_risk']  # look up updated risk for t2dm
+        random_numbers = rng.random_sample(size=len(d2_probability))  # Get random numbers
+        now_d2 = (d2_probability > random_numbers)  # assign new t2dm cases as per incidence and risk
+        d2_idx = currently_d2_no[now_d2]  # hold id of those with new t2dm
 
-        over_18 = age_index.index[age_index.age_years > 17]
-        a = aaa.loc[over_18]
-        a = a.mean()
+        # Check random numbers      #TODO: Remove from here .... (not pretty code - just for testing)
+        #random_numbers_df = random_numbers, index = currently_d2_no
+        randnum_holder = pd.DataFrame(data=random_numbers, index=currently_d2_no, columns=['nr'])
 
-        over_25_35 = age_index.index[age_index.age_years > 24 & (age_index.age_years < 35)]
-        b = aaa.loc[over_25_35]
-        b = a.mean()
+        pop_over_18 = age_index.index[(age_index.age_years >= 18) & (age_index.age_years < 25)]
+        rand_18_25 = (randnum_holder.loc[pop_over_18]).mean()
+        rand_18_25_mean = rand_18_25.mean()
 
-        over_35_45 = age_index.index[age_index.age_years > 34 & (age_index.age_years < 45)]
-        c = aaa.loc[over_35_45]
-        c = a.mean()
+        pop_over_25_35 = age_index.index[(age_index.age_years >= 25) & (age_index.age_years < 35)]
+        rand_25_35 = (randnum_holder.loc[pop_over_25_35]).mean()
+        rand_25_35_mean = rand_25_35.mean()
 
-        over_45_55 = age_index.index[age_index.age_years > 44 & (age_index.age_years < 55)]
-        d = aaa.loc[over_45_55]
-        d = a.mean()
+        pop_over_35_45 = age_index.index[(age_index.age_years >= 35) & (age_index.age_years < 45)]
+        rand_35_45 = (randnum_holder.loc[pop_over_35_45]).mean()
+        rand_35_45_mean = rand_35_45.mean()
 
-        over_55 = age_index.loc[age_index['age_years'] > 55].index
-        e = aaa.loc[over_55]
-        e = a.mean()
+        pop_over_45_55 = age_index.index[(age_index.age_years >= 45) & (age_index.age_years < 55)]
+        rand_45_55 = (randnum_holder.loc[pop_over_45_55]).mean()
+        rand_45_55_mean = rand_45_55.mean()
 
-        print("\n", "Lets generate the random number check for incidence T2DM: ",
-              "\n", "A: ", a,
-              "\n", "B: ", b,
-              "\n", "C: ", c,
-              "\n", "D: ", d,
-              "\n", "e: ", e, "\n")
+        pop_over_55 = age_index.index[(age_index.age_years >= 55)]
+        rand_over55 = (randnum_holder.loc[pop_over_55]).mean()
+        rand_over55_mean = rand_over55.mean()
 
-        # 3.3 If newly diabetic
-        df.loc[t2dm_idx, 'd2_current_status'] = True
-        df.loc[t2dm_idx, 'd2_historic_status'] = 'C'
-        df.loc[t2dm_idx, 'd2_date'] = self.sim.date
+        logger.debug('Lets generate the random number check for incident t2dm. ')
+        logger.debug({
+            'Mean rand num in 18-25 yo': rand_18_25,
+            'Mean rand num_in 25-35 yo': rand_25_35,
+            'Mean rand num_in 35-45 yo': rand_35_45,
+            'Mean rand num_in 45-55 yo': rand_45_55,
+            'Mean_rand num_in over 55 yo': rand_over55
+        })
 
-        # 3.2. Calculate prevalence
-        # Count adults in different age groups
-        adults_count_overall = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 65)])
-        adults_count_25to35 = len(df[(df.is_alive) & (df.age_years > 24) & (df.age_years < 35)])
-        adults_count_35to45 = len(df[(df.is_alive) & (df.age_years > 34) & (df.age_years < 45)])
-        adults_count_45to55 = len(df[(df.is_alive) & (df.age_years > 44) & (df.age_years < 55)])
-        adults_count_55to65 = len(df[(df.is_alive) & (df.age_years > 54) & (df.age_years < 65)])
+        assert 0.4 < rand_18_25_mean < 0.6
+        assert 0.4 < rand_25_35_mean < 0.6
+        assert 0.4 < rand_35_45_mean < 0.6
+        assert 0.4 < rand_45_55_mean < 0.6
+        assert 0.4 < rand_over55_mean < 0.6
 
-        assert adults_count_overall == adults_count_25to35 + adults_count_35to45 + adults_count_45to55 + adults_count_55to65
+        # TODO: ... to here
 
-        # Count adults with T2DM by age group
-        count = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 24) & (df.age_years < 65)])
-        count_25to35 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 24) & (df.age_years < 35)])
-        count_35to45 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 34) & (df.age_years < 45)])
-        count_45to55 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 44) & (df.age_years < 55)])
-        count_55to65 = len(df[(df.is_alive) & (df.d2_current_status) & (df.age_years > 54) & (df.age_years < 65)])
+        # Assign variables amongst those with new cases of t2dm
+        df.loc[d2_idx, 'd2_current_status'] = True
+        df.loc[d2_idx, 'd2_historic_status'] = 'C'
+        df.loc[d2_idx, 'd2_date'] = self.sim.date
 
-        assert count == count_25to35 + count_35to45 + count_45to55 + count_55to65
-
-        # Calculate overall and age-specific prevalence
-        prevalence_overall = (count / adults_count_overall) * 100
-        prevalence_25to35 = (count_25to35 / adults_count_25to35) * 100
-        prevalence_35to45 = (count_35to45 / adults_count_35to45) * 100
-        prevalence_45to55 = (count_45to55 / adults_count_45to55) * 100
-        prevalence_55to65 = (count_55to65 / adults_count_55to65) * 100
-
-        # 3.1 Log prevalence compared to data
-        df2 = self.module.parameters['initial_prevalence']
-        print("\n", "New cases of T2DM have been assigned. The time is: ", self.sim.date,
-              "\n", "Prevalent T2DM has been assigned"
-                    "\n", "MODEL: ",
-              "\n", "both sexes: ", prevalence_overall, "%",
-              "\n", "25 to 35:   ", prevalence_25to35, "%",
-              "\n", "35 to 45:   ", prevalence_35to45, "%",
-              "\n", "45 to 55:   ", prevalence_45to55, "%",
-              "\n", "55 to 65:   ", prevalence_55to65, "%",
-              "\n", "DATA: ", df2)
-
-        print("\n", "Pause to check t2DM incidence - REMOVE LATER", "\n")
-
-        # 3.2. Calculate prevalence
-        #count = df.d2_current_status.sum()
-        #prevalence = (sum(count) / alive_count) * 100
-
-        # 4. Assign level of symptoms
-        #level_of_symptoms = self.parameters['level_of_symptoms']
-        #symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
-        #                           size=t2dm_idx,
-        #                           p=level_of_symptoms.probability)
-        #df.loc[t2dm_idx, 'd2_specific_symptoms'] = symptoms
-
-        # 5. Set date of death
-        #death_years_ahead = np.random.exponential(scale=20, size=t2dm_idx)
-        #death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
-
-         # 3.3 If newly T2DM
-        df.loc[t2dm_idx, 'd2_current_status'] = True
-        df.loc[t2dm_idx, 'd2_historic_status'] = 'C'
-        df.loc[t2dm_idx, 'd2_date'] = self.sim.date
-       # df.loc[t2dm_idx, 'd2_death_date'] = self.sim.date + death_td_ahead
-
-
-
-        print("\n", "Time is: ", self.sim.date, "New T2DM cases have been assigned.  "
-              "\n", "Prevalence of T2DM is: ", prevalence, "%")
-
-        # 6. Determine if anyone with severe symptoms will seek care
-        serious_symptoms = (df['is_alive']) & ((df['d2_specific_symptoms'] == 'extreme emergency') | (
-            df['d2_specific_symptoms'] == 'coughing and irritiable'))
-
-        seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
-        for i in df.index[serious_symptoms]:
-            prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-            seeks_care[i] = self.module.rng.rand() < prob
-
-        if seeks_care.sum() > 0:
-            for person_index in seeks_care.index[seeks_care == True]:
-                logger.debug(
-                    'This is T2DM, scheduling Hyp_PresentsForCareWithSevereSymptoms for person %d',
-                    person_index)
-                event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_event(event,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(weeks=2)
-                                                                )
-            else:
-                logger.debug(
-                    'This is MockitisEvent, There is  no one with new severe symptoms so no new healthcare seeking')
-        else:
-            logger.debug('This is MockitisEvent, no one is newly infected.')
+        # TODO: update any other variables beyond HTN
 
 
 class T2DMDeathEvent(Event, IndividualScopeEventMixin):   # TODO: update
@@ -623,200 +532,7 @@ class T2DMDeathEvent(Event, IndividualScopeEventMixin):   # TODO: update
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_Hyp_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
-
-    """
-    This is a Health System Interaction Event.
-    It is first appointment that someone has when they present to the healthcare system with the severe
-    symptoms of Mockitis.
-    If they are aged over 15, then a decision is taken to start treatment at the next appointment.
-    If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hyp_PresentsForCareWithSevereSymptoms'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ALERT_OTHER_DISEASES = []
-
-
-    def apply(self, person_id):
-
-        logger.debug('This is HSI_Hyp_PresentsForCareWithSevereSymptoms, a first appointment for person %d', person_id)
-
-        df = self.sim.population.props  # shortcut to the dataframe
-
-        if df.at[person_id, 'age_years'] >= 15:
-            logger.debug(
-                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there should now be treatment for person %d',
-                person_id)
-            event = HSI_Hyp_StartTreatment(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=self.sim.date,
-                                                            tclose=None)
-
-        else:
-            logger.debug(
-                '...This is HSI_Hyp_PresentsForCareWithSevereSymptoms: there will not be treatment for person %d',
-                person_id)
-
-            date_turns_15 = self.sim.date + DateOffset(years=np.ceil(15 - df.at[person_id, 'age_exact_years']))
-            event = HSI_Hyp_PresentsForCareWithSevereSymptoms(self.module, person_id=person_id)
-            self.sim.modules['HealthSystem'].schedule_event(event,
-                                                            priority=2,
-                                                            topen=date_turns_15,
-                                                            tclose=date_turns_15 + DateOffset(months=12))
-
-
-class HSI_Hyp_StartTreatment(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is inititaed.
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
-
-        item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
-        logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
-        df = self.sim.population.props
-        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
-
-        if treatmentworks:
-            df.at[person_id, 'mi_is_infected'] = False
-            df.at[person_id, 'mi_status'] = 'P'
-
-            # (in this we nullify the death event that has been scheduled.)
-            df.at[person_id, 'mi_scheduled_date_death'] = pd.NaT
-
-            df.at[person_id, 'mi_date_cure'] = self.sim.date
-            df.at[person_id, 'mi_specific_symptoms'] = 'none'
-            df.at[person_id, 'mi_unified_symptom_code'] = 0
-            pass
-
-        # Create a follow-up appointment
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug('....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-                     person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2)
-        )
-
-
-
-
-class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event.
-
-    It is appointment at which treatment for mockitiis is monitored.
-    (In practise, nothing happens!)
-
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
-
-
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'First line treatment for new TB cases for adults', 'Intervention_Pkg_Code'])[
-            0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] == 'MDR notification among previously treated patients', 'Intervention_Pkg_Code'])[
-            0]
-
-        item_code1 = \
-        pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ALERT_OTHER_DISEASES = ['*']
-
-    def apply(self, person_id):
-
-        # There is a follow-up appoint happening now but it has no real effect!
-
-        # Create the next follow-up appointment....
-        target_date_for_followup_appt = self.sim.date + DateOffset(months=6)
-
-        logger.debug(
-            '....This is HSI_Mockitis_StartTreatment: scheduling a follow-up appointment for person %d on date %s',
-            person_id, target_date_for_followup_appt)
-
-        followup_appt = HSI_Mockitis_TreatmentMonitoring(self.module, person_id=person_id)
-
-        # Request the heathsystem to have this follow-up appointment
-        self.sim.modules['HealthSystem'].schedule_event(followup_appt,
-                                                        priority=2,
-                                                        topen=target_date_for_followup_appt,
-                                                        tclose=target_date_for_followup_appt + DateOffset(weeks=2))
-
-
-
-# ---------------------------------------------------------------------------------
-
+# TODO: complete this
 
 
 class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -852,3 +568,140 @@ class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #             })
         #
         # logger.info('%s|status_counts|%s', self.sim.date, counts)
+
+class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """This Logging event logs the model prevalence for analysis purposed.
+        This Logging event is different to the validation  logging event as it logs prevalence by standard age groups
+        used throughout the model. The validation logging event logs prevalence generated by the model to the age
+        groups used in the data to ensure the model is running well.
+        """
+
+        self.repeat = 12  # run this event every year
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # This code will calculate the prevalence and log it
+
+        df = population.props
+
+        # 1 Calculate prevalence
+        count_by_age = df[df.is_alive].groupby('age_range').size()
+        count_d2_by_age = df[df.is_alive & (df.d2_current_status)].groupby('age_range').size()
+        prevalence_d2_by_age = (count_d2_by_age / count_by_age) * 100
+        prevalence_d2_by_age.fillna(0, inplace=True)
+
+        # 2 Log prevalence
+        logger.info('%s|d2_prevalence|%s', self.sim.date, prevalence_d2_by_age.to_dict())
+
+class T2DMLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
+    def __init__(self, module):
+        """This Logging event logs the data and the model prevalence for validation purposed.
+        This Logging event is different than the regular model logging event as it logs prevalence by age groups to
+        match those reported in the data. The regular logging event logs prevalence generated by the model to the age
+        groups used throughout the model.
+        """
+
+        self.repeat = 12  # run this event every year # TODO: only run this for the first 5 years for validation
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # This code logs the prevalence for the first 5 years from the data and the model.
+        # Assumption is that T2DM prevalence will remain stable over 5 years and thus equal to 2010 data
+
+        df = population.props
+        p = self.module.parameters
+
+        # Log the data every year (for plotting)
+        # TODO: Can this codebelow be shorten (i.e. read in the whole frame?
+        # TODO: Can this be logged only first year
+        logger.info('%s|test|%s',
+                    self.sim.date,
+                    {
+                        'total': p['initial_prevalence_d2'].loc['total', 'prevalence']})
+
+        logger.info('%s|d2_prevalence_data_validation|%s',
+                    self.sim.date,
+                    {
+                        'total': p['initial_prevalence_d2'].loc['total', 'prevalence'],
+                        'total_min': p['initial_prevalence_d2'].loc['total', 'min95ci'],
+                        'total_max': p['initial_prevalence_d2'].loc['total', 'max95ci'],
+                        'age25to35': p['initial_prevalence_d2'].loc['25_to_35', 'prevalence'],
+                        'age25to35_min': p['initial_prevalence_d2'].loc['25_to_35', 'min95ci'],
+                        'age25to35_max': p['initial_prevalence_d2'].loc['25_to_35', 'max95ci'],
+                        'age35to45': p['initial_prevalence_d2'].loc['35_to_45', 'prevalence'],
+                        'age35to45_min': p['initial_prevalence_d2'].loc['35_to_45', 'min95ci'],
+                        'age35to45_max': p['initial_prevalence_d2'].loc['35_to_45', 'max95ci'],
+                        'age45to55': p['initial_prevalence_d2'].loc['45_to_55', 'prevalence'],
+                        'age45to55_min': p['initial_prevalence_d2'].loc['45_to_55', 'min95ci'],
+                        'age45to55_max': p['initial_prevalence_d2'].loc['45_to_55', 'max95ci'],
+                        'age55to65': p['initial_prevalence_d2'].loc['55_to_65', 'prevalence'],
+                        'age55to65_min': p['initial_prevalence_d2'].loc['55_to_65', 'min95ci'],
+                        'age55to65_max': p['initial_prevalence_d2'].loc['55_to_65', 'max95ci']
+                    })
+
+        # 3.3. Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
+        adults_count_all = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 65)])
+        adults_count_25to35 = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 35)])
+        adults_count_35to45 = len(df[df.is_alive & (df.age_years > 34) & (df.age_years < 45)])
+        adults_count_45to55 = len(df[df.is_alive & (df.age_years > 44) & (df.age_years < 55)])
+        adults_count_55to65 = len(df[df.is_alive & (df.age_years > 54) & (df.age_years < 65)])
+
+        assert adults_count_all == adults_count_25to35 + adults_count_35to45 + adults_count_45to55 + adults_count_55to65
+
+        # Count adults with t2dm by age group
+        count_d2 = len(df[df.is_alive & df.d2_current_status & (df.age_years > 24) & (df.age_years < 65)])
+        count_d2_25to35 = len(df[df.is_alive & df.d2_current_status & (df.age_years > 24) & (df.age_years < 35)])
+        count_d2_35to45 = len(df[df.is_alive & df.d2_current_status & (df.age_years > 34) & (df.age_years < 45)])
+        count_d2_45to55 = len(df[df.is_alive & df.d2_current_status & (df.age_years > 44) & (df.age_years < 55)])
+        count_d2_55to65 = len(df[df.is_alive & df.d2_current_status & (df.age_years > 54) & (df.age_years < 65)])
+
+        assert count_d2 == count_d2_25to35 + count_d2_35to45 + count_d2_45to55 + count_d2_55to65
+
+        # Calculate overall and age-specific prevalence
+        prevalence_overall = (count_d2 / adults_count_all) * 100
+        prevalence_25to35 = (count_d2_25to35 / adults_count_25to35) * 100
+        prevalence_35to45 = (count_d2_35to45 / adults_count_35to45) * 100
+        prevalence_45to55 = (count_d2_45to55 / adults_count_45to55) * 100
+        prevalence_55to65 = (count_d2_55to65 / adults_count_55to65) * 100
+
+        assert prevalence_overall > 0
+        assert prevalence_25to35 > 0
+        assert prevalence_35to45 > 0
+        assert prevalence_45to55 > 0
+        assert prevalence_55to65 > 0
+
+        # 3.4 Log prevalence from the model
+        logger.info('%s|d2_prevalence_model_validation|%s',
+                    self.sim.date,
+                    {
+                        'total': prevalence_overall,
+                        '25to35': prevalence_25to35,
+                        '35to45': prevalence_35to45,
+                        '45to55': prevalence_45to55,
+                        '55to65': prevalence_55to65
+                    })
+
+        # TODO: remove up to here
+
+        # 3.3. Calculate prevalence from the model using groupby instead
+        # TODO: use groupby (make new cats) below instead - check it is working
+
+        # First by age
+        count_by_age_val = df[df.is_alive].groupby('d2_age_range').size()
+        count_d2_by_age_val = df[df.is_alive & df.d2_current_status].groupby('d2_age_range').size()
+        prevalence_d2_by_age_val = (count_d2_by_age_val / count_by_age_val) * 100
+        prevalence_d2_by_age_val.fillna(0, inplace=True)
+
+        # Then overall
+        prevalence_d2_all_val = count_d2_by_age_val[0:4].sum() / count_by_age_val[0:4].sum() * 100
+
+        # 3.4 Log prevalence
+        logger.info('%s|d2_prevalence_model_validation_2|%s', self.sim.date,
+                    {'total': prevalence_d2_all_val,
+                     '25to35': prevalence_d2_by_age_val.iloc[0],
+                     '35to45': prevalence_d2_by_age_val.iloc[1],
+                     '45to55': prevalence_d2_by_age_val.iloc[2],
+                     '55to65': prevalence_d2_by_age_val.iloc[3]
+                     })
+

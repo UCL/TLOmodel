@@ -434,10 +434,14 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: ... to here
 
-        # 3.2 Assign variables amongst those newly hypertensive
+        # Assign variables amongst those newly hypertensive
         df.loc[ht_idx, 'ht_current_status'] = True
         df.loc[ht_idx, 'ht_historic_status'] = 'C'
         df.loc[ht_idx, 'ht_date'] = self.sim.date
+
+# ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+# Health System Interaction Events
 
 
 class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
@@ -466,10 +470,6 @@ class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
                                                                 topen=self.sim.date,
                                                                 tclose=None)
 
-
-# ---------------------------------------------------------------------------------
-# ---------------------------------------------------------------------------------
-# Health System Interaction Events
 
 class HSI_HT_Outreach_Individual(Event, IndividualScopeEventMixin):
     """
