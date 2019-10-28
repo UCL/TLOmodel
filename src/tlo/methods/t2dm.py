@@ -61,7 +61,7 @@ def make_t2dm_age_range_lookup(min_age, max_age, range_size):
 class Type2DiabetesMellitus(Module):
     """
     This is type 2 diabetes mellitus.
-    Version October 2019
+    Version 2 - October 2019
     The execution of all health system related interaction for type 2 diabetes mellitus are controlled through
     this module.
     """
@@ -103,10 +103,15 @@ class Type2DiabetesMellitus(Module):
         # TODO: update after HSI events
         # TODO: update with DALY weights
         'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Severity of symptoms that the individual will have'),
+        'dalywt_uncomplicated': Parameter(Types.REAL,          'DALY weighting for uncomplicated diabetic'),
         'dalywt_mild_retino': Parameter(Types.REAL,            'DALY weighting for mild retinopathy'),
         'dalywt_severe_retino': Parameter(Types.REAL,          'DALY weighting for severe retinopathy'),
-        'dalywt_uncomplicated': Parameter(Types.REAL,          'DALY weighting for uncomplicated diabetic'),
         'dalywt_neuropathy': Parameter(Types.REAL,             'DALY weighting for neuropathy'),
+        'dalywt_one_amputation': Parameter(Types.REAL,         'DALY weighting for amputation of one limp'),
+        'dalywt_two_amputations': Parameter(Types.REAL,        'DALY weighting for amputation of two limps'),
+        'dalywt_nephropathy_mild': Parameter(Types.REAL,       'DALY weighting for mild nephropathy'),
+        'dalywt_nephropathy_moderate': Parameter(Types.REAL,   'DALY weighting for moderate nephropathy'),
+        'dalywt_nephropathy_severe': Parameter(Types.REAL,     'DALY weighting for severe nephropathy'),
     }
 
     PROPERTIES = {
@@ -192,10 +197,18 @@ class Type2DiabetesMellitus(Module):
         # Get the DALY weight that diabetes type 2 will us from the weight database
         # TODO: check mapping of DALY to states of T2DM
         if 'HealthBurden' in self.sim.modules.keys():
-            p['qalywt_mild_retino']   = self.sim.modules['HealthBurden'].get_daly_weight(967)
-            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(977)
             p['qalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
-            p['qalywt_neuropathy']    = self.sim.modules['HealthBurden'].get_daly_weight(970)
+
+            p['qalywt_mild_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(967)
+            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(974)
+
+            p['qalywt_neuropathy'] = self.sim.modules['HealthBurden'].get_daly_weight(970)
+            p['dalywt_one_amputation'] = 0.164  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
+            p['dalywt_two_amputations'] = 0.494  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
+
+            p['dalywt_nephropathy_mild'] = self.sim.modules['HealthBurden'].get_daly_weight(989)
+            p['dalywt_nephropathy_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(979)
+            p['dalywt_nephropathy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(987)
 
         logger.debug("Type 2 Diabetes Mellitus method: finished reading in parameters.  ")
 
@@ -239,7 +252,7 @@ class Type2DiabetesMellitus(Module):
                                                                              left_on=['age_years'], right_on=['age'],
                                                                              how='left')['probability']
         # TODO: update with BMI once merged to master
-        df.loc[df.is_alive & df.li_overwt, 'd2_risk'] *= m.prob_htgivenbmi
+        df.loc[df.is_alive & df.li_overwt, 'd2_risk'] *= m.prob_d2givenbmi
         # TODO: add hypertension risk after circular declaration has been fixed with Asif/Stef
         # df.loc[df.is_alive & df.ht_current_status, 'd2_risk'] *= self.prob_d2givenht
         # TODO complete with other risk factors
@@ -569,7 +582,7 @@ class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         #
         # logger.info('%s|status_counts|%s', self.sim.date, counts)
 
-class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class Type2DiabetesMellitusLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """This Logging event logs the model prevalence for analysis purposed.
         This Logging event is different to the validation  logging event as it logs prevalence by standard age groups
@@ -594,7 +607,7 @@ class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # 2 Log prevalence
         logger.info('%s|d2_prevalence|%s', self.sim.date, prevalence_d2_by_age.to_dict())
 
-class T2DMLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
+class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """This Logging event logs the data and the model prevalence for validation purposed.
         This Logging event is different than the regular model logging event as it logs prevalence by age groups to
