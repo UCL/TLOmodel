@@ -830,8 +830,8 @@ class HealthSystem(Module):
             )
 
         # Compute Fraction of Time Used In Each Facility
-        summary['Fraction_Time_Used'] = (summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
-                                         .replace([np.inf, -np.inf], 0.0)).fillna(0.0)
+        summary['Fraction_Time_Used'] = summary['Minutes_Used'] / summary['Total_Minutes_Per_Day']
+        summary['Fraction_Time_Used'].replace([np.inf, -np.inf, np.nan], 0.0, inplace=True)
 
         # Put out to the logger
         logger.debug('-------------------------------------------------')
