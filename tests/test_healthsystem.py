@@ -1,6 +1,5 @@
 import logging
 import os
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -51,12 +50,12 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     check_dtypes(sim)
 
 
-def test_run_no_interventions_allowed():
+def test_run_no_interventions_allowed(tmpdir):
     # There should be no events run or scheduled
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("healthsystem").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -85,8 +84,8 @@ def test_run_no_interventions_allowed():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
@@ -94,13 +93,13 @@ def test_run_no_interventions_allowed():
     check_dtypes(sim)
 
 
-def test_run_in_mode_0_with_capacity():
+def test_run_in_mode_0_with_capacity(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("healthsystem").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -129,8 +128,8 @@ def test_run_in_mode_0_with_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -139,13 +138,13 @@ def test_run_in_mode_0_with_capacity():
     check_dtypes(sim)
 
 
-def test_run_in_mode_0_no_capacity():
+def test_run_in_mode_0_no_capacity(tmpdir):
     # Every events should run (no did_not_run)
     # (Mode 0 -> No Constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("mode_0_no_capacity").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -174,8 +173,8 @@ def test_run_in_mode_0_no_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -184,13 +183,13 @@ def test_run_in_mode_0_no_capacity():
     check_dtypes(sim)
 
 
-def test_run_in_mode_1_with_capacity():
+def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("mode_1_with_capacity").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -219,8 +218,8 @@ def test_run_in_mode_1_with_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -230,13 +229,13 @@ def test_run_in_mode_1_with_capacity():
 
 
 # TODO; This one!
-def test_run_in_mode_1_with_no_capacity():
+def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("mode_1_with_no_capacit").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -265,8 +264,8 @@ def test_run_in_mode_1_with_no_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     check_dtypes(sim)
@@ -278,13 +277,13 @@ def test_run_in_mode_1_with_no_capacity():
     check_dtypes(sim)
 
 
-def test_run_in_mode_2_with_capacity():
+def test_run_in_mode_2_with_capacity(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("mode_2_with_capacity").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -313,8 +312,8 @@ def test_run_in_mode_2_with_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -323,14 +322,14 @@ def test_run_in_mode_2_with_capacity():
     check_dtypes(sim)
 
 
-def test_run_in_mode_2_with_no_capacity():
+def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
     # events did not run. Population level events should have run.
     # (Mode 2 -> hard constraints)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
+    f = tmpdir.mkdir("mode_2_with_no_capacity").join("dummy.log")
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
@@ -359,8 +358,8 @@ def test_run_in_mode_2_with_no_capacity():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
