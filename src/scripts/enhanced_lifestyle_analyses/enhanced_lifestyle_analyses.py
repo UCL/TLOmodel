@@ -10,7 +10,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
+from tlo.methods import demography, enhanced_lifestyle
 
 # Where will output go - by default, wherever this script is run
 outputpath = ''
@@ -46,6 +46,8 @@ logging.getLogger("tlo.methods.enhanced_lifestyle").setLevel(logging.INFO)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
