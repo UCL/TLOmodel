@@ -1201,7 +1201,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(weeks=12))
 
         # schedule next prep launch event
-        next_prep_event = HivLaunchPrepEvent(self)
+        next_prep_event = HivLaunchPrepEvent(self.module)
         self.sim.schedule_event(next_prep_event, self.sim.date + DateOffset(months=12))
 
 
