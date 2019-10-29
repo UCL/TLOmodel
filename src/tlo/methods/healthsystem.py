@@ -27,9 +27,9 @@ class HealthSystem(Module):
         resourcefilepath=None,
         service_availability=None,  # must be a list of treatment_ids to allow
         mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
-        ignore_priority=False,  # do not use the priroity information in HSI event to schedule
+        ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,
-    ):  # multiplier for the capabailities of health officers
+    ):  # multiplier for the capabilities of health officers
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -190,6 +190,8 @@ class HealthSystem(Module):
             hsi_event.TREATMENT_ID,
             hsi_event.target,
         )
+
+        assert isinstance(hsi_event, HSI_Event)
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
