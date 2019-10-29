@@ -1563,10 +1563,10 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, 'hv_on_art'] = True
 
         # schedule end date of cotrim after six months
-        self.sim.schedule_event(HivCotrimEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
+        self.sim.schedule_event(HivCotrimEndEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
         # schedule end date of ARVs after 6-12 weeks
-        self.sim.schedule_event(HivARVEndEvent(self, person_id), self.sim.date + DateOffset(weeks=12))
+        self.sim.schedule_event(HivARVEndEvent(self.module, person_id), self.sim.date + DateOffset(weeks=12))
 
         # Log consumbales being used:
         # TODO: get the correct consumables listing cotrim + NVP/AZT
