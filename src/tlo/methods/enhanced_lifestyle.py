@@ -14,6 +14,7 @@ from tlo.events import PopulationScopeEventMixin, RegularEvent
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+
 # todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that
 # todo: module is coded.
 
@@ -326,6 +327,7 @@ class Lifestyle(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
         m = self
         rng = m.rng
+        alive_idx = df.index[df.is_alive]
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
@@ -399,6 +401,7 @@ class Lifestyle(Module):
         odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
 
         odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
+        # TODO: documentation has 4% * wealth_level, is this meant to be 4 x
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
         odds_tob.loc[df.li_wealth == 2] *= 2
@@ -461,7 +464,7 @@ class Lifestyle(Module):
         # calculate baseline of education level 3, and adjust for age and wealth
         p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
 
-        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
+        p_ed_lev_3.loc[(df.age_years < 13)] = 0
         p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
         p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
         p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
@@ -489,60 +492,49 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
         # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
-
-        all_idx = df.index[df.is_alive]
-
         init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban / (
-            1 - m.init_p_unimproved_sanitation_urban
-        )
+                1 - m.init_p_unimproved_sanitation_urban)
 
         # create a series with odds of unimproved sanitation for base group (urban)
-        odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation, index=all_idx)
+        odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation, index=alive_idx)
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_unimproved_sanitation.loc[df.is_alive & ~df.li_urban] *= m.init_or_unimproved_sanitation_rural
 
-        prob_unimproved_sanitation = pd.Series(
-            (odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)), index=all_idx
-        )
+        prob_unimproved_sanitation = odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
+        df.loc[alive_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
 
         # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
-
-        all_idx = df.index[df.is_alive]
-
         init_odds_no_clean_drinking_water = m.init_p_no_clean_drinking_water_urban / (
             1 - m.init_p_no_clean_drinking_water_urban
         )
 
-        odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water, index=all_idx)
+        odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water, index=alive_idx)
 
         odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= m.init_or_no_clean_drinking_water_rural
 
-        prob_no_clean_drinking_water = pd.Series(
-            (odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)), index=all_idx
-        )
+        prob_no_clean_drinking_water = odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
+        df.loc[alive_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
 
         # -------------------- WOOD BURN STOVE ---------------------------------------------------
 
         init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (1 - m.init_p_wood_burn_stove_urban)
 
-        odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=all_idx)
+        odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=alive_idx)
 
         odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= m.init_or_wood_burn_stove_rural
 
-        prob_wood_burn_stove = pd.Series((odds_wood_burn_stove / (1 + odds_wood_burn_stove)), index=all_idx)
+        prob_wood_burn_stove = odds_wood_burn_stove / (1 + odds_wood_burn_stove)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
+        df.loc[alive_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
 
         # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
 
@@ -551,9 +543,7 @@ class Lifestyle(Module):
         wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
         wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
 
-        init_odds_no_access_handwashing = 1 / (1 - m.init_p_no_access_handwashing_wealth1)
-
-        odds_no_access_handwashing = pd.Series(init_odds_no_access_handwashing, index=all_idx)
+        odds_no_access_handwashing = pd.Series(1 / (1 - m.init_p_no_access_handwashing_wealth1), index=alive_idx)
 
         odds_no_access_handwashing.loc[wealth2_idx] *= m.init_or_no_access_handwashing_per_lower_wealth
         odds_no_access_handwashing.loc[wealth3_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 2
@@ -562,33 +552,31 @@ class Lifestyle(Module):
 
         prob_no_access_handwashing = odds_no_access_handwashing / (1 + odds_no_access_handwashing)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
+        df.loc[alive_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
 
         # -------------------- SALT INTAKE ----------------------------------------------------------
 
-        init_odds_high_salt = m.init_p_high_salt_urban / (1 - m.init_p_high_salt_urban)
-
         # create a series with odds of unimproved sanitation for base group (urban)
-        odds_high_salt = pd.Series(init_odds_high_salt, index=all_idx)
+        odds_high_salt = pd.Series(m.init_p_high_salt_urban / (1 - m.init_p_high_salt_urban), index=alive_idx)
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_high_salt.loc[df.is_alive & ~df.li_urban] *= m.init_or_high_salt_rural
 
-        prob_high_salt = pd.Series((odds_high_salt / (1 + odds_high_salt)), index=all_idx)
+        prob_high_salt = (odds_high_salt / (1 + odds_high_salt))
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_high_salt'] = random_draw < prob_high_salt
+        df.loc[alive_idx, 'li_high_salt'] = random_draw < prob_high_salt
 
         # -------------------- SUGAR INTAKE ----------------------------------------------------------
 
         # no determinants of sugar intake hence dont need to convert to odds to apply odds ratios
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
+        df.loc[alive_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
 
         # -------------------- WEALTH LEVEL ----------------------------------------------------------
 
@@ -627,137 +615,48 @@ class Lifestyle(Module):
             index=age_ge15_idx,
         )
 
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '1'] *= m.init_or_higher_bmi_f ** -2
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '1'] *= m.init_or_higher_bmi_rural ** -2
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '1'] *= m.init_or_higher_bmi_high_sugar ** -2
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '1'] *= m.init_or_higher_bmi_age3049 ** -2
-        df_odds_probs_bmi_levels.loc[agege50_idx, '1'] *= m.init_or_higher_bmi_agege50 ** -2
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '1'] *= m.init_or_higher_bmi_tob ** -2
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 2
-        ) ** -2
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 3
-        ) ** -2
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 4
-        ) ** -2
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 5
-        ) ** -2
+        def update_df_odds_bmi(bmi: str, power: int):
+            """Update specified bmi column using pattern and the power given"""
+            df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= m.init_or_higher_bmi_f ** power
+            df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= m.init_or_higher_bmi_rural ** power
+            df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= m.init_or_higher_bmi_high_sugar ** power
+            df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= m.init_or_higher_bmi_age3049 ** power
+            df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= m.init_or_higher_bmi_agege50 ** power
+            df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= m.init_or_higher_bmi_tob ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** power
 
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '2'] *= m.init_or_higher_bmi_f ** -1
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '2'] *= m.init_or_higher_bmi_rural ** -1
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '2'] *= m.init_or_higher_bmi_high_sugar ** -1
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '2'] *= m.init_or_higher_bmi_age3049 ** -1
-        df_odds_probs_bmi_levels.loc[agege50_idx, '2'] *= m.init_or_higher_bmi_agege50 ** -1
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '2'] *= m.init_or_higher_bmi_tob ** -1
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '2'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 2
-        ) ** -1
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '2'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 3
-        ) ** -1
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '2'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 4
-        ) ** -1
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '2'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 5
-        ) ** -1
+        update_df_odds_bmi('1', -2)
+        update_df_odds_bmi('2', -1)
+        update_df_odds_bmi('3', 0)
+        update_df_odds_bmi('4', 1)
+        update_df_odds_bmi('5', 2)
 
-        # realise this does nothing
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '3'] *= m.init_or_higher_bmi_f ** 0
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '3'] *= m.init_or_higher_bmi_rural ** 0
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '3'] *= m.init_or_higher_bmi_high_sugar ** 0
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '3'] *= m.init_or_higher_bmi_age3049 ** 0
-        df_odds_probs_bmi_levels.loc[agege50_idx, '3'] *= m.init_or_higher_bmi_agege50 ** 0
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '3'] *= m.init_or_higher_bmi_tob ** 0
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '3'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 2
-        ) ** 0
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '3'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 3
-        ) ** 0
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '3'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 4
-        ) ** 0
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '3'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 5
-        ) ** 0
+        def create_prob_column(bmi: str):
+            df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
+                lambda row: row[bmi] / (1 + row[bmi]), axis=1
+            )
 
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '4'] *= m.init_or_higher_bmi_f ** 1
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '4'] *= m.init_or_higher_bmi_rural ** 1
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '4'] *= m.init_or_higher_bmi_high_sugar ** 1
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '4'] *= m.init_or_higher_bmi_age3049 ** 1
-        df_odds_probs_bmi_levels.loc[agege50_idx, '4'] *= m.init_or_higher_bmi_agege50 ** 1
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '4'] *= m.init_or_higher_bmi_tob ** 1
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '4'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 2
-        ) ** 1
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '4'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 3
-        ) ** 1
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '4'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 4
-        ) ** 1
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '4'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 5
-        ) ** 1
-
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '5'] *= m.init_or_higher_bmi_f ** 2
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '5'] *= m.init_or_higher_bmi_rural ** 2
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '5'] *= m.init_or_higher_bmi_high_sugar ** 2
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '5'] *= m.init_or_higher_bmi_age3049 ** 2
-        df_odds_probs_bmi_levels.loc[agege50_idx, '5'] *= m.init_or_higher_bmi_agege50 ** 2
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '5'] *= m.init_or_higher_bmi_tob ** 2
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '5'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 2
-        ) ** 2
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '5'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 3
-        ) ** 2
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '5'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 4
-        ) ** 2
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '5'] *= (
-            m.init_or_higher_bmi_per_higher_wealth_level ** 5
-        ) ** 2
-
-        df_odds_probs_bmi_levels['prob 1'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['1'] / (1 + row['1']), axis=1
-        )
-        df_odds_probs_bmi_levels['prob 2'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['2'] / (1 + row['2']), axis=1
-        )
-        df_odds_probs_bmi_levels['prob 3'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['3'] / (1 + row['3']), axis=1
-        )
-        df_odds_probs_bmi_levels['prob 4'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['4'] / (1 + row['4']), axis=1
-        )
-        df_odds_probs_bmi_levels['prob 5'] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['5'] / (1 + row['5']), axis=1
-        )
+        for bmi in range(1, 6):
+            create_prob_column(str(bmi))
 
         df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
             lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
         )
 
-        df_odds_probs_bmi_levels[1] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 1'] / row['sum_probs'], axis=1
-        )
-        df_odds_probs_bmi_levels[2] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 2'] / row['sum_probs'], axis=1
-        )
-        df_odds_probs_bmi_levels[3] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 3'] / row['sum_probs'], axis=1
-        )
-        df_odds_probs_bmi_levels[4] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 4'] / row['sum_probs'], axis=1
-        )
-        df_odds_probs_bmi_levels[5] = df_odds_probs_bmi_levels.apply(
-            lambda row: row['prob 5'] / row['sum_probs'], axis=1
-        )
+        def normalise_probabilities(bmi: int):
+            df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
+                lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
+            )
+
+        for bmi in range(1, 6):
+            normalise_probabilities(bmi)
 
         dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
 
@@ -991,7 +890,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of improved sanitation upon moving to urban from rural
         unimproved_sanitation_newly_urban_idx = df.index[
             df.li_unimproved_sanitation & df.is_alive & df.li_date_trans_to_urban == self.sim.date
-        ]
+            ]
 
         random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
 
@@ -1034,7 +933,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of no clean drinking water upon moving to urban from rural
         no_clean_drinking_water_newly_urban_idx = df.index[
             df.li_no_clean_drinking_water & df.is_alive & df.li_date_trans_to_urban == self.sim.date
-        ]
+            ]
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
 
@@ -1063,7 +962,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # probability of moving to wood burn stove upon moving to urban from rural
         wood_burn_stove_newly_urban_idx = df.index[
             df.li_wood_burn_stove & df.is_alive & df.li_date_trans_to_urban == self.sim.date
-        ]
+            ]
 
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
 

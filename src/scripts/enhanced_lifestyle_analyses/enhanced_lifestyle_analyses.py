@@ -41,6 +41,9 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
+logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.enhanced_lifestyle").setLevel(logging.INFO)
+
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.seed_rngs(1)
