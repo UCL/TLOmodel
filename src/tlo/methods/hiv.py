@@ -764,7 +764,7 @@ class hiv(Module):
         # ----------------------------------- MTCT - PREGNANCY -----------------------------------
 
         #  TRANSMISSION DURING PREGNANCY / DELIVERY
-        random_draw = self.module.rng.random_sample(size=1)
+        random_draw = self.rng.random_sample(size=1)
 
         #  mother has incident infection during pregnancy, NO ART
         if ((random_draw < params['prob_mtct_incident_preg'])
