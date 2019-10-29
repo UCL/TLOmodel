@@ -493,7 +493,7 @@ class Lifestyle(Module):
 
         # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
         init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban / (
-                1 - m.init_p_unimproved_sanitation_urban)
+            1 - m.init_p_unimproved_sanitation_urban)
 
         # create a series with odds of unimproved sanitation for base group (urban)
         odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation, index=alive_idx)
@@ -729,13 +729,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # handle new transitions
-        now_urban: pd.Series = m.rng.random_sample(size=len(currently_rural)) < m.r_urban
-        urban_idx = currently_rural[now_urban]
-        df.loc[urban_idx, 'li_urban'] = True
+        rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < m.r_urban]
+        df.loc[rural_to_urban, 'li_urban'] = True
 
         # handle new transitions to rural
-        now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < m.r_rural
-        df.loc[currently_urban[now_rural], 'li_urban'] = False
+        urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < m.r_rural]
+        df.loc[urban_to_rural, 'li_urban'] = False
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
@@ -750,8 +749,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_low_ex = pd.Series(m.r_not_low_ex, index=low_ex_idx)
         eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_exercise_increase] *= m.rr_not_low_ex_pop_advice_exercise
         random_draw = rng.random_sample(len(low_ex_idx))
-        newly_not_low_ex: pd.Series = random_draw < eff_rate_not_low_ex
-        newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
+        newly_not_low_ex_idx = low_ex_idx[random_draw < eff_rate_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
         # todo: this line below to start a general population campaign
@@ -777,8 +775,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
         eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= m.rr_not_tob_pop_advice_tobacco
         random_draw = rng.random_sample(len(tob_idx))
-        newly_not_tob: pd.Series = random_draw < eff_rate_not_tob
-        newly_not_tob_idx = tob_idx[newly_not_tob]
+        newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
@@ -800,8 +797,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_ex_alc = pd.Series(m.r_not_ex_alc, index=ex_alc_idx)
         eff_rate_not_ex_alc.loc[df.li_exposed_to_campaign_alcohol_reduction] *= m.rr_not_ex_alc_pop_advice_alcohol
         random_draw = rng.random_sample(len(ex_alc_idx))
-        newly_not_ex_alc: pd.Series = random_draw < eff_rate_not_ex_alc
-        newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
+        newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
         all_idx_campaign_alcohol_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -882,8 +878,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(unimproved_sanitaton_idx))
 
-        newly_improved_sanitation: pd.Series = random_draw < eff_rate_improved_sanitation
-        newly_improved_sanitation_idx = unimproved_sanitaton_idx[newly_improved_sanitation]
+        newly_improved_sanitation_idx = unimproved_sanitaton_idx[random_draw < eff_rate_improved_sanitation]
         df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
         df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
 
@@ -911,8 +906,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(no_access_handwashing_idx))
 
-        newly_access_handwashing: pd.Series = random_draw < eff_rate_access_handwashing
-        newly_access_handwashing_idx = no_access_handwashing_idx[newly_access_handwashing]
+        newly_access_handwashing_idx = no_access_handwashing_idx[random_draw < eff_rate_access_handwashing]
         df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
         df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
 
@@ -925,8 +919,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
 
-        newly_clean_drinking_water: pd.Series = random_draw < eff_rate_clean_drinking_water
-        newly_clean_drinking_water_idx = no_clean_drinking_water_idx[newly_clean_drinking_water]
+        newly_clean_drinking_water_idx = no_clean_drinking_water_idx[random_draw < eff_rate_clean_drinking_water]
         df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
         df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
 
@@ -954,8 +947,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(wood_burn_stove_idx))
 
-        newly_non_wood_burn_stove: pd.Series = random_draw < eff_rate_non_wood_burn_stove
-        newly_non_wood_burn_stove_idx = wood_burn_stove_idx[newly_non_wood_burn_stove]
+        newly_non_wood_burn_stove_idx = wood_burn_stove_idx[random_draw < eff_rate_non_wood_burn_stove]
         df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
         df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
 
@@ -978,7 +970,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_high_salt = pd.Series(m.r_high_salt_urban, index=not_high_salt_idx)
         eff_rate_high_salt[df.li_urban] *= m.rr_high_salt_rural
         random_draw = rng.random_sample(len(not_high_salt_idx))
-        newly_high_salt: pd.Series = random_draw < eff_rate_high_salt
+        newly_high_salt = random_draw < eff_rate_high_salt
         newly_high_salt_idx = not_high_salt_idx[newly_high_salt]
         df.loc[newly_high_salt_idx, 'li_high_salt'] = True
 
@@ -987,8 +979,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_salt = pd.Series(m.r_not_high_salt, index=high_salt_idx)
         eff_rate_not_high_salt.loc[df.li_exposed_to_campaign_salt_reduction] *= m.rr_not_high_salt_pop_advice_salt
         random_draw = rng.random_sample(len(high_salt_idx))
-        newly_not_high_salt: pd.Series = random_draw < eff_rate_not_high_salt
-        newly_not_high_salt_idx = high_salt_idx[newly_not_high_salt]
+        newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
 
         all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -999,8 +990,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
         eff_p_high_sugar = pd.Series(m.r_high_sugar, index=not_high_sugar_idx)
         random_draw = rng.random_sample(len(not_high_sugar_idx))
-        newly_high_sugar: pd.Series = random_draw < eff_p_high_sugar
-        newly_high_sugar_idx = not_high_sugar_idx[newly_high_sugar]
+        newly_high_sugar_idx = not_high_sugar_idx[random_draw < eff_p_high_sugar]
         df.loc[newly_high_sugar_idx, 'li_high_sugar'] = True
 
         # transition from high sugar to not high sugar
@@ -1008,8 +998,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_sugar = pd.Series(m.r_not_high_sugar, index=high_sugar_idx)
         eff_rate_not_high_sugar.loc[df.li_exposed_to_campaign_sugar_reduction] *= m.rr_not_high_sugar_pop_advice_sugar
         random_draw = rng.random_sample(len(high_sugar_idx))
-        newly_not_high_sugar: pd.Series = random_draw < eff_rate_not_high_sugar
-        newly_not_high_sugar_idx = high_sugar_idx[newly_not_high_sugar]
+        newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
 
         all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -1038,8 +1027,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_higher_bmi[df.li_high_sugar] *= m.rr_higher_bmi_high_sugar
 
         random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
-        increase_bmi_cat: pd.Series = random_draw < eff_rate_higher_bmi
-        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[increase_bmi_cat]
+        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
         df.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] + 1
 
         # possible decrease in category of bmi
@@ -1049,8 +1037,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_lower_bmi[df.li_urban] *= m.rr_lower_bmi_tob
         eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= m.rr_lower_bmi_pop_advice_weight
         random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
-        decrease_bmi_cat: pd.Series = random_draw < eff_rate_lower_bmi
-        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[decrease_bmi_cat]
+        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
         all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
