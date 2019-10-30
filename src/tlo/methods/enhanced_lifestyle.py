@@ -635,8 +635,9 @@ class Lifestyle(Module):
         update_df_odds_bmi('5', 2)
 
         for bmi in range(1, 6):
+            bmi = str(bmi)
             df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
-                lambda row: row[str(bmi)] / (1 + row[str(bmi)]), axis=1
+                lambda row: row[bmi] / (1 + row[bmi]), axis=1
             )
         # normalise probabilities
         df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
