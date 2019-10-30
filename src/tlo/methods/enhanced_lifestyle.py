@@ -308,7 +308,6 @@ class Lifestyle(Module):
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
-        'li_on_con': Property(Types.BOOL, 'on contraceptive'),  # remove to be used by contraception module?
     }
 
     def read_parameters(self, data_folder):
@@ -690,7 +689,6 @@ class Lifestyle(Module):
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_ex_alc'] = False
         df.at[child_id, 'li_mar_stat'] = 1
-        df.at[child_id, 'li_on_con'] = False
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
         df.at[child_id, 'li_unimproved_sanitation'] = df.at[mother_id, 'li_unimproved_sanitation']
@@ -1114,7 +1112,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.li_bmi == 5)
         ).sum()
 
-        # TODO: assume this is meant to be logged
+        # TODO: assume this is meant to be logged, comes up as zero always
         prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
         )
