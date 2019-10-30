@@ -1515,7 +1515,7 @@ class HSI_Hiv_Prep(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         item_code1 = pd.unique(
-            consumables.loc[consumables['Items'] == 'Tenofovir(TDF) / Emtricitabine(FTC), tablet, 300 / 200 mg',
+            consumables.loc[consumables['Items'] == 'Tenofovir (TDF)/Emtricitabine (FTC), tablet, 300/200 mg',
                             'Item_Code']
         )[0]
 
