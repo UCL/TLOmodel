@@ -37,11 +37,6 @@ def __check_properties(df):
     assert not (under15 & df.li_tob).any()
     assert not (under15 & df.li_ex_alc).any()
     assert not (under15 & (df.li_mar_stat != 1)).any()
-    assert not (under15 & df.li_on_con).any()
-
-    # only adult females 15-50 can use contraceptives
-    assert not (df.li_on_con & ((df.sex != 'F') | under15 | (df.age_years > 50))).any()
-
     # education: no one 0-5 should be in education
     assert not ((df.age_years < 5) & (df.li_in_ed | (df.li_ed_lev != 1))).any()
 
