@@ -10,6 +10,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -249,7 +250,7 @@ class tb(Module):
         # allocate some latent infections as mdr-tb
         if len(df[df.is_alive & (df.tb_inf == 'latent_susc_primary')]) > 10:
             idx_c = df[df.is_alive & (df.tb_inf == 'latent_susc_primary')].sample(
-                frac=self.parameters['prop_mdr2010']).index
+                frac=self.parameters['prop_mdr2010'], random_state=self.rng).index
 
             df.loc[idx_c, 'tb_inf'] = 'latent_mdr_primary'  # change to mdr-tb
             df.loc[idx_c, 'tb_specific_symptoms'] = 'latent'
@@ -261,7 +262,7 @@ class tb(Module):
         frac_active_tb = active_tb_prob_year.loc[
             (active_tb_prob_year.Sex == 'M') & (active_tb_prob_year.ages == 0), 'incidence_per_capita']
 
-        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb).index
+        active = df[df.is_alive & (df.tb_inf == 'uninfected')].sample(frac=frac_active_tb, random_state=self.rng).index
         # print(active)
         df.loc[active, 'tb_inf'] = 'active_susc_primary'
         df.loc[active, 'tb_date_active'] = now
@@ -271,7 +272,7 @@ class tb(Module):
         # allocate some active infections as mdr-tb
         if len(active) > 10:
             idx_c = df[df.is_alive & (df.tb_inf == 'active_susc_primary')].sample(
-                frac=self.parameters['prop_mdr2010']).index
+                frac=self.parameters['prop_mdr2010'], random_state=self.rng).index
 
             df.loc[idx_c, 'tb_inf'] = 'active_mdr_primary'
             df.loc[idx_c, 'tb_specific_symptoms'] = 'active'
@@ -340,8 +341,9 @@ class tb(Module):
             piggy_back_dx_at_appt.TREATMENT_ID = 'ChronicSyndrome_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
-            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
+                                                                         key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
@@ -464,7 +466,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_susc_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
+                frac=params['prop_fast_progressor'], random_state=self.module.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_susc_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -569,7 +571,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         #         'This is TbActiveEvent, There is  no one with new active disease so no new healthcare seeking')
 
         # ----------------------------------- RELAPSE -----------------------------------
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         # relapse after treatment completion, tb_date_treated + six months
         relapse_tx_complete = df[
@@ -763,7 +765,7 @@ class TbMdrActiveEvent(RegularEvent, PopulationScopeEventMixin):
         if new_latent.any():
             fast_progression = df[
                 (df.tb_inf == 'latent_mdr_primary') & (df.tb_date_latent == now) & df.is_alive].sample(
-                frac=params['prop_fast_progressor']).index
+                frac=params['prop_fast_progressor'], random_state=self.module.rng).index
             df.loc[fast_progression, 'tb_inf'] = 'active_mdr_primary'
             df.loc[fast_progression, 'tb_date_active'] = now
             df.loc[fast_progression, 'tb_ever_tb'] = True
@@ -955,7 +957,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
 
         # self-cure - move from active to latent_secondary, make sure it's not the ones that just became active
-        random_draw = self.sim.rng.random_sample(size=len(df))
+        random_draw = self.module.rng.random_sample(size=len(df))
 
         self_cure = df[df['tb_inf'].str.contains('active_mdr') & df.is_alive & (
             df.tb_date_active < now) & (random_draw < params['monthly_prob_self_cure'])].index
@@ -972,7 +974,7 @@ class TbMdrSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 #   Testing
 # ---------------------------------------------------------------------------
 
-class HSI_TbScreening(Event, IndividualScopeEventMixin):
+class HSI_TbScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is the screening event that occurs before a sputum smear test or xpert is offered
@@ -987,12 +989,11 @@ class HSI_TbScreening(Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = []
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_TbScreening, a screening appointment for person %d', person_id)
 
         df = self.sim.population.props
@@ -1023,8 +1024,11 @@ class HSI_TbScreening(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
+    def did_not_run(self):
+        pass
 
-class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
+
+class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
     """
     This is a sputum test for presumptive tb cases
     """
@@ -1037,6 +1041,16 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
         the_appt_footprint['ConWithDCSA'] = 1  # This requires one generic outpatient appt
         the_appt_footprint['LabTBMicro'] = 1  # This requires one lab appt for microscopy
 
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Tb_SputumTest'
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
+        self.ALERT_OTHER_DISEASES = ['hiv']
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug('This is HSI_Tb_SputumTest, a first appointment for person %d', person_id)
+
+        # log the consumables being used
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = \
@@ -1045,19 +1059,13 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Tb_SputumTest'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = ['hiv']
-
-    def apply(self, person_id):
-        logger.debug('This is HSI_Tb_SputumTest, a first appointment for person %d', person_id)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -1073,16 +1081,16 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         # active tb, hiv-negative
         if (df.at[person_id, 'tb_specific_symptoms'] == 'active') and not df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
-                                                                      (1 - params['prop_smear_positive'])])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive'],
+                                                                         (1 - params['prop_smear_positive'])])
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
                 df.at[person_id, 'tb_diagnosed'] = True
 
         # hiv+, 80% of smear tests will be negative - extrapulmonary
         elif (df.at[person_id, 'tb_specific_symptoms'] == 'active') and df.at[person_id, 'hv_inf']:
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
-                                                                      (1 - params['prop_smear_positive_hiv'])])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[params['prop_smear_positive_hiv'],
+                                                                         (1 - params['prop_smear_positive_hiv'])])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_smear_test'] = True
@@ -1107,7 +1115,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-             df.at[person_id, 'age_years'] < 15)):
+                df.at[person_id, 'age_years'] < 15)):
             # request child treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentChild for person %d", person_id)
 
@@ -1119,7 +1127,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_primary') & (
-             df.at[person_id, 'age_years'] >= 15)):
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult treatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_StartTreatmentAdult for person %d", person_id)
 
@@ -1131,7 +1139,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-             df.at[person_id, 'age_years'] < 15)):
+                df.at[person_id, 'age_years'] < 15)):
             # request child retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentChild for person %d", person_id)
 
@@ -1143,7 +1151,7 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
 
         if (df.at[person_id, 'tb_diagnosed'] & (
             df.at[person_id, 'tb_inf'] == 'active_susc_secondary') & (
-             df.at[person_id, 'age_years'] >= 15)):
+                df.at[person_id, 'age_years'] >= 15)):
             # request adult retreatment
             logger.debug("This is HSI_Tb_XpertTest scheduling HSI_Tb_RetreatmentAdult for person %d", person_id)
 
@@ -1165,7 +1173,8 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                 ~df.ever_tb &
                                 ~df.ever_tb_mdr &
                                 df.is_alive &
-                                df.district_of_residence == district].sample(n=5, replace=False).index
+                                df.district_of_residence == district].sample(n=5, replace=False,
+                                                                             random_state=self.module.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1176,8 +1185,11 @@ class HSI_Tb_SputumTest(Event, IndividualScopeEventMixin):
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=None)
 
+    def did_not_run(self):
+        pass
 
-class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
+
+class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - tb xpert test
         """
@@ -1192,25 +1204,13 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         the_appt_footprint['TBFollowUp'] = 1
         the_appt_footprint['LabSero'] = 1
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Xpert test',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_XpertTest'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("This is HSI_Tb_XpertTest giving xpert test for person %d", person_id)
 
         df = self.sim.population.props
@@ -1226,7 +1226,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
         # they will present back to the health system with some delay (2-4 weeks)
         if df.at[person_id, 'tb_inf'].startswith("active"):
 
-            diagnosed = self.sim.rng.choice([True, False], size=1, p=[0.9, 0.1])
+            diagnosed = self.module.rng.choice([True, False], size=1, p=[0.9, 0.1])
 
             if diagnosed:
                 df.at[person_id, 'tb_result_xpert_test'] = True
@@ -1250,7 +1250,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                 df.is_alive &
                                 df.district_of_residence == district].sample(
                     n=5,
-                    replace=False).index
+                    replace=False, random_state=self.module.rng).index
                 # need to pass pd.Series length (df.is_alive) to outreach event
                 test = pd.Series(False, index=df.index)
                 test.loc[ipt_sample] = True
@@ -1332,6 +1332,25 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
                                                             topen=self.sim.date,
                                                             tclose=None)
 
+        # log the consumables being used
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Xpert test',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
+
 
 # ---------------------------------------------------------------------------
 #   Treatment
@@ -1339,7 +1358,7 @@ class HSI_Tb_XpertTest(Event, IndividualScopeEventMixin):
 # the consumables at treatment initiation include the cost for the full course of treatment
 # so the follow-up appts don't need to account for consumables, just appt time
 
-class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1351,25 +1370,13 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBNew'] = 1  # New tb treatment initiation appt, this include pharmacist time
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for adults',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationAdult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1400,9 +1407,27 @@ class HSI_Tb_StartTreatmentAdult(Event, IndividualScopeEventMixin):
                                                                 topen=followup_appt_date,
                                                                 tclose=followup_appt_date + DateOffset(days=3)
                                                                 )
+        # log the consumables being used
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for adults',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
 
 
-class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1414,25 +1439,13 @@ class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBNew'] = 1  # New tb treatment initiation appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for children',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationChild'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1463,9 +1476,27 @@ class HSI_Tb_StartTreatmentChild(Event, IndividualScopeEventMixin):
                                                                 topen=followup_appt_date,
                                                                 tclose=followup_appt_date + DateOffset(days=3)
                                                                 )
+        # log the consuamables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for new TB cases for children',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
 
 
-class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
+class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb-mdr treatment
     """
@@ -1477,25 +1508,13 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBFollowUp'] = 1
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Case management of MDR cases',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_MdrTreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -1526,9 +1545,27 @@ class HSI_Tb_StartMdrTreatment(Event, IndividualScopeEventMixin):
                                                                 topen=followup_appt_date,
                                                                 tclose=followup_appt_date + DateOffset(days=3)
                                                                 )
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Case management of MDR cases',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
 
 
-class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
+class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1540,25 +1577,13 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBNew'] = 1  # This requires one out patient appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'First line treatment for retreatment TB cases for adults',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentAdult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['tb'].parameters
@@ -1590,8 +1615,27 @@ class HSI_Tb_RetreatmentAdult(Event, IndividualScopeEventMixin):
                                                                 tclose=followup_appt_date + DateOffset(days=3)
                                                                 )
 
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for retreatment TB cases for adults',
+                'Intervention_Pkg_Code'])[0]
 
-class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
+
+
+class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1603,25 +1647,13 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['TBNew'] = 1  # New tb treatment initiation appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'First line treatment for retreatment TB cases for children',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentChild'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['tb'].parameters
@@ -1652,12 +1684,30 @@ class HSI_Tb_RetreatmentChild(Event, IndividualScopeEventMixin):
                                                                 topen=followup_appt_date,
                                                                 tclose=followup_appt_date + DateOffset(days=3)
                                                                 )
+        # log the consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'First line treatment for retreatment TB cases for children',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
 
 
 # ---------------------------------------------------------------------------
 #   Follow-up appts
 # ---------------------------------------------------------------------------
-class HSI_Tb_FollowUp(Event, IndividualScopeEventMixin):
+class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - start tb treatment
     """
@@ -1671,14 +1721,17 @@ class HSI_Tb_FollowUp(Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUp'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = []
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         # nothing needs to happen here, just log the appt
         logger.debug("Follow up appt for tb case %d", person_id)
+
+    def did_not_run(self):
+        pass
+
 
 # ---------------------------------------------------------------------------
 #   Cure
@@ -1702,7 +1755,7 @@ class TbCureEvent(Event, IndividualScopeEventMixin):
         # if drug-susceptible then probability of successful treatment for both primary and secondary
         if df.at[person_id, 'tb_inf'].startswith("active_susc"):
 
-            cured = self.sim.rng.random_sample(size=1) < params['prob_treatment_success']
+            cured = self.module.rng.random_sample(size=1) < params['prob_treatment_success']
 
             if cured:
                 df.at[person_id, 'tb_inf'] = 'latent_susc_secondary'
@@ -1746,7 +1799,7 @@ class TbCureMdrEvent(Event, IndividualScopeEventMixin):
 #   IPT
 # ---------------------------------------------------------------------------
 # TODO consumables should be IPT for non-HIV+
-class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
+class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - give ipt to contacts of tb cases for 6 months
         """
@@ -1758,25 +1811,13 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Ipt'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("Starting IPT for person %d", person_id)
 
         df = self.sim.population.props
@@ -1787,8 +1828,27 @@ class HSI_Tb_Ipt(Event, IndividualScopeEventMixin):
         # schedule end date of ipt after six months
         self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
 
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
+                'Intervention_Pkg_Code'])[0]
 
-class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+
+    def did_not_run(self):
+        pass
+
+
+class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
     """
         This is a Health System Interaction Event - give ipt to hiv+ persons
         called by hiv module when starting ART (adults and children)
@@ -1801,25 +1861,13 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(
-            consumables.loc[
-                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
-                'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_IptHiv'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("Starting IPT for HIV+ person %d", person_id)
 
         df = self.sim.population.props
@@ -1829,6 +1877,22 @@ class HSI_Tb_IptHiv(Event, IndividualScopeEventMixin):
 
         # schedule end date of ipt after six months and repeat call to HS for another prescription
         self.sim.schedule_event(TbIptEndEvent(self, person_id), self.sim.date + DateOffset(months=6))
+
+        # log consumables being used:
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code1 = pd.unique(
+            consumables.loc[
+                consumables['Intervention_Pkg'] == 'Isoniazid preventative therapy for HIV+ no TB',
+                'Intervention_Pkg_Code'])[0]
+
+        the_cons_footprint = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': []
+        }
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint)
+        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
 
 
 class TbIptEndEvent(Event, IndividualScopeEventMixin):

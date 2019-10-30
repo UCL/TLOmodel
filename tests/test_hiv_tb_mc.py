@@ -10,7 +10,7 @@ from tlo.methods import demography, enhanced_lifestyle, healthsystem, hiv, male_
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 50
+popsize = 500
 
 
 @pytest.fixture(autouse=True)
@@ -26,7 +26,7 @@ def simulation():
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=["tb*"],
-                                           capabilities_coefficient=0.0))
+                                           capabilities_coefficient=1.0))
     sim.register(tb.tb(resourcefilepath=resourcefilepath))
     sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))

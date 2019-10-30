@@ -32,8 +32,7 @@ def simulation():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           ignore_appt_constraints=True,
-                                           ignore_cons_constraints=True))
+                                           mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
     sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
