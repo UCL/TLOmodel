@@ -316,8 +316,6 @@ class Lifestyle(Module):
             self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
         self.load_parameters_from_dataframe(dfd)
-        # TODO: assume just use the spreadsheet value but check
-        p['init_p_high_salt_urban'] = 0.2  # dfd.loc['init_p_high_salt_urban', 'value1'],
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
