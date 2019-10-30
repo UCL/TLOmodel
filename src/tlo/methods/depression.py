@@ -5,8 +5,9 @@ import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -496,7 +497,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 #     Declare the HSI event
 
 
-class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, IndividualScopeEventMixin):
+class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -512,18 +513,13 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
 
-        # Get the consumables required
-        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 
@@ -536,6 +532,8 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(Event, Individual
 
         # Change the flag for this person
         df.at[person_id, 'de_on_antidepr'] = True
+
+        # TODO: Here adjust the cons footprint so that it incldues antidepressant medication
 
 
 class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):

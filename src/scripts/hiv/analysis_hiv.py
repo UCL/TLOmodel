@@ -1,8 +1,10 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from tlo import Date, Simulation
+from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     healthburden,
@@ -22,11 +24,10 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = "./resources/"
-
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
-popsize = 2000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -69,8 +70,10 @@ sim.simulate(end_date=end_date)
 fh.flush()
 # fh.close()
 
-
 # %% read the results
+
+output = parse_log_file(logfile)
+
 
 # outputpath = './src/scripts/outputLogs/'
 # TODO: I am removing the redef of outputpath (see above)
@@ -84,7 +87,7 @@ fh.flush()
 # deaths_df['date'] = pd.to_datetime(deaths_df['date'])
 # deaths_df['year'] = deaths_df['date'].dt.year
 # death_by_cause = deaths_df.groupby(['year','cause'])['person_id'].size()
-#
+# #
 
 # TODO: Maybe add some graphs here to demonstrate the results? For example....
 # %% Demonstrate the HIV epidemic and it's impact on the population
