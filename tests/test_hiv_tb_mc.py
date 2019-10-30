@@ -26,7 +26,7 @@ def simulation():
     sim.register(lifestyle.Lifestyle())
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=["tb*"],
-                                           capabilities_coefficient=0.0))
+                                           capabilities_coefficient=1.0))
     sim.register(tb.tb(resourcefilepath=resourcefilepath))
     sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))
