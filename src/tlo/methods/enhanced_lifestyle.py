@@ -1,17 +1,15 @@
-
 """
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import logging
-import numpy as np
 import datetime
-
-import pandas as pd
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+import logging
 from pathlib import Path
 
+import pandas as pd
+
+from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -20,27 +18,27 @@ logger.setLevel(logging.DEBUG)
 # todo: Note: bmi category at turning age 15 needs to be made dependent on malnutrition in childhood when that
 # todo: module is coded.
 
+
 class Lifestyle(Module):
     """
     Lifestyle module provides properties that are used by all disease modules if they are affected
     by urban/rural, wealth, tobacco usage etc.
     """
+
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
-        self.resourcefilepath = resourcefilepath
+        self.resourcefilepath: Path = resourcefilepath
 
     PARAMETERS = {
-
         # -------- list of parameters ---------------------------------------------------------------
-
         'init_p_urban': Parameter(Types.REAL, 'initial proportion urban'),
         'init_p_wealth_urban': Parameter(Types.LIST, 'List of probabilities of category given urban'),
         'init_p_wealth_rural': Parameter(Types.LIST, 'List of probabilities of category given rural'),
-        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(Types.LIST, 'List of probabilities of '
-                                                                                           'bmi categories for urban '
-                                                                                           'men age 15-29 with not high'
-                                                                                           'sugar, not tobacco, '
-                                                                                           'wealth level 1'),
+        'init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1': Parameter(
+            Types.LIST,
+            'List of probabilities of  bmi categories '
+            'for urban men age 15-29 with not high sugar, not tobacco, wealth level 1',
+        ),
         'init_or_higher_bmi_f': Parameter(Types.REAL, 'odds ratio higher BMI if female'),
         'init_or_higher_bmi_rural': Parameter(Types.REAL, 'odds ratio higher BMI if rural'),
         'init_or_higher_bmi_high_sugar': Parameter(Types.REAL, 'odds ratio higher BMI if high sugar intake'),
@@ -48,18 +46,20 @@ class Lifestyle(Module):
         'init_or_higher_bmi_agege50': Parameter(Types.REAL, 'odds ratio higher BMI if age ge 50'),
         'init_or_higher_bmi_tob': Parameter(Types.REAL, 'odds ratio higher BMI if use tobacco'),
         'init_or_higher_bmi_per_higher_wealth': Parameter(Types.REAL, 'odds ratio higher BMI per higer wealth level'),
-
+        'init_or_higher_bmi_per_higher_wealth_level': Parameter(
+            Types.REAL, 'odds ratio for higher initial bmi category per higher wealth level'
+        ),
         'init_p_high_sugar': Parameter(Types.REAL, 'initital proportion with high sugar intake'),
         'init_p_high_salt_urban': Parameter(Types.REAL, 'initital proportion with high salt intake'),
         'init_or_high_salt_rural': Parameter(Types.REAL, 'odds ratio high salt if rural'),
         'init_p_ex_alc_m': Parameter(Types.REAL, 'initital proportion of men with excess alcohol use'),
         'init_p_ex_alc_f': Parameter(Types.REAL, 'initital proportion of women with excess alcohol use'),
-
         'init_p_low_ex_urban_m': Parameter(Types.REAL, 'initital proportion of men with low exercise urban'),
         'init_or_low_ex_rural': Parameter(Types.REAL, 'odds ratio low exercise rural'),
         'init_or_low_ex_f': Parameter(Types.REAL, 'odds ratio low exercise female'),
-        'init_p_tob_age1519_m_wealth1': Parameter(Types.REAL, 'initital proportion of 15-19 year old men using '
-                                                              'tobacco, wealth level 1 '),
+        'init_p_tob_age1519_m_wealth1': Parameter(
+            Types.REAL, 'initital proportion of 15-19 year old men using ' 'tobacco, wealth level 1 '
+        ),
         'init_or_tob_f': Parameter(Types.REAL, 'odds ratio tobacco use females'),
         'init_or_tob_age2039_m': Parameter(Types.REAL, 'odds ratio tobacco use age2039 in men'),
         'init_or_tob_agege40_m': Parameter(Types.REAL, 'odds ratio tobacco use age40+ in men'),
@@ -73,126 +73,187 @@ class Lifestyle(Module):
         'init_dist_mar_stat_age4050': Parameter(Types.LIST, 'proportions never, current, div_wid age 40-50 baseline'),
         'init_dist_mar_stat_age5060': Parameter(Types.LIST, 'proportions never, current, div_wid age 50-60 baseline'),
         'init_dist_mar_stat_agege60': Parameter(Types.LIST, 'proportions never, current, div_wid age 60+ baseline'),
-
-        'init_age2030_w5_some_ed': Parameter(Types.REAL, 'proportions of low wealth 20-30 year olds with some '
-                                                         'education at baseline'),
+        'init_age2030_w5_some_ed': Parameter(
+            Types.REAL, 'proportions of low wealth 20-30 year olds with some ' 'education at baseline'
+        ),
         'init_or_some_ed_age0513': Parameter(Types.REAL, 'odds ratio of some education at baseline age 5-13'),
         'init_or_some_ed_age1320': Parameter(Types.REAL, 'odds ratio of some education at baseline age 13-20'),
         'init_or_some_ed_age2030': Parameter(Types.REAL, 'odds ratio of some education at baseline age 20-30'),
         'init_or_some_ed_age3040': Parameter(Types.REAL, 'odds ratio of some education at baseline age 30-40'),
         'init_or_some_ed_age4050': Parameter(Types.REAL, 'odds ratio of some education at baseline age 40-50'),
         'init_or_some_ed_age5060': Parameter(Types.REAL, 'odds ratio of some education at baseline age 50-60'),
-        'init_or_some_ed_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of some education at baseline '
-                                                                   'per higher wealth level'),
-        'init_prop_age2030_w5_some_ed_sec': Parameter(Types.REAL,
-                                                      'proportion of low wealth aged 20-30 with some education who '
-                                                      'have secondary education at baseline'),
+        'init_or_some_ed_per_higher_wealth': Parameter(
+            Types.REAL, 'odds ratio of some education at baseline ' 'per higher wealth level'
+        ),
+        'init_prop_age2030_w5_some_ed_sec': Parameter(
+            Types.REAL,
+            'proportion of low wealth aged 20-30 with some education who ' 'have secondary education at baseline',
+        ),
         'init_or_some_ed_sec_age1320': Parameter(Types.REAL, 'odds ratio of secondary education age 13-20'),
         'init_or_some_ed_sec_age3040': Parameter(Types.REAL, 'odds ratio of secondary education age 30-40'),
         'init_or_some_ed_sec_age4050': Parameter(Types.REAL, 'odds ratio of secondary education age 40-50'),
         'init_or_some_ed_sec_age5060': Parameter(Types.REAL, 'odds ratio of secondary education age 50-60'),
         'init_or_some_ed_sec_agege60': Parameter(Types.REAL, 'odds ratio of secondary education age 60+'),
-        'init_or_some_ed_sec_per_higher_wealth': Parameter(Types.REAL, 'odds ratio of secondary education '
-                                                                       'per higher wealth level'),
-        'init_p_unimproved_sanitation_urban': Parameter(Types.REAL, 'initial probability of unimproved_sanitation '
-                                                              'given urban'),
+        'init_or_some_ed_sec_per_higher_wealth': Parameter(
+            Types.REAL, 'odds ratio of secondary education ' 'per higher wealth level'
+        ),
+        'init_p_unimproved_sanitation_urban': Parameter(
+            Types.REAL, 'initial probability of unimproved_sanitation ' 'given urban'
+        ),
         # note that init_p_unimproved_sanitation is also used as the one-off probability of unimproved_sanitation '
         #                                                     'true to false upon move from rural to urban'
-        'init_or_unimproved_sanitation_rural': Parameter(Types.REAL,
-                                                         'initial odds ratio of unimproved_sanitation if '
-                                                         'rural'),
-        'init_p_no_clean_drinking_water_urban': Parameter(Types.REAL,
-                                                    'initial probability of no_clean_drinking_water given urban'),
+        'init_or_unimproved_sanitation_rural': Parameter(
+            Types.REAL, 'initial odds ratio of unimproved_sanitation if ' 'rural'
+        ),
+        'init_p_no_clean_drinking_water_urban': Parameter(
+            Types.REAL, 'initial probability of no_clean_drinking_water given urban'
+        ),
         # note that init_p_no_clean_drinking_water is also used as the one-off probability of no_clean_drinking_water '
         #                                                     'true to false upon move from rural to urban'
-        'init_or_no_clean_drinking_water_rural': Parameter(Types.REAL,
-                                                           'initial odds ratio of no clean drinking_water '
-                                                           'if rural'),
-        'init_p_wood_burn_stove_urban': Parameter(Types.REAL,
-                                            'initial probability of wood_burn_stove given urban'),
+        'init_or_no_clean_drinking_water_rural': Parameter(
+            Types.REAL, 'initial odds ratio of no clean drinking_water ' 'if rural'
+        ),
+        'init_p_wood_burn_stove_urban': Parameter(Types.REAL, 'initial probability of wood_burn_stove given urban'),
         # note that init_p_wood_burn_stove is also used as the one-off probability of wood_burn_stove '
         #                                                     'true to false upon move from rural to urban'
-        'init_or_wood_burn_stove_rural': Parameter(Types.REAL,
-                                                   'initial odds ratio of wood_burn_stove if rural'),
-        'init_p_no_access_handwashing_wealth1': Parameter(Types.REAL,
-                                                  'initial probability of no_access_handwashing given wealth 1'),
-        'init_or_no_access_handwashing_per_lower_wealth': Parameter(Types.REAL, 'initial odds ratio of no_'
-                                                                                'access_handwashing per lower wealth '
-                                                                                'level'),
-
-    # ------------ parameters relating to updating of property values over time ------------------------
-
+        'init_or_wood_burn_stove_rural': Parameter(Types.REAL, 'initial odds ratio of wood_burn_stove if rural'),
+        'init_p_no_access_handwashing_wealth1': Parameter(
+            Types.REAL, 'initial probability of no_access_handwashing given wealth 1'
+        ),
+        'init_or_no_access_handwashing_per_lower_wealth': Parameter(
+            Types.REAL, 'initial odds ratio of no_' 'access_handwashing per lower wealth ' 'level'
+        ),
+        'init_rp_some_ed_age0513': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 5-13'),
+        'init_rp_some_ed_age1320': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 13-20'),
+        'init_rp_some_ed_age2030': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 20-30'),
+        'init_rp_some_ed_age3040': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 30-40'),
+        'init_rp_some_ed_age4050': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 40-50'),
+        'init_rp_some_ed_age5060': Parameter(Types.REAL, 'relative prevalence of some education at baseline age 50-60'),
+        'init_rp_some_ed_per_higher_wealth': Parameter(
+            Types.REAL, 'relative prevalence of some education at baseline per higher wealth level'
+        ),
+        'init_rp_some_ed_sec_age1320': Parameter(Types.REAL, 'relative prevalence of secondary education age 15-20'),
+        'init_rp_some_ed_sec_age3040': Parameter(Types.REAL, 'relative prevalence of secondary education age 30-40'),
+        'init_rp_some_ed_sec_age4050': Parameter(Types.REAL, 'relative prevalence of secondary education age 40-50'),
+        'init_rp_some_ed_sec_age5060': Parameter(Types.REAL, 'relative prevalence of secondary education age 50-60'),
+        'init_rp_some_ed_sec_agege60': Parameter(Types.REAL, 'relative prevalence of secondary education age 60+'),
+        # Note: Added this to the properties and parameters tab of the resource file excel (init_rp_some_ed_agege60)
+        # Did have a value in the parameter_values tabs but may need updating in other documents?
+        'init_rp_some_ed_agege60': Parameter(
+            Types.REAL, 'relative prevalence of some education at baseline age age 60+'
+        ),
+        'init_rp_some_ed_sec_per_higher_wealth': Parameter(
+            Types.REAL, 'relative prevalence of secondary education per higher wealth level'
+        ),
+        # ------------ parameters relating to updating of property values over time ------------------------
         'r_urban': Parameter(Types.REAL, 'probability per 3 months of change from rural to urban'),
         'r_rural': Parameter(Types.REAL, 'probability per 3 months of change from urban to rural'),
-        'r_higher_bmi': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if rural male age'
-                                              '15-29 not using tobacoo with wealth level 1 with not high sugar intake'),
+        'r_higher_bmi': Parameter(
+            Types.REAL,
+            'probability per 3 months of increase in bmi category if rural male age'
+            '15-29 not using tobacoo with wealth level 1 with not high sugar intake',
+        ),
         'rr_higher_bmi_urban': Parameter(Types.REAL, 'probability per 3 months of increase in bmi category if '),
         'rr_higher_bmi_f': Parameter(Types.REAL, 'rate ratio for increase in bmi category for females'),
         'rr_higher_bmi_age3049': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age 30-49'),
         'rr_higher_bmi_agege50': Parameter(Types.REAL, 'rate ratio for increase in bmi category for age ge 50'),
         'rr_higher_bmi_tob': Parameter(Types.REAL, 'rate ratio for increase in bmi category for tobacco users'),
-        'rr_higher_bmi_per_higher_wealth_level': Parameter(Types.REAL, 'rate ratio for increase in bmi category per higher '
-                                                                 'wealth level'),
-        'rr_higher_bmi_high_sugar': Parameter(Types.REAL, 'rate ratio for increase in bmi category for high sugar '
-                                                          'intake'),
-        'r_lower_bmi': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'),
+        'rr_higher_bmi_per_higher_wealth': Parameter(
+            Types.REAL, 'rate ratio for increase in bmi category per higher ' 'wealth level'
+        ),
+        'rr_higher_bmi_high_sugar': Parameter(
+            Types.REAL, 'rate ratio for increase in bmi category for high sugar ' 'intake'
+        ),
+        'r_lower_bmi': Parameter(
+            Types.REAL, 'probability per 3 months of decrease in bmi category in non tobacco users'
+        ),
         'rr_lower_bmi_tob': Parameter(Types.REAL, 'rate ratio for lower bmi category for tobacco users'),
-        'rr_lower_bmi_pop_advice_weight': Parameter(Types.REAL, 'probability per 3 months of decrease in bmi category '
-                                                                'given population advice/campaign on weight'),
+        'rr_lower_bmi_pop_advice_weight': Parameter(
+            Types.REAL,
+            'probability per 3 months of decrease in bmi category ' 'given population advice/campaign on weight',
+        ),
         'r_high_salt_urban': Parameter(Types.REAL, 'probability per 3 months of high salt intake if urban'),
         'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
         'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
-        'rr_not_high_salt_pop_advice_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt given'
-                                                                  'population advice/campaign on salt'),
+        'rr_not_high_salt_pop_advice_salt': Parameter(
+            Types.REAL, 'probability per 3 months of not high salt given' 'population advice/campaign on salt'
+        ),
         'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
         'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
-        'rr_not_high_sugar_pop_advice_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar given'
-                                                                   'population advice/campaign on sugar'),
+        'rr_not_high_sugar_pop_advice_sugar': Parameter(
+            Types.REAL, 'probability per 3 months of not high sugar given' 'population advice/campaign on sugar'
+        ),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
-        'r_not_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'),
-        'rr_not_low_ex_pop_advice_sugar': Parameter(Types.REAL, 'probability per 3 months of not low exercise'
-                                                                    'population advice/campaign on exercise'),
+        'r_not_low_ex': Parameter(
+            Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'
+        ),
+        'rr_not_low_ex_pop_advice_sugar': Parameter(
+            Types.REAL, 'probability per 3 months of not low exercise' 'population advice/campaign on exercise'
+        ),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
-        'r_tob': Parameter(Types.REAL, 'probability per 3 months of change from not using tobacco to using '
-                                       'tobacco if male age 15-19 wealth level 1'),
-        'r_not_tob': Parameter(Types.REAL, 'probability per 3 months of change from tobacco using to '
-                                           'not tobacco using'),
+        'r_tob': Parameter(
+            Types.REAL,
+            'probability per 3 months of change from not using tobacco to using '
+            'tobacco if male age 15-19 wealth level 1',
+        ),
+        'r_not_tob': Parameter(
+            Types.REAL, 'probability per 3 months of change from tobacco using to ' 'not tobacco using'
+        ),
         'rr_tob_f': Parameter(Types.REAL, 'rate ratio tobacco if female'),
         'rr_tob_age2039': Parameter(Types.REAL, 'risk ratio for tobacco using if age 20-39 compared with 15-19'),
         'rr_tob_agege40': Parameter(Types.REAL, 'risk ratio for tobacco using if age >= 40 compared with 15-19'),
-        'rr_tob_wealth': Parameter(Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level '
-                                               '(higher wealth level = lower wealth)'),
-        'rr_not_tob_pop_advice_tobacco': Parameter(Types.REAL, 'probability per 3 months of quitting tobacco given'
-                                                               'population advice/campaign on tobacco'),
-        'r_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from not excess alcohol to '
-                                          'excess alcohol'),
-        'r_not_ex_alc': Parameter(Types.REAL, 'probability per 3 months of change from excess alcohol to '
-                                              'not excess alcohol'),
+        'rr_tob_wealth': Parameter(
+            Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level ' '(higher wealth level = lower wealth)'
+        ),
+        'rr_not_tob_pop_advice_tobacco': Parameter(
+            Types.REAL, 'probability per 3 months of quitting tobacco given' 'population advice/campaign on tobacco'
+        ),
+        'r_ex_alc': Parameter(
+            Types.REAL, 'probability per 3 months of change from not excess alcohol to ' 'excess alcohol'
+        ),
+        'r_not_ex_alc': Parameter(
+            Types.REAL, 'probability per 3 months of change from excess alcohol to ' 'not excess alcohol'
+        ),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
-        'rr_not_tob_pop_advice_alcohol': Parameter(Types.REAL, 'probability per 3 months of not excess alcohol given'
-                                                           'population advice/campaign on alcohol'),
+        'rr_not_tob_pop_advice_alcohol': Parameter(
+            Types.REAL, 'probability per 3 months of not excess alcohol given' 'population advice/campaign on alcohol'
+        ),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
-        'r_div_wid': Parameter(Types.REAL, 'probability per 3 months of becoming divorced or widowed, '
-                                           'amongst those married'),
+        'r_div_wid': Parameter(
+            Types.REAL, 'probability per 3 months of becoming divorced or widowed, ' 'amongst those married'
+        ),
         'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
-        'rr_stop_ed_lower_wealth': Parameter(Types.REAL, 'relative rate of stopping education per '
-                                                         '1 lower wealth quintile'),
+        'rr_stop_ed_lower_wealth': Parameter(
+            Types.REAL, 'relative rate of stopping education per ' '1 lower wealth quintile'
+        ),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
-        'rp_ed_primary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting school per 1 '
-                                                             'higher wealth level'),
-        'p_ed_secondary': Parameter(Types.REAL, 'probability at age 13 that start secondary education at 13 '
-                                                'if in primary education and wealth level 5'),
-        'rp_ed_secondary_higher_wealth': Parameter(Types.REAL, 'relative probability of starting secondary '
-                                                               'school per 1 higher wealth level'),
-        'r_improved_sanitation': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'unimproved_sanitation true to false'),
-        'r_clean_drinking_water': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                        'drinking_water true to false'),
-        'r_non_wood_burn_stove': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                       'wood_burn_stove true to false'),
-        'r_access_handwashing': Parameter(Types.REAL, 'probability per 3 months of change from '
-                                                      'no_access_handwashing true to false')
+        'rp_ed_primary_higher_wealth': Parameter(
+            Types.REAL, 'relative probability of starting school per 1 ' 'higher wealth level'
+        ),
+        'p_ed_secondary': Parameter(
+            Types.REAL,
+            'probability at age 13 that start secondary education at 13 ' 'if in primary education and wealth level 5',
+        ),
+        'rp_ed_secondary_higher_wealth': Parameter(
+            Types.REAL, 'relative probability of starting secondary ' 'school per 1 higher wealth level'
+        ),
+        'r_improved_sanitation': Parameter(
+            Types.REAL, 'probability per 3 months of change from ' 'unimproved_sanitation true to false'
+        ),
+        'r_clean_drinking_water': Parameter(
+            Types.REAL, 'probability per 3 months of change from ' 'drinking_water true to false'
+        ),
+        'r_non_wood_burn_stove': Parameter(
+            Types.REAL, 'probability per 3 months of change from ' 'wood_burn_stove true to false'
+        ),
+        'r_access_handwashing': Parameter(
+            Types.REAL, 'probability per 3 months of change from ' 'no_access_handwashing true to false'
+        ),
+        # Added these fields to the properties and parameters tab as above,
+        # TODO: add in descriptions for these parameters
+        'rr_not_low_ex_pop_advice_exercise': Parameter(Types.REAL, 'TODO: value for this'),
+        'rr_not_ex_alc_pop_advice_alcohol': Parameter(Types.REAL, 'TODO: value for this'),
     }
 
     # Properties of individuals that this module provides.
@@ -201,177 +262,59 @@ class Lifestyle(Module):
     PROPERTIES = {
         'li_urban': Property(Types.BOOL, 'Currently urban'),
         'li_wealth': Property(Types.CATEGORICAL, 'wealth level: 1 (high) to 5 (low)', categories=[1, 2, 3, 4, 5]),
-        'li_bmi': Property(Types.INT, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)'
-                                      'bmi is 0 until age 15'),
-        'li_exposed_to_campaign_weight_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
-                                                                        'weight reduction if BMI >= 25'),
+        'li_bmi': Property(
+            Types.INT, 'bmi: 1 (<18) 2 (18-24.9)  3 (25-29.9) 4 (30-34.9) 5 (35+)' 'bmi is 0 until age 15'
+        ),
+        'li_exposed_to_campaign_weight_reduction': Property(
+            Types.BOOL, 'currently exposed to population campaign for ' 'weight reduction if BMI >= 25'
+        ),
         'li_low_ex': Property(Types.BOOL, 'currently low exercise'),
-        'li_exposed_to_campaign_exercise_increase': Property(Types.BOOL, 'currently exposed to population campaign for '
-                                                                        'increase exercise if low ex'),
+        'li_exposed_to_campaign_exercise_increase': Property(
+            Types.BOOL, 'currently exposed to population campaign for ' 'increase exercise if low ex'
+        ),
         'li_high_salt': Property(Types.BOOL, 'currently high salt intake'),
-        'li_exposed_to_campaign_salt_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
-                                                                        'salt reduction if high salt'),
+        'li_exposed_to_campaign_salt_reduction': Property(
+            Types.BOOL, 'currently exposed to population campaign for ' 'salt reduction if high salt'
+        ),
         'li_high_sugar': Property(Types.BOOL, 'currently high sugar intake'),
-        'li_exposed_to_campaign_sugar_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
-                                                                      'sugar reduction if high sugar'),
+        'li_exposed_to_campaign_sugar_reduction': Property(
+            Types.BOOL, 'currently exposed to population campaign for ' 'sugar reduction if high sugar'
+        ),
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_not_tob': Property(Types.DATE, 'date last transitioned from tob to not tob'),
-        'li_exposed_to_campaign_quit_smoking': Property(Types.BOOL, 'currently exposed to population campaign to'
-                                                                      'quit smoking if tob'),
+        'li_exposed_to_campaign_quit_smoking': Property(
+            Types.BOOL, 'currently exposed to population campaign to' 'quit smoking if tob'
+        ),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
-        'li_exposed_to_campaign_alcohol_reduction': Property(Types.BOOL, 'currently exposed to population campaign for '
-                                                                      'alcohol reduction if ex alc'),
-        'li_mar_stat': Property(Types.CATEGORICAL,
-                                'marital status {1:never, 2:current, 3:past (widowed or divorced)}',
-                                categories=[1, 2, 3]),
+        'li_exposed_to_campaign_alcohol_reduction': Property(
+            Types.BOOL, 'currently exposed to population campaign for ' 'alcohol reduction if ex alc'
+        ),
+        'li_mar_stat': Property(
+            Types.CATEGORICAL, 'marital status {1:never, 2:current, 3:past (widowed or divorced)}', categories=[1, 2, 3]
+        ),
         'li_in_ed': Property(Types.BOOL, 'currently in education'),
         'li_ed_lev': Property(Types.CATEGORICAL, 'education level achieved as of now', categories=[1, 2, 3]),
-        'li_unimproved_sanitation': Property(Types.BOOL, 'uninproved sanitation - anything other than own or '
-                                                         'shared latrine'),
-        'li_no_access_handwashing': Property(Types.BOOL, 'no_access_handwashing - no water, no soap, no other '
-                                                         'cleaning agent - as in DHS'),
+        'li_unimproved_sanitation': Property(
+            Types.BOOL, 'uninproved sanitation - anything other than own or ' 'shared latrine'
+        ),
+        'li_no_access_handwashing': Property(
+            Types.BOOL, 'no_access_handwashing - no water, no soap, no other ' 'cleaning agent - as in DHS'
+        ),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
-        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove')
+        'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
+        # Added in. TODO: Check these are the correct descriptions
+        'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'),
+        'li_date_acquire_improved_sanitation': Property(Types.DATE, 'date transition to urban'),
+        'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
+        'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
+        'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
     }
 
-
     def read_parameters(self, data_folder):
-        p = self.parameters
-
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
-                            sheet_name='parameter_values')
-
-        dfd.set_index('parameter_name', inplace=True)
-
-        p['init_p_urban'] = dfd.loc['init_p_urban', 'value1']
-        p['init_p_wealth_urban'] = \
-                    [dfd.loc['init_p_wealth_urban', 'value1'], dfd.loc['init_p_wealth_urban', 'value2'],
-                     dfd.loc['init_p_wealth_urban', 'value3'], dfd.loc['init_p_wealth_urban', 'value4'],
-                     dfd.loc['init_p_wealth_urban', 'value5']]
-        p['init_p_wealth_rural'] = \
-                    [dfd.loc['init_p_wealth_rural', 'value1'], dfd.loc['init_p_wealth_rural', 'value2'],
-                     dfd.loc['init_p_wealth_rural', 'value3'], dfd.loc['init_p_wealth_rural', 'value4'],
-                     dfd.loc['init_p_wealth_rural', 'value5']]
-        p['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1'] = \
-                    [dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value1'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value2'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value3'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value4'],
-                     dfd.loc['init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1', 'value5']]
-        p['init_or_higher_bmi_f'] = dfd.loc['init_or_higher_bmi_f', 'value1']
-        p['init_or_higher_bmi_rural'] = dfd.loc['init_or_higher_bmi_rural', 'value1']
-        p['init_or_higher_bmi_high_sugar'] = dfd.loc['init_or_higher_bmi_high_sugar', 'value1']
-        p['init_or_higher_bmi_age3049'] = dfd.loc['init_or_higher_bmi_age3049', 'value1']
-        p['init_or_higher_bmi_agege50'] = dfd.loc['init_or_higher_bmi_agege50', 'value1']
-        p['init_or_higher_bmi_tob'] = dfd.loc['init_or_higher_bmi_tob', 'value1']
-        p['init_or_higher_bmi_per_higher_wealth_level'] = dfd.loc['init_or_higher_bmi_per_higher_wealth_level', 'value1']
-        p['init_p_high_sugar'] = dfd.loc['init_p_high_sugar', 'value1']
-        p['init_p_high_salt_urban'] = 0.2 # dfd.loc['init_p_high_salt_urban', 'value1'],
-        p['init_or_high_salt_rural'] = dfd.loc['init_or_high_salt_rural', 'value1']
-        p['init_p_low_ex_urban_m'] = dfd.loc['init_p_low_ex_urban_m', 'value1']
-        p['init_or_low_ex_rural'] = dfd.loc['init_or_low_ex_rural', 'value1']
-        p['init_or_low_ex_f'] = dfd.loc['init_or_low_ex_f', 'value1']
-        p['init_p_ex_alc_m'] = dfd.loc['init_p_ex_alc_m', 'value1']
-        p['init_p_ex_alc_f'] = dfd.loc['init_p_ex_alc_f', 'value1']
-        p['init_p_tob_age1519_m_wealth1'] = dfd.loc['init_p_tob_age1519_m_wealth1', 'value1']
-        p['init_or_tob_f'] = dfd.loc['init_or_tob_f', 'value1']
-        p['init_or_tob_age2039_m'] = dfd.loc['init_or_tob_age2039_m', 'value1']
-        p['init_or_tob_agege40_m'] = dfd.loc['init_or_tob_agege40_m', 'value1']
-        p['init_or_tob_wealth2'] = dfd.loc['init_or_tob_wealth2', 'value1']
-        p['init_or_tob_wealth3'] = dfd.loc['init_or_tob_wealth3', 'value1']
-        p['init_or_tob_wealth4'] = dfd.loc['init_or_tob_wealth4', 'value1']
-        p['init_or_tob_wealth5'] = dfd.loc['init_or_tob_wealth5', 'value1']
-        p['init_dist_mar_stat_age1520'] = [dfd.loc['init_dist_mar_stat_age1520', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age1520', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age1520', 'value3']]
-        p['init_dist_mar_stat_age2030'] = [dfd.loc['init_dist_mar_stat_age2030', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age2030', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age2030', 'value3']]
-        p['init_dist_mar_stat_age3040'] = [dfd.loc['init_dist_mar_stat_age3040', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age3040', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age3040', 'value3']]
-        p['init_dist_mar_stat_age4050'] = [dfd.loc['init_dist_mar_stat_age4050', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age4050', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age4050', 'value3']]
-        p['init_dist_mar_stat_age5060'] = [dfd.loc['init_dist_mar_stat_age5060', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_age5060', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_age5060', 'value3']]
-        p['init_dist_mar_stat_agege60'] = [dfd.loc['init_dist_mar_stat_agege60', 'value1'],
-                                           dfd.loc['init_dist_mar_stat_agege60', 'value2'],
-                                           dfd.loc['init_dist_mar_stat_agege60', 'value3']]
-        p['init_age2030_w5_some_ed'] = dfd.loc['init_age2030_w5_some_ed', 'value1']
-        p['init_rp_some_ed_age0513'] = dfd.loc['init_rp_some_ed_age0513', 'value1']
-        p['init_rp_some_ed_age1320'] = dfd.loc['init_rp_some_ed_age1320', 'value1']
-        p['init_rp_some_ed_age2030'] = dfd.loc['init_rp_some_ed_age2030', 'value1']
-        p['init_rp_some_ed_age3040'] = dfd.loc['init_rp_some_ed_age3040', 'value1']
-        p['init_rp_some_ed_age4050'] = dfd.loc['init_rp_some_ed_age4050', 'value1']
-        p['init_rp_some_ed_age5060'] = dfd.loc['init_rp_some_ed_age5060', 'value1']
-        p['init_rp_some_ed_agege60'] = dfd.loc['init_rp_some_ed_agege60', 'value1']
-        p['init_rp_some_ed_per_higher_wealth'] = dfd.loc['init_rp_some_ed_per_higher_wealth', 'value1']
-        p['init_prop_age2030_w5_some_ed_sec'] = dfd.loc['init_prop_age2030_w5_some_ed_sec', 'value1']
-        p['init_rp_some_ed_sec_age1320'] = dfd.loc['init_rp_some_ed_sec_age1320', 'value1']
-        p['init_rp_some_ed_sec_age3040'] = dfd.loc['init_rp_some_ed_sec_age3040', 'value1']
-        p['init_rp_some_ed_sec_age4050'] = dfd.loc['init_rp_some_ed_sec_age4050', 'value1']
-        p['init_rp_some_ed_sec_age5060'] = dfd.loc['init_rp_some_ed_sec_age5060', 'value1']
-        p['init_rp_some_ed_sec_agege60'] = dfd.loc['init_rp_some_ed_sec_agege60', 'value1']
-        p['init_rp_some_ed_sec_per_higher_wealth'] = dfd.loc['init_rp_some_ed_sec_per_higher_wealth', 'value1']
-        p['init_p_unimproved_sanitation_urban'] = dfd.loc['init_p_unimproved_sanitation_urban', 'value1']
-        p['init_or_unimproved_sanitation_rural'] = dfd.loc['init_or_unimproved_sanitation_rural', 'value1']
-        p['init_p_no_clean_drinking_water_urban'] = dfd.loc['init_p_no_clean_drinking_water_urban', 'value1']
-        p['init_or_no_clean_drinking_water_rural'] = dfd.loc['init_or_no_clean_drinking_water_rural', 'value1']
-        p['init_p_wood_burn_stove_urban'] = dfd.loc['init_p_wood_burn_stove_urban', 'value1']
-        p['init_or_wood_burn_stove_rural'] = dfd.loc['init_or_wood_burn_stove_rural', 'value1']
-        p['init_p_no_access_handwashing_wealth1'] = dfd.loc['init_p_no_access_handwashing_wealth1', 'value1']
-        p['init_or_no_access_handwashing_per_lower_wealth'] = dfd.loc['init_or_no_access_handwashing_per_lower_wealth', 'value1']
-
-        p['r_urban'] = dfd.loc['r_urban', 'value1']
-        p['r_rural'] = dfd.loc['r_rural', 'value1']
-        p['r_higher_bmi'] = dfd.loc['r_higher_bmi', 'value1']
-        p['rr_higher_bmi_urban'] = dfd.loc['rr_higher_bmi_urban', 'value1']
-        p['rr_higher_bmi_f'] = dfd.loc['rr_higher_bmi_f', 'value1']
-        p['rr_higher_bmi_age3049'] = dfd.loc['rr_higher_bmi_age3049', 'value1']
-        p['rr_higher_bmi_agege50'] = dfd.loc['rr_higher_bmi_agege50', 'value1']
-        p['rr_higher_bmi_tob'] = dfd.loc['rr_higher_bmi_tob', 'value1']
-        p['rr_higher_bmi_per_higher_wealth'] = dfd.loc['rr_higher_bmi_per_higher_wealth', 'value1']
-        p['rr_higher_bmi_high_sugar'] = dfd.loc['rr_higher_bmi_high_sugar', 'value1']
-        p['r_lower_bmi'] = dfd.loc['r_lower_bmi', 'value1']
-        p['rr_lower_bmi_pop_advice_weight'] = dfd.loc['rr_lower_bmi_pop_advice_weight', 'value1']
-        p['rr_lower_bmi_tob'] = dfd.loc['rr_lower_bmi_tob', 'value1']
-        p['r_high_salt_urban'] = dfd.loc['r_high_salt_urban', 'value1']
-        p['rr_high_salt_rural'] = dfd.loc['rr_high_salt_rural', 'value1']
-        p['r_not_high_salt'] = dfd.loc['r_not_high_salt', 'value1']
-        p['rr_not_high_salt_pop_advice_salt'] = dfd.loc['rr_not_high_salt_pop_advice_salt', 'value1']
-        p['r_high_sugar'] = dfd.loc['r_high_sugar', 'value1']
-        p['r_not_high_sugar'] = dfd.loc['r_not_high_sugar', 'value1']
-        p['rr_not_high_sugar_pop_advice_sugar'] = dfd.loc['rr_not_high_sugar_pop_advice_sugar', 'value1']
-        p['r_low_ex'] = dfd.loc['r_low_ex', 'value1']
-        p['r_not_low_ex'] = dfd.loc['r_not_low_ex', 'value1']
-        p['rr_not_low_ex_pop_advice_exercise'] = dfd.loc['rr_not_low_ex_pop_advice_exercise', 'value1']
-        p['rr_low_ex_f'] = dfd.loc['rr_low_ex_f', 'value1']
-        p['rr_low_ex_urban'] = dfd.loc['rr_low_ex_urban', 'value1']
-        p['r_tob'] = dfd.loc['r_tob', 'value1']
-        p['r_not_tob'] = dfd.loc['r_not_tob', 'value1']
-        p['rr_tob_f'] = dfd.loc['rr_tob_f', 'value1']
-        p['rr_tob_age2039'] = dfd.loc['rr_tob_age2039', 'value1']
-        p['rr_tob_agege40'] = dfd.loc['rr_tob_agege40', 'value1']
-        p['rr_tob_wealth'] = dfd.loc['rr_tob_wealth', 'value1']
-        p['rr_not_tob_pop_advice_tobacco'] = dfd.loc['rr_not_tob_pop_advice_tobacco', 'value1']
-        p['r_ex_alc'] = dfd.loc['r_ex_alc', 'value1']
-        p['r_not_ex_alc'] = dfd.loc['r_not_ex_alc', 'value1']
-        p['rr_ex_alc_f'] = dfd.loc['rr_ex_alc_f', 'value1']
-        p['rr_not_ex_alc_pop_advice_alcohol'] = dfd.loc['rr_not_ex_alc_pop_advice_alcohol', 'value1']
-        p['r_mar'] = dfd.loc['r_mar', 'value1']
-        p['r_div_wid'] = dfd.loc['r_div_wid', 'value1']
-        p['r_stop_ed'] = dfd.loc['r_stop_ed', 'value1']
-        p['rr_stop_ed_lower_wealth'] = dfd.loc['rr_stop_ed_lower_wealth', 'value1']
-        p['p_ed_primary'] = dfd.loc['p_ed_primary', 'value1']
-        p['rp_ed_primary_higher_wealth'] = dfd.loc['rp_ed_primary_higher_wealth', 'value1']
-        p['p_ed_secondary'] = dfd.loc['p_ed_secondary', 'value1']
-        p['rp_ed_secondary_higher_wealth'] = dfd.loc['rp_ed_secondary_higher_wealth', 'value1']
-        p['r_improved_sanitation'] = dfd.loc['r_improved_sanitation', 'value1']
-        p['r_clean_drinking_water'] = dfd.loc['r_clean_drinking_water', 'value1']
-        p['r_non_wood_burn_stove'] = dfd.loc['r_non_wood_burn_stove', 'value1']
-        p['r_access_handwashing'] = dfd.loc['r_access_handwashing', 'value1']
+        dfd = pd.read_excel(
+            self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
+        )
+        self.load_parameters_from_dataframe(dfd)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -380,6 +323,7 @@ class Lifestyle(Module):
         df = population.props  # a shortcut to the data-frame storing data for individuals
         m = self
         rng = m.rng
+        alive_idx = df.index[df.is_alive]
 
         # -------------------- DEFAULTS ------------------------------------------------------------
 
@@ -418,7 +362,7 @@ class Lifestyle(Module):
         # todo: urban rural depends on district of residence
 
         # randomly selected some individuals as urban
-        df['li_urban'] = (rng.random_sample(size=len(df)) < m.init_p_urban)
+        df['li_urban'] = rng.random_sample(size=len(df)) < m.init_p_urban
 
         # get the indices of all individuals who are urban or rural
         urban_index = df.index[df.is_alive & df.li_urban]
@@ -444,7 +388,7 @@ class Lifestyle(Module):
         assert len(low_ex_probs) == len(age_ge15_idx)
 
         random_draw = rng.random_sample(size=len(age_ge15_idx))
-        df.loc[age_ge15_idx, 'li_low_ex'] = (random_draw < low_ex_probs)
+        df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
 
@@ -453,6 +397,7 @@ class Lifestyle(Module):
         odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
 
         odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
+        # TODO: documentation has 4% * wealth_level, is this meant to be 4 x
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
         odds_tob.loc[df.li_wealth == 2] *= 2
@@ -468,7 +413,7 @@ class Lifestyle(Module):
 
         # decide on tobacco use based on the individual probability is greater than random draw
         # this is a list of True/False. assign to li_tob
-        df.loc[age_ge15_idx, 'li_tob'] = (random_draw < tob_probs)
+        df.loc[age_ge15_idx, 'li_tob'] = random_draw < tob_probs
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
 
@@ -510,18 +455,18 @@ class Lifestyle(Module):
         p_some_ed.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_agege60
 
         # adjust probability of some education based on wealth
-        p_some_ed *= m.init_rp_some_ed_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_some_ed *= m.init_rp_some_ed_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         # calculate baseline of education level 3, and adjust for age and wealth
         p_ed_lev_3 = pd.Series(m.init_prop_age2030_w5_some_ed_sec, index=age_gte5)
 
-        p_ed_lev_3.loc[(df.age_years < 13)] *= 0
+        p_ed_lev_3.loc[(df.age_years < 13)] = 0
         p_ed_lev_3.loc[df.age_years.between(13, 19)] *= m.init_rp_some_ed_sec_age1320
         p_ed_lev_3.loc[df.age_years.between(30, 39)] *= m.init_rp_some_ed_sec_age3040
         p_ed_lev_3.loc[df.age_years.between(40, 49)] *= m.init_rp_some_ed_sec_age4050
         p_ed_lev_3.loc[df.age_years.between(50, 59)] *= m.init_rp_some_ed_sec_age5060
         p_ed_lev_3.loc[(df.age_years >= 60)] *= m.init_rp_some_ed_sec_agege60
-        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth**(5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
+        p_ed_lev_3 *= m.init_rp_some_ed_sec_per_higher_wealth ** (5 - pd.to_numeric(df.loc[age_gte5, 'li_wealth']))
 
         rnd_draw = pd.Series(rng.random_sample(size=len(age_gte5)), index=age_gte5)
 
@@ -543,60 +488,49 @@ class Lifestyle(Module):
         df.loc[df.age_years.between(13, 19) & (df['li_ed_lev'] == 3) & df.is_alive, 'li_in_ed'] = True
 
         # -------------------- UNIMPROVED SANITATION ---------------------------------------------------
-
-        all_idx = df.index[df.is_alive]
-
-        init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban  / (1-m.init_p_unimproved_sanitation_urban)
+        init_odds_unimproved_sanitation = m.init_p_unimproved_sanitation_urban / (
+            1 - m.init_p_unimproved_sanitation_urban)
 
         # create a series with odds of unimproved sanitation for base group (urban)
-        odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation,
-                                               index=all_idx)
+        odds_unimproved_sanitation = pd.Series(init_odds_unimproved_sanitation, index=alive_idx)
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_unimproved_sanitation.loc[df.is_alive & ~df.li_urban] *= m.init_or_unimproved_sanitation_rural
 
-        prob_unimproved_sanitation = pd.Series((odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)),
-                                               index=all_idx)
+        prob_unimproved_sanitation = odds_unimproved_sanitation / (1 + odds_unimproved_sanitation)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
+        df.loc[alive_idx, 'li_unimproved_sanitation'] = random_draw < prob_unimproved_sanitation
 
         # -------------------- NO CLEAN DRINKING WATER ---------------------------------------------------
-
-        all_idx = df.index[df.is_alive]
-
         init_odds_no_clean_drinking_water = m.init_p_no_clean_drinking_water_urban / (
-                1 - m.init_p_no_clean_drinking_water_urban)
+            1 - m.init_p_no_clean_drinking_water_urban
+        )
 
-        odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water,
-                                               index=all_idx)
+        odds_no_clean_drinking_water = pd.Series(init_odds_no_clean_drinking_water, index=alive_idx)
 
         odds_no_clean_drinking_water.loc[df.is_alive & ~df.li_urban] *= m.init_or_no_clean_drinking_water_rural
 
-        prob_no_clean_drinking_water = pd.Series((odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)),
-                                               index=all_idx)
+        prob_no_clean_drinking_water = odds_no_clean_drinking_water / (1 + odds_no_clean_drinking_water)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
+        df.loc[alive_idx, 'li_no_clean_drinking_water'] = random_draw < prob_no_clean_drinking_water
 
         # -------------------- WOOD BURN STOVE ---------------------------------------------------
 
-        init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (
-                1 - m.init_p_wood_burn_stove_urban)
+        init_odds_wood_burn_stove = m.init_p_wood_burn_stove_urban / (1 - m.init_p_wood_burn_stove_urban)
 
-
-        odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=all_idx)
+        odds_wood_burn_stove = pd.Series(init_odds_wood_burn_stove, index=alive_idx)
 
         odds_wood_burn_stove.loc[df.is_alive & ~df.li_urban] *= m.init_or_wood_burn_stove_rural
 
-        prob_wood_burn_stove = pd.Series((odds_wood_burn_stove / (1 + odds_wood_burn_stove)),
-                                         index=all_idx)
+        prob_wood_burn_stove = odds_wood_burn_stove / (1 + odds_wood_burn_stove)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
+        df.loc[alive_idx, 'li_wood_burn_stove'] = random_draw < prob_wood_burn_stove
 
         # -------------------- NO ACCESS HANDWASHING ---------------------------------------------------
 
@@ -605,48 +539,40 @@ class Lifestyle(Module):
         wealth4_idx = df.index[df.is_alive & (df.li_wealth == 4)]
         wealth5_idx = df.index[df.is_alive & (df.li_wealth == 5)]
 
-        init_odds_no_access_handwashing = 1 / (1-m.init_p_no_access_handwashing_wealth1)
-
-        odds_no_access_handwashing = pd.Series(init_odds_no_access_handwashing, index=all_idx)
+        odds_no_access_handwashing = pd.Series(1 / (1 - m.init_p_no_access_handwashing_wealth1), index=alive_idx)
 
         odds_no_access_handwashing.loc[wealth2_idx] *= m.init_or_no_access_handwashing_per_lower_wealth
-        odds_no_access_handwashing.loc[wealth3_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 2)
-        odds_no_access_handwashing.loc[wealth4_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 3)
-        odds_no_access_handwashing.loc[wealth5_idx] *= (m.init_or_no_access_handwashing_per_lower_wealth ** 4)
+        odds_no_access_handwashing.loc[wealth3_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 2
+        odds_no_access_handwashing.loc[wealth4_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 3
+        odds_no_access_handwashing.loc[wealth5_idx] *= m.init_or_no_access_handwashing_per_lower_wealth ** 4
 
-        prob_no_access_handwashing = odds_no_access_handwashing / (1+odds_no_access_handwashing)
+        prob_no_access_handwashing = odds_no_access_handwashing / (1 + odds_no_access_handwashing)
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
+        df.loc[alive_idx, 'li_no_access_handwashing'] = random_draw < prob_no_access_handwashing
 
         # -------------------- SALT INTAKE ----------------------------------------------------------
 
-        init_odds_high_salt = m.init_p_high_salt_urban / (
-            1 - m.init_p_high_salt_urban)
-
         # create a series with odds of unimproved sanitation for base group (urban)
-        odds_high_salt = pd.Series(init_odds_high_salt,
-                                               index=all_idx)
+        odds_high_salt = pd.Series(m.init_p_high_salt_urban / (1 - m.init_p_high_salt_urban), index=alive_idx)
 
         # update odds according to determinants of unimproved sanitation (rural status the only determinant)
         odds_high_salt.loc[df.is_alive & ~df.li_urban] *= m.init_or_high_salt_rural
 
-        prob_high_salt = pd.Series((odds_high_salt / (1 + odds_high_salt)),
-                                               index=all_idx)
+        prob_high_salt = (odds_high_salt / (1 + odds_high_salt))
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_high_salt'] = random_draw < prob_high_salt
-
+        df.loc[alive_idx, 'li_high_salt'] = random_draw < prob_high_salt
 
         # -------------------- SUGAR INTAKE ----------------------------------------------------------
 
         # no determinants of sugar intake hence dont need to convert to odds to apply odds ratios
 
-        random_draw = pd.Series(rng.random_sample(size=len(all_idx)), index=all_idx)
+        random_draw = pd.Series(rng.random_sample(size=len(alive_idx)), index=alive_idx)
 
-        df.loc[all_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
+        df.loc[alive_idx, 'li_high_sugar'] = random_draw < m.init_p_high_sugar
 
         # -------------------- WEALTH LEVEL ----------------------------------------------------------
 
@@ -654,14 +580,10 @@ class Lifestyle(Module):
         rural_idx = df.index[df.is_alive & ~df.li_urban]
 
         # allocate wealth level for urban
-        df.loc[urban_idx, 'li_wealth'] = np.random.choice(
-            [1, 2, 3, 4, 5], size=len(urban_idx), p=m.init_p_wealth_urban
-        )
+        df.loc[urban_idx, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(urban_idx), p=m.init_p_wealth_urban)
 
         # allocate wealth level for rural
-        df.loc[rural_idx, 'li_wealth'] = np.random.choice(
-            [1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural
-        )
+        df.loc[rural_idx, 'li_wealth'] = rng.choice([1, 2, 3, 4, 5], size=len(rural_idx), p=m.init_p_wealth_rural)
 
         # -------------------- BMI CATEGORIES ----------------------------------------------------------
 
@@ -679,89 +601,59 @@ class Lifestyle(Module):
         # this below is the approach to apply the effect of contributing determinants on bmi levels at baseline
         # transform to odds, apply the odds ratio for the effect, transform back to probabilities and normalise
         # to sum to 1
-        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = \
-            [i / (1-i) for i in m.init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1]
+        init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1 = [
+            i / (1 - i) for i in m.init_p_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1
+        ]
 
-        df_odds_probs_bmi_levels = pd.DataFrame(data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
-                                       columns=['1', '2', '3', '4', '5'], index=age_ge15_idx)
+        df_odds_probs_bmi_levels = pd.DataFrame(
+            data=[init_odds_bmi_urban_m_not_high_sugar_age1529_not_tob_wealth1],
+            columns=['1', '2', '3', '4', '5'],
+            index=age_ge15_idx,
+        )
 
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '1'] *= (m.init_or_higher_bmi_f ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '1'] *= (m.init_or_higher_bmi_rural ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '1'] *= (m.init_or_higher_bmi_high_sugar ** -2)
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '1'] *= (m.init_or_higher_bmi_age3049 ** -2)
-        df_odds_probs_bmi_levels.loc[agege50_idx, '1'] *= (m.init_or_higher_bmi_agege50 ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '1'] *= (m.init_or_higher_bmi_tob ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** -2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '1'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** -2)
+        def update_df_odds_bmi(bmi: str, power: int):
+            """Update specified bmi column using pattern and the power given"""
+            df_odds_probs_bmi_levels.loc[agege15_w_idx, bmi] *= m.init_or_higher_bmi_f ** power
+            df_odds_probs_bmi_levels.loc[agege15_rural_idx, bmi] *= m.init_or_higher_bmi_rural ** power
+            df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, bmi] *= m.init_or_higher_bmi_high_sugar ** power
+            df_odds_probs_bmi_levels.loc[agege3049_idx, bmi] *= m.init_or_higher_bmi_age3049 ** power
+            df_odds_probs_bmi_levels.loc[agege50_idx, bmi] *= m.init_or_higher_bmi_agege50 ** power
+            df_odds_probs_bmi_levels.loc[agege15_tob_idx, bmi] *= m.init_or_higher_bmi_tob ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** power
+            df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, bmi] *= (
+                m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** power
 
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '2'] *= (m.init_or_higher_bmi_f ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '2'] *= (m.init_or_higher_bmi_rural ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '2'] *= (m.init_or_higher_bmi_high_sugar ** -1)
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '2'] *= (m.init_or_higher_bmi_age3049 ** -1)
-        df_odds_probs_bmi_levels.loc[agege50_idx, '2'] *= (m.init_or_higher_bmi_agege50 ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '2'] *= (m.init_or_higher_bmi_tob ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** -1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '2'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** -1)
+        update_df_odds_bmi('1', -2)
+        update_df_odds_bmi('2', -1)
+        update_df_odds_bmi('3', 0)
+        update_df_odds_bmi('4', 1)
+        update_df_odds_bmi('5', 2)
 
-        # realise this does nothing
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '3'] *= (m.init_or_higher_bmi_f ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '3'] *= (m.init_or_higher_bmi_rural ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '3'] *= (m.init_or_higher_bmi_high_sugar ** 0)
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '3'] *= (m.init_or_higher_bmi_age3049 ** 0)
-        df_odds_probs_bmi_levels.loc[agege50_idx, '3'] *= (m.init_or_higher_bmi_agege50 ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '3'] *= (m.init_or_higher_bmi_tob ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 0)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '3'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 0)
-
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '4'] *= (m.init_or_higher_bmi_f ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '4'] *= (m.init_or_higher_bmi_rural ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '4'] *= (m.init_or_higher_bmi_high_sugar ** 1)
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '4'] *= (m.init_or_higher_bmi_age3049 ** 1)
-        df_odds_probs_bmi_levels.loc[agege50_idx, '4'] *= (m.init_or_higher_bmi_agege50 ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '4'] *= (m.init_or_higher_bmi_tob ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 1)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '4'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 1)
-
-        df_odds_probs_bmi_levels.loc[agege15_w_idx, '5'] *= (m.init_or_higher_bmi_f ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_rural_idx, '5'] *= (m.init_or_higher_bmi_rural ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_high_sugar_idx, '5'] *= (m.init_or_higher_bmi_high_sugar ** 2)
-        df_odds_probs_bmi_levels.loc[agege3049_idx, '5'] *= (m.init_or_higher_bmi_age3049 ** 2)
-        df_odds_probs_bmi_levels.loc[agege50_idx, '5'] *= (m.init_or_higher_bmi_agege50 ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_tob_idx, '5'] *= (m.init_or_higher_bmi_tob ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth2_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 2) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth3_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 3) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth4_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 4) ** 2)
-        df_odds_probs_bmi_levels.loc[agege15_wealth5_idx, '5'] *= ((m.init_or_higher_bmi_per_higher_wealth_level ** 5) ** 2)
-
-        df_odds_probs_bmi_levels['prob 1'] = df_odds_probs_bmi_levels.apply(lambda row: row['1'] / (1 + row['1']), axis=1)
-        df_odds_probs_bmi_levels['prob 2'] = df_odds_probs_bmi_levels.apply(lambda row: row['2'] / (1 + row['2']), axis=1)
-        df_odds_probs_bmi_levels['prob 3'] = df_odds_probs_bmi_levels.apply(lambda row: row['3'] / (1 + row['3']), axis=1)
-        df_odds_probs_bmi_levels['prob 4'] = df_odds_probs_bmi_levels.apply(lambda row: row['4'] / (1 + row['4']), axis=1)
-        df_odds_probs_bmi_levels['prob 5'] = df_odds_probs_bmi_levels.apply(lambda row: row['5'] / (1 + row['5']), axis=1)
-
-        df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] + row['prob 2']
-                                                    + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1)
-
-        df_odds_probs_bmi_levels[1] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 1'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels[2] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 2'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels[3] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 3'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels[4] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 4'] / row['sum_probs'], axis=1)
-        df_odds_probs_bmi_levels[5] = df_odds_probs_bmi_levels.apply(lambda row: row['prob 5'] / row['sum_probs'], axis=1)
+        for bmi in range(1, 6):
+            bmi = str(bmi)
+            df_odds_probs_bmi_levels[f'prob {bmi}'] = df_odds_probs_bmi_levels.apply(
+                lambda row: row[bmi] / (1 + row[bmi]), axis=1
+            )
+        # normalise probabilities
+        df_odds_probs_bmi_levels['sum_probs'] = df_odds_probs_bmi_levels.apply(
+            lambda row: row['prob 1'] + row['prob 2'] + row['prob 3'] + row['prob 4'] + row['prob 5'], axis=1
+        )
+        for bmi in range(1, 6):
+            df_odds_probs_bmi_levels[bmi] = df_odds_probs_bmi_levels.apply(
+                lambda row: row[f'prob {bmi}'] / row['sum_probs'], axis=1
+            )
 
         dfxx = df_odds_probs_bmi_levels[[1, 2, 3, 4, 5]]
 
         # for each row, make a choice
-        dfxx['bmi_cat'] = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
+        bmi_cat = dfxx.apply(lambda p_bmi: rng.choice(dfxx.columns, p=p_bmi), axis=1)
 
-        df.loc[age_ge15_idx, 'li_bmi'] = dfxx['bmi_cat']
+        df.loc[age_ge15_idx, 'li_bmi'] = bmi_cat
 
     def initialise_simulation(self, sim):
         """Add lifestyle events to the simulation
@@ -788,7 +680,6 @@ class Lifestyle(Module):
         df.at[child_id, 'li_tob'] = False
         df.at[child_id, 'li_ex_alc'] = False
         df.at[child_id, 'li_mar_stat'] = 1
-        df.at[child_id, 'li_on_con'] = False
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
         df.at[child_id, 'li_unimproved_sanitation'] = df.at[mother_id, 'li_unimproved_sanitation']
@@ -803,12 +694,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
     """
     Regular event that updates all lifestyle properties for population
     """
+
     def __init__(self, module):
         """schedule to run every 3 months
         note: if change this offset from 3 months need to consider code conditioning on age.years_exact
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=3))
+        assert isinstance(module, Lifestyle)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -825,13 +718,12 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         currently_urban = df.index[df.li_urban & df.is_alive]
 
         # handle new transitions
-        now_urban: pd.Series = m.rng.random_sample(size=len(currently_rural)) < m.r_urban
-        urban_idx = currently_rural[now_urban]
-        df.loc[urban_idx, 'li_urban'] = True
+        rural_to_urban = currently_rural[m.rng.random_sample(size=len(currently_rural)) < m.r_urban]
+        df.loc[rural_to_urban, 'li_urban'] = True
 
         # handle new transitions to rural
-        now_rural: pd.Series = rng.random_sample(size=len(currently_urban)) < m.r_rural
-        df.loc[currently_urban[now_rural], 'li_urban'] = False
+        urban_to_rural = currently_urban[rng.random_sample(size=len(currently_urban)) < m.r_rural]
+        df.loc[urban_to_rural, 'li_urban'] = False
 
         # -------------------- LOW EXERCISE --------------------------------------------------------
 
@@ -839,18 +731,18 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_low_ex = pd.Series(m.r_low_ex, index=adults_not_low_ex)
         eff_p_low_ex.loc[df.sex == 'F'] *= m.rr_low_ex_f
         eff_p_low_ex.loc[df.li_urban] *= m.rr_low_ex_urban
-        df.loc[adults_not_low_ex, 'li_low_ex'] = (rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex)
+        df.loc[adults_not_low_ex, 'li_low_ex'] = rng.random_sample(len(adults_not_low_ex)) < eff_p_low_ex
 
         # transition from low exercise to not low exercise
         low_ex_idx = df.index[df.li_low_ex & df.is_alive]
         eff_rate_not_low_ex = pd.Series(m.r_not_low_ex, index=low_ex_idx)
         eff_rate_not_low_ex.loc[df.li_exposed_to_campaign_exercise_increase] *= m.rr_not_low_ex_pop_advice_exercise
         random_draw = rng.random_sample(len(low_ex_idx))
-        newly_not_low_ex: pd.Series = random_draw < eff_rate_not_low_ex
-        newly_not_low_ex_idx = low_ex_idx[newly_not_low_ex]
+        newly_not_low_ex_idx = low_ex_idx[random_draw < eff_rate_not_low_ex]
         df.loc[newly_not_low_ex_idx, 'li_low_ex'] = False
 
-        # todo: this line below to start a general population campaign to increase exercise not working yet (same for others below)
+        # todo: this line below to start a general population campaign
+        #  to increase exercise not working yet (same for others below)
         all_idx_campaign_exercise_increase = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
@@ -865,15 +757,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_p_tob.loc[df.sex == 'F'] *= m.rr_tob_f
         eff_p_tob *= m.rr_tob_wealth ** (pd.to_numeric(df.loc[adults_not_tob, 'li_wealth']) - 1)
 
-        df.loc[adults_not_tob, 'li_tob'] = (rng.random_sample(len(adults_not_tob)) < eff_p_tob)
+        df.loc[adults_not_tob, 'li_tob'] = rng.random_sample(len(adults_not_tob)) < eff_p_tob
 
         # transition from tobacco to no tobacco
         tob_idx = df.index[df.li_tob & df.is_alive]
         eff_rate_not_tob = pd.Series(m.r_not_tob, index=tob_idx)
         eff_rate_not_tob.loc[df.li_exposed_to_campaign_quit_smoking] *= m.rr_not_tob_pop_advice_tobacco
         random_draw = rng.random_sample(len(tob_idx))
-        newly_not_tob: pd.Series = random_draw < eff_rate_not_tob
-        newly_not_tob_idx = tob_idx[newly_not_tob]
+        newly_not_tob_idx = tob_idx[random_draw < eff_rate_not_tob]
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
@@ -895,8 +786,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_ex_alc = pd.Series(m.r_not_ex_alc, index=ex_alc_idx)
         eff_rate_not_ex_alc.loc[df.li_exposed_to_campaign_alcohol_reduction] *= m.rr_not_ex_alc_pop_advice_alcohol
         random_draw = rng.random_sample(len(ex_alc_idx))
-        newly_not_ex_alc: pd.Series = random_draw < eff_rate_not_ex_alc
-        newly_not_ex_alc_idx = ex_alc_idx[newly_not_ex_alc]
+        newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
         all_idx_campaign_alcohol_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -931,7 +821,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # create a series to hold the probablity of primary education for children at age 5
         prob_primary = pd.Series(m.p_ed_primary, index=age5)
-        prob_primary *= m.rp_ed_primary_higher_wealth**(5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
+        prob_primary *= m.rp_ed_primary_higher_wealth ** (5 - pd.to_numeric(df.loc[age5, 'li_wealth']))
 
         # randomly select some to have primary education
         age5_in_primary = rng.random_sample(len(age5)) < prob_primary
@@ -945,7 +835,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # they have a probability of gaining secondary education (level 3), based on wealth
         prob_secondary = pd.Series(m.p_ed_secondary, index=age13_in_primary)
-        prob_secondary *= m.rp_ed_secondary_higher_wealth**(5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
+        prob_secondary *= m.rp_ed_secondary_higher_wealth ** (5 - pd.to_numeric(df.loc[age13_in_primary, 'li_wealth']))
 
         # randomly select some to get secondary education
         age13_to_secondary = rng.random_sample(len(age13_in_primary)) < prob_secondary
@@ -956,17 +846,14 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---- DROP OUT OF EDUCATION
 
-        # get all individuals currently in education age 15+
-        in_ed_agege15 = df.index[df.is_alive & df.li_in_ed & (df.age_years >= 15)]
-
         # baseline rate of leaving education then adjust for wealth level
-        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed_agege15)
-        p_leave_ed *= m.rr_stop_ed_lower_wealth**(pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
+        p_leave_ed = pd.Series(m.r_stop_ed, index=in_ed)
+        p_leave_ed *= m.rr_stop_ed_lower_wealth ** (pd.to_numeric(df.loc[in_ed, 'li_wealth']) - 1)
 
         # randomly select some individuals to leave education
-        now_not_in_ed = rng.random_sample(len(in_ed_agege15)) < p_leave_ed
+        now_not_in_ed = rng.random_sample(len(in_ed)) < p_leave_ed
 
-        df.loc[in_ed_agege15[now_not_in_ed], 'li_in_ed'] = False
+        df.loc[in_ed[now_not_in_ed], 'li_in_ed'] = False
 
         # everyone leaves education at age 20
         df.loc[df.is_alive & df.li_in_ed & (df.age_years == 20), 'li_in_ed'] = False
@@ -980,22 +867,24 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(unimproved_sanitaton_idx))
 
-        newly_improved_sanitation: pd.Series = random_draw < eff_rate_improved_sanitation
-        newly_improved_sanitation_idx = unimproved_sanitaton_idx[newly_improved_sanitation]
+        newly_improved_sanitation_idx = unimproved_sanitaton_idx[random_draw < eff_rate_improved_sanitation]
         df.loc[newly_improved_sanitation_idx, 'li_unimproved_sanitation'] = False
         df.loc[newly_improved_sanitation_idx, 'li_date_acquire_improved_sanitation'] = self.sim.date
 
         # probability of improved sanitation upon moving to urban from rural
-        unimproved_sanitation_newly_urban_idx = df.index[df.li_unimproved_sanitation & df.is_alive &
-                                                         df.li_date_trans_to_urban == self.sim.date]
+        unimproved_sanitation_newly_urban_idx = df.index[
+            df.li_unimproved_sanitation & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            ]
 
         random_draw = rng.random_sample(len(unimproved_sanitation_newly_urban_idx))
 
-        eff_prev_unimproved_sanitation_urban = pd.Series(m.init_p_unimproved_sanitation_urban,
-                                                         index=unimproved_sanitation_newly_urban_idx)
+        eff_prev_unimproved_sanitation_urban = pd.Series(
+            m.init_p_unimproved_sanitation_urban, index=unimproved_sanitation_newly_urban_idx
+        )
 
-        df.loc[unimproved_sanitation_newly_urban_idx, 'li_unimproved_sanitation'] \
-            = random_draw < eff_prev_unimproved_sanitation_urban
+        df.loc[unimproved_sanitation_newly_urban_idx, 'li_unimproved_sanitation'] = (
+            random_draw < eff_prev_unimproved_sanitation_urban
+        )
 
         # -------------------- NO ACCESS HANDWASHING --------------------------------------------------------
 
@@ -1006,8 +895,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(no_access_handwashing_idx))
 
-        newly_access_handwashing: pd.Series = random_draw < eff_rate_access_handwashing
-        newly_access_handwashing_idx = no_access_handwashing_idx[newly_access_handwashing]
+        newly_access_handwashing_idx = no_access_handwashing_idx[random_draw < eff_rate_access_handwashing]
         df.loc[newly_access_handwashing_idx, 'li_no_access_handwashing'] = False
         df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = self.sim.date
 
@@ -1020,22 +908,24 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_idx))
 
-        newly_clean_drinking_water: pd.Series = random_draw < eff_rate_clean_drinking_water
-        newly_clean_drinking_water_idx = no_clean_drinking_water_idx[newly_clean_drinking_water]
+        newly_clean_drinking_water_idx = no_clean_drinking_water_idx[random_draw < eff_rate_clean_drinking_water]
         df.loc[newly_clean_drinking_water_idx, 'li_no_clean_drinking_water'] = False
         df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = self.sim.date
 
         # probability of no clean drinking water upon moving to urban from rural
-        no_clean_drinking_water_newly_urban_idx = df.index[df.li_no_clean_drinking_water & df.is_alive &
-                                                           df.li_date_trans_to_urban == self.sim.date]
+        no_clean_drinking_water_newly_urban_idx = df.index[
+            df.li_no_clean_drinking_water & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            ]
 
         random_draw = rng.random_sample(len(no_clean_drinking_water_newly_urban_idx))
 
-        eff_prev_no_clean_drinking_water_urban = pd.Series(m.init_p_no_clean_drinking_water_urban,
-                                                           index=no_clean_drinking_water_newly_urban_idx)
+        eff_prev_no_clean_drinking_water_urban = pd.Series(
+            m.init_p_no_clean_drinking_water_urban, index=no_clean_drinking_water_newly_urban_idx
+        )
 
-        df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] \
-            = random_draw < eff_prev_no_clean_drinking_water_urban
+        df.loc[no_clean_drinking_water_newly_urban_idx, 'li_no_clean_drinking_water'] = (
+            random_draw < eff_prev_no_clean_drinking_water_urban
+        )
 
         # -------------------- WOOD BURN STOVE -------------------------------------------------------------
 
@@ -1046,22 +936,22 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         random_draw = rng.random_sample(len(wood_burn_stove_idx))
 
-        newly_non_wood_burn_stove: pd.Series = random_draw < eff_rate_non_wood_burn_stove
-        newly_non_wood_burn_stove_idx = wood_burn_stove_idx[newly_non_wood_burn_stove]
+        newly_non_wood_burn_stove_idx = wood_burn_stove_idx[random_draw < eff_rate_non_wood_burn_stove]
         df.loc[newly_non_wood_burn_stove_idx, 'li_wood_burn_stove'] = False
         df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = self.sim.date
 
         # probability of moving to wood burn stove upon moving to urban from rural
-        wood_burn_stove_newly_urban_idx = df.index[df.li_wood_burn_stove & df.is_alive &
-                                                   df.li_date_trans_to_urban == self.sim.date]
+        wood_burn_stove_newly_urban_idx = df.index[
+            df.li_wood_burn_stove & df.is_alive & df.li_date_trans_to_urban == self.sim.date
+            ]
 
         random_draw = rng.random_sample(len(wood_burn_stove_newly_urban_idx))
 
-        eff_prev_wood_burn_stove_urban = pd.Series(m.init_p_wood_burn_stove_urban,
-                                                   index=wood_burn_stove_newly_urban_idx)
+        eff_prev_wood_burn_stove_urban = pd.Series(
+            m.init_p_wood_burn_stove_urban, index=wood_burn_stove_newly_urban_idx
+        )
 
-        df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] \
-            = random_draw < eff_prev_wood_burn_stove_urban
+        df.loc[wood_burn_stove_newly_urban_idx, 'li_wood_burn_stove'] = random_draw < eff_prev_wood_burn_stove_urban
 
         # -------------------- HIGH SALT ----------------------------------------------------------
 
@@ -1069,7 +959,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_high_salt = pd.Series(m.r_high_salt_urban, index=not_high_salt_idx)
         eff_rate_high_salt[df.li_urban] *= m.rr_high_salt_rural
         random_draw = rng.random_sample(len(not_high_salt_idx))
-        newly_high_salt: pd.Series = random_draw < eff_rate_high_salt
+        newly_high_salt = random_draw < eff_rate_high_salt
         newly_high_salt_idx = not_high_salt_idx[newly_high_salt]
         df.loc[newly_high_salt_idx, 'li_high_salt'] = True
 
@@ -1078,8 +968,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_salt = pd.Series(m.r_not_high_salt, index=high_salt_idx)
         eff_rate_not_high_salt.loc[df.li_exposed_to_campaign_salt_reduction] *= m.rr_not_high_salt_pop_advice_salt
         random_draw = rng.random_sample(len(high_salt_idx))
-        newly_not_high_salt: pd.Series = random_draw < eff_rate_not_high_salt
-        newly_not_high_salt_idx = high_salt_idx[newly_not_high_salt]
+        newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
 
         all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -1090,8 +979,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         not_high_sugar_idx = df.index[~df.li_high_sugar & df.is_alive]
         eff_p_high_sugar = pd.Series(m.r_high_sugar, index=not_high_sugar_idx)
         random_draw = rng.random_sample(len(not_high_sugar_idx))
-        newly_high_sugar: pd.Series = random_draw < eff_p_high_sugar
-        newly_high_sugar_idx = not_high_sugar_idx[newly_high_sugar]
+        newly_high_sugar_idx = not_high_sugar_idx[random_draw < eff_p_high_sugar]
         df.loc[newly_high_sugar_idx, 'li_high_sugar'] = True
 
         # transition from high sugar to not high sugar
@@ -1099,8 +987,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_not_high_sugar = pd.Series(m.r_not_high_sugar, index=high_sugar_idx)
         eff_rate_not_high_sugar.loc[df.li_exposed_to_campaign_sugar_reduction] *= m.rr_not_high_sugar_pop_advice_sugar
         random_draw = rng.random_sample(len(high_sugar_idx))
-        newly_not_high_sugar: pd.Series = random_draw < eff_rate_not_high_sugar
-        newly_not_high_sugar_idx = high_sugar_idx[newly_not_high_sugar]
+        newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
 
         all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -1115,8 +1002,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # possible increase in category of bmi
 
-        bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15)
-                                      & df.li_bmi.between(1, 4)]
+        bmi_cat_1_to_4_idx = df.index[df.is_alive & (df.age_years >= 15) & df.li_bmi.between(1, 4)]
         eff_rate_higher_bmi = pd.Series(m.r_higher_bmi, index=bmi_cat_1_to_4_idx)
         eff_rate_higher_bmi[df.li_urban] *= m.rr_higher_bmi_urban
         eff_rate_higher_bmi[df.sex == 'F'] *= m.rr_higher_bmi_f
@@ -1130,8 +1016,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_higher_bmi[df.li_high_sugar] *= m.rr_higher_bmi_high_sugar
 
         random_draw = rng.random_sample(len(bmi_cat_1_to_4_idx))
-        increase_bmi_cat: pd.Series = random_draw < eff_rate_higher_bmi
-        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[increase_bmi_cat]
+        newly_increase_bmi_cat_idx = bmi_cat_1_to_4_idx[random_draw < eff_rate_higher_bmi]
         df.loc[newly_increase_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] + 1
 
         # possible decrease in category of bmi
@@ -1141,8 +1026,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         eff_rate_lower_bmi[df.li_urban] *= m.rr_lower_bmi_tob
         eff_rate_lower_bmi.loc[df.li_exposed_to_campaign_weight_reduction] *= m.rr_lower_bmi_pop_advice_weight
         random_draw = rng.random_sample(len(bmi_cat_3_to_5_idx))
-        decrease_bmi_cat: pd.Series = random_draw < eff_rate_lower_bmi
-        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[decrease_bmi_cat]
+        newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
         all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
@@ -1151,11 +1035,13 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
+
     def __init__(self, module):
         """schedule logging to repeat every 3 months
         """
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Lifestyle)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -1164,87 +1050,27 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
-        n_alive = (df.is_alive).sum()
-        n_urban = (df.is_alive & df.li_urban).sum()
-        n_urban_agege15 = (df.is_alive & df.li_urban & (df.age_years >= 15)).sum()
-        n_urban_agege15_m = (df.is_alive & df.li_urban & (df.sex == 'M') & (df.age_years >= 15)).sum()
-        n_rural_agege15_m = (df.is_alive & ~df.li_urban & (df.sex == 'M') & (df.age_years >= 15)).sum()
-        n_urban_agege15_f = (df.is_alive & df.li_urban & (df.sex == 'F') & (df.age_years >= 15)).sum()
-        n_rural_agege15_f = (df.is_alive & ~df.li_urban & (df.sex == 'F') & (df.age_years >= 15)).sum()
-        n_rural = (df.is_alive & ~df.li_urban).sum()
-        n_rural_agege15 = (df.is_alive & ~df.li_urban & (df.age_years >= 15)).sum()
-        prop_urban = n_urban / n_alive
         n_agege15 = (df.is_alive & (df.age_years >= 15)).sum()
         n_agege15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
         n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
-        n_agege15_urban = (df.is_alive & (df.age_years >= 15) & df.li_urban).sum()
+        n_agege15_urban = (
+            df.is_alive & (df.age_years >= 15) & df.li_urban
+        ).sum()  # TODO: check if this should start off as zero, seems wrong
         n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
         n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
         n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
 
-        n_urban_wealth1 = (df.is_alive & df.li_urban & (df.li_wealth == 1)).sum()
-        n_urban_wealth2 = (df.is_alive & df.li_urban & (df.li_wealth == 2)).sum()
-        n_urban_wealth3 = (df.is_alive & df.li_urban & (df.li_wealth == 3)).sum()
-        n_urban_wealth4 = (df.is_alive & df.li_urban & (df.li_wealth == 4)).sum()
-        n_urban_wealth5 = (df.is_alive & df.li_urban & (df.li_wealth == 5)).sum()
-        n_rural_wealth1 = (df.is_alive & ~df.li_urban & (df.li_wealth == 1)).sum()
-        n_rural_wealth2 = (df.is_alive & ~df.li_urban & (df.li_wealth == 2)).sum()
-        n_rural_wealth3 = (df.is_alive & ~df.li_urban & (df.li_wealth == 3)).sum()
-        n_rural_wealth4 = (df.is_alive & ~df.li_urban & (df.li_wealth == 4)).sum()
-        n_rural_wealth5 = (df.is_alive & ~df.li_urban & (df.li_wealth == 5)).sum()
+        n_bmi_1 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 1)).sum()
+        prop_bmi_1 = n_bmi_1 / n_agege15
+        n_bmi_2 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 2)).sum()
+        prop_bmi_2 = n_bmi_2 / n_agege15
+        n_bmi_3 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 3)).sum()
+        prop_bmi_3 = n_bmi_3 / n_agege15
+        n_bmi_4 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 4)).sum()
+        prop_bmi_4 = n_bmi_4 / n_agege15
+        n_bmi_5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi == 5)).sum()
+        prop_bmi_5 = n_bmi_5 / n_agege15
 
-        p_wealth1_urban = n_urban_wealth1 / n_urban
-        p_wealth2_urban = n_urban_wealth2 / n_urban
-        p_wealth3_urban = n_urban_wealth3 / n_urban
-        p_wealth4_urban = n_urban_wealth4 / n_urban
-        p_wealth5_urban = n_urban_wealth5 / n_urban
-
-        p_wealth1_rural = n_rural_wealth1 / n_rural
-        p_wealth2_rural = n_rural_wealth2 / n_rural
-        p_wealth3_rural = n_rural_wealth3 / n_rural
-        p_wealth4_rural = n_rural_wealth4 / n_rural
-        p_wealth5_rural = n_rural_wealth5 / n_rural
-
-        n_age6 = (df.is_alive & (df.age_years.between(5, 7))).sum()
-        n_age6_in_ed = (df.is_alive & (df.age_years.between(5, 7)) & df.li_in_ed).sum()
-        p_in_ed_age6 = n_age6_in_ed / n_age6
-        n_age12 = (df.is_alive & df.age_years.between(11, 13)).sum()
-        n_age12_in_ed = (df.is_alive & (df.age_years.between(11, 13)) & df.li_in_ed).sum()
-        p_in_ed_age12 = n_age12_in_ed / n_age12
-        n_age16 = (df.is_alive & (df.age_years.between(15, 17))).sum()
-        n_age16_in_ed = (df.is_alive & (df.age_years.between(15, 17)) & df.li_in_ed).sum()
-        p_in_ed_age16 = n_age16_in_ed / n_age16
-        n_age19 = (df.is_alive & (df.age_years.between(18, 19))).sum()
-        n_age19_in_ed = (df.is_alive & (df.age_years.between(18, 19)) & df.li_in_ed).sum()
-        p_in_ed_age19 = n_age19_in_ed / n_age19
-
-        n_agege20 = (df.is_alive & (df.age_years >= 20)).sum()
-        n_sec_ed_agege20 = (df.is_alive & (df.age_years >= 20) & (df.li_ed_lev == 3)).sum()
-        p_sec_ed_agege20 = n_sec_ed_agege20 / n_agege20
-
-        n_bmi1_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 1) & df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi1_urban_f = n_bmi1_urban_f / n_urban_agege15_f
-        n_bmi2_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 2) & df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi2_urban_f = n_bmi2_urban_f / n_urban_agege15_f
-        n_bmi3_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 3) & df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi3_urban_f = n_bmi3_urban_f / n_urban_agege15_f
-        n_bmi4_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 4) & df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi4_urban_f = n_bmi4_urban_f / n_urban_agege15_f
-        n_bmi5_urban_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 5) & df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi5_urban_f = n_bmi5_urban_f / n_urban_agege15_f
-
-        n_bmi1_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 1) & ~df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi1_rural_f = n_bmi1_rural_f / n_rural_agege15_f
-        n_bmi2_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 2) & ~df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi2_rural_f = n_bmi2_rural_f / n_rural_agege15_f
-        n_bmi3_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 3) & ~df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi3_rural_f = n_bmi3_rural_f / n_rural_agege15_f
-        n_bmi4_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 4) & ~df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi4_rural_f = n_bmi4_rural_f / n_rural_agege15_f
-        n_bmi5_rural_f = (df.is_alive & (df.age_years.between(30, 40)) & (df.li_bmi == 5) & ~df.li_urban & (df.sex == 'F')).sum()
-        prop_bmi5_rural_f = n_bmi5_rural_f / n_rural_agege15_f
-
-    
         n_bmi_45_f = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'F')).sum()
         prop_bmi_45_f = n_bmi_45_f / n_agege15_f
         n_bmi_45_m = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.sex == 'M')).sum()
@@ -1258,116 +1084,53 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_bmi_45_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_bmi >= 4) & (df.li_wealth == 5)).sum()
         prop_bmi_45_wealth5 = n_bmi_45_wealth5 / n_agege15_wealth5
 
-        n_ex_alc_m = (df.is_alive & df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_ex_alc).sum()
-        p_ex_alc_m = n_ex_alc_m / n_agege15_m
-        n_ex_alc_f = (df.is_alive & df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_ex_alc).sum()
-        p_ex_alc_f = n_ex_alc_f / n_agege15_f
+        n_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            df.is_alive
+            & (df.sex == 'M')
+            & ~df.li_high_sugar
+            & df.age_years.between(15, 24)
+            & ~df.li_tob
+            & (df.li_wealth == 1)
+        ).sum()
 
-        n_low_ex_urban_m = (df.is_alive & df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_low_ex).sum()
-        p_low_ex_urban_m = n_low_ex_urban_m / n_urban_agege15_m
-        n_low_ex_urban_f = (df.is_alive & df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
-        p_low_ex_urban_f = n_low_ex_urban_f / n_urban_agege15_f
-        n_low_ex_rural_m = (df.is_alive & ~df.li_urban & (df.sex == 'M') & (df.age_years >= 15) & df.li_low_ex).sum()
-        p_low_ex_rural_m = n_low_ex_rural_m / n_rural_agege15_m
-        n_low_ex_rural_f = (df.is_alive & ~df.li_urban & (df.sex == 'F') & (df.age_years >= 15) & df.li_low_ex).sum()
-        p_low_ex_rural_f = n_low_ex_rural_f / n_rural_agege15_f
+        n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            df.is_alive
+            & (df.sex == 'M')
+            & ~df.li_high_sugar
+            & df.age_years.between(15, 24)
+            & ~df.li_tob
+            & (df.li_wealth == 1)
+            & (df.li_bmi == 5)
+        ).sum()
 
-        n_high_salt = (df.is_alive & df.li_high_salt).sum()
-        p_high_salt = n_high_salt / n_alive
-        n_high_sugar = (df.is_alive & df.li_high_sugar).sum()
-        p_high_sugar = n_high_sugar / n_alive
+        # TODO: assume this is meant to be logged, comes up as zero always
+        prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
+            n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
+        )
 
-        n_urban_no_access_handwashing = (df.is_alive & df.li_urban & df.li_no_access_handwashing).sum()
-        p_no_access_handwashing_urban = n_urban_no_access_handwashing / n_urban
-        n_rural_no_access_handwashing = (df.is_alive & ~df.li_urban & df.li_no_access_handwashing).sum()
-        p_no_access_handwashing_rural = n_rural_no_access_handwashing / n_rural
+        logger.info(
+            '%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
+            'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
+            'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s|'
+            'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1|%s',
+            self.sim.date,
+            prop_bmi_1,
+            prop_bmi_2,
+            prop_bmi_3,
+            prop_bmi_4,
+            prop_bmi_5,
+            prop_bmi_45_f,
+            prop_bmi_45_m,
+            prop_bmi_45_urban,
+            prop_bmi_45_rural,
+            prop_bmi_45_wealth1,
+            prop_bmi_45_wealth5,
+            prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1,
+        )
 
-        n_urban_unimproved_sanitation = (df.is_alive & df.li_urban & df.li_unimproved_sanitation).sum()
-        p_unimproved_sanitation_urban = n_urban_unimproved_sanitation / n_urban
-        n_rural_unimproved_sanitation = (df.is_alive & ~df.li_urban & df.li_unimproved_sanitation).sum()
-        p_unimproved_sanitation_rural = n_rural_unimproved_sanitation / n_rural
-
-        n_urban_wood_burn_stove = (df.is_alive & df.li_urban & df.li_wood_burn_stove).sum()
-        p_wood_burn_stove_urban = n_urban_wood_burn_stove / n_urban
-        n_rural_wood_burn_stove = (df.is_alive & ~df.li_urban & df.li_wood_burn_stove).sum()
-        p_wood_burn_stove_rural = n_rural_wood_burn_stove / n_rural
-
-        n_urban_no_clean_drinking_water = (df.is_alive & df.li_urban & df.li_no_clean_drinking_water).sum()
-        p_no_clean_drinking_water_urban = n_urban_no_clean_drinking_water / n_urban
-        n_rural_no_clean_drinking_water = (df.is_alive & ~df.li_urban & df.li_no_clean_drinking_water).sum()
-        p_no_clean_drinking_water_rural = n_rural_no_clean_drinking_water / n_rural
-
-        n_age25 = (df.is_alive & (df.age_years.between(24, 26))).sum()
-        n_age25_mar_stat_1 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 1)).sum()
-        n_age25_mar_stat_2 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 2)).sum()
-        n_age25_mar_stat_3 = (df.is_alive & (df.age_years.between(24, 26)) & (df.li_mar_stat == 3)).sum()
-        p_mar_stat_1_age25 = n_age25_mar_stat_1 / n_age25 
-        p_mar_stat_2_age25 = n_age25_mar_stat_2 / n_age25 
-        p_mar_stat_3_age25 = n_age25_mar_stat_3 / n_age25 
-
-        n_age50 = (df.is_alive & (df.age_years.between(49, 51))).sum()
-        n_age50_mar_stat_1 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 1)).sum()
-        n_age50_mar_stat_2 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 2)).sum()
-        n_age50_mar_stat_3 = (df.is_alive & (df.age_years.between(49, 51)) & (df.li_mar_stat == 3)).sum()
-        p_mar_stat_1_age50 = n_age50_mar_stat_1 / n_age50 
-        p_mar_stat_2_age50 = n_age50_mar_stat_2 / n_age50 
-        p_mar_stat_3_age50 = n_age50_mar_stat_3 / n_age50
-
-#       logger.info('%s|p_mar_stat_1_age25|%s|p_mar_stat_2_age25|%s|p_mar_stat_2_age25|%s',
-#               self.sim.date, p_mar_stat_1_age25, p_mar_stat_2_age25, p_mar_stat_3_age25)
-
-#       logger.info('%s|p_mar_stat_1_age50|%s|p_mar_stat_2_age50|%s|p_mar_stat_2_age50|%s',
-#               self.sim.date, p_mar_stat_1_age50, p_mar_stat_2_age50, p_mar_stat_3_age50)
-
-
-#       logger.info('%s|p_no_access_handwashing_urban|%s|p_no_access_handwashing_rural|%s'
-#                   '|p_unimproved_sanitation_urban|%s|p_unimproved_sanitation_rural|%s'
-#                   '|p_wood_burn_stove_urban|%s|p_wood_burn_stove_rural|%s'
-#                   '|p_no_clean_drinking_water_urban|%s|p_no_clean_drinking_water_rural|%s',
-#                   self.sim.date, p_no_access_handwashing_urban, p_no_access_handwashing_rural,
-#                   p_unimproved_sanitation_urban, p_unimproved_sanitation_rural,
-#                   p_wood_burn_stove_urban, p_wood_burn_stove_rural,
-#                   p_no_clean_drinking_water_urban, p_no_clean_drinking_water_rural)
-
-#       logger.info('%s|p_high_salt|%s|p_high_sugar|%s',
-#           self.sim.date, p_high_salt, p_high_sugar)
-
-#       logger.info('%s|p_low_ex_rural_m|%s|p_low_ex_rural_f|%s',
-#           self.sim.date, p_low_ex_rural_m, p_low_ex_rural_f)
-
-#       logger.info('%s|prop_ex_alc_m|%s|prop_ex_alc_f|%s',
-#           self.sim.date, p_ex_alc_m, p_ex_alc_f)
-
-        logger.info('%s|prop_bmi1_urban_f|%s|prop_bmi2_urban_f|%s|prop_bmi3_urban_f|%s|prop_bmi4_urban_f|%s|prop_bmi5_urban_f|%s'
-                    '|prop_bmi1_rural_f|%s|prop_bmi2_rural_f|%s|prop_bmi3_rural_f|%s|prop_bmi4_rural_f|%s|prop_bmi5_rural_f|%s',
-        self.sim.date, prop_bmi1_urban_f, prop_bmi2_urban_f, prop_bmi3_urban_f, prop_bmi4_urban_f, prop_bmi5_urban_f,
-                    prop_bmi1_rural_f, prop_bmi2_rural_f, prop_bmi3_rural_f, prop_bmi4_rural_f, prop_bmi5_rural_f)
-
-#       logger.info('%s|p_in_ed_age6|%s|p_in_ed_age12|%s|p_in_ed_age16|%s|p_in_ed_age19|%s|p_sec_ed_agege20|%s',
-#                   self.sim.date,
-#                   p_in_ed_age6, p_in_ed_age12, p_in_ed_age16, p_in_ed_age19, p_sec_ed_agege20)
-
-#       logger.info('%s|p_wealth1_urban|%s|p_wealth2_urban|%s|p_wealth3_urban|%s|p_wealth4_urban|%s|'
-#                   'p_wealth5_urban|%s|p_wealth1_rural|%s|p_wealth2_rural|%s|p_wealth3_rural|'
-#                   '%s|p_wealth4_rural|%s|p_wealth5_rural|%s',
-#                   self.sim.date, p_wealth1_urban, p_wealth2_urban, p_wealth3_urban, p_wealth4_urban,
-#                   p_wealth5_urban, p_wealth1_rural, p_wealth2_rural, p_wealth3_rural, p_wealth4_rural,
-#                   p_wealth5_rural)
-
-#       logger.info('%s|prop_urban|%s|',
-#                   self.sim.date, prop_urban)
-
-#       logger.info('%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
-#                   'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
-#                   'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s',
-#                   self.sim.date, prop_bmi_1, prop_bmi_2, prop_bmi_3, prop_bmi_4, prop_bmi_5,
-#                   prop_bmi_45_f, prop_bmi_45_m, prop_bmi_45_urban, prop_bmi_45_rural,
-#                   prop_bmi_45_wealth1, prop_bmi_45_wealth5)
-
-#       logger.debug('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
-
+        #       logger.debug('%s|person_one|%s',
+        #                    self.sim.date,
+        #                    df.loc[0].to_dict())
 
         """
         logger.info('%s|li_urban|%s',
