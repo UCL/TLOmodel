@@ -1093,6 +1093,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.li_wealth == 1)
         ).sum()
 
+        # TODO: always zero?
         n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
             df.is_alive
             & (df.sex == 'M')
