@@ -5,13 +5,7 @@ from pathlib import Path
 
 from tlo import Date, Simulation
 # from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthsystem,
-    oesophageal_cancer,
-)
+from tlo.methods import demography, healthburden, healthsystem, lifestyle, oesophageal_cancer
 
 # import matplotlib.pyplot as plt
 # import numpy as np
@@ -53,7 +47,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
              ignore_appt_constraints=True,
              ignore_cons_constraints=True))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
 sim.register(oesophageal_cancer.Oesophageal_Cancer(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
