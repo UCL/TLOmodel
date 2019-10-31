@@ -2,15 +2,15 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from pathlib import Path
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography
+from tlo.methods import demography, enhanced_lifestyle
 
 # Where will output go - by default, wherever this script is run
 outputpath = ''
@@ -20,8 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 
@@ -42,17 +41,19 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
+logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)
+logging.getLogger("tlo.methods.enhanced_lifestyle").setLevel(logging.INFO)
+
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
 sim.seed_rngs(1)
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
-
-
 # this will make sure that the logging file is complete
 fh.flush()
-
 
 # %% read the results
 output = parse_log_file(logfile)
@@ -68,6 +69,7 @@ Model_Pop_Normalised = 100 * np.asarray(Model_Pop) / np.asarray(
     Model_Pop[Model_Years == '2010-01-01'])
 
 # Load Data
+resourcefile_demography = resourcefilepath / "ResourceFile_Lifestyle_Enhanced.xlsx"
 Data = pd.read_excel(resourcefile_demography, sheet_name='Interpolated Pop Structure')
 Data_Pop = Data.groupby(by='year')['value'].sum()
 Data_Years = Data.groupby(by='year')['year'].mean()
