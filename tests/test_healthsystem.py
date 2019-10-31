@@ -6,14 +6,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (
-    chronicsyndrome,
-    demography,
-    enhanced_lifestyle,
-    healthburden,
-    healthsystem,
-    mockitis,
-)
+from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -77,7 +70,6 @@ def test_run_no_interventions_allowed(tmpdir):
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
