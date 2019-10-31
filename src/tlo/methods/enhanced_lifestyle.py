@@ -362,7 +362,7 @@ class Lifestyle(Module):
         # todo: urban rural depends on district of residence
 
         # randomly selected some individuals as urban
-        df['li_urban'] = rng.random_sample(size=len(df)) < m.init_p_urban
+        df.loc[alive_idx, 'li_urban'] = rng.random_sample(size=len(alive_idx)) < m.init_p_urban
 
         # get the indices of all individuals who are urban or rural
         urban_index = df.index[df.is_alive & df.li_urban]
