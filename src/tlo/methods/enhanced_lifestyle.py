@@ -383,9 +383,7 @@ class Lifestyle(Module):
         odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
         odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
 
-        low_ex_probs = pd.Series((odds_low_ex / (1 + odds_low_ex)), index=age_ge15_idx)
-
-        assert len(low_ex_probs) == len(age_ge15_idx)
+        low_ex_probs = odds_low_ex / (1 + odds_low_ex)
 
         random_draw = rng.random_sample(size=len(age_ge15_idx))
         df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
@@ -405,9 +403,7 @@ class Lifestyle(Module):
         odds_tob.loc[df.li_wealth == 4] *= 4
         odds_tob.loc[df.li_wealth == 5] *= 5
 
-        tob_probs = pd.Series((odds_tob / (1 + odds_tob)), index=age_ge15_idx)
-
-        assert len(age_ge15_idx) == len(tob_probs)
+        tob_probs = odds_tob / (1 + odds_tob)
 
         random_draw = rng.random_sample(size=len(age_ge15_idx))
 
