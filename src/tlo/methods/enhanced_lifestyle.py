@@ -1105,24 +1105,26 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
         )
 
+        bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                    prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            }
+
         logger.info(
-            '%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
-            'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
-            'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s|'
-            'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1|%s',
+            '%s|bmi_proportions|%s',
             self.sim.date,
-            prop_bmi_1,
-            prop_bmi_2,
-            prop_bmi_3,
-            prop_bmi_4,
-            prop_bmi_5,
-            prop_bmi_45_f,
-            prop_bmi_45_m,
-            prop_bmi_45_urban,
-            prop_bmi_45_rural,
-            prop_bmi_45_wealth1,
-            prop_bmi_45_wealth5,
-            prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1,
+            bmi_proportions
         )
 
         #       logger.debug('%s|person_one|%s',
