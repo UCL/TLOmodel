@@ -94,9 +94,21 @@ class Type2DiabetesMellitus(Module):
         'initial_prevalence_d2': Parameter(Types.REAL, 'Prevalence of T2DM as per data'),
 
         # Define disease progression parameters
+        # At the start of the model, parameters to assign prevalence of complications
+        'prob_retino_1': Parameter(Types.REAL, 'Probability of having mild retinopathy'),
+        'prob_retino_2': Parameter(Types.REAL, 'Probability of having severe retinopathy'),
+        'prob_nephro_1': Parameter(Types.REAL, 'Probability of having mild nephropathy'),
+        'prob_nephro_2': Parameter(Types.REAL, 'Probability of having moderate nephropathy'),
+        'prob_nephro_3': Parameter(Types.REAL, 'Probability of having severe nephropathy'),
+        'prob_neuro_1': Parameter(Types.REAL, 'Probability of having mild peripheral neuropathy'),
+        'prob_neuro_2': Parameter(Types.REAL, 'Probability of having moderate peripheral neuropathy'),
+        'prob_neuro_3': Parameter(Types.REAL, 'Probability of having severe peripheral neuropathy'),
+
+        # During model run, parameters to assign incidence of new complication
         'prob_retinocomp': Parameter(Types.REAL, 'Probability of developing retinopathy'),
         'prob_nephrocomp': Parameter(Types.REAL, 'Probability of developing diabetic nephropathy'),
         'prob_neurocomp': Parameter(Types.REAL, 'Probability of developing peripheral neuropathy'),
+        't_to_increase_complication_severity': Parameter(Types.REAL, 'Time until severity of complication increases'),
         'prob_death': Parameter(Types.REAL, 'Probability of dying'),
 
         # Define health care parameters
@@ -133,13 +145,13 @@ class Type2DiabetesMellitus(Module):
                                                                  categories=['N', 'C', 'P']),
         'd2_retino_date': Property(Types.DATE,                'Date of latest retinopathy complication'),
         'd2_retino_status': Property(Types.CATEGORICAL,       'Level of retinopathy: none, moderate; severe',
-                                                                categories=['None', 'Moderate', 'Severe']),
+                                                                categories=[0, 1, 2]),
         'd2_neuro_date': Property(Types.DATE,                 'Date of latest neuropathy complication'),
         'd2_neuro_status': Property(Types.CATEGORICAL,        'Level of neuropathy: none, mild, moderate, severe',
-                                                                categories=['None','Mild', 'Moderate', 'Severe']),
+                                                                categories=[0, 1, 2, 3]),
         'd2_nephro_date': Property(Types.DATE,                'Date of latest nephropathy complication'),
         'd2_nephro_status': Property(Types.CATEGORICAL,       'Level of nephropathy: none, mild, moderate, severe',
-                                                                categories=['None','Mild', 'Moderate', 'Severe']),
+                                                                categories=[0, 1, 2, 3]),
         'd2_death_date': Property(Types.DATE,                 'Date of scheduled death of infected individual'),
 
         # Define health care properties  #ToDO: to add more if needed once HSi coded
@@ -240,25 +252,25 @@ class Type2DiabetesMellitus(Module):
         m = self
 
         # Define default properties
-        df.loc[df.is_alive,'d2_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
-        df.loc[df.is_alive,'d2_current_status'] = False     # Default setting: no one has T2DM
-        df.loc[df.is_alive,'d2_historic_status'] = 'N'      # Default setting: no one has T2DM
-        df.loc[df.is_alive,'d2_date'] = pd.NaT              # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_retino_date'] = pd.NaT      # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_retino_status'] = 'None'    # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT       # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_status'] = 'None'     # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_nephro_date'] = pd.NaT      # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_nephro_status'] = 'None'    # Default setting: no one has T2DM
-        df.loc[df.is_alive,'d2_death_date'] = pd.NaT        # Default setting: no one has T2DM
-        df.loc[df.is_alive,'d2_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
-        df.loc[df.is_alive,'d2_diag_status'] = 'N'          # Default setting: no one is diagnosed
-        df.loc[df.is_alive,'d2_treat_date'] = pd.NaT        # Default setting: no one is treated
-        df.loc[df.is_alive,'d2_treat_status'] = 'N'         # Default setting: no one is treated
-        df.loc[df.is_alive,'d2_contr_date'] = pd.NaT        # Default setting: no one is controlled
-        df.loc[df.is_alive,'d2_contr_status'] = 'N'         # Default setting: no one is controlled
-        df.loc[df.is_alive,'d2_specific_symptoms'] = 'none' # Default setting: no one has symptoms
-        df.loc[df.is_alive,'d2_unified_symptom_code'] = 0   # Default setting: no one has symptoms
+        df.loc[df.is_alive, 'd2_risk'] = 1.0                 # Default setting: no risk given pre-existing conditions
+        df.loc[df.is_alive, 'd2_current_status'] = False     # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_historic_status'] = 'N'      # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_date'] = pd.NaT              # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_retino_date'] = pd.NaT       # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_retino_status'] = 0          # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT        # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_status'] = 0           # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_nephro_date'] = pd.NaT       # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_nephro_status'] = 0          # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_death_date'] = pd.NaT        # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
+        df.loc[df.is_alive, 'd2_diag_status'] = 'N'          # Default setting: no one is diagnosed
+        df.loc[df.is_alive, 'd2_treat_date'] = pd.NaT        # Default setting: no one is treated
+        df.loc[df.is_alive, 'd2_treat_status'] = 'N'         # Default setting: no one is treated
+        df.loc[df.is_alive, 'd2_contr_date'] = pd.NaT        # Default setting: no one is controlled
+        df.loc[df.is_alive, 'd2_contr_status'] = 'N'         # Default setting: no one is controlled
+        df.loc[df.is_alive, 'd2_specific_symptoms'] = 'none' # Default setting: no one has symptoms
+        df.loc[df.is_alive, 'd2_unified_symptom_code'] = 0   # Default setting: no one has symptoms
         # TODO: note that d2_age_range has not been given default
 
         # Assign prevalence as per data
@@ -269,7 +281,7 @@ class Type2DiabetesMellitus(Module):
         # TODO: update with BMI once merged to master
         df.loc[df.is_alive & df.li_overwt, 'd2_risk'] *= m.prob_d2givenbmi
         # TODO: add hypertension risk after circular declaration has been fixed with Asif/Stef
-        # df.loc[df.is_alive & df.ht_current_status, 'd2_risk'] *= self.prob_d2givenht
+        # df.loc[df.is_alive & df.ht_current_status, 'd2_risk'] *= m.prob_d2givenht
         # TODO complete with other risk factors
 
         # Define key variables
@@ -325,7 +337,52 @@ class Type2DiabetesMellitus(Module):
         df.loc[df.is_alive & df.d2_current_status, 'd2_date'] = self.sim.date - infected_td_ago
         df.loc[df.is_alive & df.d2_current_status, 'd2_historic_status'] = 'C'
 
-        # Assign level of symptoms # TODO: complete this section
+        # Assign complication
+        # TODO: not sure if there is a more efficient way to code the below?
+        # Retinopathy
+        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
+        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
+        now_retino_1 = (random_numbers < m.prob_retino_1)  # assign retinopathy amongst those with diabetes
+        now_retino_2 = (random_numbers < m.prob_retino_2)  # amongst those with retinopathy assign severe retinopathy
+        d2_idx_retino1 = currently_d2_yes[now_retino_1]    # hold id of those with retinopathy
+        d2_idx_retino2 = currently_d2_yes[now_retino_2]    # hold id of those with severe retinopathy
+
+        # Now update the df
+        df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
+        df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
+
+        # Nephropathy
+        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
+        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
+        now_nephro_1 = (random_numbers < m.prob_nephro_1)  # assign nephropathy amongst those with diabetes
+        now_nephro_2 = (random_numbers < m.prob_nephro_2)  # amongst those with nephropathy assign moderate to severe nephropathy
+        now_nephro_3 = (random_numbers < m.prob_nephro_3)  # now assign severe nephropathy amongst those with moderate to severe neruopathy
+        d2_idx_nephro1 = currently_d2_yes[now_nephro_1]    # hold id of those with nephropathy
+        d2_idx_nephro2 = currently_d2_yes[now_nephro_2]    # hold id of those with mod-severe nephropathy
+        d2_idx_nephro3 = currently_d2_yes[now_nephro_3]    # hold id of those with severe nephropathy
+
+        # Now update the df
+        df.loc[d2_idx_nephro1, 'd2_idx_nephro1'] = 1
+        df.loc[d2_idx_nephro2, 'd2_retino_status'] = 2
+        df.loc[d2_idx_nephro3, 'd2_retino_status'] = 3
+
+        # Neuropathy
+        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
+        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
+        now_neuro_1 = (random_numbers < m.prob_neuro_1)  # assign neuropathy amongst those with diabetes
+        now_neuro_2 = (random_numbers < m.prob_neuro_2)  # amongst those with neuropathy assign moderate to severe neuropathy
+        now_neuro_3 = (random_numbers < m.prob_neuro_3)  # now assign severe neuropathy amongst those with moderate to severe neuropathy
+        d2_idx_neuro1 = currently_d2_yes[now_neuro_1]    # hold id of those with neuropathy
+        d2_idx_neuro2 = currently_d2_yes[now_neuro_2]    # hold id of those with mod-severe neuropathy
+        d2_idx_neuro3 = currently_d2_yes[now_neuro_3]    # hold id of those with severe neuropathy
+
+        # Now update the df
+        df.loc[d2_idx_neuro1, 'd2_idx_nephro1'] = 1
+        df.loc[d2_idx_neuro2, 'd2_retino_status'] = 2
+        df.loc[d2_idx_neuro3, 'd2_retino_status'] = 3
+
+
+        # Assign level of symptoms # TODO: complete this section once symptoms haev been finalised
         # level_of_symptoms = self.parameters['level_of_symptoms']
         # symptoms = self.rng.choice(level_of_symptoms.level_of_symptoms,
         #                           size=T2DM_count,
@@ -558,44 +615,8 @@ class T2DMDeathEvent(Event, IndividualScopeEventMixin):   # TODO: update
 
 # ---------------------------------------------------------------------------------
 # ---------------------------------------------------------------------------------
-# Health System Interaction Events
+# Logging events
 
-# TODO: complete this
-
-
-class T2DMLoggingEvent(RegularEvent, PopulationScopeEventMixin):
-    def __init__(self, module):
-        """Produce a summmary of the numbers of people with respect to their 'mockitis status'
-        """
-        # run this event every month
-        self.repeat = 6
-        super().__init__(module, frequency=DateOffset(months=self.repeat))
-
-    def apply(self, population):
-        # get some summary statistics
-        df = population.props
-
-        # infected_total = df.loc[df.is_alive, 'mi_is_infected'].sum()
-        # proportion_infected = infected_total / len(df)
-        #
-        # mask: pd.Series = (df.loc[df.is_alive, 'mi_date_infected'] >
-        #                    self.sim.date - DateOffset(months=self.repeat))
-        # infected_in_last_month = mask.sum()
-        # mask = (df.loc[df.is_alive, 'mi_date_cure'] > self.sim.date - DateOffset(months=self.repeat))
-        # cured_in_last_month = mask.sum()
-        #
-        # counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        # counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
-        #
-        # logger.info('%s|summary|%s', self.sim.date,
-        #             {
-        #                 'TotalInf': infected_total,
-        #                 'PropInf': proportion_infected,
-        #                 'PrevMonth': infected_in_last_month,
-        #                 'Cured': cured_in_last_month,
-        #             })
-        #
-        # logger.info('%s|status_counts|%s', self.sim.date, counts)
 
 class Type2DiabetesMellitusLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
