@@ -115,7 +115,9 @@ class tb(Module):
         'tb_date_treated_mdr': Property(Types.DATE, 'date tb MDR treatment started'),
         'tb_request_mdr_regimen': Property(Types.BOOL, 'request for mdr treatment'),
         'tb_on_ipt': Property(Types.BOOL, 'if currently on ipt'),
-        'tb_date_ipt': Property(Types.DATE, 'date ipt started')
+        'tb_date_ipt': Property(Types.DATE, 'date ipt started'),
+        'tb_date_death': Property(Types.DATE, 'date of death from tb')
+
     }
 
     def read_parameters(self, data_folder):
@@ -217,6 +219,7 @@ class tb(Module):
         df['tb_request_mdr_regimen'] = False
         df['tb_on_ipt'] = False
         df['tb_date_ipt'] = pd.NaT
+        df['tb_date_death'] = pd.NaT
 
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
