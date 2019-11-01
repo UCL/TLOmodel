@@ -122,13 +122,13 @@ class ChronicSyndrome(Module):
 
         # date acquired cs
         # sample years in the past
-        acquired_years_ago = np.random.exponential(scale=10, size=acquired_count)
+        acquired_years_ago = self.rng.exponential(scale=10, size=acquired_count)
 
         # pandas requires 'timedelta' type for date calculations
         acquired_td_ago = pd.to_timedelta(acquired_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=20, size=acquired_count)
+        death_years_ahead = self.rng.exponential(scale=20, size=acquired_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals

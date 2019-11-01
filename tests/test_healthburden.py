@@ -1,6 +1,5 @@
 import logging
 import os
-import tempfile
 from pathlib import Path
 
 import pandas as pd
@@ -8,7 +7,14 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+from tlo.methods import (
+    chronicsyndrome,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    mockitis,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -18,7 +24,7 @@ except NameError:
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10
+popsize = 100
 
 
 # Simply test whether the system runs under multiple configurations of the healthsystem
@@ -36,19 +42,19 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthburden_with_dummy_diseases():
+def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # There should be no events run or scheduled
-
-    # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().addHandler(fh)
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
+
+    # Get ready for temporary log-file
+    f = tmpdir.mkdir("healthburden_with_dummy_disease").join("dummy.log")
+    fh = logging.FileHandler(f)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
+    logging.getLogger().addHandler(fh)
 
     # Define the service availability as null
     service_availability = []
@@ -60,9 +66,11 @@ def test_run_with_healthburden_with_dummy_diseases():
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0))
     sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -71,11 +79,11 @@ def test_run_with_healthburden_with_dummy_diseases():
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
-    # correctly configured index (outputs on 31st decemnber in each year of simulation for each age/sex group)
+    # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)
     dalys = output['tlo.methods.healthburden']['DALYS']
     age_index = sim.modules['Demography'].AGE_RANGE_CATEGORIES
     sex_index = ['M', 'F']

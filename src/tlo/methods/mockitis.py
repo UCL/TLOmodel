@@ -132,7 +132,7 @@ class Mockitis(Module):
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=20, size=infected_count)
+        death_years_ahead = self.rng.exponential(scale=20, size=infected_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
@@ -186,7 +186,7 @@ class Mockitis(Module):
         if child_is_infected:
 
             # Scheduled death date
-            death_years_ahead = np.random.exponential(scale=20)
+            death_years_ahead = self.rng.random.exponential(scale=20)
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             # Level of symptoms
@@ -274,14 +274,15 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             prevalence = 0
 
         # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
+        now_infected = self.module.rng.choice([True, False],
+                                              size=len(currently_uninfected),
+                                              p=[prevalence, 1 - prevalence])
 
         # if any are infected
         if now_infected.sum():
             infected_idx = currently_uninfected[now_infected]
 
-            death_years_ahead = np.random.exponential(scale=2, size=now_infected.sum())
+            death_years_ahead = self.module.rng.exponential(scale=2, size=now_infected.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
             symptoms = self.module.rng.choice(
                 self.module.parameters['level_of_symptoms']['level_of_symptoms'],
