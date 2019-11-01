@@ -4,6 +4,7 @@ import heapq
 import itertools
 import logging
 import sys
+from collections import OrderedDict
 
 import numpy as np
 
@@ -43,7 +44,7 @@ class Simulation:
             a keyword parameter for clarity
         """
         self.date = self.start_date = start_date
-        self.modules = {}
+        self.modules = OrderedDict()
         self.rng = np.random.RandomState()
         self.event_queue = EventQueue()
 
@@ -81,7 +82,7 @@ class Simulation:
         :param seed: the seed for the Simulation RNG
         """
         self.rng.seed(seed)
-        logger.info("Simluation RNG user seed %d", seed)
+        logger.info("Simulation RNG user seed %d", seed)
         for module in self.modules.values():
             module_seed = self.rng.randint(2**31 - 1)
             logger.info("%s RNG auto seed %d", module.name, module_seed)
