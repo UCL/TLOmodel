@@ -51,7 +51,7 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
 
     # Get ready for temporary log-file
     f = tmpdir.mkdir("healthburden_with_dummy_disease").join("dummy.log")
-    fh = logging.FileHandler(f.name)
+    fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().handlers.clear()
