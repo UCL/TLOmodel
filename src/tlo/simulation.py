@@ -13,6 +13,7 @@ from tlo import Population
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
 class Simulation:
     """The main control centre for a simulation.
 
