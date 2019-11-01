@@ -52,6 +52,7 @@ class Simulation:
         handler.setLevel(logging.DEBUG)
         formatter = logging.Formatter('%(levelname)s|%(name)s|%(message)s')
         handler.setFormatter(formatter)
+        logging.getLogger().handlers.clear()
         logging.getLogger().addHandler(handler)
         logging.basicConfig(level=logging.DEBUG)
 
