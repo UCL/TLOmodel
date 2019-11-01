@@ -54,15 +54,15 @@ def test_run_with_healthsystem_no_disease_modules_defined():
 def test_run_no_interventions_allowed(tmpdir):
     # There should be no events run or scheduled
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("healthsystem").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability as null
     service_availability = []
@@ -97,15 +97,15 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("healthsystem").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -141,15 +141,15 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # Every events should run (no did_not_run)
     # (Mode 0 -> No Constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("mode_0_no_capacity").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -185,15 +185,15 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     # All events should run with some zero squeeze factors
     # (Mode 1 -> elastic constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("mode_1_with_capacity").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -230,15 +230,15 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("mode_1_with_no_capacit").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -277,15 +277,15 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # All events should run
     # (Mode 2 -> hard constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("mode_2_with_capacity").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -322,15 +322,15 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # events did not run. Population level events should have run.
     # (Mode 2 -> hard constraints)
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tmpdir.mkdir("mode_2_with_no_capacity").join("dummy.log")
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])

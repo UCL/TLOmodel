@@ -46,15 +46,15 @@ def check_dtypes(simulation):
 def test_run_with_healthburden_with_dummy_diseases():
     # There should be no events run or scheduled
 
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
     # Get ready for temporary log-file
     f = tempfile.NamedTemporaryFile(dir='.')
     fh = logging.FileHandler(f.name)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
     logging.getLogger().addHandler(fh)
-
-    # Establish the simulation object
-    sim = Simulation(start_date=start_date)
 
     # Define the service availability as null
     service_availability = []
