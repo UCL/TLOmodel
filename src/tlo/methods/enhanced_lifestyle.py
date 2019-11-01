@@ -338,33 +338,32 @@ class Lifestyle(Module):
         # -------------------- DEFAULTS ------------------------------------------------------------
 
         df['li_urban'] = False
-        df['li_date_trans_to_urban'] = pd.NaT
         df['li_wealth'].values[:] = 3
         df['li_bmi'] = 0
+        df['li_exposed_to_campaign_weight_reduction'] = False
         df['li_low_ex'] = False
+        df['li_exposed_to_campaign_exercise_increase'] = False
+        df['li_high_salt'] = False
+        df['li_exposed_to_campaign_salt_reduction'] = False
+        df['li_high_sugar'] = False
+        df['li_exposed_to_campaign_sugar_reduction'] = False
         df['li_tob'] = False
         df['li_date_not_tob'] = pd.NaT
+        df['li_exposed_to_campaign_quit_smoking'] = False
         df['li_ex_alc'] = False
+        df['li_exposed_to_campaign_alcohol_reduction'] = False
         df['li_mar_stat'].values[:] = 1
         df['li_in_ed'] = False
         df['li_ed_lev'].values[:] = 1
         df['li_unimproved_sanitation'] = True
-        df['li_date_acquire_improved_sanitation'] = pd.NaT
         df['li_no_access_handwashing'] = True
-        df['li_date_acquire_access_handwashing'] = pd.NaT
         df['li_no_clean_drinking_water'] = True
-        df['li_date_acquire_clean_drinking_water'] = pd.NaT
         df['li_wood_burn_stove'] = True
+        df['li_date_trans_to_urban'] = pd.NaT
+        df['li_date_acquire_improved_sanitation'] = pd.NaT
+        df['li_date_acquire_access_handwashing'] = pd.NaT
+        df['li_date_acquire_clean_drinking_water'] = pd.NaT
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
-        df['li_high_salt'] = False
-        df['li_high_sugar'] = False
-        df['li_exposed_to_campaign_weight_reduction'] = False
-        df['li_exposed_to_campaign_exercise_increase'] = False
-        df['li_exposed_to_campaign_salt_reduction'] = False
-        df['li_exposed_to_campaign_sugar_reduction'] = False
-        df['li_exposed_to_campaign_quit_smoking'] = False
-        df['li_exposed_to_campaign_alcohol_reduction'] = False
-
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -678,12 +677,20 @@ class Lifestyle(Module):
         df = self.sim.population.props
 
         df.at[child_id, 'li_urban'] = df.at[mother_id, 'li_urban']
-        df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
         df.at[child_id, 'li_wealth'] = df.at[mother_id, 'li_wealth']
         df.at[child_id, 'li_bmi'] = 0
+        df.at[child_id, 'li_exposed_to_campaign_weight_reduction'] = False
         df.at[child_id, 'li_low_ex'] = False
+        df.at[child_id, 'li_exposed_to_campaign_exercise_increase'] = False
+        df.at[child_id, 'li_high_salt'] = df.at[mother_id, 'li_high_salt']
+        df.at[child_id, 'li_exposed_to_campaign_salt_reduction'] = False
+        df.at[child_id, 'li_high_sugar'] = df.at[mother_id, 'li_high_sugar']
+        df.at[child_id, 'li_exposed_to_campaign_sugar_reduction'] = False
         df.at[child_id, 'li_tob'] = False
+        df.at[child_id, 'li_date_not_tob'] = pd.NaT
+        df.at[child_id, 'li_exposed_to_campaign_quit_smoking'] = False
         df.at[child_id, 'li_ex_alc'] = False
+        df.at[child_id, 'li_exposed_to_campaign_alcohol_reduction'] = False
         df.at[child_id, 'li_mar_stat'] = 1
         df.at[child_id, 'li_in_ed'] = False
         df.at[child_id, 'li_ed_lev'] = 1
@@ -691,8 +698,11 @@ class Lifestyle(Module):
         df.at[child_id, 'li_no_access_handwashing'] = df.at[mother_id, 'li_no_access_handwashing']
         df.at[child_id, 'li_no_clean_drinking_water'] = df.at[mother_id, 'li_no_clean_drinking_water']
         df.at[child_id, 'li_wood_burn_stove'] = df.at[mother_id, 'li_wood_burn_stove']
-        df.at[child_id, 'li_high_salt'] = df.at[mother_id, 'li_high_salt']
-        df.at[child_id, 'li_high_sugar'] = df.at[mother_id, 'li_high_sugar']
+        df.at[child_id, 'li_date_trans_to_urban'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_improved_sanitation'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_access_handwashing'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_clean_drinking_water'] = pd.NaT
+        df.at[child_id, 'li_date_acquire_non_wood_burn_stove'] = pd.NaT
 
 
 class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1121,6 +1131,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'prop_bmi_4': prop_bmi_4,
             'prop_bmi_5': prop_bmi_5,
             'prop_bmi_45_f': prop_bmi_45_f,
+            # prop_bmi_45_m is a rare event and is non-zero with 10,000 population sizes
             'prop_bmi_45_m': prop_bmi_45_m,
             'prop_bmi_45_urban': prop_bmi_45_urban,
             'prop_bmi_45_rural': prop_bmi_45_rural,
