@@ -80,8 +80,8 @@ def test_run_with_healthburden_with_dummy_diseases(tmpdir):
 
     # read the results
     fh.flush()
-    output = parse_log_file(f.name)
-    f.close()
+    output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     # correctly configured index (outputs on 31st december in each year of simulation for each age/sex group)
