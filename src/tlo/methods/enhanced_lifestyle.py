@@ -7,7 +7,6 @@ import logging
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -1116,19 +1115,19 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         bmi_proportions = {
-                'prop_bmi_1': prop_bmi_1,
-                'prop_bmi_2': prop_bmi_2,
-                'prop_bmi_3': prop_bmi_3,
-                'prop_bmi_4': prop_bmi_4,
-                'prop_bmi_5': prop_bmi_5,
-                'prop_bmi_45_f': prop_bmi_45_f,
-                'prop_bmi_45_m': prop_bmi_45_m,
-                'prop_bmi_45_urban': prop_bmi_45_urban,
-                'prop_bmi_45_rural': prop_bmi_45_rural,
-                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
-                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
-                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
-                    prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            'prop_bmi_1': prop_bmi_1,
+            'prop_bmi_2': prop_bmi_2,
+            'prop_bmi_3': prop_bmi_3,
+            'prop_bmi_4': prop_bmi_4,
+            'prop_bmi_5': prop_bmi_5,
+            'prop_bmi_45_f': prop_bmi_45_f,
+            'prop_bmi_45_m': prop_bmi_45_m,
+            'prop_bmi_45_urban': prop_bmi_45_urban,
+            'prop_bmi_45_rural': prop_bmi_45_rural,
+            'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+            'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+            'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
             }
 
         logger.info(
