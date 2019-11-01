@@ -251,6 +251,15 @@ class Lifestyle(Module):
         'r_access_handwashing': Parameter(
             Types.REAL, 'probability per 3 months of change from ' 'no_access_handwashing true to false'
         ),
+        'start_date_campaign_exercise_increase': Parameter(
+            Types.DATE, 'Date of campaign start for increased exercise'
+        ),
+        'start_date_campaign_quit_smoking': Parameter(
+            Types.DATE, 'Date of campaign start to quit smoking'
+        ),
+        'start_date_campaign_alcohol_reduction': Parameter(
+            Types.DATE, 'Date of campaign start for alcohol reduction'
+        ),
     }
 
     # Properties of individuals that this module provides.
@@ -307,11 +316,16 @@ class Lifestyle(Module):
     }
 
     def read_parameters(self, data_folder):
+        p = self.parameters
         dfd = pd.read_excel(
             self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
 
         self.load_parameters_from_dataframe(dfd)
+        # Manually set dates for campaign starts for now
+        p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
+        p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
+        p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -735,7 +749,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
 
         # todo: this line below to start a general population campaign
         #  to increase exercise not working yet (same for others below)
-        all_idx_campaign_exercise_increase = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_exercise_increase = df.index[df.is_alive &
+                                                      (self.sim.date == m.start_date_campaign_exercise_increase)]
         df.loc[all_idx_campaign_exercise_increase, 'li_exposed_to_campaign_exercise_increase'] = True
 
         # -------------------- TOBACCO USE ---------------------------------------------------------
@@ -760,7 +775,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_not_tob_idx, 'li_tob'] = False
         df.loc[newly_not_tob_idx, 'li_date_not_tob'] = self.sim.date
 
-        all_idx_campaign_quit_smoking = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_quit_smoking = df.index[df.is_alive & (self.sim.date == m.start_date_campaign_quit_smoking)]
         df.loc[all_idx_campaign_quit_smoking, 'li_exposed_to_campaign_quit_smoking'] = True
 
         # -------------------- EXCESSIVE ALCOHOL ---------------------------------------------------
@@ -781,7 +796,8 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_ex_alc_idx = ex_alc_idx[random_draw < eff_rate_not_ex_alc]
         df.loc[newly_not_ex_alc_idx, 'li_ex_alc'] = False
 
-        all_idx_campaign_alcohol_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_alcohol_reduction = df.index[df.is_alive
+                                                      & (self.sim.date == m.start_date_campaign_alcohol_reduction)]
         df.loc[all_idx_campaign_alcohol_reduction, 'li_exposed_to_campaign_alcohol_reduction'] = True
 
         # -------------------- MARITAL STATUS ------------------------------------------------------
