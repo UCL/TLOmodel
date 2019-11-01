@@ -37,6 +37,9 @@ def check_dtypes(simulation):
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date)
 
+    # disable logging to stdout
+    logging.getLogger().handlers.clear()
+
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
