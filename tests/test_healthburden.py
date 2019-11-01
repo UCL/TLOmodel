@@ -25,7 +25,7 @@ except NameError:
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 10
+popsize = 100
 
 
 # Simply test whether the system runs under multiple configurations of the healthsystem
@@ -43,19 +43,19 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthburden_with_dummy_diseases():
+def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # There should be no events run or scheduled
-
-    # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
-    fh = logging.FileHandler(f.name)
-    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
-    fh.setFormatter(fr)
-    logging.getLogger().addHandler(fh)
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
+
+    # Get ready for temporary log-file
+    f = tmpdir.mkdir("healthburden_with_dummy_disease").join("dummy.log")
+    fh = logging.FileHandler(f)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
+    logging.getLogger().addHandler(fh)
 
     # Define the service availability as null
     service_availability = []
@@ -70,6 +70,8 @@ def test_run_with_healthburden_with_dummy_diseases():
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
