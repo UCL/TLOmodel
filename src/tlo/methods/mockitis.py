@@ -274,8 +274,9 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             prevalence = 0
 
         # 2. handle new infections
-        now_infected = self.module.rng.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
+        now_infected = self.module.rng.choice([True, False],
+                                              size=len(currently_uninfected),
+                                              p=[prevalence, 1 - prevalence])
 
         # if any are infected
         if now_infected.sum():
