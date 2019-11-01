@@ -187,7 +187,7 @@ class Lifestyle(Module):
         'r_not_low_ex': Parameter(
             Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'
         ),
-        'rr_not_low_ex_pop_advice_sugar': Parameter(
+        'rr_not_low_ex_pop_advice_exercise': Parameter(
             Types.REAL, 'probability per 3 months of not low exercise' 'population advice/campaign on exercise'
         ),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
@@ -216,7 +216,7 @@ class Lifestyle(Module):
             Types.REAL, 'probability per 3 months of change from excess alcohol to ' 'not excess alcohol'
         ),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
-        'rr_not_tob_pop_advice_alcohol': Parameter(
+        'rr_not_ex_alc_pop_advice_alcohol': Parameter(
             Types.REAL, 'probability per 3 months of not excess alcohol given' 'population advice/campaign on alcohol'
         ),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
@@ -251,9 +251,10 @@ class Lifestyle(Module):
             Types.REAL, 'probability per 3 months of change from ' 'no_access_handwashing true to false'
         ),
         # Added these fields to the properties and parameters tab as above,
-        # TODO: add in descriptions for these parameters
-        'rr_not_low_ex_pop_advice_exercise': Parameter(Types.REAL, 'TODO: value for this'),
-        'rr_not_ex_alc_pop_advice_alcohol': Parameter(Types.REAL, 'TODO: value for this'),
+        # TODO: add in descriptions for these parameters -
+        # AP: done above
+        # 'rr_not_low_ex_pop_advice_exercise': Parameter(Types.REAL, 'TODO: value for this'),
+        # 'rr_not_ex_alc_pop_advice_alcohol': Parameter(Types.REAL, 'TODO: value for this'),
     }
 
     # Properties of individuals that this module provides.
@@ -302,7 +303,7 @@ class Lifestyle(Module):
         ),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
-        # Added in. TODO: Check these are the correct descriptions
+        # Added in. TODO: Check these are the correct descriptions - yes
         'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_improved_sanitation': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
@@ -314,6 +315,7 @@ class Lifestyle(Module):
         dfd = pd.read_excel(
             self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
+        
         self.load_parameters_from_dataframe(dfd)
 
     def initialise_population(self, population):
