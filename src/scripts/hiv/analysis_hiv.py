@@ -7,10 +7,10 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
-    enhanced_lifestyle,
     healthburden,
     healthsystem,
     hiv,
+    lifestyle,
     male_circumcision,
     tb,
 )
@@ -48,7 +48,7 @@ logging.getLogger().addHandler(fh)
 service_availability = ["*"]
 
 logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
-logging.getLogger("tlo.methods.enhanced_lifestyle").setLevel(logging.WARNING)
+logging.getLogger("tlo.methods.lifestyle").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.hiv").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.tb").setLevel(logging.INFO)
@@ -58,7 +58,7 @@ logging.getLogger("tlo.methods.male_circumcision").setLevel(logging.INFO)
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
 sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.tb(resourcefilepath=resourcefilepath))
 sim.register(male_circumcision.male_circumcision(resourcefilepath=resourcefilepath))

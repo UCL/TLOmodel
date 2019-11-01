@@ -7,7 +7,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, epilepsy, healthburden, healthsystem
+from tlo.methods import demography, epilepsy, healthburden, healthsystem, lifestyle
 
 # Where will output go
 outputpath = ''
@@ -43,7 +43,7 @@ logging.getLogger('tlo.methods.Demography').setLevel(logging.DEBUG)
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+sim.register(lifestyle.Lifestyle())
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        ignore_appt_constraints=True,
                                        ignore_cons_constraints=True))

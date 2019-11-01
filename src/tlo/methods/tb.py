@@ -221,7 +221,6 @@ class tb(Module):
         df['tb_date_ipt'] = pd.NaT
         df['tb_date_death'] = pd.NaT
 
-
         # TB infections - active / latent
         # baseline infections not weighted by RR, randomly assigned
         active_tb_data = self.parameters['Active_tb_prob']

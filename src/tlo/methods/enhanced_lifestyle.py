@@ -364,7 +364,7 @@ class Lifestyle(Module):
         # todo: urban rural depends on district of residence
 
         # randomly selected some individuals as urban
-        df['li_urban'] = rng.random_sample(size=len(df)) < m.init_p_urban
+        df.loc[alive_idx, 'li_urban'] = rng.random_sample(size=len(alive_idx)) < m.init_p_urban
 
         # get the indices of all individuals who are urban or rural
         urban_index = df.index[df.is_alive & df.li_urban]
@@ -385,9 +385,7 @@ class Lifestyle(Module):
         odds_low_ex.loc[df.sex == 'F'] *= m.init_or_low_ex_f
         odds_low_ex.loc[~df.li_urban] *= m.init_or_low_ex_rural
 
-        low_ex_probs = pd.Series((odds_low_ex / (1 + odds_low_ex)), index=age_ge15_idx)
-
-        assert len(low_ex_probs) == len(age_ge15_idx)
+        low_ex_probs = odds_low_ex / (1 + odds_low_ex)
 
         random_draw = rng.random_sample(size=len(age_ge15_idx))
         df.loc[age_ge15_idx, 'li_low_ex'] = random_draw < low_ex_probs
@@ -407,9 +405,7 @@ class Lifestyle(Module):
         odds_tob.loc[df.li_wealth == 4] *= 4
         odds_tob.loc[df.li_wealth == 5] *= 5
 
-        tob_probs = pd.Series((odds_tob / (1 + odds_tob)), index=age_ge15_idx)
-
-        assert len(age_ge15_idx) == len(tob_probs)
+        tob_probs = odds_tob / (1 + odds_tob)
 
         random_draw = rng.random_sample(size=len(age_ge15_idx))
 
@@ -1095,6 +1091,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.li_wealth == 1)
         ).sum()
 
+        # TODO: always zero?
         n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
             df.is_alive
             & (df.sex == 'M')
@@ -1110,24 +1107,26 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
         )
 
+        bmi_proportions = {
+                'prop_bmi_1': prop_bmi_1,
+                'prop_bmi_2': prop_bmi_2,
+                'prop_bmi_3': prop_bmi_3,
+                'prop_bmi_4': prop_bmi_4,
+                'prop_bmi_5': prop_bmi_5,
+                'prop_bmi_45_f': prop_bmi_45_f,
+                'prop_bmi_45_m': prop_bmi_45_m,
+                'prop_bmi_45_urban': prop_bmi_45_urban,
+                'prop_bmi_45_rural': prop_bmi_45_rural,
+                'prop_bmi_45_wealth1': prop_bmi_45_wealth1,
+                'prop_bmi_45_wealth5': prop_bmi_45_wealth5,
+                'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1':
+                    prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
+            }
+
         logger.info(
-            '%s|prop_bmi_1|%s|prop_bmi_2|%s|prop_bmi_3|%s|prop_bmi_4|%s|prop_bmi_5|%s|'
-            'prop_bmi_45_f|%s|prop_bmi_45_m|%s|prop_bmi_45_urban|%s|prop_bmi_45_rural|%s|'
-            'prop_bmi_45_wealth1|%s|prop_bmi_45_wealth5|%s|'
-            'prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1|%s',
+            '%s|bmi_proportions|%s',
             self.sim.date,
-            prop_bmi_1,
-            prop_bmi_2,
-            prop_bmi_3,
-            prop_bmi_4,
-            prop_bmi_5,
-            prop_bmi_45_f,
-            prop_bmi_45_m,
-            prop_bmi_45_urban,
-            prop_bmi_45_rural,
-            prop_bmi_45_wealth1,
-            prop_bmi_45_wealth5,
-            prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1,
+            bmi_proportions
         )
 
         #       logger.debug('%s|person_one|%s',
