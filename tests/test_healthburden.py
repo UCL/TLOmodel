@@ -55,7 +55,6 @@ def test_run_with_healthburden_with_dummy_diseases():
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability as null
     service_availability = []
@@ -70,6 +69,8 @@ def test_run_with_healthburden_with_dummy_diseases():
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)

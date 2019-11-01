@@ -36,12 +36,13 @@ def check_dtypes(simulation):
 
 def test_run_with_healthsystem_no_disease_modules_defined():
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -62,7 +63,6 @@ def test_run_no_interventions_allowed(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability as null
     service_availability = []
@@ -76,6 +76,8 @@ def test_run_no_interventions_allowed(tmpdir):
                                            mode_appt_constraints=0))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -104,7 +106,6 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -118,6 +119,8 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -147,7 +150,6 @@ def test_run_in_mode_0_no_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -161,6 +163,8 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -190,7 +194,6 @@ def test_run_in_mode_1_with_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -204,6 +207,8 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -234,7 +239,6 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -249,6 +253,8 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -280,7 +286,6 @@ def test_run_in_mode_2_with_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -294,6 +299,8 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
@@ -324,7 +331,6 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
-    sim.seed_rngs(0)
 
     # Define the service availability
     service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
@@ -339,6 +345,8 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
 
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
