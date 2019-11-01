@@ -91,6 +91,7 @@ def test_run_no_interventions_allowed(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
@@ -135,6 +136,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -180,6 +182,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -225,6 +228,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -272,6 +276,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -319,6 +324,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
@@ -366,6 +372,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     # read the results
     fh.flush()
     output = parse_log_file(f)
+    fh.close()
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
