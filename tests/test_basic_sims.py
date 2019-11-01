@@ -22,8 +22,9 @@ def test_individual_death():
     assert rd.death_probability == 0.1
     rd.death_probability = 0.2
 
-    # Seed the random number generators
+    # Seed the random number generators (manually)
     sim.seed_rngs(1)
+    sim.modules['rd'].rng.seed(1)
 
     # Create a population of 2 individuals
     sim.make_initial_population(n=2)
@@ -66,6 +67,7 @@ def test_single_step_death():
     rd.parameters['death_probability'] = 0.1
     sim.register(rd)
     sim.seed_rngs(1)
+    sim.modules['rd'].rng.seed(1)
     sim.make_initial_population(n=10)
 
     # Create and fire the event of interest
@@ -117,6 +119,8 @@ def test_birth_and_death():
 
     # Seed the random number generators
     sim.seed_rngs(2)
+    sim.modules['rd'].rng.seed(2)
+    sim.modules['rb'].rng.seed(2)
 
     # Create a population of 10 individuals
     sim.make_initial_population(n=10)
