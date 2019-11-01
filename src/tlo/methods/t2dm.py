@@ -246,10 +246,10 @@ class Type2DiabetesMellitus(Module):
         df.loc[df.is_alive,'d2_date'] = pd.NaT              # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_retino_date'] = pd.NaT      # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_retino_status'] = 'None'    # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT  # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_status'] = 'None'  # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_nephro_date'] = pd.NaT  # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_nephro_status'] = 'None'  # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT       # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_status'] = 'None'     # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_nephro_date'] = pd.NaT      # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_nephro_status'] = 'None'    # Default setting: no one has T2DM
         df.loc[df.is_alive,'d2_death_date'] = pd.NaT        # Default setting: no one has T2DM
         df.loc[df.is_alive,'d2_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
         df.loc[df.is_alive,'d2_diag_status'] = 'N'          # Default setting: no one is diagnosed

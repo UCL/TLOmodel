@@ -85,7 +85,8 @@ class Hypertension(Module):
         'prob_ht_basic': Parameter(Types.REAL, 'Basic HTN probability'),
         'prob_htgivenbmi': Parameter(Types.REAL, 'HTN probability given BMI'),
         'prob_htgivendiabetes': Parameter(Types.REAL, 'HTN probability given pre-existing diabetes'),
-        'initial_prevalence_ht': Parameter(Types.REAL, 'Prevalence of hypertension as per data'),
+        'prevalence_ht_data': Parameter(Types.REAL, 'Prevalence of hypertension as per STEP data'),
+        'prevalence_ht_data_other': Parameter(Types.REAL, 'Prevalence of hypertension as per non-STEP data'),
 
         # Define health care parameters #ToDO: to add all the HSI parameters here later
         'dalywt_ht': Parameter(Types.REAL, 'DALY weighting for hypertension')
@@ -148,7 +149,7 @@ class Hypertension(Module):
         # TODO: Asif/Stef to see if we can do the below shorter.
 
         # Read in prevalence data from file and put into model df
-        p['initial_prevalence_ht'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
+        p['prevalence_ht_data'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
                                                                df.at['b_35_45', 'value'], df.at['b_45_55', 'value'],
                                                                df.at['b_55_65', 'value']],
                                                 'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'],
@@ -160,9 +161,23 @@ class Hypertension(Module):
                                                 },
                                                index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
 
-        p['initial_prevalence_ht'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
-        p['initial_prevalence_ht'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
-        p['initial_prevalence_ht'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
+        p['prevalence_ht_data'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+        p['prevalence_ht_data'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
+        p['prevalence_ht_data'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
+
+        p['prevalence_ht_data_other'] = pd.DataFrame({'prevalence': [df.at['price', 'value'], df.at['divala', 'value'],
+                                                               df.at['ruecker', 'value'], df.at['ramirez', 'value']],
+                                                'min95ci': [df.at['price', 'min'], df.at['divala', 'min'],
+                                                            df.at['ruecker', 'min'], df.at['ramirez', 'min']],
+                                                'max95ci': [df.at['price', 'max'], df.at['divala', 'max'],
+                                                            df.at['ruecker', 'max'], df.at['ramirez', 'max']]
+                                                },
+                                               index=['price', 'divala', 'ruecker', 'ramirez'])
+
+        p['prevalence_ht_data_other'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+        p['prevalence_ht_data_other'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
+        p['prevalence_ht_data_other'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
+
 
         logger.debug("Hypertension method: finished reading in parameters.  ")
 
@@ -758,29 +773,29 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info('%s|test|%s',
                     self.sim.date,
                     {
-                        'total': p['initial_prevalence_ht'].loc['total', 'prevalence']})
+                        'total': p['prevalence_ht_data'].loc['total', 'prevalence']})
 
         logger.info('%s|ht_prevalence_data_validation|%s',
                     self.sim.date,
                     {
-                        'total': p['initial_prevalence_ht'].loc['total', 'prevalence'],
-                        'total_min': p['initial_prevalence_ht'].loc['total', 'min95ci'],
-                        'total_max': p['initial_prevalence_ht'].loc['total', 'max95ci'],
-                        'age25to35': p['initial_prevalence_ht'].loc['25_to_35', 'prevalence'],
-                        'age25to35_min': p['initial_prevalence_ht'].loc['25_to_35', 'min95ci'],
-                        'age25to35_max': p['initial_prevalence_ht'].loc['25_to_35', 'max95ci'],
-                        'age35to45': p['initial_prevalence_ht'].loc['35_to_45', 'prevalence'],
-                        'age35to45_min': p['initial_prevalence_ht'].loc['35_to_45', 'min95ci'],
-                        'age35to45_max': p['initial_prevalence_ht'].loc['35_to_45', 'max95ci'],
-                        'age45to55': p['initial_prevalence_ht'].loc['45_to_55', 'prevalence'],
-                        'age45to55_min': p['initial_prevalence_ht'].loc['45_to_55', 'min95ci'],
-                        'age45to55_max': p['initial_prevalence_ht'].loc['45_to_55', 'max95ci'],
-                        'age55to65': p['initial_prevalence_ht'].loc['55_to_65', 'prevalence'],
-                        'age55to65_min': p['initial_prevalence_ht'].loc['55_to_65', 'min95ci'],
-                        'age55to65_max': p['initial_prevalence_ht'].loc['55_to_65', 'max95ci']
+                        'total': p['prevalence_ht_data'].loc['total', 'prevalence'],
+                        'total_min': p['prevalence_ht_data'].loc['total', 'min95ci'],
+                        'total_max': p['prevalence_ht_data'].loc['total', 'max95ci'],
+                        'age25to35': p['prevalence_ht_data'].loc['25_to_35', 'prevalence'],
+                        'age25to35_min': p['prevalence_ht_data'].loc['25_to_35', 'min95ci'],
+                        'age25to35_max': p['prevalence_ht_data'].loc['25_to_35', 'max95ci'],
+                        'age35to45': p['prevalence_ht_data'].loc['35_to_45', 'prevalence'],
+                        'age35to45_min': p['prevalence_ht_data'].loc['35_to_45', 'min95ci'],
+                        'age35to45_max': p['prevalence_ht_data'].loc['35_to_45', 'max95ci'],
+                        'age45to55': p['prevalence_ht_data'].loc['45_to_55', 'prevalence'],
+                        'age45to55_min': p['prevalence_ht_data'].loc['45_to_55', 'min95ci'],
+                        'age45to55_max': p['prevalence_ht_data'].loc['45_to_55', 'max95ci'],
+                        'age55to65': p['prevalence_ht_data'].loc['55_to_65', 'prevalence'],
+                        'age55to65_min': p['prevalence_ht_data'].loc['55_to_65', 'min95ci'],
+                        'age55to65_max': p['prevalence_ht_data'].loc['55_to_65', 'max95ci']
                     })
 
-        # 3.3. Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
+        # Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
         adults_count_all = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 65)])
         adults_count_25to35 = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 35)])
         adults_count_35to45 = len(df[df.is_alive & (df.age_years > 34) & (df.age_years < 45)])
@@ -811,7 +826,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         assert prevalence_45to55 > 0
         assert prevalence_55to65 > 0
 
-        # 3.4 Log prevalence from the model
+        # Log prevalence from the model
         logger.info('%s|ht_prevalence_model_validation|%s',
                     self.sim.date,
                     {
@@ -824,7 +839,44 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
 
         # TODO: remove up to here
 
-        # 3.3. Calculate prevalence from the model using groupby instead
+        # Add additional data from Malawi
+        price = (len(df[df.is_alive & df.ht_current_status & (df.age_years > 18) & (df.age_years < 80)]) / len(df[df.is_alive & (df.age_years > 18) & (df.age_years < 80)])) * 100
+        ruecker = (len(df[df.is_alive & df.ht_current_status & (df.age_years > 30) & (df.age_years < 70)]) / len(df[df.is_alive & (df.age_years > 30) & (df.age_years < 70)])) * 100
+        ramirez = (len(df[df.is_alive & df.ht_current_status & (df.age_years > 18) & (df.age_years < 90)]) / len(df[df.is_alive & (df.age_years > 18) & (df.age_years < 90)])) * 100
+        divala = (len(df[df.is_alive & df.ht_current_status & (df.age_years > 18) & (df.age_years < 66)]) / len(df[df.is_alive & (df.age_years > 18) & (df.age_years < 66)])) * 100
+
+        # Log prevalence from the data and model for comparison to non-STEP data
+        logger.info('%s|ht_prevalence_data_extra|%s',
+                    self.sim.date,
+                    {
+                        'price': p['prevalence_ht_data_other'].loc['price', 'prevalence'],
+                        'price_min': p['prevalence_ht_data_other'].loc['price', 'min95ci'],
+                        'price_max': p['prevalence_ht_data_other'].loc['price', 'max95ci'],
+
+                        'divala': p['prevalence_ht_data_other'].loc['divala', 'prevalence'],
+                        'divala_min': p['prevalence_ht_data_other'].loc['divala', 'min95ci'],
+                        'divala_max': p['prevalence_ht_data_other'].loc['divala', 'max95ci'],
+
+                        'ruecker': p['prevalence_ht_data_other'].loc['ruecker', 'prevalence'],
+                        'ruecker_min': p['prevalence_ht_data_other'].loc['ruecker', 'min95ci'],
+                        'ruecker_max': p['prevalence_ht_data_other'].loc['ruecker', 'max95ci'],
+
+
+                        'ramirez': p['prevalence_ht_data_other'].loc['ramirez', 'prevalence'],
+                        'ramirez_min': p['prevalence_ht_data_other'].loc['ramirez', 'min95ci'],
+                        'ramirez_max': p['prevalence_ht_data_other'].loc['ramirez', 'max95ci'],
+                    })
+
+        logger.info('%s|ht_prevalence_model_extra|%s',
+                    self.sim.date,
+                    {
+                        'price_model': price,
+                        'ruecker_model': ruecker,
+                        'ramirez_model': ramirez,
+                        'divala_model': divala,
+                    })
+
+        # Calculate prevalence from the model using groupby instead
         # TODO: use groupby (make new cats) below instead - check it is working
 
         # First by age
