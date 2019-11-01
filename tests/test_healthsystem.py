@@ -62,6 +62,7 @@ def test_run_no_interventions_allowed(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability as null
@@ -105,6 +106,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
@@ -149,6 +151,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
@@ -193,6 +196,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
@@ -238,6 +242,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
@@ -285,6 +290,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
@@ -330,6 +336,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     fh = logging.FileHandler(f)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
     logging.getLogger().addHandler(fh)
 
     # Define the service availability
