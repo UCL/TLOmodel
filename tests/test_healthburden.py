@@ -43,14 +43,14 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-def test_run_with_healthburden_with_dummy_diseases():
+def test_run_with_healthburden_with_dummy_diseases(tmpdir):
     # There should be no events run or scheduled
 
     # Establish the simulation object
     sim = Simulation(start_date=start_date)
 
     # Get ready for temporary log-file
-    f = tempfile.NamedTemporaryFile(dir='.')
+    f = tmpdir.mkdir("healthburden_with_dummy_disease").join("dummy.log")
     fh = logging.FileHandler(f.name)
     fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
     fh.setFormatter(fr)
