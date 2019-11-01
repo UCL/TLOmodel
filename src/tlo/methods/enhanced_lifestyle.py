@@ -251,11 +251,6 @@ class Lifestyle(Module):
         'r_access_handwashing': Parameter(
             Types.REAL, 'probability per 3 months of change from ' 'no_access_handwashing true to false'
         ),
-        # Added these fields to the properties and parameters tab as above,
-        # TODO: add in descriptions for these parameters -
-        # AP: done above
-        # 'rr_not_low_ex_pop_advice_exercise': Parameter(Types.REAL, 'TODO: value for this'),
-        # 'rr_not_ex_alc_pop_advice_alcohol': Parameter(Types.REAL, 'TODO: value for this'),
     }
 
     # Properties of individuals that this module provides.
@@ -304,7 +299,6 @@ class Lifestyle(Module):
         ),
         'li_no_clean_drinking_water': Property(Types.BOOL, 'no drinking water from an improved source'),
         'li_wood_burn_stove': Property(Types.BOOL, 'wood (straw / crop)-burning stove'),
-        # Added in. TODO: Check these are the correct descriptions - yes
         'li_date_trans_to_urban': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_improved_sanitation': Property(Types.DATE, 'date transition to urban'),
         'li_date_acquire_access_handwashing': Property(Types.DATE, 'date acquire access to handwashing'),
@@ -316,7 +310,7 @@ class Lifestyle(Module):
         dfd = pd.read_excel(
             self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
-        
+
         self.load_parameters_from_dataframe(dfd)
 
     def initialise_population(self, population):
@@ -398,7 +392,6 @@ class Lifestyle(Module):
         odds_tob = pd.Series(init_odds_tob_age1519_m_wealth1, index=age_ge15_idx)
 
         odds_tob.loc[df.sex == 'F'] *= m.init_or_tob_f
-        # TODO: documentation has 4% * wealth_level, is this meant to be 4 x
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 20) & (df.age_years < 40)] *= m.init_or_tob_age2039_m
         odds_tob.loc[(df.sex == 'M') & (df.age_years >= 40)] *= m.init_or_tob_agege40_m
         odds_tob.loc[df.li_wealth == 2] *= 2
@@ -1054,7 +1047,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_agege15_m = (df.is_alive & (df.age_years >= 15) & (df.sex == 'M')).sum()
         n_agege15_urban = (
             df.is_alive & (df.age_years >= 15) & df.li_urban
-        ).sum()  # TODO: check if this should start off as zero, seems wrong
+        ).sum()
         n_agege15_rural = (df.is_alive & (df.age_years >= 15) & ~df.li_urban).sum()
         n_agege15_wealth1 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 1)).sum()
         n_agege15_wealth5 = (df.is_alive & (df.age_years >= 15) & (df.li_wealth == 5)).sum()
@@ -1092,7 +1085,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.li_wealth == 1)
         ).sum()
 
-        # TODO: always zero?
         n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
             df.is_alive
             & (df.sex == 'M')
@@ -1103,7 +1095,6 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.li_bmi == 5)
         ).sum()
 
-        # TODO: assume this is meant to be logged, comes up as zero always
         prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 = (
             n_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1 / n_urban_m_not_high_sugar_age1529_not_tob_wealth1
         )
