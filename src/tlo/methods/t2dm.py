@@ -4,6 +4,9 @@ Developed by Mikaela Smit, October 2018
 
 """
 
+# TODO: Asif/Stef you can review from here to below message (line ~442 ) and two loggin events at the bottom of the file
+# TODO: Corresponding file is analysis_t2dm.py
+
 import logging
 from pathlib import Path
 import numpy as np
@@ -435,6 +438,8 @@ class Type2DiabetesMellitus(Module):
         # self.sim.schedule_event(event, self.sim.date + DateOffset(months=24))
 
         logger.debug("Type 2 Diabetes Mellitus method: finished initialising simulation.  ")
+
+        # TODO: up to here
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
