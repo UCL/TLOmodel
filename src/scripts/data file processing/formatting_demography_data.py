@@ -107,7 +107,7 @@ table['number'] = table['number'].astype(float)
 table = table.rename(columns={'Region':'region'})
 table = table[table.columns[[0, 1, 4, 2, 3]]]
 
-table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv')
+table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',index=False)
 
 
 #%% Number of births
@@ -127,7 +127,6 @@ b1['region']=b1['region'].ffill()
 b1 = b1.drop(b1.index[b1['Age/Region'].isin(region_labels)],axis=0)
 b1 = b1.rename(columns={'Age/Region':'age_grp'})
 b1 = b1[b1.columns[[0, 5, 1, 2, 3, 4]]]
-b1.to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv')
 
 # take the word 'region' out of the values in the 'region' column
 b1['region'] = b1['region'].str.replace(' Region','')
@@ -137,4 +136,29 @@ from_fert_data = b1.groupby('region')['Num_Women_1549'].sum()
 from_pop_data = table.loc[(table['sex']=='F') & (table['age_grp'].isin(['15-19','20-24','25-29','30-34','35-39','40-44','45-49']))].groupby('region')['number'].sum()
 diff = 100* (from_fert_data - from_pop_data) / from_fert_data
 
-#%%
+# save the file:
+b1.to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv',index=False)
+
+#%% Number of deaths
+
+workingfile_mortality = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/Census_Main_Report/Series K. Mortality Tables.xlsx'
+
+k2 = pd.read_excel(workingfile_mortality,sheet_name = 'K2')
+
+k2 = k2.dropna()
+k2.columns = ['Age/Region','Pop_Total','Pop_Males','Pop_Females','Deaths_Total','Deaths_Males','Deaths_Females']
+
+k2 = k2.drop(list(range(2,24)),axis=0)
+
+k2['region']=None
+k2.loc[k2['Age/Region'].isin(region_names),'region']=k2['Age/Region']
+k2['region']=k2['region'].ffill()
+k2 = k2.drop(k2.index[k2['Age/Region'].isin(region_names)],axis=0)
+k2 = k2.rename(columns={'Age/Region':'age_grp'})
+
+k2 = k2[k2.columns[[7,0,1,2,3,4,5,6]]]
+
+# save the file:
+k2.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
+
