@@ -11,16 +11,16 @@ from pathlib import Path
 
 import pandas as pd
 
-workingfile = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/Census_Main_Report/Series A. Population Tables.xlsx'
-
 resourcefilepath = Path("./resources")
 
 
 #%% Totals by Sex for Each District
 
+workingfile_popsizes = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/Census_Main_Report/Series A. Population Tables.xlsx'
+
 # Clean up the data that is imported
-a1 = pd.read_excel(workingfile, sheet_name='A1')
+a1 = pd.read_excel(workingfile_popsizes, sheet_name='A1')
 a1 = a1.drop([0,1])
 a1 = a1.drop(a1.index[0])
 a1.index = a1.iloc[:,0]
@@ -55,7 +55,7 @@ district_names = list(a1.index)
 #%%
 # extract the age-breakdown for each district by %
 
-a7 = pd.read_excel(workingfile, sheet_name='A7',usecols=[0]+list(range(2,10))+list(range(12,21)),header=1,index_col=0)
+a7 = pd.read_excel(workingfile_popsizes, sheet_name='A7', usecols=[0] + list(range(2, 10)) + list(range(12, 21)), header=1, index_col=0)
 
 # There is a typo in the table: correct manually
 a7.loc['TA Kameme','10-14'] = None
@@ -82,26 +82,59 @@ assert extract.sum(axis=1).astype(int).eq(a1['Total_2018']).all()
 frac_in_each_age_grp = extract.div(extract.sum(axis=1),axis=0)
 assert (frac_in_each_age_grp.sum(axis=1).astype('float32')==(1.0)).all()
 
-#%% Get district-specific age/sex breakdowns
+#%% Compute  district-specific age/sex breakdowns
 # Use the district-specific age breakdown and district-specific sex breakdown to create district/age/sex breakdown
 # (Assuming that the age-breakdown is the same for men and women)
 
 males = frac_in_each_age_grp.mul(a1['Male_2018'],axis=0)
 assert (males.sum(axis=1).astype('float32') == a1['Male_2018'].astype('float32')).all()
 males['district'] = males.index
-males_melt = males.melt(id_vars='district',var_name='age_grp',value_name='number')
+males = males.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
+males_melt = males.melt(id_vars=['district','Region'],var_name='age_grp',value_name='number')
 males_melt['sex'] = 'M'
 
 females = frac_in_each_age_grp.mul(a1['Female_2018'],axis=0)
 assert (females.sum(axis=1).astype('float32') == a1['Female_2018'].astype('float32')).all()
 females['district'] = females.index
-females_melt = females.melt(id_vars='district',var_name='age_grp',value_name='number')
+females = females.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
+females_melt = females.melt(id_vars=['district','Region'],var_name='age_grp',value_name='number')
 females_melt['sex'] = 'F'
 
 # Melt into long-format and save
 table = pd.concat([males_melt,females_melt])
 
 table['number'] = table['number'].astype(float)
-table = table[table.columns[[0, 1, 3, 2]]]
+table = table.rename(columns={'Region':'region'})
+table = table[table.columns[[0, 1, 4, 2, 3]]]
 
-table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize.csv')
+table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv')
+
+
+#%% Number of births
+
+workingfile_fertility = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/Census_Main_Report/Series B. Fertility Tables.xlsx'
+
+
+b1 = pd.read_excel(workingfile_fertility, sheet_name='TABLE B1')
+b1 = b1.dropna()
+b1 = b1.rename(columns={b1.columns[0]:'Age/Region',b1.columns[1]:'Num_Women_1549',b1.columns[2]:'Live_Births',b1.columns[3]:'Babies_Live_12m',b1.columns[4]:'Babies_Dead_12m'})
+b1 = b1.drop(list(range(2,10)),axis=0)
+b1['region']=None
+region_labels = [r + ' Region' for r in region_names]
+b1.loc[b1['Age/Region'].isin(region_labels),'region']=b1['Age/Region']
+b1['region']=b1['region'].ffill()
+b1 = b1.drop(b1.index[b1['Age/Region'].isin(region_labels)],axis=0)
+b1 = b1.rename(columns={'Age/Region':'age_grp'})
+b1 = b1[b1.columns[[0, 5, 1, 2, 3, 4]]]
+b1.to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv')
+
+# take the word 'region' out of the values in the 'region' column
+b1['region'] = b1['region'].str.replace(' Region','')
+
+# check that number of women 15-49 by region is close to the estimate for population size
+from_fert_data = b1.groupby('region')['Num_Women_1549'].sum()
+from_pop_data = table.loc[(table['sex']=='F') & (table['age_grp'].isin(['15-19','20-24','25-29','30-34','35-39','40-44','45-49']))].groupby('region')['number'].sum()
+diff = 100* (from_fert_data - from_pop_data) / from_fert_data
+
+#%%
