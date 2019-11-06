@@ -43,7 +43,10 @@ class Schisto(Module):
     PARAMETERS = {
 
     # natural history
-        'prob_infection': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected'),
+        'prevalence_2010_haem': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.haematobium infection'),
+        'prob_infection_haem': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected with S. Haematobium'),
+        'prevalence_2010_mansoni': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.Mansoni infection'),
+        'prob_infection_mansoni': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected with S. Mansoni'),
         'rr_PSAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age under 5 yo'),
         'rr_SAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age 5 - 14 yo'),
         'rr_adults': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age above 14 yo'),
@@ -67,16 +70,18 @@ class Schisto(Module):
     # Note that all properties must have a two letter prefix that identifies them to this module.
 
     PROPERTIES = {
-        'ss_is_infected': Property(Types.CATEGORICAL, 'Current status of schistosomiasis infection'),
-        categories = ['Non-infected', 'Latent', 'Heamatobium', 'Mansoni', 'Both']),
-        'ss_date_infected': Property(Types.DATE, 'Date of latest infection'),
-        'ss_scheduled_date_death': Property(Types.DATE, 'Date of scheduled death of infected individual'),
+        'ss_is_infected': Property(
+            Types.CATEGORICAL, 'Current status of schistosomiasis infection',
+            categories = ['Non-infected', 'Latent_Haem', 'Latent_Mans', 'Heamatobium', 'Mansoni']),
         'ss_haematobium_specific_symptoms': Property(
             Types.CATEGORICAL, 'Symptoms for S. Haematobium infection',
             categories=['none', 'fever', 'stomach_ache', 'skin', 'other']),
         'ss_mansoni_specific_symptoms': Property(
-        Types.CATEGORICAL, 'Symptoms for S. Mansoni infection',
-        categories=['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other']),
+            Types.CATEGORICAL, 'Symptoms for S. Mansoni infection',
+            categories=['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other']),
+        'ss_schedule_infectiousness_start': Property(
+            Types.DATE, 'Date of start of infectious period')
+        )
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -87,25 +92,30 @@ class Schisto(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
-
+        params['prevalence_2010_haem'] = 0.5
         params['prob_infection'] = 0.5
         params['delay_rate'] = 0.50
         params['initial_prevalence'] = 0.5
-        params['level_of_symptoms'] = pd.DataFrame(
+        params['death_schisto_haematobium'] = 0.0005
+        params['death_schisto_mansoni'] = 0.0005
+
+        params['prob_seeking_healthcare'] = 0.3
+        params['prob_sent_to_lab_test'] = 0.9
+        params['PZQ_efficacy'] = 1.0
+
+        params['symptoms_haematobium'] = pd.DataFrame(
             data={
-                'level_of_symptoms': ['none',
-                                      'mild sneezing',
-                                      'coughing and irritable',
-                                      'extreme emergency'],
-                'probability': [0.25, 0.25, 0.25, 0.25]
+                'symptoms': ['none', 'fever', 'stomach_ache', 'skin', 'other'],
+                'probability': [0.2, 0.2, 0.2, 0.2, 0.2]
             })
 
-       'rr_PSAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age under 5 yo'),
-        'rr_SAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age 5 - 14 yo'),
-        'rr_adults': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age above 14 yo'),
-        'delay_rate': Parameter(Types.REAL, 'Rate at which an infected individual goes from uninfectious to infectious state'),
-        'death_schisto_mansoni': Parameter(Types.REAL, 'Rate at which a death from S.Mansoni complications occure'),
-        'death_schisto_haematobium': Parameter(Types.REAL, 'Rate at which a death from S.Haematobium complications occure'),
+        params['symptoms_mansoni'] = pd.DataFrame(
+            data={
+                'symptoms': ['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other'],
+                'probability': [0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1]
+            })
+
+
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -115,7 +125,42 @@ class Schisto(Module):
 
         :param population: the population of individuals
         """
-        raise NotImplementedError
+        df = population.props  # a shortcut to the dataframe storing data for individiuals
+        params = self.parameters
+
+
+        df['ss_is_infected'] = 'Non-infected'
+        df['ss_scheduled_date_death'] = pd.NaT
+        df['ss_haematobium_specific_symptoms'] = pd.NaT
+        df['ss_mansoni_specific_symptoms'] = pd.NaT
+        df['ss_schedule_shedding_start'] = pd.NaT
+
+        n = population.size()
+
+        ### initial infected population - assuming no one is in the latent period
+        # first for simplicity let's assume every infected person has S. Haematobium and no one has S.Mansoni
+        eligible = df.index()
+        infected_idx = self.rng.choice(eligible, size = int(params.prevalence_2010_haem * (len(eligible))), replace=False)
+        df.loc[infected_idx, 'ss_is_infected'] = 'Haematobium'
+
+        # assign scheduled date of death (from a demography module?)
+
+        # assign s. heamatobium symptoms
+        inf_haem_idx = df[df['ss_is_infected'] == 'Haematobium'].index
+        eligible = len(inf_haem_idx)
+        symptoms_haematobium = params.symptoms_haematobium.symptoms.values # from the params
+        symptoms_haem_prob = params.symptoms_haematobium.probability.values
+        symptoms = np.random.choice(symptoms_haematobium, size = int((len(eligible))), replace = True, p = symptoms_haem_prob)
+        df.loc[inf_haem_idx, 'symptoms_haematobium'] = symptoms
+
+        # assign s. mansoni symptoms
+        inf_mans_idx = df[df['ss_is_infected'] == 'Mansoni'].index
+        eligible = len(inf_mans_idx)
+        symptoms_mansoni = params.symptoms_mansoni.symptoms.values # from the params
+        symptoms_mans_prob = params.symptoms_mansoni.probability.values
+        symptoms = np.random.choice(symptoms_mansoni, size = int((len(eligible))), replace = True, p = symptoms_mans_prob)
+        df.loc[inf_mans_idx, 'symptoms_mansoni'] = symptoms
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -127,18 +172,24 @@ class Schisto(Module):
         If this is a disease module, register this disease module with the healthsystem:
         self.sim.modules['HealthSystem'].register_disease_module(self)
         """
+        # Register this disease module with the health system
+        self.sim.modules['HealthSystem'].register_disease_module(self)
 
         raise NotImplementedError
 
-    def on_birth(self, mother_id, child_id):
+    def on_birth(self, child_id):
         """Initialise our properties for a newborn individual.
 
-        This is called by the simulation whenever a new person is born.
+        All children are born without an infection, even if the mother is infected.
 
-        :param mother_id: the mother for this child
         :param child_id: the new child
         """
-        raise NotImplementedError
+        # Assign the default for a newly born child
+        df.at[child_id, 'ss_is_infected'] = 'Non-infected'
+        df.at[child_id, 'ss_scheduled_date_death'] = pd.NaT
+        df.at[child_id, 'ss_haematobium_specific_symptoms'] = pd.NaT
+        df.at[child_id, 'ss_mansoni_specific_symptoms'] = pd.NaT
+
 
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -168,7 +219,7 @@ class Schisto(Module):
 #   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
-class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
+class SchistoEventInfections(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
     Regular events automatically reschedule themselves at a fixed frequency,
@@ -185,6 +236,136 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 
         :param module: the module that created this event
         """
+        super().__init__(module, frequency=DateOffset(months=0.5))
+        assert isinstance(module, Schisto)
+
+    def apply(self, population):
+
+        logger.debug('This is SchistoEvent, tracking the disease progression of the population.')
+
+        df = population.props
+
+        # 1. get (and hold) index of currently infected and uninfected individuals
+        currently_infected_latent_haem = df.index[df['ss_is_infected'] == 'Latent_Haem']
+        currently_infected_latent_mans = df.index[df['ss_is_infected'] == 'Latent_Mans']
+        currently_infected_latent_any = currently_infected_latent_haem + currently_infected_latent_mans
+        currently_infected_haematobium = df.index[df['ss_is_infected'] == 'Haematobium']
+        currently_infected_mansoni = df.index[df['ss_is_infected'] == 'Mansoni']
+        currently_infected_infectious_any = currently_infected_haematobium + currently_infected_mansoni
+        currently_infected_any = currently_infected_haematobium + currently_infected_mansoni + currently_infected_latent_any
+
+        currently_uninfected = df.index[df['ss_is_infected'] == 'Non-Infected']
+        total_population = currently_uninfected + currently_infected_any
+
+        # calculates prevalence of infectious people only to calculate the new infections, not the actual prevalence
+        if df.is_alive.sum():
+            prevalence_haematobium = len(currently_infected_haematobium) / len(total_population)
+            prevalence_mansoni = len(currently_infected_mansoni) / len(total_population)
+        else:
+            prevalence_haematobium = 0
+            prevalence_mansoni = 0
+
+
+        # 2. handle new infections - for now no co-infections
+        # now_infected_haematobium = self.module.rng.choice([True, False],
+        #                                       size = len(currently_uninfected),
+        #                                       p = prevalence_haematobium)
+        # now_infected_mansoni = self.module.rng.choice([True, False],
+        #                                           size = len(currently_uninfected), # here we will get co-infections!!!!
+        #                                           p = prevalence_mansoni)
+        # now_infected_haematobium = self.module.rng.choice(currently_uninfected, size = len)
+
+        new_infections = self.module.rng.choice(['Latent_Haem', 'Latent_Mans', 'Non-Infected'], len(currently_uninfected),
+                                                p = [prevalence_haematobium, prevalence_mansoni, 1-prevalence_haematobium-prevalence_mansoni])
+        df.loc[currently_uninfected, 'ss_is_infected'] = new_infections
+
+        # new infections are those with un-scheduled time of the end of latency period
+        new_infections_haem = df.index[(df['ss_is_infected'] == 'Latent_Haem') & (df['ss_schedule_infectiousness_start'].isnan())]
+        new_infections_mans = df.index[(df['ss_is_infected'] == 'Latent_Mans') & (df['ss_schedule_infectiousness_start'].isnan())]
+        new_infections_all = new_infections_haem + new_infections_mans
+
+        # if any are infected
+        if len(new_infections_all) > 0:
+
+            # schedule start of infectiousness
+            latent_period_ahead = self.module.rng.exponential(scale = population.parameters.delay_rate, size = len(new_infections_all))
+            latent_period_td_ahead = pd.to_timedelta(latent_period_ahead, unit = 'M')
+            # what to do with it now???????????
+
+            # assign symptoms - when should they be triggered????????
+            symptoms_haematobium = population.parameters.symptoms_haematobium.symptoms.values  # from the params
+            symptoms_haem_prob = population.parameters.symptoms_haematobium.probability.values
+            df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = np.random.choice(symptoms_haematobium, size=int((len(new_infections_haem))), replace=True,
+                                        p=symptoms_haem_prob)
+
+            symptoms_mansoni = population.parameters.symptoms_haematobium.symptoms.values  # from the params
+            symptoms_mans_prob = population.parameters.symptoms_haematobium.probability.values
+            df.loc[new_infections_haem, 'ss_mansoni_specific_symptoms'] = np.random.choice(symptoms_mansoni, size=int((len(new_infections_mans))), replace=True,
+                                        p=symptoms_mans_prob)
+
+
+            # if now_infected.sum():
+        #     infected_idx = currently_uninfected[now_infected]
+        #
+        #     death_years_ahead = self.module.rng.exponential(scale=2, size=now_infected.sum())
+        #     death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
+        #     symptoms = self.module.rng.choice(
+        #         self.module.parameters['level_of_symptoms']['level_of_symptoms'],
+        #         size=now_infected.sum(),
+        #         p=self.module.parameters['level_of_symptoms']['probability'])
+        #
+        #     df.loc[infected_idx, 'mi_is_infected'] = True
+        #     df.loc[infected_idx, 'mi_status'] = 'C'
+        #
+        #     # schedule death events for newly infected individuals
+        #     for person_index in infected_idx:
+        #         death_event = MockitisDeathEvent(self.module, person_index)
+        #         self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
+        #
+        #     # Determine if anyone with severe symptoms will seek care
+        #     serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
+        #         df['mi_specific_symptoms'] == 'coughing and irritiable'))
+        #
+        #     seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
+        #     for i in df.index[serious_symptoms]:
+        #         prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
+        #         seeks_care[i] = self.module.rng.rand() < prob
+        #
+        #     if seeks_care.sum() > 0:
+        #         for person_index in seeks_care.index[seeks_care is True]:
+        #             logger.debug(
+        #                 'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
+        #                 person_index)
+        #             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
+        #             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+        #                                                                 priority=2,
+        #                                                                 topen=self.sim.date,
+        #                                                                 tclose=self.sim.date + DateOffset(weeks=2)
+        #                                                                 )
+        #     else:
+        #         logger.debug(
+        #             'This is SchistoEvent, There is  no one with new severe symptoms so no new healthcare seeking')
+        # else:
+        #     logger.debug('This is SchistoEvent, no one is newly infected.')
+
+class SchistoLatentPeriodEnd(RegularEvent, PopulationScopeEventMixin):
+    """Models the end of the latency period (Asymptomatic -> Infectious transition)"""
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Skeleton)
+
+    def apply(self, population):
+
+
+        raise NotImplementedError
+
+class SchistoEventMDA(RegularEvent, PopulationScopeEventMixin):
+    """A skeleton class for an event
+    """
+    def __init__(self, module):
+        """One line summary here
+        :param module: the module that created this event
+        """
         super().__init__(module, frequency=DateOffset(months=1))
         assert isinstance(module, Skeleton)
 
@@ -195,12 +376,11 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
         """
         raise NotImplementedError
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 #
 #   Put the logging events here. There should be a regular logger outputting current states of the
-#   population. There may also be a loggig event that is driven by particular events.
+#   population. There may also be a logging event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
 
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
