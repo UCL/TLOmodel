@@ -52,3 +52,5 @@ df = sim.population.props
 
 # start the simulation
 sim.simulate(end_date=end_date)
+df = sim.population.props
+

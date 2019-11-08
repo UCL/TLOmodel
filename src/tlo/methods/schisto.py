@@ -50,8 +50,8 @@ class Schisto(Module):
         'rr_adults': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age above 14 yo'),
         'delay_a': Parameter(Types.REAL, 'End of the latent period in days, start'),
         'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
-        'death_schisto_mansoni': Parameter(Types.REAL, 'Rate at which a death from S.Mansoni complications occure'),
-        'death_schisto_haematobium': Parameter(Types.REAL, 'Rate at which a death from S.Haematobium complications occure'),
+        'death_schisto_mansoni': Parameter(Types.REAL, 'Rate at which a death from S.Mansoni complications occurs'),
+        'death_schisto_haematobium': Parameter(Types.REAL, 'Rate at which a death from S.Haematobium complications occurs'),
         'daly_wt_fever': Parameter(Types.REAL, 'DALY weight for fever'),
         'daly_wt_stomach_ache': Parameter(Types.REAL, 'DALY weight for stomach_ache'),
         'daly_wt_skin': Parameter(Types.REAL, 'DALY weight for skin rash'),
@@ -89,6 +89,7 @@ class Schisto(Module):
 
     def read_parameters(self, data_folder):
         params = self.parameters
+
         params['prevalence_2010_haem'] = 0.5
         params['prevalence_2010_mans'] = 0.5
         params['prob_infection'] = 0.5
@@ -120,10 +121,6 @@ class Schisto(Module):
             params['daly_wt_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(254)
             params['daly_wt_other'] = self.sim.modules['HealthBurden'].get_daly_weight(259)
 
-            print("Printing all parameters:")
-            print(params)
-            print("")
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
@@ -142,9 +139,6 @@ class Schisto(Module):
         df['ss_mansoni_specific_symptoms'] = 'none'
         df['ss_schedule_infectiousness_start'] = pd.NaT
 
-        print("Population table columns:")
-        print(list(df.columns))
-
         ### initial infected population - assuming no one is in the latent period
         # first for simplicity let's assume every infected person has S. Haematobium and no one has S.Mansoni
         print("Assign initially infected with S.Haematobium")
@@ -152,8 +146,6 @@ class Schisto(Module):
         infected_idx = self.rng.choice(eligible, size = int(params['prevalence_2010_haem'] * (len(eligible))), replace=False)
         df.loc[infected_idx, 'ss_is_infected'] = 'Haematobium'
         print("Assigned - S.Haematobium")
-
-        # assign scheduled date of death (from a demography module?)
 
         # assign s. heamatobium symptoms
         print("Assing S.Haematobium symptoms to the infected")
@@ -163,7 +155,6 @@ class Schisto(Module):
         symptoms_haem_prob = params['symptoms_haematobium'].probability.values
         symptoms = np.random.choice(symptoms_haematobium, size = eligible_count, replace = True, p = symptoms_haem_prob)
         df.loc[inf_haem_idx, 'ss_haematobium_specific_symptoms'] = symptoms
-        print("Assigned - S.Haematobium symptoms")
 
         # assign s. mansoni symptoms
         print("Assing S.Mansoni symptoms to the infected")
@@ -173,13 +164,11 @@ class Schisto(Module):
         symptoms_mans_prob = params['symptoms_mansoni'].probability.values
         symptoms = np.random.choice(symptoms_mansoni, size = eligible_count, replace = True, p = symptoms_mans_prob)
         df.loc[inf_mans_idx, 'ss_mansoni_specific_symptoms'] = symptoms
-        print("Assigned - S.Mansoni symptoms")
 
         print("Fill in start of infectiousness")
         # set the start of infectiousness to the start date of the simulation for simplicity
         df.loc[inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
         df.loc[inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
-        print("Filled in")
 
         # # maybe use this instead later??
         # latent_period_ahead_haem = self.module.rng.uniform(params['delay_a'], params['delay_b'],
@@ -333,10 +322,10 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         #                                           p = prevalence_mansoni)
         # now_infected_haematobium = self.module.rng.choice(currently_uninfected, size = len)
 
-        susceptibles_next_state = self.module.rng.choice(['Latent_Haem', 'Latent_Mans', 'Non-Infected'], len(currently_uninfected),
+        susceptibles_next_state = self.module.rng.choice(['Latent_Haem', 'Latent_Mans', 'Non-infected'], len(currently_uninfected),
                                                 p = [prevalence_haematobium, prevalence_mansoni, 1-prevalence_haematobium-prevalence_mansoni])
         df.loc[currently_uninfected, 'ss_is_infected'] = susceptibles_next_state
-        print(susceptibles_next_state)
+        # print(susceptibles_next_state)
 
         # new infections are those with un-scheduled time of the end of latency period
         new_infections_haem = df.index[(df['ss_is_infected'] == 'Latent_Haem') & (df['ss_schedule_infectiousness_start'].isna())].tolist()
@@ -415,7 +404,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
     should be scheduled district-wise
     """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=3))
+        super().__init__(module, frequency=DateOffset(months=6))
         assert isinstance(module, Schisto)
 
     def apply(self, population):
@@ -424,7 +413,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         # choose coverage-fraction of the population
         eligible = df.index.tolist()
         treated_idx = self.module.rng.choice(eligible, size = int(coverage * (len(eligible))), replace=False)
-        # change their infection status to Non-Infected
+        # change their infection status to Non-infected
         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected' # PZQ efficacy 100%, effective immediately
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx) # just in this round of MDA
@@ -444,7 +433,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         # run this event every year
-        self.repeat = 1
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 
