@@ -73,7 +73,7 @@ class Depression(Module):
         'rr_depr_female': Parameter(Types.REAL, 'Relative rate of depression for females'),
         'rr_depr_prev_epis': Parameter(Types.REAL, 'Relative rate of depression associated with previous depression'),
         'rr_depr_on_antidepr': Parameter(
-            Types.REAL, 'Relative rate of depression associated with previous depression if on antidepressants'
+            Types.REAL, 'Relative rate of depression episode if on antidepressants'
         ),
         'rr_depr_age1519': Parameter(Types.REAL, 'Relative rate of depression associated with 15-20 year olds'),
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
@@ -89,9 +89,13 @@ class Depression(Module):
         'rr_resol_depr_on_antidepr': Parameter(
             Types.REAL, 'Relative rate of resolving depression if on antidepressants'
         ),
+        'rr_resol_depr_current_talk_ther': Parameter(
+            Types.REAL, 'Relative rate of resolving depression if current talking therapy'
+        ),
         'rate_stop_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when not currently depressed'),
         'rate_default_antidepr': Parameter(Types.REAL, 'rate of stopping antidepressants when still depressed'),
         'rate_init_antidepr': Parameter(Types.REAL, 'rate of initiation of antidepressants'),
+        'pr_talk_ther_in_3_mth_period': Parameter(Types.REAL, 'pr_talk_ther_in_3_mth_period'),
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
         'rr_suicide_depr_f': Parameter(Types.REAL, 'relative rate of suicide in women compared with me'),
         'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
@@ -106,11 +110,6 @@ class Depression(Module):
         ),
     }
 
-
-    # todo:  consider talking therapy (in diagnosed)
-
-
-
     # Properties of individuals 'owned' by this module
     PROPERTIES = {
         'de_depr': Property(Types.BOOL, 'currently depr'),
@@ -123,6 +122,8 @@ class Depression(Module):
         'de_prob_3m_resol_depression': Property(Types.REAL, 'probability per 3 months of resolution of depresssion'),
         'de_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
+        'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)')
+
         'de_cc': Property(Types.BOOL, 'whether has chronic condition')
     }
 
@@ -157,6 +158,7 @@ class Depression(Module):
         df['de_ever_depr'] = False
         df['de_prob_3m_resol_depression'] = 0
         df['de_ever_diagnosed_depression'] = False
+        df['de_current_talk_ther'] = False
 
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
@@ -289,6 +291,7 @@ class Depression(Module):
         df.at[child_id, 'de_ever_diagnosed_depression'] = False
         df.at[child_id, 'de_prob_3m_resol_depression'] = 0
         df.at[child_id, 'de_disability'] = 0
+        df.at[child_id, 'de_current_talk_ther'] = False
 
         # todo - this to be removed when defined in other modules
         df.at[child_id, 'de_cc'] = False
@@ -366,6 +369,8 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             'daly_wt_moderate_episode_major_depressive_disorder']
         self.daly_wt_severe_episode_major_depressive_disorder = p[
             'daly_wt_severe_episode_major_depressive_disorder']
+        self.pr_talk_ther_in_3_mth_period = p['pr_talk_ther_in_3_mth_period']
+        self.rr_resol_depr_current_talk_ther = p['rr_resol_depr_current_talk_ther']
 
     def apply(self, population):
         """Apply this event to the population.
@@ -424,6 +429,14 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
             self.rate_diagnosis_depression > self.module.rng.random_sample(size=len(depr_never_diagnosed_idx))
         )
 
+        # talking therapy this 3 month period
+
+        depr_diagnosed_idx = df.index[df.is_alive & df.de_depr & df.de_diagnosed_depression]
+
+        df.loc[depr_diagnosed_idx, 'de_current_talk_ther'] = (
+            self.pr_talk_ther_in_3_mth_period > self.module.rng.random_sample(size=len(depr_diagnosed_idx))
+        )
+
         # initiation of antidepressants
         depr_not_on_antidepr_idx = df.index[df.is_alive & df.de_depr & ~df.de_on_antidepr &
                                             df.de_ever_diagnosed_depression]
@@ -473,15 +486,19 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # resolution of depression
 
+    #       self.rr_resol_depr_current_talk_ther = p['rr_resol_depr_current_talk_ther']
+
         depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
         cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
+        talk_ther_this_3mth_per_idx = df.index[df.is_alive & df.de_current_talk_ther]
 
         eff_prob_depr_resolved = pd.Series(
             df.de_prob_3m_resol_depression, index=depr_idx
         )
         eff_prob_depr_resolved.loc[cc_depr_idx] *= self.rr_resol_depr_cc
         eff_prob_depr_resolved.loc[on_antidepr_idx] *= self.rr_resol_depr_on_antidepr
+        eff_prob_depr_resolved.loc[talk_ther_this_3mth_per_idx] *= self.rr_resol_depr_current_talk_ther
 
         depr_resolved = eff_prob_depr_resolved < self.module.rng.random_sample(size=len(depr_idx))
         depr_resolved_idx = depr_resolved[depr_resolved].index
