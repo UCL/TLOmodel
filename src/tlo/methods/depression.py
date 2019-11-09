@@ -113,8 +113,7 @@ class Depression(Module):
         'de_ever_depr': Property(Types.BOOL, 'Whether this person has ever experienced depr'),
         'de_prob_3m_resol_depression': Property(Types.REAL, 'probability per 3 months of resolution of depresssion'),
         'de_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
-        # todo - this to be removed when defined in other modules
-        'de_wealth': Property(Types.CATEGORICAL, 'wealth level', categories=[1, 2, 3, 4, 5]),
+
         'de_cc': Property(Types.BOOL, 'whether has chronic condition'),
     }
 
@@ -150,7 +149,6 @@ class Depression(Module):
 
         # todo - this to be removed when defined in other modules
         df['de_cc'] = False
-        df['de_wealth'].values[:] = 4
 
         #  this below calls the age dataframe / call age.years to get age in years
 
@@ -160,7 +158,7 @@ class Depression(Module):
         cc_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive]
         age_2059_idx = df.index[(df.age_years >= 20) & (df.age_years < 60) & df.is_alive]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
+        wealth45_ge15_idx = df.index[df.li_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive]
         f_not_rec_preg_idx = df.index[(df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive]
         f_rec_preg_idx = df.index[(df.sex == 'F') & df.is_pregnant & (df.age_years >= 15) & df.is_alive]
 
@@ -270,7 +268,6 @@ class Depression(Module):
 
         # todo - this to be removed when defined in other modules
         df.at[child_id, 'de_cc'] = False
-        df.at[child_id, 'de_wealth'] = 4
 
     def query_symptoms_now(self):
         # This is called by the health-care seeking module
@@ -364,7 +361,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
         age_1519_idx = df.index[(df.age_years >= 15) & (df.age_years < 20) & df.is_alive & ~df.de_depr]
         age_ge60_idx = df.index[(df.age_years >= 60) & df.is_alive & ~df.de_depr]
-        wealth45_ge15_idx = df.index[df.de_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
+        wealth45_ge15_idx = df.index[df.li_wealth.isin([4, 5]) & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
         f_not_rec_preg_idx = df.index[
             (df.sex == 'F') & ~df.is_pregnant & (df.age_years >= 15) & df.is_alive & ~df.de_depr
         ]
