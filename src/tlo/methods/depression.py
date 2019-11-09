@@ -385,6 +385,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[df.is_alive, 'de_non_fatal_self_harm_event'] = False
         df.loc[df.is_alive, 'de_suicide'] = False
         df.loc[df.is_alive, 'de_disability'] = 0
+        df.loc[df.is_alive, 'de_current_talk_ther'] = False
 
         ge15_not_depr_idx = df.index[(df.age_years >= 15) & ~df.de_depr & df.is_alive]
         cc_ge15_idx = df.index[df.de_cc & (df.age_years >= 15) & df.is_alive & ~df.de_depr]
@@ -622,6 +623,9 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_ever_diagnosed_depression = (df.is_alive & df.de_ever_diagnosed_depression & (df.age_years >= 15)).sum()
         p_ever_diagnosed_depression = n_ever_diagnosed_depression / n_ge15
 
+        n_current_talk_ther = (df.de_current_talk_ther).sum()
+        prop_current_talk_ther = n_current_talk_ther / n_ge15
+
         # prop_depr = n_depr / n_ge15
         prop_ge15_m_depr = n_ge15_m_depr / n_ge15_m
         prop_ge15_f_depr = n_ge15_f_depr / n_ge15_f
@@ -634,26 +638,29 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         prop_age_50_ever_depr = n_age_50_ever_depr / n_age_50
 
 
+
+
         # TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
-#       dict_for_output = {
-#           'prop_ever_depr': prop_ever_depr,
-#           'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
-#           'prop_antidepr': prop_antidepr,
-#           'prop_antidepr_depr': prop_antidepr_depr,
-#           'prop_antidepr_not_depr': prop_antidepr_not_depr,
-#           'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
-#           'prop_ge15_m_depr': prop_ge15_m_depr,
-#           'prop_ge15_f_depr': prop_ge15_f_depr,
-#           'prop_age_50_ever_depr': prop_age_50_ever_depr,
-#           'prop_depr_ge45': prop_depr_ge45,
-#           'suicides_this_3m': suicides_this_3m,
-#           'self_harm_events_this_3m': self_harm_events_this_3m,
-#       }
+        dict_for_output = {
+            'prop_ever_depr': prop_ever_depr,
+            'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
+            'prop_antidepr': prop_antidepr,
+            'prop_antidepr_depr': prop_antidepr_depr,
+            'prop_antidepr_not_depr': prop_antidepr_not_depr,
+            'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
+            'prop_current_talk_ther': prop_current_talk_ther,
+            'prop_ge15_m_depr': prop_ge15_m_depr,
+            'prop_ge15_f_depr': prop_ge15_f_depr,
+            'prop_age_50_ever_depr': prop_age_50_ever_depr,
+            'prop_depr_ge45': prop_depr_ge45,
+            'suicides_this_3m': suicides_this_3m,
+            'self_harm_events_this_3m': self_harm_events_this_3m,
+        }
 
-#       logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
+        logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
 
-        logger.info('%s|person_one|%s',
-                     self.sim.date,
-                     df.loc[10].to_dict())
+#       logger.info('%s|person_one|%s',
+#                    self.sim.date,
+#                    df.loc[10].to_dict())
 
 
