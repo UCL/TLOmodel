@@ -122,8 +122,7 @@ class Depression(Module):
         'de_prob_3m_resol_depression': Property(Types.REAL, 'probability per 3 months of resolution of depresssion'),
         'de_disability': Property(Types.REAL, 'disability weight for current 3 month period'),
         'de_ever_diagnosed_depression': Property(Types.BOOL, 'Whether ever previously diagnosed with depression'),
-        'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)')
-
+        'de_current_talk_ther': Property(Types.BOOL, 'Whether having current talking therapy (in this 3 mnth period)'),
         'de_cc': Property(Types.BOOL, 'whether has chronic condition')
     }
 
@@ -431,7 +430,7 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # talking therapy this 3 month period
 
-        depr_diagnosed_idx = df.index[df.is_alive & df.de_depr & df.de_diagnosed_depression]
+        depr_diagnosed_idx = df.index[df.is_alive & df.de_depr & df.de_ever_diagnosed_depression]
 
         df.loc[depr_diagnosed_idx, 'de_current_talk_ther'] = (
             self.pr_talk_ther_in_3_mth_period > self.module.rng.random_sample(size=len(depr_diagnosed_idx))
@@ -486,12 +485,11 @@ class DeprEvent(RegularEvent, PopulationScopeEventMixin):
 
         # resolution of depression
 
-    #       self.rr_resol_depr_current_talk_ther = p['rr_resol_depr_current_talk_ther']
-
         depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive]
         cc_depr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_cc]
         on_antidepr_idx = df.index[(df.age_years >= 15) & df.de_depr & df.is_alive & df.de_on_antidepr]
-        talk_ther_this_3mth_per_idx = df.index[df.is_alive & df.de_current_talk_ther]
+        talk_ther_this_3mth_per_idx = df.index[df.is_alive & df.de_current_talk_ther & df.de_depr
+                                               & (df.age_years >= 15)]
 
         eff_prob_depr_resolved = pd.Series(
             df.de_prob_3m_resol_depression, index=depr_idx
@@ -637,23 +635,25 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         # TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
-        dict_for_output = {
-            'prop_ever_depr': prop_ever_depr,
-            'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
-            'prop_antidepr': prop_antidepr,
-            'prop_antidepr_depr': prop_antidepr_depr,
-            'prop_antidepr_not_depr': prop_antidepr_not_depr,
-            'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
-            'prop_ge15_m_depr': prop_ge15_m_depr,
-            'prop_ge15_f_depr': prop_ge15_f_depr,
-            'prop_age_50_ever_depr': prop_age_50_ever_depr,
-            'prop_depr_ge45': prop_depr_ge45,
-            'suicides_this_3m': suicides_this_3m,
-            'self_harm_events_this_3m': self_harm_events_this_3m,
-        }
+#       dict_for_output = {
+#           'prop_ever_depr': prop_ever_depr,
+#           'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
+#           'prop_antidepr': prop_antidepr,
+#           'prop_antidepr_depr': prop_antidepr_depr,
+#           'prop_antidepr_not_depr': prop_antidepr_not_depr,
+#           'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
+#           'prop_ge15_m_depr': prop_ge15_m_depr,
+#           'prop_ge15_f_depr': prop_ge15_f_depr,
+#           'prop_age_50_ever_depr': prop_age_50_ever_depr,
+#           'prop_depr_ge45': prop_depr_ge45,
+#           'suicides_this_3m': suicides_this_3m,
+#           'self_harm_events_this_3m': self_harm_events_this_3m,
+#       }
 
-        logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
+#       logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
 
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[0].to_dict())
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
+
+
