@@ -91,6 +91,8 @@ class Depression(Module):
         'prob_3m_suicide_depr_m': Parameter(Types.REAL, 'rate of suicide in (currently depressed) men'),
         'rr_suicide_depr_f': Parameter(Types.REAL, 'relative rate of suicide in women compared with me'),
         'prob_3m_selfharm_depr': Parameter(Types.REAL, 'rate of non-fatal self harm in (currently depressed)'),
+        'rate_diagnosis_depression': Parameter(Types.REAL, 'rate of diagnosis of depression in a person never '
+                                                           'previously diagnosed with depression'),
         # these definitions for disability weights are the ones in the global burden of disease list (Salomon)
         'daly_wt_severe_episode_major_depressive_disorder': Parameter(
             Types.REAL, 'daly_wt_severe_major_depressive_disorder' ' - code 932'
@@ -118,7 +120,7 @@ class Depression(Module):
 
     def read_parameters(self, data_folder):
         # Update parameters from the resource dataframe
-        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression.xlsx', sheet_name='parameter_values')
+        dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Depression_nov19.xlsx', sheet_name='parameter_values')
         self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
