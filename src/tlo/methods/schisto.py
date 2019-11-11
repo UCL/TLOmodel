@@ -16,7 +16,6 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
-
 class Schisto(Module):
     """
     Schistosomiasis module
@@ -31,17 +30,11 @@ class Schisto(Module):
     They need to provide several methods which will be called by the simulation
     framework:
     * `read_parameters(data_folder)`
-    * `initialise_population(population)`
-    * `initialise_simulation(sim)`
-    * `on_birth(mother, child)` [If this is disease module]
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
-    *  `report_daly_values()` [If this is disease module]
-
     """
 
     PARAMETERS = {
-
-    # natural history
+        # natural history
         'prevalence_2010_haem': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.haematobium infection'),
         'prob_infection_haem': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected with S. Haematobium'),
         'prevalence_2010_mansoni': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.Mansoni infection'),
@@ -102,13 +95,11 @@ class Schisto(Module):
         params['prob_seeking_healthcare'] = 0.3
         params['prob_sent_to_lab_test'] = 0.95
         params['PZQ_efficacy'] = 1.0
-
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
                 'symptoms': ['none', 'fever', 'stomach_ache', 'skin', 'other'],
                 'probability': [0.2, 0.2, 0.2, 0.2, 0.2]
             })
-
         params['symptoms_mansoni'] = pd.DataFrame(
             data={
                 'symptoms': ['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other'],
@@ -158,7 +149,7 @@ class Schisto(Module):
         eligible_count = len(inf_haem_idx.tolist())
         symptoms_haematobium = params['symptoms_haematobium'].symptoms.values
         symptoms_haem_prob = params['symptoms_haematobium'].probability.values
-        symptoms = np.random.choice(symptoms_haematobium, size=eligible_count, replace = True, p = symptoms_haem_prob)
+        symptoms = np.random.choice(symptoms_haematobium, size=eligible_count, replace=True, p=symptoms_haem_prob)
         df.loc[inf_haem_idx, 'ss_haematobium_specific_symptoms'] = symptoms
 
         # assign s. mansoni symptoms
@@ -167,7 +158,7 @@ class Schisto(Module):
         eligible_count = len(inf_mans_idx.tolist())
         symptoms_mansoni = params['symptoms_mansoni'].symptoms.values # from the params
         symptoms_mans_prob = params['symptoms_mansoni'].probability.values
-        symptoms = np.random.choice(symptoms_mansoni, size=eligible_count, replace = True, p = symptoms_mans_prob)
+        symptoms = np.random.choice(symptoms_mansoni, size=eligible_count, replace=True, p=symptoms_mans_prob)
         df.loc[inf_mans_idx, 'ss_mansoni_specific_symptoms'] = symptoms
 
         print("Fill in start of infectiousness")
@@ -199,7 +190,7 @@ class Schisto(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # add the basic events
+        # add the basic events (infection & treatment)
         event_infection = SchistoInfectionsEvent(self)
         sim.schedule_event(event_infection, sim.date + DateOffset(months=1))
         event_treatment = SchistoHealthCareSeekEvent(self)
@@ -279,7 +270,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         """
         :param module: the module that created this event
         """
-        super().__init__(module, frequency=DateOffset(months = 1))
+        super().__init__(module, frequency=DateOffset(months=1))
         assert isinstance(module, Schisto)
 
     def apply(self, population):
@@ -325,7 +316,6 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                                                             prevalence_mansoni,
                                                             1-prevalence_haematobium-prevalence_mansoni])
         df.loc[currently_uninfected, 'ss_is_infected'] = susceptibles_next_state
-        # print(susceptibles_next_state)
 
         # new infections are those with un-scheduled time of the end of latency period
         new_infections_haem = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Haem')
@@ -333,6 +323,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         new_infections_mans = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Mans')
                                        & (df['ss_schedule_infectiousness_start'].isna())].tolist()
         new_infections_all = new_infections_haem + new_infections_mans
+        print("Number of new infections: " + str(len(new_infections_all)))
 
         # if any are infected
         if len(new_infections_all) > 0:
@@ -349,18 +340,18 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                 end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
                 self.sim.schedule_event(end_latent_period_event, df.at[person_index, 'ss_schedule_infectiousness_start'])
 
-            # assign symptoms - when should they be triggered???????? Also best to make it another event???
-            symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
-            symptoms_haem_prob = params['symptoms_haematobium'].probability.values
-            df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = \
-                self.module.rng.choice(symptoms_haematobium, size=int((len(new_infections_haem))),
-                                       replace=True, p=symptoms_haem_prob)
-
-            symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
-            symptoms_mans_prob = params['symptoms_mansoni'].probability.values
-            df.loc[new_infections_mans, 'ss_mansoni_specific_symptoms'] =\
-                self.module.rng.choice(symptoms_mansoni, size=int((len(new_infections_mans))),
-                                       replace=True, p=symptoms_mans_prob)
+            # # assign symptoms - when should they be triggered???????? Also best to make it another event???
+            # symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
+            # symptoms_haem_prob = params['symptoms_haematobium'].probability.values
+            # df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = \
+            #     self.module.rng.choice(symptoms_haematobium, size=int((len(new_infections_haem))),
+            #                            replace=True, p=symptoms_haem_prob)
+            #
+            # symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
+            # symptoms_mans_prob = params['symptoms_mansoni'].probability.values
+            # df.loc[new_infections_mans, 'ss_mansoni_specific_symptoms'] =\
+            #     self.module.rng.choice(symptoms_mansoni, size=int((len(new_infections_mans))),
+            #                            replace=True, p=symptoms_mans_prob)
         else:
             print("No newly infected")
             logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
@@ -391,12 +382,13 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
                                                     replace=False)
         # determine which of those who seek healthcare are sent to the schisto diagnostics (and hence getting treated)
         treated_idx = self.module.rng.choice(seeking_healthcare,
-                                                    size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
-                                                    replace=False)
+                                             size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
+                                             replace=False)
         # for those who seeks the healthcare initiate treatment
         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
         df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
         df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+        df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
         if len(treated_idx) > 0:
             print("Number of treated due to HSI: " + str(len(treated_idx)))
@@ -407,6 +399,7 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
 
 class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
     """End of the latency period (Asymptomatic -> Infectious transition)
+        Also assign a symptom to an infection
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -414,10 +407,25 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        params = self.module.parameters
+
+        # should we also change scheduled infectiousness start back to pd.NaT???
+
         if df.at[person_id, 'ss_is_infected'] == 'Latent_Haem':
             df.at[person_id, 'ss_is_infected'] = 'Haematobium'
+            symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
+            symptoms_haem_prob = params['symptoms_haematobium'].probability.values
+            df.loc[person_id, 'ss_haematobium_specific_symptoms'] = \
+                self.module.rng.choice(symptoms_haematobium, size=1,
+                                       replace=True, p=symptoms_haem_prob)
+
         elif df.at[person_id, 'ss_is_infected'] == 'Latent_Mans':
             df.at[person_id, 'ss_is_infected'] = 'Mansoni'
+            symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
+            symptoms_mans_prob = params['symptoms_mansoni'].probability.values
+            df.loc[person_id, 'ss_mansoni_specific_symptoms'] = \
+                self.module.rng.choice(symptoms_mansoni, size=1,
+                                       replace=True, p=symptoms_mans_prob)
 
 
 # class SchistoTreatment(Event, IndividualScopeEventMixin):
@@ -430,6 +438,9 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 #     def apply(self, person_id):
 #         df = self.sim.population.props
 #         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+#         df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
+#         df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+#         df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
 
 class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
@@ -453,6 +464,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
         df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
         df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+        df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
