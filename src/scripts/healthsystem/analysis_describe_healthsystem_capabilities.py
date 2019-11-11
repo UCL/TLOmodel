@@ -10,12 +10,17 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-
 resourcefilepath = Path("./resources")
+
+#%%
+
+
 
 data = pd.read_csv(
     Path(resourcefilepath) / "ResourceFile_Daily_Capabilities.csv"
-)[['Total_Minutes_Per_Day','Officer_Type','District']]
+)
+
+# [['Total_Minutes_Per_Day','Officer_Type','District']]
 
 data = data.dropna()
 # data['District'] = data['District'].fillna('National')
@@ -23,41 +28,26 @@ data = data.dropna()
 # do some re-grouping to make a more manageable number of health cadres:
 data['Officer_Type'] = data['Officer_Type'].replace('DCSA','CHW')
 data['Officer_Type'] = data['Officer_Type'].replace(['Lab Officer','Lab Technician', 'Lab Assistant'],'Lab Support')
-data['Officer_Type'] = data['Officer_Type'].replace([],'Radiography')
+data['Officer_Type'] = data['Officer_Type'].replace(['Radiographer','Radiography Technician'],'Radiography')
 data['Officer_Type'] = data['Officer_Type'].replace(['Nurse Officer', 'Nutrition Staff', 'Med. Assistant'],'Nurse')
 data['Officer_Type'] = data['Officer_Type'].replace('Nurse Midwife Technician','MidWife')
+data['Officer_Type'] = data['Officer_Type'].replace(['Pharmacist','Pharm Technician','Pharm Assistant'],'Pharmacy')
+data['Officer_Type'] = data['Officer_Type'].replace(['Medical Officer / Specialist', 'Clinical Officer / Technician'],'Clinician')
+data['Officer_Type'] = data['Officer_Type'].replace(['Dental Therapist'],'Dentist')
 
 
-tab = data.pivot(index='District',columns='Officer_Type',values='Total_Minutes_Per_Day')
-tab.plot.bar(stacked=True, legend=None)
+# MINUTES PER HEALTH OFFICER TYPE BY DISTRICT:
+dat = pd.DataFrame(data.groupby(['District','Officer_Type'],as_index=False)['Total_Minutes_Per_Day'].sum())
+tab = dat.pivot(index='District',columns='Officer_Type',values='Total_Minutes_Per_Day')
+ax=tab.plot.bar(stacked=True)
 plt.ylabel('Minutes per day')
 plt.xlabel('District')
+
+ax.legend(ncol=3, bbox_to_anchor=(0, 1),
+          loc='lower left', fontsize='small')
+
+plt.savefig('health_officer_minutes_per_district.pdf',bbox_inches='tight')
 plt.show()
+
 
 #%%
-N = 5
-labels = ['G1', 'G2', 'G3', 'G4', 'G5']
-men_means = [20, 34, 30, 35, 27]
-women_means = [25, 32, 34, 20, 25]
-
-ind = np.arange(N)    # the x locations for the groups
-width = 0.35       # the width of the bars: can also be len(x) sequence
-
-
-x = np.arange(len(labels))  # the label locations
-width = 0.35  # the width of the bars
-
-fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, men_means, width, label='Men')
-rects2 = ax.bar(x + width/2, women_means, width, label='Women', bottom=men_means)
-
-
-
-plt.ylabel('Scores')
-plt.title('Scores by group and gender')
-plt.xticks(ind, ('G1', 'G2', 'G3', 'G4', 'G5'))
-plt.yticks(np.arange(0, 81, 10))
-plt.legend((p1[0], p2[0]), ('Men', 'Women'))
-
-plt.show()
-
