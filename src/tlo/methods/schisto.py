@@ -100,7 +100,7 @@ class Schisto(Module):
         params['death_schisto_mansoni'] = 0.0005
 
         params['prob_seeking_healthcare'] = 0.3
-        params['prob_sent_to_lab_test'] = 0.9
+        params['prob_sent_to_lab_test'] = 0.95
         params['PZQ_efficacy'] = 1.0
 
         params['symptoms_haematobium'] = pd.DataFrame(
@@ -114,6 +114,7 @@ class Schisto(Module):
                 'symptoms': ['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other'],
                 'probability': [0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1]
             })
+        params['prob_PZQ_in_MDA'] = 0.7
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
@@ -185,7 +186,6 @@ class Schisto(Module):
         # df.loc[df.inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_haem
         # df.loc[df.inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_mans
 
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -199,16 +199,18 @@ class Schisto(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # add the basic event
-        event = SchistoInfectionsEvent(self)
-        sim.schedule_event(event, sim.date + DateOffset(months=1))
-
-        # add an event to log to screen
-        sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=1))
+        # add the basic events
+        event_infection = SchistoInfectionsEvent(self)
+        sim.schedule_event(event_infection, sim.date + DateOffset(months=1))
+        event_treatment = SchistoHealthCareSeekEvent(self)
+        sim.schedule_event(event_treatment, sim.date + DateOffset(months=1))
 
         # add and event of MDA
         MDA_event = SchistoMDAEvent(self)
         self.sim.schedule_event(MDA_event, self.sim.date + DateOffset(months=3))
+
+        # add an event to log to screen
+        sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -218,7 +220,7 @@ class Schisto(Module):
         :param mother_id: the ID for the mother for this child (redundant)
         :param child_id: the new child
         """
-        df = self.sim.population.props  # a shortcut to the dataframe storing data for individiuals
+        df = self.sim.population.props
 
         # Assign the default for a newly born child
         df.at[child_id, 'ss_is_infected'] = 'Non-infected'
@@ -227,23 +229,13 @@ class Schisto(Module):
         df.at[child_id, 'ss_mansoni_specific_symptoms'] = 'none'
         df.at[child_id, 'ss_schedule_infectiousness_start'] = pd.NaT
 
-        print("")
-        print("")
-        print("")
-        print("")
-        print("BABY IS BORN")
-        print("")
-        print("")
-        print("")
-        print("")
-
     def report_daly_values(self):
         # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
         # experienced by persons in the previous month. Only rows for alive-persons must be returned.
         # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        logger.debug('This is schisto reporting my health values')
+        logger.debug('This is Schisto reporting my health values')
 
         df = self.sim.population.props
         params = self.parameters
@@ -280,20 +272,11 @@ class Schisto(Module):
 # ---------------------------------------------------------------------------------------------------------
 
 class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
-    """A skeleton class for an event
-
-    Regular events automatically reschedule themselves at a fixed frequency,
-    and thus implement discrete timestep type behaviour. The frequency is
-    specified when calling the base class constructor in our __init__ method.
+    """An event of infecting people with Schistosomiasis
     """
 
     def __init__(self, module):
-        """One line summary here
-
-        We need to pass the frequency at which we want to occur to the base class
-        constructor using super(). We also pass the module that created this event,
-        so that random number generators can be scoped per-module.
-
+        """
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months = 1))
@@ -366,7 +349,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                 end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
                 self.sim.schedule_event(end_latent_period_event, df.at[person_index, 'ss_schedule_infectiousness_start'])
 
-            # assign symptoms - when should they be triggered????????
+            # assign symptoms - when should they be triggered???????? Also best to make it another event???
             symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
             symptoms_haem_prob = params['symptoms_haematobium'].probability.values
             df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = \
@@ -378,32 +361,48 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[new_infections_mans, 'ss_mansoni_specific_symptoms'] =\
                 self.module.rng.choice(symptoms_mansoni, size=int((len(new_infections_mans))),
                                        replace=True, p=symptoms_mans_prob)
+        else:
+            print("No newly infected")
+            logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
 
-        #     # Determine if anyone with severe symptoms will seek care
-        #     serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
-        #         df['mi_specific_symptoms'] == 'coughing and irritiable'))
-        #
-        #     seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
-        #     for i in df.index[serious_symptoms]:
-        #         prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-        #         seeks_care[i] = self.module.rng.rand() < prob
-        #
-        #     if seeks_care.sum() > 0:
-        #         for person_index in seeks_care.index[seeks_care is True]:
-        #             logger.debug(
-        #                 'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
-        #                 person_index)
-        #             event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(self.module, person_id=person_index)
-        #             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-        #                                                                 priority=2,
-        #                                                                 topen=self.sim.date,
-        #                                                                 tclose=self.sim.date + DateOffset(weeks=2)
-        #                                                                 )
-        #     else:
-        #         logger.debug(
-        #             'This is SchistoEvent, There is  no one with new severe symptoms so no new healthcare seeking')
-        # else:
-        #     logger.debug('This is SchistoEvent, no one is newly infected.')
+
+class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
+    """An event of infecting people with Schistosomiasis
+    """
+
+    def __init__(self, module):
+        """
+        :param module: the module that created this event
+        """
+        super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Schisto)
+
+    def apply(self, population):
+        df = population.props
+        params = self.module.parameters
+
+        eligible = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni'])) &
+                           ~((df['ss_haematobium_specific_symptoms'] == 'none') &
+                           (df['ss_mansoni_specific_symptoms'] == 'none'))].tolist()  # these are all infectious & symptomatic
+
+        # determine who will seek healthcare
+        seeking_healthcare = self.module.rng.choice(eligible,
+                                                    size=int(params['prob_seeking_healthcare'] * (len(eligible))),
+                                                    replace=False)
+        # determine which of those who seek healthcare are sent to the schisto diagnostics (and hence getting treated)
+        treated_idx = self.module.rng.choice(seeking_healthcare,
+                                                    size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
+                                                    replace=False)
+        # for those who seeks the healthcare initiate treatment
+        df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+        df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
+        df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+
+        if len(treated_idx) > 0:
+            print("Number of treated due to HSI: " + str(len(treated_idx)))
+        else:
+            print("No one got treatment")
+            logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
 
 class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
@@ -421,6 +420,18 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'ss_is_infected'] = 'Mansoni'
 
 
+# class SchistoTreatment(Event, IndividualScopeEventMixin):
+#     """Treatment upon Heathcare interaction - simple version
+#     """
+#     def __init__(self, module, person_id):
+#         super().__init__(module, person_id=person_id)
+#         assert isinstance(module, Schisto)
+#
+#     def apply(self, person_id):
+#         df = self.sim.population.props
+#         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+
+
 class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
     should be scheduled district-wise
@@ -431,12 +442,18 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        coverage = 0.3  # for now we assign the same coverage for all ages and districts
+        params = self.module.parameters
+        coverage = params['prob_PZQ_in_MDA']  # for now we assign the same coverage for all ages and districts
+
         # choose coverage-fraction of the population
         eligible = df.index[df.is_alive].tolist()
         treated_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False)
+
         # change their infection status to Non-infected
         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+        df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
+        df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
         print("PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
@@ -455,7 +472,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         This is a regular event that can output current states of people or cumulative events since last logging event.
         """
         # run this event every year
-        self.repeat = 12
+        self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 
