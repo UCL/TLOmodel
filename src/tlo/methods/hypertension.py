@@ -176,8 +176,11 @@ class Hypertension(Module):
         )['probability']
         # TODO: update with BMI once merged to master
         df.loc[df.is_alive & (df.li_bmi >= 3), 'ht_risk'] *= m.prob_htgivenbmi
-        # TODO: add diabetes risk after circular declaration has been fixed with Asif/Stef
-        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
+
+        # Increase risk of hypertension for diabetics
+        if "Type2DiabetesMellitus" in self.sim.modules:
+            df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= self.prob_htgivendiabetes
+            # TODO: continue from here to setup entire interaction
 
         # Define key variables
         alive_count = df.is_alive.sum()
@@ -185,7 +188,7 @@ class Hypertension(Module):
         df.loc[df.is_alive, 'ht_age_range'] = df.loc[df.is_alive, 'age_years'].map(self.htn_age_range_lookup)
 
         # Assign prevalent cases of hypertension according to risk
-        ht_probability = ht_probability * df.loc[df.is_alive, 'ht_risk']
+        ht_probability *= df.loc[df.is_alive, 'ht_risk']
 
         random_numbers = self.rng.random_sample(size=alive_count)
         df.loc[df.is_alive, 'ht_current_status'] = random_numbers < ht_probability
@@ -327,10 +330,13 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         df['ht_risk'] = 1.0  # Reset risk for all people
         # TODO: update with BMI once merged to master
         df.loc[df.is_alive & (df.li_bmi >= 3), 'ht_risk'] *= m.prob_htgivenbmi  # Adjust risk if overwt
-        # TODO: add diabetes risk after circular declaration has been fixed with Asif/Stef
-        # df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= m.prob_htgivendiabetes
 
-        ht_probability = ht_probability * df.loc[currently_ht_no, 'ht_risk']  # look up updated risk of hypertension
+        # Increase risk of hypertension for diabetics
+        if "Type2DiabetesMellitus" in self.sim.modules:
+            df.loc[df.is_alive & df.d2_current_status, 'ht_risk'] *= m.prob_htgivendiabetes
+            # TODO: continue from here to setup entire interaction
+
+        ht_probability *= df.loc[currently_ht_no, 'ht_risk']  # look up updated risk of hypertension
         random_numbers = rng.random_sample(size=len(ht_probability))  # get random numbers
         now_hypertensive = ht_probability > random_numbers  # assign new hypertensive cases as per incidence and risk
         ht_idx = currently_ht_no[now_hypertensive]  # hold id of those with new hypertension
