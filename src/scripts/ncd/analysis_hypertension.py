@@ -10,7 +10,6 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem, hypertension
 
-
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 # TODO: adapt to NCD analysis
 # TODO: add check that there is HTN >0
@@ -56,8 +55,7 @@ service_availability = ['*']
 # -----------------------------------------------------------------
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       service_availability=service_availability))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
@@ -79,12 +77,12 @@ output = parse_log_file(logfile)
 # Plot and check output
 
 # Load overall prevalence model and prevalence data
-val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]    # Load the existing data
+val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_validation"]  # Load the existing data
 val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validation"]
-val_model_df2 = output["tlo.methods.hypertension"]["ht_prevalence_model_validation_2"] # Load the model data
+val_model_df2 = output["tlo.methods.hypertension"]["ht_prevalence_model_validation_2"]  # Load the model data
 # TODO: I do not get the same numbers out for the model output using groupby. Need to check and redo plotting code
 Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
-Data_total = val_data_df.total    # Pick out overall prevalence from data
+Data_total = val_data_df.total  # Pick out overall prevalence from data
 Data_min = val_data_df.total_min  # Pick out min CI
 Data_max = val_data_df.total_max  # Pick out max CI
 Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
@@ -100,7 +98,7 @@ print("Is the prevalence of hypertension above the min 95% CI of the data: ", "\
 
 
 # Scatter graph of overall prevalence data vs model
-Plot_Years = (2010, 2011)   # ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
+Plot_Years = (2010, 2011)  # ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
 
 plt.scatter(Plot_Years, Data_total, label='Data', color='k')
 plt.scatter(Plot_Years, Data_min, label='Min 95% CI', color='grey')
@@ -123,18 +121,26 @@ df2 = val_model_df
 df.index = Plot_Years
 df2.index = Plot_Years
 
-Data_Age = pd.DataFrame(index=Plot_Years,
-                        columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'],
-                        data=df[['age25to35', 'age35to45', 'age45to55', 'age55to65']].values)
-Data_Age_min = pd.DataFrame(index=Plot_Years,
-                            columns=['Age25to35_min', 'Age35to45_min', 'Age45to55_min', 'Age55to65_min'],
-                            data=df[['age25to35_min', 'age35to45_min', 'age45to55_min', 'age55to65_min']].values)
-Data_Age_max = pd.DataFrame(index=Plot_Years,
-                            columns=['Age25to35_max', 'Age35to45_max', 'Age45to55_max', 'Age55to65_max'],
-                            data=df[['age25to35_max', 'age35to45_max', 'age45to55_max', 'age55to65_max']].values)
-Model_Age = pd.DataFrame(index=Plot_Years,
-                         columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'],
-                         data=df2[['25to35', '35to45', '45to55', '55to65']].values)
+Data_Age = pd.DataFrame(
+    index=Plot_Years,
+    columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'],
+    data=df[['age25to35', 'age35to45', 'age45to55', 'age55to65']].values,
+)
+Data_Age_min = pd.DataFrame(
+    index=Plot_Years,
+    columns=['Age25to35_min', 'Age35to45_min', 'Age45to55_min', 'Age55to65_min'],
+    data=df[['age25to35_min', 'age35to45_min', 'age45to55_min', 'age55to65_min']].values,
+)
+Data_Age_max = pd.DataFrame(
+    index=Plot_Years,
+    columns=['Age25to35_max', 'Age35to45_max', 'Age45to55_max', 'Age55to65_max'],
+    data=df[['age25to35_max', 'age35to45_max', 'age45to55_max', 'age55to65_max']].values,
+)
+Model_Age = pd.DataFrame(
+    index=Plot_Years,
+    columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'],
+    data=df2[['25to35', '35to45', '45to55', '55to65']].values,
+)
 
 # Clean by year
 # 2010
@@ -164,22 +170,22 @@ plt.show()
 
 
 # Load prevalence model and compare to data other than STEP data
-val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_extra"]    # Load the existing data
+val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_extra"]  # Load the existing data
 val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_extra"]
 Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
-Data_price = val_data_df.price    # Pick out overall prevalence from price data
+Data_price = val_data_df.price  # Pick out overall prevalence from price data
 Data_price_min = val_data_df.price_min  # Pick out min CI
 Data_price_max = val_data_df.price_max  # Pick out max CI
 
-Data_divala = val_data_df.divala    # Pick out overall prevalence from divala data
+Data_divala = val_data_df.divala  # Pick out overall prevalence from divala data
 Data_divala_min = val_data_df.divala_min  # Pick out min CI
 Data_divala_max = val_data_df.divala_max  # Pick out max CI
 
-Data_ruecker = val_data_df.ruecker    # Pick out overall prevalence from ruecker data
+Data_ruecker = val_data_df.ruecker  # Pick out overall prevalence from ruecker data
 Data_ruecker_min = val_data_df.ruecker_min  # Pick out min CI
 Data_ruecker_max = val_data_df.ruecker_max  # Pick out max CI
 
-Data_ramirez = val_data_df.ramirez    # Pick out overall prevalence from ramirez data
+Data_ramirez = val_data_df.ramirez  # Pick out overall prevalence from ramirez data
 Data_ramirez_min = val_data_df.ramirez_min  # Pick out min CI
 Data_ramirez_max = val_data_df.ramirez_max  # Pick out max CI
 
@@ -191,7 +197,7 @@ Model_ramirez = val_model_df.ramirez_model  # Pick out overall prevalence from m
 
 
 # Scatter graph of overall prevalence of non-STEP data vs model
-Plot_Years = (2010, 2011)   # ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
+Plot_Years = (2010, 2011)  # ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
 
 # Price et al 2018
 plt.scatter(Plot_Years, Data_price, label='Data', color='k')

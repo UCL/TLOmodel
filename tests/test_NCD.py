@@ -1,10 +1,11 @@
 import logging
 import os
 import time
-import pytest
 from pathlib import Path
 
-from tlo import Simulation, Date
+import pytest
+
+from tlo import Date, Simulation
 from tlo.methods import demography, enhanced_lifestyle, healthsystem, hypertension
 
 start_date = Date(2010, 1, 1)
@@ -15,6 +16,7 @@ popsize = 1000
 @pytest.fixture(autouse=True)
 def disable_logging():
     logging.disable(logging.INFO)
+
 
 @pytest.fixture(scope='module')
 def simulation():
@@ -41,7 +43,7 @@ def test_dtypes(simulation):
 
 
 def test_hypertension_adults(simulation):
-    #TODO: need to check with Asif that this test age across time (not just during seeding)
+    # TODO: need to check with Asif that this test age across time (not just during seeding)
     # check all hypertensive individuals are 18 years or over
     df = simulation.population.props
     HTN = df.loc[df.ht_current_status]
@@ -54,4 +56,3 @@ if __name__ == '__main__':
     test_NCD_simulation(simulation)
     t1 = time.time()
     print('Time taken', t1 - t0)
-
