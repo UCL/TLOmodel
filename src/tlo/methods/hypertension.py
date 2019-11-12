@@ -195,43 +195,8 @@ class Hypertension(Module):
         # Assign prevalent cases of hypertension according to risk
         ht_probability = ht_probability * df.loc[df.is_alive, 'ht_risk']
 
-        # TODO: remove duplication later. Asif and Stef: when the model runs with 1st random_number, numbers are not
-        # TODO: [cont] random (younger and older age group is always very high. Even if seed is changed. When executing
-        # TODO: [cont] a second time this is fine. Once fixed remove excess code up to below note.
-        random_numbers = self.rng.random_sample(size=alive_count)
         random_numbers = self.rng.random_sample(size=alive_count)
         df.loc[df.is_alive, 'ht_current_status'] = (random_numbers < ht_probability)
-
-        # Check random numbers      #TODO: Remove from here ...
-        logger.debug('Lets generate the random number check for hypertension')
-
-        pop_over_18 = df.index[(df.age_years >= 18) & (df.age_years < 25)]
-        mean_randnum_18_25 = random_numbers[pop_over_18].mean()
-        pop_over_25_35 = df.index[(df.age_years >= 25) & (df.age_years < 35)]
-        mean_randnum_25_35 = random_numbers[pop_over_25_35].mean()
-        pop_over_35_45 = df.index[(df.age_years >= 35) & (df.age_years < 45)]
-        mean_randnum_35_45 = random_numbers[pop_over_35_45].mean()
-        pop_over_45_55 = df.index[(df.age_years >= 45) & (df.age_years < 55)]
-        mean_randnum_45_55 = random_numbers[pop_over_45_55].mean()
-        pop_over_55 = df.index[df['age_years'] >= 55]
-        mean_randnum_over55 = random_numbers[pop_over_55].mean()
-
-        logger.debug('Lets generate the random number check for hypertension. ')
-        logger.debug({
-            'Mean rand num in 18-25 yo': mean_randnum_18_25,
-            'Mean rand num_in 25-35 yo': mean_randnum_25_35,
-            'Mean rand num_in 35-45 yo': mean_randnum_35_45,
-            'Mean rand num_in 45-55 yo': mean_randnum_45_55,
-            'Mean_rand num_in over 55 yo': mean_randnum_over55
-        })
-        # TODO: check the assertion range is correct
-        # assert 0.4 < mean_randnum_18_25 < 0.6
-        # assert 0.4 < mean_randnum_25_35 < 0.6
-        # assert 0.4 < mean_randnum_35_45 < 0.6
-        # assert 0.4 < mean_randnum_45_55 < 0.6
-        # assert 0.4 < mean_randnum_over55 < 0.6
-
-        # TODO: ... to here
 
         # Assign relevant properties amongst those hypertensive
         count_ht_all = len(df[df.is_alive & df.ht_current_status])  # Count all people with hypertension
