@@ -372,6 +372,13 @@ lt = lt.drop(lt.columns[[1]],axis=1)
 lt.loc[lt['Variant'].str.contains('Medium'),'Variant']='Medium'
 lt.to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_WPP.csv',index=False)
 
+#%%
+# *** USE OF THE GBD DATA ****
+#%%
 
+gbd_working_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/GBD/IHME-GBD_2017_DATA-1629962a-1/IHME-GBD_2017_DATA-1629962a-1.csv'
 
+gbd = pd.read_csv(gbd_working_file)
 
+gbd.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
