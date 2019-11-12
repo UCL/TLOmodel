@@ -5,11 +5,11 @@ import pytest
 from pathlib import Path
 
 from tlo import Simulation, Date
-from tlo.methods import demography, lifestyle, healthsystem, hypertension#, t2dm#, CVD
+from tlo.methods import demography, enhanced_lifestyle, healthsystem, hypertension
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 10
+popsize = 100
 
 
 @pytest.fixture(autouse=True)
@@ -21,7 +21,7 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
     sim.seed_rngs(0)
@@ -44,9 +44,8 @@ def test_hypertension_adults(simulation):
     #TODO: need to check with Asif that this test age across time (not just during seeding)
     # check all hypertensive individuals are 18 years or over
     df = simulation.population.props
-    HTN = df.loc[df.current_status]
-    is_adult = HTN.apply(lambda age_years: df.at.age_years >= 18)
-    assert is_adult.all()
+    HTN = df.loc[df.ht_current_status]
+    assert (HTN.age_years >= 18).all()
 
 
 if __name__ == '__main__':

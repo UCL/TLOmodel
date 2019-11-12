@@ -8,7 +8,7 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, healthburden, healthsystem, lifestyle, hypertension
+from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem, hypertension
 
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
@@ -24,8 +24,7 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = Path("./resources")
-
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 
@@ -60,7 +59,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(hypertension.Hypertension(resourcefilepath=resourcefilepath))
 # sim.register(t2dm.T2DM(resourcefilepath=resourcefilepath))
 
