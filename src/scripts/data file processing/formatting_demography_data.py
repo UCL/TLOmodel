@@ -167,7 +167,7 @@ k2.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
 
 #%% **** USE OF THE WPP DATA ****
 
-#%%
+#%% Population size: age groups
 wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
 
@@ -203,8 +203,42 @@ ests = pd.concat([ests_males,ests_females],sort=False)
 ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
 ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 
-#TODO: More tidying to unify for import and useage in the code
 ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
+
+#%% Population size: single-year age/time steps
+wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_INT_F03_2_POPULATION_BY_AGE_ANNUAL_MALE.xlsx'
+
+wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_INT_F03_3_POPULATION_BY_AGE_ANNUAL_FEMALE.xlsx'
+
+
+# Males
+dat = pd.concat([
+    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16)
+], sort=False)
+
+ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_males['Sex']= 'M'
+
+
+# Females
+dat = pd.concat([
+    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16)
+])
+
+ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_females['Sex']= 'F'
+
+# Join and tidy up
+ests = pd.concat([ests_males,ests_females],sort=False)
+ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
+ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+ests = ests.rename(columns={ests.columns[1]:'Year'})
+ests.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
+
 
 #%% Fertility and births
 
