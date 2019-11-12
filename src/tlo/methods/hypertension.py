@@ -332,47 +332,6 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
         now_hypertensive = (ht_probability > random_numbers)  # assign new hypertensive cases as per incidence and risk
         ht_idx = currently_ht_no[now_hypertensive]  # hold id of those with new hypertension
 
-        # Check random numbers      #TODO: Remove from here ... (not petty code - just for testing)
-        # random_numbers_df = random_numbers, index = currently_ht_no
-        randnum_holder = pd.DataFrame(data=random_numbers, index=currently_ht_no, columns=['nr'])
-
-        pop_over_18 = age_index.index[(age_index.age_years >= 18) & (age_index.age_years < 25)]
-        rand_18_25 = (randnum_holder.loc[pop_over_18]).mean()
-        rand_18_25_mean = rand_18_25.mean()
-
-        pop_over_25_35 = age_index.index[(age_index.age_years >= 25) & (age_index.age_years < 35)]
-        rand_25_35 = (randnum_holder.loc[pop_over_25_35]).mean()
-        rand_25_35_mean = rand_25_35.mean()
-
-        pop_over_35_45 = age_index.index[(age_index.age_years >= 35) & (age_index.age_years < 45)]
-        rand_35_45 = (randnum_holder.loc[pop_over_35_45]).mean()
-        rand_35_45_mean = rand_35_45.mean()
-
-        pop_over_45_55 = age_index.index[(age_index.age_years >= 45) & (age_index.age_years < 55)]
-        rand_45_55 = (randnum_holder.loc[pop_over_45_55]).mean()
-        rand_45_55_mean = rand_45_55.mean()
-
-        pop_over_55 = age_index.index[(age_index.age_years >= 55)]
-        rand_over55 = (randnum_holder.loc[pop_over_55]).mean()
-        rand_over55_mean = rand_over55.mean()
-
-        logger.debug('Lets generate the random number check for incident hypertension. ')
-        logger.debug({
-            'Mean rand num in 18-25 yo': rand_18_25,
-            'Mean rand num_in 25-35 yo': rand_25_35,
-            'Mean rand num_in 35-45 yo': rand_35_45,
-            'Mean rand num_in 45-55 yo': rand_45_55,
-            'Mean_rand num_in over 55 yo': rand_over55
-        })
-
-        assert 0.35 < rand_18_25_mean < 0.6
-        assert 0.35 < rand_25_35_mean < 0.6
-        assert 0.35 < rand_35_45_mean < 0.6
-        assert 0.35 < rand_45_55_mean < 0.6
-        assert 0.35 < rand_over55_mean < 0.6
-
-        # TODO: ... to here
-
         # Assign variables amongst those newly hypertensive
         df.loc[ht_idx, 'ht_current_status'] = True
         df.loc[ht_idx, 'ht_historic_status'] = 'C'
