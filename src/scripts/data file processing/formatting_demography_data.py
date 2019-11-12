@@ -13,7 +13,7 @@ import pandas as pd
 
 resourcefilepath = Path("./resources")
 
-
+# *** USE OF THE CENSUS DATA ****
 
 #%% Totals by Sex for Each District
 
@@ -163,3 +163,108 @@ k2 = k2[k2.columns[[7,0,1,2,3,4,5,6]]]
 # save the file:
 k2.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
 
+
+
+#%% **** USE OF THE WPP DATA ****
+
+#%%
+wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
+
+wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
+
+
+# Males
+dat = pd.concat([
+    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
+], sort=False)
+
+ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_males['Sex']= 'M'
+
+
+# Females
+dat = pd.concat([
+    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
+])
+
+ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_females['Sex']= 'F'
+
+# Join and tidy up
+ests = pd.concat([ests_males,ests_females],sort=False)
+ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
+ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+
+#TODO: More tidying to unify for import and useage in the code
+ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
+
+#%% Fertility and births
+
+tot_births_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_FERT_F01_BIRTHS_BOTH_SEXES.xlsx'
+
+tot_births = pd.concat([
+    pd.read_excel(tot_births_file,sheet_name='ESTIMATES',header=16),
+    pd.read_excel(tot_births_file,sheet_name='LOW VARIANT',header=16),
+    pd.read_excel(tot_births_file,sheet_name='MEDIUM VARIANT',header=16),
+    pd.read_excel(tot_births_file,sheet_name='HIGH VARIANT',header=16)
+], sort=False)
+
+tot_births = tot_births.loc[tot_births[tot_births.columns[2]]=='Malawi'].copy().reset_index(drop=True)
+tot_births = tot_births.drop(tot_births.columns[[0,2,3,4,5,6]],axis='columns')
+
+tot_births = tot_births.melt(id_vars=['Variant'],var_name='Period',value_name='Total_Births').dropna()
+tot_births['Total_Births'] = 1000 * tot_births['Total_Births']  # Imported units are 1000's
+
+# Sex Ratio at Birth
+sex_ratio_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_FERT_F02_SEX_RATIO_AT_BIRTH.xlsx'
+
+sex_ratio = pd.concat([
+    pd.read_excel(sex_ratio_file,sheet_name='ESTIMATES',header=16),
+    pd.read_excel(sex_ratio_file,sheet_name='MEDIUM VARIANT',header=16)
+], sort=False)
+
+sex_ratio = sex_ratio.loc[sex_ratio[sex_ratio.columns[2]]=='Malawi'].copy().reset_index(drop=True)
+sex_ratio  = sex_ratio .drop(sex_ratio .columns[[0,2,3,4,5,6]],axis='columns')
+sex_ratio = sex_ratio.melt(id_vars=['Variant'],var_name='Period',value_name='M_to_F_Sex_Ratio').dropna()
+
+# copy the medium variant sex ratio project for the low and high variants (in order to merge with the total births)
+copy_high = sex_ratio.loc[sex_ratio['Variant']=='Medium variant',['Period','M_to_F_Sex_Ratio']].copy()
+copy_high['Variant']='High variant'
+sex_ratio = sex_ratio.append(copy_high, sort=False)
+
+copy_low = sex_ratio.loc[sex_ratio['Variant']=='Medium variant',['Period','M_to_F_Sex_Ratio']].copy()
+copy_low['Variant']='Low variant'
+sex_ratio = sex_ratio.append(copy_low, sort=False)
+
+# Combine these together
+births = tot_births.merge(sex_ratio,on=['Variant','Period'],validate='1:1')
+
+births.to_csv(resourcefilepath / 'ResourceFile_TotalBirths_WPP.csv',index=False)
+
+
+# Age-specific Fertility Rates
+asfr_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.xlsx'
+
+asfr = pd.concat([
+    pd.read_excel(asfr_file,sheet_name='ESTIMATES',header=16),
+    pd.read_excel(asfr_file,sheet_name='LOW VARIANT',header=16),
+    pd.read_excel(asfr_file,sheet_name='MEDIUM VARIANT',header=16),
+    pd.read_excel(asfr_file,sheet_name='HIGH VARIANT',header=16)
+], sort=False)
+
+
+asfr = asfr.loc[asfr[asfr.columns[2]]=='Malawi'].copy().reset_index(drop=True)
+asfr = asfr.drop(asfr.columns[[0,2,3,4,5,6]],axis='columns')
+asfr[asfr.columns[2:9]] = asfr[asfr.columns[2:9]]/1000  # given numbers are per 1000, so divide by 1000 to make 'per woman'
+asfr.to_csv(resourcefilepath / 'ResourceFile_ASFR_WPP.csv',index=False)
