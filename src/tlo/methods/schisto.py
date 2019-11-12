@@ -27,13 +27,6 @@ class Schisto(Module):
         - Reading DALY weights and reporting daly values related to this disease
         - Health care seeking
         - Usual HSI behaviour
-        - Restrictive requirements on the facility_level for the HSI_event
-
-    All disease modules need to be implemented as a class inheriting from Module.
-    They need to provide several methods which will be called by the simulation
-    framework:
-    * `read_parameters(data_folder)`
-    * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     """
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -64,7 +57,8 @@ class Schisto(Module):
         'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
         'death_schisto_mansoni': Parameter(Types.REAL, 'Rate at which a death from S.Mansoni complications occurs'),
         'death_schisto_haematobium': Parameter(Types.REAL, 'Rate at which a death from S.Haematobium complications occurs'),
-        # symptoms prob should also be defined here but i don't know how to do that in a dataframe
+        'symptoms_haematobium': Parameter(Types.DATA_FRAME, 'Symptoms for S. Haematobium infection'),
+        'symptoms_mansoni': Parameter(Types.DATA_FRAME, 'Symptoms for S. Mansoni infection'),
 
         # healthburden
         'daly_wt_fever': Parameter(Types.REAL, 'DALY weight for fever'),
@@ -74,14 +68,16 @@ class Schisto(Module):
         'daly_wt_other': Parameter(Types.REAL, 'DALY weight for other symptoms'),
 
         # health system interaction
-        'prob_seeking_healthcare': Parameter(Types.REAL, 'Probability that an infected individual visits a healthcare facility'),
-        'prob_sent_to_lab_test': Parameter(Types.REAL, 'Probability that an infected individual gets sent to urine or stool lab test'),
+        'prob_seeking_healthcare': Parameter(Types.REAL,
+                                             'Probability that an infected individual visits a healthcare facility'),
+        'prob_sent_to_lab_test': Parameter(Types.REAL,
+                                           'Probability that an infected individual gets sent to urine or stool lab test'),
         'PZQ_efficacy': Parameter(Types.REAL, 'Efficacy of prazinquantel'),  # unused
 
         # MDA
         'MDA_coverage_PSAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for PSAC'),
         'MDA_coverage_SAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for SAC'),
-        'MDA_coverage_Adults': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults'),
+        'MDA_coverage_Adults': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults')
     }
 
     PROPERTIES = {
@@ -125,14 +121,19 @@ class Schisto(Module):
         print("HSI & treatment params loaded")
 
         # baseline prevalence
+        # THIS NEEDS TO BE ALL HANDLED IN A DIFFERENT WAY AS WE HAVE MANY DISTRICTS
         params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
         self.schisto_haem_initial_prev.set_index("District", inplace=True)
-        params['prevalence_2010_haem_PSAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence PSAC']
-        params['prevalence_2010_haem_SAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence SAC']
-        params['prevalence_2010_haem_Adults'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence Adults']
-        params['prevalence_2010_mans_PSAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence PSAC']
-        params['prevalence_2010_mans_SAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence SAC']
-        params['prevalence_2010_mans_Adults'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence Adults']
+        params['prevalence_2010_haem_PSAC'] = self.schisto_haem_initial_prev.loc[:, 'Prevalence PSAC']
+        params['prevalence_2010_haem_SAC'] = self.schisto_haem_initial_prev.loc[:, 'Prevalence SAC']
+        params['prevalence_2010_haem_Adults'] = self.schisto_haem_initial_prev.loc[:, 'Prevalence Adults']
+
+        params['schisto_mans_initial_prev'] = workbook['Prevalence_Mansoni_2010']
+        self.schisto_mans_initial_prev.set_index("District", inplace=True)
+        params['prevalence_2010_mans_PSAC'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence PSAC']
+        params['prevalence_2010_mans_SAC'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence SAC']
+        params['prevalence_2010_mans_Adults'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence Adults']
+
         print("initial prevalence loaded")
 
         params['symptoms_haematobium'] = pd.DataFrame(
@@ -241,6 +242,7 @@ class Schisto(Module):
 
     def assign_initial_prevalence(self, population, age_group, inf_type):
         """Assign initial 2010 prevalence of S.Haematobium or S.Mansoni.
+        This will depend on a district and age group.
 
         :param population: population
         :param age_group: 'SAC', 'PSAC', 'Adults'
@@ -251,6 +253,7 @@ class Schisto(Module):
 
         df = population.props
         params = self.parameters
+        districts = df.district_of_residence.unique().tolist()
 
         age_range = self.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
         if inf_type == 'Haematobium':
@@ -259,12 +262,17 @@ class Schisto(Module):
             inf_string = 'mans'
         prev_string = "prevalence_2010_" + inf_string + "_" + age_group
 
-        prevalence = params[prev_string]
+        prevalence = params[prev_string] # this is a pd.Series not a single value
         # pd.Series.between is by default inclusive of the edges
-        eligible = df.index[df['age_years'].between(age_range[0], age_range[1])].tolist()
-        infected_idx = self.rng.choice(eligible, size=int(prevalence *
-                                                          (len(eligible))), replace=False)
-        df.loc[infected_idx, 'ss_is_infected'] = inf_type
+        print("Assigning prevalence to each district:")
+        for distr in districts:
+            prevalence_distr = prevalence[distr]  # get a correct value from the pd.Series
+            print(distr + ": " + str(prevalence_distr))
+            eligible = df.index[(df['district_of_residence'] == distr) &
+                                (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+            infected_idx = self.rng.choice(eligible, size=int(prevalence_distr *
+                                                              (len(eligible))), replace=False)
+            df.loc[infected_idx, 'ss_is_infected'] = inf_type
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -290,7 +298,8 @@ class Schisto(Module):
 
         All children are born without an infection, even if the mother is infected.
 
-        :param mother_id: the ID for the mother for this child (redundant)        :param child_id: the new child
+        :param mother_id: the ID for the mother for this child (redundant)
+        :param child_id: the new child
         """
         df = self.sim.population.props
 
