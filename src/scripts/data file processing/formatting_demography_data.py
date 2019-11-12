@@ -302,3 +302,76 @@ asfr = asfr.loc[asfr[asfr.columns[2]]=='Malawi'].copy().reset_index(drop=True)
 asfr = asfr.drop(asfr.columns[[0,2,3,4,5,6]],axis='columns')
 asfr[asfr.columns[2:9]] = asfr[asfr.columns[2:9]]/1000  # given numbers are per 1000, so divide by 1000 to make 'per woman'
 asfr.to_csv(resourcefilepath / 'ResourceFile_ASFR_WPP.csv',index=False)
+
+
+#%% Deaths
+
+deaths_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_MORT_F04_2_DEATHS_BY_AGE_MALE.xlsx'
+
+deaths_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_MORT_F04_3_DEATHS_BY_AGE_FEMALE.xlsx'
+
+deaths_males = pd.concat([
+    pd.read_excel(deaths_males_file,sheet_name='ESTIMATES',header=16),
+    pd.read_excel(deaths_males_file,sheet_name='LOW VARIANT',header=16),
+    pd.read_excel(deaths_males_file,sheet_name='MEDIUM VARIANT',header=16),
+    pd.read_excel(deaths_males_file,sheet_name='HIGH VARIANT',header=16)
+], sort=False)
+
+deaths_males  = deaths_males.loc[deaths_males[deaths_males.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+deaths_males ['Sex']= 'M'
+
+deaths_females = pd.concat([
+    pd.read_excel(deaths_females_file,sheet_name='ESTIMATES',header=16),
+    pd.read_excel(deaths_females_file,sheet_name='LOW VARIANT',header=16),
+    pd.read_excel(deaths_females_file,sheet_name='MEDIUM VARIANT',header=16),
+    pd.read_excel(deaths_females_file,sheet_name='HIGH VARIANT',header=16)
+], sort=False)
+
+deaths_females  = deaths_females.loc[deaths_females[deaths_females.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+deaths_females ['Sex']= 'F'
+
+
+# Join and tidy up
+deaths = pd.concat([deaths_males,deaths_females],sort=False)
+deaths  = deaths .drop(deaths.columns[[0,2,3,4,5,6]],axis=1)
+deaths[deaths.columns[2:22]] = deaths[deaths.columns[2:22]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
+
+
+# The ASMR from the LifeTable
+lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_MORT_F17_2_ABRIDGED_LIFE_TABLE_MALE.xlsx'
+
+lt_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.xlsx'
+
+
+lt_males = pd.concat([pd.read_excel(lt_males_file, sheet_name ='ESTIMATES', header=16, usecols ='B,C,H,I,J,K'),
+                      pd.read_excel(lt_males_file, sheet_name ='MEDIUM 2020-2050', header=16, usecols ='B,C,H,I,J,K'),
+                      pd.read_excel(lt_males_file, sheet_name ='MEDIUM 2050-2100', header=16, usecols ='B,C,H,I,J,K')
+                      ])
+
+lt_males = lt_males.loc[lt_males[lt_males.columns[1]] == 'Malawi'].copy().reset_index(drop=True)
+lt_males['Sex'] = 'M'
+
+
+lt_females = pd.concat([pd.read_excel(lt_females_file, sheet_name ='ESTIMATES', header=16, usecols ='B,C,H,I,J,K'),
+                      pd.read_excel(lt_females_file, sheet_name ='MEDIUM 2020-2050', header=16, usecols ='B,C,H,I,J,K'),
+                      pd.read_excel(lt_females_file, sheet_name ='MEDIUM 2050-2100', header=16, usecols ='B,C,H,I,J,K')
+                      ])
+
+lt_females = lt_females.loc[lt_females[lt_females.columns[1]] == 'Malawi'].copy().reset_index(drop=True)
+lt_females['Sex'] = 'F'
+
+
+# Join and tidy up
+lt = pd.concat([lt_males,lt_females],sort=False)
+lt = lt.drop(lt.columns[[1]],axis=1)
+lt.loc[lt['Variant'].str.contains('Medium'),'Variant']='Medium'
+lt.to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_WPP.csv',index=False)
+
+
+
+
