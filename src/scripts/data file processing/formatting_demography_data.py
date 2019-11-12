@@ -382,3 +382,20 @@ Module-demography/GBD/IHME-GBD_2017_DATA-1629962a-1/IHME-GBD_2017_DATA-1629962a-
 gbd = pd.read_csv(gbd_working_file)
 
 gbd.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
+
+
+#%% *** DHS DATA
+
+dhs_working_file =  '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/DHS/STATcompilerExport20191112_211640.xlsx'
+
+dhs_asfr = pd.read_excel(dhs_working_file, sheet_name='ASFR')
+dhs_asfr[dhs_asfr.columns[1:]] = dhs_asfr[dhs_asfr.columns[1:]] / 1000  # to make the ASFR per women
+dhs_asfr.to_csv(resourcefilepath / 'ResourceFile_ASFR_DHS.csv', index=False)
+
+dhs_u5 = pd.read_excel(dhs_working_file, sheet_name='UNDER_5_MORT',header=1,index=False)
+dhs_u5['Year']=dhs_u5.index
+dhs_u5 = dhs_u5.reset_index(drop=True)
+dhs_u5 = dhs_u5[dhs_u5.columns[[3,0,1,2]]]
+dhs_u5[dhs_u5.columns[1:]] = dhs_u5[dhs_u5.columns[1:]] / 1000  # to make it mortality risk per person
+dhs_u5.to_csv(resourcefilepath / 'ResourceFile_Under_Five_Mortality_DHS.csv', index=False)
