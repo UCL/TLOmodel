@@ -315,12 +315,13 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Handle new cases of hypertension
         # First get relative risk
-        ht_probability = df.loc[currently_ht_no,
-                                ['age_years', 'ht_risk']].reset_index().merge(self.module.parameters['HT_incidence'],
-                                                                              left_on=['age_years'],
-                                                                              right_on=['age'],
-                                                                              how='left').set_index('person')[
-            'probability']
+        ht_probability = (
+            df.loc[currently_ht_no, ['age_years', 'ht_risk']]
+              .reset_index()
+              .merge(self.module.parameters['HT_incidence'],
+                     left_on=['age_years'], right_on=['age'], how='left').set_index('person')
+        )['probability']
+        # TODO: check that we want to update risk for everyone
         df['ht_risk'] = 1.0  # Reset risk for all people
         # TODO: update with BMI once merged to master
         df.loc[df.is_alive & (df.li_bmi >= 3), 'ht_risk'] *= m.prob_htgivenbmi  # Adjust risk if overwt
@@ -348,6 +349,7 @@ class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
     It will now submit the individual HSI events that occur when each individual is met.
     (i.e. Any large campaign is composed of many individual outreach events).
     """
+    # TODO: assume that this is unfinished and don't want feedback on this?
 
     def __init__(self, module):
         super().__init__(module)
@@ -378,6 +380,7 @@ class HSI_HT_Outreach_Individual(Event, IndividualScopeEventMixin):
     NB. This needs to be created and run for each individual that benefits from the outreach campaign.
 
     """
+    # TODO: assume that this is unfinished and don't want feedback on this?
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -419,6 +422,7 @@ class HSI_HT_Refer_Individual(Event, IndividualScopeEventMixin):
     If they are aged over 15, then a decision is taken to start treatment at the next appointment.
     If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
     """
+    # TODO: assume that this is unfinished and don't want feedback on this?
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
