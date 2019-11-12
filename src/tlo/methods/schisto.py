@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import os
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -35,10 +36,19 @@ class Schisto(Module):
 
     PARAMETERS = {
         # natural history
-        'prevalence_2010_haem': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.haematobium infection'),
-        'prob_infection_haem': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected with S. Haematobium'),
-        'prevalence_2010_mansoni': Parameter(Types.REAL, 'Initial prevalence in 2010 of s.Mansoni infection'),
-        'prob_infection_mansoni': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected with S. Mansoni'),
+        'prevalence_2010_haem_PSAC': Parameter(Types.REAL,
+                                               'Initial prevalence in 2010 of s.haematobium infection among PSAC'),
+        'prevalence_2010_haem_SAC': Parameter(Types.REAL,
+                                               'Initial prevalence in 2010 of s.haematobium infection among SAC'),
+        'prevalence_2010_haem_Adult': Parameter(Types.REAL,
+                                               'Initial prevalence in 2010 of s.haematobium infection among Adults'),
+        'prevalence_2010_mans_PSAC': Parameter(Types.REAL,
+                                               'Initial prevalence in 2010 of s.mansoni infection among PSAC'),
+        'prevalence_2010_mans_SAC': Parameter(Types.REAL,
+                                              'Initial prevalence in 2010 of s.mansoni infection among SAC'),
+        'prevalence_2010_mans_Adult': Parameter(Types.REAL,
+                                                'Initial prevalence in 2010 of s.mansoni infection among Adults'),
+        'prob_infection': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected'),  # unused
         'rr_PSAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age under 5 yo'),
         'rr_SAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age 5 - 14 yo'),
         'rr_adults': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age above 14 yo'),
@@ -46,6 +56,9 @@ class Schisto(Module):
         'delay_b': Parameter(Types.REAL, 'End of the latent period in days, end'),
         'death_schisto_mansoni': Parameter(Types.REAL, 'Rate at which a death from S.Mansoni complications occurs'),
         'death_schisto_haematobium': Parameter(Types.REAL, 'Rate at which a death from S.Haematobium complications occurs'),
+        # symptoms prob should also be defined here but i don't know how to do that in a dataframe
+
+        # healthburden
         'daly_wt_fever': Parameter(Types.REAL, 'DALY weight for fever'),
         'daly_wt_stomach_ache': Parameter(Types.REAL, 'DALY weight for stomach_ache'),
         'daly_wt_skin': Parameter(Types.REAL, 'DALY weight for skin rash'),
@@ -55,10 +68,12 @@ class Schisto(Module):
         # health system interaction
         'prob_seeking_healthcare': Parameter(Types.REAL, 'Probability that an infected individual visits a healthcare facility'),
         'prob_sent_to_lab_test': Parameter(Types.REAL, 'Probability that an infected individual gets sent to urine or stool lab test'),
-        'PZQ_efficacy': Parameter(Types.REAL, 'Efficacy of prazinquantel'),
+        'PZQ_efficacy': Parameter(Types.REAL, 'Efficacy of prazinquantel'),  # unused
 
         # MDA
-        'prob_PZQ_in_MDA': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA programme'),
+        'MDA_coverage_PSAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for PSAC'),
+        'MDA_coverage_SAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for SAC'),
+        'MDA_coverage_Adult': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults'),
     }
 
     PROPERTIES = {
@@ -75,26 +90,41 @@ class Schisto(Module):
             Types.DATE, 'Date of start of infectious period')
     }
 
-    # def __init__(self, name=None, resourcefilepath=None):
-    #     # NB. Parameters passed to the module can be inserted in the __init__ definition.
-    #
-    #     super().__init__(name)
-    #     self.resourcefilepath = resourcefilepath
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
 
     def read_parameters(self, data_folder):
+
+        workbook = pd.read_excel(os.path.join(self.resourcefilepath,
+                                              'ResourceFile_Schisto.xlsx'), sheet_name=None)
         params = self.parameters
+        params['param_list'] = workbook['Parameters']
+        self.param_list.set_index("Parameter", inplace=True)
 
-        params['prevalence_2010_haem'] = 0.5
-        params['prevalence_2010_mans'] = 0.5
-        params['prob_infection'] = 0.5
-        params['delay_a'] = 25
-        params['delay_b'] = 30
-        params['death_schisto_haematobium'] = 0.0005
-        params['death_schisto_mansoni'] = 0.0005
+        # natural history params
+        params['prob_infection'] = self.param_list.loc['prob_infection', 'Value']
+        params['delay_a'] = self.param_list.loc['delay_a', 'Value']
+        params['delay_b'] = self.param_list.loc['delay_b', 'Value']
+        params['death_schisto_haematobium'] = self.param_list.loc['death_schisto_haematobium', 'Value']
+        params['death_schisto_mansoni'] = self.param_list.loc['death_schisto_mansoni', 'Value']
 
-        params['prob_seeking_healthcare'] = 0.3
-        params['prob_sent_to_lab_test'] = 0.95
-        params['PZQ_efficacy'] = 1.0
+        # HSI and treatment params
+        params['prob_seeking_healthcare'] = self.param_list.loc['prob_seeking_healthcare', 'Value']
+        params['prob_sent_to_lab_test'] = self.param_list.loc['prob_sent_to_lab_test', 'Value']
+        params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
+
+        # baseline prevalence
+        params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
+        params['prevalence_2010_haem_PSAC'] = self.param_list.loc['prevalence_2010_haem_PSAC', 'Prevalence PSAC']
+        params['prevalence_2010_haem_SAC'] = self.param_list.loc['prevalence_2010_haem_SAC', 'Prevalence SAC']
+        params['prevalence_2010_haem_Adult'] = self.param_list.loc['prevalence_2010_haem_Adult', 'Prevalence Adults']
+        params['prevalence_2010_mans_PSAC'] = self.param_list.loc['prevalence_2010_mans_PSAC', 'Prevalence PSAC']
+        params['prevalence_2010_mans_SAC'] = self.param_list.loc['prevalence_2010_mans_SAC', 'Prevalence SAC']
+        params['prevalence_2010_mans_Adult'] = self.param_list.loc['prevalence_2010_mans_Adult', 'Prevalence Adults']
+
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
                 'symptoms': ['none', 'fever', 'stomach_ache', 'skin', 'other'],
@@ -105,7 +135,12 @@ class Schisto(Module):
                 'symptoms': ['none', 'fever', 'stomach_ache', 'diarrhoea', 'vomit', 'skin', 'other'],
                 'probability': [0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1]
             })
-        params['prob_PZQ_in_MDA'] = 0.7
+
+        # MDA coverage
+        params['MDA_coverage'] = workbook['MDA_Coverage']
+        params['MDA_coverage_PSAC'] = self.param_list.loc['MDA_coverage_PSAC', 'Coverage PSAC']
+        params['MDA_coverage_SAC'] = self.param_list.loc['MDA_coverage_SAC', 'Coverage SAC']
+        params['MDA_coverage_Adult'] = self.param_list.loc['MDA_coverage_Adult', 'Coverage Adults']
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
@@ -117,10 +152,6 @@ class Schisto(Module):
     def initialise_population(self, population):
         """Set our property values for the initial population.
 
-        This method is called by the simulation when creating the initial population, and is
-        responsible for assigning initial values, for every individual, of those properties
-        'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
         """
         df = population.props  # a shortcut to the dataframe storing data for individiuals
@@ -129,7 +160,7 @@ class Schisto(Module):
         assert len(df.index[df.is_alive].tolist()) == len(df.index.tolist()), "Dead subjects in the initial population"
 
         df['ss_is_infected'] = 'Non-infected'
-        df['ss_scheduled_date_death'] = pd.NaT # not a time
+        df['ss_scheduled_date_death'] = pd.NaT  # not a time
         df['ss_haematobium_specific_symptoms'] = 'none'
         df['ss_mansoni_specific_symptoms'] = 'none'
         df['ss_schedule_infectiousness_start'] = pd.NaT
@@ -137,10 +168,9 @@ class Schisto(Module):
         # initial infected population - assuming no one is in the latent period
         # first for simplicity let's assume every infected person has S. Haematobium and no one has S.Mansoni
         print("Assign initially infected with S.Haematobium")
-        eligible = df.index.tolist()
-        infected_idx = self.rng.choice(eligible, size=int(params['prevalence_2010_haem'] *
-                                                            (len(eligible))), replace=False)
-        df.loc[infected_idx, 'ss_is_infected'] = 'Haematobium'
+        self.assign_initial_prevalence(population, 'SAC', 'Haematobium')
+        self.assign_initial_prevalence(population, 'PSAC', 'Haematobium')
+        self.assign_initial_prevalence(population, 'Adults', 'Haematobium')
         print("Assigned - S.Haematobium")
 
         # assign s. heamatobium symptoms
@@ -177,15 +207,53 @@ class Schisto(Module):
         # df.loc[df.inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_haem
         # df.loc[df.inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_mans
 
+    def map_age_groups(self, age_group):
+        """Helper function for obtaining the age range for each age_group
+        It returns a tuple of two integers (a,b) such that the given age group is in range a <= group < b,i.e.:
+            0 <= PSAC < 5
+            5 <= SAC < 15
+            15 <= Adults
+
+        :param age_group: 'SAC', 'PSAC', 'Adults'
+        """
+        assert age_group.isin(['SAC', 'PSAC', 'Adults']), "Incorrect age group"
+
+        if age_group == 'PSAC':
+            return (0,5)
+        elif age_group == 'SAC':
+            return (5,15)
+        else:
+            return (15,120)
+
+
+    def assign_initial_prevalence(self, population, age_group, inf_type):
+        """Assign initial 2010 prevalence of S.Haematobium or S.Mansoni.
+
+        :param population: population
+        :param age_group: 'SAC', 'PSAC', 'Adults'
+        :param inf_type: 'Mansoni', 'Haematobium'
+        """
+        assert age_group.isin(['SAC', 'PSAC', 'Adults']), "Incorrect age group"
+        assert inf_type.isin(['Mansoni', 'Haematobium']), "Incorrect infection type."
+
+        df = population.props
+        params = self.parameters
+
+        age_range = self.map_age_groups(age_group) # returns a tuple (a,b) a <= age_group < b
+        if inf_type == 'Haematobium':
+            inf_string = 'haem'
+        else:
+            inf_string = 'mans'
+        prev_string = "prevalence_2010_" + inf_string + "_" + age_group
+
+        prevalence = params[prev_string]
+        eligible = df.index[df['age_years'].isbetween(age_range[0], age_range[1])].tolist()
+        infected_idx = self.rng.choice(eligible, size=int(prevalence *
+                                                          (len(eligible))), replace=False)
+        df.loc[infected_idx, 'ss_is_infected'] = inf_type
+
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
-        This method is called just before the main simulation loop begins, and after all
-        modules have read their parameters and the initial population has been created.
-        It is a good place to add initial events to the event queue.
-
-        If this is a disease module, register this disease module with the healthsystem:
-        self.sim.modules['HealthSystem'].register_disease_module(self)
         """
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
@@ -221,9 +289,6 @@ class Schisto(Module):
         df.at[child_id, 'ss_schedule_infectiousness_start'] = pd.NaT
 
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
         logger.debug('This is Schisto reporting my health values')
@@ -256,14 +321,12 @@ class Schisto(Module):
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
-#
-#   These are the events which drive the simulation of the disease. It may be a regular event that updates
-#   the status of all the population of subsections of it at one time. There may also be a set of events
-#   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
 class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
+    In each Infection event a susceptible individual is infected with prob P
+    P = #infectious / #total_population
     """
 
     def __init__(self, module):
@@ -525,8 +588,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
-#
-# class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
+
+# class HSI_Schisto_Seeking Healthcare(HSI_Event, IndividualScopeEventMixin):
 #     """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
 #     like this.
 #     It must begin HSI_<Module_Name>_Description
@@ -534,7 +597,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #
 #     def __init__(self, module, person_id):
 #         super().__init__(module, person_id=person_id)
-#         assert isinstance(module, Skeleton)
+#         assert isinstance(module, Schisto)
 #
 #         # Define the call on resources of this treatment event: Time of Officers (Appointments)
 #         #   - get an 'empty' footprint:
