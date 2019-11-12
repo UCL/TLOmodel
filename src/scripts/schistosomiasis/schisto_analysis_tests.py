@@ -9,9 +9,9 @@ from tlo.methods import (
     demography,
     healthburden,
     healthsystem,
-    contraception
+    contraception,
+    schisto
 )
-from tlo.methods import schisto
 
 # Where will output go
 outputpath = ""
@@ -20,7 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-#resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
 popsize = 10000
@@ -45,7 +45,7 @@ logging.getLogger().addHandler(fh)
 
 logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
-logging.getLogger("tlo.methods.healthburden").setLevel(logging.WARNING)
+logging.getLogger("tlo.methods.healthburden").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.healthsystem").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.schisto").setLevel(logging.INFO)
 
@@ -55,7 +55,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-sim.register(schisto.Schisto())
+sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)

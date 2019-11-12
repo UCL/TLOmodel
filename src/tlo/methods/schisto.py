@@ -3,6 +3,8 @@ import logging
 import numpy as np
 import pandas as pd
 import os
+from pathlib import Path
+
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -34,19 +36,25 @@ class Schisto(Module):
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     """
 
+    def __init__(self, name=None, resourcefilepath=None):
+        # NB. Parameters passed to the module can be inserted in the __init__ definition.
+
+        super().__init__(name)
+        self.resourcefilepath = resourcefilepath
+
     PARAMETERS = {
         # natural history
         'prevalence_2010_haem_PSAC': Parameter(Types.REAL,
                                                'Initial prevalence in 2010 of s.haematobium infection among PSAC'),
         'prevalence_2010_haem_SAC': Parameter(Types.REAL,
                                                'Initial prevalence in 2010 of s.haematobium infection among SAC'),
-        'prevalence_2010_haem_Adult': Parameter(Types.REAL,
+        'prevalence_2010_haem_Adults': Parameter(Types.REAL,
                                                'Initial prevalence in 2010 of s.haematobium infection among Adults'),
         'prevalence_2010_mans_PSAC': Parameter(Types.REAL,
                                                'Initial prevalence in 2010 of s.mansoni infection among PSAC'),
         'prevalence_2010_mans_SAC': Parameter(Types.REAL,
                                               'Initial prevalence in 2010 of s.mansoni infection among SAC'),
-        'prevalence_2010_mans_Adult': Parameter(Types.REAL,
+        'prevalence_2010_mans_Adults': Parameter(Types.REAL,
                                                 'Initial prevalence in 2010 of s.mansoni infection among Adults'),
         'prob_infection': Parameter(Types.REAL, 'Probability that a susceptible individual becomes infected'),  # unused
         'rr_PSAC': Parameter(Types.REAL, 'Relative risk of aquiring infections due to age under 5 yo'),
@@ -73,7 +81,7 @@ class Schisto(Module):
         # MDA
         'MDA_coverage_PSAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for PSAC'),
         'MDA_coverage_SAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for SAC'),
-        'MDA_coverage_Adult': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults'),
+        'MDA_coverage_Adults': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults'),
     }
 
     PROPERTIES = {
@@ -90,16 +98,14 @@ class Schisto(Module):
             Types.DATE, 'Date of start of infectious period')
     }
 
-    def __init__(self, name=None, resourcefilepath=None):
-        # NB. Parameters passed to the module can be inserted in the __init__ definition.
-
-        super().__init__(name)
-        self.resourcefilepath = resourcefilepath
-
     def read_parameters(self, data_folder):
 
         workbook = pd.read_excel(os.path.join(self.resourcefilepath,
                                               'ResourceFile_Schisto.xlsx'), sheet_name=None)
+
+        # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Schisto.xlsx',
+        #                          sheet_name=None)
+
         params = self.parameters
         params['param_list'] = workbook['Parameters']
         self.param_list.set_index("Parameter", inplace=True)
@@ -110,20 +116,24 @@ class Schisto(Module):
         params['delay_b'] = self.param_list.loc['delay_b', 'Value']
         params['death_schisto_haematobium'] = self.param_list.loc['death_schisto_haematobium', 'Value']
         params['death_schisto_mansoni'] = self.param_list.loc['death_schisto_mansoni', 'Value']
+        print("natural history params loaded")
 
         # HSI and treatment params
         params['prob_seeking_healthcare'] = self.param_list.loc['prob_seeking_healthcare', 'Value']
         params['prob_sent_to_lab_test'] = self.param_list.loc['prob_sent_to_lab_test', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
+        print("HSI & treatment params loaded")
 
         # baseline prevalence
         params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
-        params['prevalence_2010_haem_PSAC'] = self.param_list.loc['prevalence_2010_haem_PSAC', 'Prevalence PSAC']
-        params['prevalence_2010_haem_SAC'] = self.param_list.loc['prevalence_2010_haem_SAC', 'Prevalence SAC']
-        params['prevalence_2010_haem_Adult'] = self.param_list.loc['prevalence_2010_haem_Adult', 'Prevalence Adults']
-        params['prevalence_2010_mans_PSAC'] = self.param_list.loc['prevalence_2010_mans_PSAC', 'Prevalence PSAC']
-        params['prevalence_2010_mans_SAC'] = self.param_list.loc['prevalence_2010_mans_SAC', 'Prevalence SAC']
-        params['prevalence_2010_mans_Adult'] = self.param_list.loc['prevalence_2010_mans_Adult', 'Prevalence Adults']
+        self.schisto_haem_initial_prev.set_index("District", inplace=True)
+        params['prevalence_2010_haem_PSAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence PSAC']
+        params['prevalence_2010_haem_SAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence SAC']
+        params['prevalence_2010_haem_Adults'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence Adults']
+        params['prevalence_2010_mans_PSAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence PSAC']
+        params['prevalence_2010_mans_SAC'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence SAC']
+        params['prevalence_2010_mans_Adults'] = self.schisto_haem_initial_prev.loc['Chitipa', 'Prevalence Adults']
+        print("initial prevalence loaded")
 
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
@@ -138,9 +148,11 @@ class Schisto(Module):
 
         # MDA coverage
         params['MDA_coverage'] = workbook['MDA_Coverage']
-        params['MDA_coverage_PSAC'] = self.param_list.loc['MDA_coverage_PSAC', 'Coverage PSAC']
-        params['MDA_coverage_SAC'] = self.param_list.loc['MDA_coverage_SAC', 'Coverage SAC']
-        params['MDA_coverage_Adult'] = self.param_list.loc['MDA_coverage_Adult', 'Coverage Adults']
+        self.MDA_coverage.set_index("District", inplace=True)
+        params['MDA_coverage_PSAC'] = self.MDA_coverage.loc['Chitipa', 'Coverage PSAC']
+        params['MDA_coverage_SAC'] = self.MDA_coverage.loc['Chitipa', 'Coverage SAC']
+        params['MDA_coverage_Adults'] = self.MDA_coverage.loc['Chitipa', 'Coverage Adults']
+        print("MDA coverage loaded")
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
@@ -209,14 +221,15 @@ class Schisto(Module):
 
     def map_age_groups(self, age_group):
         """Helper function for obtaining the age range for each age_group
-        It returns a tuple of two integers (a,b) such that the given age group is in range a <= group < b,i.e.:
-            0 <= PSAC < 5
-            5 <= SAC < 15
+        It returns a tuple of two integers (a,b) such that the given age group is in range a <= group <= b,i.e.:
+            0 <= PSAC <= 4
+            5 <= SAC <= 14
             15 <= Adults
 
+        this will cover all ages because we look at the int variable of age
         :param age_group: 'SAC', 'PSAC', 'Adults'
         """
-        assert age_group.isin(['SAC', 'PSAC', 'Adults']), "Incorrect age group"
+        assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
 
         if age_group == 'PSAC':
             return (0,5)
@@ -233,8 +246,8 @@ class Schisto(Module):
         :param age_group: 'SAC', 'PSAC', 'Adults'
         :param inf_type: 'Mansoni', 'Haematobium'
         """
-        assert age_group.isin(['SAC', 'PSAC', 'Adults']), "Incorrect age group"
-        assert inf_type.isin(['Mansoni', 'Haematobium']), "Incorrect infection type."
+        assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
+        assert inf_type in ['Mansoni', 'Haematobium'], "Incorrect infection type."
 
         df = population.props
         params = self.parameters
@@ -247,7 +260,8 @@ class Schisto(Module):
         prev_string = "prevalence_2010_" + inf_string + "_" + age_group
 
         prevalence = params[prev_string]
-        eligible = df.index[df['age_years'].isbetween(age_range[0], age_range[1])].tolist()
+        # pd.Series.between is by default inclusive of the edges so we decrease b by 0.5
+        eligible = df.index[df['age_years'].between(age_range[0], age_range[1])].tolist()
         infected_idx = self.rng.choice(eligible, size=int(prevalence *
                                                           (len(eligible))), replace=False)
         df.loc[infected_idx, 'ss_is_infected'] = inf_type
@@ -276,8 +290,7 @@ class Schisto(Module):
 
         All children are born without an infection, even if the mother is infected.
 
-        :param mother_id: the ID for the mother for this child (redundant)
-        :param child_id: the new child
+        :param mother_id: the ID for the mother for this child (redundant)        :param child_id: the new child
         """
         df = self.sim.population.props
 
