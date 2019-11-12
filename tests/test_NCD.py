@@ -9,7 +9,7 @@ from tlo.methods import demography, enhanced_lifestyle, healthsystem, hypertensi
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2011, 1, 1)
-popsize = 100
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
