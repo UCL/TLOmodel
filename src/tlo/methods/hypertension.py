@@ -38,7 +38,7 @@ class Hypertension(Module):
 
     htn_age_range_categories, htn_age_range_lookup = create_age_range_lookup(25, 65, 10)
 
-    # We should have 4 age range categories
+    # We should have 5 age range categories
     assert len(htn_age_range_categories) == 5
 
     PARAMETERS = {
@@ -113,18 +113,10 @@ class Hypertension(Module):
         HT_data = workbook['data']  # reads in data
         df = HT_data.set_index('index')  # sets index
 
-        # TODO: Asif/Stef to see if we can do the below shorter.
-
         # Read in prevalence data from file and put into model df
-        p['prevalence_ht_data'] = pd.DataFrame({'prevalence': [df.at['b_all', 'value'], df.at['b_25_35', 'value'],
-                                                               df.at['b_35_45', 'value'], df.at['b_45_55', 'value'],
-                                                               df.at['b_55_65', 'value']],
-                                                'min95ci': [df.at['b_all', 'min'], df.at['b_25_35', 'min'],
-                                                            df.at['b_35_45', 'min'], df.at['b_45_55', 'min'],
-                                                            df.at['b_55_65', 'min']],
-                                                'max95ci': [df.at['b_all', 'max'], df.at['b_25_35', 'max'],
-                                                            df.at['b_35_45', 'max'], df.at['b_45_55', 'max'],
-                                                            df.at['b_55_65', 'max']]
+        p['prevalence_ht_data'] = pd.DataFrame({'prevalence': df.loc[df.index.str.startswith("b_"), 'value'].tolist(),
+                                                'min95ci': df.loc[df.index.str.startswith("b_"), 'min'].tolist(),
+                                                'max95ci': df.loc[df.index.str.startswith("b_"), 'max'].tolist()
                                                 },
                                                index=['total', '25_to_35', '35_to_45', '45_to_55', '55_to_65'])
 
@@ -132,14 +124,14 @@ class Hypertension(Module):
         p['prevalence_ht_data'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
         p['prevalence_ht_data'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
 
-        p['prevalence_ht_data_other'] = pd.DataFrame({'prevalence': [df.at['price', 'value'], df.at['divala', 'value'],
-                                                               df.at['ruecker', 'value'], df.at['ramirez', 'value']],
-                                                'min95ci': [df.at['price', 'min'], df.at['divala', 'min'],
-                                                            df.at['ruecker', 'min'], df.at['ramirez', 'min']],
-                                                'max95ci': [df.at['price', 'max'], df.at['divala', 'max'],
-                                                            df.at['ruecker', 'max'], df.at['ramirez', 'max']]
-                                                },
-                                               index=['price', 'divala', 'ruecker', 'ramirez'])
+        other_publications = ['price', 'divala', 'ruecker', 'ramirez']
+
+        p['prevalence_ht_data_other'] = pd.DataFrame({
+            'prevalence': df.loc[df.index.isin(other_publications), 'value'].tolist(),
+            'min95ci': df.loc[df.index.isin(other_publications), 'min'].tolist(),
+            'max95ci': df.loc[df.index.isin(other_publications), 'max'].tolist()
+        },
+            index=other_publications)
 
         p['prevalence_ht_data_other'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
         p['prevalence_ht_data_other'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
