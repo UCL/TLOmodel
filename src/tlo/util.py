@@ -1,7 +1,41 @@
 """This file contains helpful utility functions."""
+from collections import defaultdict
 
 import numpy as np
 import pandas as pd
+
+
+def create_age_range_lookup(min_age, max_age, range_size=5):
+    """Generates and returns a dictionary mapping age (in years) to age range
+    as per data for validation (i.e. 25-30, 30-35, etc until 65)
+    """
+
+    def chunks(items, n):
+        """Takes a list and divides it into parts of size n"""
+        for index in range(0, len(items), n):
+            yield items[index:index + n]
+
+    # split all the ages from min to limit
+    parts = chunks(range(min_age, max_age), range_size)
+
+    # TODO: have category of under minimum age? i.e. 25- for
+    default_category = '%d+' % max_age
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
+
+    # loop over each range and map all ages falling within the range to the range
+    for part in parts:
+        start = part.start
+        end = part.stop - 1
+        value = '%s-%s' % (start, end)
+        ranges.append(value)
+        for i in range(start, part.stop):
+            lookup[i] = value
+
+    ranges.append(default_category)
+    return ranges, lookup
 
 
 def show_changes(sim, initial_state, final_state):

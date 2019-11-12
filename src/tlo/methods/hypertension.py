@@ -7,10 +7,10 @@ import logging
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from collections import defaultdict
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -19,39 +19,6 @@ logger.setLevel(logging.DEBUG)
 # TODO: Asif/Stef to check if file path is mac/window flexible
 # TODO: circular declaration with diabetes to be addressed
 # TODO: Update with BMI categories
-
-def make_hypertension_age_range_lookup(min_age, max_age, range_size):
-    """Generates and returns a dictionary mapping age (in years) to age range
-    as per data for validation (i.e. 25-35, 35-45, etc until 65)
-    """
-
-    def chunks(items, n):
-        """Takes a list and divides it into parts of size n"""
-        for index in range(0, len(items), n):
-            yield items[index:index + n]
-
-    # split all the ages from min to limit (100 years) into 5 year ranges
-    parts = chunks(range(min_age, max_age), range_size)
-
-    # any ages >= 100 are in the '100+' category
-    # TODO: would be good to have those younger than 25 in 25- instead or just other
-    default_category = '%d+' % max_age
-    lookup = defaultdict(lambda: default_category)
-
-    # collect the possible ranges
-    ranges = []
-
-    # loop over each range and map all ages falling within the range to the range
-    for part in parts:
-        start = part.start
-        end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
-        for i in range(start, part.stop):
-            lookup[i] = value
-
-    ranges.append(default_category)
-    return ranges, lookup
 
 
 class Hypertension(Module):
@@ -69,7 +36,7 @@ class Hypertension(Module):
         logger.info("Running hypertension.  ")
         logger.info('----------------------------------------------------------------------')
 
-    htn_age_range_categories, htn_age_range_lookup = make_hypertension_age_range_lookup(25, 65, 10)
+    htn_age_range_categories, htn_age_range_lookup = create_age_range_lookup(25, 65, 10)
 
     # We should have 4 age range categories
     assert len(htn_age_range_categories) == 5
