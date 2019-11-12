@@ -20,7 +20,7 @@ outputpath = ""
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
-# assume Python console is started in the top-level TLOModel directory
+# assume Python console is started in the top-leve TLOModel directory
 resourcefilepath = Path("./resources")
 
 
@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2031, 1, 1)  # so last full year of simulation will be 2030
-popsize = 10
+popsize = 1000
 
 # add file handler for the purpose of logging
 sim = Simulation(start_date=start_date)
