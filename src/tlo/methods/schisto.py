@@ -232,11 +232,11 @@ class Schisto(Module):
         assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
 
         if age_group == 'PSAC':
-            return (0,5)
+            return (0,4)
         elif age_group == 'SAC':
-            return (5,15)
+            return (5,14)
         else:
-            return (15,120)
+            return (15,150)
 
 
     def assign_initial_prevalence(self, population, age_group, inf_type):
@@ -252,7 +252,7 @@ class Schisto(Module):
         df = population.props
         params = self.parameters
 
-        age_range = self.map_age_groups(age_group) # returns a tuple (a,b) a <= age_group < b
+        age_range = self.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
         if inf_type == 'Haematobium':
             inf_string = 'haem'
         else:
@@ -260,7 +260,7 @@ class Schisto(Module):
         prev_string = "prevalence_2010_" + inf_string + "_" + age_group
 
         prevalence = params[prev_string]
-        # pd.Series.between is by default inclusive of the edges so we decrease b by 0.5
+        # pd.Series.between is by default inclusive of the edges
         eligible = df.index[df['age_years'].between(age_range[0], age_range[1])].tolist()
         infected_idx = self.rng.choice(eligible, size=int(prevalence *
                                                           (len(eligible))), replace=False)
@@ -529,12 +529,17 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        params = self.module.parameters
-        coverage = params['prob_PZQ_in_MDA']  # for now we assign the same coverage for all ages and districts
+        # params = self.module.parameters
 
         # choose coverage-fraction of the population
-        eligible = df.index[df.is_alive].tolist()
-        treated_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False)
+        treated_idx_PSAC = self.assign_MDA_coverage(population, 'PSAC')
+        print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
+        treated_idx_SAC = self.assign_MDA_coverage(population, 'SAC')
+        print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
+        treated_idx_Adults = self.assign_MDA_coverage(population, 'Adults')
+        print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
+
+        treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
 
         # change their infection status to Non-infected
         df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
@@ -545,6 +550,27 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
         print("PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
+
+    def assign_MDA_coverage(self, population, age_group):
+        """Assign coverage of MDA program to chosen age_group.
+
+          :param population: population
+          :param age_group: 'SAC', 'PSAC', 'Adults'
+          """
+        assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
+
+        df = population.props
+        params = self.module.parameters
+
+        age_range = self.module.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+
+        param_str = "MDA_coverage_" + age_group
+        coverage = params[param_str]
+        # pd.Series.between is by default inclusive of the edges
+        eligible = df.index[(df.is_alive) & (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+        treated_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False)
+
+        return treated_idx.tolist()
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
