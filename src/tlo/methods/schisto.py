@@ -479,22 +479,23 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
                            ~((df['ss_haematobium_specific_symptoms'] == 'none') &
                            (df['ss_mansoni_specific_symptoms'] == 'none'))].tolist()  # these are all infectious & symptomatic
 
-        # determine who will seek healthcare
-        seeking_healthcare = self.module.rng.choice(eligible,
-                                                    size=int(params['prob_seeking_healthcare'] * (len(eligible))),
-                                                    replace=False)
-        # determine which of those who seek healthcare are sent to the schisto diagnostics (and hence getting treated)
-        treated_idx = self.module.rng.choice(seeking_healthcare,
-                                             size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
-                                             replace=False)
-        # for those who seeks the healthcare initiate treatment
-        df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
-        df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
-        df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
-        df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
+        if len(eligible):  # there are new infections
+            # determine who will seek healthcare
+            seeking_healthcare = self.module.rng.choice(eligible,
+                                                        size=int(params['prob_seeking_healthcare'] * (len(eligible))),
+                                                        replace=False)
+            # determine which of those who seek healthcare are sent to the schisto diagnostics (and hence getting treated)
+            treated_idx = self.module.rng.choice(seeking_healthcare,
+                                                 size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
+                                                 replace=False)
+            # for those who seeks the healthcare initiate treatment
+            df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+            df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
+            df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
+            df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
-        if len(treated_idx) > 0:
-            print("Number of treated due to HSI: " + str(len(treated_idx)))
+            if len(treated_idx) > 0:
+                print("Number of treated due to HSI: " + str(len(treated_idx))) # there were new infections but no one seeked treatment
         else:
             print("No one got treatment")
             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
@@ -570,11 +571,16 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
 
-        # change their infection status to Non-infected
-        df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
-        df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
-        df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
-        df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
+        # people administered PZQ in MDA but in the Latent period will get the pill but won't get treated
+        # similarly susceptibles will get the pill but nothing will happen
+        # The infected will get treated immediately
+        infected_idx = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni']))]
+        MDA_treated = list(set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively treated
+
+        df.loc[MDA_treated, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%
+        df.loc[MDA_treated, 'ss_haematobium_specific_symptoms'] = 'none'
+        df.loc[MDA_treated, 'ss_mansoni_specific_symptoms'] = 'none'
+        df.loc[MDA_treated, 'ss_schedule_infectiousness_start'] = pd.NaT
 
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
