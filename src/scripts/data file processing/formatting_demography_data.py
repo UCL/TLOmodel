@@ -239,6 +239,7 @@ ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in
 ests = ests.rename(columns={ests.columns[1]:'Year'})
 ests.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
 
+#TODO: year 2020 is duplicated as medium and variant - remove. also remove 'variant' as not neededd.
 
 #%% Fertility and births
 
