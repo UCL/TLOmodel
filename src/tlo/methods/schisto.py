@@ -112,13 +112,11 @@ class Schisto(Module):
         params['delay_b'] = self.param_list.loc['delay_b', 'Value']
         params['death_schisto_haematobium'] = self.param_list.loc['death_schisto_haematobium', 'Value']
         params['death_schisto_mansoni'] = self.param_list.loc['death_schisto_mansoni', 'Value']
-        print("natural history params loaded")
 
         # HSI and treatment params
         params['prob_seeking_healthcare'] = self.param_list.loc['prob_seeking_healthcare', 'Value']
         params['prob_sent_to_lab_test'] = self.param_list.loc['prob_sent_to_lab_test', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
-        print("HSI & treatment params loaded")
 
         # baseline prevalence
         params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
@@ -132,8 +130,6 @@ class Schisto(Module):
         params['prevalence_2010_mans_PSAC'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence PSAC']
         params['prevalence_2010_mans_SAC'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence SAC']
         params['prevalence_2010_mans_Adults'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence Adults']
-
-        print("initial prevalence loaded")
 
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
@@ -152,7 +148,6 @@ class Schisto(Module):
         params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
         params['MDA_coverage_SAC'] = self.MDA_coverage.loc[:, 'Coverage SAC']
         params['MDA_coverage_Adults'] = self.MDA_coverage.loc[:, 'Coverage Adults']
-        print("MDA coverage loaded")
 
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
@@ -204,6 +199,7 @@ class Schisto(Module):
 
         print("Fill in start of infectiousness")
         # set the start of infectiousness to the start date of the simulation for simplicity
+        # also set the symptoms to be experienced
         df.loc[inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
         df.loc[inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
 
@@ -316,7 +312,8 @@ class Schisto(Module):
         params = self.parameters
 
         # for now we only have haematobium infections anyway
-        health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive,
+                               'ss_haematobium_specific_symptoms'].map({
             'none': 0,
             'fever': params['daly_wt_fever'],
             'stomach_ache': params['daly_wt_stomach_ache'],
@@ -324,7 +321,9 @@ class Schisto(Module):
             'diarrhoea': params['daly_wt_diarrhoea'],
             'other': params['daly_wt_other']
         })
-
+        # the mapping above included counting DALYs for people with 'scheduled' symptoms. i.e. in Latent period
+        # we want to calculate it only for people who are infectious
+        health_values[~df['ss_is_infected'].isin(['Haematobium', 'Mansoni'])] = 0
         health_values.name = 'Schisto_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
