@@ -7,6 +7,7 @@ In the combination of both the codes from Tim C in Contraception and Tim H in De
 import datetime
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -97,7 +98,7 @@ plt.show()
 
 #%% Population Size
 
-# Census vs WPP vs GBD? vs Model
+# Census vs WPP vs Model
 
 cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
 cens_2018 = cens.groupby('sex')['number'].sum()
@@ -122,9 +123,11 @@ plt.show()
 popsize = pd.concat([cens_2018, wpp_2018,model_2018], keys=['Census_2018','WPP','Model']).unstack()
 
 popsize.transpose().plot(kind='bar')
+plt.title('Population Size (2018)')
 plt.show()
 
 # TODO; Why the discrepancy between WPP and Census?
+# TODO; GBD population data in here too
 
 #%% Births
 
@@ -132,10 +135,76 @@ births = output['tlo.methods.demography']['on_birth']
 births["date"] = pd.to_datetime(births["date"])
 births["year"] = births["date"].dt.year
 
-# Births over time
-nbirths = births.groupby(by='year')['child'].count()
-nbirths.plot()
+
+
+# Births over time (Model)
+# Aggregate the model output into five year periods:
+def make_calendar_period_lookup():
+    """Returns a dictionary mapping calendar year (in years) to five year period
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+
+    def chunks(items, n):
+        """Takes a list and divides it into parts of size n"""
+        for index in range(0, len(items), n):
+            yield items[index:index + n]
+
+    # split all the ages from min to limit (100 years) into 5 year ranges
+    parts = chunks(range(1950, 2100), 5)
+
+    # any year >= 2100 are in the '2100+' category
+    default_category = '%d+' % 2100
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
+
+    # loop over each range and map all ages falling within the range to the range
+    for part in parts:
+        start = part.start
+        end = part.stop - 1
+        value = '%s-%s' % (start, end)
+        ranges.append(value)
+        for i in range(start, part.stop):
+            lookup[i] = value
+
+    ranges.append(default_category)
+    return ranges, lookup
+
+
+(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+births["period"] = births["year"].map(calendar_period_lookup)
+nbirths = births.groupby(by='period')['child'].count()
+
+
+# Births over time (WPP)
+wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalBirths_WPP.csv")
+
+# Adjust the labelling of the calendar periods in WPP so that it is inclusive years (2010-2014, 2015-2019 not 2010-2015, 2015-2020, etc)
+wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
+wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
+wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
+
+wpp = wpp.groupby(['period','Variant'])['Total_Births'].sum()
+
+
+fig, ax = plt.subplots(1)
+ax.plot(wpp[:,'Estimates'].index,wpp[:,'Estimates'],lw=2, label='WPP Estimate', color='blue')
+ax.plot(wpp[:,'Medium variant'].index, wpp[:,'Medium variant'], lw=2, label='WPP Projection', color='blue')
+ax.fill_between(wpp[:,'Low variant'].index, wpp[:,'Low variant'], wpp[:,'High variant'], facecolor='blue', alpha=0.5)
+ax.plot(nbirths.index,nbirths,lw=2, label='Model', color='red')
+plt.xticks(rotation=90)
+ax.set_title('Number of Births Per Calendar Period')
+ax.legend(loc='upper left')
+ax.set_xlabel('Calendar Period')
+ax.set_ylabel('Number per period')
 plt.show()
+
+
+#%%
+
+ax.plot(list(range(len(wpp[:,'Low variant']))), wpp[:,'Medium variant'], lw=2, label='WPP Projection', color='blue')
+ax.fill_between(t, wpp[:,'Low variant'], wpp[:,'High variant'], facecolor='blue', alpha=0.5)
 
 # Births to mothers by age
 (__tmp__, age_grp_lookup) = make_age_range_lookup()
@@ -146,3 +215,6 @@ nbirths_byage_2030 = nbirths_byage[2030]
 
 
 
+
+
+##% Deaths

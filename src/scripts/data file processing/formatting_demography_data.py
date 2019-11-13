@@ -166,6 +166,10 @@ k2.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
 
 
 #%% **** USE OF THE WPP DATA ****
+#TODO: relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
+# wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
+# wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
+# wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
 
 #%% Population size: age groups
 wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
