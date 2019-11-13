@@ -362,43 +362,13 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        # 1. get (and hold) index of currently infected and uninfected individuals
-        currently_infected_latent_haem = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Haem')].tolist()
-        currently_infected_latent_mans = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Mans')].tolist()
-        currently_infected_latent_any = currently_infected_latent_haem + currently_infected_latent_mans
-        currently_infected_haematobium = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Haematobium')].tolist()
-        currently_infected_mansoni = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Mansoni')].tolist()
-        currently_infected_infectious_any = currently_infected_haematobium + currently_infected_mansoni
-        currently_infected_any = currently_infected_haematobium + currently_infected_mansoni + currently_infected_latent_any
+        districts = df.district_of_residence.unique().tolist()
 
-        currently_uninfected = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Non-infected')].tolist()
-        total_population_alive = currently_uninfected + currently_infected_any
+        ######################## assign new infections in each district ################################################
+        for distr in districts:
+            self.new_infections_distr(population, distr)
 
-        # calculates prevalence of infectious people only to calculate the new infections, not the actual prevalence
-        if df.is_alive.sum():
-            prevalence_haematobium = len(currently_infected_haematobium) / len(total_population_alive)
-            prevalence_mansoni = len(currently_infected_mansoni) / len(total_population_alive)
-        else:
-            prevalence_haematobium = 0
-            prevalence_mansoni = 0
-
-
-        # 2. handle new infections - for now no co-infections
-        # now_infected_haematobium = self.module.rng.choice([True, False],
-        #                                       size = len(currently_uninfected),
-        #                                       p = prevalence_haematobium)
-        # now_infected_mansoni = self.module.rng.choice([True, False],
-        #                                           size = len(currently_uninfected), # here we will get co-infections!!!!
-        #                                           p = prevalence_mansoni)
-        # now_infected_haematobium = self.module.rng.choice(currently_uninfected, size = len)
-
-        susceptibles_next_state = self.module.rng.choice(['Latent_Haem', 'Latent_Mans', 'Non-infected'],
-                                                         len(currently_uninfected),
-                                                         p=[prevalence_haematobium,
-                                                            prevalence_mansoni,
-                                                            1-prevalence_haematobium-prevalence_mansoni])
-        df.loc[currently_uninfected, 'ss_is_infected'] = susceptibles_next_state
-
+        ######################## schedule end of the latent period #####################################################
         # new infections are those with un-scheduled time of the end of latency period
         new_infections_haem = df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Haem')
                                        & (df['ss_schedule_infectiousness_start'].isna())].tolist()
@@ -437,6 +407,57 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             print("No newly infected")
             logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
+
+    def new_infections_distr(self, population, distr):
+        """Assigns new infections of S.Haematobium and S.Mansoni in one district distr
+        :param population: population
+        : param distr: one of the 32 Malawi districts
+        """
+
+        df = population.props
+        df_distr_copy = df[(df["district_of_residence"] == distr) & (df.is_alive)].copy()  # get a copy of the main df with only one district and alive ind
+
+        if df_distr_copy.shape[0]:  # if there are any rows in the dataframe
+
+            # 1. get (and hold) index of currently infected and uninfected individuals
+            currently_infected_latent_haem = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Latent_Haem'].tolist()
+            currently_infected_latent_mans = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Latent_Mans'].tolist()
+            currently_infected_latent_any = currently_infected_latent_haem + currently_infected_latent_mans
+            currently_infected_haematobium = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Haematobium'].tolist()
+            currently_infected_mansoni = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Mansoni'].tolist()
+            currently_infected_infectious_any = currently_infected_haematobium + currently_infected_mansoni
+            currently_infected_any = currently_infected_haematobium + currently_infected_mansoni + currently_infected_latent_any
+
+            currently_uninfected = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Non-infected'].tolist()
+            total_population_alive = currently_uninfected + currently_infected_any
+
+            # calculate prevalence of infectious people only to calculate the new infections, not the actual prevalence
+            prevalence_haematobium = len(currently_infected_haematobium) / len(total_population_alive)
+            prevalence_mansoni = len(currently_infected_mansoni) / len(total_population_alive)
+
+        else:
+            currently_uninfected = []
+            prevalence_haematobium = 0
+            prevalence_mansoni = 0
+
+
+        # 2. handle new infections - for now no co-infections
+        # now_infected_haematobium = self.module.rng.choice([True, False],
+        #                                       size = len(currently_uninfected),
+        #                                       p = prevalence_haematobium)
+        # now_infected_mansoni = self.module.rng.choice([True, False],
+        #                                           size = len(currently_uninfected), # here we will get co-infections!!!!
+        #                                           p = prevalence_mansoni)
+        # now_infected_haematobium = self.module.rng.choice(currently_uninfected, size = len)
+
+        # What is the new state of the susceptibles: are they infected or not?
+        susceptibles_next_state = self.module.rng.choice(['Latent_Haem', 'Latent_Mans', 'Non-infected'],
+                                                         len(currently_uninfected),
+                                                         p=[prevalence_haematobium,
+                                                            prevalence_mansoni,
+                                                            1-prevalence_haematobium-prevalence_mansoni])
+        # 3. update the state of susceptibles in the main df
+        df.loc[currently_uninfected, 'ss_is_infected'] = susceptibles_next_state
 
 
 class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
@@ -493,6 +514,9 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 
         # should we also change scheduled infectiousness start back to pd.NaT???
 
+        # change infection status from Latent to Infectious and assign a symptom
+        # this assigns a symptom for a single person - it'd be quicker to assign for all newly infected upon infection
+        # but then we would need another column "scheduled_symptom" that would be triggered when Latent period ends
         if df.at[person_id, 'ss_is_infected'] == 'Latent_Haem':
             df.at[person_id, 'ss_is_infected'] = 'Haematobium'
             symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
