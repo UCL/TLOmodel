@@ -11,7 +11,7 @@ import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.util import create_age_range_lookup
+from tlo.util import create_age_range_lookup, nested_to_record
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -660,9 +660,6 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         p = self.module.parameters
 
         # Log the data every year (for plotting)
-        # TODO: Can this codebelow be shorten (i.e. read in the whole frame?
-        # My takeis that it might be best to define exactly what you want to be logged,
-        # rather than putting everything in there
         # TODO: Can this be logged only first year
         # You could only log specific items for a particular simulation date, added comment to PR
         logger.info('%s|test|%s', self.sim.date, {'total': p['prevalence_ht_data'].loc['total', 'prevalence']})
@@ -670,23 +667,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(
             '%s|ht_prevalence_data_validation|%s',
             self.sim.date,
-            {
-                'total': p['prevalence_ht_data'].loc['total', 'prevalence'],
-                'total_min': p['prevalence_ht_data'].loc['total', 'min95ci'],
-                'total_max': p['prevalence_ht_data'].loc['total', 'max95ci'],
-                'age25to35': p['prevalence_ht_data'].loc['25_to_35', 'prevalence'],
-                'age25to35_min': p['prevalence_ht_data'].loc['25_to_35', 'min95ci'],
-                'age25to35_max': p['prevalence_ht_data'].loc['25_to_35', 'max95ci'],
-                'age35to45': p['prevalence_ht_data'].loc['35_to_45', 'prevalence'],
-                'age35to45_min': p['prevalence_ht_data'].loc['35_to_45', 'min95ci'],
-                'age35to45_max': p['prevalence_ht_data'].loc['35_to_45', 'max95ci'],
-                'age45to55': p['prevalence_ht_data'].loc['45_to_55', 'prevalence'],
-                'age45to55_min': p['prevalence_ht_data'].loc['45_to_55', 'min95ci'],
-                'age45to55_max': p['prevalence_ht_data'].loc['45_to_55', 'max95ci'],
-                'age55to65': p['prevalence_ht_data'].loc['55_to_65', 'prevalence'],
-                'age55to65_min': p['prevalence_ht_data'].loc['55_to_65', 'min95ci'],
-                'age55to65_max': p['prevalence_ht_data'].loc['55_to_65', 'max95ci'],
-            },
+            nested_to_record(p['prevalence_ht_data']),
         )
 
         # Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
@@ -757,20 +738,7 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         logger.info(
             '%s|ht_prevalence_data_extra|%s',
             self.sim.date,
-            {
-                'price': p['prevalence_ht_data_other'].loc['price', 'prevalence'],
-                'price_min': p['prevalence_ht_data_other'].loc['price', 'min95ci'],
-                'price_max': p['prevalence_ht_data_other'].loc['price', 'max95ci'],
-                'divala': p['prevalence_ht_data_other'].loc['divala', 'prevalence'],
-                'divala_min': p['prevalence_ht_data_other'].loc['divala', 'min95ci'],
-                'divala_max': p['prevalence_ht_data_other'].loc['divala', 'max95ci'],
-                'ruecker': p['prevalence_ht_data_other'].loc['ruecker', 'prevalence'],
-                'ruecker_min': p['prevalence_ht_data_other'].loc['ruecker', 'min95ci'],
-                'ruecker_max': p['prevalence_ht_data_other'].loc['ruecker', 'max95ci'],
-                'ramirez': p['prevalence_ht_data_other'].loc['ramirez', 'prevalence'],
-                'ramirez_min': p['prevalence_ht_data_other'].loc['ramirez', 'min95ci'],
-                'ramirez_max': p['prevalence_ht_data_other'].loc['ramirez', 'max95ci'],
-            },
+            nested_to_record(p['prevalence_ht_data_other']),
         )
 
         logger.info(

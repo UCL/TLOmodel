@@ -82,12 +82,11 @@ val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_validatio
 val_model_df2 = output["tlo.methods.hypertension"]["ht_prevalence_model_validation_2"]  # Load the model data
 # TODO: I do not get the same numbers out for the model output using groupby. Need to check and redo plotting code
 Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
-Data_total = val_data_df.total  # Pick out overall prevalence from data
-Data_min = val_data_df.total_min  # Pick out min CI
-Data_max = val_data_df.total_max  # Pick out max CI
+Data_total = val_data_df.prevalence_total  # Pick out overall prevalence from data
+Data_min = val_data_df.min95ci_total  # Pick out min CI
+Data_max = val_data_df.max95ci_total  # Pick out max CI
 Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
 Model_total = val_model_df.total  # Pick out overall prevalence from model
-
 
 # Check there is hypertension if it compares to data
 # TODO: would be nice to have it as break or assert (didn't manage with those functions)
@@ -124,17 +123,17 @@ df2.index = Plot_Years
 Data_Age = pd.DataFrame(
     index=Plot_Years,
     columns=['Age25to35', 'Age35to45', 'Age45to55', 'Age55to65'],
-    data=df[['age25to35', 'age35to45', 'age45to55', 'age55to65']].values,
+    data=df[['prevalence_25_to_35', 'prevalence_35_to_45', 'prevalence_45_to_55', 'prevalence_55_to_65']].values,
 )
 Data_Age_min = pd.DataFrame(
     index=Plot_Years,
     columns=['Age25to35_min', 'Age35to45_min', 'Age45to55_min', 'Age55to65_min'],
-    data=df[['age25to35_min', 'age35to45_min', 'age45to55_min', 'age55to65_min']].values,
+    data=df[['min95ci_25_to_35', 'min95ci_35_to_45', 'min95ci_45_to_55', 'min95ci_55_to_65']].values,
 )
 Data_Age_max = pd.DataFrame(
     index=Plot_Years,
     columns=['Age25to35_max', 'Age35to45_max', 'Age45to55_max', 'Age55to65_max'],
-    data=df[['age25to35_max', 'age35to45_max', 'age45to55_max', 'age55to65_max']].values,
+    data=df[['max95ci_25_to_35', 'max95ci_35_to_45', 'max95ci_45_to_55', 'max95ci_55_to_65']].values,
 )
 Model_Age = pd.DataFrame(
     index=Plot_Years,
@@ -168,26 +167,25 @@ plt.gca().legend(loc='lower right', bbox_to_anchor=(0.45, 0.65))
 
 plt.show()
 
-
 # Load prevalence model and compare to data other than STEP data
 val_data_df = output["tlo.methods.hypertension"]["ht_prevalence_data_extra"]  # Load the existing data
 val_model_df = output["tlo.methods.hypertension"]["ht_prevalence_model_extra"]
 Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
-Data_price = val_data_df.price  # Pick out overall prevalence from price data
-Data_price_min = val_data_df.price_min  # Pick out min CI
-Data_price_max = val_data_df.price_max  # Pick out max CI
+Data_price = val_data_df.prevalence_price  # Pick out overall prevalence from price data
+Data_price_min = val_data_df.min95ci_price  # Pick out min CI
+Data_price_max = val_data_df.max95ci_price  # Pick out max CI
 
-Data_divala = val_data_df.divala  # Pick out overall prevalence from divala data
-Data_divala_min = val_data_df.divala_min  # Pick out min CI
-Data_divala_max = val_data_df.divala_max  # Pick out max CI
+Data_divala = val_data_df.prevalence_divala  # Pick out overall prevalence from divala data
+Data_divala_min = val_data_df.min95ci_divala  # Pick out min CI
+Data_divala_max = val_data_df.max95ci_divala  # Pick out max CI
 
-Data_ruecker = val_data_df.ruecker  # Pick out overall prevalence from ruecker data
-Data_ruecker_min = val_data_df.ruecker_min  # Pick out min CI
-Data_ruecker_max = val_data_df.ruecker_max  # Pick out max CI
+Data_ruecker = val_data_df.prevalence_ruecker  # Pick out overall prevalence from ruecker data
+Data_ruecker_min = val_data_df.min95ci_ruecker  # Pick out min CI
+Data_ruecker_max = val_data_df.max95ci_ruecker  # Pick out max CI
 
-Data_ramirez = val_data_df.ramirez  # Pick out overall prevalence from ramirez data
-Data_ramirez_min = val_data_df.ramirez_min  # Pick out min CI
-Data_ramirez_max = val_data_df.ramirez_max  # Pick out max CI
+Data_ramirez = val_data_df.prevalence_ramirez  # Pick out overall prevalence from ramirez data
+Data_ramirez_min = val_data_df.min95ci_ramirez  # Pick out min CI
+Data_ramirez_max = val_data_df.max95ci_ramirez  # Pick out max CI
 
 Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
 Model_price = val_model_df.divala_model  # Pick out overall prevalence from model
