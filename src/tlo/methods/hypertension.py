@@ -17,8 +17,12 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-# TODO: Asif/Stef to check if file path is mac/window flexible
 # TODO: circular declaration with diabetes to be addressed
+# if you carry out the declaration of t2dm first and then have this module run the interaction between
+# the two modules under the conditional `if "Type2DiabetesMellitus" in self.sim.modules:` as carried out in code
+# this should work for the one off setup event.
+# Assume that for events you only need to access t2dm parameters to determine the hypertensino status
+# so this should be fine also doing within the conditional
 # TODO: Update with BMI categories
 
 
@@ -326,7 +330,7 @@ class HTEvent(RegularEvent, PopulationScopeEventMixin):
             .merge(self.module.parameters['HT_incidence'], left_on=['age_years'], right_on=['age'], how='left')
             .set_index('person')
         )['probability']
-        # TODO: check that we want to update risk for everyone
+        # TODO: check that we want to update risk for everyone, probably what you want but thought I'd double check
         df['ht_risk'] = 1.0  # Reset risk for all people
         # TODO: update with BMI once merged to master
         df.loc[df.is_alive & (df.li_bmi >= 3), 'ht_risk'] *= m.prob_htgivenbmi  # Adjust risk if overwt
@@ -359,8 +363,6 @@ class HT_LaunchOutreachEvent(Event, PopulationScopeEventMixin):
     (i.e. Any large campaign is composed of many individual outreach events).
     """
 
-    # TODO: assume that this is unfinished and don't want feedback on this?
-
     def __init__(self, module):
         super().__init__(module)
 
@@ -389,8 +391,6 @@ class HSI_HT_Outreach_Individual(Event, IndividualScopeEventMixin):
     NB. This needs to be created and run for each individual that benefits from the outreach campaign.
 
     """
-
-    # TODO: assume that this is unfinished and don't want feedback on this?
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -431,9 +431,6 @@ class HSI_HT_Refer_Individual(Event, IndividualScopeEventMixin):
     If they are aged over 15, then a decision is taken to start treatment at the next appointment.
     If they are younger than 15, then another initial appointment is scheduled for then are 15 years old.
     """
-
-    # TODO: assume that this is unfinished and don't want feedback on this?
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
@@ -664,7 +661,10 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Log the data every year (for plotting)
         # TODO: Can this codebelow be shorten (i.e. read in the whole frame?
+        # My takeis that it might be best to define exactly what you want to be logged,
+        # rather than putting everything in there
         # TODO: Can this be logged only first year
+        # You could only log specific items for a particular simulation date, added comment to PR
         logger.info('%s|test|%s', self.sim.date, {'total': p['prevalence_ht_data'].loc['total', 'prevalence']})
 
         logger.info(
@@ -788,8 +788,8 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
         prevalence_ht_by_age_val = (count_ht_by_age_val / count_by_age_val) * 100
         prevalence_ht_by_age_val.fillna(0, inplace=True)
 
-        # Then overall
-        prevalence_ht_all_val = count_ht_by_age_val[0:4].sum() / count_by_age_val[0:4].sum() * 100
+        # Note, excluding new age group of 25- (under 25) by missing 0th index in each series, change if not correct
+        prevalence_ht_all_val = count_ht_by_age_val[1:5].sum() / count_by_age_val[1:5].sum() * 100
 
         # 3.4 Log prevalence
         logger.info(
@@ -797,9 +797,9 @@ class HTLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.date,
             {
                 'total': prevalence_ht_all_val,
-                '25to35': prevalence_ht_by_age_val.iloc[0],
-                '35to45': prevalence_ht_by_age_val.iloc[1],
-                '45to55': prevalence_ht_by_age_val.iloc[2],
-                '55to65': prevalence_ht_by_age_val.iloc[3],
+                '25to35': prevalence_ht_by_age_val.iloc[1],
+                '35to45': prevalence_ht_by_age_val.iloc[2],
+                '45to55': prevalence_ht_by_age_val.iloc[3],
+                '55to65': prevalence_ht_by_age_val.iloc[4],
             },
         )
