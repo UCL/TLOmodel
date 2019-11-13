@@ -40,7 +40,7 @@ class Hypertension(Module):
     htn_age_range_categories, htn_age_range_lookup = create_age_range_lookup(25, 65, 10)
 
     # We should have 5 age range categories
-    assert len(htn_age_range_categories) == 5
+    assert len(htn_age_range_categories) == 6
 
     PARAMETERS = {
         # Here we declare parameters for this module. Each parameter has a name, data type,

@@ -1,13 +1,24 @@
 """This file contains helpful utility functions."""
 from collections import defaultdict
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 
 
-def create_age_range_lookup(min_age, max_age, range_size=5):
-    """Generates and returns a dictionary mapping age (in years) to age range
-    as per data for validation (i.e. 25-30, 30-35, etc until 65)
+def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
+    """Create age-range categories and a dictionary that will map all whole years to age-range categories
+
+    If the minimum age is not zero then a below minimum age category will be made,
+    then age ranges until maximum age will be made by the range size,
+    all other ages will map to the greater than maximum age category.
+
+    :param min_age: Minimum age for categories,
+    :param max_age: Maximum age for categories, a greater than maximum age category will be made
+    :param range_size: Size of each category between minimum and maximum ages
+    :returns:
+        age_categories: ordered list of age categories available
+        lookup: Default dict of integers to maximum age mapping to the age categories
     """
 
     def chunks(items, n):
@@ -18,24 +29,29 @@ def create_age_range_lookup(min_age, max_age, range_size=5):
     # split all the ages from min to limit
     parts = chunks(range(min_age, max_age), range_size)
 
-    # TODO: have category of under minimum age? i.e. 25- for
-    default_category = '%d+' % max_age
+    default_category = f'{max_age}+'
     lookup = defaultdict(lambda: default_category)
+    age_categories = []
 
-    # collect the possible ranges
-    ranges = []
+    # create category for minimum age
+    if min_age > 0:
+        under_min_age_category = f'{min_age}-'
+        age_categories.append(under_min_age_category)
+        for i in range(0, min_age):
+            lookup[i] = under_min_age_category
 
     # loop over each range and map all ages falling within the range to the range
     for part in parts:
         start = part.start
         end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
+        value = f'{start}-{end}'
+        age_categories.append(value)
         for i in range(start, part.stop):
             lookup[i] = value
 
-    ranges.append(default_category)
-    return ranges, lookup
+    age_categories.append(default_category)
+
+    return age_categories, lookup
 
 
 def show_changes(sim, initial_state, final_state):
