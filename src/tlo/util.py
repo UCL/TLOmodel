@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pandas.io.json import normalize
 
+
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
     """Create age-range categories and a dictionary that will map all whole years to age-range categories
 
