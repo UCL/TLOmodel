@@ -121,7 +121,6 @@ class Schisto(Module):
         print("HSI & treatment params loaded")
 
         # baseline prevalence
-        # THIS NEEDS TO BE ALL HANDLED IN A DIFFERENT WAY AS WE HAVE MANY DISTRICTS
         params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
         self.schisto_haem_initial_prev.set_index("District", inplace=True)
         params['prevalence_2010_haem_PSAC'] = self.schisto_haem_initial_prev.loc[:, 'Prevalence PSAC']
@@ -150,9 +149,9 @@ class Schisto(Module):
         # MDA coverage
         params['MDA_coverage'] = workbook['MDA_Coverage']
         self.MDA_coverage.set_index("District", inplace=True)
-        params['MDA_coverage_PSAC'] = self.MDA_coverage.loc['Chitipa', 'Coverage PSAC']
-        params['MDA_coverage_SAC'] = self.MDA_coverage.loc['Chitipa', 'Coverage SAC']
-        params['MDA_coverage_Adults'] = self.MDA_coverage.loc['Chitipa', 'Coverage Adults']
+        params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
+        params['MDA_coverage_SAC'] = self.MDA_coverage.loc[:, 'Coverage SAC']
+        params['MDA_coverage_Adults'] = self.MDA_coverage.loc[:, 'Coverage Adults']
         print("MDA coverage loaded")
 
         if 'HealthBurden' in self.sim.modules.keys():
@@ -184,7 +183,6 @@ class Schisto(Module):
         self.assign_initial_prevalence(population, 'SAC', 'Haematobium')
         self.assign_initial_prevalence(population, 'PSAC', 'Haematobium')
         self.assign_initial_prevalence(population, 'Adults', 'Haematobium')
-        print("Assigned - S.Haematobium")
 
         # assign s. heamatobium symptoms
         print("Assing S.Haematobium symptoms to the infected")
@@ -199,7 +197,7 @@ class Schisto(Module):
         print("Assing S.Mansoni symptoms to the infected")
         inf_mans_idx = df[df['ss_is_infected'] == 'Mansoni'].index
         eligible_count = len(inf_mans_idx.tolist())
-        symptoms_mansoni = params['symptoms_mansoni'].symptoms.values # from the params
+        symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
         symptoms_mans_prob = params['symptoms_mansoni'].probability.values
         symptoms = np.random.choice(symptoms_mansoni, size=eligible_count, replace=True, p=symptoms_mans_prob)
         df.loc[inf_mans_idx, 'ss_mansoni_specific_symptoms'] = symptoms
@@ -262,12 +260,11 @@ class Schisto(Module):
             inf_string = 'mans'
         prev_string = "prevalence_2010_" + inf_string + "_" + age_group
 
-        prevalence = params[prev_string] # this is a pd.Series not a single value
+        prevalence = params[prev_string]  # this is a pd.Series not a single value
         # pd.Series.between is by default inclusive of the edges
-        print("Assigning prevalence to each district:")
+        print("Assigning initial prevalence to each district")
         for distr in districts:
             prevalence_distr = prevalence[distr]  # get a correct value from the pd.Series
-            print(distr + ": " + str(prevalence_distr))
             eligible = df.index[(df['district_of_residence'] == distr) &
                                 (df['age_years'].between(age_range[0], age_range[1]))].tolist()
             infected_idx = self.rng.choice(eligible, size=int(prevalence_distr *
@@ -538,7 +535,6 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
-        # params = self.module.parameters
 
         # choose coverage-fraction of the population
         treated_idx_PSAC = self.assign_MDA_coverage(population, 'PSAC')
@@ -570,16 +566,25 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         df = population.props
         params = self.module.parameters
+        districts = df.district_of_residence.unique().tolist()
 
         age_range = self.module.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
 
         param_str = "MDA_coverage_" + age_group
-        coverage = params[param_str]
-        # pd.Series.between is by default inclusive of the edges
-        eligible = df.index[(df.is_alive) & (df['age_years'].between(age_range[0], age_range[1]))].tolist()
-        treated_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False)
+        coverage = params[param_str]  # this is a pd.Series not a single value
+        MDA_idx = []  # store indices of treated individuals
 
-        return treated_idx.tolist()
+        print("MDA coverage in district:")
+        for distr in districts:
+            coverage_distr = coverage[distr]  # get a correct value from the pd.Series
+            eligible = df.index[(df['district_of_residence'] == distr) &
+                                (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+            MDA_idx_distr = self.module.rng.choice(eligible,
+                                                   size=int(coverage_distr * (len(eligible))), replace=False)
+            MDA_idx = MDA_idx + MDA_idx_distr.tolist()
+
+        return MDA_idx
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
