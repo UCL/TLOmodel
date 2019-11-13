@@ -22,8 +22,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2010, 1, 1)
-end_date = Date(2011, 1, 1)
-popsize = 10000
+end_date = Date(2015, 1, 1)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date = start_date)
@@ -38,10 +38,6 @@ fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
 
-# ----- Control over the types of intervention that can occur -----
-# Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
-# '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
-# service_availability = ["*"]
 
 logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
@@ -59,11 +55,15 @@ sim.register(schisto.Schisto(resourcefilepath=resourcefilepath))
 
 # Run the simulation and flush the logger
 sim.seed_rngs(0)
-# initialise the population first
+# initialise the population
 sim.make_initial_population(n=popsize)
 # start the simulation
 sim.simulate(end_date=end_date)
 fh.flush()
+output = parse_log_file(logfile)
 
+
+# for testing & inspection
 df = sim.population.props
-
+params = sim.modules['Schisto'].parameters
+loger_schisto = output['tlo.methods.schisto']['summary']

@@ -65,6 +65,7 @@ class Schisto(Module):
         'daly_wt_stomach_ache': Parameter(Types.REAL, 'DALY weight for stomach_ache'),
         'daly_wt_skin': Parameter(Types.REAL, 'DALY weight for skin rash'),
         'daly_wt_diarrhoea': Parameter(Types.REAL, 'DALY weight for diarrhoea'),
+        'daly_wt_vomit': Parameter(Types.REAL, 'DALY weight for vomitting'),
         'daly_wt_other': Parameter(Types.REAL, 'DALY weight for other symptoms'),
 
         # health system interaction
@@ -149,11 +150,12 @@ class Schisto(Module):
         params['MDA_coverage_SAC'] = self.MDA_coverage.loc[:, 'Coverage SAC']
         params['MDA_coverage_Adults'] = self.MDA_coverage.loc[:, 'Coverage Adults']
 
-        if 'HealthBurden' in self.sim.modules.keys():
+        if 'HealthBurden' in self.sim.modules.keys(): # these are quite random atm
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
             params['daly_wt_stomach_ache'] = self.sim.modules['HealthBurden'].get_daly_weight(263)
             params['daly_wt_skin'] = self.sim.modules['HealthBurden'].get_daly_weight(261)
             params['daly_wt_diarrhoea'] = self.sim.modules['HealthBurden'].get_daly_weight(254)
+            params['daly_wt_vomit'] = self.sim.modules['HealthBurden'].get_daly_weight(256)
             params['daly_wt_other'] = self.sim.modules['HealthBurden'].get_daly_weight(259)
 
     def initialise_population(self, population):
@@ -174,13 +176,11 @@ class Schisto(Module):
 
         # initial infected population - assuming no one is in the latent period
         # first for simplicity let's assume every infected person has S. Haematobium and no one has S.Mansoni
-        print("Assign initially infected with S.Haematobium")
         self.assign_initial_prevalence(population, 'SAC', 'Haematobium')
         self.assign_initial_prevalence(population, 'PSAC', 'Haematobium')
         self.assign_initial_prevalence(population, 'Adults', 'Haematobium')
 
         # assign s. heamatobium symptoms
-        print("Assing S.Haematobium symptoms to the infected")
         inf_haem_idx = df[df['ss_is_infected'] == 'Haematobium'].index
         eligible_count = len(inf_haem_idx.tolist())
         symptoms_haematobium = params['symptoms_haematobium'].symptoms.values
@@ -189,7 +189,6 @@ class Schisto(Module):
         df.loc[inf_haem_idx, 'ss_haematobium_specific_symptoms'] = symptoms
 
         # assign s. mansoni symptoms
-        print("Assing S.Mansoni symptoms to the infected")
         inf_mans_idx = df[df['ss_is_infected'] == 'Mansoni'].index
         eligible_count = len(inf_mans_idx.tolist())
         symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
@@ -197,7 +196,6 @@ class Schisto(Module):
         symptoms = np.random.choice(symptoms_mansoni, size=eligible_count, replace=True, p=symptoms_mans_prob)
         df.loc[inf_mans_idx, 'ss_mansoni_specific_symptoms'] = symptoms
 
-        print("Fill in start of infectiousness")
         # set the start of infectiousness to the start date of the simulation for simplicity
         # also set the symptoms to be experienced
         df.loc[inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
@@ -258,14 +256,13 @@ class Schisto(Module):
 
         prevalence = params[prev_string]  # this is a pd.Series not a single value
         # pd.Series.between is by default inclusive of the edges
-        print("Assigning initial prevalence to each district")
         for distr in districts:
             prevalence_distr = prevalence[distr]  # get a correct value from the pd.Series
             eligible = df.index[(df['district_of_residence'] == distr) &
                                 (df['age_years'].between(age_range[0], age_range[1]))].tolist()
-            infected_idx = self.rng.choice(eligible, size=int(prevalence_distr *
-                                                              (len(eligible))), replace=False)
-            df.loc[infected_idx, 'ss_is_infected'] = inf_type
+            if len(eligible):
+                infected_idx = self.rng.choice(eligible, size=int(prevalence_distr * (len(eligible))), replace=False)
+                df.loc[infected_idx, 'ss_is_infected'] = inf_type
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -312,13 +309,13 @@ class Schisto(Module):
         params = self.parameters
 
         # for now we only have haematobium infections anyway
-        health_values = df.loc[df.is_alive,
-                               'ss_haematobium_specific_symptoms'].map({
+        health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].map({
             'none': 0,
             'fever': params['daly_wt_fever'],
             'stomach_ache': params['daly_wt_stomach_ache'],
             'skin': params['daly_wt_skin'],
             'diarrhoea': params['daly_wt_diarrhoea'],
+            'vomit': params['daly_wt_vomit'],
             'other': params['daly_wt_other']
         })
         # the mapping above included counting DALYs for people with 'scheduled' symptoms. i.e. in Latent period
@@ -409,6 +406,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
 
     def new_infections_distr(self, population, distr):
         """Assigns new infections of S.Haematobium and S.Mansoni in one district distr
+
         :param population: population
         : param distr: one of the 32 Malawi districts
         """
@@ -474,16 +472,17 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        eligible = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni'])) &
-                           ~((df['ss_haematobium_specific_symptoms'] == 'none') &
-                           (df['ss_mansoni_specific_symptoms'] == 'none'))].tolist()  # these are all infectious & symptomatic
+        eligible = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni']))
+                            & ~((df['ss_haematobium_specific_symptoms'] == 'none')
+                                & (df['ss_mansoni_specific_symptoms'] == 'none'))].tolist()
+        # these are all infectious & symptomatic
 
         if len(eligible):  # there are new infections
             # determine who will seek healthcare
             seeking_healthcare = self.module.rng.choice(eligible,
                                                         size=int(params['prob_seeking_healthcare'] * (len(eligible))),
                                                         replace=False)
-            # determine which of those who seek healthcare are sent to the schisto diagnostics (and hence getting treated)
+            # determine which of those who seek healthcare are sent to the schisto diagnostics (hence getting treated)
             treated_idx = self.module.rng.choice(seeking_healthcare,
                                                  size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
                                                  replace=False)
@@ -494,9 +493,12 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
             if len(treated_idx) > 0:
-                print("Number of treated due to HSI: " + str(len(treated_idx))) # there were new infections but no one seeked treatment
+                print("Number of treated due to HSI: " + str(len(treated_idx)))
+            else:
+                print("There were new infections but no one seeked treatment")
+                logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')  # no clue what this does
         else:
-            print("No one got treatment")
+            print("No one got treatment - no new infections")
             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
 
@@ -608,9 +610,10 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
             coverage_distr = coverage[distr]  # get a correct value from the pd.Series
             eligible = df.index[(df['district_of_residence'] == distr) &
                                 (df['age_years'].between(age_range[0], age_range[1]))].tolist()
-            MDA_idx_distr = self.module.rng.choice(eligible,
-                                                   size=int(coverage_distr * (len(eligible))), replace=False)
-            MDA_idx = MDA_idx + MDA_idx_distr.tolist()
+            if len(eligible):
+                MDA_idx_distr = self.module.rng.choice(eligible,
+                                                       size=int(coverage_distr * (len(eligible))), replace=False)
+                MDA_idx = MDA_idx + MDA_idx_distr.tolist()
 
         return MDA_idx
 
@@ -628,7 +631,7 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Produce a summary of the numbers of people with respect to the action of this module.
         This is a regular event that can output current states of people or cumulative events since last logging event.
         """
-        # run this event every year
+        # run this event every month
         self.repeat = 1
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
@@ -646,24 +649,48 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         currently_uninfected = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Non-infected')].tolist())
         total_population_alive = currently_uninfected + currently_infected_any
+        prevalence_haem =  (currently_infected_haematobium + currently_infected_latent_haem) / total_population_alive
 
-        print("currently haem infectious: " + str(currently_infected_haematobium))
-        print("currently haem latent: " + str(currently_infected_latent_haem))
-        print("currently susceptible: " + str(currently_uninfected))
-        print("total population alive: " + str(total_population_alive))
+        logger.info('%s|summary|%s', self.sim.date,
+                    {
+                        'TotalInfHaem': currently_infected_haematobium,
+                        'TotalLatHaem': currently_infected_latent_haem,
+                        'TotalSusc': currently_uninfected,
+                        'TotalPrevalence': prevalence_haem,
+                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
+                    })
 
-        # counts = {'N': 0, 'T1': 0, 'T2': 0, 'P': 0}
-        # counts.update(df.loc[df.is_alive, 'mi_status'].value_counts().to_dict())
-        #
-        # # logger.info('%s|summary|%s', self.sim.date,
-        # #             {
-        # #                 'TotalInf': infected_total,
-        # #                 'PropInf': proportion_infected,
-        # #                 'PrevMonth': infected_in_last_month,
-        # #                 'Cured': cured_in_last_month,
-        # #             })
-        #
-        # logger.info('%s|status_counts|%s', self.sim.date, counts)
+        ###### PSAC ######
+        # calculate here
+        logger.info('%s|PSAC|%s', self.sim.date,
+                    {
+                        'TotalInfHaem': currently_infected_haematobium,
+                        'TotalLatHaem': currently_infected_latent_haem,
+                        'TotalSusc': currently_uninfected,
+                        'TotalPrevalence': prevalence_haem,
+                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
+                    })
+        ##### SAC #######
+        # calculate here
+        logger.info('%s|SAC|%s', self.sim.date,
+                    {
+                        'TotalInfHaem': currently_infected_haematobium,
+                        'TotalLatHaem': currently_infected_latent_haem,
+                        'TotalSusc': currently_uninfected,
+                        'TotalPrevalence': prevalence_haem,
+                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
+                    })
+
+        ##### Adults ######
+        # calculate here
+        logger.info('%s|Adults|%s', self.sim.date,
+                    {
+                        'TotalInfHaem': currently_infected_haematobium,
+                        'TotalLatHaem': currently_infected_latent_haem,
+                        'TotalSusc': currently_uninfected,
+                        'TotalPrevalence': prevalence_haem,
+                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
+                    })
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
