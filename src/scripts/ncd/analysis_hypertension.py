@@ -8,7 +8,14 @@ import pandas as pd
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, enhanced_lifestyle, healthburden, healthsystem, hypertension
+from tlo.methods import (
+    contraception,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthsystem,
+    hypertension,
+)
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 # TODO: adapt to NCD analysis
@@ -55,6 +62,7 @@ service_availability = ['*']
 # -----------------------------------------------------------------
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=service_availability))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
