@@ -329,7 +329,6 @@ class Schisto(Module):
         logger.debug('This is Schisto, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
@@ -384,18 +383,19 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                 end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
                 self.sim.schedule_event(end_latent_period_event, df.at[person_index, 'ss_schedule_infectiousness_start'])
 
-            # # assign symptoms - when should they be triggered???????? Also best to make it another event???
-            # symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
-            # symptoms_haem_prob = params['symptoms_haematobium'].probability.values
-            # df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = \
-            #     self.module.rng.choice(symptoms_haematobium, size=int((len(new_infections_haem))),
-            #                            replace=True, p=symptoms_haem_prob)
-            #
-            # symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
-            # symptoms_mans_prob = params['symptoms_mansoni'].probability.values
-            # df.loc[new_infections_mans, 'ss_mansoni_specific_symptoms'] =\
-            #     self.module.rng.choice(symptoms_mansoni, size=int((len(new_infections_mans))),
-            #                            replace=True, p=symptoms_mans_prob)
+            ######################## assign symptoms to newly infected #################################################
+
+            symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
+            symptoms_haem_prob = params['symptoms_haematobium'].probability.values
+            df.loc[new_infections_haem, 'ss_haematobium_specific_symptoms'] = \
+                self.module.rng.choice(symptoms_haematobium, size=int((len(new_infections_haem))),
+                                       replace=True, p=symptoms_haem_prob)
+
+            symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
+            symptoms_mans_prob = params['symptoms_mansoni'].probability.values
+            df.loc[new_infections_mans, 'ss_mansoni_specific_symptoms'] =\
+                self.module.rng.choice(symptoms_mansoni, size=int((len(new_infections_mans))),
+                                       replace=True, p=symptoms_mans_prob)
         else:
             print("No newly infected")
             logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
@@ -508,29 +508,14 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        params = self.module.parameters
 
         # should we also change scheduled infectiousness start back to pd.NaT???
-
-        # change infection status from Latent to Infectious and assign a symptom
-        # this assigns a symptom for a single person - it'd be quicker to assign for all newly infected upon infection
-        # but then we would need another column "scheduled_symptom" that would be triggered when Latent period ends
+        # change infection status from Latent to Infectious
         if df.at[person_id, 'ss_is_infected'] == 'Latent_Haem':
             df.at[person_id, 'ss_is_infected'] = 'Haematobium'
-            symptoms_haematobium = params['symptoms_haematobium'].symptoms.values  # from the params
-            symptoms_haem_prob = params['symptoms_haematobium'].probability.values
-            df.loc[person_id, 'ss_haematobium_specific_symptoms'] = \
-                self.module.rng.choice(symptoms_haematobium, size=1,
-                                       replace=True, p=symptoms_haem_prob)
 
         elif df.at[person_id, 'ss_is_infected'] == 'Latent_Mans':
             df.at[person_id, 'ss_is_infected'] = 'Mansoni'
-            symptoms_mansoni = params['symptoms_mansoni'].symptoms.values  # from the params
-            symptoms_mans_prob = params['symptoms_mansoni'].probability.values
-            df.loc[person_id, 'ss_mansoni_specific_symptoms'] = \
-                self.module.rng.choice(symptoms_mansoni, size=1,
-                                       replace=True, p=symptoms_mans_prob)
-
 
 # class SchistoTreatment(Event, IndividualScopeEventMixin):
 #     """Treatment upon Heathcare interaction - simple version
