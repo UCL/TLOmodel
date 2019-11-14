@@ -162,4 +162,48 @@ plt.gca().legend(loc='lower right', bbox_to_anchor=(0.45, 0.65))
 
 plt.show()
 
+
+# Plot complication due to type 2 diabetes model vs data
+val_data_df = output["tlo.methods.t2dm"]["d2_complication_data_validation"]    # Load the existing data
+val_model_df = output["tlo.methods.t2dm"]["d2_complications_model_validation"]
+
+Plot_Complications = ('Neuropathy mild', 'Neuropathy severe', 'Nephropathy mild', 'Nephropathy severe', 'Retinopathy mild', 'Retinopathy severe')
+df = val_data_df
+df1 = val_model_df
+df.index = Plot_Years
+df1.index = Plot_Years
+
+Data_Comp = pd.DataFrame(index=Plot_Years,
+                        columns=['Neuropathy mild', 'Neuropathy severe', 'Nephropathy mild', 'Nephropathy severe', 'Retinopathy mild', 'Retinopathy severe'],
+                        data=df[['Neuro_mild', 'Neuro_sev', 'Nephro_mild', 'Nephro_sev', 'Retino_mild', 'Retino_sev']].values)
+
+Model_Comp = pd.DataFrame(index=Plot_Years,
+                        columns=['Neuropathy mild', 'Neuropathy severe', 'Nephropathy mild', 'Nephropathy severe', 'Retinopathy mild', 'Retinopathy severe'],
+                        data=df1[['Neuro_mild', 'Neuro_sev', 'Nephro_mild', 'Nephro_sev', 'Retino_mild', 'Retino_sev']].values)
+
+
+# Clean by year
+# 2010
+Data_Comp_2010 = pd.DataFrame(Data_Comp.loc[2010]).transpose()
+Model_Comp_2010 = pd.DataFrame(Model_Comp.loc[2010]).transpose()
+
+# 2011 onwards - only model needed
+Model_Comp_2011 = pd.DataFrame(Model_Comp.loc[2011]).transpose()
+
+
+# Plot the whole lot
+plt.scatter(Plot_Complications, Data_Comp_2010, label='Data by age', color='k')
+plt.scatter(Plot_Complications, Model_Comp_2010, label='Model by age - 2010', color='red')
+plt.scatter(Plot_Complications, Model_Comp_2011, label='Model by age - 2011', color='orange')
+
+plt.title("Prevalence of type 2 diabetes complications: data vs model")
+plt.ylabel("Prevalence")
+plt.xticks(rotation=90)
+plt.gca().set_ylim(0, 100)
+plt.gca().legend(loc='lower right', bbox_to_anchor=(0.45, 0.65))
+
+plt.show()
+
+
+
 print("We are half way!")

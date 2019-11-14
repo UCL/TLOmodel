@@ -19,10 +19,7 @@ logger.setLevel(logging.DEBUG)
 # TODO: Asif/Stef to check if file path is mac/window flexible
 # TODO: circular declaration with diabetes to be addressed
 # TODO: Update weight to BMI
-# ToDO: Update complication, symptoms and QALYs in line with DALY file
-# TODO: how to handle symptoms and how specific to be - develop
-# TODO: What about Qaly for mild symptoms (urination, tiredness etc), nephrology, amputation, and NOTE: severe vision impairmenet and blindness same qaly so only one
-
+# TODO: symptoms - waiting for Tara
 
 def make_t2dm_age_range_lookup(min_age, max_age, range_size):
     """Generates and returns a dictionary mapping age (in years) to age range
@@ -92,38 +89,43 @@ class Type2DiabetesMellitus(Module):
         'prob_d2givenht': Parameter(Types.REAL, 'T2DM probability given pre-existing hypertension'),
         'prob_d2givengd': Parameter(Types.REAL, 'T2DM probability given pre-existing gestational diabetes'),
         'initial_prevalence_d2': Parameter(Types.REAL, 'Prevalence of T2DM as per data'),
+        'initial_complication_prevalence_d2': Parameter(Types.REAL, 'Prevalence of T2DM complications as per data'),
 
         # Define disease progression parameters
         # At the start of the model, parameters to assign prevalence of complications
-        'prob_retino_1': Parameter(Types.REAL, 'Probability of having mild retinopathy'),
-        'prob_retino_2': Parameter(Types.REAL, 'Probability of having severe retinopathy'),
-        'prob_nephro_1': Parameter(Types.REAL, 'Probability of having mild nephropathy'),
-        'prob_nephro_2': Parameter(Types.REAL, 'Probability of having moderate nephropathy'),
-        'prob_nephro_3': Parameter(Types.REAL, 'Probability of having severe nephropathy'),
-        'prob_neuro_1': Parameter(Types.REAL, 'Probability of having mild peripheral neuropathy'),
-        'prob_neuro_2': Parameter(Types.REAL, 'Probability of having moderate peripheral neuropathy'),
-        'prob_neuro_3': Parameter(Types.REAL, 'Probability of having severe peripheral neuropathy'),
+        'prev_nephro_1': Parameter(Types.REAL, 'Probability of having mild nephropathy'),
+        'prev_nephro_2': Parameter(Types.REAL, 'Probability of having moderate nephropathy'),
+        'prev_neuro_1': Parameter(Types.REAL, 'Probability of having mild peripheral neuropathy'),
+        'prev_neuro_2': Parameter(Types.REAL, 'Probability of having moderate peripheral neuropathy'),
+        'prev_retino_1': Parameter(Types.REAL, 'Probability of having severe retinopathy'),
+        'prev_retino_2': Parameter(Types.REAL, 'Probability of having severe retinopathy'),
 
         # During model run, parameters to assign incidence of new complication
-        'prob_retinocomp': Parameter(Types.REAL, 'Probability of developing retinopathy'),
-        'prob_nephrocomp': Parameter(Types.REAL, 'Probability of developing diabetic nephropathy'),
-        'prob_neurocomp': Parameter(Types.REAL, 'Probability of developing peripheral neuropathy'),
+        'prob_nephrocomp_1': Parameter(Types.REAL, 'Probability of developing mild diabetic nephropathy'),
+        'prob_nephrocomp_2': Parameter(Types.REAL, 'Probability of developing severe diabetic nephropathy'),
+        'prob_neurocomp_1': Parameter(Types.REAL, 'Probability of developing mild peripheral neuropathy'),
+        'prob_neurocomp_2': Parameter(Types.REAL, 'Probability of developing severe peripheral neuropathy'),
+        'prob_retinocomp_1': Parameter(Types.REAL, 'Probability of developing mild retinopathy'),
+        'prob_retinocomp_2': Parameter(Types.REAL, 'Probability of developing severe retinopathy'),
         't_to_increase_complication_severity': Parameter(Types.REAL, 'Time until severity of complication increases'),
         'prob_death': Parameter(Types.REAL, 'Probability of dying'),
 
         # Define health care parameters
         # TODO: update after HSI events
         # TODO: update with DALY weights
-        'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Severity of symptoms that the individual will have'),
+        #'level_of_symptoms': Parameter(Types.CATEGORICAL,      'Severity of symptoms that the individual will have'),
         'dalywt_uncomplicated': Parameter(Types.REAL,          'DALY weighting for uncomplicated diabetic'),
-        'dalywt_mild_retino': Parameter(Types.REAL,            'DALY weighting for mild retinopathy'),
-        'dalywt_severe_retino': Parameter(Types.REAL,          'DALY weighting for severe retinopathy'),
         'dalywt_neuropathy': Parameter(Types.REAL,             'DALY weighting for neuropathy'),
         'dalywt_one_amputation': Parameter(Types.REAL,         'DALY weighting for amputation of one limp'),
         'dalywt_two_amputations': Parameter(Types.REAL,        'DALY weighting for amputation of two limps'),
         'dalywt_nephropathy_mild': Parameter(Types.REAL,       'DALY weighting for mild nephropathy'),
-        'dalywt_nephropathy_moderate': Parameter(Types.REAL,   'DALY weighting for moderate nephropathy'),
         'dalywt_nephropathy_severe': Parameter(Types.REAL,     'DALY weighting for severe nephropathy'),
+        'dalywt_neuropathy': Parameter(Types.REAL,             'DALY weighting for neuropathy'),
+        'dalywt_one_amputation': Parameter(Types.REAL,         'DALY weighting for amputation of one limp'),
+        'dalywt_two_amputations': Parameter(Types.REAL,        'DALY weighting for amputation of two limps'),
+        'dalywt_mild_retino': Parameter(Types.REAL, 'DALY weighting for mild retinopathy'),
+        'dalywt_severe_retino': Parameter(Types.REAL, 'DALY weighting for severe retinopathy'),
+
     }
 
     PROPERTIES = {
@@ -136,22 +138,22 @@ class Type2DiabetesMellitus(Module):
         # ToDo: Update symptoms name
 
         # Define disease properties
-        'd2_age_range': Property(Types.CATEGORICAL, 'The age range categories for hypertension validation use',
+        'd2_age_range': Property(Types.CATEGORICAL, 'The age range categories for t2dm validation use',
                                  categories=d2_age_range_categories),
         'd2_risk': Property(Types.REAL,                       'Risk of T2DM given pre-existing condition and risk'),
         'd2_date': Property(Types.DATE,                       'Date of latest T2DM'),
         'd2_current_status': Property(Types.BOOL,             'Current T2DM status'),
         'd2_historic_status': Property(Types.CATEGORICAL,     'Historical status: N=never; C=Current, P=Previous',
                                                                  categories=['N', 'C', 'P']),
-        'd2_retino_date': Property(Types.DATE,                'Date of latest retinopathy complication'),
-        'd2_retino_status': Property(Types.CATEGORICAL,       'Level of retinopathy: none, moderate; severe',
+        'd2_nephro_date': Property(Types.DATE,                'Date of latest nephropathy complication'),
+        'd2_nephro_status': Property(Types.CATEGORICAL,       'Level of nephropathy: none, mild, severe referring to none, reduced function and end-stage',
                                                                 categories=[0, 1, 2]),
         'd2_neuro_date': Property(Types.DATE,                 'Date of latest neuropathy complication'),
-        'd2_neuro_status': Property(Types.CATEGORICAL,        'Level of neuropathy: none, mild, moderate, severe',
+        'd2_neuro_status': Property(Types.CATEGORICAL,        'Level of neuropathy: none, mild, moderate, severe referring to none, numbness, 1 and 2 amputations',
                                                                 categories=[0, 1, 2, 3]),
-        'd2_nephro_date': Property(Types.DATE,                'Date of latest nephropathy complication'),
-        'd2_nephro_status': Property(Types.CATEGORICAL,       'Level of nephropathy: none, mild, moderate, severe',
-                                                                categories=[0, 1, 2, 3]),
+        'd2_retino_date': Property(Types.DATE,                'Date of latest retinopathy complication'),
+        'd2_retino_status': Property(Types.CATEGORICAL,       'Level of retinopathy: none, mild, severe referring to none, any and severely visually impaired',
+                                                                categories=[0, 1, 2]),
         'd2_death_date': Property(Types.DATE,                 'Date of scheduled death of infected individual'),
 
         # Define health care properties  #ToDO: to add more if needed once HSi coded
@@ -183,7 +185,7 @@ class Type2DiabetesMellitus(Module):
 
         logger.debug('Type 2 Diabetes Mellitus method: reading in parameters.  ')
 
-        # Reads in the parameters for hypertension from  file
+        # Reads in the parameters for t2dm from  file
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Method_T2DM.xlsx',
                                  sheet_name=None)
 
@@ -215,21 +217,29 @@ class Type2DiabetesMellitus(Module):
         p['initial_prevalence_d2'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
         p['initial_prevalence_d2'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
 
+        # Read in prevalence data on complications from file
+        p['initial_complication_prevalence_d2'] = pd.DataFrame({'prevalence': [df.at['p_neuro_1', 'value'], df.at['p_neuro_2', 'value'],
+                                                                  df.at['p_nephro_1', 'value'], df.at['p_nephro_2', 'value'],
+                                                                  df.at['p_retino_1', 'value'], df.at['p_retino_2', 'value']],
+                                                   },
+                                                  index=['Neuro_mild', 'Neuro_sev', 'Nephro_mild', 'Nephro_sev', 'Retino_mild', 'Retino_sev'])
+        p['initial_complication_prevalence_d2'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+
+
         # Get the DALY weight that diabetes type 2 will us from the weight database
         # TODO: check mapping of DALY to states of T2DM
         if 'HealthBurden' in self.sim.modules.keys():
             p['qalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
 
-            p['qalywt_mild_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(967)
-            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(974)
+            p['dalywt_nephropathy_mild'] = self.sim.modules['HealthBurden'].get_daly_weight(989)
+            p['dalywt_nephropathy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(987)
 
             p['qalywt_neuropathy'] = self.sim.modules['HealthBurden'].get_daly_weight(970)
             p['dalywt_one_amputation'] = 0.164  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
             p['dalywt_two_amputations'] = 0.494  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
 
-            p['dalywt_nephropathy_mild'] = self.sim.modules['HealthBurden'].get_daly_weight(989)
-            p['dalywt_nephropathy_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(979)
-            p['dalywt_nephropathy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(987)
+            p['qalywt_mild_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(967)
+            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(974)
 
         logger.debug("Type 2 Diabetes Mellitus method: finished reading in parameters.  ")
 
@@ -256,12 +266,12 @@ class Type2DiabetesMellitus(Module):
         df.loc[df.is_alive, 'd2_current_status'] = False     # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_historic_status'] = 'N'      # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_date'] = pd.NaT              # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_retino_date'] = pd.NaT       # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_retino_status'] = 0          # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT        # Default setting: no one has T2DM
-        df.loc[df.is_alive, 'd2_neuro_status'] = 0           # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_nephro_date'] = pd.NaT       # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_nephro_status'] = 0          # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_date'] = pd.NaT  # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_neuro_status'] = 0  # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_retino_date'] = pd.NaT  # Default setting: no one has T2DM
+        df.loc[df.is_alive, 'd2_retino_status'] = 0  # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_death_date'] = pd.NaT        # Default setting: no one has T2DM
         df.loc[df.is_alive, 'd2_diag_date'] = pd.NaT         # Default setting: no one is diagnosed
         df.loc[df.is_alive, 'd2_diag_status'] = 'N'          # Default setting: no one is diagnosed
@@ -289,7 +299,7 @@ class Type2DiabetesMellitus(Module):
         assert alive_count == len(d2_probability)
         df.loc[df.is_alive, 'd2_age_range'] = df.loc[df.is_alive, 'age_years'].map(self.d2_age_range_lookup)
 
-        # Assign prevalent cases of hypertension according to risk
+        # Assign prevalent cases of t2dm according to risk
         d2_probability = d2_probability * df.loc[df.is_alive, 'd2_risk']
 
         # TODO: remove duplication later. Asif and Stef: when the model runs with 1st random_number, numbers are not
@@ -330,7 +340,7 @@ class Type2DiabetesMellitus(Module):
 
         # TODO: ... to here
 
-        # Assign relevant properties amongst those hypertensive
+        # Assign relevant properties amongst those t2dm
         count_d2_all = len(df[df.is_alive & df.d2_current_status])  # Count all people with type 2 diabetes mellitus
         d2_years_ago = np.array([1] * count_d2_all)
         infected_td_ago = pd.to_timedelta(d2_years_ago, unit='y')
@@ -339,47 +349,40 @@ class Type2DiabetesMellitus(Module):
 
         # Assign complication
         # TODO: not sure if there is a more efficient way to code the below?
-        # Retinopathy
+        # Nephropathy
         currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
         random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
-        now_retino_1 = (random_numbers < m.prob_retino_1)  # assign retinopathy amongst those with diabetes
-        now_retino_2 = (random_numbers < m.prob_retino_2)  # amongst those with retinopathy assign severe retinopathy
-        d2_idx_retino1 = currently_d2_yes[now_retino_1]    # hold id of those with retinopathy
-        d2_idx_retino2 = currently_d2_yes[now_retino_2]    # hold id of those with severe retinopathy
+        now_nephro_1 = (random_numbers < m.prev_nephro_1)  # assign nephropathy amongst those with diabetes
+        now_nephro_2 = (random_numbers < m.prev_nephro_2)  # amongst those with nephropathy assign moderate to severe nephropathy
+        d2_idx_nephro1 = currently_d2_yes[now_nephro_1]  # hold id of those with nephropathy
+        d2_idx_nephro2 = currently_d2_yes[now_nephro_2]  # hold id of those with mod-severe nephropathy
+
+        # Now update the df
+        df.loc[d2_idx_nephro1, 'd2_nephro_status'] = 1
+        df.loc[d2_idx_nephro2, 'd2_nephro_status'] = 2
+
+        # Neuropathy
+        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
+        now_neuro_1 = (random_numbers < m.prev_neuro_1)  # assign neuropathy amongst those with diabetes
+        now_neuro_2 = (
+                random_numbers < m.prev_neuro_2)  # amongst those with neuropathy assign moderate to severe neuropathy
+        d2_idx_neuro1 = currently_d2_yes[now_neuro_1]  # hold id of those with neuropathy
+        d2_idx_neuro2 = currently_d2_yes[now_neuro_2]  # hold id of those with mod-severe neuropathy
+
+        # Now update the df
+        df.loc[d2_idx_neuro1, 'd2_neuro_status'] = 1
+        df.loc[d2_idx_neuro2, 'd2_neuro_status'] = 2
+
+        # Retinopathy
+        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
+        now_retino_1 = (random_numbers < m.prev_retino_1)  # assign retinopathy amongst those with diabetes
+        now_retino_2 = (random_numbers < m.prev_retino_2)  # amongst those with retinopathy assign severe retinopathy
+        d2_idx_retino1 = currently_d2_yes[now_retino_1]  # hold id of those with retinopathy
+        d2_idx_retino2 = currently_d2_yes[now_retino_2]  # hold id of those with severe retinopathy
 
         # Now update the df
         df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
         df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
-
-        # Nephropathy
-        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
-        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
-        now_nephro_1 = (random_numbers < m.prob_nephro_1)  # assign nephropathy amongst those with diabetes
-        now_nephro_2 = (random_numbers < m.prob_nephro_2)  # amongst those with nephropathy assign moderate to severe nephropathy
-        now_nephro_3 = (random_numbers < m.prob_nephro_3)  # now assign severe nephropathy amongst those with moderate to severe neruopathy
-        d2_idx_nephro1 = currently_d2_yes[now_nephro_1]    # hold id of those with nephropathy
-        d2_idx_nephro2 = currently_d2_yes[now_nephro_2]    # hold id of those with mod-severe nephropathy
-        d2_idx_nephro3 = currently_d2_yes[now_nephro_3]    # hold id of those with severe nephropathy
-
-        # Now update the df
-        df.loc[d2_idx_nephro1, 'd2_idx_nephro1'] = 1
-        df.loc[d2_idx_nephro2, 'd2_retino_status'] = 2
-        df.loc[d2_idx_nephro3, 'd2_retino_status'] = 3
-
-        # Neuropathy
-        currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # hold index of all those who have diabetes
-        random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
-        now_neuro_1 = (random_numbers < m.prob_neuro_1)  # assign neuropathy amongst those with diabetes
-        now_neuro_2 = (random_numbers < m.prob_neuro_2)  # amongst those with neuropathy assign moderate to severe neuropathy
-        now_neuro_3 = (random_numbers < m.prob_neuro_3)  # now assign severe neuropathy amongst those with moderate to severe neuropathy
-        d2_idx_neuro1 = currently_d2_yes[now_neuro_1]    # hold id of those with neuropathy
-        d2_idx_neuro2 = currently_d2_yes[now_neuro_2]    # hold id of those with mod-severe neuropathy
-        d2_idx_neuro3 = currently_d2_yes[now_neuro_3]    # hold id of those with severe neuropathy
-
-        # Now update the df
-        df.loc[d2_idx_neuro1, 'd2_idx_nephro1'] = 1
-        df.loc[d2_idx_neuro2, 'd2_retino_status'] = 2
-        df.loc[d2_idx_neuro3, 'd2_retino_status'] = 3
 
 
         # Assign level of symptoms # TODO: complete this section once symptoms haev been finalised
@@ -403,7 +406,7 @@ class Type2DiabetesMellitus(Module):
         Get ready for simulation start.
 
         This method is called just before the main simulation begins, and after all
-        parameters have been read in and prevalent hypertension has been assigned.
+        parameters have been read in and prevalent t2dm has been assigned.
         It is a good place to add initial events to the event queue.
 
         :param sim: simulation
@@ -514,12 +517,12 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.debug('Type 2 diabetes mellitus method: tracking the disease progression in the population.')
 
-        # 1. Basic variables
+        # Basic variables
         df = population.props
         m = self.module
         rng = self.module.rng
 
-        # 2. Get (and hold) index of people with and w/o T2DM
+        # Get (and hold) index of people with and w/o T2DM
         currently_d2_yes = df[df.d2_current_status & df.is_alive].index  # holds all people with t2dm
         currently_d2_no = df[~df.d2_current_status & df.is_alive].index  # hold all people w/o t2dm
         age_index = df.loc[currently_d2_no, ['age_years']]  # looks up age index of those w/o t2dm
@@ -527,8 +530,8 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
         assert alive_count == len(currently_d2_yes) + len(currently_d2_no)  # checks that we didn't loose anyone
 
-        # 3. Handle new cases of T2DM
-        # 3.1 First get relative risk
+        # Handle new cases of T2DM
+        # First get relative risk
         d2_probability = df.loc[currently_d2_no,
                          ['age_years', 'd2_risk']].reset_index().merge(self.module.parameters['d2_incidence'],
                                                                        left_on=['age_years'],
@@ -592,7 +595,45 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[d2_idx, 'd2_historic_status'] = 'C'
         df.loc[d2_idx, 'd2_date'] = self.sim.date
 
-        # TODO: update any other variables beyond HTN
+
+        # Assign complication amongst anyone who has diabetes
+        # TODO: not sure if there is a more efficient way to code the below?
+        # Nephropathy
+        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
+        now_nephro_1 = (random_numbers < m.prev_nephro_1)  # assign nephropathy amongst those with diabetes
+        now_nephro_2 = (
+                random_numbers < m.prev_nephro_2)  # amongst those with nephropathy assign moderate to severe nephropathy
+        d2_idx_nephro1 = d2_idx[now_nephro_1]  # hold id of those with nephropathy
+        d2_idx_nephro2 = d2_idx[now_nephro_2]  # hold id of those with mod-severe nephropathy
+
+        # Now update the df
+        df.loc[d2_idx_nephro1, 'd2_nephro_status'] = 1
+        df.loc[d2_idx_nephro2, 'd2_nephro_status'] = 2
+
+        # Neuropathy
+        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
+        now_neuro_1 = (random_numbers < m.prev_neuro_1)  # assign neuropathy amongst those with diabetes
+        now_neuro_2 = (
+            random_numbers < m.prev_neuro_2)  # amongst those with neuropathy assign moderate to severe neuropathy
+        d2_idx_neuro1 = d2_idx[now_neuro_1]  # hold id of those with neuropathy
+        d2_idx_neuro2 = d2_idx[now_neuro_2]  # hold id of those with mod-severe neuropathy
+
+        # Now update the df
+        df.loc[d2_idx_neuro1, 'd2_neuro_status'] = 1
+        df.loc[d2_idx_neuro2, 'd2_neuro_status'] = 2
+
+        # Retinopathy
+        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
+        now_retino_1 = (random_numbers < m.prev_retino_1)  # assign retinopathy amongst those with diabetes
+        now_retino_2 = (random_numbers < m.prev_retino_2)  # amongst those with retinopathy assign severe retinopathy
+        d2_idx_retino1 = d2_idx[now_retino_1]  # hold id of those with retinopathy
+        d2_idx_retino2 = d2_idx[now_retino_2]  # hold id of those with severe retinopathy
+
+        # Now update the df
+        df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
+        df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
+
+        # TODO: add mortality
 
 
 class T2DMDeathEvent(Event, IndividualScopeEventMixin):   # TODO: update
@@ -607,10 +648,10 @@ class T2DMDeathEvent(Event, IndividualScopeEventMixin):   # TODO: update
         df = self.sim.population.props  # shortcut to the dataframe
 
         # Apply checks to ensure that this death should occur
-        if df.at[person_id, 'd2_current_status'] == 'C':
+        #if df.at[person_id, 'd2_current_status'] == 'C':
             # Fire the centralised death event:
-            death = InstantaneousDeath(self.module, person_id, cause='T2DM')
-            self.sim.schedule_event(death, self.sim.date)
+            #death = InstantaneousDeath(self.module, person_id, cause='T2DM')
+            #self.sim.schedule_event(death, self.sim.date)
 
 
 # ---------------------------------------------------------------------------------
@@ -633,15 +674,36 @@ class Type2DiabetesMellitusLoggingEvent(RegularEvent, PopulationScopeEventMixin)
         # This code will calculate the prevalence and log it
 
         df = population.props
+        p = self.module.parameters
 
-        # 1 Calculate prevalence
+        # Calculate prevalence
         count_by_age = df[df.is_alive].groupby('age_range').size()
         count_d2_by_age = df[df.is_alive & (df.d2_current_status)].groupby('age_range').size()
         prevalence_d2_by_age = (count_d2_by_age / count_by_age) * 100
         prevalence_d2_by_age.fillna(0, inplace=True)
 
-        # 2 Log prevalence
+        # Log prevalence
         logger.info('%s|d2_prevalence|%s', self.sim.date, prevalence_d2_by_age.to_dict())
+
+        # Calculate prevalence of complications
+        prev_nephro_1 = (df.d2_nephro_status.value_counts()[1] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_nephro_2 = (df.d2_nephro_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_neuro_1 = (df.d2_neuro_status.value_counts()[1] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_neuro_2 = (df.d2_neuro_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_retino_1 = (df.d2_retino_status.value_counts()[1] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_retino_2 = (df.d2_retino_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+
+        # Log prevalence of complications for validation
+        logger.info('%s|d2_complications|%s', self.sim.date,
+                    {
+                        'Nephro_mild': prev_nephro_1,
+                        'Nephro_sev': prev_nephro_2,
+                        'Neuro_mild': prev_neuro_1,
+                        'Neuro_sev': prev_neuro_2,
+                        'Retino_mild': prev_retino_1,
+                        'Retino_sev': prev_retino_2
+                    })
+
 
 class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
@@ -689,7 +751,7 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
                         'age55to65_max': p['initial_prevalence_d2'].loc['55_to_65', 'max95ci']
                     })
 
-        # 3.3. Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
+        # Calculate prevalence from the model     #TODO: use groupby (make new cats) -  remove after check
         adults_count_all = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 65)])
         adults_count_25to35 = len(df[df.is_alive & (df.age_years > 24) & (df.age_years < 35)])
         adults_count_35to45 = len(df[df.is_alive & (df.age_years > 34) & (df.age_years < 45)])
@@ -720,7 +782,7 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
         assert prevalence_45to55 > 0
         assert prevalence_55to65 > 0
 
-        # 3.4 Log prevalence from the model
+        # Log prevalence from the model
         logger.info('%s|d2_prevalence_model_validation|%s',
                     self.sim.date,
                     {
@@ -733,7 +795,7 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
 
         # TODO: remove up to here
 
-        # 3.3. Calculate prevalence from the model using groupby instead
+        # Calculate prevalence from the model using groupby instead
         # TODO: use groupby (make new cats) below instead - check it is working
 
         # First by age
@@ -745,7 +807,7 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
         # Then overall
         prevalence_d2_all_val = count_d2_by_age_val[0:4].sum() / count_by_age_val[0:4].sum() * 100
 
-        # 3.4 Log prevalence
+        # Log prevalence
         logger.info('%s|d2_prevalence_model_validation_2|%s', self.sim.date,
                     {'total': prevalence_d2_all_val,
                      '25to35': prevalence_d2_by_age_val.iloc[0],
@@ -753,4 +815,39 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
                      '45to55': prevalence_d2_by_age_val.iloc[2],
                      '55to65': prevalence_d2_by_age_val.iloc[3]
                      })
+
+        # Log the data on complication
+        logger.info('%s|d2_complication_data_validation|%s',
+                    self.sim.date,
+                    {
+                        'Nephro_mild': p['initial_complication_prevalence_d2'].loc['Nephro_mild', 'prevalence'],
+                        'Nephro_sev': p['initial_complication_prevalence_d2'].loc['Nephro_sev', 'prevalence'],
+                        'Neuro_mild': p['initial_complication_prevalence_d2'].loc['Neuro_mild', 'prevalence'],
+                        'Neuro_sev': p['initial_complication_prevalence_d2'].loc['Neuro_sev', 'prevalence'],
+                        'Retino_mild': p['initial_complication_prevalence_d2'].loc['Retino_mild', 'prevalence'],
+                        'Retino_sev': p['initial_complication_prevalence_d2'].loc['Retino_sev', 'prevalence']
+                    })
+
+
+        # Calculate prevalence of complications
+        prev_nephro_1 = ((df.d2_nephro_status.value_counts()[1] + df.d2_nephro_status.value_counts()[2]) / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_nephro_2 = (df.d2_nephro_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_neuro_1 = ((df.d2_neuro_status.value_counts()[1] + df.d2_neuro_status.value_counts()[2]) / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_neuro_2 = (df.d2_neuro_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_retino_1 = ((df.d2_retino_status.value_counts()[1] + df.d2_retino_status.value_counts()[2]) / len(df[df.d2_current_status & df.is_alive])) * 100
+        prev_retino_2 = (df.d2_retino_status.value_counts()[2] / len(df[df.d2_current_status & df.is_alive])) * 100
+
+        # Log prevalence of complications for validation
+        logger.info('%s|d2_complications_model_validation|%s', self.sim.date,
+                    {
+                        'Nephro_mild': prev_nephro_1,
+                        'Nephro_sev': prev_nephro_2,
+                        'Neuro_mild': prev_neuro_1,
+                        'Neuro_sev': prev_neuro_2,
+                        'Retino_mild': prev_retino_1,
+                        'Retino_sev': prev_retino_2
+                    })
+
+
+
 
