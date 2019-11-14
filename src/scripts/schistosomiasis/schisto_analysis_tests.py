@@ -64,7 +64,10 @@ fh.flush()
 output = parse_log_file(logfile)
 
 
-# for testing & inspection
+# ---------------------------------------------------------------------------------------------------------
+#   INSPECTING & PLOTTING
+# ---------------------------------------------------------------------------------------------------------
+
 df = sim.population.props
 params = sim.modules['Schisto'].parameters
 loger_PSAC = output['tlo.methods.schisto']['PSAC']
@@ -72,7 +75,7 @@ loger_SAC = output['tlo.methods.schisto']['SAC']
 loger_Adults = output['tlo.methods.schisto']['Adults']
 loger_All = output['tlo.methods.schisto']['All']
 
-# some plots
+# Prevalence
 plt.plot(loger_Adults.date, loger_Adults.Prevalence, label='Adults')
 plt.plot(loger_PSAC.date, loger_PSAC.Prevalence, label='PSAC')
 plt.plot(loger_SAC.date, loger_SAC.Prevalence, label='SAC')
@@ -80,5 +83,25 @@ plt.xticks(rotation='vertical')
 plt.legend()
 plt.title('Prevalence of S.Haematobium')
 plt.ylabel('% of infected sub-population')
+plt.xlabel('logging date')
+plt.show()
+
+# DALYS
+loger_daly = output['tlo.methods.healthburden']["DALYS"]
+loger_daly.drop(columns=['sex', 'YLL_Demography_Other'], inplace=True)
+loger_daly = loger_daly.groupby(['date', 'age_range'], as_index=False)['YLD_Schisto_Schisto_Symptoms'].sum() # this add M and F
+age_map = {'0-4': 'PSAC', '5-9': 'SAC', '10-14': 'SAC'}
+loger_daly['age_group'] = loger_daly['age_range'].map(age_map)
+loger_daly.fillna('Adults', inplace=True)  # the reminder will be Adults
+loger_daly.drop(columns=['age_range'], inplace=True)
+loger_daly = loger_daly.groupby(['date', 'age_group'], as_index=False)['YLD_Schisto_Schisto_Symptoms'].sum() # this add M and F
+
+plt.scatter(loger_daly.date[loger_daly.age_group == 'Adults'], loger_daly.YLD_Schisto_Schisto_Symptoms[loger_daly.age_group == 'Adults'], label='Adults')
+plt.scatter(loger_daly.date[loger_daly.age_group == 'PSAC'], loger_daly.YLD_Schisto_Schisto_Symptoms[loger_daly.age_group == 'PSAC'], label='PSAC')
+plt.scatter(loger_daly.date[loger_daly.age_group == 'SAC'], loger_daly.YLD_Schisto_Schisto_Symptoms[loger_daly.age_group == 'SAC'], label='SAC')
+plt.xticks(rotation='vertical')
+plt.legend()
+plt.title('DALYs due to schistosomiasis')
+plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()

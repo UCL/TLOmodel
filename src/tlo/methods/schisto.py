@@ -540,7 +540,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
     should be scheduled district-wise
     """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=6))
+        super().__init__(module, frequency=DateOffset(months=12))
         assert isinstance(module, Schisto)
 
     def apply(self, population):
