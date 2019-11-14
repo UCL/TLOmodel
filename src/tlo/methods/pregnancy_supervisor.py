@@ -14,7 +14,6 @@ from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMix
 from tlo.methods import antenatal_care
 
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -64,6 +63,11 @@ class PregnancySupervisor(Module):
             Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
         'prob_multiples': Parameter(
             Types.REAL, 'probability that a woman is currently carrying more than one pregnancy'),
+        'prob_pa_complications': Parameter(
+            Types.REAL, 'probability that a woman who has had an induced abortion will experience any complications'),
+        'prob_pa_complication_type': Parameter(
+            Types.REAL, 'List of probabilities that determine what type of complication a woman who has had an abortion'
+                        ' will experience'),
         'r_mild_pe_gest_htn': Parameter(
             Types.REAL, 'probability per month that a woman will progress from gestational hypertension to mild '
                         'pre-eclampsia'),
@@ -91,14 +95,18 @@ class PregnancySupervisor(Module):
         'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether this womans is pregnant with multiple fetuses'),
         'ps_total_miscarriages': Property(Types.INT, 'the number of miscarriages a woman has experienced'),
         'ps_total_induced_abortion': Property(Types.INT, 'the number of induced abortions a woman has experienced'),
+        'ps_abortion_complication': Property(Types.CATEGORICAL, 'Type of complication following an induced abortion: '
+                                                                'None; Sepsis; Haemorrhage; Sepsis and Haemorrhage',
+                                            categories=['none','haem','sepsis', 'haem_sepsis']),
         'ps_antepartum_still_birth': Property(Types.BOOL, 'whether this woman has experienced an antepartum still birth'
                                                           'of her current pregnancy'),
         'ps_previous_stillbirth': Property(Types.BOOL, 'whether this woman has had any previous pregnancies end in '
                                                        'still birth'),  # consider if this should be an interger
-        'ps_htn_disorder_preg': Property(Types.CATEGORICAL,  'Hypertensive disorders of pregnancy: none,gestational hypertension,'
-                                                             ' mild pre-eclampsia, severe pre-eclampsia, eclampsia,'
+        'ps_htn_disorder_preg': Property(Types.CATEGORICAL,  'Hypertensive disorders of pregnancy: none, '
+                                                             'gestational hypertension, mild pre-eclampsia,'
+                                                             'severe pre-eclampsia, eclampsia,'
                                                              ' HELLP syndrome',
-            categories=['none','gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),  # ??superimposed
+                 categories=['none', 'gest_htn', 'mild_pe', 'severe_pe', 'eclampsia', 'HELLP']),  # ??superimposed
         'ps_prev_pre_eclamp': Property(Types.BOOL,'whether this woman has experienced pre-eclampsia in a previous '
                                                   'pregnancy'),
         'ps_gest_diab': Property(Types.BOOL, 'whether this woman has gestational diabetes'),
@@ -144,6 +152,13 @@ class PregnancySupervisor(Module):
                 'probability': [0.25, 0.25, 0.25, 0.25]  # DUMMY
             })
         params['prob_multiples'] = dfd['parameter_values'].loc['prob_multiples', 'value']
+        params['prob_pa_complications'] = dfd['parameter_values'].loc['prob_pa_complications', 'value']
+        params['type_pa_complication'] = pd.DataFrame(
+            data={
+                'type_pa_complication': ['haem',
+                                         'sepsis',
+                                         'haem_sepsis'],
+                'probability': [0.5, 0.3, 0.2]})
         params['r_mild_pe_gest_htn'] = dfd['parameter_values'].loc['r_mild_pe_gest_htn', 'value']
         params['r_severe_pe_mild_pe'] = dfd['parameter_values'].loc['r_severe_pe_mild_pe', 'value']
         params['r_eclampsia_severe_pe'] = dfd['parameter_values'].loc['r_eclampsia_severe_pe', 'value']
@@ -164,6 +179,7 @@ class PregnancySupervisor(Module):
         df.loc[df.sex == 'F', 'ps_multiple_pregnancy'] = False
         df.loc[df.sex == 'F', 'ps_total_miscarriages'] = 0
         df.loc[df.sex == 'F', 'ps_total_induced_abortion'] = 0
+        df.loc[df.sex == 'F', 'ps_abortion_complication'] = 'none'
         df.loc[df.sex == 'F', 'ps_antepartum_still_birth'] = False
         df.loc[df.sex == 'F', 'ps_previous_stillbirth'] = False
         df.loc[df.sex == 'F', 'ps_htn_disorder_preg'] = 'none'
@@ -250,6 +266,7 @@ class PregnancySupervisor(Module):
             df.at[child_id, 'ps_multiple_pregnancy'] = False
             df.at[child_id, 'ps_total_miscarriages'] = 0
             df.at[child_id, 'ps_total_induced_abortion'] = 0
+            df.at[child_id, 'ps_abortion_complication'] = 'none'
             df.at[child_id, 'ps_antepartum_still_birth'] = False
             df.at[child_id, 'ps_previous_stillbirth'] = False
             df.at[child_id, 'ps_htn_disorder_preg'] = 'none'
@@ -267,7 +284,7 @@ class PregnancySupervisor(Module):
 
     def report_daly_values(self):
 
-        #TODO: this is copied from old module will need reviewing
+        #  TODO: this is copied from old module will need reviewing
         logger.debug('This is Abortion and Miscarriage reporting my health values')
         df = self.sim.population.props
         params = self.parameters
@@ -455,9 +472,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_abortion = pd.Series(ia_risk[2], index=idx_ac)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
                                 index=idx_ac)
-        dfx = pd.concat([random_draw, eff_prob_abortion], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_abortion']
+        eff_prob_comps = pd.Series(params['prob_pa_complications'], index=idx_ac)
+        random_draw_comp = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
+                                index=idx_ac)
+        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
+        idx_ia_comps = dfx.index[(dfx.eff_prob_abortion > dfx.random_draw) & (dfx.eff_prob_comps >
+                                                                              dfx.random_draw_comp)]
 
         if not idx_ia.empty:
             print(idx_ia, 'These women have had an induced abortion in month 2')
@@ -467,9 +489,15 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'ps_gestational_age'] = 0
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
 
-        # TODO: risk factors for Induced abortion? Or blanket prevelance? Should link to unwanted pregnancy
-        # TODO: Incidence of complications, symptoms of complications and care seeking (HSI?)
-        # safe vs unsafe
+        type_pa_complication = params['type_pa_complication']
+        random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
+                               size=len(idx_ia_comps),
+                               p=type_pa_complication.probability)
+        df.loc[idx_ia_comps, 'ps_abortion_complication'] = random_comp_type
+
+        # Todo - Issues to consider:causal influences on abortion, should the probability of each complication type be
+        #  constant for each month? do we need to record saftey(would allow policy questions), care seeking & symptoms
+
 
     # ========================= MONTH 3 ECTOPIC PREGNANCY SYMPTOMS/CARESEEKING =========================================
         ectopic_month_3 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age ==13) &
@@ -478,7 +506,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         level_of_symptoms_ep = params['level_of_symptoms_ep']
         symptoms = self.module.rng.choice(level_of_symptoms_ep.level_of_symptoms_ep,
                                           size=len(ectopic_month_3),
-                                          p=[0, 0.2, 0.4, 0.3])  # todo: parameters for probabilities as per mockitis
+                                          p=[0, 0.2, 0.4, 0.4])  # todo: parameters for probabilities as per mockitis
         df.loc[ectopic_month_3, 'ps_ectopic_symptoms'] = symptoms
 
         month_3_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 13)]
@@ -517,9 +545,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_abortion = pd.Series(ia_risk[3], index=idx_ac)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
                                 index=idx_ac)
-        dfx = pd.concat([random_draw, eff_prob_abortion], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_abortion']
+        eff_prob_comps = pd.Series(params['prob_pa_complications'], index=idx_ac)
+        random_draw_comp = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
+                                     index=idx_ac)
+        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
+        idx_ia_comps = dfx.index[(dfx.eff_prob_abortion > dfx.random_draw) & (dfx.eff_prob_comps >
+                                                                              dfx.random_draw_comp)]
 
         if not idx_ia.empty:
             print(idx_ia, 'These women have had an induced abortion in month 3')
@@ -528,6 +561,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'is_pregnant'] = False
         df.loc[idx_ia, 'ps_gestational_age'] = 0
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
+
+        type_pa_complication = params['type_pa_complication']
+        random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
+                                                  size=len(idx_ia_comps),
+                                                  p=type_pa_complication.probability)
+        df.loc[idx_ia_comps, 'ps_abortion_complication'] = random_comp_type
 
     # =========================== MONTH 4 RISK APPLICATION =============================================================
         month_4_idx = df.index[~df.ps_ectopic_pregnancy & df.is_pregnant & df.is_alive & (df.ps_gestational_age == 17)]
@@ -563,9 +602,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_abortion = pd.Series(ia_risk[4], index=idx_ac)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
                                 index=idx_ac)
-        dfx = pd.concat([random_draw, eff_prob_abortion], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_abortion']
+        eff_prob_comps = pd.Series(params['prob_pa_complications'], index=idx_ac)
+        random_draw_comp = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
+                                     index=idx_ac)
+        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
+        idx_ia_comps = dfx.index[(dfx.eff_prob_abortion > dfx.random_draw) & (dfx.eff_prob_comps >
+                                                                              dfx.random_draw_comp)]
 
         if not idx_ia.empty:
             print(idx_ia, 'These women have had an induced abortion in month 4')
@@ -574,6 +618,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'is_pregnant'] = False
         df.loc[idx_ia, 'ps_gestational_age'] = 0
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
+
+        type_pa_complication = params['type_pa_complication']
+        random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
+                                                  size=len(idx_ia_comps),
+                                                  p=type_pa_complication.probability)
+        df.loc[idx_ia_comps, 'ps_abortion_complication'] = random_comp_type
 
     # =========================== MONTH 5 RISK APPLICATION =========================================================
         # Here we begin to apply the risk of developing complications which present later in pregnancy including
@@ -615,13 +665,14 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_abortion = pd.Series(ia_risk[5], index=idx_ac)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
                                 index=idx_ac)
-
-        htn_stat = pd.Series(df.ps_htn_disorder_preg, index=month_5_idx)
-        gd_stat = pd.Series(df.ps_gest_diab, index=month_5_idx)
-
-        dfx = pd.concat([random_draw, eff_prob_abortion, htn_stat, gd_stat], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_abortion', 'htn_stat', 'gd_stat']
+        eff_prob_comps = pd.Series(params['prob_pa_complications'], index=idx_ac)
+        random_draw_comp = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
+                                     index=idx_ac)
+        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
+        idx_ia_comps = dfx.index[(dfx.eff_prob_abortion > dfx.random_draw) & (dfx.eff_prob_comps >
+                                                                              dfx.random_draw_comp)]
 
         if not idx_ia.empty:
             print(idx_ia, 'These women have had an induced abortion in month 5')
@@ -630,6 +681,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[idx_ia, 'is_pregnant'] = False
         df.loc[idx_ia, 'ps_gestational_age'] = 0
         df.loc[idx_ia, 'la_due_date_current_pregnancy'] = pd.NaT
+
+        type_pa_complication = params['type_pa_complication']
+        random_comp_type = self.module.rng.choice(type_pa_complication.type_pa_complication,
+                                                  size=len(idx_ia_comps),
+                                                  p=type_pa_complication.probability)
+        df.loc[idx_ia_comps, 'ps_abortion_complication'] = random_comp_type
 
         at_risk_htn = dfx.index[(dfx.eff_prob_abortion < dfx.random_draw) & (dfx.htn_stat == 'none')]
         at_risk_gd = dfx.index[(dfx.eff_prob_abortion < dfx.random_draw) & ~dfx.gd_stat]

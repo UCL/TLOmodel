@@ -60,7 +60,6 @@ class AntenatalCare(Module):
         # Todo: We may (will) need to apply a number of previous ANC visits to women pregnant at baseline?
         # Todo: Similarly need to the schedule additional ANC visits/ care seeking
 
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
 
@@ -301,6 +300,7 @@ class HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(Event, Individua
 
         print(person_id, 'has had an emergency')
 
+
 class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, IndividualScopeEventMixin):  # ??Name
     """
     This is a Health System Interaction Event.
@@ -329,7 +329,7 @@ class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, IndividualScopeEvent
         self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
         self.APPT_FOOTPRINT = the_appt_footprint
         self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # todo: Community?! need anc guidelines...
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id):
@@ -374,6 +374,7 @@ class HSI_AntenatalCare_PresentsForPostAbortionCare(Event, IndividualScopeEventM
         df = self.sim.population.props
         params = self.module.parameters
         m = self
+
 
 class HSI_AntenatalCare_PresentsForCarePostAntepartumStillbirth(Event, IndividualScopeEventMixin):  # ??Name
     """
