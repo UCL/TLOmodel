@@ -1,9 +1,10 @@
 """This file contains helpful utility functions."""
 from collections import defaultdict
-from typing import Dict
+from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
+from pandas.io.json import normalize
 
 
 def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
@@ -52,6 +53,22 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     age_categories.append(default_category)
 
     return age_categories, lookup
+
+
+def nested_to_record(df: pd.DataFrame) -> Dict[str, Any]:
+    """Transform dataframe into flattened dictionary,
+    a convenience wrapper for nested_to_record (from pandas.io.json.normalize) on a df.to_dict() output
+
+    Dictionary keys are in the form f'{column_name}_{index_name}'
+
+    :param df: Input dataframe
+    :return: flattened dictionary
+    """
+    df = df.copy()
+    # convert index and column to string as keys are required to be strings for nested_to_record
+    df.index = df.index.astype(str)
+    df.columns = df.columns.astype(str)
+    return normalize.nested_to_record(df.to_dict(), sep="_")
 
 
 def show_changes(sim, initial_state, final_state):
