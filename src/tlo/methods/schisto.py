@@ -14,6 +14,32 @@ from tlo.methods.healthsystem import HSI_Event
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# ---------------------------------------------------------------------------------------------------------
+#   help functions
+# ---------------------------------------------------------------------------------------------------------
+
+
+def map_age_groups(age_group):
+    """Helper function for obtaining the age range for each age_group
+    It returns a tuple of two integers (a,b) such that the given age group is in range a <= group <= b,i.e.:
+        0 <= PSAC <= 4
+        5 <= SAC <= 14
+        15 <= Adults
+        0 <= All
+
+    this will cover all ages because we look at the int variable of age
+    :param age_group: 'SAC', 'PSAC', 'Adults', 'All'
+    """
+    assert age_group in ['SAC', 'PSAC', 'Adults', 'All'], "Incorrect age group"
+
+    if age_group == 'PSAC':
+        return (0, 4)
+    elif age_group == 'SAC':
+        return (5, 14)
+    elif age_group == 'Adults':
+        return (15, 150)
+    else:
+        return (0,150)
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -201,37 +227,6 @@ class Schisto(Module):
         df.loc[inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
         df.loc[inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date
 
-        # # maybe use this instead later??
-        # latent_period_ahead_haem = self.module.rng.uniform(params['delay_a'], params['delay_b'],
-        #                                               size=len(inf_haem_idx))
-        # latent_period_ahead_mans = self.module.rng.uniform(params['delay_a'], params['delay_b'],
-        #                                               size=len(inf_mans_idx))
-        # latent_period_td_ahead_haem = pd.to_timedelta(latent_period_ahead_haem, unit='D')
-        # latent_period_td_ahead_mans = pd.to_timedelta(latent_period_ahead_mans, unit='D')
-        #
-        # df.loc[df.inf_haem_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_haem
-        # df.loc[df.inf_mans_idx, 'ss_schedule_infectiousness_start'] = self.sim.date + latent_period_td_ahead_mans
-
-    def map_age_groups(self, age_group):
-        """Helper function for obtaining the age range for each age_group
-        It returns a tuple of two integers (a,b) such that the given age group is in range a <= group <= b,i.e.:
-            0 <= PSAC <= 4
-            5 <= SAC <= 14
-            15 <= Adults
-
-        this will cover all ages because we look at the int variable of age
-        :param age_group: 'SAC', 'PSAC', 'Adults'
-        """
-        assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
-
-        if age_group == 'PSAC':
-            return (0,4)
-        elif age_group == 'SAC':
-            return (5,14)
-        else:
-            return (15,150)
-
-
     def assign_initial_prevalence(self, population, age_group, inf_type):
         """Assign initial 2010 prevalence of S.Haematobium or S.Mansoni.
         This will depend on a district and age group.
@@ -247,7 +242,8 @@ class Schisto(Module):
         params = self.parameters
         districts = df.district_of_residence.unique().tolist()
 
-        age_range = self.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+
         if inf_type == 'Haematobium':
             inf_string = 'haem'
         else:
@@ -599,7 +595,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         districts = df.district_of_residence.unique().tolist()
 
-        age_range = self.module.map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
 
         param_str = "MDA_coverage_" + age_group
         coverage = params[param_str]  # this is a pd.Series not a single value
@@ -636,61 +632,55 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(months=self.repeat))
         assert isinstance(module, Schisto)
 
-    def apply(self, population):
+    def count_age_group_states(self, population, age_group):
+        """
+        :param population:
+        :param age_group:
+        :return: count_states: a dictionary of counts of individuals in age_group in different states on infection
+        """
         df = population.props
+        age_range = map_age_groups(age_group)  # returns a tuple
 
-        currently_infected_latent_haem = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Haem')].tolist())
-        currently_infected_latent_mans = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Latent_Mans')].tolist())
-        currently_infected_latent_any = currently_infected_latent_haem + currently_infected_latent_mans
-        currently_infected_haematobium = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Haematobium')].tolist())
-        currently_infected_mansoni = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Mansoni')].tolist())
-        currently_infected_infectious_any = currently_infected_haematobium + currently_infected_mansoni
-        currently_infected_any = currently_infected_haematobium + currently_infected_mansoni + currently_infected_latent_any
+        # this is not ideal bc we're making a copy but it's for clearer code below
+        df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()  # get a copy of the main df with only specified age group only
+        count_states = {}
 
-        currently_uninfected = len(df.index[(df.is_alive) & (df['ss_is_infected'] == 'Non-infected')].tolist())
-        total_population_alive = currently_uninfected + currently_infected_any
-        prevalence_haem =  (currently_infected_haematobium + currently_infected_latent_haem) / total_population_alive
+        count_states.update({'uninfected': len(df_age.index[df_age['ss_is_infected'] == 'Non-infected'])})
+        count_states.update({'infected_latent_haem': len(df_age.index[df_age['ss_is_infected'] == 'Latent_Haem'])})
+        count_states.update({'infected_latent_mans': len(df_age.index[df_age['ss_is_infected'] == 'Latent_Mans'])})
+        count_states.update({'infectious_haematobium': len(df_age.index[df_age['ss_is_infected'] == 'Haematobium'])})
+        count_states.update({'infectious_mansoni': len(df_age.index[df_age['ss_is_infected'] == 'Mansoni'])})
+        count_states.update({'infected_latent_any': count_states['infected_latent_haem']
+                                                              + count_states['infected_latent_mans']})
+        count_states.update({'infected_infectious_any': count_states['infectious_haematobium']
+                                                                  + count_states['infectious_mansoni']})
+        count_states.update({'infected_any': count_states['infected_latent_any']
+                                                       + count_states['infected_infectious_any']})
+        count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['uninfected']})
 
-        logger.info('%s|summary|%s', self.sim.date,
+        return count_states
+
+    def create_logger(self, population, age_group):
+        count_states = self.count_age_group_states(population, age_group)
+        tot_prevalence = count_states['infected_any'] / count_states['total_pop_alive']
+        log_string = '%s|' + age_group + '|%s'
+        logger.info(log_string, self.sim.date,
                     {
-                        'TotalInfHaem': currently_infected_haematobium,
-                        'TotalLatHaem': currently_infected_latent_haem,
-                        'TotalSusc': currently_uninfected,
-                        'TotalPrevalence': prevalence_haem,
+                        'Susc': count_states['uninfected'],
+                        'LatentHaem': count_states['infected_latent_haem'],
+                        'InfectiousHaem': count_states['infectious_haematobium'],
+                        'InfectedHaem': count_states['infected_any'], # not this in fact but for now when only Haem infections
+                        'Prevalence': tot_prevalence,
                         'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
                     })
 
-        ###### PSAC ######
-        # calculate here
-        logger.info('%s|PSAC|%s', self.sim.date,
-                    {
-                        'TotalInfHaem': currently_infected_haematobium,
-                        'TotalLatHaem': currently_infected_latent_haem,
-                        'TotalSusc': currently_uninfected,
-                        'TotalPrevalence': prevalence_haem,
-                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
-                    })
-        ##### SAC #######
-        # calculate here
-        logger.info('%s|SAC|%s', self.sim.date,
-                    {
-                        'TotalInfHaem': currently_infected_haematobium,
-                        'TotalLatHaem': currently_infected_latent_haem,
-                        'TotalSusc': currently_uninfected,
-                        'TotalPrevalence': prevalence_haem,
-                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
-                    })
+    def apply(self, population):
 
-        ##### Adults ######
-        # calculate here
-        logger.info('%s|Adults|%s', self.sim.date,
-                    {
-                        'TotalInfHaem': currently_infected_haematobium,
-                        'TotalLatHaem': currently_infected_latent_haem,
-                        'TotalSusc': currently_uninfected,
-                        'TotalPrevalence': prevalence_haem,
-                        'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
-                    })
+        self.create_logger(population, 'PSAC')
+        self.create_logger(population, 'SAC')
+        self.create_logger(population, 'Adults')
+        self.create_logger(population, 'All')
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
