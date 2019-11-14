@@ -171,12 +171,12 @@ class Schisto(Module):
 
         # MDA coverage
         params['MDA_coverage'] = workbook['MDA_Coverage']
-        self.MDA_coverage.set_index("District", inplace=True)
+        self.MDA_coverage.set_index(['District', 'Year'], inplace=True)
         params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
         params['MDA_coverage_SAC'] = self.MDA_coverage.loc[:, 'Coverage SAC']
         params['MDA_coverage_Adults'] = self.MDA_coverage.loc[:, 'Coverage Adults']
 
-        if 'HealthBurden' in self.sim.modules.keys(): # these are quite random atm
+        if 'HealthBurden' in self.sim.modules.keys():  # these are quite random atm
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
             params['daly_wt_stomach_ache'] = self.sim.modules['HealthBurden'].get_daly_weight(263)
             params['daly_wt_skin'] = self.sim.modules['HealthBurden'].get_daly_weight(261)
@@ -537,7 +537,6 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 
 class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
-    should be scheduled district-wise
     """
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=12))
@@ -545,13 +544,14 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = self.sim.population.props
+        year = self.sim.date.year
 
         # choose coverage-fraction of the population
-        treated_idx_PSAC = self.assign_MDA_coverage(population, 'PSAC')
+        treated_idx_PSAC = self.assign_MDA_coverage(population, year, 'PSAC')
         print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
-        treated_idx_SAC = self.assign_MDA_coverage(population, 'SAC')
+        treated_idx_SAC = self.assign_MDA_coverage(population, year, 'SAC')
         print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
-        treated_idx_Adults = self.assign_MDA_coverage(population, 'Adults')
+        treated_idx_Adults = self.assign_MDA_coverage(population, year, 'Adults')
         print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
 
         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
@@ -569,15 +569,17 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
-        print("PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
+        print("Year " + str(year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
 
-    def assign_MDA_coverage(self, population, age_group):
+    def assign_MDA_coverage(self, population, year, age_group):
         """Assign coverage of MDA program to chosen age_group.
 
           :param population: population
+          :param year: current year. used to find the coverage
           :param age_group: 'SAC', 'PSAC', 'Adults'
           """
         assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
+        assert year in [2015, 2016, 2017, 2018], "No data for requested MDA coverage"
 
         df = population.props
         params = self.module.parameters
@@ -587,6 +589,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         param_str = "MDA_coverage_" + age_group
         coverage = params[param_str]  # this is a pd.Series not a single value
+        coverage = coverage[:, year]
         MDA_idx = []  # store indices of treated individuals
 
         print("MDA coverage in district:")
