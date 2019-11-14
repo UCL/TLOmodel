@@ -174,3 +174,51 @@ class TestTransitionsStates:
         output = tlo.util.transition_states(categorical_input, self.prob_matrix, rng=self.rng)
         print(output.dtype)
         assert output.dtype == categorical_input.dtype
+
+
+class TestCreateAgeRangeLookup:
+    def test_default_range(self):
+        """
+        Given just a minimum and maximum age,
+        should get a below age category, ranges of 5 and then an above maximum age category
+        """
+        ranges, lookup = tlo.util.create_age_range_lookup(10, 20)
+        assert ranges == ["10-", "10-14", "15-19", "20+"]
+        for i in range(0, 10):
+            assert lookup[i] == ranges[0]
+        for i in range(10, 15):
+            assert lookup[i] == ranges[1]
+        for i in range(15, 20):
+            assert lookup[i] == ranges[2]
+        for i in range(20, 25):
+            assert lookup[i] == ranges[3]
+
+    def test_user_range(self):
+        """
+        Given just a minimum age, maximum age, and a range size of 10
+        should get a below age category, ranges of 10 and then an above maximum age category
+        """
+        ranges, lookup = tlo.util.create_age_range_lookup(10, 30, 10)
+        assert ranges == ["10-", "10-19", "20-29", "30+"]
+        for i in range(0, 10):
+            assert lookup[i] == ranges[0]
+        for i in range(10, 20):
+            assert lookup[i] == ranges[1]
+        for i in range(20, 30):
+            assert lookup[i] == ranges[2]
+        for i in range(30, 40):
+            assert lookup[i] == ranges[3]
+
+    def test_no_under_min_age(self):
+        """
+        Given just a minimum age of zero, and a maximum age
+        should get a ranges of 5 and then an above maximum age category
+        """
+        ranges, lookup = tlo.util.create_age_range_lookup(0, 10)
+        assert ranges == ["0-4", "5-9", "10+"]
+        for i in range(0, 5):
+            assert lookup[i] == ranges[0]
+        for i in range(5, 10):
+            assert lookup[i] == ranges[1]
+        for i in range(10, 15):
+            assert lookup[i] == ranges[2]
