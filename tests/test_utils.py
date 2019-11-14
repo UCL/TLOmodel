@@ -222,3 +222,56 @@ class TestCreateAgeRangeLookup:
             assert lookup[i] == ranges[1]
         for i in range(10, 15):
             assert lookup[i] == ranges[2]
+
+
+class TestNestedToRecord:
+    def setup(self):
+        indexes = [f'index{i}' for i in range(0, 3)]
+        self.df = pd.DataFrame(
+            {
+                'col0': [f'data{i}' for i in range(0, 3)],
+                'col1': [f'data{i}' for i in range(3, 6)],
+                'col2': [f'data{i}' for i in range(6, 9)],
+            },
+            index=indexes,
+        )
+
+        self.expected_output = {
+            'col0_index0': 'data0',
+            'col0_index1': 'data1',
+            'col0_index2': 'data2',
+            'col1_index0': 'data3',
+            'col1_index1': 'data4',
+            'col1_index2': 'data5',
+            'col2_index0': 'data6',
+            'col2_index1': 'data7',
+            'col2_index2': 'data8',
+        }
+
+    def test_simple_df(self):
+        output = tlo.util.nested_to_record(self.df)
+        assert output == self.expected_output
+
+    def test_numeric_index(self):
+        df = self.df.copy()
+        df.index = range(0, 3)
+        expected_output = {key.replace('index', ''): value for key, value in self.expected_output.items()}
+
+        output = tlo.util.nested_to_record(df)
+
+        # output as expected
+        assert output == expected_output
+        # original df index not changed
+        assert (df.index == pd.Index(range(0, 3))).all()
+
+    def test_numeric_column(self):
+        df = self.df.copy()
+        df.columns = range(0, 3)
+        expected_output = {key.replace('col', ''): value for key, value in self.expected_output.items()}
+
+        output = tlo.util.nested_to_record(df)
+
+        # output as expected
+        assert output == expected_output
+        # original df column not changed
+        assert (df.columns == range(0, 3)).all()
