@@ -485,7 +485,7 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
             treated_idx = self.module.rng.choice(seeking_healthcare,
                                                  size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
                                                  replace=False)
-            # for those who seeks the healthcare initiate treatment
+            # for those who seek the healthcare initiate treatment
             df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
             df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = 'none'
             df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = 'none'
