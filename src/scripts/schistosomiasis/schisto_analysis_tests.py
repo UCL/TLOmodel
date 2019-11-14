@@ -2,6 +2,7 @@ import datetime
 import logging
 import os
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
@@ -22,11 +23,11 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
+end_date = Date(2011, 1, 1)
 popsize = 1000
 
 # Establish the simulation object
-sim = Simulation(start_date = start_date)
+sim = Simulation(start_date=start_date)
 
 # Establish the logger
 logfile = outputpath + "LogFile" + datestamp + ".log"
@@ -66,4 +67,18 @@ output = parse_log_file(logfile)
 # for testing & inspection
 df = sim.population.props
 params = sim.modules['Schisto'].parameters
-loger_schisto = output['tlo.methods.schisto']['summary']
+loger_PSAC = output['tlo.methods.schisto']['PSAC']
+loger_SAC = output['tlo.methods.schisto']['SAC']
+loger_Adults = output['tlo.methods.schisto']['Adults']
+loger_All = output['tlo.methods.schisto']['All']
+
+# some plots
+plt.plot(loger_Adults.date, loger_Adults.Prevalence, label='Adults')
+plt.plot(loger_PSAC.date, loger_PSAC.Prevalence, label='PSAC')
+plt.plot(loger_SAC.date, loger_SAC.Prevalence, label='SAC')
+plt.xticks(rotation='vertical')
+plt.legend()
+plt.title('Prevalence of S.Haematobium')
+plt.ylabel('% of infected sub-population')
+plt.xlabel('logging date')
+plt.show()

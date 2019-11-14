@@ -408,31 +408,34 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         """
 
         df = population.props
-        df_distr_copy = df[(df["district_of_residence"] == distr) & (df.is_alive)].copy()  # get a copy of the main df with only one district and alive ind
+        df_distr = df[(df["district_of_residence"] == distr) & (df.is_alive)].copy()  # get a copy of the main df with only one district and alive ind
 
-        if df_distr_copy.shape[0]:  # if there are any rows in the dataframe
+        if df_distr.shape[0]:  # if there are any rows in the dataframe
 
-            # 1. get (and hold) index of currently infected and uninfected individuals
-            currently_infected_latent_haem = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Latent_Haem'].tolist()
-            currently_infected_latent_mans = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Latent_Mans'].tolist()
-            currently_infected_latent_any = currently_infected_latent_haem + currently_infected_latent_mans
-            currently_infected_haematobium = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Haematobium'].tolist()
-            currently_infected_mansoni = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Mansoni'].tolist()
-            currently_infected_infectious_any = currently_infected_haematobium + currently_infected_mansoni
-            currently_infected_any = currently_infected_haematobium + currently_infected_mansoni + currently_infected_latent_any
+            # 1. get a count of infected to calculate the prevalence
+            count_states = {'Non-infected': 0, 'Latent_Haem': 0, 'Latent_Mans': 0, 'Haematobium': 0, 'Mansoni': 0}
 
-            currently_uninfected = df_distr_copy.index[df_distr_copy['ss_is_infected'] == 'Non-infected'].tolist()
-            total_population_alive = currently_uninfected + currently_infected_any
+            count_states.update(df_distr.ss_is_infected.value_counts().to_dict())  # this will get counts of non-infected, latent and infectious individuals
 
-            # calculate prevalence of infectious people only to calculate the new infections, not the actual prevalence
-            prevalence_haematobium = len(currently_infected_haematobium) / len(total_population_alive)
-            prevalence_mansoni = len(currently_infected_mansoni) / len(total_population_alive)
+            count_states.update({'infected_latent_any': count_states['Latent_Haem']
+                                                        + count_states['Latent_Mans']})
+            count_states.update({'infected_infectious_any': count_states['Haematobium']
+                                                            + count_states['Mansoni']})
+            count_states.update({'infected_any': count_states['infected_latent_any']
+                                                 + count_states['infected_infectious_any']})
+            count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
+
+            # 2 get the indices of susceptibles
+            currently_uninfected = df_distr.index[df_distr['ss_is_infected'] == 'Non-infected'].tolist()
+
+            # 3. calculate prevalence of infectious people only, not the actual prevalence
+            prevalence_haematobium = count_states['Haematobium'] / count_states['total_pop_alive']
+            prevalence_mansoni = count_states['Mansoni'] / count_states['total_pop_alive']
 
         else:
             currently_uninfected = []
             prevalence_haematobium = 0
             prevalence_mansoni = 0
-
 
         # 2. handle new infections - for now no co-infections
         # now_infected_haematobium = self.module.rng.choice([True, False],
@@ -630,18 +633,16 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()  # get a copy of the main df with only specified age group only
         count_states = {}
 
-        count_states.update({'uninfected': len(df_age.index[df_age['ss_is_infected'] == 'Non-infected'])})
-        count_states.update({'infected_latent_haem': len(df_age.index[df_age['ss_is_infected'] == 'Latent_Haem'])})
-        count_states.update({'infected_latent_mans': len(df_age.index[df_age['ss_is_infected'] == 'Latent_Mans'])})
-        count_states.update({'infectious_haematobium': len(df_age.index[df_age['ss_is_infected'] == 'Haematobium'])})
-        count_states.update({'infectious_mansoni': len(df_age.index[df_age['ss_is_infected'] == 'Mansoni'])})
-        count_states.update({'infected_latent_any': count_states['infected_latent_haem']
-                                                              + count_states['infected_latent_mans']})
-        count_states.update({'infected_infectious_any': count_states['infectious_haematobium']
-                                                                  + count_states['infectious_mansoni']})
+        count_states = {'Non-infected': 0, 'Latent_Haem': 0, 'Latent_Mans': 0, 'Haematobium': 0, 'Mansoni': 0,}
+        count_states.update(df_age.ss_is_infected.value_counts().to_dict())  # this will get counts of non-infected, latent and infectious individuals
+
+        count_states.update({'infected_latent_any': count_states['Latent_Haem']
+                                                              + count_states['Latent_Mans']})
+        count_states.update({'infected_infectious_any': count_states['Haematobium']
+                                                                  + count_states['Mansoni']})
         count_states.update({'infected_any': count_states['infected_latent_any']
                                                        + count_states['infected_infectious_any']})
-        count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['uninfected']})
+        count_states.update({'total_pop_alive': count_states['infected_any'] + count_states['Non-infected']})
 
         return count_states
 
@@ -649,11 +650,11 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         count_states = self.count_age_group_states(population, age_group)
         tot_prevalence = count_states['infected_any'] / count_states['total_pop_alive']
         log_string = '%s|' + age_group + '|%s'
-        logger.info(log_string, self.sim.date,
+        logger.info(log_string, self.sim.date.date(),
                     {
-                        'Susc': count_states['uninfected'],
-                        'LatentHaem': count_states['infected_latent_haem'],
-                        'InfectiousHaem': count_states['infectious_haematobium'],
+                        'Susc': count_states['Non-infected'],
+                        'LatentHaem': count_states['Latent_Haem'],
+                        'InfectiousHaem': count_states['Haematobium'],
                         'InfectedHaem': count_states['infected_any'], # not this in fact but for now when only Haem infections
                         'Prevalence': tot_prevalence,
                         'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
