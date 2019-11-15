@@ -203,6 +203,8 @@ plt.show()
 
 #%%
 
+#TODO: make utilitiy function to scale-up the population size for particualr thing in the log
+
 ax.plot(list(range(len(wpp[:,'Low variant']))), wpp[:,'Medium variant'], lw=2, label='WPP Projection', color='blue')
 ax.fill_between(t, wpp[:,'Low variant'], wpp[:,'High variant'], facecolor='blue', alpha=0.5)
 
