@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2015, 1, 1)
-end_date = Date(2019, 1, 1)
-popsize = 100000
+end_date = Date(2017, 1, 1)
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -63,6 +63,12 @@ sim.simulate(end_date=end_date)
 fh.flush()
 output = parse_log_file(logfile)
 
+# ---------------------------------------------------------------------------------------------------------
+#   Saving the results
+# ---------------------------------------------------------------------------------------------------------
+
+# save the log outputs
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   INSPECTING & PLOTTING
@@ -79,6 +85,7 @@ loger_All = output['tlo.methods.schisto']['All']
 plt.plot(loger_Adults.date, loger_Adults.Prevalence, label='Adults')
 plt.plot(loger_PSAC.date, loger_PSAC.Prevalence, label='PSAC')
 plt.plot(loger_SAC.date, loger_SAC.Prevalence, label='SAC')
+plt.plot(loger_All.date, loger_All.Prevalence, label='All')
 plt.xticks(rotation='vertical')
 plt.legend()
 plt.title('Prevalence of S.Haematobium')
