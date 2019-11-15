@@ -41,6 +41,17 @@ def map_age_groups(age_group):
     else:
         return (0,150)
 
+def prob_seeking_healthcare(probabilities):
+    """
+
+    :param probabilities: list of probabilities to seek treatment due to every symptom
+    :return: total probability that an individual will seek treatment
+    """
+    probabilities = [1 - p for p in probabilities]
+    total_prob = 1 - np.prod(probabilities)
+
+    return total_prob
+
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -102,6 +113,10 @@ class Schisto(Module):
         'PZQ_efficacy': Parameter(Types.REAL, 'Efficacy of prazinquantel'),  # unused
 
         # MDA
+        'MDA_prognosed_PSAC': Parameter(Types.REAL, 'Prognosed coverage of MDA in PSAC'),
+        'MDA_prognosed_SAC': Parameter(Types.REAL, 'Prognosed coverage of MDA in SAC'),
+        'MDA_prognosed_Adults': Parameter(Types.REAL, 'Prognosed coverage of MDA in Adults'),
+
         'MDA_coverage_PSAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for PSAC'),
         'MDA_coverage_SAC': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for SAC'),
         'MDA_coverage_Adults': Parameter(Types.REAL, 'Probability of being administered PZQ in the MDA for Adults')
@@ -145,6 +160,11 @@ class Schisto(Module):
         params['prob_sent_to_lab_test'] = self.param_list.loc['prob_sent_to_lab_test', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
 
+        # MDA prognosed
+        params['MDA_prognosed_PSAC'] = self.param_list.loc['MDA_prognosed_PSAC', 'Value']
+        params['MDA_prognosed_SAC'] = self.param_list.loc['MDA_prognosed_SAC', 'Value']
+        params['MDA_prognosed_Adults'] = self.param_list.loc['MDA_prognosed_Adults', 'Value']
+
         # baseline prevalence
         params['schisto_haem_initial_prev'] = workbook['Prevalence_Haem_2010']
         self.schisto_haem_initial_prev.set_index("District", inplace=True)
@@ -158,6 +178,17 @@ class Schisto(Module):
         params['prevalence_2010_mans_SAC'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence SAC']
         params['prevalence_2010_mans_Adults'] = self.schisto_mans_initial_prev.loc[:, 'Prevalence Adults']
 
+        # params['symptoms_haematobium'] = pd.DataFrame(
+        #     data={
+        #         'symptoms': ['anemia', 'fever', 'hydronephrosis', 'dysuria', 'bladder_pathology'],
+        #         'probability': [0.6, 0.3, 0.083, 0.2857, 0.7857]
+        #     })
+        # params['symptoms_mansoni'] = pd.DataFrame(
+        #     data={
+        #         'symptoms': ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly'],
+        #         'probability': [0.6, 0.3, 0.0054, 0.0144, 0.0172, 0.1574]
+        #     })
+
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
                 'symptoms': ['none', 'fever', 'stomach_ache', 'skin', 'other'],
@@ -169,7 +200,7 @@ class Schisto(Module):
                 'probability': [0.2, 0.1, 0.2, 0.2, 0.1, 0.1, 0.1]
             })
 
-        # MDA coverage
+        # MDA coverage historical
         params['MDA_coverage'] = workbook['MDA_Coverage']
         self.MDA_coverage.set_index(['District', 'Year'], inplace=True)
         params['MDA_coverage_PSAC'] = self.MDA_coverage.loc[:, 'Coverage PSAC']
@@ -266,13 +297,13 @@ class Schisto(Module):
         # Register this disease module with the health system
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
-        # add the basic events (infection & treatment)
+        # add the basic events (infection, treatment, MDA)
         event_infection = SchistoInfectionsEvent(self)
         sim.schedule_event(event_infection, sim.date + DateOffset(months=1))
+
         event_treatment = SchistoHealthCareSeekEvent(self)
         sim.schedule_event(event_treatment, sim.date + DateOffset(months=1))
 
-        # add and event of MDA
         MDA_event = SchistoMDAEvent(self)
         self.sim.schedule_event(MDA_event, self.sim.date + DateOffset(months=3))
 
@@ -546,12 +577,18 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         year = self.sim.date.year
 
-        # choose coverage-fraction of the population
-        treated_idx_PSAC = self.assign_MDA_coverage(population, year, 'PSAC')
+        if year in [2015, 2016, 2017, 2018]:
+            treated_idx_PSAC = self.assign_historical_MDA_coverage(population, year, 'PSAC')
+            treated_idx_SAC = self.assign_historical_MDA_coverage(population, year, 'SAC')
+            treated_idx_Adults = self.assign_historical_MDA_coverage(population, year, 'Adults')
+
+        else:  # for now no district-specific MDA coverage
+            treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, 'PSAC')
+            treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, 'SAC')
+            treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, 'Adults')
+
         print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
-        treated_idx_SAC = self.assign_MDA_coverage(population, year, 'SAC')
         print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
-        treated_idx_Adults = self.assign_MDA_coverage(population, year, 'Adults')
         print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
 
         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
@@ -571,14 +608,13 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
         print("Year " + str(year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
 
-    def assign_MDA_coverage(self, population, year, age_group):
+    def assign_historical_MDA_coverage(self, population, year, age_group):
         """Assign coverage of MDA program to chosen age_group.
 
           :param population: population
           :param year: current year. used to find the coverage
           :param age_group: 'SAC', 'PSAC', 'Adults'
           """
-        assert age_group in ['SAC', 'PSAC', 'Adults'], "Incorrect age group"
         assert year in [2015, 2016, 2017, 2018], "No data for requested MDA coverage"
 
         df = population.props
@@ -587,7 +623,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
 
-        param_str = "MDA_coverage_" + age_group
+        param_str = 'MDA_coverage_' + age_group
         coverage = params[param_str]  # this is a pd.Series not a single value
         coverage = coverage[:, year]
         MDA_idx = []  # store indices of treated individuals
@@ -604,7 +640,26 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         return MDA_idx
 
+    def assign_prognosed_MDA_coverage(self, population, age_group):
+        """Assign coverage of MDA program to chosen age_group.
 
+          :param population: population
+          :param age_group: 'SAC', 'PSAC', 'Adults'
+          """
+
+        df = population.props
+        params = self.module.parameters
+        age_range = map_age_groups(age_group)  # returns a tuple (a,b) a <= age_group <= b
+        param_str = 'MDA_prognosed_' + age_group
+
+        coverage = params[param_str]
+
+        eligible = df.index[(df.is_alive) & (df['age_years'].between(age_range[0], age_range[1]))].tolist()
+        MDA_idx = []
+        if len(eligible):
+            MDA_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False).tolist()
+
+        return MDA_idx
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
 #
