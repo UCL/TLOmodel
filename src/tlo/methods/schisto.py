@@ -43,7 +43,11 @@ def map_age_groups(age_group):
 
 
 def prob_seeking_healthcare(probabilities):
-    """
+    """Helper function to get a probability of seeking healthcare due to multiple symptoms. Governed by the maths below:
+    s_i - symptoms
+    p_i = prob of seeking healthcare due to having symptom s_i
+    q_i = 1 - p_i = prob of NOT seeking healthacre due to having symptom s_i
+    P(seek healthcare) = 1 - P(not seek healthcare) = 1 - q_1 * q__2 * .... * q_n
 
     :param probabilities: list of probabilities to seek treatment due to every symptom
     :return: total probability that an individual will seek treatment
@@ -55,6 +59,12 @@ def prob_seeking_healthcare(probabilities):
 
 
 def add_elements(el1, el2):
+    """Helper function for multiple symptoms assignments
+
+    :param el1: np.nan or a list
+    :param el2: list containing a single string with a symptom
+    :return: either a sum of two lists or the list el2
+    """
     if isinstance(el1, list):
         return el1 + el2
     else:
@@ -346,30 +356,46 @@ class Schisto(Module):
 
     def report_daly_values(self):
         # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        #
-        # logger.debug('This is Schisto reporting my health values')
-        #
-        # df = self.sim.population.props
-        # params = self.parameters
-        #
-        # # for now we only have haematobium infections anyway
-        # health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].map({
-        #     'anemia': params['daly_wt_anemia'],
-        #     'fever': params['daly_wt_fever'],
-        #     'hydronephrosis': params['daly_wt_hydronephrosis'],
-        #     'dysuria': params['daly_wt_dysuria'],
-        #     'bladder_pathology': params['daly_wt_bladder_pathology']
-        # })
-        #
-        # # the mapping above included counting DALYs for people with 'scheduled' symptoms. i.e. in Latent period
-        # # we want to calculate it only for people who are infectious
-        # health_values[~df['ss_is_infected'].isin(['Haematobium', 'Mansoni'])] = 0
-        # health_values.name = 'Schisto_Symptoms'    # label the cause of this disability
-        #
-        # return health_values.loc[df.is_alive]   # returns the series
+
+        logger.debug('This is Schisto reporting my health values')
 
         df = self.sim.population.props
-        return pd.Series(index=df.index[df.is_alive], data=0.0)
+        params = self.parameters
+
+        # for now we only have haematobium infections anyway
+        # health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].map(dalys_map)
+        health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].apply(lambda x: self.add_DALYs_from_symptoms(x))
+
+        # the mapping above included counting DALYs for people with 'scheduled' symptoms. i.e. in Latent period
+        # we want to calculate it only for people who are infectious
+        health_values[~df['ss_is_infected'].isin(['Haematobium', 'Mansoni'])] = 0
+        health_values.name = 'Schisto_Symptoms'    # label the cause of this disability
+
+        return health_values.loc[df.is_alive]   # returns the series
+
+        # Use this if you want to NOT calculate DALYs:
+        # df = self.sim.population.props
+        # return pd.Series(index=df.index[df.is_alive], data=0.0)
+
+    def add_DALYs_from_symptoms(self, symptoms):
+        params = self.parameters
+
+        dalys_map = {
+            'anemia': params['daly_wt_anemia'],
+            'fever': params['daly_wt_fever'],
+            'hydronephrosis': params['daly_wt_hydronephrosis'],
+            'dysuria': params['daly_wt_dysuria'],
+            'bladder_pathology': params['daly_wt_bladder_pathology'],
+            'diarrhoea': params['daly_wt_diarrhoea'],
+            'vomit': params['daly_wt_vomit'],
+            'ascites': params['daly_wt_ascites'],
+            'hepatomegaly': params['daly_wt_hepatomegaly']
+        }
+        if isinstance(symptoms, list):
+            symptoms = [dalys_map[s] for s in symptoms]
+            return sum(symptoms)
+        else:
+            return 0
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
