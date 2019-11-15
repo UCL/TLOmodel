@@ -23,7 +23,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2015, 1, 1)
-end_date = Date(2017, 1, 1)
+end_date = Date(2022, 1, 1)
 popsize = 10000
 
 # Establish the simulation object
@@ -64,6 +64,22 @@ fh.flush()
 output = parse_log_file(logfile)
 
 # ---------------------------------------------------------------------------------------------------------
+#   Check the prevalence of the symptoms
+df = sim.population.props
+params = sim.modules['Schisto'].parameters
+symptoms_params = params['symptoms_haematobium'].set_index('symptoms').to_dict()['prevalence']
+
+tot_pop_alive = len(df.index[df.is_alive])
+huge_list = df['ss_haematobium_specific_symptoms'].dropna().tolist()
+huge_list = [item for sublist in huge_list for item in sublist]
+symptoms_prevalence = [[x, huge_list.count(x)] for x in set(huge_list)]
+symptoms_prevalence = dict(symptoms_prevalence)
+for s in symptoms_prevalence.keys():
+    print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive,3)), ", expected = " + str(symptoms_params[s]))
+# ---------------------------------------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------------------------------------
 #   Saving the results
 # ---------------------------------------------------------------------------------------------------------
 
@@ -73,7 +89,6 @@ output = parse_log_file(logfile)
 # ---------------------------------------------------------------------------------------------------------
 #   INSPECTING & PLOTTING
 # ---------------------------------------------------------------------------------------------------------
-
 df = sim.population.props
 params = sim.modules['Schisto'].parameters
 loger_PSAC = output['tlo.methods.schisto']['PSAC']

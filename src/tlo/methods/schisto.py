@@ -200,15 +200,13 @@ class Schisto(Module):
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
                 'symptoms': ['anemia', 'fever', 'hydronephrosis', 'dysuria', 'bladder_pathology'],
-                'probability': [0.6, 0.3, 0.083, 0.2857, 0.7857]
-                # 'probability': [0.2, 0.3, 0.083, 0.2857, 0.1313]  # so it sums up to 1 for now
+                'prevalence': [0.6, 0.3, 0.083, 0.2857, 0.7857]
 
             })
         params['symptoms_mansoni'] = pd.DataFrame(
             data={
                 'symptoms': ['anemia', 'fever', 'ascites', 'diarrhoea', 'vomit', 'hepatomegaly'],
-                'probability': [0.6, 0.3, 0.0054, 0.0144, 0.0172, 0.1574]
-                # 'probability': [0.6, 0.2056, 0.0054, 0.0144, 0.0172, 0.1574]  # so it sums up to 1 for now
+                'prevalence': [0.6, 0.3, 0.0054, 0.0144, 0.0172, 0.1574]
             })
 
         # MDA coverage historical
@@ -313,7 +311,7 @@ class Schisto(Module):
 
             df = population.props
             params = self.parameters
-            symptoms_dict = params['symptoms_' + inf_type].set_index('symptoms').to_dict()['probability']  # create a dictionary form a df
+            symptoms_dict = params['symptoms_' + inf_type].set_index('symptoms').to_dict()['prevalence']  # create a dictionary form a df
             symptoms_column = 'ss_' + inf_type + '_specific_symptoms'
 
             for symptom in symptoms_dict.keys():
@@ -360,10 +358,8 @@ class Schisto(Module):
         logger.debug('This is Schisto reporting my health values')
 
         df = self.sim.population.props
-        params = self.parameters
 
         # for now we only have haematobium infections anyway
-        # health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].map(dalys_map)
         health_values = df.loc[df.is_alive, 'ss_haematobium_specific_symptoms'].apply(lambda x: self.add_DALYs_from_symptoms(x))
 
         # the mapping above included counting DALYs for people with 'scheduled' symptoms. i.e. in Latent period
@@ -372,10 +368,6 @@ class Schisto(Module):
         health_values.name = 'Schisto_Symptoms'    # label the cause of this disability
 
         return health_values.loc[df.is_alive]   # returns the series
-
-        # Use this if you want to NOT calculate DALYs:
-        # df = self.sim.population.props
-        # return pd.Series(index=df.index[df.is_alive], data=0.0)
 
     def add_DALYs_from_symptoms(self, symptoms):
         params = self.parameters
@@ -543,7 +535,7 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
                                 & (df['ss_mansoni_specific_symptoms'].isna()))].tolist()  # empty lists are bool False so we get those with at least one symptom
         # these are all infectious & symptomatic
 
-        if len(eligible):  # there are new infections
+        if len(eligible):  # there are infectious symptomatic people
             # determine who will seek healthcare
             seeking_healthcare = self.module.rng.choice(eligible,
                                                         size=int(params['prob_seeking_healthcare'] * (len(eligible))),
@@ -562,10 +554,10 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
 
                 print("Number of treated due to HSI: " + str(len(treated_idx)))
             else:
-                print("There were new infections but no one seeked treatment")
-                logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')  # no clue what this does
+                print("No one seeked treatment")
+                logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
         else:
-            print("No one got treatment - no new infections")
+            print("No one got treatment - no one was infectious and symptomatic")
             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
 
@@ -630,9 +622,9 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
 
-        # people administered PZQ in MDA but in the Latent period will get the pill but won't get treated
+        # people administered PZQ in MDA but in the Latent period will get the pill but won't be cured
         # similarly susceptibles will get the pill but nothing will happen
-        # The infected will get treated immediately
+        # The infected will get cured immediately
         infected_idx = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni']))]
         MDA_treated = list(set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively treated
 
