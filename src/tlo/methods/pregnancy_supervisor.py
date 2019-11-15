@@ -202,10 +202,11 @@ class PregnancySupervisor(Module):
         dfx.columns = ['random_draw', 'eff_prob_pe']
         idx_pe = dfx.index[dfx.eff_prob_pe > dfx.random_draw]
 
-        df.loc[idx_pe, 'ps_htn_disorder_preg'] = 'mild_pe'  # TODO: consider applying prevelance of severe PE
+        df.loc[idx_pe, 'ps_htn_disorder_preg'] = 'mild_pe'
         df.loc[idx_pe, 'ps_prev_pre_eclamp'] = True
 
         # TODO: Review symptoms of mild-pe, may not apply
+        # TODO: consider applying prevalance of severe PE
 
         # ============================= GESTATIONAL HYPERTENSION (at baseline) ========================================
 
@@ -334,11 +335,12 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         pregnant_idx = df.index[df.is_alive & df.is_pregnant]
+
         df.loc[pregnant_idx, 'ps_gestational_age'] = gestation_in_weeks.astype(int)
 
     # ===================================== ECTOPIC PREGNANCY & MULTIPLES ==============================================
         # Here we look at all the newly pregnant women (1 week gestation) and apply the risk of this pregnancy being
-        # ectopic, progression and care seeking and managed in a seperate event
+        # ectopic, progression and care seeking and managed in a separate event
         newly_pregnant_idx = df.index[df.is_pregnant & df.is_alive & (df.ps_gestational_age == 1)]
         eff_prob_ectopic = pd.Series(params['prob_ectopic_pregnancy'], index=newly_pregnant_idx)
         random_draw = pd.Series(self.module.rng.random_sample(size=len(newly_pregnant_idx)),
@@ -348,9 +350,10 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         idx_ep = dfx.index[dfx.eff_prob_ectopic > dfx.random_draw]
         idx_mp = dfx.index[dfx.eff_prob_ectopic < dfx.random_draw]
 
-        df.loc[idx_ep, 'ps_ectopic_pregnancy'] = True # Todo: should we switch off 'is_pregnant'?
+        df.loc[idx_ep, 'ps_ectopic_pregnancy'] = True
         df.loc[idx_ep, 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[idx_ep, 'ps_ectopic_symptoms'] = 'none'
+        # Todo: we need to insure is_pregnant is turned off at treatment/death for these women
 
     # =========================================  MULTIPLES =============================================================
 
@@ -668,8 +671,11 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         eff_prob_comps = pd.Series(params['prob_pa_complications'], index=idx_ac)
         random_draw_comp = pd.Series(self.module.rng.random_sample(size=len(idx_ac)),
                                      index=idx_ac)
-        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps], axis=1)
-        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps']
+        htn_stat = pd.Series(df.ps_htn_disorder_preg, index=month_5_idx)
+        gd_stat = pd.Series(df.ps_gest_diab, index=month_5_idx)
+
+        dfx = pd.concat([random_draw, eff_prob_abortion, random_draw_comp, eff_prob_comps, htn_stat, gd_stat], axis=1)
+        dfx.columns = ['random_draw', 'eff_prob_abortion', 'random_draw_comp', 'eff_prob_comps','htn_stat', 'gd_stat']
         idx_ia = dfx.index[dfx.eff_prob_abortion > dfx.random_draw]
         idx_ia_comps = dfx.index[(dfx.eff_prob_abortion > dfx.random_draw) & (dfx.eff_prob_comps >
                                                                               dfx.random_draw_comp)]
