@@ -3,6 +3,8 @@ General utility functions for TLO analysis
 """
 import logging
 from ast import literal_eval
+from collections import defaultdict
+from pathlib import Path
 
 import pandas as pd
 
@@ -131,3 +133,105 @@ def parse_output(list_of_log_lines):
             # append the new row to the dataframe for this logger & log name
             o[i['logger']][i['key']] = df.append(row, ignore_index=True)
     return o
+
+
+def scale_to_population(parsed_output, resourcefilepath):
+    """
+    This helper function scales certain outputs so that they can create statistics for the whole population.
+    e.g. Population Size, Number of deaths are scaled by the factor of {Model Pop Size at Start of Simulation} to {
+    {Real Population at the same time}.
+
+    NB. This file gives precedence to the Malawi Population Census
+
+    :param parsed_outoput: The output from parse_output
+    :param resourcefilepath: The resourcefilepath
+    :return: a new version of parsed_output that includes certain variables scaled
+    """
+
+    # Get information about the real population size (Malawi Census in 2018)
+    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['number'].sum()
+    cens_yr = 2018
+
+    # Get information about the model population size in 2018 (and fail if no 2018)
+    model_res = parsed_output['tlo.methods.demography']['population']
+    model_res['year'] = pd.to_datetime(model_res.date).dt.year
+
+    assert cens_yr in model_res.year.values, "Model results do not contain the year of the census, so cannot scale"
+    model_tot = model_res.loc[model_res['year']==cens_yr,'total'].values[0]
+
+    # Calculate ratio for scaling
+    ratio_data_to_model= cens_tot / model_tot
+
+    # Do the scaling on selected columns in the parsed outputs:
+
+    o = parsed_output.copy()
+
+    # Multiply population count summaries by ratio
+    o['tlo.methods.demography']['population']['male']*= ratio_data_to_model
+    o['tlo.methods.demography']['population']['female']*= ratio_data_to_model
+    o['tlo.methods.demography']['population']['total']*= ratio_data_to_model
+
+    o['tlo.methods.demography']['age_range_m'].iloc[:,1:]*= ratio_data_to_model
+    o['tlo.methods.demography']['age_range_f'].iloc[:,1:]*= ratio_data_to_model
+
+    # For individual-level reporting, construct groupby's and then multipy by ratio
+    # 1) Counts of numbers of death by year/age/cause
+    deaths = o['tlo.methods.demography']['death']
+    deaths.index = pd.to_datetime(deaths['date'])
+    deaths['year'] = deaths.index.year.astype(int)
+
+    deaths_groupby_scaled = deaths[['year','age','cause','person_id']].groupby(by=['year','age','cause']) \
+                .count().unstack(fill_value=0).stack() * ratio_data_to_model
+    deaths_groupby_scaled .rename(columns={'person_id': 'count'}, inplace=True)
+    o['tlo.methods.demography'].update({'death_groupby_scaled':deaths_groupby_scaled})
+
+    # 2) Counts of numbers of births by year/age-of-mother
+    births = o['tlo.methods.demography']['on_birth']
+    births.index = pd.to_datetime(births['date'])
+    births['year'] = births.index.year
+    births_groupby_scaled = \
+        births[['year','mother_age','mother']].groupby(by=['year','mother_age']).count() \
+                * ratio_data_to_model
+    births_groupby_scaled.rename(columns={'mother':'count'}, inplace=True)
+    o['tlo.methods.demography'].update({'birth_groupby_scaled':births_groupby_scaled})
+
+    #TODO: Do this kind of manipulatio for all things in the log that are flagged are being subject to scaling
+
+    return o
+
+
+
+
+def make_calendar_period_lookup():
+    """Returns a dictionary mapping calendar year (in years) to five year period
+    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
+    """
+
+    def chunks(items, n):
+        """Takes a list and divides it into parts of size n"""
+        for index in range(0, len(items), n):
+            yield items[index:index + n]
+
+    # split all the ages from min to limit (100 years) into 5 year ranges
+    parts = chunks(range(1950, 2100), 5)
+
+    # any year >= 2100 are in the '2100+' category
+    default_category = '%d+' % 2100
+    lookup = defaultdict(lambda: default_category)
+
+    # collect the possible ranges
+    ranges = []
+
+    # loop over each range and map all ages falling within the range to the range
+    for part in parts:
+        start = part.start
+        end = part.stop - 1
+        value = '%s-%s' % (start, end)
+        ranges.append(value)
+        for i in range(start, part.stop):
+            lookup[i] = value
+
+    ranges.append(default_category)
+    return ranges, lookup
+
+
