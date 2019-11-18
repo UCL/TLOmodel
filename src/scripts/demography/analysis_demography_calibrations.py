@@ -15,9 +15,10 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file, scale_to_population, make_calendar_period_lookup
 from tlo.methods import contraception, demography
 from tlo.methods.demography import make_age_range_lookup
+
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -30,6 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 # %% Run the Simulation
+logfile = outputpath + 'LogFile' + datestamp + '.log'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2070, 1, 2)
@@ -39,7 +41,6 @@ popsize = 1000
 sim = Simulation(start_date=start_date)
 
 # this block of code is to capture the output to file
-logfile = outputpath + 'LogFile' + datestamp + '.log'
 
 if os.path.exists(logfile):
     os.remove(logfile)
@@ -59,17 +60,21 @@ sim.simulate(end_date=end_date)
 fh.flush()
 
 # %% read the results
-output = parse_log_file(logfile)
 
-#%%
+# FOR STORED RESULTS
+logfile = 'LogFile__2019_11_18.log'
 
+parsed_output = parse_log_file(logfile)
 
+scaled_output = scale_to_population(parsed_output, resourcefilepath)
 
-# get model population size by year for model and data for scaling the respective metrics of each
+#%% Population
+# Trend in Number Over Time
 
+# Get model population size by year for model and data for scaling the respective metrics of each
 # Population Growth Over Time:
 # Load Model Results
-pop_df = output["tlo.methods.demography"]["population"]
+pop_df = scaled_output["tlo.methods.demography"]["population"]
 pop_df['year']= pd.to_datetime(pop_df.date).dt.year
 Model_Years = pop_df['year']
 Model_Pop = pop_df.total
@@ -81,7 +86,6 @@ wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv"
 wpp_ann_norm = wpp_ann / wpp_ann[2010]
 wpp_ann_norm.plot()
 plt.show()
-
 
 # Plot population size over time
 plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
@@ -95,8 +99,8 @@ plt.savefig(outputpath + "Pop_Size_Over_Time" + datestamp + ".pdf")
 plt.show()
 
 
-
-#%% Population Size
+#%% Population
+# Population Size in 2018
 
 # Census vs WPP vs Model
 
@@ -110,18 +114,7 @@ model = pop_df.melt(id_vars='year', value_vars=['male','female'],var_name='sex',
 model['sex'] = model['sex'].replace({'male':'M', 'female':'F'})
 model_2018 = model.loc[model['year']==2018].groupby(['sex'])['number'].sum()
 
-
-cens_2018.plot.bar()
-plt.show()
-
-wpp_2018.plot.bar()
-plt.show()
-
-model_2018.plot.bar()
-plt.show()
-
 popsize = pd.concat([cens_2018, wpp_2018,model_2018], keys=['Census_2018','WPP','Model']).unstack()
-
 popsize.transpose().plot(kind='bar')
 plt.title('Population Size (2018)')
 plt.show()
@@ -129,53 +122,22 @@ plt.show()
 # TODO; Why the discrepancy between WPP and Census?
 # TODO; GBD population data in here too
 
+
+#%% Population
+# Population Pyramid at two time points
+
+
+
 #%% Births
-
-births = output['tlo.methods.demography']['on_birth']
-births["date"] = pd.to_datetime(births["date"])
-births["year"] = births["date"].dt.year
-
-
+# Number over time
+births = scaled_output['tlo.methods.demography']['birth_groupby_scaled']
+births = births.reset_index()
 
 # Births over time (Model)
 # Aggregate the model output into five year periods:
-def make_calendar_period_lookup():
-    """Returns a dictionary mapping calendar year (in years) to five year period
-    i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
-    """
-
-    def chunks(items, n):
-        """Takes a list and divides it into parts of size n"""
-        for index in range(0, len(items), n):
-            yield items[index:index + n]
-
-    # split all the ages from min to limit (100 years) into 5 year ranges
-    parts = chunks(range(1950, 2100), 5)
-
-    # any year >= 2100 are in the '2100+' category
-    default_category = '%d+' % 2100
-    lookup = defaultdict(lambda: default_category)
-
-    # collect the possible ranges
-    ranges = []
-
-    # loop over each range and map all ages falling within the range to the range
-    for part in parts:
-        start = part.start
-        end = part.stop - 1
-        value = '%s-%s' % (start, end)
-        ranges.append(value)
-        for i in range(start, part.stop):
-            lookup[i] = value
-
-    ranges.append(default_category)
-    return ranges, lookup
-
-
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 births["period"] = births["year"].map(calendar_period_lookup)
-nbirths = births.groupby(by='period')['child'].count()
-
+nbirths = births.groupby(by='period')['count'].sum()
 
 # Births over time (WPP)
 wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalBirths_WPP.csv")
@@ -200,14 +162,7 @@ ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.show()
 
-
-#%%
-
-#TODO: make utilitiy function to scale-up the population size for particualr thing in the log
-
-ax.plot(list(range(len(wpp[:,'Low variant']))), wpp[:,'Medium variant'], lw=2, label='WPP Projection', color='blue')
-ax.fill_between(t, wpp[:,'Low variant'], wpp[:,'High variant'], facecolor='blue', alpha=0.5)
-
+#%% Births
 # Births to mothers by age
 (__tmp__, age_grp_lookup) = make_age_range_lookup()
 births["mother_age_grp"] = births["mother_age"].map(age_grp_lookup)
@@ -216,7 +171,37 @@ nbirths_byage_2015 = nbirths_byage[2015]
 nbirths_byage_2030 = nbirths_byage[2030]
 
 
+#%% Deaths
+# Number over time
+deaths = scaled_output['tlo.methods.demography']['death_groupby_scaled']
+deaths = deaths.reset_index()
+
+# Births over time (Model)
+# Aggregate the model output into five year periods:
+(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+deaths["period"] = deaths["year"].map(calendar_period_lookup)
+ndeaths = deaths.groupby(by='period')['count'].sum()
+
+# Get WPP data
+# Births over time (WPP)
+wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_WPP.csv")
+
+# Adjust the labelling of the calendar periods in WPP so that it is inclusive years (2010-2014, 2015-2019 not 2010-2015, 2015-2020, etc)
+wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
+wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
+wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
 
 
 
-##% Deaths
+
+wpp['total'] = wpp.iloc[:,2:21].astype(float).sum(axis=1)
+
+
+#%% Deaths
+# Number by age at two different time points
+
+#%% Deaths
+# Number by Cause by time
+
+#%% Deaths
+# Number by Cause by age and time

@@ -8,7 +8,6 @@ from os.path import dirname, join
 
 from setuptools import find_packages, setup
 
-
 def read(*names, **kwargs):
     return io.open(
         join(dirname(__file__), *names),

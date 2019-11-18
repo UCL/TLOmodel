@@ -344,6 +344,8 @@ deaths  = deaths .drop(deaths.columns[[0,2,3,4,5,6]],axis=1)
 deaths[deaths.columns[2:22]] = deaths[deaths.columns[2:22]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
 
+#TODO; WPP DEATH DATA CONTAINS LOTS OF '....' strings: remove and make it come out as float.
+
 
 # The ASMR from the LifeTable
 lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
@@ -404,3 +406,6 @@ dhs_u5 = dhs_u5.reset_index(drop=True)
 dhs_u5 = dhs_u5[dhs_u5.columns[[3,0,1,2]]]
 dhs_u5[dhs_u5.columns[1:]] = dhs_u5[dhs_u5.columns[1:]] / 1000  # to make it mortality risk per person
 dhs_u5.to_csv(resourcefilepath / 'ResourceFile_Under_Five_Mortality_DHS.csv', index=False)
+
+
+
