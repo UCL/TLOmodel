@@ -390,6 +390,10 @@ gbd = pd.read_csv(gbd_working_file)
 
 gbd.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
 
+#TODO: GBD age_name; change 'to' to '-'
+#TODO: Take out 'all ages in the deaths' so that can sum
+#TODO: look up to see about deaths about 0-1 year-olds? and call it 'age_grp'
+#TODO; GET SORTING RIGHT AS THE AGE_NAME IS MESSING IT UP
 
 #%% *** DHS DATA
 

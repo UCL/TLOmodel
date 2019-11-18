@@ -9,7 +9,7 @@ import logging
 import os
 from collections import defaultdict
 from pathlib import Path
-
+import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -176,29 +176,92 @@ nbirths_byage_2030 = nbirths_byage[2030]
 deaths = scaled_output['tlo.methods.demography']['death_groupby_scaled']
 deaths = deaths.reset_index()
 
-# Births over time (Model)
-# Aggregate the model output into five year periods:
+# Aggregate the model output into five year periods for age and time:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 deaths["period"] = deaths["year"].map(calendar_period_lookup)
+deaths["age_grp"] = deaths["age"].map(age_grp_lookup)
+
+# Create time-series
 ndeaths = deaths.groupby(by='period')['count'].sum()
 
 # Get WPP data
-# Births over time (WPP)
 wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalDeaths_WPP.csv")
 
 # Adjust the labelling of the calendar periods in WPP so that it is inclusive years (2010-2014, 2015-2019 not 2010-2015, 2015-2020, etc)
 wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
 wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
 wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
-
-
-
-
+# Make a total TODO: get rid of stings in WPP
 wpp['total'] = wpp.iloc[:,2:21].astype(float).sum(axis=1)
+
+# load the GBD data
+gbd =  pd.read_csv(Path(resourcefilepath) / "ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv")
+gbd = gbd.loc[gbd['measure_name']=='Deaths'].copy()
+gbd['period'] = gbd["year"].map(calendar_period_lookup)
+
+# collapse by cause to give total
+ndeaths_gbd = gbd.groupby(by=['period'])[['val','upper','lower']].sum()
+
+
+fig, ax = plt.subplots(1)
+ax.plot(ndeaths_gbd.index,ndeaths_gbd['val'],lw=2, label='GBD Estimate', color='blue')
+ax.fill_between(ndeaths_gbd.index, ndeaths_gbd['lower'], ndeaths_gbd['upper'], facecolor='blue', alpha=0.5)
+ax.plot(ndeaths.index,ndeaths,lw=2, label='Model', color='red')
+ax.set_title('Number of Deaths Per Calendar Period')
+ax.legend(loc='upper left')
+plt.xticks(rotation=90)
+ax.set_xlabel('Calendar Period')
+ax.set_ylabel('Number per period')
+plt.show()
 
 
 #%% Deaths
 # Number by age at two different time points
+ndeaths_by_age_model = deaths.groupby(by=['period','age_grp'])['count'].sum().reset_index()
+
+# ndeaths_by_age_model_2010 = ndeaths_by_age_model.loc[ndeaths_by_age_model['period']=='2010-2014']
+# ndeaths_by_age_model_2030 = ndeaths_by_age_model.loc[ndeaths_by_age_model['period']=='2030-2034']
+
+ndeaths_by_age_gbd = gbd.groupby(by=['period','age_name'])[['val','upper','lower']].sum().reset_index()
+
+# REFORMA THE AGE-NAME AND DROPPING ALL AGES
+ndeaths_by_age_gbd['age_name'] =  ndeaths_by_age_gbd['age_name'].str.replace('to','-').str.replace('95 plus','95+').str.replace(' ','')
+ndeaths_by_age_gbd = ndeaths_by_age_gbd.drop(ndeaths_by_age_gbd.index[ndeaths_by_age_gbd['age_name']=='AllAges'])
+ndeaths_by_age_gbd = ndeaths_by_age_gbd.rename(columns={'age_name':'age_grp'})
+
+# Merge together
+ndeaths = ndeaths_by_age_model.merge(ndeaths_by_age_gbd, on = ['period','age_grp'], suffixes=('Model','GBD'))
+
+
+ndeaths_by_age_gbd_2010 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='2010-2014']
+ndeaths_by_age_gbd_2030 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='2030-2034']
+
+#
+
+#TODO: Bring in WPP data here
+
+
+
+fig, ax = plt.subplots(2)
+ax[0].plot(ndeaths_by_age_gbd_2010['age_name'],ndeaths_by_age_gbd_2010['val'],lw=2, label='GBD Estimate', color='blue')
+ax[0].fill_between(ndeaths_by_age_gbd_2010['age_name'],ndeaths_by_age_gbd_2010['lower'],ndeaths_by_age_gbd_2010['upper'], facecolor='blue', alpha=0.5)
+ax[0].plot(ndeaths_by_age_model_2010['age_grp'],ndeaths_by_age_model_2010['count'],lw=2, label='Model', color='red')
+ax[0].set_title('Number of Deaths by Age: 2010-2014')
+ax[0].legend(loc='upper left')
+ax[0].set_xlabel('Age Group')
+ax[0].set_ylabel('Number per period')
+
+
+
+
+ax = sns.lineplot(x="age_name", y="val", data=ndeaths_by_age_gbd_2010)
+plt.xticks(rotation=90)
+plt.show()
+
+
+
+
+
 
 #%% Deaths
 # Number by Cause by time
