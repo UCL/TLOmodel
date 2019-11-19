@@ -242,7 +242,7 @@ ndeaths_by_age_gbd_2030 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='
 
 
 # *****
-# turn the age-grp into categories
+# turn the age-grp into categories - this to go into utils
 from pandas.api.types import CategoricalDtype
 
 age_grp_cats = list()
