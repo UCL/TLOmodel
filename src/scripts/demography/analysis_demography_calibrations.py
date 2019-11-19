@@ -241,6 +241,9 @@ ndeaths_by_age_gbd_2010 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='
 ndeaths_by_age_gbd_2030 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='2030-2034']
 
 
+#TODO: Bring in WPP data here
+
+
 # *****
 # turn the age-grp into categories - this to go into utils
 from pandas.api.types import CategoricalDtype
@@ -255,13 +258,10 @@ ndeaths['age_grp'] = ndeaths['age_grp'].astype(age_grp_type)
 ndeaths = ndeaths.sort_values(by = ['age_grp'])
 # ******
 
-
-
-#TODO: Bring in WPP data here
-
 ndeaths = ndeaths.loc[ndeaths['period']=='2015-2019']
 ndeaths.index=ndeaths['age_grp']
 ndeaths.plot.line(x='age_grp',y=['count','val'])
+plt.plot(ndeaths['lower'])
 plt.fill_between(ndeaths['age_grp'],ndeaths['lower'],ndeaths['upper'], alpha=0.5)
 plt.xticks(np.arange(len(ndeaths.index)), ndeaths.index)
 ax[0].set_title('Number of Deaths by Age: 2010-2014')
