@@ -229,16 +229,47 @@ ndeaths_by_age_gbd['age_name'] =  ndeaths_by_age_gbd['age_name'].str.replace('to
 ndeaths_by_age_gbd = ndeaths_by_age_gbd.drop(ndeaths_by_age_gbd.index[ndeaths_by_age_gbd['age_name']=='AllAges'])
 ndeaths_by_age_gbd = ndeaths_by_age_gbd.rename(columns={'age_name':'age_grp'})
 
+# SPECIFY ORDER
+
 # Merge together
 ndeaths = ndeaths_by_age_model.merge(ndeaths_by_age_gbd, on = ['period','age_grp'], suffixes=('Model','GBD'))
+
+
 
 
 ndeaths_by_age_gbd_2010 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='2010-2014']
 ndeaths_by_age_gbd_2030 = ndeaths_by_age_gbd.loc[ndeaths_by_age_gbd['period']=='2030-2034']
 
-#
+
+# *****
+# turn the age-grp into categories
+from pandas.api.types import CategoricalDtype
+
+age_grp_cats = list()
+for i in age_grp_lookup.values():
+    if i not in age_grp_cats:
+        age_grp_cats.append(i)
+
+age_grp_type = CategoricalDtype(categories=age_grp_cats,ordered=True)
+ndeaths['age_grp'] = ndeaths['age_grp'].astype(age_grp_type)
+ndeaths = ndeaths.sort_values(by = ['age_grp'])
+# ******
+
+
 
 #TODO: Bring in WPP data here
+
+ndeaths = ndeaths.loc[ndeaths['period']=='2015-2019']
+ndeaths.index=ndeaths['age_grp']
+ndeaths.plot.line(x='age_grp',y=['count','val'])
+plt.fill_between(ndeaths['age_grp'],ndeaths['lower'],ndeaths['upper'], alpha=0.5)
+plt.xticks(np.arange(len(ndeaths.index)), ndeaths.index)
+ax[0].set_title('Number of Deaths by Age: 2010-2014')
+ax[0].legend(loc='upper left')
+ax[0].set_xlabel('Age Group')
+ax[0].set_ylabel('Number per period')
+plt.xticks(rotation=90)
+plt.show()
 
 
 
@@ -254,7 +285,9 @@ ax[0].set_ylabel('Number per period')
 
 
 
-ax = sns.lineplot(x="age_name", y="val", data=ndeaths_by_age_gbd_2010)
+ax = sns.lineplot(x='age_grp', y='value', \
+                  data=ndeaths.melt(id_vars=['period','age_grp']), \
+                  hue = 'variable')
 plt.xticks(rotation=90)
 plt.show()
 
