@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2015, 1, 1)
 end_date = Date(2022, 1, 1)
-popsize = 10000
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -38,7 +38,6 @@ fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
-
 
 logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
@@ -75,7 +74,31 @@ huge_list = [item for sublist in huge_list for item in sublist]
 symptoms_prevalence = [[x, huge_list.count(x)] for x in set(huge_list)]
 symptoms_prevalence = dict(symptoms_prevalence)
 for s in symptoms_prevalence.keys():
-    print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive,3)), ", expected = " + str(symptoms_params[s]))
+    print(s + ", prevalence = " + str(round(symptoms_prevalence[s] / tot_pop_alive, 3)), ", expected = " + str(symptoms_params[s]))
+
+# get prevalence per age_years
+df_pa = df[['age_years', 'ss_is_infected']][df.is_alive]
+age_groups_count = df_pa['age_years'].value_counts().to_dict()
+infected_age_count = df_pa[df['ss_is_infected'] == 'Haematobium']['age_years'].value_counts().to_dict()
+age_prev = {}
+for k in age_groups_count.keys():
+    if k in infected_age_count.keys():
+        prev = infected_age_count[k] / age_groups_count[k]
+    else:
+        prev = 0
+    age_prev.update({k: prev})
+
+import matplotlib.pylab as plt
+lists = sorted(age_prev.items())  # sorted by key, return a list of tuples
+x, y = zip(*lists)  # unpack a list of pairs into two tuples
+plt.plot(x, y)
+plt.xlabel('Age')
+plt.ylabel('Prevalence')
+plt.title('Final prevalence per age')
+plt.show()
+
+
+
 # ---------------------------------------------------------------------------------------------------------
 
 
@@ -127,3 +150,5 @@ plt.title('DALYs due to schistosomiasis')
 plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()
+
+
