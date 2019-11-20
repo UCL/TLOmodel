@@ -335,8 +335,8 @@ class Schisto(Module):
 
         # add the basic events (infection, treatment, MDA)
         sim.schedule_event(SchistoInfectionsEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(SchistoHealthCareSeekEvent(self), sim.date + DateOffset(months=1))
         sim.schedule_event(SchistoMDAEvent(self), self.sim.date + DateOffset(months=3))
+        sim.schedule_event(SchistoHealthCareSeekEvent(self), sim.date + DateOffset(months=1))
 
         # add an event to log to screen
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
@@ -415,7 +415,8 @@ class Schisto(Module):
 
 class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
-    In each Infection event a susceptible individual is infected with prob P
+    In each Infection e
+    vent a susceptible individual is infected with prob P
     P = #infectious / #total_population
     """
 
@@ -427,7 +428,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto)
 
     def apply(self, population):
-
+        print("Choosing new infections")
         logger.debug('This is SchistoEvent, tracking the disease progression of the population.')
 
         df = population.props
@@ -500,27 +501,40 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             currently_uninfected = df_distr.index[df_distr['ss_is_infected'] == 'Non-infected'].tolist()
 
             ############# calculate prevalence of infectious people only, not the actual prevalence #################
-            prevalence_haematobium = count_states['Haematobium'] / count_states['total_pop_alive']
-            prevalence_mansoni = count_states['Mansoni'] / count_states['total_pop_alive']
+            if count_states['Non-infected']:
+                # prevalence_haematobium = count_states['Haematobium'] / count_states['Non-infected'] # this can easily be > 1
+                prevalence_haematobium = count_states['Haematobium'] / count_states['total_pop_alive']
+                prevalence_mansoni = count_states['Mansoni'] / count_states['total_pop_alive']
 
+            else:
+                prevalence_haematobium = 0
+                prevalence_mansoni = 0
         else:
             currently_uninfected = []
             prevalence_haematobium = 0
             prevalence_mansoni = 0
 
-        ############# get relative risks of the susceptibles #########################################################
-        ss_risk = pd.Series(1, index=currently_uninfected)  # this will be holding the relative risks
+        ############# get relative risks for the susceptibles #########################################################
+        # ss_risk = pd.Series(1, index=currently_uninfected)  # this will be holding the relative risks for uninfected in the district alive
+        ss_risk = pd.Series(1, index=df_distr.index.tolist())  # this will be holding the relative risks for everyone in the district alive
+        # ss_risk.loc[df_distr.ss_is_infected == 'Non-infected'] = 1
+
         for age_group in ['PSAC', 'SAC', 'Adults']:
             params_str = 'rr_' + age_group
             age_range = map_age_groups(age_group)
             ss_risk.loc[df.age_years.between(age_range[0], age_range[1])] *= params[params_str]
-            norm_p = pd.Series(ss_risk)
-            norm_p /= norm_p.sum()
+        # norm_p = pd.Series(ss_risk)
+        # norm_p /= norm_p.sum()
 
-        ############## update the state of susceptibles in the main df ##############################################
-        new_infections_haem = self.module.rng.choice(currently_uninfected,
-                                                size=int(prevalence_haematobium * len(currently_uninfected)),
-                                                replace=False, p=norm_p)
+        ############## find the new infections indices ###############################################################
+        trans_prob_haem = prevalence_haematobium * params['prob_infection']
+        trans_prob_mans = prevalence_mansoni * params['prob_infection']
+
+        newly_infected_index = df_distr.index[(self.module.rng.random_sample(size=len(df_distr.index)) < (trans_prob_haem * ss_risk))]
+        new_infections_haem = list(set(newly_infected_index) & set(currently_uninfected))
+        # new_infections_haem = self.module.rng.choice(currently_uninfected,
+        #                                         size=int(prevalence_haematobium * len(currently_uninfected)),
+        #                                         replace=False, p=norm_p)
 
         ############## update the state of susceptibles in the main df ##############################################
         df.loc[new_infections_haem, 'ss_is_infected'] = 'Latent_Haem'
@@ -548,6 +562,7 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto)
 
     def apply(self, population):
+        print("Now some people will seek treatment")
         df = population.props
         params = self.module.parameters
 
@@ -623,6 +638,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto)
 
     def apply(self, population):
+        print("MDA is happening now!")
         df = self.sim.population.props
         year = self.sim.date.year
 
@@ -656,6 +672,8 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         # count how many PZQ tablets were distributed
         PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
         print("Year " + str(year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
+        print("All cured in MDA: " + str(len(MDA_treated)))
+
 
     def assign_historical_MDA_coverage(self, population, year, age_group):
         """Assign coverage of MDA program to chosen age_group.
