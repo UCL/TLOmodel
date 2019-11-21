@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo.analysis.utils import make_calendar_period_lookup
-
+from tlo.methods.demography import make_age_range_lookup
 resourcefilepath = Path("./resources")
 
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
@@ -108,12 +108,18 @@ females_melt['sex'] = 'F'
 # Melt into long-format and save
 table = pd.concat([males_melt,females_melt])
 table['number'] = table['number'].astype(float)
-table.rename(columns={'district':'District', 'age_grp':'Age_Grp', 'sex':'Sex', 'number':'Count'}, inplace=True)
-table['Age_Grp'] = table['Age_Grp'].replace({'Less than 1 Year':'0-1'})
+table.rename(columns={'district':'District', 'age_grp':'Age_Grp_Special', 'sex':'Sex', 'number':'Count'}, inplace=True)
+table['Age_Grp_Special'] = table['Age_Grp_Special'].replace({'Less than 1 Year':'0-1'})
 table['Variant']='Census_2018'
 table['Year']=2018
 table['Period']=table['Year'].map(calendar_period_lookup)
 table = table[table.columns[[0, 1, 4, 2, 3]]]
+
+# Collapse the 0-1 and 1-4 age-groups into 0-4
+table['Age_Grp']=table['Age_Grp_Special'].replace({'0-1':'0-4','1-4':'0-4'})
+table['Count_By_Age_Grp'] = table.groupby(by=['Age_Grp','Region','Sex'])['Count'].transform('sum')
+table = table.drop_duplicates(subset=['Age_Grp','Region','Sex'])
+table = table.rename(columns={'Count_By_Age_Grp':'Count', 'Count':'Count_By_Age_Grp_Special'})
 
 table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',index=False)
 
@@ -189,49 +195,49 @@ k2_melt.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=Fal
 
 
 #%% **** USE OF THE WPP DATA ****
-
-# Population size: age groups
-wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
-
-wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
-
-
-# Males
-dat = pd.concat([
-    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
-], sort=False)
-
-ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_males['Sex']= 'M'
-
-
-# Females
-dat = pd.concat([
-    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
-])
-
-ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_females['Sex']= 'F'
-
-# Join and tidy up
-ests = pd.concat([ests_males,ests_females],sort=False)
-ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
-ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
-
-ests['Variant']= 'WPP_' + ests['Variant']
-ests = ests.rename(columns={ests.columns[1]:'Year'})
-ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age_Grp')
-ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
-
-ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
+#
+# # Population size: age groups
+# wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+# Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
+#
+# wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+# Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
+#
+#
+# # Males
+# dat = pd.concat([
+#     pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
+#     pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
+#     pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
+#     pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
+# ], sort=False)
+#
+# ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+# ests_males['Sex']= 'M'
+#
+#
+# # Females
+# dat = pd.concat([
+#     pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
+#     pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
+#     pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
+#     pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
+# ])
+#
+# ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+# ests_females['Sex']= 'F'
+#
+# # Join and tidy up
+# ests = pd.concat([ests_males,ests_females],sort=False)
+# ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
+# ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+#
+# ests['Variant']= 'WPP_' + ests['Variant']
+# ests = ests.rename(columns={ests.columns[1]:'Year'})
+# ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age_Grp')
+# ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
+#
+# ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
 
 
 
@@ -277,6 +283,8 @@ ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_na
 
 ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 
+(__tmp__, age_grp_lookup) = make_age_range_lookup()
+ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
 ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
 
 
