@@ -9,13 +9,12 @@ import logging
 import os
 from collections import defaultdict
 from pathlib import Path
-import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import parse_log_file, scale_to_population, make_calendar_period_lookup
+from tlo.analysis.utils import *
 from tlo.methods import contraception, demography
 from tlo.methods.demography import make_age_range_lookup
 
@@ -62,7 +61,7 @@ fh.flush()
 # %% read the results
 
 # FOR STORED RESULTS
-logfile = 'LogFile__2019_11_18.log'
+logfile = 'LogFile__2019_11_21.log'
 
 parsed_output = parse_log_file(logfile)
 
@@ -71,48 +70,38 @@ scaled_output = scale_to_population(parsed_output, resourcefilepath)
 #%% Population
 # Trend in Number Over Time
 
-# Get model population size by year for model and data for scaling the respective metrics of each
 # Population Growth Over Time:
-# Load Model Results
-pop_df = scaled_output["tlo.methods.demography"]["population"]
-pop_df['year']= pd.to_datetime(pop_df.date).dt.year
-Model_Years = pop_df['year']
-Model_Pop = pop_df.total
-Model_Pop_Normalised = (np.asarray(Model_Pop) / np.asarray(Model_Pop[Model_Years == 2010]))
+# Load and format model results
+model_df = scaled_output["tlo.methods.demography"]["population"]
+model_df['year']= pd.to_datetime(model_df.date).dt.year
 
-# Load Data
-# 1) WPP_Annnual
-wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv").groupby(['Year']).sum().sum(axis=1)
-wpp_ann_norm = wpp_ann / wpp_ann[2010]
-wpp_ann_norm.plot()
-plt.show()
+# Load Data: WPP_Annual
+wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
+
+# Load Data: Census
+cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
+cens_2018 = cens.groupby('Sex')['Count'].sum()
 
 # Plot population size over time
-plt.plot(np.asarray(Model_Years), Model_Pop_Normalised)
-plt.plot(np.asarray(wpp_ann_norm.index), np.asarray(wpp_ann_norm))
+plt.plot(model_df['year'], model_df['total'])
+plt.plot(wpp_ann_total.index, wpp_ann_total)
+plt.plot(2018,cens_2018.sum(),'*')
 plt.title("Population Size")
 plt.xlabel("Year")
-plt.ylabel("Population Size (Normalised to 2010)")
+plt.ylabel("Population Size")
 plt.gca().set_xlim(2010, 2050)
-plt.legend(["Model (Normalised to 2010)", "WPP (Normalised to 2010)"])
-plt.savefig(outputpath + "Pop_Size_Over_Time" + datestamp + ".pdf")
+plt.legend(["Model", "WPP","Census 2018"])
 plt.show()
 
 
-#%% Population
 # Population Size in 2018
 
 # Census vs WPP vs Model
+wpp_2018 = wpp_ann.groupby(['Year','Sex'])['Count'].sum()[2018]
 
-cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
-cens_2018 = cens.groupby('sex')['number'].sum()
-
-wpp = (pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv").groupby(['Year','Sex']).sum().sum(axis=1))
-wpp_2018 = wpp[2018]
-
-model = pop_df.melt(id_vars='year', value_vars=['male','female'],var_name='sex',value_name='number')
-model['sex'] = model['sex'].replace({'male':'M', 'female':'F'})
-model_2018 = model.loc[model['year']==2018].groupby(['sex'])['number'].sum()
+# Get Model totals for males and females in 2018
+model_2018 = model_df.loc[model_df['year']==2018,['male','female']].reset_index(drop=True).transpose().rename(index={'male':'M', 'female':'F'})
 
 popsize = pd.concat([cens_2018, wpp_2018,model_2018], keys=['Census_2018','WPP','Model']).unstack()
 popsize.transpose().plot(kind='bar')
@@ -126,9 +115,42 @@ plt.show()
 #%% Population
 # Population Pyramid at two time points
 
+# Import and format male population data:
+model_m= scaled_output["tlo.methods.demography"]["age_range_m"]
+model_m=model_m.loc[pd.to_datetime(model_m['date']).dt.year==2018].drop(columns=['date','Year']).melt(value_name='Model',var_name='Age_Grp')
+model_m.index= model_m['Age_Grp'].astype(make_age_grp_types())
+model_m = model_m.loc[model_m.index.dropna(),'Model']
+
+# Import and format Census data:
+cens = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")
+cens_m = cens.loc[cens['Sex']=='M'].groupby(by='Age_Grp')['Count'].sum()
+cens_m.index=cens_m.index.astype(make_age_grp_types())
+cens_m = cens_m.loc[cens_m.index.dropna()]
+
+# Import and format WPP data:
+wpp_ann = pd.read_csv(Path(resourcefilepath) / "ResourceFile_Pop_Annual_WPP.csv")
+wpp_ann = wpp_ann.loc[wpp_ann['Year']==2018]
+wpp_m = wpp_ann.loc[wpp_ann['Sex']=='M',['Count','Age_Grp']].groupby('Age_Grp')['Count'].sum()
+wpp_m.index=wpp_m.index.astype(make_age_grp_types())
+wpp_m =wpp_m.loc[wpp_m.index.dropna()]
+
+# Make into dataframe:
+pop_m=pd.DataFrame(model_m)
+pop_m['Census']=cens_m
+pop_m['WPP']=wpp_m
+
+pop_m.plot.bar()
+plt.show()
+
+# TODO; Check WPP calcs
+# TODO: repeat for women
+
 
 
 #%% Births
+
+# TH ************** GOT TO HERE **************
+
 # Number over time
 births = scaled_output['tlo.methods.demography']['birth_groupby_scaled']
 births = births.reset_index()
@@ -136,25 +158,26 @@ births = births.reset_index()
 # Births over time (Model)
 # Aggregate the model output into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-births["period"] = births["year"].map(calendar_period_lookup)
-nbirths = births.groupby(by='period')['count'].sum()
+births["Period"] = births["year"].map(calendar_period_lookup)
+births_model = births.groupby(by='Period')['count'].sum()
+births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
 wpp = pd.read_csv(Path(resourcefilepath) / "ResourceFile_TotalBirths_WPP.csv")
+wpp = wpp.groupby(['Period','Variant'])['Total_Births'].sum().unstack()
+wpp.index = wpp.index.astype(make_calendar_period_type())
+wpp.columns ='WPP_' + wpp.columns
 
-# Adjust the labelling of the calendar periods in WPP so that it is inclusive years (2010-2014, 2015-2019 not 2010-2015, 2015-2020, etc)
-wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
-wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
-wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
+#TODO ADD CENSUS
 
-wpp = wpp.groupby(['period','Variant'])['Total_Births'].sum()
+# Merge in model results
+wpp['Model']=births_model
 
 
-fig, ax = plt.subplots(1)
-ax.plot(wpp[:,'Estimates'].index,wpp[:,'Estimates'],lw=2, label='WPP Estimate', color='blue')
-ax.plot(wpp[:,'Medium variant'].index, wpp[:,'Medium variant'], lw=2, label='WPP Projection', color='blue')
-ax.fill_between(wpp[:,'Low variant'].index, wpp[:,'Low variant'], wpp[:,'High variant'], facecolor='blue', alpha=0.5)
-ax.plot(nbirths.index,nbirths,lw=2, label='Model', color='red')
+
+ax = wpp.plot.line(y=['Model','WPP_Estimates','WPP_Medium variant'])
+plt.xticks(np.arange(len(wpp.index)), wpp.index)
+ax.fill_between(wpp.index, wpp['WPP_Low variant'], wpp['WPP_High variant'], facecolor='blue', alpha=0.5)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
@@ -163,7 +186,6 @@ ax.set_ylabel('Number per period')
 plt.show()
 
 
-#TODO ADD CENSUS
 
 #%% Births
 # Births to mothers by age
@@ -256,6 +278,8 @@ for i in age_grp_lookup.values():
 
 
 age_grp_type = CategoricalDtype(categories=age_grp_cats,ordered=True)
+
+
 ndeaths['age_grp'] = ndeaths['age_grp'].astype(age_grp_type)
 ndeaths = ndeaths.sort_values(by = ['age_grp'])
 # ******

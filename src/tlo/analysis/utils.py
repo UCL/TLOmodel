@@ -151,7 +151,7 @@ def scale_to_population(parsed_output, resourcefilepath):
     """
 
     # Get information about the real population size (Malawi Census in 2018)
-    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['number'].sum()
+    cens_tot = pd.read_csv(Path(resourcefilepath) / "ResourceFile_PopulationSize_2018Census.csv")['Count'].sum()
     cens_yr = 2018
 
     # Get information about the model population size in 2018 (and fail if no 2018)
@@ -197,7 +197,7 @@ def scale_to_population(parsed_output, resourcefilepath):
     births_groupby_scaled.rename(columns={'mother':'count'}, inplace=True)
     o['tlo.methods.demography'].update({'birth_groupby_scaled':births_groupby_scaled})
 
-    #TODO: Do this kind of manipulatio for all things in the log that are flagged are being subject to scaling
+    #TODO: Do this kind of manipulation for all things in the log that are flagged are being subject to scaling
 
     return o
 
@@ -237,6 +237,10 @@ def make_calendar_period_lookup():
 
 
 def make_age_grp_types():
+    """
+    Make an ordered categorical type for age-groups
+    Returns CategoricalDType
+    """
 
     (__tmp__, age_grp_lookup) = make_age_range_lookup()
     age_grp_cats = list()
@@ -244,18 +248,24 @@ def make_age_grp_types():
         if i not in age_grp_cats:
             age_grp_cats.append(i)
 
-    return age_grp_cats
+    age_grp_type = CategoricalDtype(categories=age_grp_cats, ordered=True)
+
+    return age_grp_type
 
 
 def make_calendar_period_type():
-
+    """
+    Make an ordered categorical type for calendar periods
+    Returns CategoricalDType
+    """
     (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-    pass
 
+    cal_per_cats = list()
+    for i in calendar_period_lookup.values():
+        if i not in cal_per_cats:
+            cal_per_cats.append(i)
 
+    cal_period_type = CategoricalDtype(categories=cal_per_cats, ordered=True)
 
-
-
-
-
+    return cal_period_type
 
