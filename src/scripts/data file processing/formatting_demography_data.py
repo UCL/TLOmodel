@@ -17,8 +17,6 @@ resourcefilepath = Path("./resources")
 
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 
-
-
 # *** USE OF THE CENSUS DATA ****
 
 #%% Totals by Sex for Each District
@@ -89,7 +87,7 @@ assert extract.sum(axis=1).astype(int).eq(a1['Total_2018']).all()
 frac_in_each_age_grp = extract.div(extract.sum(axis=1),axis=0)
 assert (frac_in_each_age_grp.sum(axis=1).astype('float32')==(1.0)).all()
 
-#%% Compute  district-specific age/sex breakdowns
+# Compute  district-specific age/sex breakdowns
 # Use the district-specific age breakdown and district-specific sex breakdown to create district/age/sex breakdown
 # (Assuming that the age-breakdown is the same for men and women)
 
@@ -109,13 +107,15 @@ females_melt['sex'] = 'F'
 
 # Melt into long-format and save
 table = pd.concat([males_melt,females_melt])
-
 table['number'] = table['number'].astype(float)
-table = table.rename(columns={'Region':'region'})
+table.rename(columns={'district':'District', 'age_grp':'Age_Grp', 'sex':'Sex', 'number':'Count'}, inplace=True)
+table['Age_Grp'] = table['Age_Grp'].replace({'Less than 1 Year':'0-1'})
+table['Variant']='Census_2018'
+table['Year']=2018
+table['Period']=table['Year'].map(calendar_period_lookup)
 table = table[table.columns[[0, 1, 4, 2, 3]]]
 
 table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',index=False)
-
 
 #%% Number of births
 
@@ -131,19 +131,24 @@ region_labels = [r + ' Region' for r in region_names]
 b1.loc[b1['Age/Region'].isin(region_labels),'region']=b1['Age/Region']
 b1['region']=b1['region'].ffill()
 b1 = b1.drop(b1.index[b1['Age/Region'].isin(region_labels)],axis=0)
-b1 = b1.rename(columns={'Age/Region':'age_grp'})
+b1 = b1.rename(columns={'Age/Region':'Age_Grp'})
 b1 = b1[b1.columns[[0, 5, 1, 2, 3, 4]]]
 
 # take the word 'region' out of the values in the 'region' column
-b1['region'] = b1['region'].str.replace(' Region','')
+b1['Region'] = b1['region'].str.replace(' Region','')
 
 # check that number of women 15-49 by region is close to the estimate for population size
 from_fert_data = b1.groupby('region')['Num_Women_1549'].sum()
-from_pop_data = table.loc[(table['sex']=='F') & (table['age_grp'].isin(['15-19','20-24','25-29','30-34','35-39','40-44','45-49']))].groupby('region')['number'].sum()
+from_pop_data = table.loc[(table['Sex']=='F') & (table['Age_Grp'].isin(['15-19','20-24','25-29','30-34','35-39','40-44','45-49']))].groupby('Region')['Count'].sum()
 diff = 100* (from_fert_data - from_pop_data) / from_fert_data
 
+b1['Variant']='Census_2018'
+b1['Year']=2018
+b1['Period']=b1['Year'].map(calendar_period_lookup)
+b1['Count']=b1['Live_Births']
+
 # save the file:
-b1.to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv',index=False)
+b1[['Variant','Year','Period','Region','Count']].to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv',index=False)
 
 #%% Number of deaths
 
@@ -473,7 +478,6 @@ gbd_deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_GBD.csv',index=Fa
 # Deaths Database Split by Cause (TODO)
 
 # DALYS Database (TODO)
-
 
 
 #%% *** DHS DATA

@@ -255,8 +255,6 @@ for i in age_grp_lookup.values():
         age_grp_cats.append(i)
 
 
-
-
 age_grp_type = CategoricalDtype(categories=age_grp_cats,ordered=True)
 ndeaths['age_grp'] = ndeaths['age_grp'].astype(age_grp_type)
 ndeaths = ndeaths.sort_values(by = ['age_grp'])
@@ -285,7 +283,6 @@ ax[0].set_title('Number of Deaths by Age: 2010-2014')
 ax[0].legend(loc='upper left')
 ax[0].set_xlabel('Age Group')
 ax[0].set_ylabel('Number per period')
-
 
 
 

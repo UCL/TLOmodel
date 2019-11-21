@@ -5,8 +5,10 @@ import logging
 from ast import literal_eval
 from collections import defaultdict
 from pathlib import Path
-
+from pandas.api.types import CategoricalDtype
 import pandas as pd
+
+from tlo.methods.demography import make_age_range_lookup
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -201,7 +203,6 @@ def scale_to_population(parsed_output, resourcefilepath):
 
 
 
-
 def make_calendar_period_lookup():
     """Returns a dictionary mapping calendar year (in years) to five year period
     i.e. { 0: '0-4', 1: '0-4', ..., 119: '100+', 120: '100+' }
@@ -233,5 +234,28 @@ def make_calendar_period_lookup():
 
     ranges.append(default_category)
     return ranges, lookup
+
+
+def make_age_grp_types():
+
+    (__tmp__, age_grp_lookup) = make_age_range_lookup()
+    age_grp_cats = list()
+    for i in age_grp_lookup.values():
+        if i not in age_grp_cats:
+            age_grp_cats.append(i)
+
+    return age_grp_cats
+
+
+def make_calendar_period_type():
+
+    (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+    pass
+
+
+
+
+
+
 
 
