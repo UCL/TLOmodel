@@ -162,6 +162,9 @@ ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.show()
 
+
+#TODO ADD CENSUS
+
 #%% Births
 # Births to mothers by age
 (__tmp__, age_grp_lookup) = make_age_range_lookup()
@@ -224,10 +227,8 @@ ndeaths_by_age_model = deaths.groupby(by=['period','age_grp'])['count'].sum().re
 
 ndeaths_by_age_gbd = gbd.groupby(by=['period','age_name'])[['val','upper','lower']].sum().reset_index()
 
-# REFORMA THE AGE-NAME AND DROPPING ALL AGES
-ndeaths_by_age_gbd['age_name'] =  ndeaths_by_age_gbd['age_name'].str.replace('to','-').str.replace('95 plus','95+').str.replace(' ','')
-ndeaths_by_age_gbd = ndeaths_by_age_gbd.drop(ndeaths_by_age_gbd.index[ndeaths_by_age_gbd['age_name']=='AllAges'])
-ndeaths_by_age_gbd = ndeaths_by_age_gbd.rename(columns={'age_name':'age_grp'})
+
+
 
 # SPECIFY ORDER
 
@@ -252,6 +253,9 @@ age_grp_cats = list()
 for i in age_grp_lookup.values():
     if i not in age_grp_cats:
         age_grp_cats.append(i)
+
+
+
 
 age_grp_type = CategoricalDtype(categories=age_grp_cats,ordered=True)
 ndeaths['age_grp'] = ndeaths['age_grp'].astype(age_grp_type)
@@ -294,10 +298,13 @@ plt.show()
 
 
 
-
+#%% Desths
+# Plot by region in the census
 
 #%% Deaths
 # Number by Cause by time
 
 #%% Deaths
 # Number by Cause by age and time
+
+
