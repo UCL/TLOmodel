@@ -11,7 +11,13 @@ from pathlib import Path
 
 import pandas as pd
 
+from tlo.analysis.utils import make_calendar_period_lookup
+
 resourcefilepath = Path("./resources")
+
+(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+
+
 
 # *** USE OF THE CENSUS DATA ****
 
@@ -116,7 +122,6 @@ table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',ind
 workingfile_fertility = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/Census_Main_Report/Series B. Fertility Tables.xlsx'
 
-
 b1 = pd.read_excel(workingfile_fertility, sheet_name='TABLE B1')
 b1 = b1.dropna()
 b1 = b1.rename(columns={b1.columns[0]:'Age/Region',b1.columns[1]:'Num_Women_1549',b1.columns[2]:'Live_Births',b1.columns[3]:'Babies_Live_12m',b1.columns[4]:'Babies_Dead_12m'})
@@ -160,18 +165,27 @@ k2 = k2.rename(columns={'Age/Region':'age_grp'})
 
 k2 = k2[k2.columns[[7,0,1,2,3,4,5,6]]]
 
-# save the file:
-k2.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
 
+k2['Variant']='Census_2018'
+k2['Year']=2018
+k2['Period']=k2['Year'].map(calendar_period_lookup)
+k2['Age_Grp']=k2['age_grp']
+k2['Region']=k2['region']
+
+k2_melt = k2.melt(id_vars=['Variant','Year','Period','Age_Grp','Region'], \
+                  value_vars=['Deaths_Males','Deaths_Females'], \
+                  var_name = 'Sex',
+                  value_name= 'Count')
+
+k2_melt['Sex'] = k2_melt['Sex'].replace({'Deaths_Males':'M', 'Deaths_Females':'F'})
+
+# save the file:
+k2_melt.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=False)
 
 
 #%% **** USE OF THE WPP DATA ****
-#TODO: relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
-# wpp['t_lo'], wpp['t_hi']=wpp['Period'].str.split('-',1).str
-# wpp['t_hi'] = wpp['t_hi'].astype(int) - 1
-# wpp['period'] = wpp['t_lo'].astype(str) + '-' + wpp['t_hi'].astype(str)
 
-#%% Population size: age groups
+# Population size: age groups
 wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
 
@@ -207,7 +221,14 @@ ests = pd.concat([ests_males,ests_females],sort=False)
 ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
 ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 
+ests['Variant']= 'WPP_' + ests['Variant']
+ests = ests.rename(columns={ests.columns[1]:'Year'})
+ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age_Grp')
+ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
+
 ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
+
+
 
 #%% Population size: single-year age/time steps
 wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
@@ -241,9 +262,18 @@ ests = pd.concat([ests_males,ests_females],sort=False)
 ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
 ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 ests = ests.rename(columns={ests.columns[1]:'Year'})
-ests.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
 
-#TODO: year 2020 is duplicated as medium and variant - remove. also remove 'variant' as not neededd.
+# Remove duplicates (year 2020 is provided in each of the individual datasets)
+ests.loc[ests.duplicated(subset = ['Year','Sex']),['Year']]
+ests.drop_duplicates(subset = ['Year','Sex'], inplace=True)
+
+ests['Variant']= 'WPP_' + ests['Variant']
+ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age')
+
+ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
+
+ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
+
 
 #%% Fertility and births
 
@@ -288,6 +318,16 @@ sex_ratio = sex_ratio.append(copy_low, sort=False)
 # Combine these together
 births = tot_births.merge(sex_ratio,on=['Variant','Period'],validate='1:1')
 
+
+def reformat_date_period_for_wpp(wpp_import):
+    # Relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
+    wpp_import['t_lo'], wpp_import['t_hi']=wpp_import['Period'].str.split('-',1).str
+    wpp_import['t_hi'] = wpp_import['t_hi'].astype(int) - 1
+    wpp_import['Period'] = wpp_import['t_lo'].astype(str) + '-' + wpp_import['t_hi'].astype(str)
+    wpp_import.drop(columns=['t_lo','t_hi'],inplace=True)
+
+reformat_date_period_for_wpp(births)
+
 births.to_csv(resourcefilepath / 'ResourceFile_TotalBirths_WPP.csv',index=False)
 
 
@@ -306,8 +346,14 @@ asfr = pd.concat([
 asfr = asfr.loc[asfr[asfr.columns[2]]=='Malawi'].copy().reset_index(drop=True)
 asfr = asfr.drop(asfr.columns[[0,2,3,4,5,6]],axis='columns')
 asfr[asfr.columns[2:9]] = asfr[asfr.columns[2:9]]/1000  # given numbers are per 1000, so divide by 1000 to make 'per woman'
-asfr.to_csv(resourcefilepath / 'ResourceFile_ASFR_WPP.csv',index=False)
 
+reformat_date_period_for_wpp(asfr)
+
+# pivot into the usual long-format:
+asfr['Variant']= 'WPP_' + asfr['Variant']
+asfr_melt = asfr.melt(id_vars=['Variant','Period'],value_name='asfr',var_name='Age_Grp')
+
+asfr_melt.to_csv(resourcefilepath / 'ResourceFile_ASFR_WPP.csv',index=False)
 
 #%% Deaths
 
@@ -342,9 +388,17 @@ deaths_females ['Sex']= 'F'
 deaths = pd.concat([deaths_males,deaths_females],sort=False)
 deaths  = deaths .drop(deaths.columns[[0,2,3,4,5,6]],axis=1)
 deaths[deaths.columns[2:22]] = deaths[deaths.columns[2:22]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
-deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
 
-#TODO; WPP DEATH DATA CONTAINS LOTS OF '....' strings: remove and make it come out as float.
+reformat_date_period_for_wpp(deaths)
+
+deaths_melt = deaths.melt(id_vars=['Variant','Period','Sex'],value_name='Count',var_name='Age_Grp')
+deaths_melt['Count'].sum()
+deaths_melt['Variant'] = 'WPP_' + deaths_melt['Variant']
+
+deaths_melt.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
+
+
+
 
 
 # The ASMR from the LifeTable
@@ -377,23 +431,50 @@ lt_females['Sex'] = 'F'
 lt = pd.concat([lt_males,lt_females],sort=False)
 lt = lt.drop(lt.columns[[1]],axis=1)
 lt.loc[lt['Variant'].str.contains('Medium'),'Variant']='Medium'
-lt.to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_WPP.csv',index=False)
+lt = lt.rename(columns={'Central death rate m(x,n)':'death_rate'})
+lt['Variant'] = 'WPP_' + lt['Variant']
+lt.drop(lt['Age (x)']==100.0, inplace=True)
+
+lt['Age_Grp'] = lt['Age (x)'].astype(int).astype(str) + '-' + (lt['Age (x)']+lt['Age interval (n)']-1).astype(int).astype(str).replace({'95-99':'95+'})
+
+reformat_date_period_for_wpp(lt)
+
+lt[['Variant','Period','Sex','Age_Grp','death_rate']].to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_WPP.csv',index=False)
+
+
 
 #%%
 # *** USE OF THE GBD DATA ****
-#%%
 
 gbd_working_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/GBD/IHME-GBD_2017_DATA-1629962a-1/IHME-GBD_2017_DATA-1629962a-1.csv'
 
 gbd = pd.read_csv(gbd_working_file)
 
-gbd.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
+# Reformat the age-groups
+gbd['age_name'] =  gbd['age_name'].str.replace('to','-').str.replace('95 plus','95+').str.replace(' ','')
+gbd = gbd.drop(gbd.index[gbd['age_name']=='AllAges'])
+gbd = gbd.rename(columns={'age_name':'Age_Grp'})
+gbd['Sex'] = gbd['sex_id'].replace({1:'M', 2:'F'})
+gbd['Year'] = gbd['year']
 
-#TODO: GBD age_name; change 'to' to '-'
-#TODO: Take out 'all ages in the deaths' so that can sum
-#TODO: look up to see about deaths about 0-1 year-olds? and call it 'age_grp'
-#TODO; GET SORTING RIGHT AS THE AGE_NAME IS MESSING IT UP
+# Deaths Database No Split by Cause
+gbd_deaths = gbd.loc[gbd['measure_name']=='Deaths'].copy().reset_index(drop=True)
+gbd_deaths.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
+
+gbd_deaths=gbd_deaths[['Age_Grp','Sex','Year','val','upper','lower','cause_name','cause_id']]
+
+gbd_deaths=gbd_deaths.groupby(by=['Year','Sex','Age_Grp'],as_index=False)['val','upper','lower'].sum()
+gbd_deaths=gbd_deaths.melt(id_vars=['Year','Sex','Age_Grp'],var_name='Variant',value_name='Count')
+gbd_deaths['Variant'] = gbd_deaths['Variant'].replace({'val': 'GBD_Est', 'upper':'GBD_Upper', 'lower':'GBD_Lower'})
+
+gbd_deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_GBD.csv',index=False)
+
+# Deaths Database Split by Cause (TODO)
+
+# DALYS Database (TODO)
+
+
 
 #%% *** DHS DATA
 
