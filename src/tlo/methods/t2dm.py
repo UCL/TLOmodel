@@ -229,17 +229,17 @@ class Type2DiabetesMellitus(Module):
         # Get the DALY weight that diabetes type 2 will us from the weight database
         # TODO: check mapping of DALY to states of T2DM
         if 'HealthBurden' in self.sim.modules.keys():
-            p['qalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
+            p['dalywt_uncomplicated'] = self.sim.modules['HealthBurden'].get_daly_weight(971)
 
             p['dalywt_nephropathy_mild'] = self.sim.modules['HealthBurden'].get_daly_weight(989)
             p['dalywt_nephropathy_severe'] = self.sim.modules['HealthBurden'].get_daly_weight(987)
 
-            p['qalywt_neuropathy'] = self.sim.modules['HealthBurden'].get_daly_weight(970)
+            p['dalywt_neuropathy'] = self.sim.modules['HealthBurden'].get_daly_weight(970)
             p['dalywt_one_amputation'] = 0.164  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
             p['dalywt_two_amputations'] = 0.494  # no value in 2016 DALY weight, value taken from 2010 w/o treatment
 
-            p['qalywt_mild_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(967)
-            p['qalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(974)
+            p['dalywt_mild_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(967)
+            p['dalywt_severe_retino'] = self.sim.modules['HealthBurden'].get_daly_weight(974)
 
         logger.debug("Type 2 Diabetes Mellitus method: finished reading in parameters.  ")
 
@@ -342,9 +342,7 @@ class Type2DiabetesMellitus(Module):
 
         # Assign relevant properties amongst those t2dm
         count_d2_all = len(df[df.is_alive & df.d2_current_status])  # Count all people with type 2 diabetes mellitus
-        d2_years_ago = np.array([1] * count_d2_all)
-        infected_td_ago = pd.to_timedelta(d2_years_ago, unit='y')
-        df.loc[df.is_alive & df.d2_current_status, 'd2_date'] = self.sim.date - infected_td_ago
+        df.loc[df.is_alive & df.d2_current_status, 'd2_date'] = self.sim.date
         df.loc[df.is_alive & df.d2_current_status, 'd2_historic_status'] = 'C'
 
         # Assign complication
@@ -499,10 +497,14 @@ class Type2DiabetesMellitus(Module):
 
         health_values = df.loc[df.is_alive, 'd2_specific_symptoms'].map({
             'none': 0,
+            'uncomplicated diabetes': p['dalywt_uncomplicated'],
+            'mild nephropathy': p['dalywt_nephropathy_mild'],
+            'severe nephropathy': p['dalywt_nephropathy_severe'],
+            'mild neuropathy': p['qalywt_neuropathy'],
+            'severe oneamputation': p['dalywt_one_amputation'],
+            'severe twoamputations': p['dalywt_two_amputations'],
             'mild retinopathy': p['qalywt_mild_retino'],
             'severe retinopathy': p['qalywt_severe_retino'],
-            'uncomplicated diabetes': p['qalywt_uncomplicated'],
-            'neuropathy': p['qalywt_neuropathy']
         })
         return health_values.loc[df.is_alive]
 
@@ -613,38 +615,65 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & df.d2_current_status].index  # holds all people with t2dm with mild retinopathy
 
         # Nephropathy
-        random_numbers = self.rng.random_sample(size=len(currently_nephro_mild))  # Get random numbers
+        random_numbers = rng.random_sample(size=len(currently_nephro_mild))  # Get random numbers
         now_nephro_2 = (random_numbers < m.prob_nephrocomp_2)  # see if mild progresses to severe
-        d2_idx_nephro2 = d2_idx[now_nephro_2]  # hold id of those with newly severe
+        d2_idx_nephro2 = currently_nephro_mild[now_nephro_2]  # hold id of those with newly severe
 
         # Now update the df
         df.loc[d2_idx_nephro2, 'd2_nephro_status'] = 2
+        df.loc[d2_idx_nephro2, 'd2_nephro_date'] = self.sim.date
 
         # Neuropathy
-        random_numbers = self.rng.random_sample(size=len(currently_neuro_mild))  # Get random numbers
-        now_neuro_2 = (
-            random_numbers < m.prev_neuro_2)  # see if mild progresses to severe
-        d2_idx_neuro2 = d2_idx[now_neuro_2]  # hold id of those with newly severe
+        random_numbers = rng.random_sample(size=len(currently_neuro_mild))  # Get random numbers
+        now_neuro_2 = (random_numbers < m.prob_neurocomp_2)  # see if mild progresses to severe
+        d2_idx_neuro2 = currently_neuro_mild[now_neuro_2]  # hold id of those with newly severe
 
         # Now update the df
         df.loc[d2_idx_neuro2, 'd2_neuro_status'] = 2
+        df.loc[d2_idx_neuro2, 'd2_neuro_date'] = self.sim.date
 
         # Retinopathy
-        random_numbers = self.rng.random_sample(size=len(currently_retino_mild))  # Get random numbers
-        now_retino_2 = (random_numbers < m.prev_retino_2)  # see if mild progresses to severe
-        d2_idx_retino2 = d2_idx[now_retino_2]  # hold id of those with newly severe
+        random_numbers = rng.random_sample(size=len(currently_retino_mild))  # Get random numbers
+        now_retino_2 = (random_numbers < m.prob_retinocomp_2)  # see if mild progresses to severe
+        d2_idx_retino2 = currently_retino_mild[now_retino_2]  # hold id of those with newly severe
 
         # Now update the df
         df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
+        df.loc[d2_idx_retino2, 'd2_retino_date'] = self.sim.date
 
 
         # Assign new complication amongst anyone who has diabetes (not just new diabetics)
         # TODO: not sure if there is a more efficient way to code the below?
-        df.index[df.d2_nephro_status == 0] & df[df.is_alive & df.d2_current_status].index # holds all people with t2dm without nephropathy
-        df.index[df.d2_neuro_status == 0] & df[
-            df.is_alive & df.d2_current_status].index  # holds all people with t2dm without neuropathy
-        df.index[df.d2_retino_status == 0] & df[
-            df.is_alive & df.d2_current_status].index  # holds all people with t2dm without retinopathy
+        currently_nephro_no = df.index[df.d2_nephro_status == 0] & df[df.is_alive & df.d2_current_status].index # holds all people with t2dm without nephropathy
+        currently_neuro_no = df.index[df.d2_neuro_status == 0] & df[df.is_alive & df.d2_current_status].index  # holds all people with t2dm without neuropathy
+        currently_retino_no = df.index[df.d2_retino_status == 0] & df[df.is_alive & df.d2_current_status].index  # holds all people with t2dm without retinopathy
+
+        # Nephropathy
+        random_numbers = rng.random_sample(size=len(currently_nephro_no))  # Get random numbers
+        now_nephro_1 = (random_numbers < m.prob_nephrocomp_1)  # see if mild progresses to severe
+        d2_idx_nephro1 = currently_nephro_no[now_nephro_1]  # hold id of those with newly severe
+
+        # Now update the df
+        df.loc[d2_idx_nephro1, 'd2_nephro_status'] = 1
+        df.loc[d2_idx_nephro1, 'd2_nephro_date'] = self.sim.date
+
+        # Neuropathy
+        random_numbers = rng.random_sample(size=len(currently_neuro_no))  # Get random numbers
+        now_neuro_1 = (random_numbers < m.prob_neurocomp_1)  # see if mild progresses to severe
+        d2_idx_neuro1 = currently_neuro_no[now_neuro_1]  # hold id of those with newly severe
+
+        # Now update the df
+        df.loc[d2_idx_neuro1, 'd2_neuro_status'] = 1
+        df.loc[d2_idx_neuro1, 'd2_neuro_date'] = self.sim.date
+
+        # Retinopathy
+        random_numbers = rng.random_sample(size=len(currently_retino_no))  # Get random numbers
+        now_retino_1 = (random_numbers < m.prob_retinocomp_1)  # see if mild progresses to severe
+        d2_idx_retino1 = currently_retino_no[now_retino_1]  # hold id of those with newly severe
+
+        # Now update the df
+        df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
+        df.loc[d2_idx_retino1, 'd2_retino_date'] = self.sim.date
 
         # TODO: Revaluate mortality amongst those with new complications
 
