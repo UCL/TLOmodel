@@ -118,6 +118,7 @@ class Schisto(Module):
         # healthburden
         'daly_wt_anemia': Parameter(Types.REAL, 'DALY weight for anemia'),
         'daly_wt_fever': Parameter(Types.REAL, 'DALY weight for fever'),
+        'daly_wt_haematuria': Parameter(Types.REAL, 'DALY weight for haematuria'),
         'daly_wt_hydronephrosis': Parameter(Types.REAL, 'DALY weight for hydronephrosis'),
         'daly_wt_dysuria': Parameter(Types.REAL, 'DALY weight for dysuria'),
         'daly_wt_bladder_pathology': Parameter(Types.REAL, 'DALY weight for bladder pathology'),
@@ -129,8 +130,10 @@ class Schisto(Module):
         # health system interaction
         'prob_seeking_healthcare': Parameter(Types.REAL,
                                              'Probability that an infected individual visits a healthcare facility'),
-        'prob_sent_to_lab_test': Parameter(Types.REAL,
-                                           'Probability that an infected individual gets sent to urine or stool lab test'),
+        'prob_sent_to_lab_test_children': Parameter(Types.REAL,
+                                           'Probability that an infected child gets sent to urine or stool lab test'),
+        'prob_sent_to_lab_test_adults': Parameter(Types.REAL,
+                             'Probability that an infected adults gets sent to urine or stool lab test'),
         'PZQ_efficacy': Parameter(Types.REAL, 'Efficacy of prazinquantel'),  # unused
         'symptoms_mapped_for_hsb': Parameter(Types.REAL,
                                              'Symptoms to which the symptoms assigned in the module are mapped for the HSB module'),
@@ -180,7 +183,8 @@ class Schisto(Module):
 
         # HSI and treatment params
         params['prob_seeking_healthcare'] = self.param_list.loc['prob_seeking_healthcare', 'Value']
-        params['prob_sent_to_lab_test'] = self.param_list.loc['prob_sent_to_lab_test', 'Value']
+        params['prob_sent_to_lab_test_children'] = self.param_list.loc['prob_sent_to_lab_test_children', 'Value']
+        params['prob_sent_to_lab_test_adults'] = self.param_list.loc['prob_sent_to_lab_test_adults', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
 
         # MDA prognosed
@@ -204,10 +208,10 @@ class Schisto(Module):
 
         params['symptoms_haematobium'] = pd.DataFrame(
             data={
-                'symptoms': ['anemia', 'fever', 'hydronephrosis', 'dysuria', 'bladder_pathology'],
-                'prevalence': [0.6, 0.3, 0.083, 0.2857, 0.7857],
-                'hsb_symptoms': ['other', 'fever', 'stomach_ache', 'stomach_ache', 'stomach_ache'],
-                'dalys_codes': [258, 262, 260, 263, 264]
+                'symptoms': ['anemia', 'fever', 'haematuria', 'hydronephrosis', 'dysuria', 'bladder_pathology'],
+                'prevalence': [0.6, 0.3, 0.625, 0.083, 0.2857, 0.7857],
+                'hsb_symptoms': ['other', 'fever', 'other', 'stomach_ache', 'stomach_ache', 'stomach_ache'],
+                'dalys_codes': [258, 262, 100000000, 260, 263, 264]
             })
         params['symptoms_mansoni'] = pd.DataFrame(
             data={
@@ -227,6 +231,7 @@ class Schisto(Module):
         if 'HealthBurden' in self.sim.modules.keys():
             params['daly_wt_anemia'] = self.sim.modules['HealthBurden'].get_daly_weight(258)  # moderate anemia
             params['daly_wt_fever'] = self.sim.modules['HealthBurden'].get_daly_weight(262)
+            params['daly_wt_haematuria'] = 0
             params['daly_wt_hydronephrosis'] = self.sim.modules['HealthBurden'].get_daly_weight(260)
             params['daly_wt_dysuria'] = self.sim.modules['HealthBurden'].get_daly_weight(263)
             params['daly_wt_bladder_pathology'] = self.sim.modules['HealthBurden'].get_daly_weight(264)
@@ -386,6 +391,7 @@ class Schisto(Module):
         dalys_map = {
             'anemia': params['daly_wt_anemia'],
             'fever': params['daly_wt_fever'],
+            'haematuria': params['daly_wt_haematuria'],
             'hydronephrosis': params['daly_wt_hydronephrosis'],
             'dysuria': params['daly_wt_dysuria'],
             'bladder_pathology': params['daly_wt_bladder_pathology'],
@@ -566,33 +572,55 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.module.parameters
 
-        eligible = df.index[(df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni']))
-                            & ~((df['ss_haematobium_specific_symptoms'].isna())
-                                & (df['ss_mansoni_specific_symptoms'].isna()))].tolist()  # empty lists are bool False so we get those with at least one symptom
+        eligible_children = df.index[
+            (df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni'])) & (df['age_years'].between(0, 14))
+            & ~((df['ss_haematobium_specific_symptoms'].isna())
+                & (df[
+                       'ss_mansoni_specific_symptoms'].isna()))].tolist()  # empty lists are bool False so we get those with at least one symptom
+
+        eligible_adults = df.index[
+                (df.is_alive) & (df.ss_is_infected.isin(['Haematobium', 'Mansoni'])) & (df['age_years'].between(15, 120))
+                & ~((df['ss_haematobium_specific_symptoms'].isna())
+                    & (df[
+                           'ss_mansoni_specific_symptoms'].isna()))].tolist()  # empty lists are bool False so we get those with at least one symptom
+
         # these are all infectious & symptomatic
 
-        if len(eligible):  # there are infectious symptomatic people
+        if len(eligible_children):  # there are infectious symptomatic children
             # determine who will seek healthcare
-            seeking_healthcare = self.module.rng.choice(eligible,
-                                                        size=int(params['prob_seeking_healthcare'] * (len(eligible))),
+            seeking_healthcare_children = self.module.rng.choice(eligible_children,
+                                                        size=int(params['prob_seeking_healthcare'] * (len(eligible_children))),
                                                         replace=False)
             # determine which of those who seek healthcare are sent to the schisto diagnostics (hence getting treated)
-            treated_idx = self.module.rng.choice(seeking_healthcare,
-                                                 size=int(params['prob_sent_to_lab_test'] * (len(seeking_healthcare))),
-                                                 replace=False)
-            if len(treated_idx) > 0:
-                # for those who seek the healthcare initiate treatment
-                df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
-                df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
-                df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = np.nan  # has to be nan bc not possible to insert []
-                df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = np.nan
-
-                print("Number of treated due to HSI: " + str(len(treated_idx)))
-            else:
-                print("No one seeked treatment")
-                logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
+            treated_children_idx = self.module.rng.choice(seeking_healthcare_children,
+                                                 size=int(params['prob_sent_to_lab_test_children'] * (len(seeking_healthcare_children))),
+                                                 replace=False).tolist()
         else:
-            print("No one got treatment - no one was infectious and symptomatic")
+            treated_children_idx = []
+
+        if len(eligible_adults):  # there are infectious symptomatic adults
+            # determine which of those who seek healthcare are sent to the schisto diagnostics (hence getting treated)
+            seeking_healthcare_adults = self.module.rng.choice(eligible_adults,
+                                                        size=int(params['prob_seeking_healthcare'] * (len(eligible_adults))),
+                                                        replace=False)
+            treated_adults_idx = self.module.rng.choice(seeking_healthcare_adults,
+                                                 size=int(params['prob_sent_to_lab_test_adults'] * (len(seeking_healthcare_adults))),
+                                                 replace=False).tolist()
+        else:
+            treated_adults_idx = []
+
+        treated_idx = treated_children_idx + treated_adults_idx
+
+        if len(treated_idx) > 0:
+            # for those who seek the healthcare initiate treatment
+            df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+            df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
+            df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = np.nan  # has to be nan bc not possible to insert []
+            df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = np.nan
+
+            print("Number of treated due to HSI: " + str(len(treated_idx)))
+        else:
+            print("No one seeked treatment")
             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
 
@@ -770,7 +798,6 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # this is not ideal bc we're making a copy but it's for clearer code below
         df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()  # get a copy of the main df with only specified age group only
-        count_states = {}
 
         count_states = {'Non-infected': 0, 'Latent_Haem': 0, 'Latent_Mans': 0, 'Haematobium': 0, 'Mansoni': 0,}
         count_states.update(df_age.ss_is_infected.value_counts().to_dict())  # this will get counts of non-infected, latent and infectious individuals
