@@ -359,7 +359,9 @@ class Type2DiabetesMellitus(Module):
 
         # Now update the df
         df.loc[d2_idx_nephro1, 'd2_nephro_status'] = 1
+        df.loc[d2_idx_nephro1, 'd2_nephro_date'] = self.sim.date
         df.loc[d2_idx_nephro2, 'd2_nephro_status'] = 2
+        df.loc[d2_idx_nephro2, 'd2_nephro_date'] = self.sim.date
 
         # Neuropathy
         random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
@@ -371,7 +373,9 @@ class Type2DiabetesMellitus(Module):
 
         # Now update the df
         df.loc[d2_idx_neuro1, 'd2_neuro_status'] = 1
+        df.loc[d2_idx_neuro1, 'd2_neuro_date'] = self.sim.date
         df.loc[d2_idx_neuro2, 'd2_neuro_status'] = 2
+        df.loc[d2_idx_neuro2, 'd2_neuro_date'] = self.sim.date
 
         # Retinopathy
         random_numbers = self.rng.random_sample(size=len(currently_d2_yes))  # Get random numbers
@@ -382,7 +386,9 @@ class Type2DiabetesMellitus(Module):
 
         # Now update the df
         df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
+        df.loc[d2_idx_retino1, 'd2_retino_date'] = self.sim.date
         df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
+        df.loc[d2_idx_retino2, 'd2_retino_date'] = self.sim.date
 
 
         # Assign level of symptoms # TODO: complete this section once symptoms haev been finalised
@@ -506,6 +512,7 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
     """
     This event is occurring regularly and controls the disease process of type 2 diabetes mellitus.
     It assigns new cases of diabetes and defines all related variables (e.g. date of diabetes)
+    It also determines disease progression and death
     """
 
     def __init__(self, module):
@@ -596,42 +603,52 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[d2_idx, 'd2_date'] = self.sim.date
 
 
-        # Assign complication amongst anyone who has diabetes
-        # TODO: not sure if there is a more efficient way to code the below?
+        # Assign progression of complications
+        # TODO: think about distributing throughout the year using variable d2_*compl*_date
+        currently_nephro_mild = df.index[df.d2_nephro_status == 1] & df[
+            df.is_alive & df.d2_current_status].index  # holds all people with t2dm with mild nephropathy
+        currently_neuro_mild = df.index[df.d2_neuro_status == 1] & df[
+            df.is_alive & df.d2_current_status].index  # holds all people with t2dm with mild neuropathy
+        currently_retino_mild = df.index[df.d2_retino_status == 1] & df[
+            df.is_alive & df.d2_current_status].index  # holds all people with t2dm with mild retinopathy
+
         # Nephropathy
-        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
-        now_nephro_1 = (random_numbers < m.prev_nephro_1)  # assign nephropathy amongst those with diabetes
-        now_nephro_2 = (
-                random_numbers < m.prev_nephro_2)  # amongst those with nephropathy assign moderate to severe nephropathy
-        d2_idx_nephro1 = d2_idx[now_nephro_1]  # hold id of those with nephropathy
-        d2_idx_nephro2 = d2_idx[now_nephro_2]  # hold id of those with mod-severe nephropathy
+        random_numbers = self.rng.random_sample(size=len(currently_nephro_mild))  # Get random numbers
+        now_nephro_2 = (random_numbers < m.prob_nephrocomp_2)  # see if mild progresses to severe
+        d2_idx_nephro2 = d2_idx[now_nephro_2]  # hold id of those with newly severe
 
         # Now update the df
-        df.loc[d2_idx_nephro1, 'd2_nephro_status'] = 1
         df.loc[d2_idx_nephro2, 'd2_nephro_status'] = 2
 
         # Neuropathy
-        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
-        now_neuro_1 = (random_numbers < m.prev_neuro_1)  # assign neuropathy amongst those with diabetes
+        random_numbers = self.rng.random_sample(size=len(currently_neuro_mild))  # Get random numbers
         now_neuro_2 = (
-            random_numbers < m.prev_neuro_2)  # amongst those with neuropathy assign moderate to severe neuropathy
-        d2_idx_neuro1 = d2_idx[now_neuro_1]  # hold id of those with neuropathy
-        d2_idx_neuro2 = d2_idx[now_neuro_2]  # hold id of those with mod-severe neuropathy
+            random_numbers < m.prev_neuro_2)  # see if mild progresses to severe
+        d2_idx_neuro2 = d2_idx[now_neuro_2]  # hold id of those with newly severe
 
         # Now update the df
-        df.loc[d2_idx_neuro1, 'd2_neuro_status'] = 1
         df.loc[d2_idx_neuro2, 'd2_neuro_status'] = 2
 
         # Retinopathy
-        random_numbers = self.rng.random_sample(size=len(d2_idx))  # Get random numbers
-        now_retino_1 = (random_numbers < m.prev_retino_1)  # assign retinopathy amongst those with diabetes
-        now_retino_2 = (random_numbers < m.prev_retino_2)  # amongst those with retinopathy assign severe retinopathy
-        d2_idx_retino1 = d2_idx[now_retino_1]  # hold id of those with retinopathy
-        d2_idx_retino2 = d2_idx[now_retino_2]  # hold id of those with severe retinopathy
+        random_numbers = self.rng.random_sample(size=len(currently_retino_mild))  # Get random numbers
+        now_retino_2 = (random_numbers < m.prev_retino_2)  # see if mild progresses to severe
+        d2_idx_retino2 = d2_idx[now_retino_2]  # hold id of those with newly severe
 
         # Now update the df
-        df.loc[d2_idx_retino1, 'd2_retino_status'] = 1
         df.loc[d2_idx_retino2, 'd2_retino_status'] = 2
+
+
+        # Assign new complication amongst anyone who has diabetes (not just new diabetics)
+        # TODO: not sure if there is a more efficient way to code the below?
+        df.index[df.d2_nephro_status == 0] & df[df.is_alive & df.d2_current_status].index # holds all people with t2dm without nephropathy
+        df.index[df.d2_neuro_status == 0] & df[
+            df.is_alive & df.d2_current_status].index  # holds all people with t2dm without neuropathy
+        df.index[df.d2_retino_status == 0] & df[
+            df.is_alive & df.d2_current_status].index  # holds all people with t2dm without retinopathy
+
+        # TODO: Revaluate mortality amongst those with new complications
+
+
 
         # TODO: add mortality
 
