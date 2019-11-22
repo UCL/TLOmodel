@@ -604,7 +604,7 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[d2_idx, 'd2_historic_status'] = 'C'
         df.loc[d2_idx, 'd2_date'] = self.sim.date
 
-
+        # TODO: not sure if there is a more efficient way to code the below?
         # Assign progression of complications
         # TODO: think about distributing throughout the year using variable d2_*compl*_date
         currently_nephro_mild = df.index[df.d2_nephro_status == 1] & df[
@@ -643,7 +643,7 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         # Assign new complication amongst anyone who has diabetes (not just new diabetics)
-        # TODO: not sure if there is a more efficient way to code the below?
+        # TODO: think about distributing throughout the year using variable d2_*compl*_date
         currently_nephro_no = df.index[df.d2_nephro_status == 0] & df[df.is_alive & df.d2_current_status].index # holds all people with t2dm without nephropathy
         currently_neuro_no = df.index[df.d2_neuro_status == 0] & df[df.is_alive & df.d2_current_status].index  # holds all people with t2dm without neuropathy
         currently_retino_no = df.index[df.d2_retino_status == 0] & df[df.is_alive & df.d2_current_status].index  # holds all people with t2dm without retinopathy
@@ -676,9 +676,6 @@ class Type2DiabetesMellitusEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[d2_idx_retino1, 'd2_retino_date'] = self.sim.date
 
         # TODO: Revaluate mortality amongst those with new complications
-
-
-
         # TODO: add mortality
 
 
