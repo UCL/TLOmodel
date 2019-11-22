@@ -217,6 +217,17 @@ class Type2DiabetesMellitus(Module):
         p['initial_prevalence_d2'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
         p['initial_prevalence_d2'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
 
+        # Read in Price data # TODO: update with rural:urban age-specififc
+        p['prevalence_d2_data_other'] = pd.DataFrame({'prevalence': [df.at['price', 'value']],
+                                                      'min95ci': [df.at['price', 'min']],
+                                                      'max95ci': [df.at['price', 'max']]
+                                                      },
+                                                     index=['price'])
+
+        p['prevalence_d2_data_other'].loc[:, 'prevalence'] *= 100  # Convert data to percentage
+        p['prevalence_d2_data_other'].loc[:, 'min95ci'] *= 100  # Convert data to percentage
+        p['prevalence_d2_data_other'].loc[:, 'max95ci'] *= 100  # Convert data to percentage
+
         # Read in prevalence data on complications from file
         p['initial_complication_prevalence_d2'] = pd.DataFrame({'prevalence': [df.at['p_neuro_1', 'value'], df.at['p_neuro_2', 'value'],
                                                                   df.at['p_nephro_1', 'value'], df.at['p_nephro_2', 'value'],
@@ -837,6 +848,25 @@ class Type2DiabetesMellitusLoggingValidationEvent(RegularEvent, PopulationScopeE
                     })
 
         # TODO: remove up to here
+
+        # Add Price et al data from Malawi
+        price = (len(df[df.is_alive & df.d2_current_status & (df.age_years > 18) & (df.age_years < 80)]) / len(
+            df[df.is_alive & (df.age_years > 18) & (df.age_years < 80)])) * 100
+
+        # Log prevalence from Price et al and model for comparison
+        logger.info('%s|d2_prevalence_data_extra|%s',
+                    self.sim.date,
+                    {
+                        'price': p['prevalence_d2_data_other'].loc['price', 'prevalence'],
+                        'price_min': p['prevalence_d2_data_other'].loc['price', 'min95ci'],
+                        'price_max': p['prevalence_d2_data_other'].loc['price', 'max95ci']
+                    })
+
+        logger.info('%s|d2_prevalence_model_extra|%s',
+                    self.sim.date,
+                    {
+                        'price_model': price,
+                    })
 
         # Calculate prevalence from the model using groupby instead
         # TODO: use groupby (make new cats) below instead - check it is working

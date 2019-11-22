@@ -25,7 +25,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
- 
+
 
 # %% Run the Simulation
 
@@ -161,6 +161,35 @@ plt.gca().set_ylim(0, 100)
 plt.gca().legend(loc='lower right', bbox_to_anchor=(0.45, 0.65))
 
 plt.show()
+
+# Load prevalence model and compare to Price et al
+val_data_df = output["tlo.methods.t2dm"]["d2_prevalence_data_extra"]    # Load the existing data
+val_model_df = output["tlo.methods.t2dm"]["d2_prevalence_model_extra"]
+Data_Years = pd.to_datetime(val_data_df.date)  # Pick out the information about time from data
+Data_price = val_data_df.price    # Pick out overall prevalence from price data
+Data_price_min = val_data_df.price_min  # Pick out min CI
+Data_price_max = val_data_df.price_max  # Pick out max CI
+
+Model_Years = pd.to_datetime(val_model_df.date)  # Pick out the information about time from data
+Model_price = val_model_df.price_model  # Pick out overall prevalence from model
+
+
+# Scatter graph of overall prevalence of non-STEP data vs model
+Plot_Years = (2010, 2011)   # ToDo: can this be automated - start_date:end_date without time format (dsnt work scatter)
+
+# Price et al 2018
+plt.scatter(Plot_Years, Data_price, label='Data', color='k')
+plt.scatter(Plot_Years, Data_price_min, label='Min 95% CI', color='grey')
+plt.scatter(Plot_Years, Data_price_max, label='Max 95% CI', color='grey')
+plt.scatter(Plot_Years, Model_price, label='Model', color='red')
+
+plt.title("Overall prevalence: data vs model (Price et al 2018)")
+plt.xlabel("Years")
+plt.ylabel("Prevalence")
+plt.gca().set_ylim(0, 100)
+plt.gca().legend(loc='lower right', bbox_to_anchor=(1.4, 0.5))
+plt.show()
+
 
 
 # Plot complication due to type 2 diabetes model vs data
