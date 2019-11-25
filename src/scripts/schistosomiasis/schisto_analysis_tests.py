@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2016, 1, 1)
-end_date = Date(2021, 1, 1)
-popsize = 100000
+end_date = Date(2017, 1, 1)
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -79,7 +79,7 @@ for s in symptoms_prevalence.keys():
 # get prevalence per age_years
 df_pa = df[['age_years', 'ss_is_infected']][df.is_alive]
 age_groups_count = df_pa['age_years'].value_counts().to_dict()
-infected_age_count = df_pa[df['ss_is_infected'] == 'Haematobium']['age_years'].value_counts().to_dict()
+infected_age_count = df_pa[df['ss_is_infected'] == 'Infected']['age_years'].value_counts().to_dict()
 age_prev = {}
 for k in age_groups_count.keys():
     if k in infected_age_count.keys():
@@ -88,7 +88,6 @@ for k in age_groups_count.keys():
         prev = 0
     age_prev.update({k: prev})
 
-import matplotlib.pylab as plt
 lists = sorted(age_prev.items())  # sorted by key, return a list of tuples
 x, y = zip(*lists)  # unpack a list of pairs into two tuples
 plt.plot(x, y)
@@ -97,7 +96,11 @@ plt.ylabel('Prevalence')
 plt.title('Final prevalence per age')
 plt.show()
 
-
+# plot the distribution of cumulative times of infection
+df['ss_cumulative_infection_time'].plot.hist(bins=100, alpha=0.5)
+plt.ylabel('Cumulative infected time, days')
+plt.title('Distribution of cumulative infection times')
+plt.show()
 
 # ---------------------------------------------------------------------------------------------------------
 
@@ -127,7 +130,7 @@ plt.plot(loger_All.date, loger_All.Prevalence, label='All')
 plt.xticks(rotation='vertical')
 plt.ylim([0, 1])
 plt.legend()
-plt.title('Prevalence of S.Haematobium')
+plt.title('Prevalence per date')
 plt.ylabel('fraction of infected sub-population')
 plt.xlabel('logging date')
 plt.show()

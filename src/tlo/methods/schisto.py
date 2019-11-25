@@ -405,6 +405,7 @@ class Schisto(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
     In each Infection event a susceptible individual is infected with prob P
@@ -419,27 +420,53 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, Schisto)
 
     def apply(self, population):
-        print("Choosing new infections")
         logger.debug('This is SchistoEvent, tracking the disease progression of the population.')
 
         df = population.props
+        params = self.module.parameters
         districts = df.district_of_residence.unique().tolist()
 
         ######################## assign new infections in each district ################################################
+        new_infections = []
         for distr in districts:
-            self.new_infections_distr(population, distr)
-        #
-        # print("Number of new infections: " + str(new_infections_count))
-        #
-        # # if any are infected
-        # if new_infections_count == 0:
-        #     logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
+            new_infections = new_infections + self.new_infections_distr(population, distr)
+
+        if len(new_infections):
+            ############## schedule the time of infection in the following month #######################################
+            days_till_infection = self.module.rng.uniform(0, 30, size=len(new_infections))
+            days_till_infection = pd.to_timedelta(days_till_infection, unit='D')
+            df.loc[new_infections, 'ss_infection_date'] = self.sim.date + days_till_infection
+
+            ######################## assign symptoms to newly infected #################################################
+            self.module.assign_symptoms(population, new_infections, 'haematobium')
+
+            ############## schedule the time of end of latent period #########################################
+            latent_period_ahead = self.module.rng.uniform(params['delay_a'],
+                                                          params['delay_b'],
+                                                          size=len(new_infections))
+            latent_period_ahead = pd.to_timedelta(latent_period_ahead, unit='D')
+            df.loc[new_infections, 'ss_schedule_infectiousness_start'] = df.loc[
+                                                                             new_infections, 'ss_infection_date'] + latent_period_ahead
+
+            ############ schedule events of infection and end of latent period
+            for person_index in new_infections:
+                infect_event = SchistoInfection(self.module, person_id=person_index)
+                self.sim.schedule_event(infect_event, df.at[person_index, 'ss_infection_date'])
+                end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
+                self.sim.schedule_event(end_latent_period_event,
+                                        df.at[person_index, 'ss_schedule_infectiousness_start'])
+
+
+        print("Number of new infections: " + str(len(new_infections)))
+        if len(new_infections) == 0:
+            logger.debug('This is SchistoInfectionEvent, no one is newly infected.')
 
     def new_infections_distr(self, population, distr):
-        """Assigns new infections of S.Haematobium and S.Mansoni in one district distr
+        """Randomly samples the indices of newly infected indices in given district
 
         :param population: population
         :param distr: one of the 32 Malawi districts
+        :returns new_infections: indices of newly infected people in district distr
         """
 
         df = population.props
@@ -449,7 +476,6 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         if df_distr.shape[0]:  # if there are any rows in the dataframe, so there are alive poeple in the district
             ############## get a count of infected to calculate the prevalence #######################################
             count_states = {'Non-infected': 0, 'Latent': 0, 'Infected': 0}
-
             count_states.update(df_distr.ss_is_infected.value_counts().to_dict())  # this will get counts of non-infected, latent and infectious individuals
             count_states.update({'infected_any': count_states['Latent']
                                                  + count_states['Infected']})
@@ -461,7 +487,6 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             ############# calculate prevalence of infectious people only, not the actual prevalence #################
             if count_states['Non-infected']:
                 prevalence = count_states['Infected'] / count_states['total_pop_alive']
-
             else:
                 prevalence = 0
         else:
@@ -485,32 +510,10 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         newly_infected_index = df_distr.index[(self.module.rng.random_sample(size=len(df_distr.index)) < (trans_prob * ss_risk))]
         new_infections = list(set(newly_infected_index) & set(currently_uninfected))
 
-        if len(new_infections):
-            ############## schedule the time of infection in the following month #########################################
-            days_till_infection = self.module.rng.uniform(0, 30, size=len(new_infections))
-            days_till_infection = pd.to_timedelta(days_till_infection, unit='D')
-            df.loc[new_infections, 'ss_infection_date'] = self.sim.date + days_till_infection
-
-            ######################## assign symptoms to newly infected #################################################
-            self.module.assign_symptoms(population, new_infections, 'haematobium')
-
-            ############## schedule the time of end of latent period #########################################
-            latent_period_ahead = self.module.rng.uniform(params['delay_a'],
-                                                         params['delay_b'],
-                                                         size=len(new_infections))
-            latent_period_ahead = pd.to_timedelta(latent_period_ahead, unit='D')
-            df.loc[new_infections, 'ss_schedule_infectiousness_start'] = df.loc[new_infections, 'ss_infection_date'] + latent_period_ahead
-
-            ############ schedule events of infection and end of latent period
-            for person_index in new_infections:
-                infect_event = SchistoInfection(self.module, person_id=person_index)
-                self.sim.schedule_event(infect_event, df.at[person_index, 'ss_infection_date'])
-                end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
-                self.sim.schedule_event(end_latent_period_event, df.at[person_index, 'ss_schedule_infectiousness_start'])
-
+        return new_infections
 
 class SchistoInfection(Event, IndividualScopeEventMixin):
-    """End of the latency period (Non-infected -> Latent)
+    """Changes the status of a person to Infected (Non-infected -> Latent)
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -519,8 +522,8 @@ class SchistoInfection(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
 
-        if df.at[person_id, 'ss_is_infected'] == 'Non-infected':
-            df.at[person_id, 'ss_is_infected'] = 'Latent'
+        if df.loc[person_id, 'ss_is_infected'] == 'Non-infected':
+            df.loc[person_id, 'ss_is_infected'] = 'Latent'
 
 
 class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
@@ -538,7 +541,7 @@ class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
 
 
 class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
-    """Cured upon PZQ treatment (Infected -> Non-infected)
+    """Cured upon PZQ treatment through HSI or MDA (Infected -> Non-infected)
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -549,12 +552,14 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
         df.loc[person_id, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
         df.loc[person_id, 'ss_haematobium_specific_symptoms'] = np.nan
         df.loc[person_id, 'ss_mansoni_specific_symptoms'] = np.nan
+
+        inf_duration = self.sim.date - df.loc[person_id, 'ss_infection_date']
+        df.loc[person_id, 'ss_cumulative_infection_time'] += inf_duration / np.timedelta64(1, 'D')
+        df.loc[person_id, 'ss_cumulative_infection_time'] = df.loc[
+            person_id, 'ss_cumulative_infection_time'].astype(int)
+
         df.loc[person_id, 'ss_infection_date'] = pd.NaT
         df.loc[person_id, 'ss_schedule_infectiousness_start'] = pd.NaT
-        # last_infection_time = self.sim.date - df.loc[person_id, 'ss_infection_date']
-        # df.loc[person_id, 'ss_cumulative_infection_time'] = \
-        #     df.loc[person_id, 'ss_cumulative_infection_time'] + last_infection_time.days
-
 
 class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
@@ -616,10 +621,16 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
 
             # for those who seek the healthcare initiate treatment
             df.loc[treated_idx, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
-            df.loc[treated_idx, 'ss_infection_date'] = pd.NaT
-            df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
             df.loc[treated_idx, 'ss_haematobium_specific_symptoms'] = np.nan
             df.loc[treated_idx, 'ss_mansoni_specific_symptoms'] = np.nan
+
+            inf_duration = self.sim.date - df.loc[treated_idx, 'ss_infection_date']
+            df.loc[treated_idx, 'ss_cumulative_infection_time'] += inf_duration / np.timedelta64(1, 'D')
+            df.loc[treated_idx, 'ss_cumulative_infection_time'] = df.loc[
+                treated_idx, 'ss_cumulative_infection_time'].astype(int)
+
+            df.loc[treated_idx, 'ss_infection_date'] = pd.NaT
+            df.loc[treated_idx, 'ss_schedule_infectiousness_start'] = pd.NaT
 
             print("Number of treated due to HSI: " + str(len(treated_idx)))
         else:
@@ -664,6 +675,12 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[MDA_treated, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%
         df.loc[MDA_treated, 'ss_haematobium_specific_symptoms'] = np.nan
         df.loc[MDA_treated, 'ss_mansoni_specific_symptoms'] = np.nan
+
+        inf_duration = self.sim.date - df.loc[MDA_treated, 'ss_infection_date']
+        df.loc[MDA_treated, 'ss_cumulative_infection_time'] += inf_duration / np.timedelta64(1, 'D')
+        df.loc[MDA_treated, 'ss_cumulative_infection_time'] = df.loc[
+            MDA_treated, 'ss_cumulative_infection_time'].astype(int)
+
         df.loc[MDA_treated, 'ss_infection_date'] = pd.NaT
         df.loc[MDA_treated, 'ss_schedule_infectiousness_start'] = pd.NaT
 
