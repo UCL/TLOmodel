@@ -684,6 +684,45 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
                      'astrovirus': (pathogen_count['astrovirus'] * 4 * 100) / len(under5),
                      'tEPEC': (pathogen_count['tEPEC'] * 4 * 100) / len(under5),
                      })
+        # incidence rate per age group by pathogen
+        pathogen_0to11mo = df[df.is_alive & (df.age_years < 1)].groupby('gi_diarrhoea_pathogen').size()
+        pathogen_12to23mo = df[df.is_alive & (df.age_years >= 1) & (df.age_years < 2)].groupby('gi_diarrhoea_pathogen').size()
+        pathogen_24to59mo = df[df.is_alive & (df.age_years >= 2) & (df.age_years < 5)].groupby('gi_diarrhoea_pathogen').size()
+        logger.info('%s|diarr_incidence_age|%s', self.sim.date,
+                    {'total': [(sum(pathogen_0to11mo) * 4 * 100) / len(under5),
+                               (sum(pathogen_12to23mo) * 4 * 100) / len(under5),
+                               (sum(pathogen_24to59mo) * 4 * 100) / len(under5)],
+                     'rotavirus': [((pathogen_0to11mo['rotavirus'] * 4 * 100) / len(under5)),
+                                   ((pathogen_12to23mo['rotavirus'] * 4 * 100) / len(under5)),
+                                   ((pathogen_24to59mo['rotavirus'] * 4 * 100) / len(under5))],
+                     'shigella': [(pathogen_0to11mo['shigella'] * 4 * 100) / len(under5),
+                                  (pathogen_12to23mo['shigella'] * 4 * 100) / len(under5),
+                                  (pathogen_24to59mo['shigella'] * 4 * 100) / len(under5)],
+                     'adenovirus': [(pathogen_0to11mo['adenovirus'] * 4 * 100) / len(under5),
+                                    (pathogen_12to23mo['adenovirus'] * 4 * 100) / len(under5),
+                                    (pathogen_24to59mo['adenovirus'] * 4 * 100) / len(under5)],
+                     'cryptosporidium': [(pathogen_0to11mo['cryptosporidium'] * 4 * 100) / len(under5),
+                                         (pathogen_12to23mo['cryptosporidium'] * 4 * 100) / len(under5),
+                                         (pathogen_24to59mo['cryptosporidium'] * 4 * 100) / len(under5)],
+                     'campylobacter': [(pathogen_0to11mo['campylobacter'] * 4 * 100) / len(under5),
+                                       (pathogen_12to23mo['campylobacter'] * 4 * 100) / len(under5),
+                                       (pathogen_24to59mo['campylobacter'] * 4 * 100) / len(under5)],
+                     'ETEC': [(pathogen_0to11mo['ST-ETEC'] * 4 * 100) / len(under5),
+                              (pathogen_12to23mo['ST-ETEC'] * 4 * 100) / len(under5),
+                              (pathogen_24to59mo['ST-ETEC'] * 4 * 100) / len(under5)],
+                     'sapovirus': [(pathogen_0to11mo['sapovirus'] * 4 * 100) / len(under5),
+                                   (pathogen_12to23mo['sapovirus'] * 4 * 100) / len(under5),
+                                   (pathogen_24to59mo['sapovirus'] * 4 * 100) / len(under5)],
+                     'norovirus': [(pathogen_0to11mo['norovirus'] * 4 * 100) / len(under5),
+                                   (pathogen_12to23mo['norovirus'] * 4 * 100) / len(under5),
+                                   (pathogen_24to59mo['norovirus'] * 4 * 100) / len(under5)],
+                     'astrovirus': [(pathogen_0to11mo['astrovirus'] * 4 * 100) / len(under5),
+                                    (pathogen_12to23mo['astrovirus'] * 4 * 100) / len(under5),
+                                    (pathogen_24to59mo['astrovirus'] * 4 * 100) / len(under5)],
+                     'tEPEC': [(pathogen_0to11mo['tEPEC'] * 4 * 100) / len(under5),
+                               (pathogen_12to23mo['tEPEC'] * 4 * 100) / len(under5),
+                               (pathogen_24to59mo['tEPEC'] * 4 * 100) / len(under5)],
+                     })
 
         # ------------------------------------------------------------------------------------------------------
         # -------------------- ASSIGN WHETHER IT IS DYSENTERY OR ACUTE WATERY DIARRHOEA ------------------------
@@ -883,8 +922,8 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         diarrhoea_count = df[df.is_alive & df.age_years.between(0, 5)].groupby('gi_diarrhoea_acute_type').size()
         logger.info('%s|acute_diarrhoea|%s', self.sim.date,
                     {'total': sum(diarrhoea_count),
-                     'AWD': diarrhoea_count['acute watery diarrhoea'],
-                     'acute_dysentery': diarrhoea_count['dysentery']
+        #             'acute_dysentery': diarrhoea_count['dysentery'],
+        #             'AWD': diarrhoea_count['acute watery diarrhoea'],
                      })
         any_dehydration = df[df.is_alive & (df.age_exact_years < 5) & df.gi_diarrhoea_status &
                                  (df.gi_dehydration_status != 'no dehydration')]
@@ -1314,12 +1353,11 @@ class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
 
-        logger.info('This is DeathDiarrhoeaEvent determining if person %d will die from their disease', person_id)
-
         if df.at[person_id, 'is_alive']:
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, person_id, cause='diarrhoea'),
                                     self.sim.date)
-            df.at[person_id, 'gi_diarrhoea_death_date'] = self.sim.date
+            logger.info('This is DeathDiarrhoeaEvent determining if person %d on the date %s will die '
+                        'from their disease', person_id, self.sim.date)
             '''death_count = sum(person_id)
             # Log the diarrhoea death information
             logger.info('%s|death_diarrhoea|%s', self.sim.date,

@@ -116,7 +116,30 @@ class ChildhoodDiseaseInterventions(Module):
          # IMCNI - Integrated Management of Neonatal and Childhood Illnesses algorithm
          'imci_any_general_danger_sign': Property
         (Types.BOOL,
-         'any of the 4 general danger signs defined by the IMNCI guidelines'),
+         'any of the 4 general danger signs defined by the IMNCI guidelines'
+         ),
+        'imci_assessment_of_main_symptoms': Property
+        (Types.CATEGORICAL,
+         'main symptoms assessments', categories=['correctly assessed', 'not assessed']
+         ),
+        'imci_classification_of_illness': Property
+        (Types.CATEGORICAL,
+         'disease classification', categories=['correctly classified', 'incorrectly classified']
+         ),
+        'imci_treatment': Property
+        (Types.CATEGORICAL,
+         'treatment given', categories=['correctly treated', 'incorrectly treated', 'not treated']
+         ),
+        'classification_for_cough_or_difficult_breathing': Property
+        (Types.CATEGORICAL,
+         'classification for cough or difficult breathing',
+         categories=['classified as severe pneumonia or very severe disease',
+                     'classified as pneumonia', 'classified as no pneumonia']
+         ),
+        'correct_classification_for_cough_or_difficult_breathing': Property
+        (Types.BOOL,
+         'classification for cough or difficult breathing is correct'
+         ),
     }
 
     def read_parameters(self, data_folder):
@@ -443,6 +466,185 @@ class HSI_IMNCI (Event, IndividualScopeEventMixin):
                                             (df.ri_pneumonia_severity == 'pneumonia')]
 
 
+class HSI_IMNCI2 (Event, IndividualScopeEventMixin):
+    """ This is the first Health Systems Interaction event at the first level health facilities for all
+    childhood diseases modules. A sick child taken to the health centre for assessment, classification and treatment.
+    Also, sick children referred by the HSA """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        logger.debug('This is HSI_IMNCI, a first appointment for person %d in the health centre',
+                     person_id)
+
+        df = self.sim.population.props
+        p = self.module.parameters
+
+        # THIS EVENT CHECKS FOR ALL SICK CHILDREN PRESENTING FOR CARE AT AN OUTPATIENT HEALTH FACILITY
+
+        cough_or_difficult_breathing = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                                df.ALL the symptoms related to cough/difficult breathing]
+        diarrhoea_present = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                                df.gi_diarrhoea_status]
+        presenting_any_general_danger_signs = df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                                                df.ds_convulsion | df.ds_not_able_to_drink_or_breastfeed |
+                                                       df.ds_vomits_everything | df.ds_unusually_sleepy_unconscious]
+        children_with_severe_pneumonia_or_very_sev_disease = \
+            df.index[df.is_alive & (df.age_exact_years > 1.667 & df.age_exact_years < 5) &
+                     (df.ri_pneumonia_severity == 'severe pneumonia') | (
+                         df.ri_pneumonia_severity == 'very severe pneumonia')]
+
+        # first for *ALL SICK CHILDREN*, health worker should check for general danger signs + the 5 main symptoms:
+        # cough/difficult breathing, diarrhoea, fever, ear problem, malnutrition and anaemia (even if not reported by mother)
+
+        # ASSESSMENT OF GENERAL DANGER SIGNS - check if each sign were a component of the consultation
+        convulsions_checked_by_health_worker = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_convulsions'],
+                                                            (1 - p['prob_checked_convulsions'])])
+        inability_to_drink_breastfeed_checked_by_health_worker = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_not_able_to_drink_or_breastfeed'],
+                                                            (1 - p['prob_checked_not_able_to_drink_or_breastfeed'])])
+        vomiting_everything_checked_by_health_worker = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_vomits_everything'],
+                                                            (1 - p['prob_checked_vomits_everything'])])
+        # unusually_sleepy_unconscious_checked_by_health_worker = \
+            # self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_unusually_sleepy_unconscious'],
+                                                            #(1 - p['prob_checked_unusually_sleepy_unconscious'])])
+        # Let's assume for now that checked danger sign = correct identification of the danger sign
+        # health worker has identified at least one general danger sign
+        imci_at_least_one_danger_sign_identified = \
+            presenting_any_general_danger_signs & \
+            (convulsions_checked_by_health_worker[True] | inability_to_drink_breastfeed_checked_by_health_worker[True] |
+            vomiting_everything_checked_by_health_worker[True] |
+            unusually_sleepy_unconscious_checked_by_health_worker[True])
+
+        # # # # # HEALTH WORKER CHECKS FOR 5 MAIN SYMPTOMS IN IMCI # # # # #
+
+        # ASSESSMENT OF MAIN SYMPTOMS (3) - checked for the presence of each main symptom at the consultation:
+        # cough or difficult breathing, diarrhoea, and fever
+        health_worker_asked_about_cough_or_difficult_breathing = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_cough_difficult_breathing'], # prob=74%
+                                                          (1 - p['prob_asked_cough_difficult_breathing'])])
+        health_worker_asked_about_diarrhoea = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_diarrhoea'], # prob=39%
+                                                          (1 - p['prob_asked_diarrhoea'])])
+        health_worker_asked_about_fever = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_fever'], # prob=77%
+                                                          (1 - p['prob_asked_fever'])])
+        # Assessment of all 3 main symptoms
+        health_worker_assessed_all_3_main_symptoms = \
+            health_worker_asked_about_cough_or_difficult_breathing & health_worker_asked_about_diarrhoea & \
+            health_worker_asked_about_fever # this probability is 24% according to SPA 2013-14
+
+        # Assessment of ear problems - ear pain or discharge
+        health_worker_asked_about_ear_problem = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_ear_problem'], # 5%
+                                                          (1 - p['prob_asked_ear_problem'])])
+        if health_worker_asked_about_ear_problem[True]:
+            HCW_looked_for_pus_draining_from_ear = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_looked_for pus_draining_from_ear'],  # 4%
+                                                              (1 - p['prob_looked_for pus_draining_from_ear'])])
+            HCW_felt_behind_ear_for_tenderness = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_felt_behind_ear_for_tenderness'],  # 4%
+                                                              (1 - p['prob_felt_behind_ear_for_tenderness'])])
+
+        # health care worker looked for signs of malnutrition and anaemia
+        HCW_looked_for_visible_severe_wasting = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_for_visible_severe_wasting'],
+                                                          (1 - p['prob_checked_for_visible_severe_wasting'])])
+        HCW_looked_for_palmar_pallor = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_for_palmar_pallor'], # 24%
+                                                          (1 - p['prob_checked_for_palmar_pallor'])])
+        HCW_looked_for_oedema_of_both_feet = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_for_oedema_of_both_feet'], # 8%
+                                                          (1 - p['prob_checked_for_oedema_of_both_feet'])])
+        HCW_determined_weight_for_age = \
+            self.sim.rng.choice([True, False], size=1, p=[p['prob_determined_weight_for_age'],
+                                                          (1 - p['prob_determined_weight_for_age'])])
+
+        # ASSESSMENT PROCESS OF COUGH AND/OR DIFFICULT BREATHING
+        # there are 4 elements to complete in the assessment of cough or difficult breathing: the duration of illness,
+        # the count of breaths per minute, to look for chest indrawing, and to listen for stridor in a calm child
+        # in the algorithm below, the probabilities refer to whether the health worker has completed and correctly
+        # assessed for each element
+        if cough_or_difficult_breathing & health_worker_asked_about_cough_or_difficult_breathing[True]:
+            health_worker_asked_duration_of_illness = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_duration_cough_difficult_breathing'],
+                                                              (1 - p['prob_asked_duration_cough_difficult_breathing'])])
+            # if health_worker_asked_duration_of_illness[True] & df.at[person_id, has asthma or tb or whooping cough] or longer than 30 days:
+            # health_worker_referral_or_hospitalization
+            health_worker_counted_breaths_per_minute = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_assessed_fast_breathing'], # 16%
+                                                              (1 - p['prob_assessed_fast_breathing'])])
+            health_worker_checked_chest_indrawing = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_chest_indrawing'],
+                                                              (1 - p['prob_assessed_chest_indrawing'])])
+            health_worker_checked_stridor = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_stridor'],
+                                                              (1 - p['prob_assessed_stridor'])])
+            if health_worker_asked_duration_of_illness[True] & \
+                health_worker_counted_breaths_per_minute[True] \
+                & health_worker_checked_chest_indrawing[True] & \
+                health_worker_checked_stridor[True]:
+                df.at[person_id, df.imci_all_elements_of_cough_or_difficult_breathing_complete] = True
+
+            # next, need to consider the sensitivity and specificity of assessing these signs
+            # for those checked for cough/difficult breathing assessment components, multiply by the sensitivity of the assssement
+            hw_correctly_assessed_fast_breathing = health_worker_counted_breaths_per_minute[True] * sensitivity and specificity
+
+            hw_correctly_assessed_chest_indrawing = health_worker_checked_chest_indrawing[True] * sensitivity and specificity
+
+            hw_correctly_assessed_stridor = health_worker_checked_stridor[True] * sensitivity and specificity
+
+            # CLASSIFICATION PROCESS
+            if children_with_severe_pneumonia_or_very_sev_disease & \
+                (hw_correctly_assessed_chest_indrawing[True] | hw_correctly_assessed_stridor[True] |
+                 imci_at_least_one_danger_sign_identified):
+                hw_correctly_classified_severe_pneumonia_or_very_sev_disease = \
+                    self.sim.rng.choice([True, False], size=1,
+                                        p=[p['prob_correctly_classified_severe_pneumonia'],  # high probability
+                                           (1 - p['prob_correctly_classified_severe_pneumonia'])])
+
+
+                if hw_correctly_classified_severe_pneumonia_or_very_sev_disease[True]:
+                    df.at[person_id, df.correct_classification_for_cough_or_difficult_breathing] = True
+                    df.at[person_id, df.classification_for_cough_or_difficult_breathing] = 'classified as severe pneumonia or very severe disease'
+
+                if hw_correctly_classified_severe_pneumonia_or_very_sev_disease[False]: # severe pneumonia/disease not correctly classified
+                    df.at[person_id, df.correct_classification_for_cough_or_difficult_breathing] = False
+                    df.at[person_id, df.classification_for_cough_or_difficult_breathing] = 'classified as pneumonia' # 16.5%
+                    df.at[person_id, df.classification_for_cough_or_difficult_breathing] = 'classified as no pneumonia'  # 54.4%
+
+            if hw_correctly_assessed_fast_breathing[True] &
+
+
+            if df.at[cases, df.imci_any_general_danger_sign | df.chest_indrawing | df.stridor ]:
+
+                if health_worker_counted_breath_per_minute[True]:
+
+        # ASSESSMENT OF DIARRHOEA
+        if diarrhoea_present & health_worker_asked_about_cough_or_difficult_breathing[True]:
+            HCW_asked_duration_of_illness = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_duration_diarrhoea'],
+                                                              (1 - p['prob_asked_duration_diarrhoea'])])
+            HCW_asked_blood_in_stool = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_asked_presence_of_blood_in_stool'],
+                                                              (1 - p['prob_asked_presence_of_blood_in_stool'])])
+            HCW_checked_lethargic_or_restless = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_lethargic_or_restless'], # this was a danger sign to be checked
+                                                              (1 - p['prob_checked_lethargic_or_restless'])])
+            HCW_looked_for_sunken_eyes = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_looked_for_sunken_eyes'],
+                                                              (1 - p['prob_looked_for_sunken_eyes'])])
+            HCW_checked_ability_to_drink = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_checked_ability_to_drink'],
+                                                              (1 - p['prob_checked_ability_to_drink'])])
+            HCW_pinched_abdomen = \
+                self.sim.rng.choice([True, False], size=1, p=[p['prob_pinched_abdomen'], # 10%
+                                                              (1 - p['prob_pinched_abdomen'])])
+
+
 class IMNCI_Severe_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -703,131 +905,5 @@ class IMNCI_Pneumonia_Treatment(Event, IndividualScopeEventMixin):
         missed_diagnosed_malaria = has malria and not correctly_diagnoed
         false_positive_diagnosed_malria = (not has_malaria and self.rng.rand<(1-spec_dx_malaria)
 
-        iCCM
-        if correctly identified_fast breathing and cough:
-                correctly_diagnosed_pneumonia
-        correctly_identified_danger_signs
-        correctly_medication_given
-
-        if correctly identified_diarrhoea and dehydration:
-        if correctly identified danger sign
-        correctly classified as severe pneumonia
-        correctly refered
-        correctly gave treatment and advice
-
-
-        if correctly identified_fever
-
-        IMCI
-        correctly_diagnosed_pneumon
-        correclty_dianoged _severe_pneu_OR_very_severe_diasease
-
-        hospital management
-        correctly_diagnosed_pneumon
-        correclty_dianoged _severe_pneu
-        correctly_diagnosed_very_severe_diasease
-
-
-        # all_seeking_care_from_HSA = df.index[all those seeking care in pneumonia, diarrhoea and malaria modules
-        # and maybe also other modules??]
-        # for child in all_seeking_care_from_HSA:
-        if df.at[person_id, 'pn_any_general_danger_sign' == True]:
-            will_CHW_ask_about_fever = self.module.rng.rand() < 0.5
-            will_CHW_ask_about_cough = self.module.rng.rand() < 0.5
-
-            hsa_will_give_first-dose_of_antibiotic = if there is drugs available
-        hsa_will refer_immediatly
-        child_goes_to health_facility
-
-
-    # in the apply() part of the event:
-    # here is where we have the CHW going through the algorithm
-
-    # will_CHW_ask_about_fever = rand()<0.5
-    # will_CHW_ask_about_cough = rand()<0.5
-
-    # fever_is_detected = (df[person_id,'fever'] is True) and will_ask_CHW_ask_about_fever
-    # cough_is_detected = (df[person_id,'cough'] is True) and will_CHW_ask_about_cough
-
-    # if fever_is_detected:
-    #   if cough_is_detected:
-    #       -- child has bouth fever and cough
-    # make a event for the treatment for this condition
-    # HSI_Treatment_For_Fever_And_Cough
-
-    PROPERTIES = {
-        'ccm_cough_14days_or_more': Property(Types.BOOL, 'danger sign - cough for 14 days or more'),
-        'ccm_diarrhoea_14days_or_more': Property(Types.BOOL, 'danger sign - diarrhoea for 14 days or more'),
-        'ccm_blood_in_stool': Property(Types.BOOL, 'danger sign - blood in the stool'),
-        'ccm_fever_7days_or_more': Property(Types.BOOL, 'danger sign - fever for the last 7 days or more'),
-        'ccm_convulsions': Property(Types.BOOL, 'danger sign - convulsions'),
-        'ccm_not_able_drink_or_eat': Property(Types.BOOL, 'danger sign - not able to drink or eat anything'),
-        'ccm_vomits_everything': Property(Types.REAL, 'danger sign - vomits everything'),
-        'ccm_chest_indrawing': Property(Types.BOOL, 'danger sign - chest indrawing'),
-        'ccm_unusually_sleepy_unconscious': Property(Types.BOOL, 'danger sign - unusually sleepy or unconscious'),
-        'ccm_red_MUAC_strap': Property(Types.BOOL, 'danger sign - red on MUAC strap'),
-        'ccm_swelling_both_feet': Property(Types.BOOL, 'danger sign - swelling of both feet'),
-        'ccm_diarrhoea_lt14days': Property(Types.BOOL, 'treat - diarrhoea less than 14 days and no blood in stool'),
-        'ccm_fever_lt7days': Property(Types.BOOL, 'treat - fever less than 7 days in malaria area'),
-        'ccm_fast_breathing': Property(Types.BOOL, 'treat - fast brething'),
-        'ccm_yellow_MUAC_strap': Property(Types.BOOL, 'treat - yellow on MUAC strap')
-    }
-    'asked_about_cough'
-        'asked_about_diarrhoea'
-        'if_diarrhoea_asked_about_blood_in_stool'
-        'asked_about_fever'
-        'if_fever_asked_how_long'
-        'asked_about_convulsions'
-        'asked_about_difficult_drinking_or_feeding'
-        'if_difficult_drink/feed_asked_not_able_to_drink/feed_anything'
-        'asked_vomiting'
-        'if_vomiting_asked_vomits_everything'
-        'asked_about_HIV'
-        'looked_for_chest_indrawing'
-        'looked_for_fast_breathing'
-        'looked_for_unusually_sleepy_unconscious'
-        'looked_for_signs_severe_malnutrition'
-
-    def initialise_population(self, population):
-
-        df = population.props  # a shortcut to the data-frame storing data for individuals
-        m = self
-
-        # DEFAULTS
-        df['ccm_cough_14days_or_more'] = False
-        df['ccm_diarrhoea_14days_or_more'] = False
-        df['ccm_blood_in_stool'] = False
-        df['ccm_fever_7days_or_more'] = False
-        df['ccm_convulsions'] = False
-        df['ccm_not_able_drink_or_eat'] = False
-        df['ccm_vomits_everything'] = False
-        df['ccm_chest_indrawing'] = False
-        df['ccm_unusually_sleepy_unconscious'] = False
-        df['ccm_red_MUAC_strap'] = False
-        df['ccm_swelling_both_feet'] = False
-        df['ccm_diarrhoea_lt14days'] = False
-        df['ccm_fever_lt7days'] = False
-        df['ccm_fast_breathing'] = False
-        df['ccm_yellow_MUAC_strap'] = False
-
-
-    def diarrhoea_diagnosis(self, person_id):
-        now = self.sim.date
-        df = self.sim.population.props
-
-        # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
-        has_diarrhoea = df.at[person_id, 'gi_diarrhoea_status']
-        has_danger_signs = df.at[person_id, 'any_danger_signs']
-        has_some_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'some dehydration'
-        has_severe_dehydration = df.at[person_id, 'gi_dehydration_status'] = 'severe dehydration'
-
-    def pneumonia_diagnosis(self, person_id):
-        now = self.sim.date
-        df = population.props
-
-        # work out if child has diarrhoea, is correctly diagnosed by the algorithm and treatment
-        has_fast_breathing = df.at[person_id, 'gi_diarrhoea_status']
-        has_danger_signs = df.at[person_id, 'any_danger_signs']
-
-"""
+     
 
