@@ -27,7 +27,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefilepath = Path("./resources")
+resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 # %% Run the Simulation
 logfile = outputpath + 'LogFile' + datestamp + '.log'
@@ -61,7 +61,7 @@ fh.flush()
 # %% read the results
 
 # FOR STORED RESULTS
-logfile = 'LogFile__2019_11_21.log'
+logfile = 'LogFile__2019_11_26.log'
 
 parsed_output = parse_log_file(logfile)
 
@@ -117,7 +117,7 @@ plt.show()
 
 # Import and format male population data:
 model_m= scaled_output["tlo.methods.demography"]["age_range_m"]
-model_m=model_m.loc[pd.to_datetime(model_m['date']).dt.year==2018].drop(columns=['date','Year']).melt(value_name='Model',var_name='Age_Grp')
+model_m=model_m.loc[pd.to_datetime(model_m['date']).dt.year==2018].drop(columns=['date']).melt(value_name='Model',var_name='Age_Grp')
 model_m.index= model_m['Age_Grp'].astype(make_age_grp_types())
 model_m = model_m.loc[model_m.index.dropna(),'Model']
 
@@ -191,7 +191,7 @@ plt.show()
 # Births to mothers by age
 (__tmp__, age_grp_lookup) = make_age_range_lookup()
 births["mother_age_grp"] = births["mother_age"].map(age_grp_lookup)
-nbirths_byage = births.groupby(by=['year','mother_age_grp'])['child'].count().unstack(fill_value=0).stack()
+nbirths_byage = births.groupby(by=['year','mother_age_grp']).count().unstack(fill_value=0).stack()
 nbirths_byage_2015 = nbirths_byage[2015]
 nbirths_byage_2030 = nbirths_byage[2030]
 
