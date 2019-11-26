@@ -70,9 +70,31 @@ def add_elements(el1, el2):
     else:
         return el2
 
+
+class PZQ:
+    """
+    Class for storing the number of PZQ pills distributed in each year.
+    Those are stored in the dictionaries that are attributes of the class
+    """
+    def __init__(self):
+        self.MDA_PZQ_used = {}
+        self.HSI_PZQ_used = {}
+
+    def update_mda(self, year, quantity):
+        if year in self.MDA_PZQ_used.keys():
+            previous = self.MDA_PZQ_used[year]
+            quantity = previous + quantity
+        self.MDA_PZQ_used.update({year: quantity})
+
+    def update_hsi(self, year, quantity):
+        if year in self.HSI_PZQ_used.keys():
+            previous = self.HSI_PZQ_used[year]
+            quantity = previous + quantity
+        self.HSI_PZQ_used.update({year: quantity})
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class Schisto(Module):
     """
@@ -131,6 +153,7 @@ class Schisto(Module):
                                              'Symptoms to which the symptoms assigned in the module are mapped for the HSB module'),
 
         # MDA
+        'MDA_prognosed_freq': Parameter(Types.REAL, 'Prognosed MDA frequency in months'),
         'MDA_prognosed_PSAC': Parameter(Types.REAL, 'Prognosed coverage of MDA in PSAC'),
         'MDA_prognosed_SAC': Parameter(Types.REAL, 'Prognosed coverage of MDA in SAC'),
         'MDA_prognosed_Adults': Parameter(Types.REAL, 'Prognosed coverage of MDA in Adults'),
@@ -182,6 +205,7 @@ class Schisto(Module):
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
 
         # MDA prognosed
+        params['MDA_prognosed_freq'] = self.param_list.loc['MDA_prognosed_freq', 'Value']
         params['MDA_prognosed_PSAC'] = self.param_list.loc['MDA_prognosed_PSAC', 'Value']
         params['MDA_prognosed_SAC'] = self.param_list.loc['MDA_prognosed_SAC', 'Value']
         params['MDA_prognosed_Adults'] = self.param_list.loc['MDA_prognosed_Adults', 'Value']
@@ -315,7 +339,17 @@ class Schisto(Module):
 
         # add the basic events (infection, treatment, MDA)
         sim.schedule_event(SchistoInfectionsEvent(self), sim.date + DateOffset(months=1))
-        sim.schedule_event(SchistoMDAEvent(self), self.sim.date + DateOffset(months=3))
+        # sim.schedule_event(SchistoMDAHistoricalEvent(self), self.sim.date + DateOffset(months=3))
+        # schedule historical MDA to happen once per year in July
+        for historical_mda_year in [2015, 2016, 2017, 2018]:
+            if historical_mda_year >= sim.date.year:
+                sim.schedule_event(SchistoHistoricalMDAEvent(self),
+                                   pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=12))
+        # schedule prognosed MDA programms
+        sim.schedule_event(SchistoPrognosedMDAEvent(self),
+                           pd.Timestamp(year=2019, month=1, day=1, hour=12) + DateOffset(months=0))
+
+
         sim.schedule_event(SchistoHealthCareSeekEvent(self), sim.date + DateOffset(days=14))
 
         # add an event to log to screen
@@ -615,28 +649,23 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
             print("No one seeked treatment")
             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
-
-class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
+class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
     """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=12))
+        super().__init__(module)
         assert isinstance(module, Schisto)
 
     def apply(self, population):
-        print("MDA is happening now!")
+        print("Historical MDA is happening now!")
         df = self.sim.population.props
         year = self.sim.date.year
 
-        if year in [2015, 2016, 2017, 2018]:
-            treated_idx_PSAC = self.assign_historical_MDA_coverage(population, year, 'PSAC')
-            treated_idx_SAC = self.assign_historical_MDA_coverage(population, year, 'SAC')
-            treated_idx_Adults = self.assign_historical_MDA_coverage(population, year, 'Adults')
+        assert year in [2015, 2016, 2017, 2018], "No historical coverage data for this year"
 
-        else:  # for now no district-specific MDA coverage
-            treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, 'PSAC')
-            treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, 'SAC')
-            treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, 'Adults')
+        treated_idx_PSAC = self.assign_historical_MDA_coverage(population, year, 'PSAC')
+        treated_idx_SAC = self.assign_historical_MDA_coverage(population, year, 'SAC')
+        treated_idx_Adults = self.assign_historical_MDA_coverage(population, year, 'Adults')
 
         print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
         print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
@@ -688,6 +717,43 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         return MDA_idx
 
+
+class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
+    """Mass-Drug administration scheduled for the population
+    """
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Schisto)
+
+    def apply(self, population):
+        print("Prognosed MDA is happening now!")
+        df = self.sim.population.props
+
+         # for now no district-specific MDA coverage
+        treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, 'PSAC')
+        treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, 'SAC')
+        treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, 'Adults')
+
+        print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
+        print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
+        print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
+
+        treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
+
+        # people administered PZQ in MDA but in the Latent period will get the pill but won't be cured
+        # similarly susceptibles will get the pill but nothing will happen
+        # The infected will get cured immediately
+        infected_idx = df.index[(df.is_alive) & (df.ss_is_infected == 'Infected')]
+        MDA_treated = list(
+            set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively treated
+
+        for person_id in MDA_treated:
+            self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
+        # count how many PZQ tablets were distributed
+        PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
+        print("Year " + str(self.sim.date.year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
+        print("All cured in MDA: " + str(len(MDA_treated)))
+
     def assign_prognosed_MDA_coverage(self, population, age_group):
         """Assign coverage of MDA program to chosen age_group. The same coverage for every district.
 
@@ -709,6 +775,7 @@ class SchistoMDAEvent(RegularEvent, PopulationScopeEventMixin):
             MDA_idx = self.module.rng.choice(eligible, size=int(coverage * (len(eligible))), replace=False).tolist()
 
         return MDA_idx
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
@@ -737,9 +804,8 @@ class SchistoLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'Susc': count_states['Non-infected'],
                         'Latent': count_states['Latent'],
                         'Infectious': count_states['Infected'],
-                        'Infected': count_states['infected_any'], # not this in fact but for now when only Haem infections
+                        'Infected': count_states['infected_any'],
                         'Prevalence': tot_prevalence,
-                        # 'TotalTreated:': 9999999999999999999999999  # how to get this? this would be treatments + MDA coverage
                     })
 
     def count_age_group_states(self, population, age_group):
