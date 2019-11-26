@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2016, 1, 1)
-end_date = Date(2017, 1, 1)
-popsize = 10000
+end_date = Date(2021, 1, 1)
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
