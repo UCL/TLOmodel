@@ -64,7 +64,6 @@ class Tb(Module):
         'p_mdr_tx_fail': Parameter(Types.REAL,
                                    'multiplier for probability of MDR emergence per treatment course – treatment failure'),
 
-
         # progression
         'prop_fast_progressor': Parameter(Types.REAL,
                                           'Proportion of infections that progress directly to active stage'),
@@ -613,8 +612,9 @@ class Tb(Module):
             piggy_back_dx_at_appt.TREATMENT_ID = 'Tb_Screening_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint to reflect that this is a piggy back appt
-            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.5
+            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
+                                                                         key] * 0.5
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
@@ -757,7 +757,7 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog.loc[df.hv_inf] *= params['rr_tb_aids']
         prob_prog.loc[(df.hv_on_art == 2)] *= (params['rr_tb_hiv'] * params['rr_tb_art_adult'])
         # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
-        prob_prog.loc[df.li_overwt] *= params['rr_tb_obese']
+        prob_prog.loc[df.li_bmi >= 4] *= params['rr_tb_obese']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
         prob_prog.loc[df.li_ex_alc] *= params['rr_tb_alcohol']
         prob_prog.loc[df.li_tob] *= params['rr_tb_smoking']
@@ -1346,7 +1346,7 @@ class TbMdrEvent(RegularEvent, PopulationScopeEventMixin):
         prob_prog.loc[df.hv_inf] *= params['rr_tb_hiv']
         prob_prog.loc[(df.hv_on_art == 2)] *= (params['rr_tb_hiv'] * params['rr_tb_art_adult'])
         # prob_prog.loc[df.xxxx] *= params['rr_tb_overweight']
-        prob_prog.loc[df.li_overwt] *= params['rr_tb_obese']
+        prob_prog.loc[df.li_bmi >= 4] *= params['rr_tb_obese']
         # prob_prog.loc[df.xxxx] *= params['rr_tb_diabetes1']
         prob_prog.loc[df.li_ex_alc] *= params['rr_tb_alcohol']
         prob_prog.loc[df.li_tob] *= params['rr_tb_smoking']
@@ -1722,11 +1722,11 @@ class HSI_Tb_Screening(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Screening'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_TbScreening: a screening appointment for person %d', person_id)
 
         df = self.sim.population.props
@@ -1796,21 +1796,18 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
-
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['ConWithDCSA'] = 1  # This requires one generic outpatient appt
         the_appt_footprint['LabTBMicro'] = 1  # This requires one lab appt for microscopy
 
-
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_SputumTest'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Tb_SputumTest, giving a sputum test to person %d', person_id)
 
         df = self.sim.population.props
@@ -1825,7 +1822,7 @@ class HSI_Tb_SputumTest(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -1975,11 +1972,11 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_XpertTest'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("HSI_Tb_XpertTest: giving xpert test for person %d", person_id)
 
         df = self.sim.population.props
@@ -1993,7 +1990,7 @@ class HSI_Tb_XpertTest(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2176,11 +2173,11 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Xray'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = ['Hiv']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Tb_Xray, a chest x-ray for person %d', person_id)
 
         df = self.sim.population.props
@@ -2195,7 +2192,7 @@ class HSI_Tb_Xray(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2292,11 +2289,11 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationAdult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -2310,7 +2307,7 @@ class HSI_Tb_StartTreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2427,11 +2424,11 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_TreatmentInitiationChild'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -2445,7 +2442,7 @@ class HSI_Tb_StartTreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2562,11 +2559,11 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_MdrTreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         now = self.sim.date
@@ -2580,7 +2577,7 @@ class HSI_Tb_StartMdrTreatment(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2652,11 +2649,11 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentAdult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['Tb'].parameters
@@ -2670,7 +2667,7 @@ class HSI_Tb_RetreatmentAdult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2742,11 +2739,11 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_RetreatmentChild'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("We are now ready to treat this tb case %d", person_id)
 
         params = self.sim.modules['Tb'].parameters
@@ -2760,7 +2757,7 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2816,6 +2813,7 @@ class HSI_Tb_RetreatmentChild(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         pass
 
+
 # ---------------------------------------------------------------------------
 #   Follow-up appts
 # ---------------------------------------------------------------------------
@@ -2834,11 +2832,11 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUp'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         # nothing needs to happen here, just log the appt
         logger.debug("Follow up appt for tb case %d", person_id)
 
@@ -2863,11 +2861,11 @@ class HSI_Tb_FollowUp_SputumTest(Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_FollowUpSputumTest'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Tb_FollowUp_SputumTest, a follow-up sputum smear test for person %d', person_id)
 
         df = self.sim.population.props
@@ -2881,7 +2879,7 @@ class HSI_Tb_FollowUp_SputumTest(Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2897,6 +2895,7 @@ class HSI_Tb_FollowUp_SputumTest(Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
+
 
 # ---------------------------------------------------------------------------
 #   Cure
@@ -3032,11 +3031,11 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_Ipt'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug("Starting IPT for person %d", person_id)
 
         df = self.sim.population.props
@@ -3048,7 +3047,7 @@ class HSI_Tb_Ipt(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -3076,7 +3075,7 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-        assert isinstance(module, Tb)
+        # assert isinstance(module, Tb)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -3084,11 +3083,11 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Tb_IptHiv'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 
@@ -3099,7 +3098,7 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -3113,16 +3112,16 @@ class HSI_Tb_IptHiv(HSI_Event, IndividualScopeEventMixin):
             # only if not currently tb_active
             if not df.at[person_id, 'tb_inf'].startswith("active"):
 
-                logger.debug("This is HSI_Tb_IptHiv, starting IPT for HIV+ person %d", person_id)
+                logger.debug("HSI_Tb_IptHiv: starting IPT for HIV+ person %d", person_id)
 
                 df.at[person_id, 'tb_on_ipt'] = True
                 df.at[person_id, 'tb_date_ipt'] = self.sim.date
 
-                # schedule end date of ipt after six months and repeat call to HS for another prescription
+                # schedule end date of ipt after six months and repeat call
                 self.sim.schedule_event(TbIptEndEvent(self.module, person_id), self.sim.date + DateOffset(months=6))
 
             else:
-                logger.debug("This is HSI_Tb_IptHiv, person %d has active TB and can't start IPT", person_id)
+                logger.debug("HSI_Tb_IptHiv: person %d has active TB and can't start IPT", person_id)
 
     def did_not_run(self):
         pass
@@ -3143,7 +3142,7 @@ class TbIptEndEvent(Event, IndividualScopeEventMixin):
         # if hiv+ reschedule HSI_Tb_IptHiv to continue IPT
         if df.at[person_id, 'hv_inf']:
             logger.debug(
-                '....This is TbIptEndEvent: scheduling further IPT for person %d on date %s',
+                'TbIptEndEvent: scheduling further IPT for person %d on date %s',
                 person_id, self.sim.date)
 
             ipt_start = HSI_Tb_IptHiv(self.module, person_id=person_id)
@@ -3318,9 +3317,9 @@ class TbMdrDeathEvent(RegularEvent, PopulationScopeEventMixin):
 
         # hiv-positive no ART, tb treated
         mort_hiv.loc[df['tb_inf'].str.contains('active_mdr') & df.hv_inf & df.tb_treated_mdr & (
-                df.hv_on_art == 2) & ~df.hv_on_cotrim] = params[
-                                                             'monthly_prob_tb_mortality'] * \
-                                                         params['mort_tx']
+            df.hv_on_art == 2) & ~df.hv_on_cotrim] = params[
+                                                         'monthly_prob_tb_mortality'] * \
+                                                     params['mort_tx']
 
         # Generate a series of random numbers, one per individual
         probs = rng.rand(len(df))

@@ -834,8 +834,9 @@ class Hiv(Module):
             piggy_back_dx_at_appt.TREATMENT_ID = 'Hiv_PiggybackAppt'
 
             # Arbitrarily reduce the size of appt footprint
-            for key in piggy_back_dx_at_appt.APPT_FOOTPRINT:
-                piggy_back_dx_at_appt.APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.APPT_FOOTPRINT[key] * 0.25
+            for key in piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT:
+                piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[key] = piggy_back_dx_at_appt.EXPECTED_APPT_FOOTPRINT[
+                                                                         key] * 0.25
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(piggy_back_dx_at_appt,
                                                                 priority=0,
@@ -1092,7 +1093,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
 
             if seeks_care:
                 logger.debug(
-                    'This is HivSymptomaticEvent, scheduling Hiv_PresentsForCareWithSymptoms for person %d',
+                    'HivSymptomaticEvent: scheduling Hiv_PresentsForCareWithSymptoms for person %d',
                     person_id)
                 event = HSI_Hiv_PresentsForCareWithSymptoms(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
@@ -1101,7 +1102,7 @@ class HivSymptomaticEvent(Event, IndividualScopeEventMixin):
                                                                     tclose=self.sim.date + DateOffset(weeks=2)
                                                                     )
         else:
-            logger.debug("This is HivSymptomaticEvent doing nothing because person %d is on art", person_id)
+            logger.debug("HivSymptomaticEvent: doing nothing because person %d is on art", person_id)
 
 
 class HivAidsEvent(Event, IndividualScopeEventMixin):
@@ -1258,14 +1259,13 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(
-            'HSI_Hiv_PresentsForCareWithSymptoms: giving a test in the first appointment for person %d',
-            person_id)
+            f'HSI_Hiv_PresentsForCareWithSymptoms: giving a test for {person_id}')
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -1278,7 +1278,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                 0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -1299,10 +1299,6 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'hv_diagnosed'] = True
 
                 # request treatment
-                logger.debug(
-                    'HSI_Hiv_PresentsForCareWithSymptoms: scheduling hiv treatment for person %d on date %s',
-                    person_id, self.sim.date)
-
                 # pre-2012, only AIDS patients received ART
                 if self.sim.date.year <= 2012:
                     logger.debug(
@@ -1353,7 +1349,7 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         logger.debug('HSI_Hiv_PresentsForCareWithSymptoms: did not run')
 
-        pass
+        return True
 
 
 class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
@@ -1371,8 +1367,8 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TestingInfant'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1391,7 +1387,7 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [item_code1, item_code2, item_code3]
+            'Item_Code': [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}]
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1471,7 +1467,7 @@ class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin
         self.sim.modules['HealthSystem'].schedule_hsi_event(popwide_hsi,
                                                             priority=1,
                                                             topen=self.sim.date + DateOffset(months=12),
-                                                            tclose=None)
+                                                            tclose=self.sim.date + DateOffset(months=13))
 
     def did_not_run(self):
         pass
@@ -1490,8 +1486,8 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1508,7 +1504,7 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -1556,8 +1552,8 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Prep'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1580,8 +1576,8 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
         )[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': [item_code1]
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': [{item_code1: 1}]
         }
 
         # query if consumables are available before logging their use (will depend on test results)
@@ -1616,7 +1612,8 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
 
                 # in this case, only the hiv test is used, so reset the cons_footprint
                 the_cons_footprint = {
-                    'Intervention_Package_Code': [pkg_code1],
+                    'Intervention_Package_Code': [{pkg_code1: 1}],
+                    'Item_Code': []
                 }
 
                 cons_logged = self.sim.modules['HealthSystem'].request_consumables(
@@ -1657,8 +1654,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantProphylaxis'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1677,7 +1674,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [item_code1, item_code2, item_code3]
+            'Item_Code': [{item_code1: 1}, {item_code2: 1}, {item_code3: 1}]
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1714,8 +1711,8 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_InfantTreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1738,8 +1735,8 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
                                       'Intervention_Pkg'] == 'Cotrimoxazole for children', 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': [item_code1]
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': [{item_code1: 1}]
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1844,11 +1841,11 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentInitiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         logger.debug('HSI_Hiv_StartTreatment: initiating treatment for person %d', person_id)
 
@@ -1863,7 +1860,7 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [item_code1]
+            'Item_Code': [{item_code1: 1}]
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -1999,11 +1996,11 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             'Hiv_TreatmentMonitoring: giving a viral load test to person %d',
             person_id)
@@ -2015,7 +2012,7 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
             0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
@@ -2044,11 +2041,11 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Hiv_Treatment'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug(
             'HSI_Hiv_RepeatPrescription: giving repeat prescription for person %d',
             person_id)
@@ -2060,7 +2057,7 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
 
         the_cons_footprint = {
             'Intervention_Package_Code': [],
-            'Item_Code': [item_code1]
+            'Item_Code': [{item_code1: 1}]
         }
 
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
@@ -2085,6 +2082,7 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
+
 
 # ---------------------------------------------------------------------------
 #   Transitions on/off treatment
@@ -2373,7 +2371,7 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # adult incidence
         tmp = len(
             df.loc[(df.age_years.between(15, 80)) & df.is_alive & (
-                    df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
+                df.hv_date_inf > (now - DateOffset(months=self.repeat)))])
         pop = len(df[df.is_alive & (df.age_years.between(15, 80))])
         adult_inc_percent = (tmp / pop) * 100
 

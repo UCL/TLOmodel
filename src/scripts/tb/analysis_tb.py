@@ -14,7 +14,7 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     hiv,
-    lifestyle,
+    enhanced_lifestyle,
     malecircumcision,
     tb
 )
@@ -29,10 +29,11 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
+# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 12, 31)
-popsize = 1000
+end_date = Date(2013, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -54,13 +55,13 @@ service_availability = ["*"]
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       ignore_appt_constraints=True,
-                                       ignore_cons_constraints=True,
-                                       ignore_priority=True))
+                                       service_availability=service_availability,
+                                       mode_appt_constraints=0,
+                                       capabilities_coefficient=0.0))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
 sim.register(tb.Tb(resourcefilepath=resourcefilepath))
 sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
@@ -69,7 +70,7 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger('tlo.methods.hiv').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.hiv').setLevel(logging.DEBUG)
 logging.getLogger("tlo.methods.tb").setLevel(logging.DEBUG)
 # logging.getLogger("tlo.methods.demography").setLevel(logging.INFO)  # to get deaths
 # logging.getLogger("tlo.methods.contraception").setLevel(logging.INFO)  # for births
