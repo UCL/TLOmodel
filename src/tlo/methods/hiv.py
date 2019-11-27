@@ -1432,6 +1432,9 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=None)
 
+    def did_not_run(self):
+        pass
+
 
 class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin):
     """
@@ -1469,6 +1472,9 @@ class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin
                                                             priority=1,
                                                             topen=self.sim.date + DateOffset(months=12),
                                                             tclose=None)
+
+    def did_not_run(self):
+        pass
 
 
 class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
@@ -1534,6 +1540,9 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=None)
 
+    def did_not_run(self):
+        pass
+
 
 class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
 
@@ -1545,6 +1554,19 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
         the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_Prep'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            'HSI_Hiv_Prep: giving a test and PrEP for person %d', person_id)
+
+        df = self.sim.population.props
+
+        # check if test available first
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
 
@@ -1562,43 +1584,57 @@ class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
             'Item_Code': [item_code1]
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Prep'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        # query if consumables are available before logging their use (will depend on test results)
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug(
-            'This is HSI_Hiv_Prep, giving a test and PrEP for person %d', person_id)
+        # if testing is available:
+        if is_cons_available['Intervention_Package_Code'][pkg_code1]:
+            logger.debug('HSI_Hiv_Prep: testing is available')
 
-        df = self.sim.population.props
+            df.at[person_id, 'hv_ever_tested'] = True
+            df.at[person_id, 'hv_date_tested'] = self.sim.date
+            df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
 
-        df.at[person_id, 'hv_ever_tested'] = True
-        df.at[person_id, 'hv_date_tested'] = self.sim.date
-        df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
+            # if hiv+ schedule treatment
+            if df.at[person_id, 'hv_inf']:
+                df.at[person_id, 'hv_diagnosed'] = True
 
-        # if hiv+ schedule treatment
-        if df.at[person_id, 'hv_inf']:
-            df.at[person_id, 'hv_diagnosed'] = True
+                # request treatment
+                logger.debug(
+                    'HSI_Hiv_Prep: scheduling hiv treatment for person %d on date %s',
+                    person_id, self.sim.date)
 
-            # request treatment
-            logger.debug(
-                '....This is HSI_Hiv_Prep: scheduling hiv treatment for person %d on date %s',
-                person_id, self.sim.date)
+                treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
-            treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+                # Request the health system to start treatment
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                    priority=1,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
-            # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=1,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                # in this case, only the hiv test is used, so reset the cons_footprint
+                the_cons_footprint = {
+                    'Intervention_Package_Code': [pkg_code1],
+                }
 
-        # if HIV-, give ARVs and assume good adherence
+                cons_logged = self.sim.modules['HealthSystem'].request_consumables(
+                    hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
+                )
+
+            # if HIV-, check PREP available, give PREP and assume good adherence
+            else:
+                if is_cons_available['Item_Code'][item_code1]:
+                    logger.debug('HSI_Hiv_Prep: Prep is available')
+                    df.at[person_id, 'hv_on_art'] = 2
+
+                    cons_logged = self.sim.modules['HealthSystem'].request_consumables(
+                        hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
+                    )
+
         else:
-            df.at[person_id, 'hv_on_art'] = 2
+            logger.debug('HSI_Hiv_Prep: testing is not available')
 
 
 class HSI_Hiv_StartInfantProphylaxis(Event, IndividualScopeEventMixin):
