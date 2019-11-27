@@ -18,8 +18,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = 'resources'
 
 start_date = Date(year=2010, month=1, day=1)
-end_date = Date(year=2012, month=12, day=31)
-popsize = 100
+end_date = Date(year=2010, month=12, day=31)
+popsize = 50
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -45,7 +45,11 @@ service_availability = ['*']
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       service_availability=service_availability))
+                                       service_availability=service_availability,
+                                       mode_appt_constraints=2,
+                                       capabilities_coefficient=0.0))
+
+
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(lifestyle.Lifestyle())
 sim.register(mockitis.Mockitis())
@@ -59,3 +63,5 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
+
+# TODO: demonstrate the role of the squeee factors-- force overloading etc
