@@ -672,103 +672,57 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
 
         # apply a force of infection to produce new latent cases
         # no age distribution for FOI but the relative risks would affect distribution of active infections
-        districts = (df['district_of_residence'].unique())
-
-        # if len(df[df['tb_inf'].str.contains('active_susc') & df.is_alive]) > 1:
-        #
-        #     test = df[df['tb_inf'].str.contains('active_susc') &
-        #         df.is_alive].groupby(['tb_smear', 'district_of_residence']).size().to_frame(
-        #         'count').reset_index().merge(
-        #         pd.DataFrame(list(districts), columns=['district']),
-        #         left_on=['district_of_residence'],
-        #         right_on=['district'],
-        #         how='right').fillna(value=0)
-
-        # test = df[df['tb_inf'].str.contains('active_susc') &
-        #     df.is_alive].groupby(['tb_smear', 'district_of_residence']).count().fillna(value=0)
-
         # smear-positive cases by district
         df['tmp'] = pd.Series(0, index=df.index)
         df.loc[df.is_alive & df['tb_inf'].str.contains('active_susc') & df.tb_smear, 'tmp'] = 1
-        smear_pos = df.groupby(['district_of_residence'])[['tmp']].sum().fillna(value=0)
+        smear_pos = df.groupby(['district_of_residence'])[['tmp']].sum()
+        smear_pos = smear_pos.iloc[:, 0]  # convert to series
 
         # smear-negative cases by district
         df['tmp2'] = pd.Series(0, index=df.index)
         df.loc[df.is_alive & df['tb_inf'].str.contains('active_susc') & ~df.tb_smear, 'tmp2'] = 1
-        smear_neg = df.groupby(['district_of_residence'])[['tmp2']].sum().fillna(value=0)
+        smear_neg = df.groupby(['district_of_residence'])[['tmp2']].sum()
+        smear_neg = smear_neg.iloc[:, 0]  # convert to series
 
         # uninfected cases by district
         df['tmp3'] = pd.Series(0, index=df.index)
         df.loc[df.is_alive & (df.tb_inf == 'uninfected'), 'tmp3'] = 1
-        uninfected = df.groupby(['district_of_residence'])[['tmp3']].sum().fillna(value=0)
+        uninfected = df.groupby(['district_of_residence'])[['tmp3']].sum()
+        uninfected = uninfected.iloc[:, 0]  # convert to series
 
         # population by district
         df['tmp4'] = pd.Series(0, index=df.index)
         df.loc[df.is_alive, 'tmp4'] = 1
-        pop = df.groupby(['district_of_residence'])[['tmp4']].sum().fillna(value=0)
+        pop = df.groupby(['district_of_residence'])[['tmp4']].sum()
+        pop = pop.iloc[:, 0]  # convert to series
 
         # calculate foi by district
+        districts = (df['district_of_residence'].unique())
         foi = pd.Series(0, index=districts)
 
         foi = (params['transmission_rate'] * smear_pos *
                (smear_neg * params['rel_inf_smear_ng']) *
                uninfected) / pop
 
+        assert foi.isna().sum() == 0  # check there is a foi for every district
 
-
-
-
-
-
-
-
-
-        # infectious people are active_pulm
-        # hiv-positive and hiv-negative
-        active_sm_pos = int(len(df[df['tb_inf'].str.contains('active_susc') & (
-            df.tb_stage == 'active_pulm') & df.is_alive]) * params['prop_smear_positive'])
-
-        active_sm_neg = int(len(df[df['tb_inf'].str.contains('active_susc') & (
-            df.tb_stage == 'active_pulm') & df.is_alive]) * (
-                                1 - params['prop_smear_positive']))
-
-        # population at-risk of new infection = uninfected
-        uninfected_total = len(df[(df.tb_inf == 'uninfected') & df.is_alive])
-        total_population = len(df[df.is_alive])
-
-        # in small pops, may get zero values which results in FOI = 0
-        if active_sm_pos == 0:
-            active_sm_pos = 1
-
-        if active_sm_neg == 0:
-            active_sm_neg = 1
-
-        force_of_infection = (params['transmission_rate'] *
-                              active_sm_pos *
-                              (active_sm_neg * params['rel_inf_smear_ng']) *
-                              uninfected_total) / total_population
-
-        # print('force_of_infection: ', force_of_infection)
+        foi_df = pd.DataFrame(foi, columns=['foi'])
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
+        df_distr = df.merge(foi_df, left_on=['district_of_residence'],
+                            right_index=True,
+                            how='left')
 
-        # pop at risk = uninfected only
-        #  no age/sex effect on risk of latent infection
-        prob_tb_new = pd.Series(0, index=df.index)
-        prob_tb_new.loc[df.is_alive & (df.tb_inf == 'uninfected')] = force_of_infection
+        assert df_distr.foi.isna().sum() == 0  # check there is a district-level foi for every person
 
-        # assign risk of latent tb
-        risk_tb = pd.Series(1, index=df.index)
-        risk_tb.loc[df.is_alive & df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
-
-        # weight the likelihood of being sampled by the relative risk
-        norm_p = pd.Series(risk_tb)
-        norm_p /= norm_p.sum()  # normalise
+        risk_tb = pd.Series(df_distr.foi, index=df.index)
+        risk_tb.loc[~df.is_alive] *= 0
+        risk_tb.loc[df.tb_bcg & df.age_years < 10] *= params['rr_bcg_inf']
 
         # get a list of random numbers between 0 and 1 for each infected individual
         random_draw = rng.random_sample(size=len(df))
 
-        tb_idx = df.index[df.is_alive & (random_draw < (prob_tb_new * norm_p))]
+        tb_idx = df.index[df.is_alive & (df.tb_inf == 'uninfected') & (random_draw < risk_tb)]
 
         df.loc[tb_idx, 'tb_inf'] = 'latent_susc_new'
         df.loc[tb_idx, 'tb_date_latent'] = now
@@ -778,11 +732,8 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         # ----------------------------------- RE-INFECTIONS -----------------------------------
 
         # pop at risk = latent_susc_tx and latent_mdr (new & tx)
-        prob_tb_reinf = pd.Series(0, index=df.index)
-        prob_tb_reinf.loc[(df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains(
-            'latent_mdr') & df.is_alive] = force_of_infection
-
-        repeat_case = df.index[df.is_alive & (random_draw < (prob_tb_reinf * norm_p))]
+        repeat_case = df.index[df.is_alive & (df.tb_inf == 'latent_susc_tx') | df['tb_inf'].str.contains(
+            'latent_mdr') & (random_draw < risk_tb)]
 
         # unchanged status, high risk of relapse as if just recovered
         df.loc[repeat_case, 'tb_inf'] = 'latent_susc_tx'
@@ -790,6 +741,8 @@ class TbEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[repeat_case, 'tb_date_latent'] = now
         df.loc[repeat_case, 'tb_stage'] = 'latent'
         df.loc[repeat_case, 'tb_unified_symptom_code'] = 0
+
+        del df_distr
 
         # -----------------------------------------------------------------------------------------------------
         # PROGRESSION TO ACTIVE DISEASE
