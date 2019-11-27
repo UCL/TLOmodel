@@ -278,7 +278,8 @@ class HealthSystem(Module):
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
             footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
-                logger.warning("The expected footprint is not possible with the configuration of officers.")
+                logger.warning(
+                    f"The expected footprint {hsi_event} is not possible with the configuration of officers.")
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
