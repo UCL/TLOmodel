@@ -912,12 +912,12 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         # print('infective', infective)
         susceptible = len(df.index[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
 
-        foi = params['beta'] * infective / susceptible
-        foi = foi * params['hv_behav_mod']  # modify foi by behaviour change modification value
-        assert foi < 1
+        prob_inf = params['beta'] * infective / susceptible  # transmission probability * proportion infected
+        prob_inf = prob_inf * params['hv_behav_mod']  # modify foi by behaviour change modification value
+        assert prob_inf < 1
 
         #  sample using the prob_inf scaled by relative susceptibility
-        newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (foi * risk_hiv))]
+        newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
         # print('newly_infected_index', newly_infected_index)
 
         # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
