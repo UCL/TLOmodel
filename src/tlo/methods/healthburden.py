@@ -63,6 +63,8 @@ class HealthBurden(Module):
         self.YearsLivedWithDisability = pd.DataFrame(index=multi_index)
 
         # Check that all registered disease modules have the report_daly_values() function
+        assert 'HealthSystem' in self.sim.modules.keys(), "HealthBurden module is dependent on HealthSystem module."
+
         for module_name in self.sim.modules['HealthSystem'].registered_disease_modules.keys():
             assert 'report_daly_values' in dir(self.sim.modules['HealthSystem'].registered_disease_modules[module_name])
 
@@ -84,7 +86,7 @@ class HealthBurden(Module):
 
         dalys = self.YearsLifeLost.join(self.YearsLivedWithDisability)
 
-        # Dump the DALYS dateframe to the log this dataframe to the log
+        # Dump the DALYS dateframe to the log
 
         # 1) Turn multi-index into regular columns
         dalys = dalys.reset_index()
