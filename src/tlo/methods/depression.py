@@ -136,7 +136,7 @@ class Depression(Module):
         p['depr_resolution_rates'] = [0.2, 0.3, 0.5, 0.7, 0.95]
 
         if 'HealthBurden' in self.sim.modules.keys():
-            # get the DALY weight - 932 and 933 are the sequale codes for epilepsy
+            # get the DALY weight - 932 and 933 are the sequale codes for depression
             p['daly_wt_severe_episode_major_depressive_disorder'] = self.sim.modules[
                 'HealthBurden'
             ].get_daly_weight(sequlae_code=932)
@@ -565,14 +565,14 @@ class HSI_Depression_Present_For_Care_And_Start_Antidepressant(HSI_Event, Indivi
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_Present_For_Care_And_Start_Antidepressant'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this appointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 
-        # This is the property that repesents currently using antidepresants: de_on_antidepr
+        # This is the property that represents currently using antidepressants: de_on_antidepr
 
         # Check that the person is currently not on antidepressants
         # (not always true so commented out for now)
@@ -641,26 +641,26 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
 
         # TODO: Andrew - I've re-organsied this, check that it's behaving as you wanted
-        dict_for_output = {
-            'prop_ever_depr': prop_ever_depr,
-            'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
-            'prop_antidepr': prop_antidepr,
-            'prop_antidepr_depr': prop_antidepr_depr,
-            'prop_antidepr_not_depr': prop_antidepr_not_depr,
-            'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
-            'prop_current_talk_ther': prop_current_talk_ther,
-            'prop_ge15_m_depr': prop_ge15_m_depr,
-            'prop_ge15_f_depr': prop_ge15_f_depr,
-            'prop_age_50_ever_depr': prop_age_50_ever_depr,
-            'prop_depr_ge45': prop_depr_ge45,
-            'suicides_this_3m': suicides_this_3m,
-            'self_harm_events_this_3m': self_harm_events_this_3m,
-        }
+#       dict_for_output = {
+#           'prop_ever_depr': prop_ever_depr,
+#           'p_ever_diagnosed_depression': p_ever_diagnosed_depression,
+#           'prop_antidepr': prop_antidepr,
+#           'prop_antidepr_depr': prop_antidepr_depr,
+#           'prop_antidepr_not_depr': prop_antidepr_not_depr,
+#           'prop_antidepr_ever_depr': prop_antidepr_ever_depr,
+#           'prop_current_talk_ther': prop_current_talk_ther,
+#           'prop_ge15_m_depr': prop_ge15_m_depr,
+#           'prop_ge15_f_depr': prop_ge15_f_depr,
+#           'prop_age_50_ever_depr': prop_age_50_ever_depr,
+#           'prop_depr_ge45': prop_depr_ge45,
+#           'suicides_this_3m': suicides_this_3m,
+#           'self_harm_events_this_3m': self_harm_events_this_3m,
+#       }
 
-        logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
+#       logger.info('%s|summary_stats_per_3m|%s', self.sim.date, dict_for_output)
 
-#       logger.info('%s|person_one|%s',
-#                    self.sim.date,
-#                    df.loc[10].to_dict())
+        logger.info('%s|person_one|%s',
+                     self.sim.date,
+                     df.loc[10].to_dict())
 
 
