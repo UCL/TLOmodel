@@ -198,7 +198,7 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
-        logger.debug('This is HSI_Circumcision_PresentsForCare, a first appointment for person %d', person_id)
+        logger.debug('HSI_Circumcision_PresentsForCare: a first appointment for person %d', person_id)
 
         df = self.sim.population.props  # shortcut to the dataframe
 
@@ -216,7 +216,7 @@ class HSI_Circumcision_PresentsForCare(HSI_Event, IndividualScopeEventMixin):
         is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
             hsi_event=self, cons_req_as_footprint=the_cons_footprint
         )
-        logger.warning(f"is_cons_available ({is_cons_available}) should be used in this method")
+        logger.warning(f'is_cons_available ({is_cons_available}) should be used in this method')
 
     def did_not_run(self):
         pass
