@@ -1983,18 +1983,30 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         pass
 
 
-class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
+class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for hiv viral load monitoring once on treatment
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['LabMolec'] = 1  # This requires one lab appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            'Hiv_TreatmentMonitoring: giving a viral load test to person %d',
+            person_id)
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2007,33 +2019,39 @@ class HSI_Hiv_VLMonitoring(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint
+        )
 
-    def apply(self, person_id):
-        logger.debug(
-            '....This is Hiv_TreatmentMonitoring: giving a viral load test to person %d',
-            person_id)
+    def did_not_run(self):
+        pass
 
 
-# TODO: check ART in consumables, how long is prescription for?
-# schedule next Tx in 3 months
-class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
+class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for hiv repeat prescriptions once on treatment
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         # TODO need a pharmacy appt
         the_appt_footprint['EstNonCom'] = 1  # This is an hiv specific appt type
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_Treatment'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug(
+            'HSI_Hiv_RepeatPrescription: giving repeat prescription for person %d',
+            person_id)
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -2045,18 +2063,15 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
             'Item_Code': [item_code1]
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Treatment'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint
+        )
 
-    def apply(self, person_id):
         date_repeat_prescription = self.sim.date + DateOffset(months=3)
 
         logger.debug(
-            '....This is HSI_Hiv_RepeatPrescription: scheduling a repeat prescription for person %d on date %s',
+            'HSI_Hiv_RepeatPrescription: scheduling a repeat prescription for person %d on date %s',
             person_id, date_repeat_prescription)
 
         followup_appt = HSI_Hiv_RepeatARV(self.module, person_id=person_id)
@@ -2068,6 +2083,8 @@ class HSI_Hiv_RepeatARV(Event, IndividualScopeEventMixin):
                                                             tclose=date_repeat_prescription + DateOffset(weeks=2)
                                                             )
 
+    def did_not_run(self):
+        pass
 
 # ---------------------------------------------------------------------------
 #   Transitions on/off treatment
