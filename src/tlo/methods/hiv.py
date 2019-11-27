@@ -495,6 +495,7 @@ class Hiv(Module):
         df.loc[art_idx_adult, 'hv_on_art'] = 2  # assumes all are adherent, then stratify into category 1/2
         df.loc[art_idx_adult, 'hv_date_art_start'] = now
 
+        del df_art
         # ----------------------------------- ADHERENCE -----------------------------------
 
         # allocate proportion to non-adherent category
