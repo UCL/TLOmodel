@@ -11,6 +11,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography, tb
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -107,6 +108,8 @@ class Hiv(Module):
             Parameter(Types.REAL, 'relative risk of hiv with secondary education'),
         'rr_edlevel_higher':
             Parameter(Types.REAL, 'relative risk of hiv with higher education'),
+        'hv_behav_mod':
+            Parameter(Types.REAL, 'change in force of infection with behaviour modification'),
 
         # daly weights
         'daly_wt_chronic':
@@ -256,6 +259,8 @@ class Hiv(Module):
             self.param_list.loc['rr_edlevel_secondary', 'Value1']
         params['rr_edlevel_higher'] = \
             self.param_list.loc['rr_edlevel_higher', 'Value1']
+        params['hv_behav_mod'] = \
+            self.param_list.loc['hv_behav_mod', 'Value1']
 
         # daly weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -690,10 +695,7 @@ class Hiv(Module):
         outreach_event = HivLaunchOutreachEvent(self)
         self.sim.schedule_event(outreach_event, self.sim.date + DateOffset(months=12))
 
-        # Schedule the event that will launch the Behaviour change event
-        # behav_change_event = HivLaunchBehavChangeEvent(self)
-        # self.sim.schedule_event(behav_change_event, self.sim.date + DateOffset(months=12))
-
+        # To launch the Behaviour change event across a target population:
         # def target_fn(person_id, population):
         #     # Receives a person_id and returns True/False to indicate whether that person is to be included
         #     return 15 <= population.at[person_id, 'age_years'] <= 50 and (not population.at[person_id, 'hv_inf'])
@@ -704,6 +706,13 @@ class Hiv(Module):
         #                                                     priority=0,
         #                                                     topen=self.sim.date + DateOffset(months=12),
         #                                                     tclose=None)
+
+        # Schedule the occurrence of a population wide change in risk that goes through the health system:
+        popwide_hsi_event = HSI_Hiv_PopulationWideBehaviourChange(self, target_fn=None)
+        self.sim.modules['HealthSystem'].schedule_hsi_event(
+            popwide_hsi_event, priority=1, topen=self.sim.date, tclose=None
+        )
+        logger.debug('HSI_Hiv_PopulationWideBehaviourChange has been scheduled successfully!')
 
         # Schedule the event that will launch the PrEP event (2018 onwards)
         prep_event = HivLaunchPrepEvent(self)
@@ -903,11 +912,12 @@ class HivEvent(RegularEvent, PopulationScopeEventMixin):
         # print('infective', infective)
         susceptible = len(df.index[df.is_alive & ~df.hv_inf & (df.age_years >= 15)])
 
-        prob_inf = params['beta'] * infective / susceptible
-        assert (prob_inf < 1)
+        foi = params['beta'] * infective / susceptible
+        foi = foi * params['hv_behav_mod']  # modify foi by behaviour change modification value
+        assert foi < 1
 
         #  sample using the prob_inf scaled by relative susceptibility
-        newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (prob_inf * risk_hiv))]
+        newly_infected_index = df.index[(rng.random_sample(size=len(df)) < (foi * risk_hiv))]
         # print('newly_infected_index', newly_infected_index)
 
         # ----------------------------------- SCATTER INFECTION DATES -----------------------------------
@@ -1229,7 +1239,7 @@ class HivLaunchPrepEvent(Event, PopulationScopeEventMixin):
 #   Health system interactions
 # ---------------------------------------------------------------------------
 
-class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
+class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the
@@ -1239,11 +1249,26 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one outpatient appt
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_Testing'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+        logger.debug(
+            'HSI_Hiv_PresentsForCareWithSymptoms: giving a test in the first appointment for person %d',
+            person_id)
+
+        df = self.sim.population.props
+        params = self.module.parameters
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -1257,41 +1282,66 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_Testing'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint
+        )
 
-    def apply(self, person_id):
-        logger.debug(
-            'This is HSI_Hiv_PresentsForCareWithSymptoms, giving a test in the first appointment for person %d',
-            person_id)
+        if is_cons_available:
+            logger.debug('HSI_Hiv_PresentsForCareWithSymptoms: all consumables available')
 
-        df = self.sim.population.props
-        params = self.module.parameters
+            df.at[person_id, 'hv_ever_tested'] = True
+            df.at[person_id, 'hv_date_tested'] = self.sim.date
+            df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
 
-        df.at[person_id, 'hv_ever_tested'] = True
-        df.at[person_id, 'hv_date_tested'] = self.sim.date
-        df.at[person_id, 'hv_number_tests'] = df.at[person_id, 'hv_number_tests'] + 1
+            # if hiv+ schedule treatment
+            if df.at[person_id, 'hv_inf']:
+                df.at[person_id, 'hv_diagnosed'] = True
 
-        # if hiv+ schedule treatment
-        if df.at[person_id, 'hv_inf']:
-            df.at[person_id, 'hv_diagnosed'] = True
-
-            # request treatment
-            logger.debug(
-                '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling hiv treatment for person %d on date %s',
-                person_id, self.sim.date)
-
-            # pre-2012, only AIDS patients received ART
-            if self.sim.date.year <= 2012:
+                # request treatment
                 logger.debug(
-                    '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling treatment for person %d on date %s',
+                    'HSI_Hiv_PresentsForCareWithSymptoms: scheduling hiv treatment for person %d on date %s',
                     person_id, self.sim.date)
 
-                if df.at[person_id, 'hv_specific_symptoms'] == 'aids':
+                # pre-2012, only AIDS patients received ART
+                if self.sim.date.year <= 2012:
+                    logger.debug(
+                        'HSI_Hiv_PresentsForCareWithSymptoms: scheduling treatment for person %d on date %s',
+                        person_id, self.sim.date)
+
+                    if df.at[person_id, 'hv_specific_symptoms'] == 'aids':
+                        treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
+
+                        # Request the health system to start treatment
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                            priority=1,
+                                                                            topen=self.sim.date,
+                                                                            tclose=None)
+                    # if not eligible for art, give ipt
+                    else:
+
+                        district = df.at[person_id, 'district_of_residence']
+
+                        if (district in params['tb_high_risk_distr'].values) & (self.sim.date.year > 2012) & (
+                            self.module.rng.rand() < params['hiv_art_ipt']):
+                            logger.debug(
+                                'HSI_Hiv_PresentsForCareWithSymptoms: scheduling IPT for person %d on date %s',
+                                person_id, self.sim.date)
+
+                            ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
+
+                            # Request the health system to have this follow-up appointment
+                            self.sim.modules['HealthSystem'].schedule_hsi_event(ipt_start,
+                                                                                priority=1,
+                                                                                topen=self.sim.date,
+                                                                                tclose=None
+                                                                                )
+
+                # post-2012, treat all
+                else:
+                    logger.debug(
+                        'HSI_Hiv_PresentsForCareWithSymptoms: scheduling art for person %d on date %s',
+                        person_id, self.sim.date)
                     treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
 
                     # Request the health system to start treatment
@@ -1299,51 +1349,37 @@ class HSI_Hiv_PresentsForCareWithSymptoms(Event, IndividualScopeEventMixin):
                                                                         priority=1,
                                                                         topen=self.sim.date,
                                                                         tclose=None)
-                # if not eligible for art, give ipt
-                else:
 
-                    district = df.at[person_id, 'district_of_residence']
+    def did_not_run(self):
+        logger.debug('HSI_Hiv_PresentsForCareWithSymptoms: did not run')
 
-                    if (district in params['tb_high_risk_distr'].values) & (self.sim.date.year > 2012) & (
-                        self.module.rng.rand() < params['hiv_art_ipt']):
-                        logger.debug(
-                            '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling IPT for person %d on date %s',
-                            person_id, self.sim.date)
-
-                        ipt_start = tb.HSI_Tb_IptHiv(self.module, person_id=person_id)
-
-                        # Request the health system to have this follow-up appointment
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(ipt_start,
-                                                                            priority=1,
-                                                                            topen=self.sim.date,
-                                                                            tclose=None
-                                                                            )
-
-            # post-2012, treat all
-            else:
-                logger.debug(
-                    '....This is HSI_Hiv_PresentsForCareWithSymptoms: scheduling art for person %d on date %s',
-                    person_id, self.sim.date)
-                treatment = HSI_Hiv_StartTreatment(self.module, person_id=person_id)
-
-                # Request the health system to start treatment
-                self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                    priority=1,
-                                                                    topen=self.sim.date,
-                                                                    tclose=None)
+        pass
 
 
-class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
+class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event - testing of infants exposed to hiv
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Peds'] = 1  # This requires one infant hiv appt
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Hiv_TestingInfant'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id, squeeze_factor):
+
+        logger.debug('HSI_Hiv_InfantScreening: a first appointment for infant %d', person_id)
+
+        df = self.sim.population.props
 
         # Get the consumables required
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -1358,130 +1394,81 @@ class HSI_Hiv_InfantScreening(Event, IndividualScopeEventMixin):
             'Item_Code': [item_code1, item_code2, item_code3]
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Hiv_TestingInfant'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-        self.ALERT_OTHER_DISEASES = []
+        is_cons_available = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self,
+            cons_req_as_footprint=the_cons_footprint
+        )
+        if is_cons_available:
+            logger.debug('HSI_Hiv_InfantScreening: all consumables available')
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Hiv_InfantScreening, a first appointment for infant %d', person_id)
+            df.at[person_id, 'hv_ever_tested'] = True
 
-        df = self.sim.population.props
+            # if hiv+ schedule treatment
+            if df.at[person_id, 'hv_inf']:
+                df.at[person_id, 'hv_diagnosed'] = True
 
-        df.at[person_id, 'hv_ever_tested'] = True
+                # request treatment
+                logger.debug('HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
+                             person_id, self.sim.date)
 
-        # if hiv+ schedule treatment
-        if df.at[person_id, 'hv_inf']:
-            df.at[person_id, 'hv_diagnosed'] = True
+                treatment = HSI_Hiv_StartInfantTreatment(self.module, person_id=person_id)
 
-            # request treatment
-            logger.debug('....This is HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
-                         person_id, self.sim.date)
+                # Request the health system to start treatment
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
+            # if hiv- then give cotrim + NVP/AZT
+            else:
+                # request treatment
+                logger.debug('HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
+                             person_id, self.sim.date)
 
-            treatment = HSI_Hiv_StartInfantTreatment(self.module, person_id=person_id)
+                treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
 
-            # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-        # if hiv- then give cotrim + NVP/AZT
-        else:
-            # request treatment
-            logger.debug('....This is HSI_Hiv_InfantScreening: scheduling hiv treatment for person %d on date %s',
-                         person_id, self.sim.date)
-
-            treatment = HSI_Hiv_StartInfantProphylaxis(self.module, person_id=person_id)
-
-            # Request the health system to start treatment
-            self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
-                                                                priority=2,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
+                # Request the health system to start treatment
+                self.sim.modules['HealthSystem'].schedule_hsi_event(treatment,
+                                                                    priority=2,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
 
 
-# class HSI_Hiv_BehaviourChange(Event, IndividualScopeEventMixin):
-#     """
-#     This is a Health System Interaction Event - encompassing all behaviour change interventions
-#     """
-#
-#     def __init__(self, module, person_id):
-#         super().__init__(module, person_id=person_id)
-#
-#         # Get a blank footprint, doesn't require any clinic time
-#         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-#         the_appt_footprint['ConWithDCSA'] = 1  # This doesn't require any appt time, but throws error if blank
-#
-#         # Get the consumables required
-#         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-#         pkg_code1 = pd.unique(
-#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on female sex workers ',
-#                             'Intervention_Pkg_Code']
-#         )[0]
-#
-#         pkg_code2 = pd.unique(
-#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on male sex workers ',
-#                             'Intervention_Pkg_Code']
-#         )[0]
-#
-#         pkg_code3 = pd.unique(
-#             consumables.loc[consumables['Intervention_Pkg'] == 'Interventions focused on men who have sex with men ',
-#                             'Intervention_Pkg_Code']
-#         )[0]
-#
-#         the_cons_footprint = {
-#             'Intervention_Package_Code': [pkg_code1, pkg_code2, pkg_code3],
-#             'Item_Code': []
-#         }
-#
-#         # Define the necessary information for an HSI
-#         self.TREATMENT_ID = 'Hiv_BehavChange'
-#         self.APPT_FOOTPRINT = the_appt_footprint
-#         self.CONS_FOOTPRINT = the_cons_footprint
-#         self.ACCEPTED_FACILITY_LEVELS = ['*']  # can occur at any facility level
-#         self.ALERT_OTHER_DISEASES = []
-#
-#     def apply(self, person_id):
-#         logger.debug('This is HSI_Hiv_BehaviourChange, a first appointment for person %d', person_id)
-#
-#         df = self.sim.population.props
-#
-#         df.at[person_id, 'hv_behaviour_change'] = True
+class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin):
+    """
+    This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
+    """
 
+    def __init__(self, module, target_fn=None):
+        super().__init__(module)
+        assert isinstance(module, Hiv)
 
-# class HSI_Hiv_PopulationWideBehaviourChange(Event, PopulationScopeEventMixin):
-#     """
-#     This is a Population-Wide Health System Interaction Event - will change the variables to do with behaviour
-#     """
-#
-#     def __init__(self, module, target_fn=None):
-#         super().__init__(module)
-#
-#         # If no "target_fn" is provided, then let this event pertain to everyone
-#         if (target_fn is None):
-#             def target_fn(person_id):
-#                 return True
-#
-#         self.target_fn = target_fn
-#
-#         # # Define the necessary information for an HSI (Population level)
-#         self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
-#
-#     def apply(self, population):
-#         logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
-#
-#         # Label the relevant people as having had contact with the 'behaviour change' intervention
-#         # NB. An alternative approach would be for, at this point, a property in the module to be changed.
-#
-#         # hv_behaviour_change
-#         df = population.props
-#         for person_id in df.index:
-#             if self.target_fn(person_id, df):
-#                 df.at[person_id, 'hv_behaviour_change'] = True
-#
-#         # (NB. This event could schedule another instance of itself if there should be further behaviour change later.)
+        # If no "target_fn" is provided, then let this event pertain to everyone
+        if (target_fn is None):
+            def target_fn(person_id):
+                return True
+
+        self.target_fn = target_fn
+
+        # # Define the necessary information for an HSI (Population level)
+        self.TREATMENT_ID = 'Hiv_PopLevel_BehavChange'
+
+    def apply(self, population, squeeze_factor):
+        logger.debug('This is HSI_Hiv_PopulationWideBehaviourChange')
+
+        # Label the relevant people as having had contact with the 'behaviour change' intervention
+        # NB. An alternative approach would be for, at this point, a property in the module to be changed.
+
+        # reduce the chance of acquisition per year (due to behaviour change)
+        self.module.parameters['hv_behav_mod'] = self.module.parameters['hv_behav_mod'] * 0.9
+
+        # schedule the next behaviour change event
+        popwide_hsi = HSI_Hiv_PopulationWideBehaviourChange(self.module, target_fn=None)
+
+        # Request the health system to start treatment
+        self.sim.modules['HealthSystem'].schedule_hsi_event(popwide_hsi,
+                                                            priority=1,
+                                                            topen=self.sim.date + DateOffset(months=12),
+                                                            tclose=None)
 
 
 class HSI_Hiv_OutreachIndividual(Event, IndividualScopeEventMixin):
