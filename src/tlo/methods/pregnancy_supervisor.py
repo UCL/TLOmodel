@@ -501,7 +501,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         # Todo - Issues to consider:causal influences on abortion, should the probability of each complication type be
         #  constant for each month? do we need to record saftey(would allow policy questions), care seeking & symptoms
 
-
     # ========================= MONTH 3 ECTOPIC PREGNANCY SYMPTOMS/CARESEEKING =========================================
         ectopic_month_3 = df.index[df.is_alive & df.ps_ectopic_pregnancy & (df.ps_gestational_age ==13) &
                                    (df.ps_ectopic_symptoms =='none')]
