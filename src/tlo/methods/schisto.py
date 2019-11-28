@@ -70,27 +70,6 @@ def add_elements(el1, el2):
     else:
         return el2
 
-
-class PZQ:
-    """
-    Class for storing the number of PZQ pills distributed in each year.
-    Those are stored in the dictionaries that are attributes of the class
-    """
-    def __init__(self):
-        self.MDA_PZQ_used = {}
-        self.HSI_PZQ_used = {}
-
-    def update_mda(self, year, quantity):
-        if year in self.MDA_PZQ_used.keys():
-            previous = self.MDA_PZQ_used[year]
-            quantity = previous + quantity
-        self.MDA_PZQ_used.update({year: quantity})
-
-    def update_hsi(self, year, quantity):
-        if year in self.HSI_PZQ_used.keys():
-            previous = self.HSI_PZQ_used[year]
-            quantity = previous + quantity
-        self.HSI_PZQ_used.update({year: quantity})
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
@@ -651,6 +630,7 @@ class SchistoHealthCareSeekEvent(RegularEvent, PopulationScopeEventMixin):
 
 class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
+    Using the historical MDA coverage
     """
     def __init__(self, module):
         super().__init__(module)
@@ -677,7 +657,7 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
         # similarly susceptibles will get the pill but nothing will happen
         # The infected will get cured immediately
         infected_idx = df.index[(df.is_alive) & (df.ss_is_infected == 'Infected')]
-        MDA_treated = list(set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively treated
+        MDA_treated = list(set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively cured
 
         for person_id in MDA_treated:
             self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
@@ -720,9 +700,10 @@ class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
 
 class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
+    Using the proposed MDA coverage
     """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
+        super().__init__(module, frequency=DateOffset(months=4))
         assert isinstance(module, Schisto)
 
     def apply(self, population):
@@ -745,7 +726,7 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
         # The infected will get cured immediately
         infected_idx = df.index[(df.is_alive) & (df.ss_is_infected == 'Infected')]
         MDA_treated = list(
-            set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively treated
+            set(treated_idx) & set(infected_idx))  # intersection of infected & given a PZQ, so effectively cured
 
         for person_id in MDA_treated:
             self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
