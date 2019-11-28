@@ -155,7 +155,7 @@ class Schisto(Module):
         'ss_schedule_infectiousness_start': Property(
             Types.DATE, 'Date of start of infectious period'),
         'ss_hsi_date': Property(
-            Types.DATE, 'Date of interaction with health system'),
+            Types.DATE, 'Date of scheduled seeking healthcare'),
         'ss_cumulative_infection_time': Property(
             Types.REAL, 'Cumulative time of being infected in days')
     }
@@ -318,8 +318,8 @@ class Schisto(Module):
 
         # add the basic events (infection, treatment, MDA)
         sim.schedule_event(SchistoInfectionsEvent(self), sim.date + DateOffset(months=1))
-        # sim.schedule_event(SchistoMDAHistoricalEvent(self), self.sim.date + DateOffset(months=3))
-        # schedule historical MDA to happen once per year in July
+
+        # schedule historical MDA to happen once per year in July (4 events)
         for historical_mda_year in [2015, 2016, 2017, 2018]:
             if historical_mda_year >= sim.date.year:
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
@@ -446,7 +446,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[new_infections, 'ss_schedule_infectiousness_start'] = df.loc[
                                                                              new_infections, 'ss_infection_date'] + latent_period_ahead
 
-            ############ schedule events of infection and end of latent period
+            ############ schedule events of infection and end of latent period and healthcare seeking
             for person_index in new_infections:
                 infect_event = SchistoInfection(self.module, person_id=person_index)
                 self.sim.schedule_event(infect_event, df.at[person_index, 'ss_infection_date'])
@@ -503,6 +503,10 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
 
         ############## find the new infections indices ###############################################################
         trans_prob = prevalence * params['prob_infection']
+
+        # check whether any of the trans_prob are higher than 1 - in that case they will for sure get the infection, which is not correct
+        are_above_1 = trans_prob >= 1
+        assert ~are_above_1.any(), "Hazard of infection is higher than 1"
 
         newly_infected_index = df_distr.index[(self.module.rng.random_sample(size=len(df_distr.index)) < (trans_prob * ss_risk))]
         new_infections = list(set(newly_infected_index) & set(currently_uninfected))
