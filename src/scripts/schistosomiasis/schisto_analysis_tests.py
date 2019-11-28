@@ -24,8 +24,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2016, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 10000
+end_date = Date(2019, 1, 1)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -45,7 +45,6 @@ logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.healthburden").setLevel(logging.INFO)
 logging.getLogger("tlo.methods.healthsystem").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.schisto").setLevel(logging.INFO)
-
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -137,6 +136,23 @@ plt.ylim([0, 1])
 plt.legend()
 plt.title('Prevalence per date')
 plt.ylabel('fraction of infected sub-population')
+plt.xlabel('logging date')
+plt.show()
+
+# My own DALYS
+loger_DALY_PSAC = output['tlo.methods.schisto']['DALY_PSAC']
+loger_DALY_SAC = output['tlo.methods.schisto']['DALY_SAC']
+loger_DALY_Adults = output['tlo.methods.schisto']['DALY_Adults']
+loger_DALY_All = output['tlo.methods.schisto']['DALY_All']
+plt.scatter(loger_DALY_Adults.date, loger_DALY_Adults.DALY_cumulative, label='Adults')
+plt.scatter(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_cumulative, label='PSAC')
+plt.scatter(loger_DALY_SAC.date, loger_DALY_SAC.DALY_cumulative, label='SAC')
+plt.scatter(loger_DALY_All.date, loger_DALY_All.DALY_cumulative, label='All')
+plt.xticks(rotation='vertical')
+# plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
+plt.legend()
+plt.title('DALYs per year')
+plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()
 
