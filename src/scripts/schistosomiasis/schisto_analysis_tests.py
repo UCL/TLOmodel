@@ -3,6 +3,7 @@ import logging
 import os
 from pathlib import Path
 import matplotlib.pyplot as plt
+import pandas as pd
 from matplotlib.dates import DateFormatter
 
 from tlo import Date, Simulation
@@ -23,8 +24,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource files
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-start_date = Date(2019, 1, 1)
-end_date = Date(2020, 1, 1)
+start_date = Date(2018, 1, 1)
+end_date = Date(2021, 1, 1)
 popsize = 1000
 
 # Establish the simulation object
@@ -39,6 +40,7 @@ fh = logging.FileHandler(logfile)
 fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
 fh.setFormatter(fr)
 logging.getLogger().addHandler(fh)
+
 
 logging.getLogger("tlo.methods.demography").setLevel(logging.WARNING)
 logging.getLogger("tlo.methods.contraception").setLevel(logging.WARNING)
@@ -106,14 +108,44 @@ plt.title('Distribution of cumulative infection times in ' + str(days) + ' days'
 plt.show()
 
 # ---------------------------------------------------------------------------------------------------------
-
-
+#   Saving the results - prevalence, dalys and parameters used
 # ---------------------------------------------------------------------------------------------------------
-#   Saving the results
-# ---------------------------------------------------------------------------------------------------------
+# prevalence and states count
+output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+timestamp = str(datetime.datetime.now().replace(microsecond=0))
+timestamp = timestamp.replace(" ", "_")
+timestamp = timestamp.replace(":", "-")
+savepath = output_path + "output_" + timestamp + ".csv"
+savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
+savepath_params = output_path + "input_" + timestamp + ".xlsx"
 
-# save the log outputs
+output_states = pd.DataFrame([])
+for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+    output['tlo.methods.schisto'][age_group]['Age_group'] = age_group
+    output_states = output_states.append(output['tlo.methods.schisto'][age_group], ignore_index=True)
+output_states.to_csv(savepath, index=False)
 
+# dalys calculated by a dedicated schisto-module functionality
+def calculate_yearly_dalys(df):
+    df['DALY_yearly'] = df['DALY_cumulative'] - df['DALY_cumulative'].shift(1)
+    df.loc[0, 'DALY_yearly'] = df.loc[0, 'DALY_cumulative']
+    return df
+
+
+dalys_output = pd.DataFrame([])
+for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+    daly_age_group = 'DALY_' + age_group
+    df = calculate_yearly_dalys(output['tlo.methods.schisto'][daly_age_group])
+    df['Age_group'] = age_group
+    dalys_output = dalys_output.append(df, ignore_index=True)
+dalys_output.to_csv(savepath_daly, index=False)
+
+# parameters spreadsheet
+parameters_used = pd.read_excel(Path("./resources/ResourceFile_Schisto.xlsx"), sheet_name=None)
+writer = pd.ExcelWriter(savepath_params)
+for sheet_name in parameters_used.keys():
+    parameters_used[sheet_name].to_excel(writer, sheet_name=sheet_name)
+writer.save()
 
 # ---------------------------------------------------------------------------------------------------------
 #   INSPECTING & PLOTTING
@@ -140,18 +172,23 @@ plt.xlabel('logging date')
 plt.show()
 
 # My own DALYS
-loger_DALY_PSAC = output['tlo.methods.schisto']['DALY_PSAC']
-loger_DALY_SAC = output['tlo.methods.schisto']['DALY_SAC']
-loger_DALY_Adults = output['tlo.methods.schisto']['DALY_Adults']
-loger_DALY_All = output['tlo.methods.schisto']['DALY_All']
-plt.scatter(loger_DALY_Adults.date, loger_DALY_Adults.DALY_cumulative, label='Adults')
-plt.scatter(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_cumulative, label='PSAC')
-plt.scatter(loger_DALY_SAC.date, loger_DALY_SAC.DALY_cumulative, label='SAC')
-plt.scatter(loger_DALY_All.date, loger_DALY_All.DALY_cumulative, label='All')
+def calculate_yearly_dalys(df):
+    df['DALY_yearly'] = df['DALY_cumulative'] - df['DALY_cumulative'].shift(1)
+    df.loc[0, 'DALY_yearly'] = df.loc[0, 'DALY_cumulative']
+    return df
+
+loger_DALY_PSAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_PSAC'])
+loger_DALY_SAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_SAC'])
+loger_DALY_Adults = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_Adults'])
+loger_DALY_All = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
+plt.scatter(loger_DALY_Adults.date, loger_DALY_Adults.DALY_yearly, label='Adults')
+plt.scatter(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_yearly, label='PSAC')
+plt.scatter(loger_DALY_SAC.date, loger_DALY_SAC.DALY_yearly, label='SAC')
+plt.scatter(loger_DALY_All.date, loger_DALY_All.DALY_yearly, label='All')
 plt.xticks(rotation='vertical')
 # plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
 plt.legend()
-plt.title('DALYs per year')
+plt.title('DALYs per year, schisto module calculation')
 plt.ylabel('DALYs')
 plt.xlabel('logging date')
 plt.show()

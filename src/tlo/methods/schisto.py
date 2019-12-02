@@ -164,7 +164,7 @@ class Schisto(Module):
         'ss_scheduled_hsi_date': Property(
             Types.DATE, 'Date of scheduled seeking healthcare'),
         'ss_cumulative_infection_time': Property(
-            Types.REAL, 'Cumulative time of being infected in days'),
+            Types.REAL, 'Cumulative time of being infectious in days'),
         'ss_cumulative_DALYs': Property(
             Types.REAL, 'Cumulative DALYs due to schistosomiasis symptoms')
     }
@@ -342,6 +342,7 @@ class Schisto(Module):
             if historical_mda_year >= sim.date.year:
                 sim.schedule_event(SchistoHistoricalMDAEvent(self),
                                    pd.Timestamp(year=historical_mda_year, month=7, day=1, hour=23))
+
         # schedule prognosed MDA programmes for every district
         for district in sim.population.props.district_of_residence.unique().tolist():
             freq = self.parameters['MDA_frequency_prognosed'][district]
@@ -423,6 +424,7 @@ class Schisto(Module):
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
+
 
 class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
     """An event of infecting people with Schistosomiasis
@@ -584,27 +586,30 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        # we need the 'if' statement below because for some reason some uninfected people were slipping through to this
+        if (df.loc[person_id, 'ss_is_infected'] == 'Infected') & (df.loc[person_id, 'is_alive']):
+            # calculate the duration of this infection
+            inf_duration = self.sim.date - df.loc[person_id, 'ss_schedule_infectiousness_start']
+            inf_duration = int(inf_duration / np.timedelta64(1, 'D'))
+            df.loc[person_id, 'ss_cumulative_infection_time'] += inf_duration
+            symptoms = df.loc[person_id, 'ss_haematobium_specific_symptoms']
+            df.loc[person_id, 'ss_cumulative_DALYs'] += self.calculate_DALY_per_infection(inf_duration, symptoms)
 
-        # calculate the duration of this infection
-        inf_duration = self.sim.date - df.loc[person_id, 'ss_infection_date']
-        if np.isnan(inf_duration / np.timedelta64(1, 'D')):
-            print(inf_duration, self.sim.date, df.loc[person_id, 'ss_infection_date'])  # this is an error that happens sometimes
-        inf_duration = int(inf_duration / np.timedelta64(1, 'D'))
-        df.loc[person_id, 'ss_cumulative_infection_time'] += inf_duration
-        symptoms = df.loc[person_id, 'ss_haematobium_specific_symptoms']
-        df.loc[person_id, 'ss_cumulative_DALYs'] += self.calculate_DALY_per_infection(inf_duration, symptoms)
-
-        df.loc[person_id, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
-        df.loc[person_id, 'ss_haematobium_specific_symptoms'] = np.nan
-        df.loc[person_id, 'ss_mansoni_specific_symptoms'] = np.nan
-        df.loc[person_id, 'ss_infection_date'] = pd.NaT
-        df.loc[person_id, 'ss_scheduled_hsi_date'] = pd.NaT
-        df.loc[person_id, 'ss_schedule_infectiousness_start'] = pd.NaT
+            df.loc[person_id, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
+            df.loc[person_id, 'ss_haematobium_specific_symptoms'] = np.nan
+            df.loc[person_id, 'ss_mansoni_specific_symptoms'] = np.nan
+            df.loc[person_id, 'ss_infection_date'] = pd.NaT
+            df.loc[person_id, 'ss_scheduled_hsi_date'] = pd.NaT
+            df.loc[person_id, 'ss_schedule_infectiousness_start'] = pd.NaT
 
     def calculate_DALY_per_infection(self, inf_duration, symptoms):
         dalys_weight = self.module.add_DALYs_from_symptoms(symptoms)
         DALY = (inf_duration / 30.0) * (dalys_weight / 12.0)  # inf_duration in days and weight given per year
         return DALY
+
+# ---------------------------------------------------------------------------------------------------------
+#   HSI EVENTS
+# ---------------------------------------------------------------------------------------------------------
 
 class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event of seeking treatment for a person with symptoms
@@ -634,7 +639,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
         params = self.module.parameters
 
         # some ppl will have been cured in the MDA before the app or will have symptomless infections,
-        if df.loc[person_id, 'ss_is_infected'] == 'Infected':
+        if ((df.loc[person_id, 'is_alive']) & (df.loc[person_id, 'ss_is_infected'] == 'Infected')):
             # check if a person is a child or an adult and assign prob of being sent to schisto test (and hence being cured)
             if df.loc[person_id, 'age_years'] <= 15:
                 prob_test = params['prob_sent_to_lab_test_children']
@@ -665,10 +670,13 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
 
                 # patient is cured
                 self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
-            else:
-                print('Person', person_id, 'seeked treatment but was not sent to test')
+            # else:
+            #     print('Person', person_id, 'seeked treatment but was not sent to test')
         else:
-            print('Person', person_id, 'had the appt scheduled but was cured in the MDA')
+            if df.loc[person_id, 'is_alive']:
+                print('Person', person_id, 'had the appt scheduled but was cured in the MDA')
+            else:
+                print('Person', person_id, 'had the appt scheduled but died before that')
 
     def did_not_run(self):
         return True
@@ -738,6 +746,10 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
 #             print("No one seeked treatment")
 #             logger.debug('This is SchistoInfectionEvent, no one got treated with PZQ.')
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   MASS-DRUG ADMINISTRATION EVENTS
+# ---------------------------------------------------------------------------------------------------------
 
 class SchistoHistoricalMDAEvent(Event, PopulationScopeEventMixin):
     """Mass-Drug administration scheduled for the population
@@ -874,10 +886,8 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
 # ---------------------------------------------------------------------------------------------------------
 #   LOGGING EVENTS
-#
-#   Put the logging events here. There should be a regular logger outputting current states of the
-#   population. There may also be a logging event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
+
 class SchistoDALYsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the DALYs per year
