@@ -24,9 +24,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # The resource files
 resourcefilepath = Path("./resources")
 # resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-start_date = Date(2018, 1, 1)
-end_date = Date(2021, 1, 1)
-popsize = 1000
+start_date = Date(2015, 1, 1)
+end_date = Date(2025, 1, 1)
+popsize = 10000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -181,10 +181,10 @@ loger_DALY_PSAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_PSA
 loger_DALY_SAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_SAC'])
 loger_DALY_Adults = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_Adults'])
 loger_DALY_All = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
-plt.scatter(loger_DALY_Adults.date, loger_DALY_Adults.DALY_yearly, label='Adults')
-plt.scatter(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_yearly, label='PSAC')
-plt.scatter(loger_DALY_SAC.date, loger_DALY_SAC.DALY_yearly, label='SAC')
-plt.scatter(loger_DALY_All.date, loger_DALY_All.DALY_yearly, label='All')
+plt.plot(loger_DALY_Adults.date, loger_DALY_Adults.DALY_yearly, label='Adults')
+plt.plot(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_yearly, label='PSAC')
+plt.plot(loger_DALY_SAC.date, loger_DALY_SAC.DALY_yearly, label='SAC')
+plt.plot(loger_DALY_All.date, loger_DALY_All.DALY_yearly, label='All')
 plt.xticks(rotation='vertical')
 # plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
 plt.legend()
