@@ -558,8 +558,8 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -685,8 +685,8 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -743,8 +743,8 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -800,8 +800,8 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -857,8 +857,8 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -914,8 +914,8 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, self.sim.modules['Malaria'])
+        super().__init__(module=Malaria, person_id=person_id)
+        assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
