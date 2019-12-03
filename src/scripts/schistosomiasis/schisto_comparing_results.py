@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
-
+from datetime import date
 
 def load_outputs(timestamp):
     prevalence = pd.read_csv(load_path + "output_" + timestamp + ".csv")
@@ -13,12 +13,20 @@ def load_outputs(timestamp):
 
 
 def plot_prev_age_group(sim_dict, age):
+    colours = ['blue', 'green', 'red', 'yellow', 'cyan', 'magenta', 'yellow', 'black']
     fig, ax = plt.subplots(figsize=(9, 7))
+    colour_counter = 0
     for k in sim_dict.keys():
+        marker_colour = colours[colour_counter]
+        # print(marker_colour)
         df = sim_dict[k]['prev']
         df = df[df['Age_group'] == age]
-        ax.plot(df.date, df.Prevalence, label=k, linestyle='-')
+        df_before_2019 = df[df.date <= pd.Timestamp(date(2019, 1, 1))]
+        df_after_2019 = df[df.date >= pd.Timestamp(date(2019, 1, 1))]
+        ax.plot(df_after_2019.date, df_after_2019.Prevalence, label=k, linestyle=':')
+        ax.plot(df_before_2019.date, df_before_2019.Prevalence, color='b', label='_nolegend_', linestyle='-')
         ax.xaxis_date()
+        colour_counter += 1
     ax.set(xlabel='logging date',
            ylabel='fraction of infected sub-population',
            title='Prevalence per date, ' + age)
@@ -68,3 +76,4 @@ for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
     plot_prev_age_group(simulations, age_group)
     # plot_dalys_age_group(simulations, age_group)
 
+df = simulations['MDA once per year, PSAC coverage 0%']['prev']
