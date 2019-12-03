@@ -2,7 +2,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter
 import matplotlib.dates as mdates
-import datetime
 
 
 def load_outputs(timestamp):
@@ -18,13 +17,14 @@ def plot_prev_age_group(sim_dict, age):
     for k in sim_dict.keys():
         df = sim_dict[k]['prev']
         df = df[df['Age_group'] == age]
-        ax.plot(df.date, df.Prevalence, label=k)
+        ax.plot(df.date, df.Prevalence, label=k, linestyle='-')
         ax.xaxis_date()
     ax.set(xlabel='logging date',
            ylabel='fraction of infected sub-population',
            title='Prevalence per date, ' + age)
+    plt.ylim([0, 1])
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-    ax.xaxis.set_major_formatter(DateFormatter("%y/%m"))
+    ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
@@ -41,29 +41,30 @@ def plot_dalys_age_group(sim_dict, age):
            ylabel='DALYs',
            title='DALYs per date, ' + age)
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=6))
-    ax.xaxis.set_major_formatter(DateFormatter("%y/%m"))
+    ax.xaxis.set_major_formatter(DateFormatter("%m/%y"))
     plt.xticks(rotation='vertical')
     plt.legend()
     plt.show()
 
 #########################################################################################################
 
+
 # Load the simulations you want to compare
 simulations = {}
 load_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
-timestamps = ['2019-12-02_10-33-48', '2019-12-02_11-21-27', '2019-12-02_12-25-55', '2019-12-02_12-53-29', '2019-12-02_13-00-15']
-# timestamps = ['2019-12-02_10-33-48']
-for t in timestamps:
-    prev, dalys = load_outputs(t)
-    outputs = {'prev': prev, 'dalys': dalys}
-    simulations.update({t: outputs})
+# timestamps = ['2019-12-02_10-33-48', '2019-12-02_11-21-27', '2019-12-02_12-25-55', '2019-12-02_12-53-29', '2019-12-02_13-00-15']
+timestamps = ['2019-12-03_14-55-53', '2019-12-03_15-26-17', '2019-12-03_16-33-26', '2019-12-03_16-00-19']
+labels = ['MDA once per year, PSAC coverage 0%', 'MDA once per year, PSAC coverage 50%',
+          'MDA twice per year, PSAC coverage 0%', 'MDA twice per year, PSAC coverage 50%']
+sim_dict = dict(zip(timestamps, labels))
 
-# plots
-plot_prev_age_group(simulations, 'SAC')
-plot_dalys_age_group(simulations, 'SAC')
+for time, label in sim_dict.items():
+    prev, dalys = load_outputs(time)
+    outputs = {'prev': prev, 'dalys': dalys}
+    simulations.update({label: outputs})
 
 # plots
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
     plot_prev_age_group(simulations, age_group)
-    plot_dalys_age_group(simulations, age_group)
+    # plot_dalys_age_group(simulations, age_group)
 
