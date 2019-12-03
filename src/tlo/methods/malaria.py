@@ -7,6 +7,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -551,17 +552,31 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 
 
-class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
+class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
     """
     this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['LabParasit'] = 1
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_RDT'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+
+        df = self.sim.population.props
+        params = self.module.parameters
+
+        logger.debug('HSI_Malaria_rdt: rdt test for person %d', person_id)
 
         # the OneHealth consumables have Intervention_Pkg_Code= -99 which causes errors
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
@@ -571,109 +586,124 @@ class HSI_Malaria_rdt(Event, IndividualScopeEventMixin):
                 consumables['Items'] == 'Malaria test kit (RDT)',
                 'Intervention_Pkg_Code'])[0]
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
-            'Item_Code': []
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code1: 1}],
+            'Item_Code': [],
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_RDT'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the RDT
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed, log=False
+        )
 
-    def apply(self, person_id):
+        if outcome_of_request_for_consumables:
 
-        df = self.sim.population.props
-        params = self.module.parameters
-        rng = self.module.rng
+            # check if diagnosed
+            if df.at[person_id, 'ma_is_infected']:
 
-        logger.debug('This is HSI_Malaria_rdt, rdt test for person %d', person_id)
+                # ----------------------------------- SEVERE MALARIA -----------------------------------
 
-        # check if diagnosed
-        if df.at[person_id, 'ma_is_infected']:
+                # if severe malaria, treat for complicated malaria
+                if (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
 
-            # ----------------------------------- SEVERE MALARIA -----------------------------------
+                    if (df.at[person_id, 'age_years'] < 15):
 
-            # if severe malaria, treat for complicated malaria
-            if (df.at[person_id, 'ma_specific_symptoms'] == 'severe'):
+                        logger.debug(
+                            "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
+                            person_id, (self.sim.date + DateOffset(days=1)))
 
-                if (df.at[person_id, 'age_years'] < 15):
+                        treat = HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                            priority=1,
+                                                                            topen=self.sim.date + DateOffset(days=1),
+                                                                            tclose=None)
 
-                    logger.debug(
-                        "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
-                        person_id, (self.sim.date + DateOffset(days=1)))
+                    else:
+                        logger.debug(
+                            "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
+                            person_id, (self.sim.date + DateOffset(days=1)))
 
-                    treat = HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
-                                                                        priority=1,
-                                                                        topen=self.sim.date + DateOffset(days=1),
-                                                                        tclose=None)
+                        treat = HSI_Malaria_tx_compl_adult(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                            priority=1,
+                                                                            topen=self.sim.date + DateOffset(days=1),
+                                                                            tclose=None)
+
+                # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
 
                 else:
-                    logger.debug(
-                        "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
-                        person_id, (self.sim.date + DateOffset(days=1)))
+                    # diagnosis of clinical disease dependent on RDT sensitivity
+                    diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
+                                                                              (1 - params['sensitivity_rdt'])])
 
-                    treat = HSI_Malaria_tx_compl_adult(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
-                                                                        priority=1,
-                                                                        topen=self.sim.date + DateOffset(days=1),
-                                                                        tclose=None)
+                    # diagnosis / treatment for children <5
+                    if diagnosed & (df.at[person_id, 'age_years'] < 5):
+                        logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_0_5 for person %d on date %s",
+                                     person_id, (self.sim.date + DateOffset(days=1)))
 
-            # ----------------------------------- TREATMENT CLINICAL DISEASE -----------------------------------
+                        treat = HSI_Malaria_tx_0_5(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                            priority=1,
+                                                                            topen=self.sim.date + DateOffset(days=1),
+                                                                            tclose=None)
 
-            else:
-                # diagnosis of clinical disease dependent on RDT sensitivity
-                diagnosed = self.sim.rng.choice([True, False], size=1, p=[params['sensitivity_rdt'],
-                                                                          (1 - params['sensitivity_rdt'])])
+                    # diagnosis / treatment for children 5-15
+                    if diagnosed & (df.at[person_id, 'age_years'] >= 5) & (df.at[person_id, 'age_years'] < 15):
+                        logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
+                                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                # diagnosis / treatment for children <5
-                if diagnosed & (df.at[person_id, 'age_years'] < 5):
-                    logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_0_5 for person %d on date %s",
-                                 person_id, (self.sim.date + DateOffset(days=1)))
+                        treat = HSI_Malaria_tx_5_15(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                            priority=1,
+                                                                            topen=self.sim.date + DateOffset(days=1),
+                                                                            tclose=None)
 
-                    treat = HSI_Malaria_tx_0_5(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
-                                                                        priority=1,
-                                                                        topen=self.sim.date + DateOffset(days=1),
-                                                                        tclose=None)
+                    # diagnosis / treatment for adults
+                    if diagnosed & (df.at[person_id, 'age_years'] >= 15):
+                        logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_adult for person %d on date %s",
+                                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                # diagnosis / treatment for children 5-15
-                if diagnosed & (df.at[person_id, 'age_years'] >= 5) & (df.at[person_id, 'age_years'] < 15):
-                    logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
-                                 person_id, (self.sim.date + DateOffset(days=1)))
+                        treat = HSI_Malaria_tx_adult(self.module, person_id=person_id)
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
+                                                                            priority=1,
+                                                                            topen=self.sim.date + DateOffset(days=1),
+                                                                            tclose=None)
 
-                    treat = HSI_Malaria_tx_5_15(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
-                                                                        priority=1,
-                                                                        topen=self.sim.date + DateOffset(days=1),
-                                                                        tclose=None)
+            # log the consumables used
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed, log=True
+            )
 
-                # diagnosis / treatment for adults
-                if diagnosed & (df.at[person_id, 'age_years'] >= 15):
-                    logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_adult for person %d on date %s",
-                                 person_id, (self.sim.date + DateOffset(days=1)))
-
-                    treat = HSI_Malaria_tx_adult(self.module, person_id=person_id)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
-                                                                        priority=1,
-                                                                        topen=self.sim.date + DateOffset(days=1),
-                                                                        tclose=None)
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_rdt: did not run')
+        pass
 
 
-class HSI_Malaria_tx_0_5(Event, IndividualScopeEventMixin):
+class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for children <15 kg. Includes treatment plus one rdt
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_treatment_child0_5'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('HSI_Malaria_tx_0_5: malaria treatment for child %d',
+                     person_id)
+
+        df = self.sim.population.props
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -682,40 +712,55 @@ class HSI_Malaria_tx_0_5(Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]  # this pkg_code includes another rdt
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_treatment_child0_5'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the treatment
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Malaria_tx_0_5, malaria treatment for child %d',
-                     person_id)
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ma_tx'] = True
+            df.at[person_id, 'ma_date_tx'] = self.sim.date
 
-        df = self.sim.population.props
+            self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
-        df.at[person_id, 'ma_tx'] = True
-        df.at[person_id, 'ma_date_tx'] = self.sim.date
+            # log the consumables
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+            )
 
-        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_tx_0_5: did not run')
+        pass
 
 
-class HSI_Malaria_tx_5_15(Event, IndividualScopeEventMixin):
+class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for children >15 kg. Includes treatment plus one rdt
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_treatment_child5_15'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('HSI_Malaria_tx_5_15: malaria treatment for child %d',
+                     person_id)
+
+        df = self.sim.population.props
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -728,36 +773,51 @@ class HSI_Malaria_tx_5_15(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_treatment_child5_15'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the treatment
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Malaria_tx_5_15, malaria treatment for child %d',
-                     person_id)
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ma_tx'] = True
+            df.at[person_id, 'ma_date_tx'] = self.sim.date
 
-        df = self.sim.population.props
+            self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
-        df.at[person_id, 'ma_tx'] = True
-        df.at[person_id, 'ma_date_tx'] = self.sim.date
+            # log the consumables
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+            )
 
-        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_tx_5_15: did not run')
+        pass
 
 
-class HSI_Malaria_tx_adult(Event, IndividualScopeEventMixin):
+class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for adults. Includes treatment plus one rdt
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_treatment_adult'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('HSI_Malaria_tx_adult: malaria treatment for person %d',
+                     person_id)
+
+        df = self.sim.population.props
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -770,36 +830,51 @@ class HSI_Malaria_tx_adult(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_treatment_adult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the treatment
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Malaria_tx_adult, malaria treatment for person %d',
-                     person_id)
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ma_tx'] = True
+            df.at[person_id, 'ma_date_tx'] = self.sim.date
 
-        df = self.sim.population.props
+            self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
-        df.at[person_id, 'ma_tx'] = True
-        df.at[person_id, 'ma_date_tx'] = self.sim.date
+            # log the consumables
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+            )
 
-        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_tx_adult: did not run')
+        pass
 
 
-class HSI_Malaria_tx_compl_child(Event, IndividualScopeEventMixin):
+class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for complicated malaria in children
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_treatment_complicated_child'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [3]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('HSI_Malaria_tx_compl_child: complicated malaria treatment for child %d',
+                     person_id)
+
+        df = self.sim.population.props
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -812,36 +887,51 @@ class HSI_Malaria_tx_compl_child(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_treatment_complicated_child'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the treatment
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Malaria_tx_compl_child, complicated malaria treatment for child %d',
-                     person_id)
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ma_tx'] = True
+            df.at[person_id, 'ma_date_tx'] = self.sim.date
 
-        df = self.sim.population.props
+            self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
-        df.at[person_id, 'ma_tx'] = True
-        df.at[person_id, 'ma_date_tx'] = self.sim.date
+            # log the consumables
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+            )
 
-        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_tx_compl_child: did not run')
+        pass
 
 
-class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
+class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
     """
     this is anti-malarial treatment for complicated malaria in adults
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, self.sim.modules['Malaria'])
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Malaria_treatment_complicated_adult'
+        self.APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [3]
+        self.ALERT_OTHER_DISEASES = []
+
+    def apply(self, person_id):
+        logger.debug('HSI_Malaria_tx_compl_adult: complicated malaria treatment for person %d',
+                     person_id)
+
+        df = self.sim.population.props
 
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         pkg_code1 = pd.unique(
@@ -854,23 +944,25 @@ class HSI_Malaria_tx_compl_adult(Event, IndividualScopeEventMixin):
             'Item_Code': []
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Malaria_treatment_complicated_adult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']
-        self.ALERT_OTHER_DISEASES = []
+        # request the treatment
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+        )
 
-    def apply(self, person_id):
-        logger.debug('This is HSI_Malaria_tx_compl_adult, complicated malaria treatment for person %d',
-                     person_id)
+        if outcome_of_request_for_consumables:
+            df.at[person_id, 'ma_tx'] = True
+            df.at[person_id, 'ma_date_tx'] = self.sim.date
 
-        df = self.sim.population.props
+            self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
 
-        df.at[person_id, 'ma_tx'] = True
-        df.at[person_id, 'ma_date_tx'] = self.sim.date
+            # log the consumables
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+            )
 
-        self.sim.schedule_event(MalariaCureEvent(self.module, person_id), self.sim.date + DateOffset(weeks=1))
+    def did_not_run(self):
+        logger.debug('HSI_Malaria_tx_compl_adult: did not run')
+        pass
 
 
 # ---------------------------------------------------------------------------------
