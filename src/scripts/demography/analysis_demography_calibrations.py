@@ -27,8 +27,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource file for demography module
 # assume Python console is started in the top-leve TLOModel directory
-resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
-
+# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
+resourcefilepath = Path("./resources")
 # %% Run the Simulation
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
@@ -61,7 +61,7 @@ fh.flush()
 # %% read the results
 
 # FOR STORED RESULTS
-logfile = 'LogFile__2019_11_26.log'
+# logfile = 'LogFile__2019_11_26.log'
 
 parsed_output = parse_log_file(logfile)
 
@@ -172,7 +172,6 @@ wpp.columns ='WPP_' + wpp.columns
 
 # Merge in model results
 wpp['Model']=births_model
-
 
 
 ax = wpp.plot.line(y=['Model','WPP_Estimates','WPP_Medium variant'])
