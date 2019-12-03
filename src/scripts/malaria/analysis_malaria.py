@@ -84,8 +84,7 @@ pfpr = output['tlo.methods.malaria']['prevalence']
 tx = output['tlo.methods.malaria']['tx_coverage']
 mort = output['tlo.methods.malaria']['ma_mortality']
 
-
-inc.to_csv(r'Z:\Thanzi la Onse\Malaria\inc.csv', header=True)
-pfpr.to_csv(r'Z:\Thanzi la Onse\Malaria\pfpr.csv', header=True)
-tx.to_csv(r'Z:\Thanzi la Onse\Malaria\tx.csv', header=True)
-mort.to_csv(r'Z:\Thanzi la Onse\Malaria\mort.csv', header=True)
+# inc.to_csv(r'Z:\Thanzi la Onse\Malaria\inc.csv', header=True)
+# pfpr.to_csv(r'Z:\Thanzi la Onse\Malaria\pfpr.csv', header=True)
+# tx.to_csv(r'Z:\Thanzi la Onse\Malaria\tx.csv', header=True)
+# mort.to_csv(r'Z:\Thanzi la Onse\Malaria\mort.csv', header=True)

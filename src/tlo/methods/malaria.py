@@ -295,18 +295,27 @@ class Malaria(Module):
         df.at[child_id, 'ma_date_death'] = pd.NaT
         df.at[child_id, 'ma_tx'] = False
         df.at[child_id, 'ma_date_tx'] = pd.NaT
-        df.at[child_id, 'ma_specific_symptoms'].values[:] = 'none'
-        df.at[child_id, 'ma_unified_symptom_code'].values[:] = 0
-        df.at[child_id, 'ma_district_edited'] = df['district_of_residence']
+        df.at[child_id, 'ma_specific_symptoms'] = 'none'
+        df.at[child_id, 'ma_unified_symptom_code'] = 0
+        df.at[child_id, 'ma_district_edited'] = df.at[child_id, 'district_of_residence']
         df.at[child_id, 'ma_age_edited'] = 0
 
         # ----------------------------------- RENAME DISTRICTS -----------------------------------
         # rename districts to match malaria data
-        df.at[child_id, (df.district_of_residence == 'Lilongwe City'), 'ma_district_edited'] = 'Lilongwe'
-        df.at[child_id, (df.district_of_residence == 'Blantyre City'), 'ma_district_edited'] = 'Blantyre'
-        df.at[child_id, (df.district_of_residence == 'Zomba City'), 'ma_district_edited'] = 'Zomba'
-        df.at[child_id, (df.district_of_residence == 'Mzuzu City'), 'ma_district_edited'] = 'Mzimba'
-        df.at[child_id, (df.district_of_residence == 'Nkhata Bay'), 'ma_district_edited'] = 'Mzimba'
+        if df.at[child_id, 'ma_district_edited'] == 'Lilongwe City':
+            df.at[child_id, 'ma_district_edited'] = 'Lilongwe'
+
+        elif df.at[child_id, 'ma_district_edited'] == 'Blantyre City':
+            df.at[child_id, 'ma_district_edited'] = 'Blantyre'
+
+        elif df.at[child_id, 'ma_district_edited'] == 'Zomba City':
+            df.at[child_id, 'ma_district_edited'] = 'Zomba'
+
+        elif df.at[child_id, 'ma_district_edited'] == 'Mzuzu City':
+            df.at[child_id, 'ma_district_edited'] = 'Mzuzu'
+
+        elif df.at[child_id, 'ma_district_edited'] == 'Nkhata Bay':
+            df.at[child_id, 'ma_district_edited'] = 'Mzimba'
 
     def on_hsi_alert(self, person_id, treatment_id):
         """
@@ -558,20 +567,22 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['LabParasit'] = 1
+        print(the_appt_footprint)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_RDT'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
         params = self.module.parameters
@@ -593,7 +604,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         # request the RDT
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed, log=False
+            hsi_event=self, cons_req_as_footprint=consumables_needed, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -671,7 +682,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables used
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=consumables_needed, log=True
+                hsi_event=self, cons_req_as_footprint=consumables_needed, to_log=True
             )
 
     def did_not_run(self):
@@ -685,7 +696,7 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -695,11 +706,11 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_treatment_child0_5'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_Malaria_tx_0_5: malaria treatment for child %d',
                      person_id)
 
@@ -718,7 +729,7 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -729,7 +740,7 @@ class HSI_Malaria_tx_0_5(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
             )
 
     def did_not_run(self):
@@ -743,7 +754,7 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -752,11 +763,11 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_treatment_child5_15'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_Malaria_tx_5_15: malaria treatment for child %d',
                      person_id)
 
@@ -769,13 +780,13 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]  # this pkg_code includes another rdt
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -786,7 +797,7 @@ class HSI_Malaria_tx_5_15(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
             )
 
     def did_not_run(self):
@@ -800,7 +811,7 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -809,11 +820,11 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_treatment_adult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_Malaria_tx_adult: malaria treatment for person %d',
                      person_id)
 
@@ -826,13 +837,13 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]  # this pkg_code includes another rdt
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -843,7 +854,7 @@ class HSI_Malaria_tx_adult(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
             )
 
     def did_not_run(self):
@@ -857,7 +868,7 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -866,11 +877,11 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_treatment_complicated_child'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [3]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_Malaria_tx_compl_child: complicated malaria treatment for child %d',
                      person_id)
 
@@ -883,13 +894,13 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -900,7 +911,7 @@ class HSI_Malaria_tx_compl_child(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
             )
 
     def did_not_run(self):
@@ -914,7 +925,7 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module=Malaria, person_id=person_id)
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Malaria)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
@@ -923,11 +934,11 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Malaria_treatment_complicated_adult'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [3]
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 3
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('HSI_Malaria_tx_compl_adult: complicated malaria treatment for person %d',
                      person_id)
 
@@ -940,13 +951,13 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
                 'Intervention_Pkg_Code'])[0]
 
         the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1],
+            'Intervention_Package_Code': [{pkg_code1: 1}],
             'Item_Code': []
         }
 
         # request the treatment
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=False
+            hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=False
         )
 
         if outcome_of_request_for_consumables:
@@ -957,7 +968,7 @@ class HSI_Malaria_tx_compl_adult(HSI_Event, IndividualScopeEventMixin):
 
             # log the consumables
             outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-                hsi_event=self, cons_req_as_footprint=the_cons_footprint, log=True
+                hsi_event=self, cons_req_as_footprint=the_cons_footprint, to_log=True
             )
 
     def did_not_run(self):
