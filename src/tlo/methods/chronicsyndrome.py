@@ -298,6 +298,13 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         become_severe_idx = curr_cs_not_severe[become_severe]
         df.loc[become_severe_idx, 'cs_specific_symptoms'] = 'extreme illness'
 
+        # Report this to the unified symptom manager:
+        self.sim.modules['SymptomManager'].chg_symptom(
+                        person_id=list(become_severe_idx),
+                        symptom_string='a',
+                        add_or_remove='+',
+                        disease_module=self.module)
+
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
             for person_index in become_severe_idx:
