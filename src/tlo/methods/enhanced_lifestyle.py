@@ -317,7 +317,7 @@ class Lifestyle(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         dfd = pd.read_excel(
-            self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
         )
 
         self.load_parameters_from_dataframe(dfd)
