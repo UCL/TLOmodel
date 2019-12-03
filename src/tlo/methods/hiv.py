@@ -591,6 +591,7 @@ class Hiv(Module):
 
         df.loc[hiv_ad, 'hv_proj_date_death'] = df.loc[hiv_ad, 'hv_date_inf'] + time_of_death
 
+
     def assign_symptom_level(self, population):
         """ assign level of symptoms to infected people: chronic or aids
         only for untreated people
