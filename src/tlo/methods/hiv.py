@@ -1250,8 +1250,8 @@ class HSI_Hiv_PresentsForCareWithSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)  # this fails if event is called by tb -> HivAidsEvent -> HSI_Hiv...
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)  # this fails if event is called by tb -> HivAidsEvent -> HSI_Hiv...
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1359,8 +1359,8 @@ class HSI_Hiv_InfantScreening(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1439,8 +1439,8 @@ class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin
     """
 
     def __init__(self, module, target_fn=None):
-        super().__init__(module)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv)
+        assert isinstance(module, Hiv)
 
         # If no "target_fn" is provided, then let this event pertain to everyone
         if (target_fn is None):
@@ -1477,8 +1477,8 @@ class HSI_Hiv_PopulationWideBehaviourChange(HSI_Event, PopulationScopeEventMixin
 class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1544,7 +1544,8 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 class HSI_Hiv_Prep(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1645,8 +1646,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1702,8 +1703,8 @@ class HSI_Hiv_StartInfantTreatment(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1832,8 +1833,8 @@ class HSI_Hiv_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -1987,8 +1988,8 @@ class HSI_Hiv_VLMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -2032,8 +2033,8 @@ class HSI_Hiv_RepeatARV(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        # assert isinstance(module, Hiv)
+        super().__init__(module=Hiv, person_id=person_id)
+        assert isinstance(module, Hiv)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()

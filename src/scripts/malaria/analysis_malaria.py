@@ -1,16 +1,16 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.methods import (
     demography,
+    contraception,
     healthburden,
     healthsystem,
-    lifestyle,
+    enhanced_lifestyle,
     malaria,
-    hiv,
-    malecircumcision
 )
 
 # Where will output go
@@ -20,11 +20,11 @@ outputpath = './src/scripts/malaria/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = "./resources/"
+resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 500
+end_date = Date(2015, 1, 1)
+popsize = 100
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -46,12 +46,14 @@ service_availability = ["*"]
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                       service_availability=service_availability,
+                                       mode_appt_constraints=0,
+                                       capabilities_coefficient=0.0))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
-# sim.register(hiv.Hiv(resourcefilepath=resourcefilepath))
-# sim.register(malecircumcision.MaleCircumcision(resourcefilepath=resourcefilepath))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
