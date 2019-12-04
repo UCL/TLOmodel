@@ -23,7 +23,7 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)` [If this is disease module]
+    * `on_birth(mother, child)`
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     *  `report_daly_values()` [If this is disease module]
 
