@@ -32,6 +32,8 @@ class SymptomManager(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.persons_with_newly_onset_acute_generic_symptoms = list()
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -57,9 +59,9 @@ class SymptomManager(Module):
 
     def initialise_simulation(self, sim):
         """
-        Nothing to do before simulation starts
+        Before simulation starts, initialise the date_of_last_reported_onset_symptom
         """
-        pass
+        self.date_of_last_reported_onset_symptom = self.sim.date
 
     def on_birth(self, mother_id, child_id):
         """
@@ -95,11 +97,21 @@ class SymptomManager(Module):
         # Check that the provided disease_module is a registered disease_module
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
+        # # Empty the list of persons with newly onset acute generic symptoms if this is a new day
+        # # [This list is used by HealthCareSeekingBehaviour to pick up the person_ids of those who have onset
+        # #  acute generic symptoms during the one day before. So empty the list each new day.]
+        # # [Not neccessary as this is being cleared out each day by HealthSeekingBehaviourPoll]
+        # if self.sim.date >  self.date_of_last_reported_onset_symptom:
+        #     self.persons_with_newly_onset_acute_generic_symptoms = list()
+
+        self.date_of_last_reported_onset_symptom = self.sim.date
 
         # Make the operation:
         if add_or_remove == '+':
             # Add the symptom
             self.sim.population.props.loc[person_id,symptom_var_name]+= 1
+            self.persons_with_newly_onset_acute_generic_symptoms = \
+                self.persons_with_newly_onset_acute_generic_symptoms + person_id
 
         else:
             # Remove the symptom
@@ -110,11 +122,9 @@ class SymptomManager(Module):
                 (self.sim.population.props.loc[person_id, symptom_var_name] - 1).clip(lower=0)
 
 
-        # Logging
+        # TODO: Chexk that this works for person_id lists of any length
+
+        # Check that all the symptom variables are in good condition (no negative values)
+        assert (self.sim.population.props[self.symptom_var_names]>=0).all().all()
 
 
-        # TODO: Chexk that this works for person_id lists of any lenth
-
-
-        # Check that all the symptom variables are in good condition
-        assert (self.sim.population.props[self.symptom_var_names]>0).all().all()

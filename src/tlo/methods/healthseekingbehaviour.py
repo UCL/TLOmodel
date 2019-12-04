@@ -6,12 +6,12 @@ A skeleton template for disease methods.
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
 from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
-
 
 class HealthSeekingBehaviour(Module):
     """
@@ -47,13 +47,16 @@ class HealthSeekingBehaviour(Module):
         """
         sim.schedule_event(HealthSeekingBehaviourPoll(self),sim.date)
 
-        pass
 
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """
         pass
 
+
+# ---------------------------------------------------------------------------------------------------------
+#   REGULAR POLLING EVENT
+# ---------------------------------------------------------------------------------------------------------
 
 class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
     """This event occurs every day and determines if persons with newly onset acute generic symptoms will seek care.
@@ -83,5 +86,35 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
         print("hello, the date is")
         print(self.sim.date)
+
+        # get the list of person_ids who have onset generic acute symptoms in the last day
+        person_ids_with_new_symptoms = self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms
+
+        # clear the list of person_ids with onset generic acute symptoms (as now dealt with here)
+        self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms= list()
+
+        for person_id in person_ids_with_new_symptoms:
+            # For each individual person_id, look at the symptoms and determine if will seek care
+
+            symptom_profile = self.sim.population.props.loc[person_id,self.sim.population.props.columns.str.startswith('sy_')]
+
+            coefficients = [0.05, 0.1, - 0.5]
+            intercept = 0.02
+            #prob_seeking_care = 0.02 + sy_a * 0.05 + sy_b * 0.1 + sy_c * -0.5
+
+            prob_seeking_care = max(0.0, min(1.0, intercept + sum(symptom_profile.values * coefficients)))
+
+            if prob_seeking_care > self.module.rng.rand():
+                # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
+                # NB. Here we can specifify which type of facility they would attend if we need to
+
+                hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel0(self.module, person_id=person_id)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=None)
+
+
+
 
 

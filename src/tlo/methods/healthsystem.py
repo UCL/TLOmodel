@@ -270,7 +270,12 @@ class HealthSystem(Module):
                         allowed = True
                         break
 
-        # 4) Check that event (if individual level) is able to run with this configuration of officers
+        # 4) Check that at least one type of appointment is required
+        if not type(hsi_event.target) is tlo.population.Population:
+            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()),\
+                'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
+
+        # 5) Check that event (if individual level) is able to run with this configuration of officers
         # (ie. Check that this does demand officers that are never available at a particular facility)
         if not type(hsi_event.target) is tlo.population.Population:
             # dealing with an individual level event
@@ -279,6 +284,18 @@ class HealthSystem(Module):
             footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
+
+        # TODO: why does this not catch this possibility:
+        #OVER5OPD in FACILITY LEVEL 0 -- is not possible but this check allows it?!?!
+        #         appts_with_duration = [appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0]
+        #         df_appt_footprint = appt_times.loc[
+        #             (appt_times['Facility_Level'] == the_facility_level) & appt_times.Appt_Type_Code.isin(appts_with_duration),
+        #             ['Officer_Type_Code', 'Time_Taken'],
+        #         ].copy()
+        #
+        #
+
+
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -514,7 +531,7 @@ class HealthSystem(Module):
             # use the actual_appt_provided
             the_appt_footprint = actual_appt_footprint
 
-        # Get the (one) health_facilities available to this person (based on their district), which is accepted by the
+        # Get the (one) health_facility available to this person (based on their district), which is accepted by the
         # hsi_event.ACCEPTED_FACILITY_LEVEL:
         the_facility_id = fac_per_district.loc[
             (fac_per_district['District'] == the_district)
@@ -540,9 +557,14 @@ class HealthSystem(Module):
         # Create Series of summed required time for each officer type
         appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
 
-        # TODO: ADD assertion that some time is requested (UNLESS POPULATION LEVEL???)
-        # TODO: ADD assertion that indicies are unique.
+        # Check that at least some time of one type of officer is required
+        assert len(appt_footprint_as_time_request)>0
+        assert (appt_footprint_as_time_request>0).all()
 
+        # Check that indicies are unique
+        assert not any(appt_footprint_as_time_request.index.duplicated())
+
+        # Return
         return appt_footprint_as_time_request
 
     def get_squeeze_factors(self, all_calls_today, current_capabilities):
@@ -577,6 +599,7 @@ class HealthSystem(Module):
         for col_num in np.arange(0, len(all_calls_today.columns)):
             load_factor_per_officer_needed = list()
             officers_needed = all_calls_today.loc[all_calls_today[col_num] > 0, col_num].index.astype(str)
+            assert len(officers_needed)>0
             for officer in officers_needed:
                 load_factor_per_officer_needed.append(load_factor.loc[officer])
             squeeze_factor_per_hsi_event.append(max(load_factor_per_officer_needed))
@@ -979,6 +1002,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 event_number: self.module.get_appt_footprint_as_time_request(hsi_event=(event_tuple[4]))
                 for event_number, event_tuple in enumerate(list_of_individual_hsi_event_tuples_due_today)
             }
+
+            # TODO: Check that each call requires at least one type of officer
+
 
             # dataframe to store all the calls to the healthsystem today
             df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(

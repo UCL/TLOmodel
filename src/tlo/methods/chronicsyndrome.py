@@ -376,12 +376,12 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['AccidentsandEmerg'] = 1  # Plus, an amount of resources similar to an A&E
+        # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
