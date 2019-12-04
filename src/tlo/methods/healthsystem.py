@@ -185,6 +185,9 @@ class HealthSystem(Module):
         :param tclose: the latest date at which the hsi event should run
         """
 
+        if hsi_event.TREATMENT_ID == 'GenericFirstApptAtFacilityLevel0':
+            print('stop')
+
         logger.debug(
             'HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
             hsi_event.TREATMENT_ID,
@@ -261,6 +264,8 @@ class HealthSystem(Module):
             allowed = True
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
+        elif hsi_event.TREATMENT_ID.startswith('GenericFirstAppt'):
+            allowed = True # allow all GenericFirstAppt's
         else:
             # check to see if anything provided given any wildcards
             for s in self.service_availability:
@@ -278,23 +283,13 @@ class HealthSystem(Module):
         # 5) Check that event (if individual level) is able to run with this configuration of officers
         # (ie. Check that this does demand officers that are never available at a particular facility)
         if not type(hsi_event.target) is tlo.population.Population:
-            # dealing with an individual level event
+            # we are dealing with an individual level event
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
-            footprint_is_possible = (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
+
+            footprint_is_possible = (len(footprint)>0) & (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
-
-        # TODO: why does this not catch this possibility:
-        #OVER5OPD in FACILITY LEVEL 0 -- is not possible but this check allows it?!?!
-        #         appts_with_duration = [appt_type for appt_type in appt_types if the_appt_footprint[appt_type] > 0]
-        #         df_appt_footprint = appt_times.loc[
-        #             (appt_times['Facility_Level'] == the_facility_level) & appt_times.Appt_Type_Code.isin(appts_with_duration),
-        #             ['Officer_Type_Code', 'Time_Taken'],
-        #         ].copy()
-        #
-        #
-
 
 
         #  Manipulate the priority level if needed
@@ -549,6 +544,9 @@ class HealthSystem(Module):
             ['Officer_Type_Code', 'Time_Taken'],
         ].copy()
 
+        assert len(df_appt_footprint)>0, \
+            "The time needed for this appointment is not defined for this specified facility level in the Appt_Time_Table"
+
         # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
         df_appt_footprint.set_index(
             f'FacilityID_{the_facility_id}_Officer_' + df_appt_footprint['Officer_Type_Code'].astype(str), inplace=True
@@ -556,10 +554,6 @@ class HealthSystem(Module):
 
         # Create Series of summed required time for each officer type
         appt_footprint_as_time_request = df_appt_footprint['Time_Taken'].groupby(level=0).sum()
-
-        # Check that at least some time of one type of officer is required
-        assert len(appt_footprint_as_time_request)>0
-        assert (appt_footprint_as_time_request>0).all()
 
         # Check that indicies are unique
         assert not any(appt_footprint_as_time_request.index.duplicated())
