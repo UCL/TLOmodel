@@ -6,7 +6,7 @@ A skeleton template for disease methods.
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
+from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
@@ -84,9 +84,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         :param population: the current population
         """
 
-        print("hello, the date is")
-        print(self.sim.date)
-
         # get the list of person_ids who have onset generic acute symptoms in the last day
         person_ids_with_new_symptoms = self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms
 
@@ -108,7 +105,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                 # NB. Here we can specifify which type of facility they would attend if we need to
 
-                hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel0(self.module, person_id=person_id)
+                hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
                                                                 priority=0,
                                                                 topen=self.sim.date,
