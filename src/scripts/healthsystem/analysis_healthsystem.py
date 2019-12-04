@@ -1,10 +1,11 @@
 import datetime
 import logging
 import os
+from pathlib import Path
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, lifestyle, mockitis
+from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
@@ -15,7 +16,7 @@ outputpath = ''
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
-resourcefilepath = 'resources'
+resourcefilepath = Path("./resources")
 
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=2010, month=12, day=31)
@@ -51,7 +52,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 
 
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(mockitis.Mockitis())
 sim.register(chronicsyndrome.ChronicSyndrome())
 

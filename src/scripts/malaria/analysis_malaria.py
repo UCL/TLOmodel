@@ -23,8 +23,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 1, 1)
-popsize = 100
+end_date = Date(2012, 12, 31)
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -49,9 +49,9 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=0,
-                                       capabilities_coefficient=0.0))
+                                       capabilities_coefficient=1.0))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
 
@@ -59,7 +59,8 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger('tlo.methods.malaria').setLevel(logging.INFO)
+logging.getLogger('tlo.methods.malaria').setLevel(logging.DEBUG)
+# logging.getLogger('tlo.methods.healthsystem').setLevel(logging.INFO)
 
 
 # Run the simulation and flush the logger
