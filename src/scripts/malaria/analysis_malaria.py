@@ -127,8 +127,8 @@ plt.figure(1)
 
 # Malaria incidence per 1000py - all ages with MAP model estimates
 plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(inc_data_years, inc_data_years.inc_1000pyMean)  # MAP data
-plt.plot(model_years, inc.inc_1000py)  # model
+plt.plot(inc_data_years, inc_data.inc_1000pyMean)  # MAP data
+plt.plot(model_years, inc.inc_clin_counter)  # model - using the clinical counter for multiple episodes per person
 plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
