@@ -489,11 +489,11 @@ class HealthSystem(Module):
 
     def get_prob_seek_care(self, person_id, symptom_code=0):
         """
-        This gives the probability that a person who had developed a particular symptom will seek care.
-        Disease modules call this when a person has symptoms onset to determine if there will be a health interaction.
+        This is depracted. Report onset of generic acute symptoms to the symptom mananger.
+        HealthSeekingBehaviour module will schedule a generic hsi.
         """
-        # It currently just returns 1.0, pending the work of Wingston on the health care seeking behaviour.
-        return 1.0
+        raise Exception('Do not use get_prob_seek_care().')
+
 
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """

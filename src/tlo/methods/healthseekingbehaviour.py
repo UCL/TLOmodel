@@ -2,6 +2,7 @@
 A skeleton template for disease methods.
 
 """
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -90,18 +91,98 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # clear the list of person_ids with onset generic acute symptoms (as now dealt with here)
         self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms= list()
 
+
+
         for person_id in person_ids_with_new_symptoms:
             # For each individual person_id, look at the symptoms and determine if will seek care
+            # NB. The application of this equation could be streamlined.
 
-            symptom_profile = self.sim.population.props.loc[person_id,self.sim.population.props.columns.str.startswith('sy_')]
+            person_profile = self.sim.population.props.loc[person_id]
 
-            coefficients = [0.05, 0.1, - 0.5]
-            intercept = 0.02
-            #prob_seeking_care = 0.02 + sy_a * 0.05 + sy_b * 0.1 + sy_c * -0.5
 
-            prob_seeking_care = max(0.0, min(1.0, intercept + sum(symptom_profile.values * coefficients)))
+            # Build up the RHS of the logistic regresssion equation: 'f' is the linear term f(beta*x +... )
+            # collate indicator variables to match the HSB equation (from Ng'ambi et al)
+            f = np.log(0.6/(1-0.6)) # Intercept term (estimate whilst awaiting response from Wingston Ng'ambi)
 
-            if prob_seeking_care > self.module.rng.rand():
+            # Region
+            if person_profile['region_of_residence']=='Northern':
+                f *= 1.00
+            elif person_profile['region_of_residence']=='Central':
+                f *= 0.61
+            elif person_profile['region_of_residence']=='Southern':
+                f *= 0.67
+            else:
+                raise Exception('region_of_residence not recognised')
+
+
+            # Urban/Rural residence
+            if person_profile['li_urban']==False:
+                f *= 1.00
+            else:
+                f *= 1.63
+
+            # Sex
+            if person_profile['sex']=='M':
+                f *= 1.00
+            else:
+                f *= 1.19
+
+            # Age-group
+            if person_profile['age_years'] < 5:
+                f *= 1.00
+            elif person_profile['age_years'] < 15:
+                f *= 0.64
+            elif person_profile['age_years'] < 35:
+                f *= 0.51
+            elif person_profile['age_years'] < 60:
+                f *= 0.54
+            else:
+                f *= 0.44
+
+            # Year
+            # - not encoded: this effect ignored
+
+            # Chronic conditions
+            # - not encoded: awaiting
+
+            # Symptom - (can have more than one)
+            if person_profile['sy_fever']:
+                 f *= 1.86
+
+            if person_profile['sy_vomiting']:
+                 f *= 1.28
+
+            if person_profile['sy_stomachache']:
+                 f *= 0.76
+
+            if person_profile['sy_sore_throat']:
+                 f *= 0.89
+
+            if person_profile['sy_respiratory_symptoms']:
+                 f *= 0.71
+
+            if person_profile['sy_headache']:
+                 f *= 0.52
+
+            if person_profile['sy_skin_complaint']:
+                 f *= 2.31
+
+            if person_profile['sy_dental_complaint']:
+                 f *= 0.94
+
+            if person_profile['sy_backache']:
+                 f *= 1.01
+
+            if person_profile['sy_injury']:
+                 f *= 1.02
+
+            if person_profile['sy_eye_complaint']:
+                 f *= 1.33
+
+            # convert into a probability of seeking care:
+            prob_seeking_care = 1 / (1 + np.exp(-f))
+
+            if self.module.rng.rand() < prob_seeking_care:
                 # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                 # NB. Here we can specifify which type of facility they would attend if we need to
 

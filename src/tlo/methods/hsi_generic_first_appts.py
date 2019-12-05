@@ -56,6 +56,10 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Do something based on this diagnosis...
+            if diagnosis=='measles':
+                logger.info('Start treatment for measles')
+            else:
+                logger.info('No treatment. HSI ends.')
 
 
 
