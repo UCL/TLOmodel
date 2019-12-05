@@ -136,7 +136,7 @@ plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
 
 # Malaria parasite prevalence rate - 2-10 year olds with MAP model estimates
-# expect model esitmates to be slightly higher as some will have
+# expect model estimates to be slightly higher as some will have
 # undetectable parasitaemia
 plt.subplot(222)  # numrows, numcols, fignum
 plt.plot(PfPR_data_years, PfPR_data.PfPR_median)  # MAP data
@@ -144,5 +144,25 @@ plt.plot(model_years, pfpr.child2_10_prev)  # model
 plt.title("Malaria PfPR 2-10 yrs")
 plt.xlabel("Year")
 plt.ylabel("PfPR (%)")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"])
+
+# Malaria treatment coverage - all ages with MAP model estimates
+plt.subplot(223)  # numrows, numcols, fignum
+plt.plot(tx_data_years, tx_data.ACT_coverage)  # MAP data
+plt.plot(model_years, tx.treatment_coverage)  # model
+plt.title("Malaria Treatment Coverage")
+plt.xlabel("Year")
+plt.ylabel("Treatment coverage (%)")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"])
+
+# Malaria mortality rate - all ages with MAP model estimates
+plt.subplot(224)  # numrows, numcols, fignum
+plt.plot(mort_data_years, mort_data.mortality_rate_median)  # MAP data
+plt.plot(model_years, mort.mort_rate)  # model
+plt.title("Malaria Mortality Rate")
+plt.xlabel("Year")
+plt.ylabel("Mortality rate")
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
