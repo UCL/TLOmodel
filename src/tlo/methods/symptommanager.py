@@ -79,7 +79,7 @@ class SymptomManager(Module):
         """
         self.sim.population.props[child_id,self.symptom_var_names]=0
 
-    def chg_symptom(self, person_id, symptom_string, add_or_remove ,disease_module):
+    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
 
@@ -131,8 +131,6 @@ class SymptomManager(Module):
             self.sim.population.props.loc[person_id, symptom_var_name] = \
                 (self.sim.population.props.loc[person_id, symptom_var_name] - 1).clip(lower=0)
 
-
-        # TODO: Check that this works for person_id lists of any length
 
         # Check that all the symptom variables are in good condition (no negative values)
         assert (self.sim.population.props[self.symptom_var_names]>=0).all().all()
