@@ -1298,6 +1298,27 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
 
+class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+
+    def __init__(self, module):
+        self.repeat = 1
+        super().__init__(module, frequency=DateOffset(months=self.repeat))
+
+    def apply(self, population):
+        # get some summary statistics
+        df = population.props
+
+        # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
+        infected = df[df.is_alive & df.ma_is_infected].groupby('ma_district_edited').size()
+        pop = df[df.is_alive].groupby('ma_district_edited').size()
+        prev = infected / pop
+        prev_ed = prev.fillna(0)
+        assert prev_ed >= 0  # checks
+        assert prev_ed <= 1
+
+        logger.info('%s|prev_district|%s', self.sim.date,
+                    prev_ed.to_dict())
+
 # ---------------------------------------------------------------------------------
 # Reset counters
 # ---------------------------------------------------------------------------------
