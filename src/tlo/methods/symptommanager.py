@@ -18,14 +18,24 @@ class SymptomManager(Module):
     This module is used to track the symptoms of persons. The addition and removal of symptoms is handled here.
     """
 
-    list_of_symptoms = ['a', 'b', 'c']
+    list_of_symptoms = ['fever',
+                        'vomiting',
+                        'stomachache',
+                        'sore_throat',
+                        'respiratory_symptoms',
+                        'headache',
+                        'skin_complaint',
+                        'dental_complaint',
+                        'backache',
+                        'injury',
+                        'eye_complaint']
 
     # These are properties of individual for the prescence/abscence of symptoms.
     # A value > 0 implies the symptom is present.
 
     PROPERTIES = dict()
     for symp in list_of_symptoms:
-        PROPERTIES['sy_' + symp] = Property(Types.INT, 'Prescence of symptom ' + symp)
+        PROPERTIES['sy_' + symp] = Property(Types.INT, 'Presence of symptom ' + symp)
 
     def __init__(self, name=None, resourcefilepath=None):
         # NB. Parameters passed to the module can be inserted in the __init__ definition.
@@ -122,7 +132,7 @@ class SymptomManager(Module):
                 (self.sim.population.props.loc[person_id, symptom_var_name] - 1).clip(lower=0)
 
 
-        # TODO: Chexk that this works for person_id lists of any length
+        # TODO: Check that this works for person_id lists of any length
 
         # Check that all the symptom variables are in good condition (no negative values)
         assert (self.sim.population.props[self.symptom_var_names]>=0).all().all()

@@ -301,7 +301,7 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # Report this to the unified symptom manager:
         self.sim.modules['SymptomManager'].chg_symptom(
                         person_id=list(become_severe_idx),
-                        symptom_string='a',
+                        symptom_string='fever',
                         add_or_remove='+',
                         disease_module=self.module)
 

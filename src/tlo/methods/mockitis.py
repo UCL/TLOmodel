@@ -302,17 +302,27 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                 death_event = MockitisDeathEvent(self.module, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
+            # Give everyone who has mild symptoms, the generic symptom of headache (some will go to care for this)
+            # Report this to the unified symptom manager:
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(infected_idx),
+                symptom_string='headache',
+                add_or_remove='+',
+                disease_module=self.module)
+
             # Determine if anyone with severe symptoms will seek care
+            # [as this is a specific symptom the disease module handles it]
             serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
                 df['mi_specific_symptoms'] == 'coughing and irritiable'))
 
-            seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
-            for i in df.index[serious_symptoms]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-                seeks_care[i] = self.module.rng.rand() < prob
+            prob_seeks_care_with_severe_symptoms = 0.5
+            seeks_care = pd.Series(data= \
+                                       (self.module.rng.rand(len(df.loc[serious_symptoms]))) \
+                                            <prob_seeks_care_with_severe_symptoms, \
+                                        index=df.loc[serious_symptoms].index)
 
             if seeks_care.sum() > 0:
-                for person_index in seeks_care.index[seeks_care is True]:
+                for person_index in seeks_care[seeks_care].index:
                     logger.debug(
                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
                         person_index)
@@ -373,7 +383,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0     # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 1     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
