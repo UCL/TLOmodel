@@ -80,7 +80,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         assert isinstance(module, HealthSeekingBehaviour)
 
     def apply(self, population):
-        """Determine if persons with newly onset acute generic symptoms will seek care
+        """Determine if persons with newly onset acute generic symptoms will seek care.
 
         :param population: the current population
         """
@@ -94,7 +94,9 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
 
         for person_id in person_ids_with_new_symptoms:
-            # For each individual person_id, look at the symptoms and determine if will seek care
+            # For each individual person_id, with at least one new onset symptom, look at the symptoms and determine if
+            # will seek care.
+            # NB. This is run looking at all symptoms even if only one is newly onset.
             # NB. The application of this equation could be streamlined.
 
             person_profile = self.sim.population.props.loc[person_id]
@@ -143,7 +145,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             # - not encoded: this effect ignored
 
             # Chronic conditions
-            # - not encoded: awaiting
+            # - not encoded: awaiting suitable variable to include. effect size = 1.44 if pre-existing chronic_condition
 
             # Symptom - (can have more than one)
             if person_profile['sy_fever']:

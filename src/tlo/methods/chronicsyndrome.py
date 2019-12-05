@@ -308,8 +308,8 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
             for person_index in become_severe_idx:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_index)
-                seeks_care = self.module.rng.rand() < prob
+                prob_seeks_emergency_care = 0.7
+                seeks_care = self.module.rng.rand() < prob_seeks_emergency_care
                 if seeks_care:
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
