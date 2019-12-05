@@ -136,15 +136,15 @@ class Malaria(Module):
         itn_2010 = round(itn_2010, 1)  # round to nearest 0.1 to match Pete's data
         irs_2010 = 0.8 if irs_2010 > 0.5 else 0  # round to 0 or 0.8
 
-        inf_inc = p['inf_inc']
-        inf_inc_Jan2010 = inf_inc.loc[(inf_inc.month == 1) & (inf_inc.llin == itn_2010) & (inf_inc.irs == irs_2010)]
-        clin_inc = p['clin_inc']
-        clin_inc_Jan2010 = clin_inc.loc[
-            (clin_inc.month == 1) & (clin_inc.llin == itn_2010) & (clin_inc.irs == irs_2010)]
-        sev_inc = p['sev_inc']
-        sev_inc_Jan2010 = sev_inc.loc[(sev_inc.month == 1) & (sev_inc.llin == itn_2010) & (sev_inc.irs == irs_2010)]
+        month = now.month
 
-        # create new district list to match Pete's list and keep/use for all malaria events
+        inf_inc = p['inf_inc']
+        inf_inc_month = inf_inc.loc[(inf_inc.month == month) & (inf_inc.llin == itn_2010) & (inf_inc.irs == irs_2010)]
+        clin_inc = p['clin_inc']
+        clin_inc_month = clin_inc.loc[
+            (clin_inc.month == month) & (clin_inc.llin == itn_2010) & (clin_inc.irs == irs_2010)]
+        sev_inc = p['sev_inc']
+        sev_inc_month = sev_inc.loc[(sev_inc.month == month) & (sev_inc.llin == itn_2010) & (sev_inc.irs == irs_2010)]
 
         # ----------------------------------- INCIDENCE ESTIMATES -----------------------------------
 
@@ -156,56 +156,74 @@ class Malaria(Module):
         assert (not pd.isnull(df['ma_age_edited']).any())
         df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
-        df = df.reset_index().merge(inf_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
-                                    right_on=['admin', 'age'],
-                                    how='left', indicator=True).set_index('person')
-        df['monthly_prob_inf'] = df['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_inf']).any())
+        # merge the incidence into the main df and replace each event call
+        df_ml = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+                                       right_on=['admin', 'age'],
+                                       how='left', indicator=True).set_index('person')
+        df_ml['monthly_prob_inf'] = df_ml['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_inf']).any())
 
-        df = df.reset_index().merge(clin_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
-                                         right_on=['admin', 'age'],
-                                         how='left').set_index('person')
-        df['monthly_prob_clin'] = df['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_clin']).any())
+        df_ml = df_ml.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+                                          right_on=['admin', 'age'],
+                                          how='left').set_index('person')
+        df_ml['monthly_prob_clin'] = df_ml['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_clin']).any())
 
-        df = df.reset_index().merge(sev_inc_Jan2010, left_on=['ma_district_edited', 'ma_age_edited'],
-                                        right_on=['admin', 'age'],
-                                        how='left').set_index('person')
-        df['monthly_prob_sev'] = df['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_sev']).any())
+        df_ml = df_ml.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+                                          right_on=['admin', 'age'],
+                                          how='left').set_index('person')
+        df_ml['monthly_prob_sev'] = df_ml['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_sev']).any())
 
-        # ----------------------------------- BASELINE INFECTION STATUS -----------------------------------
+        # ----------------------------------- NEW INFECTIONS -----------------------------------
         ## infected
         risk_ml = pd.Series(0, index=df.index)
         risk_ml.loc[df.is_alive] = 1  # applied to everyone
         # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
 
-        random_draw = self.rng.random_sample(size=len(df))
-        ml_idx = df[df.is_alive & (random_draw < df.monthly_prob_inf)].index
-        df.loc[ml_idx, 'ma_is_infected'] = True
-        df.loc[
-            ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month, then have to scatter clinical/severe
+        # new infections
+        random_draw = rng.random_sample(size=len(df_ml))
+        ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
+        df_ml.loc[ml_idx, 'ma_is_infected'] = True
+        df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+        # print('ml_idx', ml_idx)
 
-        ## clinical - subset of infected
-        random_draw = self.rng.random_sample(size=len(df))
-        clin_idx = df[df.is_alive & df.ma_is_infected & (random_draw < df.monthly_prob_clin)].index
+        ## clinical - subset of newly infected
+        random_draw = rng.random_sample(size=len(df))
+        clin_idx = df_ml[
+            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+                random_draw < df_ml.monthly_prob_clin)].index
+        df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+        # print('clin_idx', clin_idx)
+
+        ## severe - subset of newly clinical
+        random_draw = rng.random_sample(size=len(df))
+        sev_idx = df_ml[
+            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+                df_ml.ma_specific_symptoms == 'clinical') & (
+                random_draw < df_ml.monthly_prob_sev)].index
+
+        # update the main dataframe
+        df.loc[ml_idx, 'ma_date_infected'] = now
+        df.loc[ml_idx, 'ma_is_infected'] = True
+        df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+
         df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
         df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
-        df.loc[clin_idx, 'ma_clinical_counter'] = 1
+        df.loc[clin_idx, 'ma_date_clinical'] = now
+        df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
-        ## severe - subset of clinical
-        random_draw = self.rng.random_sample(size=len(df))
-        sev_idx = df[df.is_alive & (df.ma_specific_symptoms == 'clinical') & (
-            random_draw < df.monthly_prob_sev)].index
         df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
         df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
 
+        # print('sev_idx', sev_idx)
+
         ## tidy up
-        # del df_inf, df_clin, df_sev
+        del df_ml
 
         # if any are infected
         if len(ml_idx):
-            logger.debug('This is MalariaEvent, assigning new malaria infections')
+            logger.debug('MalariaEvent: assigning new malaria infections at baseline')
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -256,6 +274,7 @@ class Malaria(Module):
             # act = 1
 
             # CLINICAL CASES
+            # todo check only clinical selected here
             seeks_care = pd.Series(data=False, index=df.loc[clin].index)
 
             for i in df.loc[clin].index:
@@ -271,7 +290,7 @@ class Malaria(Module):
                         'MalariaEvent: scheduling HSI_Malaria_rdt for clinical malaria case %d',
                         person_index)
 
-                    delay = rng.choice(14)
+                    delay = rng.choice(7)
                     # print(delay)
 
                     event = HSI_Malaria_rdt(self, person_id=person_index)
@@ -286,6 +305,8 @@ class Malaria(Module):
                     'MalariaEvent: There is no new healthcare seeking for clinical cases')
 
             # SEVERE CASES
+            # todo check only severe selected here
+
             severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
 
             for person_index in severe:
@@ -295,7 +316,7 @@ class Malaria(Module):
                     'MalariaEvent: scheduling HSI_Malaria_rdt for severe malaria case %d',
                     person_index)
 
-                delay = rng.choice(5)
+                delay = rng.choice(2)
                 # print(delay)
 
                 event = HSI_Malaria_rdt(self, person_id=person_index)
@@ -316,7 +337,7 @@ class Malaria(Module):
 
             for person in death:
                 logger.debug(
-                    'This is MalariaEvent, scheduling malaria death for person %d',
+                    'MalariaEvent: scheduling malaria death for person %d',
                     person)
 
                 random_date = rng.randint(low=0, high=7)
@@ -336,7 +357,7 @@ class Malaria(Module):
     def initialise_simulation(self, sim):
         sim.schedule_event(MalariaEvent(self), sim.date + DateOffset(months=1))
 
-        # sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=0))
@@ -450,23 +471,23 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         df['ma_age_edited'] = df['ma_age_edited'].astype('float')  # for merge with malaria data
 
         # merge the incidence into the main df and replace each event call
-        df = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
-                                        right_on=['admin', 'age'],
-                                        how='left', indicator=True).set_index('person')
-        df['monthly_prob_inf'] = df['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_inf']).any())
+        df_ml = df.reset_index().merge(inf_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+                                       right_on=['admin', 'age'],
+                                       how='left', indicator=True).set_index('person')
+        df_ml['monthly_prob_inf'] = df_ml['monthly_prob_inf'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_inf']).any())
 
-        df = df.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+        df_ml = df_ml.reset_index().merge(clin_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
                                          right_on=['admin', 'age'],
                                          how='left').set_index('person')
-        df['monthly_prob_clin'] = df['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_clin']).any())
+        df_ml['monthly_prob_clin'] = df_ml['monthly_prob_clin'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_clin']).any())
 
-        df = df.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
+        df_ml = df_ml.reset_index().merge(sev_inc_month, left_on=['ma_district_edited', 'ma_age_edited'],
                                         right_on=['admin', 'age'],
                                         how='left').set_index('person')
-        df['monthly_prob_sev'] = df['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
-        assert (not pd.isnull(df['monthly_prob_sev']).any())
+        df_ml['monthly_prob_sev'] = df_ml['monthly_prob_sev'].fillna(0)  # 0 if over 80 yrs
+        assert (not pd.isnull(df_ml['monthly_prob_sev']).any())
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
         ## infected
@@ -475,37 +496,44 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
         # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
 
         # new infections
-        random_draw = rng.random_sample(size=len(df))
-        ml_idx = df[df.is_alive & ~df.ma_is_infected & (random_draw < df.monthly_prob_inf)].index
-        df.loc[ml_idx, 'ma_is_infected'] = True
-        df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
-        df.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-        print('ml_idx', ml_idx)
+        random_draw = rng.random_sample(size=len(df_ml))
+        ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
+        df_ml.loc[ml_idx, 'ma_is_infected'] = True
+        df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+        # print('ml_idx', ml_idx)
 
         ## clinical - subset of newly infected
         random_draw = rng.random_sample(size=len(df))
-        clin_idx = df[
-            df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (random_draw < df.monthly_prob_clin)].index
+        clin_idx = df_ml[
+            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+                    random_draw < df_ml.monthly_prob_clin)].index
+        df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+        # print('clin_idx', clin_idx)
+
+        ## severe - subset of newly clinical
+        random_draw = rng.random_sample(size=len(df))
+        sev_idx = df_ml[
+            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+                    df_ml.ma_specific_symptoms == 'clinical') & (
+                random_draw < df_ml.monthly_prob_sev)].index
+
+        # update the main dataframe
+        df.loc[ml_idx, 'ma_date_infected'] = now
+        df.loc[ml_idx, 'ma_is_infected'] = True
+        df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+
         df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
         df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
         df.loc[clin_idx, 'ma_date_clinical'] = now
         df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
-        print('clin_idx', clin_idx)
-
-        ## severe - subset of newly clinical
-        random_draw = rng.random_sample(size=len(df))
-        sev_idx = df[
-            df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (df.ma_specific_symptoms == 'clinical') & (
-                random_draw < df.monthly_prob_sev)].index
         df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
         df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
 
-        print('sev_idx', sev_idx)
-
+        # print('sev_idx', sev_idx)
 
         ## tidy up
-        # del df_inf, df_clin, df_sev
+        del df_ml
 
         # if any are infected
         if len(ml_idx):
@@ -562,6 +590,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
             # CLINICAL CASES
             seeks_care = pd.Series(data=False, index=df.loc[clin].index)
 
+            # todo check no-one with symptoms=none is in clin index
             for i in df.loc[clin].index:
                 # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
                 seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
@@ -575,7 +604,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
                         'MalariaEvent: scheduling HSI_Malaria_rdt for clinical malaria case %d',
                         person_index)
 
-                    delay = rng.choice(14)
+                    delay = rng.choice(7)
                     # print(delay)
 
                     event = HSI_Malaria_rdt(self.module, person_id=person_index)
@@ -590,6 +619,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
                     'MalariaEvent: There is no new healthcare seeking for clinical cases')
 
             # SEVERE CASES
+            # todo check only severe cases are passing through here
             severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
 
             for person_index in severe:
@@ -599,7 +629,7 @@ class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
                     'MalariaEvent: scheduling HSI_Malaria_rdt for severe malaria case %d',
                     person_index)
 
-                delay = rng.choice(5)
+                delay = rng.choice(2)
                 # print(delay)
 
                 event = HSI_Malaria_rdt(self.module, person_id=person_index)
@@ -718,7 +748,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                     if (df.at[person_id, 'age_years'] < 15):
 
                         logger.debug(
-                            "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
+                            "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
                             person_id, (self.sim.date + DateOffset(days=1)))
 
                         treat = HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
@@ -729,7 +759,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     else:
                         logger.debug(
-                            "This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
+                            "HSI_Malaria_rdt: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
                             person_id, (self.sim.date + DateOffset(days=1)))
 
                         treat = HSI_Malaria_tx_compl_adult(self.module, person_id=person_id)
@@ -759,7 +789,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     # diagnosis / treatment for children 5-15
                     if diagnosed & (df.at[person_id, 'age_years'] >= 5) & (df.at[person_id, 'age_years'] < 15):
-                        logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
+                        logger.debug("HSI_Malaria_rdt: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
                                      person_id, (self.sim.date + DateOffset(days=1)))
 
                         treat = HSI_Malaria_tx_5_15(self.module, person_id=person_id)
@@ -770,7 +800,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                     # diagnosis / treatment for adults
                     if diagnosed & (df.at[person_id, 'age_years'] >= 15):
-                        logger.debug("This is HSI_Malaria_rdt scheduling HSI_Malaria_tx_adult for person %d on date %s",
+                        logger.debug("HSI_Malaria_rdt: scheduling HSI_Malaria_tx_adult for person %d on date %s",
                                      person_id, (self.sim.date + DateOffset(days=1)))
 
                         treat = HSI_Malaria_tx_adult(self.module, person_id=person_id)
@@ -1159,7 +1189,7 @@ class MalariaSympEndEvent(Event, IndividualScopeEventMixin):
 class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        self.repeat = 1
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
@@ -1205,11 +1235,10 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         logger.info('%s|status_counts|%s', now, counts)
 
-        # ------------------------------------ PREVALENCE BY AGE ------------------------------------
+        # ------------------------------------ PARASITE PREVALENCE BY AGE ------------------------------------
 
-        # clinical cases including severe
-        # assume asymptomatic parasitaemia is too low to detect in surveys
-        child2_10_clin = len(df[df.is_alive & (df.ma_specific_symptoms == 'clinical') & (df.age_years.between(2, 10))])
+        # includes all parasite positive cases: some may have low parasitaemia (undetectable)
+        child2_10_clin = len(df[df.is_alive & df.ma_is_infected & (df.age_years.between(2, 10))])
 
         # population size - children
         child2_10_pop = len(df[df.is_alive & (df.age_years.between(2, 10))])
@@ -1218,7 +1247,8 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         child_prev = child2_10_clin / child2_10_pop if child2_10_pop else 0
 
         # prevalence of clinical including severe in all ages
-        total_clin = len(df[df.is_alive & (df.ma_specific_symptoms == 'clinical')])
+        total_clin = len(
+            df[df.is_alive & ((df.ma_specific_symptoms == 'clinical') | (df.ma_specific_symptoms == 'severe'))])
         pop2 = len(df[df.is_alive])
         prev_clin = total_clin / pop2
 

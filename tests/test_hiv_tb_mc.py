@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from tlo import Date, Simulation
-from tlo.methods import demography, healthsystem, hiv, lifestyle, malecircumcision, tb
+from tlo.methods import demography, healthsystem, hiv, enhanced_lifestyle, malecircumcision, tb
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)

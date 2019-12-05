@@ -2,6 +2,8 @@ import datetime
 import logging
 import os
 from pathlib import Path
+import pandas as pd
+import time
 
 from tlo import Date, Simulation
 from tlo.methods import (
@@ -12,6 +14,8 @@ from tlo.methods import (
     enhanced_lifestyle,
     malaria,
 )
+
+t0 = time.time()
 
 # Where will output go
 outputpath = './src/scripts/malaria/'
@@ -24,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-popsize = 5000
+popsize = 100000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -51,7 +55,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        mode_appt_constraints=0,
                                        capabilities_coefficient=1.0))
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-# sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
+sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
 
@@ -59,7 +63,7 @@ for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
         logging.getLogger(name).setLevel(logging.WARNING)
 
-logging.getLogger('tlo.methods.malaria').setLevel(logging.DEBUG)
+logging.getLogger('tlo.methods.malaria').setLevel(logging.INFO)
 # logging.getLogger('tlo.methods.healthsystem').setLevel(logging.INFO)
 
 
@@ -70,10 +74,16 @@ sim.simulate(end_date=end_date)
 fh.flush()
 # fh.close()
 
+t1 = time.time()
+print('Time taken', t1 - t0)
 
 # %% read the results
 from tlo.analysis.utils import parse_log_file
 import datetime
+import os
+import matplotlib.pyplot as plt
+import numpy as np
+from tlo import Date
 
 outputpath = './src/scripts/malaria/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -85,7 +95,54 @@ pfpr = output['tlo.methods.malaria']['prevalence']
 tx = output['tlo.methods.malaria']['tx_coverage']
 mort = output['tlo.methods.malaria']['ma_mortality']
 
-# inc.to_csv(r'Z:\Thanzi la Onse\Malaria\inc.csv', header=True)
-# pfpr.to_csv(r'Z:\Thanzi la Onse\Malaria\pfpr.csv', header=True)
-# tx.to_csv(r'Z:\Thanzi la Onse\Malaria\tx.csv', header=True)
-# mort.to_csv(r'Z:\Thanzi la Onse\Malaria\mort.csv', header=True)
+# get model output dates in correct format
+model_years = pd.to_datetime(inc.date)
+
+# import malaria data
+inc_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="inc1000py_MAPdata",
+)
+PfPR_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="PfPR_MAPdata",
+)
+mort_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="mortalityRate_MAPdata",
+)
+tx_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="txCov_MAPdata",
+)
+
+# check date format for year columns in each sheet
+inc_data_years = pd.to_datetime(inc_data.Year, format="%Y")
+PfPR_data_years = pd.to_datetime(PfPR_data.Year, format="%Y")
+mort_data_years = pd.to_datetime(mort_data.Year, format="%Y")
+tx_data_years = pd.to_datetime(tx_data.Year, format="%Y")
+
+## FIGURES
+plt.figure(1)
+
+# Malaria incidence per 1000py - all ages with MAP model estimates
+plt.subplot(221)  # numrows, numcols, fignum
+plt.plot(inc_data_years, inc_data_years.inc_1000pyMean)  # MAP data
+plt.plot(model_years, inc.inc_1000py)  # model
+plt.title("Malaria Inc / 1000py")
+plt.xlabel("Year")
+plt.ylabel("Incidence (/1000py)")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"])
+
+# Malaria parasite prevalence rate - 2-10 year olds with MAP model estimates
+# expect model esitmates to be slightly higher as some will have
+# undetectable parasitaemia
+plt.subplot(222)  # numrows, numcols, fignum
+plt.plot(PfPR_data_years, PfPR_data.PfPR_median)  # MAP data
+plt.plot(model_years, pfpr.child2_10_prev)  # model
+plt.title("Malaria PfPR 2-10 yrs")
+plt.xlabel("Year")
+plt.ylabel("PfPR (%)")
+plt.gca().set_xlim(start_date, end_date)
+plt.legend(["Data", "Model"])
