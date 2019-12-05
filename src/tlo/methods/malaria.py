@@ -1217,6 +1217,12 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         inc_1000py_hiv = 0  # if running without hiv/tb
 
+        # using clinical counter
+        # sum all the counters for previous year
+        clin_episodes = df['ma_clinical_counter'].sum()  # clinical episodes (inc severe)
+        incCounter_1000py = (clin_episodes / pop) * 1000
+
+
         logger.info('%s|incidence|%s', now,
                     {
                         'number_new_cases': tmp,
@@ -1225,7 +1231,8 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                         'inc_1000py_hiv': inc_1000py_hiv,
                         'new_cases_2_10': tmp2,
                         'population2_10': pop2_10,
-                        'inc_1000py_2_10': inc_1000py_2_10
+                        'inc_1000py_2_10': inc_1000py_2_10,
+                        'inc_clin_counter': incCounter_1000py
                     })
 
         # ------------------------------------ RUNNING COUNTS ------------------------------------
