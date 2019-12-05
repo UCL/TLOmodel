@@ -190,12 +190,6 @@ class Schisto(Module):
         params['prob_sent_to_lab_test_adults'] = self.param_list.loc['prob_sent_to_lab_test_adults', 'Value']
         params['PZQ_efficacy'] = self.param_list.loc['PZQ_efficacy', 'Value']
 
-        # MDA prognosed
-        # params['MDA_prognosed_freq'] = self.param_list.loc['MDA_prognosed_freq', 'Value']
-        # params['MDA_prognosed_PSAC'] = self.param_list.loc['MDA_prognosed_PSAC', 'Value']
-        # params['MDA_prognosed_SAC'] = self.param_list.loc['MDA_prognosed_SAC', 'Value']
-        # params['MDA_prognosed_Adults'] = self.param_list.loc['MDA_prognosed_Adults', 'Value']
-
         # baseline prevalence
         params['schisto_initial_prev'] = workbook['Prevalence_2010']
         self.schisto_initial_prev.set_index("District", inplace=True)
@@ -358,7 +352,7 @@ class Schisto(Module):
 
         # add an event to log to screen
         sim.schedule_event(SchistoLoggingEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(SchistoDALYsLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(SchistoDALYsLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
@@ -470,8 +464,8 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                                                           params['delay_b'],
                                                           size=len(new_infections))
             latent_period_ahead = pd.to_timedelta(latent_period_ahead, unit='D')
-            df.loc[new_infections, 'ss_schedule_infectiousness_start'] = df.loc[
-                                                                             new_infections, 'ss_infection_date'] + latent_period_ahead
+            df.loc[new_infections, 'ss_schedule_infectiousness_start'] = df.loc[new_infections, 'ss_infection_date'] \
+                                                                         + latent_period_ahead
 
             ############## schedule the time of seeking healthcare #####################################################
             seeking_treatment__ahead = self.module.rng.uniform(params['delay_till_hsi_a'],
@@ -484,7 +478,8 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             ############ schedule events of infection and end of latent period and seeking healthcare
             for person_index in new_infections:
                 infect_event = SchistoInfection(self.module, person_id=person_index)
-                self.sim.schedule_event(infect_event, df.at[person_index, 'ss_infection_date'])
+                self.sim.schedule_event(infect_event,
+                                        df.at[person_index, 'ss_infection_date'])
                 end_latent_period_event = SchistoLatentPeriodEndEvent(self.module, person_id=person_index)
                 self.sim.schedule_event(end_latent_period_event,
                                         df.at[person_index, 'ss_schedule_infectiousness_start'])
@@ -492,7 +487,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(seek_treatment_event,
                                                                     priority=1,
                                                                     topen=df.at[person_index, 'ss_scheduled_hsi_date'],
-                                                                    tclose=df.at[person_index, 'ss_scheduled_hsi_date'] + DateOffset(weeks = 4))
+                                                                    tclose=df.at[person_index, 'ss_scheduled_hsi_date'] + DateOffset(weeks=4))
 
         print("Number of new infections: " + str(len(new_infections)))
         if len(new_infections) == 0:
@@ -510,7 +505,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
         params = self.module.parameters
         df_distr = df[(df["district_of_residence"] == distr) & (df.is_alive)].copy()  # get a copy of the main df with only one district and alive ind
 
-        if df_distr.shape[0]:  # if there are any rows in the dataframe, so there are alive poeple in the district
+        if df_distr.shape[0]:  # if there are any rows in the dataframe, so there are alive people in the district
             ############## get a count of infected to calculate the prevalence #######################################
             count_states = {'Non-infected': 0, 'Latent': 0, 'Infected': 0}
             count_states.update(df_distr.ss_is_infected.value_counts().to_dict())  # this will get counts of non-infected, latent and infectious individuals
@@ -569,7 +564,7 @@ class SchistoInfection(Event, IndividualScopeEventMixin):
 
 
 class SchistoLatentPeriodEndEvent(Event, IndividualScopeEventMixin):
-    """End of the latency period (Latend -> Infected (infectious))
+    """End of the latency period (Latent -> Infected (infectious))
     """
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -596,10 +591,10 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
             # calculate the duration of this infection
             inf_duration = self.sim.date - df.loc[person_id, 'ss_schedule_infectiousness_start']
             inf_duration = int(inf_duration / np.timedelta64(1, 'D'))
+            assert inf_duration >= 0, "Duration of the infection was negative!!!!"
             df.loc[person_id, 'ss_cumulative_infection_time'] += inf_duration
             symptoms = df.loc[person_id, 'ss_haematobium_specific_symptoms']
             df.loc[person_id, 'ss_cumulative_DALYs'] += self.calculate_DALY_per_infection(inf_duration, symptoms)
-
             df.loc[person_id, 'ss_is_infected'] = 'Non-infected'  # PZQ efficacy 100%, effective immediately
             df.loc[person_id, 'ss_haematobium_specific_symptoms'] = np.nan
             df.loc[person_id, 'ss_mansoni_specific_symptoms'] = np.nan
@@ -609,7 +604,7 @@ class SchistoTreatmentEvent(Event, IndividualScopeEventMixin):
 
     def calculate_DALY_per_infection(self, inf_duration, symptoms):
         dalys_weight = self.module.add_DALYs_from_symptoms(symptoms)
-        DALY = (inf_duration / 30.0) * (dalys_weight / 12.0)  # inf_duration in days and weight given per year
+        DALY = (inf_duration / 30.0) * (dalys_weight / 12.0)  # inf_duration in days and weight given per yea
         return DALY
 
 # ---------------------------------------------------------------------------------------------------------
@@ -649,8 +644,11 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         params = self.module.parameters
 
-        # some ppl will have been cured in the MDA before the app or will have symptomless infections,
-        if ((df.loc[person_id, 'is_alive']) & (df.loc[person_id, 'ss_is_infected'] == 'Infected')):
+        # this might be an old event scheduled for an infection that has been treated
+        # TODO:symptomless infections - don't send to HSI
+        if ((df.loc[person_id, 'is_alive']) &
+            (df.loc[person_id, 'ss_is_infected'] == 'Infected') &
+            (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date)):
             # check if a person is a child or an adult and assign prob of being sent to schisto test (and hence being cured)
             if df.loc[person_id, 'age_years'] <= 15:
                 prob_test = params['prob_sent_to_lab_test_children']
@@ -683,8 +681,13 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
         #     else:
         #         print('Person', person_id, 'seeked treatment but was not sent to test')
         # else:
-        #     if df.loc[person_id, 'is_alive']:
-        #         print('Person', person_id, 'had the appt scheduled but was cured in the MDA')
+            # if df.loc[person_id, 'is_alive']:
+            #     print('Person', person_id, 'had the appt scheduled but was cured in the MDA')
+            # if ((df.loc[person_id, 'is_alive']) &
+            #  (df.loc[person_id, 'ss_is_infected'] == 'Infected') &
+            #  (df.loc[person_id, 'ss_scheduled_hsi_date'] > self.sim.date)):
+            #     print('Person', person_id, 'had an old appt scheduled that is no longer valid')
+            #     print('now is', self.sim.date, 'apt was scheduled for', df.loc[person_id, 'ss_scheduled_hsi_date'])
         #     else:
         #         print('Person', person_id, 'had the appt scheduled but died before that')
 
@@ -857,16 +860,16 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         district = self.district
-        print("Prognosed MDA is happening now for district", district, "!")
+        # print("Prognosed MDA is happening now for district", district, "!")
         df = self.sim.population.props
 
         treated_idx_PSAC = self.assign_prognosed_MDA_coverage(population, district, 'PSAC')
         treated_idx_SAC = self.assign_prognosed_MDA_coverage(population, district, 'SAC')
         treated_idx_Adults = self.assign_prognosed_MDA_coverage(population, district, 'Adults')
 
-        print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
-        print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
-        print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
+        # print("PSAC treated in MDA: " + str(len(treated_idx_PSAC)))
+        # print("SAC treated in MDA: " + str(len(treated_idx_SAC)))
+        # print("Adults treated in MDA: " + str(len(treated_idx_Adults)))
 
         treated_idx = treated_idx_PSAC + treated_idx_SAC + treated_idx_Adults
 
@@ -879,10 +882,10 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
 
         for person_id in MDA_treated:
             self.sim.schedule_event(SchistoTreatmentEvent(self.module, person_id), self.sim.date)
-        # count how many PZQ tablets were distributed
-        PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
-        print("Year " + str(self.sim.date.year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
-        print("All cured in MDA: " + str(len(MDA_treated)))
+        # # count how many PZQ tablets were distributed
+        # PZQ_tablets_used = len(treated_idx)  # just in this round of MDA
+        # print("Year " + str(self.sim.date.year) + ", PZQ tablets used in this MDA round: " + str(PZQ_tablets_used))
+        # print("All cured in MDA: " + str(len(MDA_treated)))
 
     def assign_prognosed_MDA_coverage(self, population, district, age_group):
         """Assign coverage of MDA program to chosen age_group. The same coverage for every district.
@@ -916,17 +919,19 @@ class SchistoPrognosedMDAEvent(RegularEvent, PopulationScopeEventMixin):
 class SchistoDALYsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the DALYs per year
+        Note: it only makes sense to look at the ALL population, otherwise the cumulative DALYs might be decreasing due
+        to people moving to the higher class age group, i.e. PSAC -> SAC, SAC -> Adults
         """
         # run this event every year
-        super().__init__(module, frequency=DateOffset(months=12))
+        super().__init__(module, frequency=DateOffset(months=6))
         assert isinstance(module, Schisto)
 
     def create_logger(self, population, age_group):
         df = population.props
 
         age_range = map_age_groups(age_group)  # returns a tuple
-        df_age = df[((df.is_alive) & (df['age_years'].between(age_range[0], age_range[1])))].copy()
-        DALY_so_far = df_age['ss_cumulative_DALYs'].values.sum()
+        df_age = df[df['age_years'].between(age_range[0], age_range[1])].copy()
+        DALY_so_far = df_age['ss_cumulative_DALYs'].values.sum()  ## this is decreasing sometimes LOL
         log_string = '%s|' + 'DALY_' + age_group + '|%s'
         logger.info(log_string, self.sim.date.date(),
                     {
@@ -936,9 +941,9 @@ class SchistoDALYsLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # TODO: the unfinished infections won't be logged this year
 
     def apply(self, population):
-        self.create_logger(population, 'PSAC')
-        self.create_logger(population, 'SAC')
-        self.create_logger(population, 'Adults')
+        # self.create_logger(population, 'PSAC')
+        # self.create_logger(population, 'SAC')
+        # self.create_logger(population, 'Adults')
         self.create_logger(population, 'All')
 
 

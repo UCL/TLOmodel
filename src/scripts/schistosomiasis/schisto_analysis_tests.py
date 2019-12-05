@@ -116,8 +116,11 @@ timestamp = str(datetime.datetime.now().replace(microsecond=0))
 timestamp = timestamp.replace(" ", "_")
 timestamp = timestamp.replace(":", "-")
 savepath = output_path + "output_" + timestamp + ".csv"
+savepath_full_pop = output_path + "output_population_" + timestamp + ".csv"
 savepath_daly = output_path + "output_daly_" + timestamp + ".csv"
 savepath_params = output_path + "input_" + timestamp + ".xlsx"
+
+sim.population.props.to_csv(savepath_full_pop, index=False)
 
 output_states = pd.DataFrame([])
 for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
@@ -127,13 +130,14 @@ output_states.to_csv(savepath, index=False)
 
 # dalys calculated by a dedicated schisto-module functionality
 def calculate_yearly_dalys(df):
-    df['DALY_yearly'] = df['DALY_cumulative'] - df['DALY_cumulative'].shift(1)
-    df.loc[0, 'DALY_yearly'] = df.loc[0, 'DALY_cumulative']
+    df['DALY_monthly'] = df['DALY_cumulative'] - df['DALY_cumulative'].shift(1)
+    df.loc[0, 'DALY_monthly'] = df.loc[0, 'DALY_cumulative']
     return df
 
 
 dalys_output = pd.DataFrame([])
-for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
+for age_group in ['All']:
+# for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
     daly_age_group = 'DALY_' + age_group
     df = calculate_yearly_dalys(output['tlo.methods.schisto'][daly_age_group])
     df['Age_group'] = age_group
