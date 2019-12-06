@@ -420,7 +420,8 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
 
     def did_not_run(self):
         logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
-        pass
+        # return False to prevent this event from being rescheduled if it did not run.
+        return False
 
 
 class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):

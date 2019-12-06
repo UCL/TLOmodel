@@ -1071,10 +1071,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 else:
                     # Do not run,
                     # Call did_not_run for the hsi_event
-                    event.did_not_run()
+                    rtn_from_did_not_run = event.did_not_run()
 
-                    # add to the hold-over queue
-                    hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
+                    # If received no response from the call to did_not_run, or a True signal, then
+                    # add to the hold-over queue.
+                    # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
+
+                    if not (rtn_from_did_not_run == False):
+                        # reschedule event
+                        hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 
                     # Log that the event did not run
                     self.module.log_hsi_event(
@@ -1093,8 +1098,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         self.module.log_current_capabilities(
             current_capabilities=current_capabilities, all_calls_today=df_footprints_of_all_individual_level_hsi_event
         )
-
-        # TODO- ERROR CATCHING:for a call that is not represented among the current capabilities
 
 
 class HSI_Event:
@@ -1120,9 +1123,6 @@ class HSI_Event:
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
-        # TODO: make better use of templating for the HSI events
-        #  (to incl. information that is required for each HSI Event?)
-
     def apply(self, *args, **kwargs):
         """Apply this event to the population.
 
@@ -1131,7 +1131,7 @@ class HSI_Event:
         raise NotImplementedError
 
     def did_not_run(self, *args, **kwargs):
-        """Called when this event is due but it is not run.
+        """Called when this event is due but it is not run. Return False to prevent the event being rescheduled.
 
         Must be implemented by subclasses.
         """

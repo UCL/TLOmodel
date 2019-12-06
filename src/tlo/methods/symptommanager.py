@@ -89,12 +89,16 @@ class SymptomManager(Module):
         :param disease_module: pointer to the disease module that is reporting this change in symptom
         """
 
-        # Check that the person_id is for an existing and alive person
-        alive_person_ids= list(self.sim.population.props.loc[self.sim.population.props.is_alive==True].index)
+        # Make the person_id into a list
         if type(person_id) is not list:
             person_id= [person_id]
-        for p in person_id:
-            assert p in alive_person_ids
+
+        # Strip out the person_ids for anyone who is not alive.
+        alive_person_ids= list(self.sim.population.props.loc[self.sim.population.props.is_alive==True].index)
+        person_id = list(set(person_id).intersection(alive_person_ids))
+
+        # Confirm that all person_ids (after stripping) are alive
+        assert all([(p in alive_person_ids) for p in person_id])
 
         # Check that the symptom_string is legitimate
         assert symptom_string in self.list_of_symptoms
@@ -114,11 +118,6 @@ class SymptomManager(Module):
         # # Empty the list of persons with newly onset acute generic symptoms if this is a new day
         # # [This list is used by HealthCareSeekingBehaviour to pick up the person_ids of those who have onset
         # #  acute generic symptoms during the one day before. So empty the list each new day.]
-        # # [Not neccessary as this is being cleared out each day by HealthSeekingBehaviourPoll]
-        # if self.sim.date >  self.date_of_last_reported_onset_symptom:
-        #     self.persons_with_newly_onset_acute_generic_symptoms = list()
-
-        self.date_of_last_reported_onset_symptom = self.sim.date
 
         # Make the operation:
         if add_or_remove == '+':

@@ -6,7 +6,7 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis
+from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis, symptommanager
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -44,6 +44,7 @@ def test_run_with_healthsystem_no_disease_modules_defined():
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 
     sim.seed_rngs(0)
 
@@ -78,6 +79,7 @@ def test_run_no_interventions_allowed(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
 
@@ -122,6 +124,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -168,6 +171,7 @@ def test_run_in_mode_0_no_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=0))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -214,6 +218,7 @@ def test_run_in_mode_1_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=1))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -236,7 +241,6 @@ def test_run_in_mode_1_with_capacity(tmpdir):
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
 
-# TODO; This one!
 def test_run_in_mode_1_with_no_capacity(tmpdir):
     # Events should run but with high squeeze factors
     # (Mode 1 -> elastic constraints)
@@ -262,6 +266,7 @@ def test_run_in_mode_1_with_no_capacity(tmpdir):
                                            # this effectively removes capabilities of HS:
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=1))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -310,6 +315,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(mockitis.Mockitis())
     sim.register(chronicsyndrome.ChronicSyndrome())
@@ -357,6 +363,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
                                            mode_appt_constraints=2))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
 
     sim.register(mockitis.Mockitis())
