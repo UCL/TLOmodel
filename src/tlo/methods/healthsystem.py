@@ -27,7 +27,7 @@ class HealthSystem(Module):
         resourcefilepath=None,
         service_availability=None,          # must be a list of treatment_ids to allow
         mode_appt_constraints=0,            # mode of constraints to do with officer numbers and time
-        ignore_cons_constaints=False,       # mode for consumable constraints (if ignored, all consumables available)
+        ignore_cons_constraints=False,       # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,
     ):  # multiplier for the capabilities of health officers
@@ -35,8 +35,8 @@ class HealthSystem(Module):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
-        assert type(ignore_cons_constaints) is bool
-        self.ignore_cons_constaints = ignore_cons_constaints
+        assert type(ignore_cons_constraints) is bool
+        self.ignore_cons_constraints = ignore_cons_constraints
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -129,6 +129,27 @@ class HealthSystem(Module):
         caps = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Daily_Capabilities.csv')
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
+
+
+        # Make a dataframe that organsie the probabilities of individual consumables items being available
+        # (by unique item codes)
+        cons = self.parameters['Consumables']
+        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
+
+        # merge in probabilities of being available
+        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
+        filter_col.append('Item_Code')
+        prob_unique_item_codes_available = unique_item_codes.merge(
+            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
+        )
+        assert len(prob_unique_item_codes_available) == len(unique_item_codes)
+
+        # set the index as the Item_Code
+        prob_unique_item_codes_available = prob_unique_item_codes_available.set_index(prob_unique_item_codes_available['Item_Code'])
+        prob_unique_item_codes_available = prob_unique_item_codes_available.drop(['Item_Code'], axis=1)
+
+        self.prob_unique_item_codes_available = prob_unique_item_codes_available
+
 
     def initialise_population(self, population):
         df = population.props
@@ -900,31 +921,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         )
 
         # 0) Determine the availability of consumables today based on their probabilities
-        # NB. This section (next 14 lines could be moved to initialise simulation)
-        cons = self.module.parameters['Consumables']
-        unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
-
-        # merge in probabilities of being available
-        filter_col = [col for col in cons if col.startswith('Available_Facility_Level_')]
-        filter_col.append('Item_Code')
-        unique_item_codes = unique_item_codes.merge(
-            cons.drop_duplicates(['Item_Code'])[filter_col], on='Item_Code', how='inner'
-        )
-        assert len(unique_item_codes) == len(unique_item_codes)
-
-        # set the index as the Item_Code
-        unique_item_codes = unique_item_codes.set_index(unique_item_codes['Item_Code'])
-        unique_item_codes = unique_item_codes.drop(['Item_Code'], axis=1)
 
         # random draws: assume that availability of the same item is independent between different facility levels
-        random_draws = self.module.rng.rand(len(unique_item_codes), len(unique_item_codes.columns))
+        random_draws = self.module.rng.rand(
+            len(self.module.prob_unique_item_codes_available), len(self.module.prob_unique_item_codes_available.columns)
+        )
 
         # Determine the availability of the consumables today
         if not self.module.ignore_cons_constraints:
-            self.module.cons_item_code_availability_today = unique_item_codes > random_draws
+            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > random_draws
         else:
             # Make all true if ignoring consumables constraints
-            self.module.cons_item_code_availability_today = unique_item_codes> 0.0
+            self.module.cons_item_code_availability_today = self.module.prob_unique_item_codes_available > 0.0
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
