@@ -660,33 +660,6 @@ class HealthSystem(Module):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        # # If ignoring constraints, return everything as being available without any checks
-        # if self.ignore_cons_constaints:
-        #     logger.debug('Ignoring Constraints')
-        #
-        #     # Iterate through the packages that were requested
-        #     packages_availability = dict()
-        #     if not cons_req_as_footprint['Intervention_Package_Code'] == []:
-        #         for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
-        #             package_code, = p_dict.keys()
-        #             packages_availability[package_code] = True
-        #
-        #     # Iterate through the individual items that were requested
-        #     items_availability = dict()
-        #     if not cons_req_as_footprint['Item_Code'] == []:
-        #         for i_dict in cons_req_as_footprint['Item_Code']:
-        #             item_code, = i_dict.keys()
-        #             items_availability[item_code] = True
-        #
-        #     # compile output
-        #     output = dict()
-        #     output['Intervention_Package_Code'] = packages_availability
-        #     output['Item_Code'] = items_availability
-        #
-        #     return output
-
-
-
         # 0) Get information about the hsi_event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         the_treatment_id = hsi_event.TREATMENT_ID
