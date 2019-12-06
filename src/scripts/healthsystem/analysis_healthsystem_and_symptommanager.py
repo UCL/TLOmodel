@@ -48,7 +48,8 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath))
 sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=2,
-                                       capabilities_coefficient=1.0))
+                                       capabilities_coefficient=1.0,
+                                       ignore_cons_constaints=True))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
 sim.register(dx_algorithm_child.DxAlgorithmChild())

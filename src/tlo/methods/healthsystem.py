@@ -660,31 +660,30 @@ class HealthSystem(Module):
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-        # If ignoring constraints, return everything as being available without any checks
-        if self.ignore_cons_constaints:
-            logger.debug('Ignoring Constraints')
-
-            # Iterate through the packages that were requested
-            packages_availability = dict()
-            if not cons_req_as_footprint['Intervention_Package_Code'] == []:
-                for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
-                    package_code, = p_dict.keys()
-                    packages_availability[package_code] = True
-
-            # Iterate through the individual items that were requested
-            items_availability = dict()
-            if not cons_req_as_footprint['Item_Code'] == []:
-                for i_dict in cons_req_as_footprint['Item_Code']:
-                    item_code, = i_dict.keys()
-                    items_availability[item_code] = True
-
-            # compile output
-            output = dict()
-            output['Intervention_Package_Code'] = packages_availability
-            output['Item_Code'] = items_availability
-
-            return output
-
+        # # If ignoring constraints, return everything as being available without any checks
+        # if self.ignore_cons_constaints:
+        #     logger.debug('Ignoring Constraints')
+        #
+        #     # Iterate through the packages that were requested
+        #     packages_availability = dict()
+        #     if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+        #         for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+        #             package_code, = p_dict.keys()
+        #             packages_availability[package_code] = True
+        #
+        #     # Iterate through the individual items that were requested
+        #     items_availability = dict()
+        #     if not cons_req_as_footprint['Item_Code'] == []:
+        #         for i_dict in cons_req_as_footprint['Item_Code']:
+        #             item_code, = i_dict.keys()
+        #             items_availability[item_code] = True
+        #
+        #     # compile output
+        #     output = dict()
+        #     output['Intervention_Package_Code'] = packages_availability
+        #     output['Item_Code'] = items_availability
+        #
+        #     return output
 
 
 
@@ -722,7 +721,6 @@ class HealthSystem(Module):
             )
 
             # Enter to the log
-
             items_req_to_log = items_req_to_log.drop(['Package_Code'], axis=1)  # drop from log for neatness
 
             log_consumables = items_req_to_log.to_dict()
@@ -948,7 +946,11 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         random_draws = self.module.rng.rand(len(unique_item_codes), len(unique_item_codes.columns))
 
         # Determine the availability of the consumables today
-        self.module.cons_item_code_availability_today = unique_item_codes > random_draws
+        if not self.module.ignore_cons_constraints:
+            self.module.cons_item_code_availability_today = unique_item_codes > random_draws
+        else:
+            # Make all true if ignoring consumables constraints
+            self.module.cons_item_code_availability_today = unique_item_codes> 0.0
 
         logger.debug('----------------------------------------------------------------------')
         logger.debug("This is the entire HSI_EVENT_QUEUE heapq:")
