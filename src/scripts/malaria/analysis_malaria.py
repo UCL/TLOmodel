@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-popsize = 100000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -84,11 +84,16 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from tlo import Date
+import pandas as pd
+from pathlib import Path
+
 
 outputpath = './src/scripts/malaria/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 output = parse_log_file(logfile)
+
+resourcefilepath = Path("./resources")
 
 inc = output['tlo.methods.malaria']['incidence']
 pfpr = output['tlo.methods.malaria']['prevalence']
@@ -97,6 +102,8 @@ mort = output['tlo.methods.malaria']['ma_mortality']
 
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)
+start_date = Date(2010, 1, 1)
+end_date = Date(2012, 12, 31)
 
 # import malaria data
 inc_data = pd.read_excel(
@@ -166,3 +173,4 @@ plt.xlabel("Year")
 plt.ylabel("Mortality rate")
 plt.gca().set_xlim(start_date, end_date)
 plt.legend(["Data", "Model"])
+plt.show()
