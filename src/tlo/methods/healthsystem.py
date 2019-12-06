@@ -900,6 +900,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         )
 
         # 0) Determine the availability of consumables today based on their probabilities
+        # NB. This section (next 14 lines could be moved to initialise simulation)
         cons = self.module.parameters['Consumables']
         unique_item_codes = pd.DataFrame(data={'Item_Code': pd.unique(cons['Item_Code'])})
 
