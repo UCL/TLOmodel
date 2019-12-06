@@ -304,11 +304,13 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
             # Give everyone who has mild symptoms, the generic symptom of headache (some will go to care for this)
             # Report this to the unified symptom manager:
-            self.sim.modules['SymptomManager'].chg_symptom(
+            if len(infected_idx)>0:
+                self.sim.modules['SymptomManager'].chg_symptom(
                 person_id=list(infected_idx),
                 symptom_string='headache',
                 add_or_remove='+',
-                disease_module=self.module)
+                disease_module=self.module,
+                duration_in_days=10)
 
             # Determine if anyone with severe symptoms will seek care
             # [as this is a specific symptom the disease module handles it]

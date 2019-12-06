@@ -4,7 +4,7 @@ A skeleton template for disease methods.
 """
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
 from tlo.methods.healthsystem import HSI_Event
 from tlo.population import logger
 
@@ -79,7 +79,7 @@ class SymptomManager(Module):
         """
         self.sim.population.props[child_id,self.symptom_var_names]=0
 
-    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module):
+    def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, duration_in_days=None):
         """
         This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.
 
@@ -104,6 +104,10 @@ class SymptomManager(Module):
         # Check that the add/remove signal is legitimate
         assert add_or_remove in ['+','-']
 
+        # Check that the duation in days makes sense
+        if not duration_in_days is None:
+            assert int(duration_in_days) > 0
+
         # Check that the provided disease_module is a registered disease_module
         assert disease_module in self.sim.modules['HealthSystem'].registered_disease_modules.values()
 
@@ -123,6 +127,15 @@ class SymptomManager(Module):
             self.persons_with_newly_onset_acute_generic_symptoms = \
                 self.persons_with_newly_onset_acute_generic_symptoms + person_id
 
+            # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
+            if not duration_in_days is None:
+                auto_resolve_event = SymptomManager_AutoResolveEvent(self,
+                                                                     person_id=person_id,
+                                                                     symptom_string=symptom_string,
+                                                                     disease_module=disease_module)
+                self.sim.schedule_event(event=auto_resolve_event,
+                                        date=self.sim.date + DateOffset(days=int(duration_in_days)))
+
         else:
             # Remove the symptom
             assert (self.sim.population.props.loc[person_id, symptom_var_name]>0).all(),\
@@ -135,4 +148,27 @@ class SymptomManager(Module):
         # Check that all the symptom variables are in good condition (no negative values)
         assert (self.sim.population.props[self.symptom_var_names]>=0).all().all()
 
+# ---------------------------------------------------------------------------------------------------------
+#   EVENTS
+# ---------------------------------------------------------------------------------------------------------
+
+class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
+    """
+    This utility function will remove symptoms. It is scheduled by the SymptomManager to let symptoms 'auto-resolve'
+    """
+
+    def __init__(self, module, person_id, symptom_string, disease_module):
+        super().__init__(module)
+        assert isinstance(module, SymptomManager)
+
+        self.person_id = person_id
+        self.symptom_string = symptom_string
+        self.disease_module = disease_module
+
+
+    def apply(self, population):
+        self.module.chg_symptom(person_id=self.person_id,
+                                symptom_string=self.symptom_string,
+                                add_or_remove='-',
+                                disease_module=self.disease_module)
 
