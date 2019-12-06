@@ -25,14 +25,18 @@ class HealthSystem(Module):
         self,
         name=None,
         resourcefilepath=None,
-        service_availability=None,  # must be a list of treatment_ids to allow
-        mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+        service_availability=None,          # must be a list of treatment_ids to allow
+        mode_appt_constraints=0,            # mode of constraints to do with officer numbers and time
+        ignore_cons_constaints=False,       # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
         capabilities_coefficient=1.0,
     ):  # multiplier for the capabilities of health officers
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        assert type(ignore_cons_constaints) is bool
+        self.ignore_cons_constaints = ignore_cons_constaints
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -603,6 +607,7 @@ class HealthSystem(Module):
 
         return squeeze_factor_per_hsi_event
 
+
     def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
         This is where HSI events can check access to and log use of consumables.
@@ -654,6 +659,34 @@ class HealthSystem(Module):
             assert itm_quant > 0
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        # If ignoring constraints, return everything as being available without any checks
+        if self.ignore_cons_constaints:
+            logger.debug('Ignoring Constraints')
+
+            # Iterate through the packages that were requested
+            packages_availability = dict()
+            if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+                for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                    package_code, = p_dict.keys()
+                    packages_availability[package_code] = True
+
+            # Iterate through the individual items that were requested
+            items_availability = dict()
+            if not cons_req_as_footprint['Item_Code'] == []:
+                for i_dict in cons_req_as_footprint['Item_Code']:
+                    item_code, = i_dict.keys()
+                    items_availability[item_code] = True
+
+            # compile output
+            output = dict()
+            output['Intervention_Package_Code'] = packages_availability
+            output['Item_Code'] = items_availability
+
+            return output
+
+
+
 
         # 0) Get information about the hsi_event
         the_facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
@@ -724,8 +757,6 @@ class HealthSystem(Module):
         output = dict()
         output['Intervention_Package_Code'] = packages_availability
         output['Item_Code'] = items_availability
-
-        # TODO: confirm output is in right format
 
         return output
 
