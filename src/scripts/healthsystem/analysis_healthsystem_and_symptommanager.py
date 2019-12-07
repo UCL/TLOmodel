@@ -16,7 +16,6 @@ from tlo.methods import (
     symptommanager,
 )
 
-
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
 # Where will output go

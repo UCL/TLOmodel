@@ -8,7 +8,6 @@ from tlo import DateOffset, Module
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
 
-
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
