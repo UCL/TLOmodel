@@ -3,9 +3,8 @@ An example of a diagnostic algorithm that is called during an HSI Event.
 """
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.healthsystem import HSI_Event
+from tlo import Module
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -45,7 +44,7 @@ class DxAlgorithmChild(Module):
     def on_birth(self, mother_id, child_id):
         pass
 
-    def diagnose(self,person_id,hsi_event):
+    def diagnose(self, person_id, hsi_event):
         """
         This will diagnose the condition of the person. It is being called from inside an HSI Event.
 
@@ -55,7 +54,7 @@ class DxAlgorithmChild(Module):
         """
 
         # get the symptoms of the person:
-        symptoms = self.sim.population.props.loc[person_id,self.sim.population.props.columns.str.startswith('sy_')]
+        symptoms = self.sim.population.props.loc[person_id, self.sim.population.props.columns.str.startswith('sy_')]
 
         # Make a request for consumables (making reference to the hsi_event from which this is called)
         # TODO: Finish this demonstration **
@@ -87,9 +86,5 @@ class DxAlgorithmChild(Module):
             # Without the diagnostic test, there cannot be a determinant diagnsosi
             diagnosis_str = 'indeterminate'
 
-
         # return the diagnosis as a string
         return diagnosis_str
-
-
-

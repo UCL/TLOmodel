@@ -41,7 +41,6 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         self.ACCEPTED_FACILITY_LEVEL = 1
         self.ALERT_OTHER_DISEASES = []
 
-
     def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_GenericFirstApptAtFacilityLevel1 for person %d', person_id)
 
@@ -56,19 +55,14 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Do something based on this diagnosis...
-            if diagnosis=='measles':
+            if diagnosis == 'measles':
                 logger.info('Start treatment for measles')
             else:
                 logger.info('No treatment. HSI ends.')
-
-
 
         else:
             # It's an adult
             logger.debug('To fill in ... what to with an adult')
 
-
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel1: did not run')
-
-

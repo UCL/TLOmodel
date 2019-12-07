@@ -25,12 +25,12 @@ class HealthSystem(Module):
         self,
         name=None,
         resourcefilepath=None,
-        service_availability=None,              # must be a list of treatment_ids to allow
-        mode_appt_constraints=0,                # mode of constraints to do with officer numbers and time
-        ignore_cons_constraints=False,          # mode for consumable constraints (if ignored, all consumables available)
-        ignore_priority=False,                  # do not use the priority information in HSI event to schedule
-        capabilities_coefficient=1.0,           # multiplier for the capabilities of health officers
-        disable=False                           # disables the healthsystem (no constraints and no logging).
+        service_availability=None,  # must be a list of treatment_ids to allow
+        mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
+        ignore_cons_constraints=False,  # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=False,  # do not use the priority information in HSI event to schedule
+        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+        disable=False  # disables the healthsystem (no constraints and no logging).
     ):
 
         super().__init__(name)
@@ -134,7 +134,6 @@ class HealthSystem(Module):
         self.parameters['Daily_Capabilities'] = caps.iloc[:, 1:]
         self.reformat_daily_capabilities()  # Reformats this table to include zero where capacity is not available
 
-
         # Make a dataframe that organsie the probabilities of individual consumables items being available
         # (by unique item codes)
         cons = self.parameters['Consumables']
@@ -149,11 +148,11 @@ class HealthSystem(Module):
         assert len(prob_unique_item_codes_available) == len(unique_item_codes)
 
         # set the index as the Item_Code
-        prob_unique_item_codes_available = prob_unique_item_codes_available.set_index(prob_unique_item_codes_available['Item_Code'])
+        prob_unique_item_codes_available = prob_unique_item_codes_available.set_index(
+            prob_unique_item_codes_available['Item_Code'])
         prob_unique_item_codes_available = prob_unique_item_codes_available.drop(['Item_Code'], axis=1)
 
         self.prob_unique_item_codes_available = prob_unique_item_codes_available
-
 
     def initialise_population(self, population):
         df = population.props
@@ -179,11 +178,9 @@ class HealthSystem(Module):
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
-
         # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
         if not self.disable:
             sim.schedule_event(HealthSystemScheduler(self), sim.date)
-
 
     def on_birth(self, mother_id, child_id):
 
@@ -225,12 +222,10 @@ class HealthSystem(Module):
 
         assert isinstance(hsi_event, HSI_Event)
 
-
         # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
         if self.disable:
-            self.sim.schedule_event(hsi_event,topen, force_over_from_healthsystem=True)
+            self.sim.schedule_event(hsi_event, topen, force_over_from_healthsystem=True)
             return  # Terrminate this functional call
-
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
@@ -301,7 +296,7 @@ class HealthSystem(Module):
         elif hsi_event.TREATMENT_ID is None:
             allowed = True  # (if no treatment_id it can pass)
         elif hsi_event.TREATMENT_ID.startswith('GenericFirstAppt'):
-            allowed = True # allow all GenericFirstAppt's
+            allowed = True  # allow all GenericFirstAppt's
         else:
             # check to see if anything provided given any wildcards
             for s in self.service_availability:
@@ -313,7 +308,7 @@ class HealthSystem(Module):
 
         # 4) Check that at least one type of appointment is required
         if not type(hsi_event.target) is tlo.population.Population:
-            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()),\
+            assert any(value > 0 for value in hsi_event.EXPECTED_APPT_FOOTPRINT.values()), \
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
 
         # 5) Check that event (if individual level) is able to run with this configuration of officers
@@ -323,10 +318,10 @@ class HealthSystem(Module):
             caps = self.parameters['Daily_Capabilities']
             footprint = self.get_appt_footprint_as_time_request(hsi_event=hsi_event)
 
-            footprint_is_possible = (len(footprint)>0) & (caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
+            footprint_is_possible = (len(footprint) > 0) & (
+                caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
-
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
@@ -530,7 +525,6 @@ class HealthSystem(Module):
         """
         raise Exception('Do not use get_prob_seek_care().')
 
-
     def get_appt_footprint_as_time_request(self, hsi_event, actual_appt_footprint=None):
         """
         This will take an HSI event and return the required appointments in terms of the time required of each
@@ -580,8 +574,9 @@ class HealthSystem(Module):
             ['Officer_Type_Code', 'Time_Taken'],
         ].copy()
 
-        assert len(df_appt_footprint)>0, \
-            "The time needed for this appointment is not defined for this specified facility level in the Appt_Time_Table"
+        assert len(df_appt_footprint) > 0, \
+            "The time needed for this appointment is not defined for this specified facility level in the \
+            Appt_Time_Table"
 
         # Using f string or format method throws and error when df_appt_footprint is empty so hybrid used
         df_appt_footprint.set_index(
@@ -630,7 +625,7 @@ class HealthSystem(Module):
         for col_num in np.arange(0, len(all_calls_today.columns)):
             load_factor_per_officer_needed = list()
             officers_needed = all_calls_today.loc[all_calls_today[col_num] > 0, col_num].index.astype(str)
-            assert len(officers_needed)>0
+            assert len(officers_needed) > 0
             for officer in officers_needed:
                 load_factor_per_officer_needed.append(load_factor.loc[officer])
             squeeze_factor_per_hsi_event.append(max(load_factor_per_officer_needed))
@@ -639,7 +634,6 @@ class HealthSystem(Module):
         assert (np.asarray(squeeze_factor_per_hsi_event) >= 0).all()
 
         return squeeze_factor_per_hsi_event
-
 
     def request_consumables(self, hsi_event, cons_req_as_footprint, to_log=True):
         """
@@ -1050,7 +1044,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             # TODO: Check that each call requires at least one type of officer
 
-
             # dataframe to store all the calls to the healthsystem today
             df_footprints_of_all_individual_level_hsi_event = pd.DataFrame(
                 footprints_of_all_individual_level_hsi_event, index=current_capabilities.index
@@ -1128,7 +1121,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # add to the hold-over queue.
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
 
-                    if not (rtn_from_did_not_run == False):
+                    if not (rtn_from_did_not_run is False):
                         # reschedule event
                         hp.heappush(hold_over, list_of_individual_hsi_event_tuples_due_today[ev_num])
 

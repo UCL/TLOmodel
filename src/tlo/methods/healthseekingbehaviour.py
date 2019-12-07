@@ -4,11 +4,10 @@ A skeleton template for disease methods.
 """
 import numpy as np
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.healthsystem import HSI_Event
+from tlo import DateOffset, Module
+from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel1
-from tlo.population import logger
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -46,12 +45,13 @@ class HealthSeekingBehaviour(Module):
     def initialise_simulation(self, sim):
         """Initialise the simulation: set the first occurance of the repeating HealthSeekingBehaviourPoll
         """
-        sim.schedule_event(HealthSeekingBehaviourPoll(self),sim.date)
+        sim.schedule_event(HealthSeekingBehaviourPoll(self), sim.date)
 
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """
         pass
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
@@ -84,13 +84,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         """
 
         # get the list of person_ids who have onset generic acute symptoms in the last day
-        person_ids_with_new_symptoms = self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms
+        person_ids_with_new_symptoms = self.module.sim.modules[
+            'SymptomManager'].persons_with_newly_onset_acute_generic_symptoms
 
         # clear the list of person_ids with onset generic acute symptoms (as now dealt with here)
-        self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms= list()
+        self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms = list()
 
         # TODO: check that this list here isn't emptied (when the remote list is emptied)
-
 
         for person_id in person_ids_with_new_symptoms:
             # For each individual person_id, with at least one new onset symptom, look at the symptoms and determine if
@@ -102,26 +102,26 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Build up the RHS of the logistic regresssion equation: 'f' is the linear term f(beta*x +... )
             # collate indicator variables to match the HSB equation (from Ng'ambi et al)
-            f = np.log(3.237729)    # 'Constant' term from STATA is the baseline odds.
+            f = np.log(3.237729)  # 'Constant' term from STATA is the baseline odds.
 
             # Region
-            if person_profile['region_of_residence']=='Northern':
+            if person_profile['region_of_residence'] == 'Northern':
                 f *= np.log(1.00)
-            elif person_profile['region_of_residence']=='Central':
+            elif person_profile['region_of_residence'] == 'Central':
                 f *= np.log(0.61)
-            elif person_profile['region_of_residence']=='Southern':
+            elif person_profile['region_of_residence'] == 'Southern':
                 f *= np.log(0.67)
             else:
                 raise Exception('region_of_residence not recognised')
 
             # Urban/Rural residence
-            if person_profile['li_urban']==False:
+            if person_profile['li_urban'] is False:
                 f *= np.log(1.00)
             else:
                 f *= np.log(1.63)
 
             # Sex
-            if person_profile['sex']=='M':
+            if person_profile['sex'] == 'M':
                 f *= np.log(1.00)
             else:
                 f *= np.log(1.19)
@@ -146,37 +146,37 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Symptom - (can have more than one)
             if person_profile['sy_fever']:
-                 f *= np.log(1.86)
+                f *= np.log(1.86)
 
             if person_profile['sy_vomiting']:
-                 f *= np.log(1.28)
+                f *= np.log(1.28)
 
             if person_profile['sy_stomachache']:
-                 f *= np.log(0.76)
+                f *= np.log(0.76)
 
             if person_profile['sy_sore_throat']:
-                 f *= np.log(0.89)
+                f *= np.log(0.89)
 
             if person_profile['sy_respiratory_symptoms']:
-                 f *= np.log(0.71)
+                f *= np.log(0.71)
 
             if person_profile['sy_headache']:
-                 f *= np.log(0.52)
+                f *= np.log(0.52)
 
             if person_profile['sy_skin_complaint']:
-                 f *= np.log(2.31)
+                f *= np.log(2.31)
 
             if person_profile['sy_dental_complaint']:
-                 f *= np.log(0.94)
+                f *= np.log(0.94)
 
             if person_profile['sy_backache']:
-                 f *= np.log(1.01)
+                f *= np.log(1.01)
 
             if person_profile['sy_injury']:
-                 f *= np.log(1.02)
+                f *= np.log(1.02)
 
             if person_profile['sy_eye_complaint']:
-                 f *= np.log(1.33)
+                f *= np.log(1.33)
 
             # convert into a probability of seeking care:
             prob_seeking_care = 1 / (1 + np.exp(-f))
@@ -187,11 +187,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
                 hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
-                                                                priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=None)
-
-
-
-
-
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=None)
