@@ -1404,7 +1404,8 @@ class HSI_Hiv_OutreachIndividual(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        # the_appt_footprint['ConWithDCSA'] = 1  # This requires small amount of time with DCSA
+        # -- CANNOT HAVE ConWithDCSA at Level 1
         the_appt_footprint['VCTPositive'] = 1  # Voluntary Counseling and Testing Program - For HIV-Positive
 
         # Define the necessary information for an HSI
