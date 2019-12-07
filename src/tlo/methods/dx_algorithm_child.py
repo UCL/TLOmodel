@@ -9,6 +9,7 @@ from tlo import Module
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class DxAlgorithmChild(Module):
     """
     This is an example/placeholder to show how a diagnostic algorithm can be used.

@@ -12,6 +12,7 @@ from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLe
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+
 class HealthSeekingBehaviour(Module):
     """
     This modules determines if the onset of generic symptoms will lead to that person presenting at the health
