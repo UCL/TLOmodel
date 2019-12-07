@@ -11,6 +11,7 @@ from tlo.population import logger
 #    HSI_GenericFirstApptAtFacilityLevel0
 # ---------------------------------------------------------------------------------------------------------
 
+
 class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
