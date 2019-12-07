@@ -123,18 +123,20 @@ class Simulation:
             except AttributeError:
                 pass
 
-    def schedule_event(self, event, date):
+    def schedule_event(self, event, date, force_over_from_healthsystem=False):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
+        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
-        assert 'TREATMENT_ID' not in dir(event), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-        assert (event.__str__().find('HSI_') < 0), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        if not force_over_from_healthsystem:
+            assert 'TREATMENT_ID' not in dir(event), \
+                'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+            assert (event.__str__().find('HSI_') < 0), \
+                'This looks like an HSI event. It should be handed to the healthsystem scheduler'
 
         self.event_queue.schedule(event, date)
 
@@ -144,8 +146,16 @@ class Simulation:
         :param event: :py:class:`Event` to fire
         :param date: the date of the event
         """
-        self.date = date
-        event.run()
+
+        if (event.__str__().find('HSI_') < 0):
+            # This is a normal event (i.e. not HSI event)
+            self.date = date
+            event.run()
+        else:
+            # This is an HSI event that has been forced into this event queue.
+            # Run the HSI event and give it a null signal for the squeeze_factor
+            event.run(squeeze_factor = 0.0)
+
 
     def do_birth(self, mother_id):
         """Create a new child person.

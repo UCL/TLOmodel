@@ -25,18 +25,22 @@ class HealthSystem(Module):
         self,
         name=None,
         resourcefilepath=None,
-        service_availability=None,          # must be a list of treatment_ids to allow
-        mode_appt_constraints=0,            # mode of constraints to do with officer numbers and time
-        ignore_cons_constraints=False,       # mode for consumable constraints (if ignored, all consumables available)
-        ignore_priority=False,  # do not use the priority information in HSI event to schedule
-        capabilities_coefficient=1.0,
-    ):  # multiplier for the capabilities of health officers
+        service_availability=None,              # must be a list of treatment_ids to allow
+        mode_appt_constraints=0,                # mode of constraints to do with officer numbers and time
+        ignore_cons_constraints=False,          # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=False,                  # do not use the priority information in HSI event to schedule
+        capabilities_coefficient=1.0,           # multiplier for the capabilities of health officers
+        disable=False                           # disables the healthsystem (no constraints and no logging).
+    ):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         assert type(ignore_cons_constraints) is bool
         self.ignore_cons_constraints = ignore_cons_constraints
+
+        assert type(disable) is bool
+        self.disable = disable
 
         assert mode_appt_constraints in [0, 1, 2]  # Mode of constraints
         # 0: no constraints -- all HSI Events run with no squeeze factor
@@ -175,8 +179,11 @@ class HealthSystem(Module):
             assert len(my_health_facilities) == len(self.Facility_Levels)
             assert set(my_health_facility_level) == set(self.Facility_Levels)
 
-        # Launch the healthsystem scheduler (a regular event occurring each day)
-        sim.schedule_event(HealthSystemScheduler(self), sim.date)
+
+        # Launch the healthsystem scheduler (a regular event occurring each day) [if not disabled]
+        if not self.disable:
+            sim.schedule_event(HealthSystemScheduler(self), sim.date)
+
 
     def on_birth(self, mother_id, child_id):
 
@@ -210,9 +217,6 @@ class HealthSystem(Module):
         :param tclose: the latest date at which the hsi event should run
         """
 
-        if hsi_event.TREATMENT_ID == 'GenericFirstApptAtFacilityLevel0':
-            print('stop')
-
         logger.debug(
             'HealthSystem.schedule_event>>Logging a request for an HSI: %s for person: %s',
             hsi_event.TREATMENT_ID,
@@ -220,6 +224,13 @@ class HealthSystem(Module):
         )
 
         assert isinstance(hsi_event, HSI_Event)
+
+
+        # 0) If healthsystem is disabled, put this event straight into the normal simulation scheduler.
+        if self.disable:
+            self.sim.schedule_event(hsi_event,topen, force_over_from_healthsystem=True)
+            return  # Terrminate this functional call
+
 
         # 1) Check that this is a legitimate health system interaction (HSI) event
 
@@ -592,6 +603,7 @@ class HealthSystem(Module):
         system resources for the day.
         The squeeze factor is defined as (call/available - 1). ie. the highest fractional over-demand among any type of
         officer that is called-for in the appt_footprint of an HSI event.
+        A value of 0.0 signifies that there is no squeezeing (sufficient resources for the EXPECTED_APPT_FOOTPRINT).
         A value of 99.99 signifies that the call is for an officer_type in a health-facility that is not available.
 
         :param all_calls_today: Dataframe, one column per HSI event, containing the minutes required from each health
@@ -679,6 +691,30 @@ class HealthSystem(Module):
             assert type(itm_quant) is int
             assert itm_quant > 0
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        if self.disable:
+            # If the healthsystem module is disabled, return True for all consuambles
+            # without checking or logging.
+            packages_availability = dict()
+            if not cons_req_as_footprint['Intervention_Package_Code'] == []:
+                for p_dict in cons_req_as_footprint['Intervention_Package_Code']:
+                    # dict only ever has one item so we only want the key
+                    package_code, = p_dict.keys()
+                    packages_availability[package_code] = True
+
+            # Iterate through the individual items that were requested
+            items_availability = dict()
+            if not cons_req_as_footprint['Item_Code'] == []:
+                for i_dict in cons_req_as_footprint['Item_Code']:
+                    item_code, = i_dict.keys()
+                    # check if *all* items in this package are available
+                    items_availability[item_code] = True
+
+            # compile output
+            output = dict()
+            output['Intervention_Package_Code'] = packages_availability
+            output['Item_Code'] = items_availability
+            return output
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         # 0) Get information about the hsi_event

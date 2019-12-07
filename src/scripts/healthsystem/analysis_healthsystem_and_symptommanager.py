@@ -49,7 +49,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=2,
                                        capabilities_coefficient=1.0,
-                                       ignore_cons_constraints=True))
+                                       ignore_cons_constraints=True,
+                                       disable=False))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
 sim.register(dx_algorithm_child.DxAlgorithmChild())
