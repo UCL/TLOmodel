@@ -134,6 +134,10 @@ class SymptomManager(Module):
 
         else:
             # Remove the symptom
+            # NB. There are no checks that the disease module is only relieving symptoms that it imposed.
+            # So a disease module could erronesouly remove a symptom more than once and thus alleviate it even though
+            # another disease module would not want it removed.
+
             assert (self.sim.population.props.loc[person_id, symptom_var_name] > 0).all(), \
                 'Warning: Request to remove symptoms from individuals that do not have the symptom'
 

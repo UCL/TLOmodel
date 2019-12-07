@@ -1121,7 +1121,7 @@ class HivAidsEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'hv_unified_symptom_code'] = 3
 
             # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_id, symptom_code=3)
-            prob = 0.5 # NB. Do not use get_prob_seek_care(). For non-generic symptoms do inside the module.
+            prob = 0.5  # NB. Do not use get_prob_seek_care(). For non-generic symptoms do inside the module.
             seeks_care = self.module.rng.random_sample() < prob
 
             if seeks_care:
