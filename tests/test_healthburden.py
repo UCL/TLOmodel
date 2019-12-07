@@ -14,7 +14,8 @@ from tlo.methods import (
     healthburden,
     healthsystem,
     mockitis,
-    symptommanager)
+    symptommanager,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

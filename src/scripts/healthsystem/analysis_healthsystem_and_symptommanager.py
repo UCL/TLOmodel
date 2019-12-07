@@ -4,8 +4,17 @@ import os
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, healthburden, healthsystem, enhanced_lifestyle, mockitis, \
-    symptommanager, healthseekingbehaviour, dx_algorithm_child
+from tlo.methods import (chronicsyndrome,
+                         demography,
+                         dx_algorithm_child,
+                         enhanced_lifestyle,
+                         healthburden,
+                         healthseekingbehaviour,
+                         healthsystem,
+                         mockitis,
+                         symptommanager,
+                         )
+
 
 # [NB. Working directory must be set to the root of TLO: TLOmodel/]
 
