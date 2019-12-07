@@ -428,7 +428,7 @@ for appt_type in ApptType_By_FacType.index:
             ((ApptTimeTable['Facility_Level']==fac_level) & (ApptTimeTable['Appt_Type_Code']==appt_type)).any()
 
 ApptType_By_FacType = ApptType_By_FacType.add_prefix('Facility_Level_')
-ApptType_By_FacType.to_csv(resourcefilepath + 'ResourceFile_ApptType_By_FacType.csv')
+ApptType_By_FacType.to_csv(resourcefilepath + 'ResourceFile_ApptType_By_FacLevel.csv')
 
 # -------
 # -------

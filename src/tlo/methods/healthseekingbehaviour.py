@@ -90,8 +90,6 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         # clear the list of person_ids with onset generic acute symptoms (as now dealt with here)
         self.module.sim.modules['SymptomManager'].persons_with_newly_onset_acute_generic_symptoms = list()
 
-        # TODO: check that this list here isn't emptied (when the remote list is emptied)
-
         for person_id in person_ids_with_new_symptoms:
             # For each individual person_id, with at least one new onset symptom, look at the symptoms and determine if
             # will seek care.
@@ -185,8 +183,11 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # Create HSI_GenericFirstAppt for this person to represent them presenting at the facility
                 # NB. Here we can specifify which type of facility they would attend if we need to
 
+                delay_to_seeking_care_in_days = self.module.rng.randint(0,7)   # Uniform interal 0-7 days
+                date_of_seeking_care = self.sim.date + DateOffset(days=delay_to_seeking_care_in_days)
+
                 hsi_genericfirstappt = HSI_GenericFirstApptAtFacilityLevel1(self.module, person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_genericfirstappt,
                                                                     priority=0,
-                                                                    topen=self.sim.date,
+                                                                    topen=date_of_seeking_care,
                                                                     tclose=None)
