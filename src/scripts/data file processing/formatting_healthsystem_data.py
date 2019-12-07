@@ -413,22 +413,22 @@ ApptTimeTable.to_csv(resourcefilepath + 'ResourceFile_Appt_Time_Table.csv')
 
 
 # Create a table that determines what kind of appointment can be serviced in each Facility Level
-ApptType_By_FacType = pd.DataFrame(index = appt_types_table['Appt_Type_Code'],
-                                   columns = Facility_Levels,
-                                   data = False,
-                                   dtype=bool)
+ApptType_By_FacLevel = pd.DataFrame(index=appt_types_table['Appt_Type_Code'],
+                                    columns=Facility_Levels,
+                                    data=False,
+                                    dtype=bool)
 
-for appt_type in ApptType_By_FacType.index:
-    for fac_level in ApptType_By_FacType.columns:
+for appt_type in ApptType_By_FacLevel.index:
+    for fac_level in ApptType_By_FacLevel.columns:
 
         # Can this appt_type happen at this facility_level?
         # Check to see if ApptTimeTable has any time requirement
 
-        ApptType_By_FacType.at[appt_type,fac_level] = \
-            ((ApptTimeTable['Facility_Level']==fac_level) & (ApptTimeTable['Appt_Type_Code']==appt_type)).any()
+        ApptType_By_FacLevel.at[appt_type, fac_level] = \
+            ((ApptTimeTable['Facility_Level'] == fac_level) & (ApptTimeTable['Appt_Type_Code'] == appt_type)).any()
 
-ApptType_By_FacType = ApptType_By_FacType.add_prefix('Facility_Level_')
-ApptType_By_FacType.to_csv(resourcefilepath + 'ResourceFile_ApptType_By_FacLevel.csv')
+ApptType_By_FacLevel = ApptType_By_FacLevel.add_prefix('Facility_Level_')
+ApptType_By_FacLevel.to_csv(resourcefilepath + 'ResourceFile_ApptType_By_FacLevel.csv')
 
 # -------
 # -------

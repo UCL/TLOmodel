@@ -320,11 +320,11 @@ class HealthSystem(Module):
 
         # 5) Check that the event does not request an appointment at a facility level which is not possible
         if not type(hsi_event.target) is tlo.population.Population:
-            appt_type_to_check_list = [k for k,v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v>0]
+            appt_type_to_check_list = [k for k, v in hsi_event.EXPECTED_APPT_FOOTPRINT.items() if v > 0]
             assert all([self.parameters['ApptType_By_FacLevel'].loc[
                 self.parameters['ApptType_By_FacLevel']['Appt_Type_Code'] == appt_type_to_check,
-                self.parameters['ApptType_By_FacLevel'].columns.str.contains( \
-                    str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all() \
+                self.parameters['ApptType_By_FacLevel'].columns.str.contains(
+                    str(hsi_event.ACCEPTED_FACILITY_LEVEL))].all().all()
                          for appt_type_to_check in appt_type_to_check_list
                         ]),\
                 "An appointment type has been requested at a facility level for which is it not possibe: " \
@@ -341,7 +341,6 @@ class HealthSystem(Module):
                 caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
-
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information

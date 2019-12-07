@@ -7,7 +7,8 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis, symptommanager
+from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis, symptommanager, \
+    healthseekingbehaviour, dx_algorithm_child
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -161,7 +162,7 @@ def test_run_in_mode_0_with_capacity(tmpdir):
 
 
 def test_run_in_mode_0_no_capacity(tmpdir):
-    # Every events should run (no did_not_run)
+    # Every events should run (no did_not_run) and no squeeze factors
     # (Mode 0 -> No Constraints)
 
     # Establish the simulation object
@@ -494,3 +495,50 @@ def test_run_in_with_hs_disabled(tmpdir):
     # Do the checks
     assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
     assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occured through hs.
+
+
+def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir):
+    # All events should run
+    # (Mode 2 -> hard constraints)
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
+    # Get ready for temporary log-file
+    f = tmpdir.mkdir("mode_2_with_capacity").join("dummy.log")
+    fh = logging.FileHandler(f)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
+    logging.getLogger().addHandler(fh)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2))
+    sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
+    sim.register(dx_algorithm_child.DxAlgorithmChild())
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f)
+    fh.close()
+
+    # Do the check for the occurance of the GenericFirstAppt which is created by the HSB module
+    assert 'GenericFirstApptAtFacilityLevel1' in output['tlo.methods.healthsystem']['HSI_Event']['TREATMENT_ID'].values

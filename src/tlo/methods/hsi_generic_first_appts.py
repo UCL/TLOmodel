@@ -112,5 +112,3 @@ class HSI_GenericFirstApptAtFacilityLevel0(HSI_Event, IndividualScopeEventMixin)
 
     def did_not_run(self):
         logger.debug('HSI_GenericFirstApptAtFacilityLevel0: did not run')
-
-
