@@ -7,8 +7,16 @@ import pytest
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import chronicsyndrome, demography, enhanced_lifestyle, healthsystem, mockitis, symptommanager, \
-    healthseekingbehaviour, dx_algorithm_child
+from tlo.methods import (
+    chronicsyndrome,
+    demography,
+    dx_algorithm_child,
+    enhanced_lifestyle,
+    healthseekingbehaviour,
+    healthsystem,
+    mockitis,
+    symptommanager,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'

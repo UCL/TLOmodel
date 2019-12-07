@@ -6,8 +6,8 @@ import datetime
 import logging
 from pathlib import Path
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import PopulationScopeEventMixin, RegularEvent
