@@ -1,5 +1,6 @@
 import logging
 import os
+import pandas as pd
 from pathlib import Path
 
 import pytest
@@ -386,3 +387,52 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level
+
+
+
+
+def test_run_in_with_hs_disabled(tmpdir):
+    # All events should run but no logging from healthsystem
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
+    # Get ready for temporary log-file
+    f = tmpdir.mkdir("healthsystem").join("dummy.log")
+    fh = logging.FileHandler(f)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
+    logging.getLogger().addHandler(fh)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=0,
+                                           disable=True))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f)
+    fh.close()
+
+    # Do the checks
+    assert 'tlo.methods.healthsystem' not in output     # HealthSystem no logging
+    assert not pd.isnull(sim.population.props['mi_date_cure']).all()   # At least some cures occured through hs.
+
