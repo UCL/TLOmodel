@@ -387,8 +387,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level
-
-
+    assert pd.isnull(sim.population.props['mi_date_cure']).all()   # No cures of mockitis occurring
 
 
 def test_run_in_with_hs_disabled(tmpdir):
