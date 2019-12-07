@@ -148,10 +148,16 @@ def test_run_in_mode_0_with_capacity(tmpdir):
     output = parse_log_file(f)
     fh.close()
 
-    # Do the checks
+    # Do the checks for health system apppts
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
+
+    # Check that at least some consumables requests fail due to lack of availability
+    all_req_granted = list()
+    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
+        all_req_granted.append(all([response for response in line.values()]))
+    assert not all(all_req_granted)
 
 
 def test_run_in_mode_0_no_capacity(tmpdir):
@@ -344,7 +350,6 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
-
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
     # events did not run. Population level events should have run.
@@ -395,6 +400,54 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()   # No cures of mockitis occurring
 
+
+
+def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
+    # Events should run and there be no squeeze factors
+    # (Mode 0 -> No Constraints)
+    # Ignoring consumables constraints --> all requests for consumables granted
+
+    # Establish the simulation object
+    sim = Simulation(start_date=start_date)
+
+    # Get ready for temporary log-file
+    f = tmpdir.mkdir("healthsystem").join("dummy.log")
+    fh = logging.FileHandler(f)
+    fr = logging.Formatter("%(levelname)s|%(name)s|%(message)s")
+    fh.setFormatter(fr)
+    logging.getLogger().handlers.clear()
+    logging.getLogger().addHandler(fh)
+
+    # Define the service availability
+    service_availability = list(['Mockitis*', 'ChronicSyndrome*'])
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           service_availability=service_availability,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=0,
+                                           ignore_cons_constraints=True))
+    sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
+    sim.register(mockitis.Mockitis())
+    sim.register(chronicsyndrome.ChronicSyndrome())
+
+    sim.seed_rngs(0)
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=end_date)
+    check_dtypes(sim)
+
+    # read the results
+    fh.flush()
+    output = parse_log_file(f)
+    fh.close()
+
+    # Do the checks for the consumables: all requests granted
+    for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
+        assert all([response for response in line.values()])
 
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem

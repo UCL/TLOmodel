@@ -48,7 +48,7 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                        service_availability=service_availability,
                                        mode_appt_constraints=2,
                                        capabilities_coefficient=1.0,
-                                       ignore_cons_constraints=True,
+                                       ignore_cons_constraints=False,
                                        disable=False))
 sim.register(symptommanager.SymptomManager(resourcefilepath=resourcefilepath))
 sim.register(healthseekingbehaviour.HealthSeekingBehaviour())
@@ -67,4 +67,3 @@ fh.flush()
 
 # %% read the results
 output = parse_log_file(logfile)
-
