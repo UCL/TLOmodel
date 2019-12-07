@@ -4,8 +4,7 @@ A skeleton template for disease methods.
 """
 
 from tlo import DateOffset, Module, Property, Types
-from tlo.events import PopulationScopeEventMixin, Event
-
+from tlo.events import Event, PopulationScopeEventMixin
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
