@@ -312,7 +312,7 @@ class HealthSystem(Module):
                 'No appointment types required in the EXPECTED_APPT_FOOTPRINT'
 
         # 5) Check that event (if individual level) is able to run with this configuration of officers
-        # (ie. Check that this does demand officers that are never available at a particular facility)
+        # (ie. Check that this does not demand officers that are never available at a particular facility)
         if not type(hsi_event.target) is tlo.population.Population:
             # we are dealing with an individual level event
             caps = self.parameters['Daily_Capabilities']
@@ -322,6 +322,11 @@ class HealthSystem(Module):
                 caps.loc[caps.index.isin(footprint.index), 'Total_Minutes_Per_Day'] > 0).all()
             if not footprint_is_possible:
                 logger.warning("The expected footprint is not possible with the configuration of officers.")
+
+
+        # TODO: INCLUDE CHECK THAT THE HSI IS REQUESTED AT A FACILITY FOR WHICH THAT HSI CAN BE EXECUTED
+        # WITH REFERENCE TO THE APPTTYPE_BY_FACTYPE
+
 
         #  Manipulate the priority level if needed
         # If ignoring the priority in scheduling, then over-write the provided priority information
