@@ -96,9 +96,15 @@ def test_run_no_interventions_allowed(tmpdir):
     output = parse_log_file(f)
     fh.close()
 
-    # Do the checks
+    # Do the checks for the healthsystem
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
+
+    # Do the checks for the symptom manager: some symptoms registered
+    assert (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]>0).any().any()
+    assert not (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]<0).any().any()
+    assert (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    assert not pd.isnull(sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]).any().any()
 
 
 def test_run_in_mode_0_with_capacity(tmpdir):
@@ -386,7 +392,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
     assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
-    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level
+    assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()   # No cures of mockitis occurring
 
 
