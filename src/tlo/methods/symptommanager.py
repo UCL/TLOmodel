@@ -3,10 +3,9 @@ A skeleton template for disease methods.
 
 """
 
-from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent, Event
-from tlo.methods.healthsystem import HSI_Event
-from tlo.population import logger
+from tlo import DateOffset, Module, Property, Types
+from tlo.events import PopulationScopeEventMixin, Event
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -44,7 +43,6 @@ class SymptomManager(Module):
         self.resourcefilepath = resourcefilepath
         self.persons_with_newly_onset_acute_generic_symptoms = list()
 
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         To access files use: Path(self.resourcefilepath) / file_name
@@ -57,15 +55,14 @@ class SymptomManager(Module):
         """
 
         # Get the variable names that are defined
-        symptom_var_names = [col for col in self.sim.population.props if col.startswith('sy_') ]
+        symptom_var_names = [col for col in self.sim.population.props if col.startswith('sy_')]
         self.symptom_var_names = symptom_var_names
 
         # Set all to zero
-        self.sim.population.props[symptom_var_names]= 0
+        self.sim.population.props[symptom_var_names] = 0
 
         # Get and save the list_of_symptoms
         self.list_of_symptoms = [a.split('sy_')[1] for a in symptom_var_names]
-
 
     def initialise_simulation(self, sim):
         """
@@ -77,7 +74,7 @@ class SymptomManager(Module):
         """
         Set that the child will have no symptoms by default
         """
-        self.sim.population.props[child_id,self.symptom_var_names]=0
+        self.sim.population.props[child_id, self.symptom_var_names] = 0
 
     def chg_symptom(self, person_id, symptom_string, add_or_remove, disease_module, duration_in_days=None):
         """
@@ -91,10 +88,10 @@ class SymptomManager(Module):
 
         # Make the person_id into a list
         if type(person_id) is not list:
-            person_id= [person_id]
+            person_id = [person_id]
 
         # Strip out the person_ids for anyone who is not alive.
-        alive_person_ids= list(self.sim.population.props.loc[self.sim.population.props.is_alive==True].index)
+        alive_person_ids = list(self.sim.population.props.index[self.sim.population.props.is_alive])
         person_id = list(set(person_id).intersection(alive_person_ids))
 
         # Confirm that all person_ids (after stripping) are alive
@@ -106,10 +103,10 @@ class SymptomManager(Module):
         assert symptom_var_name in self.sim.population.props.columns
 
         # Check that the add/remove signal is legitimate
-        assert add_or_remove in ['+','-']
+        assert add_or_remove in ['+', '-']
 
         # Check that the duation in days makes sense
-        if not duration_in_days is None:
+        if duration_in_days is not None:
             assert int(duration_in_days) > 0
 
         # Check that the provided disease_module is a registered disease_module
@@ -122,12 +119,12 @@ class SymptomManager(Module):
         # Make the operation:
         if add_or_remove == '+':
             # Add the symptom
-            self.sim.population.props.loc[person_id,symptom_var_name]+= 1
+            self.sim.population.props.loc[person_id, symptom_var_name] += 1
             self.persons_with_newly_onset_acute_generic_symptoms = \
                 self.persons_with_newly_onset_acute_generic_symptoms + person_id
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
-            if not duration_in_days is None:
+            if duration_in_days is not None:
                 auto_resolve_event = SymptomManager_AutoResolveEvent(self,
                                                                      person_id=person_id,
                                                                      symptom_string=symptom_string,
@@ -137,15 +134,15 @@ class SymptomManager(Module):
 
         else:
             # Remove the symptom
-            assert (self.sim.population.props.loc[person_id, symptom_var_name]>0).all(),\
+            assert (self.sim.population.props.loc[person_id, symptom_var_name] > 0).all(), \
                 'Warning: Request to remove symptoms from individuals that do not have the symptom'
 
             self.sim.population.props.loc[person_id, symptom_var_name] = \
                 (self.sim.population.props.loc[person_id, symptom_var_name] - 1).clip(lower=0)
 
-
         # Check that all the symptom variables are in good condition (no negative values)
-        assert (self.sim.population.props[self.symptom_var_names]>=0).all().all()
+        assert (self.sim.population.props[self.symptom_var_names] >= 0).all().all()
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   EVENTS
@@ -164,10 +161,8 @@ class SymptomManager_AutoResolveEvent(Event, PopulationScopeEventMixin):
         self.symptom_string = symptom_string
         self.disease_module = disease_module
 
-
     def apply(self, population):
         self.module.chg_symptom(person_id=self.person_id,
                                 symptom_string=self.symptom_string,
                                 add_or_remove='-',
                                 disease_module=self.disease_module)
-

@@ -2,6 +2,7 @@
 A skeleton template for disease methods.
 
 """
+import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -10,6 +11,9 @@ from tlo.methods.healthsystem import HSI_Event
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Skeleton(Module):

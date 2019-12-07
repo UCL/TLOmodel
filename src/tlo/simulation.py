@@ -85,7 +85,7 @@ class Simulation:
         self.rng.seed(seed)
         logger.info("Simulation RNG user seed %d", seed)
         for module in self.modules.values():
-            module_seed = self.rng.randint(2**31 - 1)
+            module_seed = self.rng.randint(2 ** 31 - 1)
             logger.info("%s RNG auto seed %d", module.name, module_seed)
             module.rng.seed(module_seed)
 
@@ -147,15 +147,14 @@ class Simulation:
         :param date: the date of the event
         """
 
-        if (event.__str__().find('HSI_') < 0):
+        if event.__str__().find('HSI_') < 0:
             # This is a normal event (i.e. not HSI event)
             self.date = date
             event.run()
         else:
             # This is an HSI event that has been forced into this event queue.
             # Run the HSI event and give it a null signal for the squeeze_factor
-            event.run(squeeze_factor = 0.0)
-
+            event.run(squeeze_factor=0.0)
 
     def do_birth(self, mother_id):
         """Create a new child person.

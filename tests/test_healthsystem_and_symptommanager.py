@@ -1,8 +1,8 @@
 import logging
 import os
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from tlo import Date, Simulation
@@ -101,10 +101,10 @@ def test_run_no_interventions_allowed(tmpdir):
     assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
 
     # Do the checks for the symptom manager: some symptoms registered
-    assert (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]>0).any().any()
-    assert not (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]<0).any().any()
-    assert (sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
-    assert not pd.isnull(sim.population.props.loc[:,sim.population.props.columns.str.startswith('sy_')]).any().any()
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] > 0).any().any()
+    assert not (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')] < 0).any().any()
+    assert (sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')].dtypes == 'int64').all()
+    assert not pd.isnull(sim.population.props.loc[:, sim.population.props.columns.str.startswith('sy_')]).any().any()
 
 
 def test_run_in_mode_0_with_capacity(tmpdir):
@@ -350,6 +350,7 @@ def test_run_in_mode_2_with_capacity(tmpdir):
     assert output['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
     assert (output['tlo.methods.healthsystem']['HSI_Event']['Squeeze_Factor'] == 0.0).all()
 
+
 def test_run_in_mode_2_with_no_capacity(tmpdir):
     # No individual level events should run and the log should contain events with a flag showing that all individual
     # events did not run. Population level events should have run.
@@ -398,8 +399,7 @@ def test_run_in_mode_2_with_no_capacity(tmpdir):
     assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
-    assert pd.isnull(sim.population.props['mi_date_cure']).all()   # No cures of mockitis occurring
-
+    assert pd.isnull(sim.population.props['mi_date_cure']).all()  # No cures of mockitis occurring
 
 
 def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
@@ -449,6 +449,7 @@ def test_run_in_mode_0_with_capacity_ignoring_cons_constraints(tmpdir):
     for line in (output['tlo.methods.healthsystem']['Consumables']['Available']):
         assert all([response for response in line.values()])
 
+
 def test_run_in_with_hs_disabled(tmpdir):
     # All events should run but no logging from healthsystem
 
@@ -491,6 +492,5 @@ def test_run_in_with_hs_disabled(tmpdir):
     fh.close()
 
     # Do the checks
-    assert 'tlo.methods.healthsystem' not in output     # HealthSystem no logging
-    assert not pd.isnull(sim.population.props['mi_date_cure']).all()   # At least some cures occured through hs.
-
+    assert 'tlo.methods.healthsystem' not in output  # HealthSystem no logging
+    assert not pd.isnull(sim.population.props['mi_date_cure']).all()  # At least some cures occured through hs.
