@@ -1,6 +1,6 @@
 """
-This is a file written by Tim Hallett to process the data from the Malawi 2018 Census that is downloaded into a
-form that a useful for TLO Model.
+This is a file written by Tim Hallett to process the data from the Malawi 2018 Census, WPP 2019 and GBD that is
+downloaded into a form that a useful for TLO Model.
 It creates:
 * ResourceFile_PopulationSize
 * ResourceFile_Mortality
@@ -20,7 +20,7 @@ resourcefilepath = Path("./resources")
 
 # *** USE OF THE CENSUS DATA ****
 
-#%% Totals by Sex for Each District
+# %% Totals by Sex for Each District
 
 workingfile_popsizes = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/Census_Main_Report/Series A. Population Tables.xlsx'
@@ -63,7 +63,8 @@ district_nums= pd.DataFrame( data={
     'Region': a1['Region'],
     'District_Num': np.arange(len(a1['Region']))})
 
-#%%
+# %%
+
 # extract the age-breakdown for each district by %
 
 a7 = pd.read_excel(workingfile_popsizes, sheet_name='A7', usecols=[0] + list(range(2, 10)) + list(range(12, 21)), header=1, index_col=0)
@@ -100,16 +101,16 @@ assert (frac_in_each_age_grp.sum(axis=1).astype('float32')==(1.0)).all()
 males = frac_in_each_age_grp.mul(a1['Male_2018'],axis=0)
 assert (males.sum(axis=1).astype('float32') == a1['Male_2018'].astype('float32')).all()
 males['district'] = males.index
-# males = males.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
 males_melt = males.melt(id_vars=['district'],var_name='age_grp',value_name='number')
 males_melt['sex'] = 'M'
+males_melt = males_melt.merge(a1[['Region']],left_on='district',right_index=True)
 
 females = frac_in_each_age_grp.mul(a1['Female_2018'],axis=0)
 assert (females.sum(axis=1).astype('float32') == a1['Female_2018'].astype('float32')).all()
 females['district'] = females.index
-# females = females.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
 females_melt = females.melt(id_vars=['district'],var_name='age_grp',value_name='number')
 females_melt['sex'] = 'F'
+females_melt = females_melt.merge(a1[['Region']],left_on='district',right_index=True)
 
 # Melt into long-format
 table = pd.concat([males_melt,females_melt])
@@ -135,16 +136,18 @@ table = table[[
     'Variant',
     'District',
     'District_Num',
+    'Region',
     'Year',
     'Period',
     'Age_Grp',
+    'Sex',
     'Count'
 ]]
 
 # Save
 table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',index=False)
 
-#%% Number of births
+# %% Number of births
 
 workingfile_fertility = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/Census_Main_Report/Series B. Fertility Tables.xlsx'
@@ -177,7 +180,7 @@ b1['Count']=b1['Live_Births']
 # save the file:
 b1[['Variant','Year','Period','Region','Count']].to_csv(resourcefilepath / 'ResourceFile_Births_2018Census.csv',index=False)
 
-#%% Number of deaths
+# %% Number of deaths
 
 workingfile_mortality = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/Census_Main_Report/Series K. Mortality Tables.xlsx'
@@ -271,7 +274,6 @@ Module-demography/WPP_2019/WPP2019_INT_F03_2_POPULATION_BY_AGE_ANNUAL_MALE.xlsx'
 wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/WPP_2019/WPP2019_INT_F03_3_POPULATION_BY_AGE_ANNUAL_FEMALE.xlsx'
 
-
 # Males
 dat = pd.concat([
     pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
@@ -343,7 +345,7 @@ for Sex in ['M','F']:
 
 init_pop = pd.DataFrame(init_pop_list)
 init_pop = init_pop.merge(district_nums,left_on='District', right_index=True)
-init_pop = init_pop[['District','District_Num','Sex','Age','Count']].reset_index(drop=True)
+init_pop = init_pop[['District','District_Num','Region','Sex','Age','Count']].reset_index(drop=True)
 assert init_pop['Count'].sum() == pop_2010['Count'].sum()
 
 init_pop.to_csv(resourcefilepath / 'ResourceFile_Population_2010.csv',index=False)
@@ -501,6 +503,7 @@ deaths_melt['Variant'] = 'WPP_' + deaths_melt['Variant']
 
 deaths_melt.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
 
+# TODO: issues with the lt - no 0 year-old cat. for 1950; oldest age-group labelled "100-98"
 # The ASMR from the LifeTable
 lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/WPP_2019/WPP2019_MORT_F17_2_ABRIDGED_LIFE_TABLE_MALE.xlsx'
@@ -526,21 +529,58 @@ lt_females = pd.concat([pd.read_excel(lt_females_file, sheet_name ='ESTIMATES', 
 lt_females = lt_females.loc[lt_females[lt_females.columns[1]] == 'Malawi'].copy().reset_index(drop=True)
 lt_females['Sex'] = 'F'
 
-
 # Join and tidy up
 lt = pd.concat([lt_males,lt_females],sort=False)
 lt = lt.drop(lt.columns[[1]],axis=1)
 lt.loc[lt['Variant'].str.contains('Medium'),'Variant']='Medium'
-lt = lt.rename(columns={'Central death rate m(x,n)':'death_rate'})
+lt = lt.rename(columns={'Central death rate m(x,n)':'death_rate'})  # NB. it is indeed an instantaneous rate
 lt['Variant'] = 'WPP_' + lt['Variant']
-lt.drop(lt['Age (x)']==100.0, inplace=True)
+lt.drop(lt.index[(lt['Age (x)']==100.0)], axis=0, inplace=True)
 
-lt['Age_Grp'] = lt['Age (x)'].astype(int).astype(str) + '-' + (lt['Age (x)']+lt['Age interval (n)']-1).astype(int).astype(str).replace({'95-99':'95+'})
-
+lt['Age_Grp'] = lt['Age (x)'].astype(int).astype(str) + '-' + (lt['Age (x)']+lt['Age interval (n)']-1).astype(int).astype(str)
 reformat_date_period_for_wpp(lt)
 
 lt[['Variant','Period','Sex','Age_Grp','death_rate']].to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_WPP.csv',index=False)
 
+
+# Expand the the life-table to create a row for each age year, for ease of indexing in the simulation
+mort_sched = lt.copy()
+
+mort_sched['low_age'], mort_sched['high_age'] = mort_sched['Age_Grp'].str.split('-', 1).str
+mort_sched['low_age'] = mort_sched['low_age'].astype(int)
+mort_sched['high_age'] = mort_sched['high_age'].astype(int)
+
+mort_sched_expanded_as_list = list()
+for period in pd.unique(mort_sched['Period']):
+    for sex in ['M', 'F']:
+        for age_years in range(120):        # MAX_AGE
+
+            if age_years > 99:
+                age_years_to_look_up = 99
+            else:
+                age_years_to_look_up = age_years
+
+            mask = (period == mort_sched['Period']) & \
+                   (age_years_to_look_up >= mort_sched['low_age']) & \
+                   (age_years_to_look_up <= mort_sched['high_age']) & \
+                   (sex == mort_sched['Sex'])
+
+            assert mask.sum() == 1
+
+            the_death_rate = float(mort_sched.loc[mask, 'death_rate'].values[0])
+
+            record = {
+                'fallbackyear': int(period.split('-')[0]),
+                'age_years': age_years,
+                'sex': sex,
+                'death_rate': the_death_rate
+            }
+            mort_sched_expanded_as_list.append(record)
+
+mort_sched_expanded = pd.DataFrame(mort_sched_expanded_as_list,
+                                   columns=['fallbackyear', 'sex', 'age_years', 'death_rate'])
+
+mort_sched_expanded.to_csv(resourcefilepath / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv',index=False)
 
 
 #%%
