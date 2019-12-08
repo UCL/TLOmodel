@@ -9,6 +9,7 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
+import datetime as dt
 import numpy as np
 import pandas as pd
 
@@ -77,12 +78,9 @@ class Demography(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
-        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
+        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010 for initialising population'),
+        'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec mortality rates from WPP'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
-        'district_and_region_data': Parameter(Types.DATA_FRAME,
-                                              'Census data on the number of persons in '
-                                              'residence in each district')
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -101,10 +99,10 @@ class Demography(Module):
                               'The age range category of the individual',
                               categories=AGE_RANGE_CATEGORIES),
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
-
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
     }
+
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -112,29 +110,47 @@ class Demography(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
-                                 sheet_name=None)
 
-        self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
+        self.parameters['pop_2010'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
+        )
 
-        # create new variable that will align with population.sex
-        ms = workbook['Mortality Rate']
-        ms['sex'] = ms.gender.map({'male': 'M', 'female': 'F'})
-        # long-list the column to avoid the problem about these being irregular age-groups
-        ms_new = []
-        for row in ms.itertuples():
-            age_high = row.age_to
-            if age_high == 99:
-                age_high = MAX_AGE
-            for age_years in range(row.age_from, age_high + 1):
-                ms_new.append(row._replace(age_from=age_years))
-        ms_new = pd.DataFrame(ms_new)
-        ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
-        self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
-        self.parameters['fraction_of_births_male'] = 0.5
+        self.parameters['mortality_schedule'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_WPP.csv'
+        )
 
-        self.parameters['district_and_region_data'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
+        self.parameters['fraction_of_births_male'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
+        )
+
+        #
+        # # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
+        # #                          sheet_name=None)
+        # #
+        # # self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
+        #
+        # # create new variable that will align with population.sex
+        # ms = workbook['Mortality Rate']
+        # ms['sex'] = ms.gender.map({'male': 'M', 'female': 'F'})
+        # # long-list the column to avoid the problem about these being irregular age-groups
+        # ms_new = []
+        # for row in ms.itertuples():
+        #     age_high = row.age_to
+        #     if age_high == 99:
+        #         age_high = MAX_AGE
+        #     for age_years in range(row.age_from, age_high + 1):
+        #         ms_new.append(row._replace(age_from=age_years))
+        # ms_new = pd.DataFrame(ms_new)
+        # ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
+        # self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
+        #
+        #
+        # # self.parameters['district_and_region_data'] = \
+        # #     pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
+        #
+        # self.parameters['fraction_of_births_male'] = 0.5
+
+
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -147,55 +163,41 @@ class Demography(Module):
 
         df.date_of_death = pd.NaT
 
-        worksheet = self.parameters['interpolated_pop']
+        init_pop = self.parameters['pop_2010']
+        init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
-        # get a subset of the rows from the interpolated population worksheet
-        intpop = worksheet.loc[worksheet.year == self.sim.date.year].copy().reset_index()
-
-        # get the probability of occurrence for each sex+age range in the population
-        intpop['probability'] = intpop.value / intpop.value.sum()
-
-        # calculate the month range interval for age ranges which are exactly 1 year
-        intpop['month_range'] = 12
-        is_age_range = (intpop['age_to'] != intpop['age_from'])
-        intpop.loc[is_age_range, 'month_range'] = (intpop['age_to'] - intpop['age_from']) * 12
-
-        # randomly rows indices from the worksheet
-        pop_sample = intpop.iloc[self.rng.choice(intpop.index.values,
+        # randomly pick from the init_pop sheet, to allocate charatceristic to each person in the df
+        demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                  size=len(df),
                                                  replace=True,
-                                                 p=intpop.probability.values)]
-        pop_sample = pop_sample.reset_index()
+                                                 p=init_pop.prob)][['District','District_Num','Sex','Age']]\
+            .reset_index(drop=True)
 
-        # select a random number of months into age_range
-        months: pd.Series = pop_sample.month_range * self.rng.random_sample(size=len(df))
-        pop_sample['months'] = pd.Series(pd.to_timedelta(months.astype(int), unit='M', box=False))
 
-        # The entire initial population is alive!
+        # make a date of birth that is consistent with the allocated age of each person
+        demog_char_to_assign['days_since_last_birthday'] = self.rng.randint(0,365,len(demog_char_to_assign))
+
+        demog_char_to_assign['date_of_birth'] = [
+            self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
+                                      days=int(demog_char_to_assign['days_since_last_birthday'][i]))
+                         for i in demog_char_to_assign.index]
+
+        # Assign the characteristics
         df.is_alive.values[:] = True
+        df['date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df['sex'] = demog_char_to_assign['Sex']
+        df['district_of_residence']= demog_char_to_assign['District']
+        df['district_num_of_residence'] = demog_char_to_assign['District_Num']
+        df['region_of_residence'] = 'Southern'  # TODO: assign residence properly
 
-        years_ago = pd.to_timedelta(pop_sample['age_from'], unit='Y') + pop_sample['months']
-        df.loc[df.is_alive, 'date_of_birth'] = self.sim.date - years_ago
-        df.loc[df.is_alive, 'sex'] = pop_sample['gender'].map({'female': 'F', 'male': 'M'})
-
-        # we can't use np.nan because that casts the series into a float
+        # Assign mother_id (null value but we can't use np.nan because that casts the series into a float)
         df.loc[df.is_alive, 'mother_id'] = -1
-
-        # Assign district and region of residence
-        district_info = self.parameters['district_and_region_data']
-        prob_in_district = district_info['District Total'] / district_info['District Total'].sum()
-
-        assigned_district = district_info.loc[
-            self.rng.choice(np.arange(0, len(prob_in_district)), size=df.is_alive.sum(), p=prob_in_district),
-            ['District', 'Region']].copy().reset_index(drop=True)
-
-        df.loc[df.is_alive, 'region_of_residence'] = assigned_district['Region']
-        df.loc[df.is_alive, 'district_of_residence'] = assigned_district['District']
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
 
+        # Update other age properties
         age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
@@ -230,7 +232,9 @@ class Demography(Module):
         df.at[child_id, 'is_alive'] = True
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
-        f_male = self.parameters['fraction_of_births_male']
+        fraction_of_births_male = self.parameters['fraction_of_births_male']
+        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year']==self.sim.date.year,\
+                                             'frac_births_male'].values[0]
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         df.at[child_id, 'mother_id'] = mother_id
@@ -286,6 +290,9 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         logger.debug('Checking to see if anyone should die...')
+
+        return
+
         df = population.props
         over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
         for individual_id in over_max_age:
