@@ -111,45 +111,20 @@ class Demography(Module):
           Typically modules would read a particular file within here.
         """
 
+        # Initial population size:
         self.parameters['pop_2010'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Population_2010.csv'
         )
 
-        self.parameters['mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_WPP.csv'
-        )
-
+        # Fraction of babies that are male
         self.parameters['fraction_of_births_male'] = pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_Pop_Frac_Births_Male.csv'
         )
 
-        #
-        # # workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_DemographicData.xlsx',
-        # #                          sheet_name=None)
-        # #
-        # # self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
-        #
-        # # create new variable that will align with population.sex
-        # ms = workbook['Mortality Rate']
-        # ms['sex'] = ms.gender.map({'male': 'M', 'female': 'F'})
-        # # long-list the column to avoid the problem about these being irregular age-groups
-        # ms_new = []
-        # for row in ms.itertuples():
-        #     age_high = row.age_to
-        #     if age_high == 99:
-        #         age_high = MAX_AGE
-        #     for age_years in range(row.age_from, age_high + 1):
-        #         ms_new.append(row._replace(age_from=age_years))
-        # ms_new = pd.DataFrame(ms_new)
-        # ms_new = ms_new.drop('age_to', axis=1)  # delete the un-needed column
-        # self.parameters['mortality_schedule'] = ms_new.rename(columns={'age_from': 'age_years'})
-        #
-        #
-        # # self.parameters['district_and_region_data'] = \
-        # #     pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_District_Population_Data.csv')
-        #
-        # self.parameters['fraction_of_births_male'] = 0.5
-
+        # Mortality schedule:
+        self.parameters['mortality_schedule'] = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+        )
 
 
     def initialise_population(self, population):
@@ -170,7 +145,7 @@ class Demography(Module):
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
                                                  size=len(df),
                                                  replace=True,
-                                                 p=init_pop.prob)][['District','District_Num','Sex','Age']]\
+                                                 p=init_pop.prob)][['District','District_Num','Region','Sex','Age']]\
             .reset_index(drop=True)
 
 
@@ -188,7 +163,7 @@ class Demography(Module):
         df['sex'] = demog_char_to_assign['Sex']
         df['district_of_residence']= demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
-        df['region_of_residence'] = 'Southern'  # TODO: assign residence properly
+        df['region_of_residence'] = demog_char_to_assign['Region']  # TODO: assign residence properly
 
         # Assign mother_id (null value but we can't use np.nan because that casts the series into a float)
         df.loc[df.is_alive, 'mother_id'] = -1
@@ -196,6 +171,7 @@ class Demography(Module):
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
+
 
         # Update other age properties
         age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
@@ -291,29 +267,28 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         logger.debug('Checking to see if anyone should die...')
 
-        return
-
+        # Get shortcut to main dataframe
         df = population.props
+
+        # Cause the death for anyone that is older than the maximum age
         over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
         for individual_id in over_max_age:
             self.sim.schedule_event(InstantaneousDeath(self.module, individual_id, 'OverMaxAge'))
 
-        # get the mortality schedule for now...
-
-        # load the mortality schedule (imported datasheet from excel workbook)
+        # Get the mortality schedule for now...
+        # load the mortality schedule from WPP
         mort_sched = self.module.parameters['mortality_schedule']
 
         # get the subset of mortality rates for this year.
         # confirms that we go to the five year period that we are in, not the exact year.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
-        mort_sched = mort_sched.loc[mort_sched.year == fallbackyear, ['age_years', 'sex', 'value']].copy()
+        mort_sched = mort_sched.loc[mort_sched.fallbackyear == fallbackyear, ['age_years', 'sex', 'death_rate']].copy()
 
         # get the population
         alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
 
-        # merge the popualtion dataframe with the parameter dataframe to pick-up the risk of
-        # mortality for each person in the model
+        # merge the popualtion dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)
         alive = alive.reset_index().merge(mort_sched,
                                           left_on=['age_years', 'sex'],
@@ -321,20 +296,19 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                                           how='inner').set_index('person')
         assert length_before_merge == len(alive)
 
+        # Work out probability of dying in the time before the next occurance of this poll
+        dur = 1.0/12.0 # because it is occuring every month
+        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate*dur)
+
         # flipping the coin to determine if this person will die
-        will_die = (self.module.rng.random_sample(size=len(alive)) < alive.value / 12)
-
+        will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
         logger.debug('Will die count: %d', will_die.sum())
-
-        # the imported number is a yearly proportion. So adjust the rate according
-        # to the frequency with which the event is recurring
-        # TODO: this should be linked to the self.frequency value
 
         # loop through to see who is going to die:
         for person in alive.index[will_die]:
-            # schedule the death for "now"
+            # schedule the death for some point in the next month
             self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-                                    self.sim.date)
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(0,int(dur*365))))
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
