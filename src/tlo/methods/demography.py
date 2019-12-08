@@ -161,7 +161,7 @@ class Demography(Module):
         df.is_alive.values[:] = True
         df['date_of_birth'] = demog_char_to_assign['date_of_birth']
         df['date_of_death'] = pd.NaT
-        df['sex'] = demog_char_to_assign['Sex']
+        df['sex'].values[:] = demog_char_to_assign['Sex']
         df.loc[df.is_alive, 'mother_id'] = -1
         df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
