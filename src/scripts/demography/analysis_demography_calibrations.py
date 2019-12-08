@@ -33,7 +33,7 @@ resourcefilepath = Path("./resources")
 logfile = outputpath + 'LogFile' + datestamp + '.log'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2070, 1, 2)
+end_date = Date(2050, 1, 2)
 popsize = 1000
 
 # add file handler for the purpose of logging
