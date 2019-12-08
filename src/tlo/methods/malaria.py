@@ -480,9 +480,9 @@ class Malaria(Module):
         sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(months=12))
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=12))
 
     def on_birth(self, mother_id, child_id):
 
@@ -1565,15 +1565,16 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # infected in the last time-step, clinical and severe cases only
         # incidence rate per 1000 person-years
+        # include those cases that have died in the case load
         tmp = len(
-            df.loc[df.is_alive & (df.ma_date_clinical > (now - DateOffset(months=self.repeat)))])
+            df.loc[(df.ma_date_clinical > (now - DateOffset(months=self.repeat)))])
         pop = len(df[df.is_alive])
 
         inc_1000py = (tmp / pop) * 1000
 
         # incidence rate in 2-10 yr olds
         tmp2 = len(
-            df.loc[df.is_alive & (df.age_years.between(2, 10)) & (
+            df.loc[(df.age_years.between(2, 10)) & (
                 df.ma_date_clinical > (now - DateOffset(months=self.repeat)))])
 
         pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])

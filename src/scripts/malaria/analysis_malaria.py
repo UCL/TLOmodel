@@ -27,8 +27,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
-popsize = 5000
+end_date = Date(2015, 12, 31)
+popsize = 1000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -140,7 +140,7 @@ plt.plot(model_years, inc.inc_clin_counter)  # model - using the clinical counte
 plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 # plt.legend(["Data", "Model"])
 
 # Malaria parasite prevalence rate - 2-10 year olds with MAP model estimates
