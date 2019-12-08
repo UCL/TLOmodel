@@ -27,8 +27,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 12, 31)
-popsize = 5000
+end_date = Date(2020, 12, 31)
+popsize = 500
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -47,6 +47,7 @@ logging.getLogger().addHandler(fh)
 # Make a list that contains the treatment_id that will be allowed. Empty list means nothing allowed.
 # '*' means everything. It will allow any treatment_id that begins with a stub (e.g. Mockitis*)
 service_availability = ["*"]
+malaria_strat = ['national']  # levels = national, district
 
 # Register the appropriate modules
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
@@ -57,7 +58,8 @@ sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
 sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
 sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
-sim.register(malaria.Malaria(resourcefilepath=resourcefilepath))
+sim.register(malaria.Malaria(resourcefilepath=resourcefilepath,
+                             level=malaria_strat))
 
 for name in logging.root.manager.loggerDict:
     if name.startswith("tlo"):
@@ -86,7 +88,6 @@ import numpy as np
 from tlo import Date
 import pandas as pd
 from pathlib import Path
-
 
 outputpath = './src/scripts/malaria/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

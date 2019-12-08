@@ -15,9 +15,10 @@ logger.setLevel(logging.DEBUG)
 
 class Malaria(Module):
 
-    def __init__(self, name=None, resourcefilepath=None):
+    def __init__(self, name=None, resourcefilepath=None, level=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+        self.level = level
 
     PARAMETERS = {
         'mal_inc': Parameter(Types.REAL, 'monthly incidence of malaria in all ages'),
@@ -355,13 +356,19 @@ class Malaria(Module):
         self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
-        sim.schedule_event(MalariaEvent(self), sim.date + DateOffset(months=1))
+
+        if self.level == 'national':
+            sim.schedule_event(MalariaEventNational(self), sim.date + DateOffset(months=1))
+        else:
+            sim.schedule_event(MalariaEventDistrict(self), sim.date + DateOffset(months=1))
+
 
         sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(months=12))
 
         # add an event to log to screen
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=0))
-        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=181))
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=0))
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=0))
 
     def on_birth(self, mother_id, child_id):
 
@@ -427,7 +434,7 @@ class Malaria(Module):
         return health_values.loc[df.is_alive]  # returns the series
 
 
-class MalariaEvent(RegularEvent, PopulationScopeEventMixin):
+class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
@@ -1320,12 +1327,13 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         pop = df[df.is_alive].groupby('ma_district_edited').size()
         prev = infected / pop
         prev_ed = prev.fillna(0)
-        assert prev_ed >= 0  # checks
-        assert prev_ed <= 1
+        assert prev_ed.all() >= 0  # checks
+        assert prev_ed.all() <= 1
 
         logger.info('%s|prev_district|%s', self.sim.date,
                     prev_ed.to_dict())
-
+        logger.info('%s|pop_district|%s', self.sim.date,
+                    pop.to_dict())
 # ---------------------------------------------------------------------------------
 # Reset counters
 # ---------------------------------------------------------------------------------
