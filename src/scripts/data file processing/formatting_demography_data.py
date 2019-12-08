@@ -9,6 +9,7 @@ It creates:
 """
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo.analysis.utils import make_calendar_period_lookup
@@ -54,8 +55,13 @@ assert a1.drop(columns='Region').sum().astype(int).equals(national_total.astype(
 # Sum of district by region = Total for regionals reported.
 assert a1.groupby('Region').sum().astype(int).eq(region_totals.astype(int)).all().all()
 
-# Get definitive list of district:
+# Get definitive list of district.
 district_names = list(a1.index)
+
+# Make table of District, District Number and Region
+district_nums= pd.DataFrame( data={
+    'Region': a1['Region'],
+    'District_Num': np.arange(len(a1['Region']))})
 
 #%%
 # extract the age-breakdown for each district by %
@@ -76,11 +82,11 @@ a7.rename(index={'Zomba Rural':'Zomba'},inplace=True)
 a7.rename(index={'Nkhatabay':'Nkhata Bay'},inplace=True)
 
 # extract results for districts
-extract = a7.loc[a7.index.isin(district_names)].copy()
+extract = a7.loc[a7.index.isin(district_nums.index)].copy()
 
 # checks
+assert set(extract.index) == set(district_nums.index)
 assert len(extract) == len(district_names)
-assert 0 == len( set(district_names)  - set(extract.index))
 assert extract.sum(axis=1).astype(int).eq(a1['Total_2018']).all()
 
 # Compute fraction of population in each age-group
@@ -94,18 +100,18 @@ assert (frac_in_each_age_grp.sum(axis=1).astype('float32')==(1.0)).all()
 males = frac_in_each_age_grp.mul(a1['Male_2018'],axis=0)
 assert (males.sum(axis=1).astype('float32') == a1['Male_2018'].astype('float32')).all()
 males['district'] = males.index
-males = males.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
-males_melt = males.melt(id_vars=['district','Region'],var_name='age_grp',value_name='number')
+# males = males.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
+males_melt = males.melt(id_vars=['district'],var_name='age_grp',value_name='number')
 males_melt['sex'] = 'M'
 
 females = frac_in_each_age_grp.mul(a1['Female_2018'],axis=0)
 assert (females.sum(axis=1).astype('float32') == a1['Female_2018'].astype('float32')).all()
 females['district'] = females.index
-females = females.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
-females_melt = females.melt(id_vars=['district','Region'],var_name='age_grp',value_name='number')
+# females = females.merge(a1[['Region']],left_index=True,right_index=True,validate='1:1')
+females_melt = females.melt(id_vars=['district'],var_name='age_grp',value_name='number')
 females_melt['sex'] = 'F'
 
-# Melt into long-format and save
+# Melt into long-format
 table = pd.concat([males_melt,females_melt])
 table['number'] = table['number'].astype(float)
 table.rename(columns={'district':'District', 'age_grp':'Age_Grp_Special', 'sex':'Sex', 'number':'Count'}, inplace=True)
@@ -113,14 +119,29 @@ table['Age_Grp_Special'] = table['Age_Grp_Special'].replace({'Less than 1 Year':
 table['Variant']='Census_2018'
 table['Year']=2018
 table['Period']=table['Year'].map(calendar_period_lookup)
-table = table[table.columns[[0, 1, 4, 2, 3]]]
 
 # Collapse the 0-1 and 1-4 age-groups into 0-4
 table['Age_Grp']=table['Age_Grp_Special'].replace({'0-1':'0-4','1-4':'0-4'})
-table['Count_By_Age_Grp'] = table.groupby(by=['Age_Grp','Region','Sex'])['Count'].transform('sum')
-table = table.drop_duplicates(subset=['Age_Grp','Region','Sex'])
+table['Count_By_Age_Grp'] = table.groupby(by=['Age_Grp','District','Sex'])['Count'].transform('sum')
+table = table.drop_duplicates(subset=['Age_Grp','District','Sex'])
 table = table.rename(columns={'Count_By_Age_Grp':'Count', 'Count':'Count_By_Age_Grp_Special'})
 
+# Merge in District_Num
+table = table.merge(district_nums[['District_Num']], left_on=['District'], right_index=True, how='left')
+assert 0 == len(set(district_nums['District_Num']).difference(set(pd.unique(table['District_Num']))))
+
+# Re-order columns
+table = table[[
+    'Variant',
+    'District',
+    'District_Num',
+    'Year',
+    'Period',
+    'Age_Grp',
+    'Count'
+]]
+
+# Save
 table.to_csv(resourcefilepath / 'ResourceFile_PopulationSize_2018Census.csv',index=False)
 
 #%% Number of births
@@ -195,50 +216,52 @@ k2_melt.to_csv(resourcefilepath / 'ResourceFile_Deaths_2018Census.csv',index=Fal
 
 
 #%% **** USE OF THE WPP DATA ****
-#
-# # Population size: age groups
-# wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-# Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
-#
-# wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-# Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
-#
-#
-# # Males
-# dat = pd.concat([
-#     pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
-#     pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
-#     pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
-#     pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
-# ], sort=False)
-#
-# ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-# ests_males['Sex']= 'M'
-#
-#
-# # Females
-# dat = pd.concat([
-#     pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
-#     pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
-#     pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
-#     pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
-# ])
-#
-# ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-# ests_females['Sex']= 'F'
-#
-# # Join and tidy up
-# ests = pd.concat([ests_males,ests_females],sort=False)
-# ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
-# ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
-#
-# ests['Variant']= 'WPP_' + ests['Variant']
-# ests = ests.rename(columns={ests.columns[1]:'Year'})
-# ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age_Grp')
-# ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
-#
-# ests.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
 
+# Population size: age groups
+wpp_pop_males_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
+
+wpp_pop_females_file= '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
+Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
+
+
+# Males
+dat = pd.concat([
+    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
+], sort=False)
+
+ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_males['Sex']= 'M'
+
+
+# Females
+dat = pd.concat([
+    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
+])
+
+ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+ests_females['Sex']= 'F'
+
+# Join and tidy up
+ests = pd.concat([ests_males,ests_females],sort=False)
+ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
+ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+
+ests['Variant']= 'WPP_' + ests['Variant']
+ests = ests.rename(columns={ests.columns[1]:'Year'})
+ests_melt = ests.melt(id_vars=['Variant','Year','Sex'],value_name='Count',var_name='Age_Grp')
+ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
+
+ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_WPP.csv',index=False)
+
+# pop in 2010:
+ests_melt.loc[ests_melt['Year']==2010,'Count'].sum() # 14M
 
 
 #%% Population size: single-year age/time steps
@@ -258,7 +281,6 @@ dat = pd.concat([
 ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
 ests_males['Sex']= 'M'
 
-
 # Females
 dat = pd.concat([
     pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
@@ -271,7 +293,8 @@ ests_females['Sex']= 'F'
 # Join and tidy up
 ests = pd.concat([ests_males,ests_females],sort=False)
 ests = ests.drop(ests.columns[[0,2,3,4,5,6]],axis=1)
-ests[ests.columns[2:23]] = ests[ests.columns[2:23]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+
+ests[ests.columns[2:103]] = ests[ests.columns[2:103]]*1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 ests = ests.rename(columns={ests.columns[1]:'Year'})
 
 # Remove duplicates (year 2020 is provided in each of the individual datasets)
@@ -287,6 +310,43 @@ ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
 ests_melt.to_csv(resourcefilepath / 'ResourceFile_Pop_Annual_WPP.csv',index=False)
 
+
+# Make the initial population size for the model in 2010
+# Age/sex breakdown from annual WPP - split by district breakdown from Census 2018
+pop_2010 = ests_melt.loc[ests_melt['Year']==2010,['Sex','Age','Count']].copy().reset_index(drop=True)
+pop_2010['Age'] = pop_2010['Age'].astype(int)
+pop_2010.sum() # 14M
+district_breakdown = table[['District','Count']].groupby(['District']).sum() / table['Count'].sum()
+
+# There will be a a neater way to do this, but....
+init_pop_list = list()
+
+for Sex in ['M','F']:
+    for Age in range(101):
+        for District in district_nums.index:
+
+            tot_agesex_pop_across_districts = pop_2010.loc[
+                      (pop_2010['Sex']==Sex) & (pop_2010['Age']==Age),
+                        'Count'].values[0]
+
+            frac_in_district = district_breakdown.loc[district_breakdown.index==District]['Count'].values[0]
+
+            tot_agesex_pop_this_district = tot_agesex_pop_across_districts * frac_in_district
+
+            record = {
+                'District': District,
+                'Sex': Sex,
+                'Age': Age,
+                'Count': tot_agesex_pop_this_district
+            }
+            init_pop_list.append(record)
+
+init_pop = pd.DataFrame(init_pop_list)
+init_pop = init_pop.merge(district_nums,left_on='District', right_index=True)
+init_pop = init_pop[['District','District_Num','Sex','Age','Count']].reset_index(drop=True)
+assert init_pop['Count'].sum() == pop_2010['Count'].sum()
+
+init_pop.to_csv(resourcefilepath / 'ResourceFile_Population_2010.csv',index=False)
 
 #%% Fertility and births
 
@@ -342,6 +402,37 @@ def reformat_date_period_for_wpp(wpp_import):
 reformat_date_period_for_wpp(births)
 
 births.to_csv(resourcefilepath / 'ResourceFile_TotalBirths_WPP.csv',index=False)
+
+
+# Give Fraction of births that are male for each year for easy importing to demography module
+frac_birth_male = births.copy()
+frac_birth_male['frac_births_male'] = frac_birth_male['M_to_F_Sex_Ratio'] / (1 + frac_birth_male['M_to_F_Sex_Ratio'])
+frac_birth_male.drop(frac_birth_male.index[frac_birth_male['Variant']=='Low variant'], axis=0, inplace=True)
+frac_birth_male.drop(frac_birth_male.index[frac_birth_male['Variant']=='High variant'], axis=0, inplace=True)
+frac_birth_male.drop(['Variant','Total_Births','M_to_F_Sex_Ratio'], axis=1, inplace=True)
+frac_birth_male['low_year'], frac_birth_male['high_year'] = frac_birth_male['Period'].str.split('-',1).str
+frac_birth_male['low_year'] = frac_birth_male['low_year'].astype(int)
+frac_birth_male['high_year'] = frac_birth_male['high_year'].astype(int)
+
+frac_birth_male_list = list()
+
+# expand dataframe to give a frac_births_male for each year
+for year in range(1950,2100):
+
+    frac_this_year = frac_birth_male.loc[
+        (int(year) >= frac_birth_male['low_year']) & (int(year) <= frac_birth_male['high_year']),
+        'frac_births_male'].values[0]
+
+    record = {
+        'Year': year,
+        'frac_births_male': frac_this_year
+    }
+
+    frac_birth_male_list.append(record)
+
+
+frac_birth_male_for_export = pd.DataFrame(frac_birth_male_list)
+frac_birth_male_for_export.to_csv(resourcefilepath / 'ResourceFile_Pop_Frac_Births_Male.csv',index=False)
 
 
 # Age-specific Fertility Rates
@@ -409,10 +500,6 @@ deaths_melt['Count'].sum()
 deaths_melt['Variant'] = 'WPP_' + deaths_melt['Variant']
 
 deaths_melt.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
-
-
-
-
 
 # The ASMR from the LifeTable
 lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
