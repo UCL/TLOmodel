@@ -101,6 +101,7 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
+        'district_num_of_residence': Property(Types.STRING, 'The district number in which the person is resident'),
     }
 
 
@@ -136,8 +137,6 @@ class Demography(Module):
         """
         df = population.props
 
-        df.date_of_death = pd.NaT
-
         init_pop = self.parameters['pop_2010']
         init_pop['prob'] = init_pop['Count'] / init_pop['Count'].sum()
 
@@ -156,29 +155,28 @@ class Demography(Module):
             self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
                                       days=int(demog_char_to_assign['days_since_last_birthday'][i]))
                          for i in demog_char_to_assign.index]
+        demog_char_to_assign['age_in_days'] = self.sim.date - demog_char_to_assign['date_of_birth']
 
         # Assign the characteristics
         df.is_alive.values[:] = True
         df['date_of_birth'] = demog_char_to_assign['date_of_birth']
+        df['date_of_death'] = pd.NaT
         df['sex'] = demog_char_to_assign['Sex']
+        df.loc[df.is_alive, 'mother_id'] = -1
+        df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
+        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
+        df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
+        df['region_of_residence'] = demog_char_to_assign['Region']
         df['district_of_residence']= demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
-        df['region_of_residence'] = demog_char_to_assign['Region']
-
-        # Assign mother_id (null value but we can't use np.nan because that casts the series into a float)
-        df.loc[df.is_alive, 'mother_id'] = -1
 
         # Check for no bad values being assigned to persons in the dataframe:
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
 
-
         # Update other age properties
-        age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
-        df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
-        df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
-        df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
+
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -297,8 +295,9 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         assert length_before_merge == len(alive)
 
         # Work out probability of dying in the time before the next occurance of this poll
-        dur = 1.0/12.0 # because it is occuring every month
+        dur = float(np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y'))
         prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate*dur)
+
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
@@ -308,7 +307,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         for person in alive.index[will_die]:
             # schedule the death for some point in the next month
             self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-                                    self.sim.date + DateOffset(days=self.module.rng.randint(0,int(dur*365))))
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(0,30)))
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):
