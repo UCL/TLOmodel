@@ -94,7 +94,6 @@ class Demography(Module):
         'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
-        'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -203,11 +202,6 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
 
-        # assign that half the adult population is married (will be done in lifestyle module)
-        df.loc[df.is_alive, 'is_married'] = False  # TODO: Lifestyle module should look after married property
-        adults = (df.loc[df.is_alive, 'age_years'] >= 18)
-        df.loc[adults, 'is_married'] = self.rng.choice([True, False], size=adults.sum(), p=[0.5, 0.5], replace=True)
-
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
         This method is called just before the main simulation loop begins, and after all
@@ -240,8 +234,6 @@ class Demography(Module):
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         df.at[child_id, 'mother_id'] = mother_id
-
-        df.at[child_id, 'is_married'] = False
 
         df.at[child_id, 'age_exact_years'] = 0.0
         df.at[child_id, 'age_years'] = 0
