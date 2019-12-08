@@ -163,7 +163,7 @@ class Demography(Module):
         df['sex'] = demog_char_to_assign['Sex']
         df['district_of_residence']= demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
-        df['region_of_residence'] = demog_char_to_assign['Region']  # TODO: assign residence properly
+        df['region_of_residence'] = demog_char_to_assign['Region']
 
         # Assign mother_id (null value but we can't use np.nan because that casts the series into a float)
         df.loc[df.is_alive, 'mother_id'] = -1
