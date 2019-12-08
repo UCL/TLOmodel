@@ -20,6 +20,8 @@ class Malaria(Module):
         self.resourcefilepath = resourcefilepath
         self.level = level  # set to national or district-level malaria infection events
 
+        logger.info(f'Malaria infection event running at level {self.level}')
+
     PARAMETERS = {
         'mal_inc': Parameter(Types.REAL, 'monthly incidence of malaria in all ages'),
         'interv': Parameter(Types.REAL, 'data frame of intervention coverage by year'),
@@ -114,38 +116,53 @@ class Malaria(Module):
         df['ma_clinical_counter'] = 0
         df['ma_tx_counter'] = 0
 
-        if self.level == 'national':
+        if self.level == 0:
             # ----------------------------------- INCIDENCE - NATIONAL -----------------------------------
             # select incidence based on year
             curr_year = now.year
 
             # these values are just clinical incidence
             inf_inc = p['mal_inc']
-            inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year)]
+            inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year), 'monthly_inc_rate']
 
             # ----------------------------------- NEW INFECTIONS -----------------------------------
             # new clinical infections
-            random_draw = rng.random_sample(size=len(df))
-            ml_idx = df[df.is_alive & ~df.ma_is_infected & (random_draw < inf_inc)].index
-            df.loc[ml_idx, 'ma_is_infected'] = True
-            df.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-            df.loc[ml_idx, 'ma_specific_symptoms'] = 'clinical'
-            df.loc[ml_idx, 'ma_unified_symptom_code'] = 1
-            df.loc[ml_idx, 'ma_date_clinical'] = now
-            df.loc[ml_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
-            # print('ml_idx', ml_idx)
+            uninf = df.index[(df.ma_specific_symptoms == 'none') & df.is_alive]
+            now_infected = rng.choice([True, False],
+                                      size=len(uninf),
+                                      p=[inf_inc_month.values[0], 1 - inf_inc_month.values[0]])
 
-            ## severe - subset of newly clinical
-            prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
-            random_draw = rng.random_sample(size=len(df))
-            sev_idx = df[
-                df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (
-                    df.ma_specific_symptoms == 'clinical') & (
-                    random_draw < df.prob_sev)].index
+            # if any are infected
+            if now_infected.sum():
 
-            df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
-            df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
-            # print('sev_idx', sev_idx)
+                infected_idx = uninf[now_infected]
+                len_new = len(infected_idx)
+                logger.debug(f'Malaria Module: assigning {len_new} clinical malaria infections')
+
+                df.loc[infected_idx, 'ma_is_infected'] = True
+                df.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+                df.loc[infected_idx, 'ma_specific_symptoms'] = 'clinical'
+                df.loc[infected_idx, 'ma_unified_symptom_code'] = 1
+                df.loc[infected_idx, 'ma_date_clinical'] = now
+                df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+
+                ## severe - subset of newly clinical
+                prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
+
+                new_inf = df.index[
+                    df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (
+                        df.ma_specific_symptoms == 'clinical')]
+                now_severe = rng.choice([True, False],
+                                        size=len(new_inf),
+                                        p=[prob_sev, 1 - prob_sev])
+
+                if now_severe.sum():
+                    severe_idx = new_inf[now_severe]
+                    len_sev = len(severe_idx)
+                    logger.debug(f'Malaria Module: assigning {len_sev} severe malaria infections')
+
+                    df.loc[severe_idx, 'ma_specific_symptoms'] = 'severe'
+                    df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
 
         else:
 
@@ -220,48 +237,106 @@ class Malaria(Module):
             # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
 
             # new infections
-            random_draw = rng.random_sample(size=len(df_ml))
-            ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
-            df_ml.loc[ml_idx, 'ma_is_infected'] = True
-            df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-            # print('ml_idx', ml_idx)
+            uninf = df_ml.index[(df_ml.ma_specific_symptoms == 'none') & df_ml.is_alive]
+            now_infected = rng.choice([True, False],
+                                      size=len(uninf),
+                                      p=[df_ml.monthly_prob_inf[uninf], df_ml.monthly_prob_inf[uninf]])
 
-            ## clinical - subset of newly infected
-            random_draw = rng.random_sample(size=len(df))
-            clin_idx = df_ml[
-                df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
-                    random_draw < df_ml.monthly_prob_clin)].index
-            df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
-            # print('clin_idx', clin_idx)
+            # if any are infected
+            if now_infected.sum():
+                infected_idx = uninf[now_infected]
+                len_new = len(infected_idx)
+                logger.debug(f'MalariaEventDistrict: assigning {len_new} malaria infections')
 
-            ## severe - subset of newly clinical
-            random_draw = rng.random_sample(size=len(df))
-            sev_idx = df_ml[
-                df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
-                    df_ml.ma_specific_symptoms == 'clinical') & (
-                    random_draw < df_ml.monthly_prob_sev)].index
+                df_ml.loc[infected_idx, 'ma_is_infected'] = True
+                df_ml.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
 
-            # update the main dataframe
-            df.loc[ml_idx, 'ma_date_infected'] = now
-            df.loc[ml_idx, 'ma_is_infected'] = True
-            df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+                new_inf = df_ml.index[
+                    df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now)]
+                now_clinical = rng.choice([True, False],
+                                          size=len(new_inf),
+                                          p=[df_ml.monthly_prob_inf[new_inf],
+                                             1 - df_ml.monthly_prob_inf[new_inf]])
 
-            df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
-            df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
-            df.loc[clin_idx, 'ma_date_clinical'] = now
-            df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+                # assign new clinical infections
+                if now_clinical.sum():
+                    clinical_idx = new_inf[now_clinical]
+                    len_new = len(clinical_idx)
+                    logger.debug(f'MalariaEventDistrict: assigning {len_new} clinical malaria infections')
 
-            df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
-            df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
+                    df_ml.loc[clinical_idx, 'ma_specific_symptoms'] = 'clinical'
 
-            # print('sev_idx', sev_idx)
+                    # update main dataframe
+                    df.loc[clinical_idx, 'ma_specific_symptoms'] = 'clinical'
+                    df.loc[clinical_idx, 'ma_unified_symptom_code'] = 1
+                    df.loc[clinical_idx, 'ma_date_clinical'] = now
+                    df.loc[clinical_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
-            ## tidy up
-            del df_ml
+                    # assign new severe infections
+                    new_clin = df_ml.index[
+                        df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) &
+                        (df_ml.ma_specific_symptoms == 'clinical')]
+                    now_severe = rng.choice([True, False],
+                                            size=len(new_clin),
+                                            p=[df_ml.monthly_prob_sev[new_clin],
+                                               1 - df_ml.monthly_prob_sev[new_clin]])
 
-        # if any are infected
-        if len(ml_idx):
-            logger.debug('MalariaEvent: assigning new malaria infections at baseline')
+                    if now_severe.sum():
+                        severe_idx = new_clin[now_severe]
+                        len_new = len(severe_idx)
+                        logger.debug(f'MalariaEventDistrict: assigning {len_new} severe malaria infections')
+
+                        # update main dataframe
+                        df.loc[severe_idx, 'ma_specific_symptoms'] = 'severe'
+                        df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
+            # ## infected
+            # risk_ml = pd.Series(0, index=df.index)
+            # risk_ml.loc[df.is_alive] = 1  # applied to everyone
+            # # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
+            #
+            # # new infections
+            # random_draw = rng.random_sample(size=len(df_ml))
+            # ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
+            # df_ml.loc[ml_idx, 'ma_is_infected'] = True
+            # df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+            # # print('ml_idx', ml_idx)
+            #
+            # ## clinical - subset of newly infected
+            # random_draw = rng.random_sample(size=len(df))
+            # clin_idx = df_ml[
+            #     df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+            #         random_draw < df_ml.monthly_prob_clin)].index
+            # df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+            # # print('clin_idx', clin_idx)
+            #
+            # ## severe - subset of newly clinical
+            # random_draw = rng.random_sample(size=len(df))
+            # sev_idx = df_ml[
+            #     df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+            #         df_ml.ma_specific_symptoms == 'clinical') & (
+            #         random_draw < df_ml.monthly_prob_sev)].index
+            #
+            # # update the main dataframe
+            # df.loc[ml_idx, 'ma_date_infected'] = now
+            # df.loc[ml_idx, 'ma_is_infected'] = True
+            # df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+            #
+            # df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+            # df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
+            # df.loc[clin_idx, 'ma_date_clinical'] = now
+            # df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+            #
+            # df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
+            # df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
+            #
+            # # print('sev_idx', sev_idx)
+            #
+            # ## tidy up
+            # del df_ml
+
+            # # if any are infected
+            # if len(ml_idx):
+            #     logger.debug('MalariaEvent: assigning new malaria infections at baseline')
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -385,16 +460,18 @@ class Malaria(Module):
                                                 cause='malaria')  # make that death event
                 self.sim.schedule_event(death_event, self.sim.date + random_days)  # schedule the death
 
-        else:
-            logger.debug('MalariaEvent: no one is newly infected.')
+            else:
+                logger.debug('MalariaEvent: no one is newly infected.')
 
+            # tidy up
+            del df_ml
 
-        # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
-        self.sim.modules['HealthSystem'].register_disease_module(self)
+            # ----------------------------------- REGISTER WITH HEALTH SYSTEM -----------------------------------
+            self.sim.modules['HealthSystem'].register_disease_module(self)
 
     def initialise_simulation(self, sim):
 
-        if self.level == 'national':
+        if self.level == 0:
             sim.schedule_event(MalariaEventNational(self), sim.date + DateOffset(months=1))
         else:
             sim.schedule_event(MalariaEventDistrict(self), sim.date + DateOffset(months=1))
@@ -491,35 +568,50 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
 
         # these values are just clinical incidence
         inf_inc = p['mal_inc']
-        inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year)]
+        inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year), 'monthly_inc_rate']
+        print('inf_inc_month', inf_inc_month.values[0])
+        print(self.sim.date)
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
         # new clinical infections
-        random_draw = rng.random_sample(size=len(df))
-        ml_idx = df[df.is_alive & ~df.ma_is_infected & (random_draw < inf_inc)].index
-        df.loc[ml_idx, 'ma_is_infected'] = True
-        df.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-        df.loc[ml_idx, 'ma_specific_symptoms'] = 'clinical'
-        df.loc[ml_idx, 'ma_unified_symptom_code'] = 1
-        df.loc[ml_idx, 'ma_date_clinical'] = now
-        df.loc[ml_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
-        # print('ml_idx', ml_idx)
-
-        ## severe - subset of newly clinical
-        prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
-        random_draw = rng.random_sample(size=len(df))
-        sev_idx = df[
-            df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (
-                df.ma_specific_symptoms == 'clinical') & (
-                random_draw < df.prob_sev)].index
-
-        df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
-        df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
-        # print('sev_idx', sev_idx)
+        uninf = df.index[(df.ma_specific_symptoms == 'none') & df.is_alive]
+        now_infected = rng.choice([True, False],
+                                  size=len(uninf),
+                                  p=[inf_inc_month.values[0], 1 - inf_inc_month.values[0]])
+        print('now_infected', now_infected.sum())
 
         # if any are infected
-        if len(ml_idx):
-            logger.debug('MalariaEventNational: assigning new malaria infections')
+        if now_infected.sum():
+
+            infected_idx = uninf[now_infected]
+            len_new = len(infected_idx)
+            logger.debug(f'MalariaEventNational: assigning {len_new} clinical malaria infections')
+
+            df.loc[infected_idx, 'ma_is_infected'] = True
+            df.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+            df.loc[infected_idx, 'ma_specific_symptoms'] = 'clinical'
+            df.loc[infected_idx, 'ma_unified_symptom_code'] = 1
+            df.loc[infected_idx, 'ma_date_clinical'] = now
+            df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+
+            ## severe - subset of newly clinical
+            prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
+
+            new_inf = df.index[
+                df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (
+                    df.ma_specific_symptoms == 'clinical')]
+            now_severe = rng.choice([True, False],
+                                    size=len(new_inf),
+                                    p=[prob_sev, 1 - prob_sev])
+
+            if now_severe.sum():
+                severe_idx = new_inf[now_severe]
+                len_sev = len(severe_idx)
+                logger.debug(f'MalariaEventNational: assigning {len_sev} severe malaria infections')
+
+                df.loc[severe_idx, 'ma_specific_symptoms'] = 'severe'
+                df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
+
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -646,9 +738,6 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             logger.debug('MalariaEventNational: no one is newly infected.')
 
 
-
-
-
 class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
@@ -718,48 +807,97 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
         # risk_ml.loc[df.hv_inf ] *= p['rr_hiv']  # then have to scale within every subgroup
 
         # new infections
-        random_draw = rng.random_sample(size=len(df_ml))
-        ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
-        df_ml.loc[ml_idx, 'ma_is_infected'] = True
-        df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
-        # print('ml_idx', ml_idx)
+        uninf = df_ml.index[(df_ml.ma_specific_symptoms == 'none') & df_ml.is_alive]
+        now_infected = rng.choice([True, False],
+                                  size=len(uninf),
+                                  p=[df_ml.monthly_prob_inf[uninf], df_ml.monthly_prob_inf[uninf]])
 
-        ## clinical - subset of newly infected
-        random_draw = rng.random_sample(size=len(df))
-        clin_idx = df_ml[
-            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
-                    random_draw < df_ml.monthly_prob_clin)].index
-        df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
-        # print('clin_idx', clin_idx)
+        # if any are infected
+        if now_infected.sum():
+            infected_idx = uninf[now_infected]
+            len_new = len(infected_idx)
+            logger.debug(f'MalariaEventDistrict: assigning {len_new} malaria infections')
 
-        ## severe - subset of newly clinical
-        random_draw = rng.random_sample(size=len(df))
-        sev_idx = df_ml[
-            df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
-                    df_ml.ma_specific_symptoms == 'clinical') & (
-                random_draw < df_ml.monthly_prob_sev)].index
+            df_ml.loc[infected_idx, 'ma_is_infected'] = True
+            df_ml.loc[infected_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
 
-        # update the main dataframe
-        df.loc[ml_idx, 'ma_date_infected'] = now
-        df.loc[ml_idx, 'ma_is_infected'] = True
-        df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+            new_inf = df_ml.index[
+                df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now)]
+            now_clinical = rng.choice([True, False],
+                                      size=len(new_inf),
+                                      p=[df_ml.monthly_prob_inf[new_inf], 1 - df_ml.monthly_prob_inf[new_inf]])
 
-        df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
-        df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
-        df.loc[clin_idx, 'ma_date_clinical'] = now
-        df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+            # assign new clinical infections
+            if now_clinical.sum():
+                clinical_idx = new_inf[now_clinical]
+                len_new = len(clinical_idx)
+                logger.debug(f'MalariaEventDistrict: assigning {len_new} clinical malaria infections')
 
-        df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
-        df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
+                df_ml.loc[clinical_idx, 'ma_specific_symptoms'] = 'clinical'
+
+                # update main dataframe
+                df.loc[clinical_idx, 'ma_specific_symptoms'] = 'clinical'
+                df.loc[clinical_idx, 'ma_unified_symptom_code'] = 1
+                df.loc[clinical_idx, 'ma_date_clinical'] = now
+                df.loc[clinical_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+
+                # assign new severe infections
+                new_clin = df_ml.index[
+                    df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) &
+                    (df_ml.ma_specific_symptoms == 'clinical')]
+                now_severe = rng.choice([True, False],
+                                        size=len(new_clin),
+                                        p=[df_ml.monthly_prob_sev[new_clin],
+                                           1 - df_ml.monthly_prob_sev[new_clin]])
+
+                if now_severe.sum():
+                    severe_idx = new_clin[now_severe]
+                    len_new = len(severe_idx)
+                    logger.debug(f'MalariaEventDistrict: assigning {len_new} severe malaria infections')
+
+                    # update main dataframe
+                    df.loc[severe_idx, 'ma_specific_symptoms'] = 'severe'
+                    df.loc[severe_idx, 'ma_unified_symptom_code'] = 2
+
+            # random_draw = rng.random_sample(size=len(df_ml))
+            # ml_idx = df_ml[df_ml.is_alive & ~df_ml.ma_is_infected & (random_draw < df_ml.monthly_prob_inf)].index
+            # df_ml.loc[ml_idx, 'ma_is_infected'] = True
+            # df_ml.loc[ml_idx, 'ma_date_infected'] = now  # TODO: scatter dates across month
+            # # print('ml_idx', ml_idx)
+            #
+            # ## clinical - subset of newly infected
+            # random_draw = rng.random_sample(size=len(df))
+            # clin_idx = df_ml[
+            #     df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+            #             random_draw < df_ml.monthly_prob_clin)].index
+            # df_ml.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+            # # print('clin_idx', clin_idx)
+            #
+            # ## severe - subset of newly clinical
+            # random_draw = rng.random_sample(size=len(df))
+            # sev_idx = df_ml[
+            #     df_ml.is_alive & df_ml.ma_is_infected & (df_ml.ma_date_infected == now) & (
+            #             df_ml.ma_specific_symptoms == 'clinical') & (
+            #         random_draw < df_ml.monthly_prob_sev)].index
+            #
+            # # update the main dataframe
+            # df.loc[ml_idx, 'ma_date_infected'] = now
+            # df.loc[ml_idx, 'ma_is_infected'] = True
+            # df.loc[ml_idx, 'ma_specific_symptoms'] = 'none'
+            #
+            # df.loc[clin_idx, 'ma_specific_symptoms'] = 'clinical'
+            # df.loc[clin_idx, 'ma_unified_symptom_code'] = 1
+            # df.loc[clin_idx, 'ma_date_clinical'] = now
+            # df.loc[clin_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
+            #
+            # df.loc[sev_idx, 'ma_specific_symptoms'] = 'severe'
+            # df.loc[sev_idx, 'ma_unified_symptom_code'] = 2
 
         # print('sev_idx', sev_idx)
 
-        ## tidy up
-        del df_ml
-
         # if any are infected
-        if len(ml_idx):
-            logger.debug('This is MalariaEvent, assigning new malaria infections')
+            # if len(ml_idx):
+            #     logger.debug('This is MalariaEvent, assigning new malaria infections')
 
             # ----------------------------------- PARASITE CLEARANCE - NO TREATMENT -----------------------------------
             # schedule self-cure if no treatment, no self-cure from severe malaria
@@ -884,6 +1022,10 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         else:
             logger.debug('MalariaEvent: no one is newly infected.')
+
+        # tidy up
+        del df_ml
+
 
 
 class MalariaDeathEvent(Event, IndividualScopeEventMixin):
@@ -1549,6 +1691,8 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     prev_ed.to_dict())
         logger.info('%s|pop_district|%s', self.sim.date,
                     pop.to_dict())
+
+
 # ---------------------------------------------------------------------------------
 # Reset counters
 # ---------------------------------------------------------------------------------
