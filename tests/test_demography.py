@@ -47,7 +47,6 @@ def test_mothers_female(simulation):
     is_female = mothers.apply(lambda mother_id: df.at[mother_id, 'sex'] == 'F')
     assert is_female.all()
 
-
 if __name__ == '__main__':
     t0 = time.time()
     simulation = simulation()

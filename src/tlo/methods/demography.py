@@ -101,7 +101,7 @@ class Demography(Module):
         'age_days': Property(Types.INT, 'The age of the individual in whole days'),
         'region_of_residence': Property(Types.STRING, 'The region in which the person in resident'),
         'district_of_residence': Property(Types.STRING, 'The district in which the person is resident'),
-        'district_num_of_residence': Property(Types.STRING, 'The district number in which the person is resident'),
+        'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
     }
 
 
