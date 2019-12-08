@@ -27,7 +27,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 12, 31)
+end_date = Date(2025, 12, 31)
 popsize = 1000
 
 # Establish the simulation object
@@ -140,6 +140,7 @@ plt.plot(model_years, inc.inc_clin_counter)  # model - using the clinical counte
 plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
+plt.xticks(rotation=90)
 # plt.gca().set_xlim(start_date, end_date)
 # plt.legend(["Data", "Model"])
 
@@ -151,8 +152,9 @@ plt.subplot(222)  # numrows, numcols, fignum
 plt.plot(model_years, pfpr.child2_10_prev)  # model
 plt.title("Malaria PfPR 2-10 yrs")
 plt.xlabel("Year")
+plt.xticks(rotation=90)
 plt.ylabel("PfPR (%)")
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 # plt.legend(["Data", "Model"])
 
 # Malaria treatment coverage - all ages with MAP model estimates
@@ -161,8 +163,9 @@ plt.subplot(223)  # numrows, numcols, fignum
 plt.plot(model_years, tx.treatment_coverage)  # model
 plt.title("Malaria Treatment Coverage")
 plt.xlabel("Year")
+plt.xticks(rotation=90)
 plt.ylabel("Treatment coverage (%)")
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 # plt.legend(["Data", "Model"])
 
 # Malaria mortality rate - all ages with MAP model estimates
@@ -171,7 +174,8 @@ plt.subplot(224)  # numrows, numcols, fignum
 plt.plot(model_years, mort.mort_rate)  # model
 plt.title("Malaria Mortality Rate")
 plt.xlabel("Year")
+plt.xticks(rotation=90)
 plt.ylabel("Mortality rate")
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 # plt.legend(["Data", "Model"])
 plt.show()

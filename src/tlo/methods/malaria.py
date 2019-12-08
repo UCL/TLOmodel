@@ -476,13 +476,12 @@ class Malaria(Module):
         else:
             sim.schedule_event(MalariaEventDistrict(self), sim.date + DateOffset(months=1))
 
+        sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(days=365))  # 01 jan each year
 
-        sim.schedule_event(MalariaResetCounterEvent(self), sim.date + DateOffset(months=12))
-
-        # add an event to log to screen
-        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(months=12))
-        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=12))
+        # add an event to log to screen - 31st Dec each year
+        sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(days=364))
+        sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(days=364))
+        # sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=364))
 
     def on_birth(self, mother_id, child_id):
 
@@ -669,6 +668,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
                 seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
 
+            print('seeks_care', seeks_care.sum())
             if seeks_care.sum() > 0:
 
                 for person_index in seeks_care.index[seeks_care]:
@@ -1587,7 +1587,6 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         clin_episodes = df['ma_clinical_counter'].sum()  # clinical episodes (inc severe)
         incCounter_1000py = (clin_episodes / pop) * 1000
 
-
         logger.info('%s|incidence|%s', now,
                     {
                         'number_new_cases': tmp,
@@ -1700,12 +1699,15 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 class MalariaResetCounterEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
-        self.repeat = 1
+        self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
 
     def apply(self, population):
         # reset all the counters to zero each year
         df = population.props
+        now = self.sim.date
+
+        logger.info(f'Resetting the malaria counter {now}')
 
         df['ma_clinical_counter'] = 0
         df['ma_tx_counter'] = 0
