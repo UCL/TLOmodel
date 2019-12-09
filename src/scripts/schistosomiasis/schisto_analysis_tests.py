@@ -134,14 +134,9 @@ def calculate_yearly_dalys(df):
     df.loc[0, 'DALY_monthly'] = df.loc[0, 'DALY_cumulative']
     return df
 
-
 dalys_output = pd.DataFrame([])
-for age_group in ['All']:
-# for age_group in ['PSAC', 'SAC', 'Adults', 'All']:
-    daly_age_group = 'DALY_' + age_group
-    df = calculate_yearly_dalys(output['tlo.methods.schisto'][daly_age_group])
-    df['Age_group'] = age_group
-    dalys_output = dalys_output.append(df, ignore_index=True)
+dalys_output = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
+dalys_output['Age_group'] = 'All'
 dalys_output.to_csv(savepath_daly, index=False)
 
 # parameters spreadsheet
@@ -181,16 +176,10 @@ def calculate_yearly_dalys(df):
     df.loc[0, 'DALY_yearly'] = df.loc[0, 'DALY_cumulative']
     return df
 
-loger_DALY_PSAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_PSAC'])
-loger_DALY_SAC = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_SAC'])
-loger_DALY_Adults = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_Adults'])
+
 loger_DALY_All = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
-plt.plot(loger_DALY_Adults.date, loger_DALY_Adults.DALY_yearly, label='Adults')
-plt.plot(loger_DALY_PSAC.date, loger_DALY_PSAC.DALY_yearly, label='PSAC')
-plt.plot(loger_DALY_SAC.date, loger_DALY_SAC.DALY_yearly, label='SAC')
 plt.plot(loger_DALY_All.date, loger_DALY_All.DALY_yearly, label='All')
 plt.xticks(rotation='vertical')
-# plt.xticks.set_major_formatter(DateFormatter('%m-%Y'))
 plt.legend()
 plt.title('DALYs per year, schisto module calculation')
 plt.ylabel('DALYs')
