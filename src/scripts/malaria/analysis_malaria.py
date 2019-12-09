@@ -28,7 +28,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2025, 12, 31)
-popsize = 50000
+popsize = 5000
 
 # Establish the simulation object
 sim = Simulation(start_date=start_date)
@@ -91,9 +91,9 @@ from pathlib import Path
 
 outputpath = './src/scripts/malaria/'
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-# logfile = outputpath + 'LogFile' + datestamp + '.log'
+logfile = outputpath + 'LogFile' + datestamp + '.log'
 
-logfile = outputpath + 'LogFile' + '__2019_12_08' + '.log'
+# logfile = outputpath + 'LogFile' + '__2019_12_08' + '.log'
 output = parse_log_file(logfile)
 #
 resourcefilepath = Path("./resources")

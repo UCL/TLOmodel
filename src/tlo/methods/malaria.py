@@ -43,6 +43,9 @@ class Malaria(Module):
             Types.REAL, 'duration (days) of parasitaemia for clinical malaria cases'),
         'rr_hiv': Parameter(
             Types.REAL, 'relative risk of clinical malaria if hiv-positive'),
+        'treatment_adjustment': Parameter(
+            Types.REAL, 'probability of death from severe malaria if on treatment'
+        )
     }
 
     PROPERTIES = {
@@ -568,8 +571,8 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
         # these values are just clinical incidence
         inf_inc = p['mal_inc']
         inf_inc_month = inf_inc.loc[(inf_inc.year == curr_year), 'monthly_inc_rate']
-        print('inf_inc_month', inf_inc_month.values[0])
-        print(self.sim.date)
+        # print('inf_inc_month', inf_inc_month.values[0])
+        # print(self.sim.date)
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
         # new clinical infections
@@ -577,7 +580,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
         now_infected = rng.choice([True, False],
                                   size=len(uninf),
                                   p=[inf_inc_month.values[0], 1 - inf_inc_month.values[0]])
-        print('now_infected', now_infected.sum())
+        # print('now_infected', now_infected.sum())
 
         # if any are infected
         if now_infected.sum():
@@ -594,7 +597,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             df.loc[infected_idx, 'ma_clinical_counter'] += 1  # counter only for new clinical cases (inc severe)
 
             ## severe - subset of newly clinical
-            prob_sev = 0.1  # tmp value for prob of clinical case becoming severe
+            prob_sev = 0.05  # tmp value for prob of clinical case becoming severe
 
             new_inf = df.index[
                 df.is_alive & df.ma_is_infected & (df.ma_date_infected == now) & (
@@ -668,7 +671,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                 # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
                 seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
 
-            print('seeks_care', seeks_care.sum())
+            # print('seeks_care', seeks_care.sum())
             if seeks_care.sum() > 0:
 
                 for person_index in seeks_care.index[seeks_care]:
@@ -1041,10 +1044,24 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         df = self.sim.population.props
 
         if df.at[individual_id, 'is_alive']:
-            self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
-                                    self.sim.date)
 
-            df.at[individual_id, 'ma_date_death'] = self.sim.date
+            # if on treatment, will reduce probability of death
+            # use random number generator - mean 0.5
+            if df.at[individual_id, 'ma_tx']:
+                prob = self.module.random_sample(size=1)
+
+                if prob < self.module.parameters['treatment_adjustment']:
+                    self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
+                                            self.sim.date)
+
+                    df.at[individual_id, 'ma_date_death'] = self.sim.date
+
+            else:
+                self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id, cause='malaria'),
+                                        self.sim.date)
+
+                df.at[individual_id, 'ma_date_death'] = self.sim.date
+
 
 
 # ---------------------------------------------------------------------------------
