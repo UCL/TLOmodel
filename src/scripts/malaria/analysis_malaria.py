@@ -110,21 +110,28 @@ start_date = 2010
 end_date = 2025
 
 # import malaria data
-inc_data = pd.read_excel(
+# MAP
+incMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
     sheet_name="inc1000py_MAPdata",
 )
-PfPR_data = pd.read_excel(
+PfPRMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
     sheet_name="PfPR_MAPdata",
 )
-mort_data = pd.read_excel(
+mortMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
     sheet_name="mortalityRate_MAPdata",
 )
-tx_data = pd.read_excel(
+txMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
     sheet_name="txCov_MAPdata",
+)
+
+# WHO
+WHO_data = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
+    sheet_name="WHO_MalReport",
 )
 
 # check date format for year columns in each sheet
@@ -133,30 +140,33 @@ tx_data = pd.read_excel(
 # mort_data_years = pd.to_datetime(mort_data.Year, format="%Y")
 # tx_data_years = pd.to_datetime(tx_data.Year, format="%Y")
 #
-# yr_num = inc_data_years.values
 
 ## FIGURES
 plt.figure(1)
 
 # Malaria incidence per 1000py - all ages with MAP model estimates
 ax = plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(inc_data.Year, inc_data.inc_1000pyMean)  # MAP data
-plt.fill_between(inc_data.Year, inc_data.inc_1000py_Lower,
-                 inc_data.inc_1000pyUpper)  # ,color='red',alpha=.5)
-# plt.fill_between(inc_data_years, inc_data.inc_1000py_Lower, inc_data.inc_1000pyUpper)#,color='red',alpha=.5)
+plt.plot(incMAP_data.Year, incMAP_data.inc_1000pyMean)  # MAP data
+plt.fill_between(incMAP_data.Year, incMAP_data.inc_1000py_Lower,
+                 incMAP_data.inc_1000pyUpper, alpha=.5)
+plt.plot(WHO_data.Year, WHO_data.cases1000pyPoint)  # WHO data
+plt.fill_between(WHO_data.Year, WHO_data.cases1000pyLower,
+                 WHO_data.cases1000pyUpper, alpha=.5)
 plt.plot(model_years, inc.inc_clin_counter)  # model - using the clinical counter for multiple episodes per person
 plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
 plt.xticks(rotation=90)
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"])
+plt.legend(["MAP", "WHO", "Model"])
 
 # Malaria parasite prevalence rate - 2-10 year olds with MAP model estimates
 # expect model estimates to be slightly higher as some will have
 # undetectable parasitaemia
 ax2 = plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(PfPR_data.Year, PfPR_data.PfPR_median)  # MAP data
+plt.plot(PfPRMAP_data.Year, PfPRMAP_data.PfPR_median)  # MAP data
+plt.fill_between(PfPRMAP_data.Year, PfPRMAP_data.PfPR_LCI,
+                 PfPRMAP_data.PfPR_UCI, alpha=.5)
 plt.plot(model_years, pfpr.child2_10_prev)  # model
 plt.title("Malaria PfPR 2-10 yrs")
 plt.xlabel("Year")
@@ -167,7 +177,7 @@ plt.legend(["Data", "Model"])
 
 # Malaria treatment coverage - all ages with MAP model estimates
 ax3 = plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(tx_data.Year, tx_data.ACT_coverage)  # MAP data
+plt.plot(txMAP_data.Year, txMAP_data.ACT_coverage)  # MAP data
 plt.plot(model_years, tx.treatment_coverage)  # model
 plt.title("Malaria Treatment Coverage")
 plt.xlabel("Year")
@@ -179,13 +189,19 @@ plt.legend(["Data", "Model"])
 
 # Malaria mortality rate - all ages with MAP model estimates
 ax4 = plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(mort_data.Year, mort_data.mortality_rate_median)  # MAP data
+plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
+plt.fill_between(mortMAP_data.Year, mortMAP_data.mortality_rate_LCI,
+                 mortMAP_data.mortality_rate_UCI, alpha=.5)
+plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
+plt.fill_between(WHO_data.Year, WHO_data.MortRatePerPersonLower,
+                 WHO_data.MortRatePerPersonUpper, alpha=.5)
 plt.plot(model_years, mort.mort_rate)  # model
 plt.title("Malaria Mortality Rate")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Mortality rate")
 plt.gca().set_xlim(start_date, end_date)
-plt.legend(["Data", "Model"])
+plt.gca().set_ylim(0.0, 0.01)
+plt.legend(["MAP", "WHO", "Model"])
 plt.show()
 
