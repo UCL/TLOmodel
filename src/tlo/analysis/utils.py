@@ -165,7 +165,6 @@ def scale_to_population(parsed_output, resourcefilepath):
     ratio_data_to_model= cens_tot / model_tot
 
     # Do the scaling on selected columns in the parsed outputs:
-
     o = parsed_output.copy()
 
     # Multiply population count summaries by ratio
@@ -182,7 +181,7 @@ def scale_to_population(parsed_output, resourcefilepath):
     deaths.index = pd.to_datetime(deaths['date'])
     deaths['year'] = deaths.index.year.astype(int)
 
-    deaths_groupby_scaled = deaths[['year','age','cause','person_id']].groupby(by=['year','age','cause']) \
+    deaths_groupby_scaled = deaths[['year','sex','age','cause','person_id']].groupby(by=['year','sex','age','cause']) \
                 .count().unstack(fill_value=0).stack() * ratio_data_to_model
     deaths_groupby_scaled .rename(columns={'person_id': 'count'}, inplace=True)
     o['tlo.methods.demography'].update({'death_groupby_scaled':deaths_groupby_scaled})

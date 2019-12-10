@@ -7,6 +7,7 @@ It creates:
 * ResourceFile_Births
 
 """
+
 from pathlib import Path
 
 import numpy as np
@@ -474,10 +475,14 @@ deaths_males = pd.concat([
     pd.read_excel(deaths_males_file,sheet_name='LOW VARIANT',header=16),
     pd.read_excel(deaths_males_file,sheet_name='MEDIUM VARIANT',header=16),
     pd.read_excel(deaths_males_file,sheet_name='HIGH VARIANT',header=16)
-], sort=False)
+], sort=False, ignore_index=True)
 
 deaths_males  = deaths_males.loc[deaths_males[deaths_males.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
 deaths_males ['Sex']= 'M'
+
+
+
+
 
 deaths_females = pd.concat([
     pd.read_excel(deaths_females_file,sheet_name='ESTIMATES',header=16),
@@ -503,7 +508,9 @@ deaths_melt['Variant'] = 'WPP_' + deaths_melt['Variant']
 
 deaths_melt.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_WPP.csv',index=False)
 
-# TODO: issues with the lt - no 0 year-old cat. for 1950; oldest age-group labelled "100-98"
+
+
+
 # The ASMR from the LifeTable
 lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
 Module-demography/WPP_2019/WPP2019_MORT_F17_2_ABRIDGED_LIFE_TABLE_MALE.xlsx'
@@ -591,22 +598,28 @@ Module-demography/GBD/IHME-GBD_2017_DATA-1629962a-1/IHME-GBD_2017_DATA-1629962a-
 
 gbd = pd.read_csv(gbd_working_file)
 
+# Rename Year variable
+gbd.rename(columns = {'year': 'Year'}, inplace=True)
+
 # Reformat the age-groups
-gbd['age_name'] =  gbd['age_name'].str.replace('to','-').str.replace('95 plus','95+').str.replace(' ','')
+gbd['age_name'] = gbd['age_name'].str.replace('to','-').str.replace('95 plus','95+').str.replace(' ','')
 gbd = gbd.drop(gbd.index[gbd['age_name']=='AllAges'])
 gbd = gbd.rename(columns={'age_name':'Age_Grp'})
 gbd['Sex'] = gbd['sex_id'].replace({1:'M', 2:'F'})
-gbd['Year'] = gbd['year']
+
 
 # Deaths Database No Split by Cause
 gbd_deaths = gbd.loc[gbd['measure_name']=='Deaths'].copy().reset_index(drop=True)
-gbd_deaths.to_csv(resourcefilepath / 'ResourceFile_Deaths_And_Causes_DeathRates_GBD.csv',index=False)
-
 gbd_deaths=gbd_deaths[['Age_Grp','Sex','Year','val','upper','lower','cause_name','cause_id']]
 
 gbd_deaths=gbd_deaths.groupby(by=['Year','Sex','Age_Grp'],as_index=False)['val','upper','lower'].sum()
 gbd_deaths=gbd_deaths.melt(id_vars=['Year','Sex','Age_Grp'],var_name='Variant',value_name='Count')
 gbd_deaths['Variant'] = gbd_deaths['Variant'].replace({'val': 'GBD_Est', 'upper':'GBD_Upper', 'lower':'GBD_Lower'})
+
+# Add Period information:
+(__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
+gbd_deaths['Period'] = gbd_deaths['Year'].map(calendar_period_lookup)
+assert not pd.isnull(gbd_deaths).any().any()
 
 gbd_deaths.to_csv(resourcefilepath / 'ResourceFile_TotalDeaths_GBD.csv',index=False)
 
