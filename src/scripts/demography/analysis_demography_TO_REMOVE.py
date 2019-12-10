@@ -240,6 +240,10 @@ plt.savefig(outputpath + "PopPyramidModelOnly" + datestamp + ".pdf")
 plt.show()
 
 
+
+
+
+
 # Model Vs Data Pop Pyramid
 fig, axes = plt.subplots(ncols=2, nrows=2, sharey=True)
 xticks = [0, 5, 10, 15, 20]
