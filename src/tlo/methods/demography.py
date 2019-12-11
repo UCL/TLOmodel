@@ -9,7 +9,6 @@ import math
 from collections import defaultdict
 from pathlib import Path
 
-import datetime as dt
 import numpy as np
 import pandas as pd
 
@@ -104,7 +103,6 @@ class Demography(Module):
         'district_num_of_residence': Property(Types.INT, 'The district number in which the person is resident'),
     }
 
-
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
         Loads the 'Interpolated Pop Structure' worksheet from the Demography Excel workbook.
@@ -127,7 +125,6 @@ class Demography(Module):
             Path(self.resourcefilepath) / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
         )
 
-
     def initialise_population(self, population):
         """Set our property values for the initial population.
         This method is called by the simulation when creating the initial population, and is
@@ -142,19 +139,19 @@ class Demography(Module):
 
         # randomly pick from the init_pop sheet, to allocate charatceristic to each person in the df
         demog_char_to_assign = init_pop.iloc[self.rng.choice(init_pop.index.values,
-                                                 size=len(df),
-                                                 replace=True,
-                                                 p=init_pop.prob)][['District','District_Num','Region','Sex','Age']]\
+                                                             size=len(df),
+                                                             replace=True,
+                                                             p=init_pop.prob)][
+            ['District', 'District_Num', 'Region', 'Sex', 'Age']] \
             .reset_index(drop=True)
 
-
         # make a date of birth that is consistent with the allocated age of each person
-        demog_char_to_assign['days_since_last_birthday'] = self.rng.randint(0,365,len(demog_char_to_assign))
+        demog_char_to_assign['days_since_last_birthday'] = self.rng.randint(0, 365, len(demog_char_to_assign))
 
         demog_char_to_assign['date_of_birth'] = [
             self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
-                                      days=int(demog_char_to_assign['days_since_last_birthday'][i]))
-                         for i in demog_char_to_assign.index]
+                                       days=int(demog_char_to_assign['days_since_last_birthday'][i]))
+            for i in demog_char_to_assign.index]
         demog_char_to_assign['age_in_days'] = self.sim.date - demog_char_to_assign['date_of_birth']
 
         # Assign the characteristics
@@ -168,7 +165,7 @@ class Demography(Module):
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
         df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
         df['region_of_residence'] = demog_char_to_assign['Region']
-        df['district_of_residence']= demog_char_to_assign['District']
+        df['district_of_residence'] = demog_char_to_assign['District']
         df['district_num_of_residence'] = demog_char_to_assign['District_Num']
 
         # Check for no bad values being assigned to persons in the dataframe:
@@ -176,7 +173,6 @@ class Demography(Module):
         assert (not pd.isnull(df['district_of_residence']).any())
 
         # Update other age properties
-
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
@@ -207,7 +203,7 @@ class Demography(Module):
         df.at[child_id, 'date_of_birth'] = self.sim.date
 
         fraction_of_births_male = self.parameters['fraction_of_births_male']
-        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year']==self.sim.date.year,\
+        f_male = fraction_of_births_male.loc[fraction_of_births_male['Year'] == self.sim.date.year,
                                              'frac_births_male'].values[0]
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
@@ -296,8 +292,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Work out probability of dying in the time before the next occurance of this poll
         dur = float(np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y'))
-        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate*dur)
-
+        prob_of_dying_during_next_month = 1.0 - np.exp(-alive.death_rate * dur)
 
         # flipping the coin to determine if this person will die
         will_die = (self.module.rng.random_sample(size=len(alive)) < prob_of_dying_during_next_month)
@@ -307,7 +302,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         for person in alive.index[will_die]:
             # schedule the death for some point in the next month
             self.sim.schedule_event(InstantaneousDeath(self.module, person, cause='Other'),
-                                    self.sim.date + DateOffset(days=self.module.rng.randint(0,30)))
+                                    self.sim.date + DateOffset(days=self.module.rng.randint(0, 30)))
 
 
 class InstantaneousDeath(Event, IndividualScopeEventMixin):

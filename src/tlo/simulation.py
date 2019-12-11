@@ -85,7 +85,7 @@ class Simulation:
         self.rng.seed(seed)
         logger.info("Simulation RNG user seed %d", seed)
         for module in self.modules.values():
-            module_seed = self.rng.randint(2**31 - 1)
+            module_seed = self.rng.randint(2 ** 31 - 1)
             logger.info("%s RNG auto seed %d", module.name, module_seed)
             module.rng.seed(module_seed)
 
@@ -106,7 +106,7 @@ class Simulation:
             date will be allowed to occur.
             Must be given as a keyword parameter for clarity.
         """
-        if end_date.year>=2100:
+        if end_date.year >= 2100:
             raise Exception('Year is after 2100: Demographic data do not extend that far.')
         self.end_date = end_date  # store the end_date so that others can reference it
 

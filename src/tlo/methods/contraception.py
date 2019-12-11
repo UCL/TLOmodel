@@ -47,7 +47,8 @@ class Contraception(Module):
         'r_init_year': Parameter(Types.REAL,
                                  'proportional change in contraception initiation rates for each year, 2010 to 2100'),
         'r_discont_year': Parameter(Types.REAL,
-                                    'proportional change in contraception_discontinuation rate for each year, 2010 to 2100'),
+                                    'proportional change in contraception_discontinuation rate for each year,\
+                                     2010 to 2100'),
         # TODO: add relative fertility rates for HIV+ compared to HIV- by age group from Marston et al 2017
     }
 
@@ -266,6 +267,7 @@ class ContraceptionSwitchingPoll(RegularEvent, PopulationScopeEventMixin):
 
     (Was previously in Init1, Switch, Discontinue events)
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         self.age_low = 15
@@ -485,7 +487,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
 
         # get the subset of women from the population dataframe and relevant characteristics
         subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant & (
-                df.co_contraception == 'not_using')
+            df.co_contraception == 'not_using')
         females = df.loc[subset, ['co_contraception', 'age_years']]
 
         # load the fertility schedule (imported datasheet from excel workbook)

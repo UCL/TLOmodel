@@ -1096,7 +1096,6 @@ class HSI_Event:
         # This is needed so mixin constructors are called
         super().__init__(*args, **kwargs)
 
-
     def apply(self, *args, **kwargs):
         """Apply this event to the population.
 
