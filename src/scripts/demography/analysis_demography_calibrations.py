@@ -120,10 +120,6 @@ plt.xticks(rotation=0)
 plt.savefig('./output/' + "Pop_Size_2018" + datestamp + ".pdf")
 plt.show()
 
-# %% Population by Region and District in 2018
-# TODO: add total by district to demography logger
-
-
 # %% Population Pyramid
 # Population Pyramid at two time points
 
@@ -184,53 +180,6 @@ for year in [2018, 2030]:
     plt.savefig('./output/' + "Pop_Size_" + str(year) + datestamp + ".pdf")
     plt.show()
 
-# %% TODO: Traditional Populaiton Pyramid
-#
-# xticks=np.linspace(start=0,stop=1.2e6/1e4,num=5)
-# fig, axes = plt.subplots(ncols=2, nrows=1, sharey=True)
-# st=fig.suptitle("Population (2018)", fontsize=14)
-#
-# # Census
-# (pop_m['Census']/1e4).plot.barh(
-#     ax=axes[0], align="center", color="blue", zorder=10
-# )
-#
-# (pop_f['Census']/1e4).plot.barh(
-#     ax=axes[1], align="center", color="red", zorder=10
-# )
-#
-# # Model lines
-# plt.plot(pop_m['Model'].values/1e4, pop_m['Model'].index,'ko-',label='line1', ax=axes[0])
-#
-# # Formatting for pyramid
-# axes[0].invert_xaxis()
-# axes[1].yaxis.tick_right()
-#
-# axes[0].set(
-#     xticks=xticks
-# )
-# axes[1].set(
-#     xticks=xticks
-# )
-#
-# axes[0].set_ylabel('Age Group')
-# axes[0].set_xlabel('Males (10,000''s)')
-# axes[1].set_xlabel('Females (10,000''s)')
-#
-# st.set_y(0.95)
-# fig.subplots_adjust(top=0.55)
-#
-# for ax in axes.flat:
-#     ax.margins(0.03)
-#     ax.grid(True)
-#
-#
-# fig.tight_layout()
-# fig.subplots_adjust(wspace=0.12)
-# plt.savefig(outputpath + "PopPyramidModelOnly" + datestamp + ".pdf")
-# plt.show()
-
-
 # %% Births: Number over time
 
 # Births over time (Model)
@@ -270,29 +219,6 @@ ax.set_xlabel('Calendar Period')
 ax.set_ylabel('Number per period')
 plt.savefig('./output/' + "Births_Over_Time_" + datestamp + ".pdf")
 plt.show()
-
-# %% Births: By Age of Mother: Comparison to Census in 2018
-
-# Load Model Results
-
-# Births in 2018
-# births_model = scaled_output['tlo.methods.demography']['birth_groupby_scaled'].reset_index()
-
-# # Aggregate the model output into five year periods:
-# (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
-# births_model["Period"] = births_model["year"].map(calendar_period_lookup)
-# births_model = births_model.groupby(by='Period')['count'].sum()
-# births_model.index = births_model.index.astype(make_calendar_period_type())
-#
-# # Aggregate mothers age into five year periods
-# (__tmp__, age_grp_lookup) = make_age_range_lookup()
-# births["mother_age_grp"] = births["mother_age"].map(age_grp_lookup)
-# nbirths_byage = births.groupby(by=['year','mother_age_grp']).count().unstack(fill_value=0).stack()
-#
-# # TODO: Census get births by age of mother
-
-
-# %% TODO: Births: Comparison to Region: Comparison in Census in 2018
 
 
 # %% Deaths
