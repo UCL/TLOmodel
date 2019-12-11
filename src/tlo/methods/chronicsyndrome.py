@@ -298,11 +298,20 @@ class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
         become_severe_idx = curr_cs_not_severe[become_severe]
         df.loc[become_severe_idx, 'cs_specific_symptoms'] = 'extreme illness'
 
+        # Report this to the unified symptom manager:
+        if len(become_severe_idx) > 0:
+            self.sim.modules['SymptomManager'].chg_symptom(
+                person_id=list(become_severe_idx),
+                symptom_string='fever',
+                add_or_remove='+',
+                disease_module=self.module,
+                duration_in_days=5)
+
         # 4) With some probability, the new severe cases seek "Emergency care"...
         if len(become_severe_idx) > 0:
             for person_index in become_severe_idx:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(person_index)
-                seeks_care = self.module.rng.rand() < prob
+                prob_seeks_emergency_care = 0.7
+                seeks_care = self.module.rng.rand() < prob_seeks_emergency_care
                 if seeks_care:
                     event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(self.module, person_index)
 
@@ -369,12 +378,12 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
-        the_appt_footprint['AccidentsandEmerg'] = 1  # Plus, an amount of resources similar to an A&E
+        # the_appt_footprint['AccidentsandEmerg'] = 0  # Plus, an amount of resources similar to an A&E
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1  # Can occur at any facility level
+        self.ACCEPTED_FACILITY_LEVEL = 2  # Can occur at this facility level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):

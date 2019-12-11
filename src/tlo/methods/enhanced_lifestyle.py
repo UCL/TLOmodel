@@ -6,6 +6,7 @@ import datetime
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
@@ -317,7 +318,8 @@ class Lifestyle(Module):
     def read_parameters(self, data_folder):
         p = self.parameters
         dfd = pd.read_excel(
-            self.resourcefilepath / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values')
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
+        )
 
         self.load_parameters_from_dataframe(dfd)
         # Manually set dates for campaign starts for now
@@ -1140,21 +1142,21 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 prop_bmi_5_urban_m_not_high_sugar_age1529_not_tob_wealth1
             }
 
+        # Screen for null values before placing in the logger
+        for k, v in bmi_proportions.items():
+            if np.isnan(v):
+                bmi_proportions[k] = 0.0
+
         logger.info(
             '%s|bmi_proportions|%s',
             self.sim.date,
             bmi_proportions
         )
 
-        #       logger.debug('%s|person_one|%s',
-        #                    self.sim.date,
-        #                    df.loc[0].to_dict())
-
         """
         logger.info('%s|li_urban|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_urban').size().to_dict())
-
         logger.info('%s|li_wealth|%s',
                     self.sim.date,
                     df[df.is_alive].groupby('li_wealth').size().to_dict())
