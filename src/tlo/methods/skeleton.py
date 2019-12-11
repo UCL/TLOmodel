@@ -2,15 +2,18 @@
 A skeleton template for disease methods.
 
 """
+import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.healthsystem import HSI_Event
-from tlo.population import logger
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Skeleton(Module):
@@ -23,7 +26,7 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)` [If this is disease module]
+    * `on_birth(mother, child)`
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     *  `report_daly_values()` [If this is disease module]
 
@@ -220,7 +223,8 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         """
         Do any action that is neccessary when the health system interaction is not run.
-        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities
-
+        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
+        Return False to cause this HSI event not to be rescheduled and to therefore never be run.
+        (Returning nothing or True will cause this event to be rescheduled for the next day.)
         """
         pass

@@ -242,9 +242,9 @@ class Mockitis(Module):
             'coughing and irritable': p['daly_wt_coughing'],
             'extreme emergency': p['daly_wt_advanced']
         })
-        health_values.name = 'Mockitis Symptoms'    # label the cause of this disability
+        health_values.name = 'Mockitis Symptoms'  # label the cause of this disability
 
-        return health_values.loc[df.is_alive]   # returns the series
+        return health_values.loc[df.is_alive]  # returns the series
 
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
@@ -302,17 +302,31 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
                 death_event = MockitisDeathEvent(self.module, person_index)
                 self.sim.schedule_event(death_event, df.at[person_index, 'mi_scheduled_date_death'])
 
+            # Give everyone who has mild symptoms, the generic symptom of headache (some will go to care for this)
+            # Report this to the unified symptom manager:
+            if len(infected_idx) > 0:
+                self.sim.modules['SymptomManager'].chg_symptom(
+                    person_id=list(infected_idx),
+                    symptom_string='headache',
+                    add_or_remove='+',
+                    disease_module=self.module,
+                    duration_in_days=10)
+
             # Determine if anyone with severe symptoms will seek care
+            # [as this is a specific symptom the disease module handles it]
             serious_symptoms = (df['is_alive']) & ((df['mi_specific_symptoms'] == 'extreme emergency') | (
                 df['mi_specific_symptoms'] == 'coughing and irritiable'))
 
-            seeks_care = pd.Series(data=False, index=df.loc[serious_symptoms].index)
-            for i in df.index[serious_symptoms]:
-                prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-                seeks_care[i] = self.module.rng.rand() < prob
+            prob_seeks_care_with_severe_symptoms = 0.5
+            does_seek_care_rand_draw_outcome = \
+                (self.module.rng.rand(len(df.loc[serious_symptoms]))) < prob_seeks_care_with_severe_symptoms
+
+            seeks_care = pd.Series(data=does_seek_care_rand_draw_outcome,
+                                   index=df.loc[serious_symptoms].index
+                                   )
 
             if seeks_care.sum() > 0:
-                for person_index in seeks_care.index[seeks_care is True]:
+                for person_index in seeks_care[seeks_care].index:
                     logger.debug(
                         'This is MockitisEvent, scheduling Mockitis_PresentsForCareWithSevereSymptoms for person %d',
                         person_index)
@@ -343,7 +357,6 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
         # Apply checks to ensure that this death should occur
         if df.at[person_id, 'mi_status'] == 'C':
-
             # Fire the centralised death event:
             death = InstantaneousDeath(self.module, person_id, cause='Mockitis')
             self.sim.schedule_event(death, self.sim.date)
@@ -373,7 +386,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 0     # This enforces that the apppointment must be run at that facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -408,7 +421,8 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
 
     def did_not_run(self):
         logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
-        pass
+        # return False to prevent this event from being rescheduled if it did not run.
+        return False
 
 
 class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -493,7 +507,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1   # Allows this HSI to occur at any facility-level
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -517,6 +531,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
         pass
+
 
 # ---------------------------------------------------------------------------------
 
