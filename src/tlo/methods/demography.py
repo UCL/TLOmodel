@@ -1,6 +1,5 @@
 """
 The core demography module and its associated events.
-
 Expects input in format of the 'Demography.xlsx'  of TimH, sent 3/10. Uses the 'Interpolated
 population structure' worksheet within to initialise the age & sex distribution of population.
 """
@@ -13,9 +12,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods import labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -80,7 +78,6 @@ class Demography(Module):
     # and longer description.
     PARAMETERS = {
         'interpolated_pop': Parameter(Types.DATA_FRAME, 'Interpolated population structure'),
-        'fertility_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'mortality_schedule': Parameter(Types.DATA_FRAME, 'Age-spec fertility rates'),
         'fraction_of_births_male': Parameter(Types.REAL, 'Birth Sex Ratio'),
         'district_and_region_data': Parameter(Types.DATA_FRAME,
@@ -94,17 +91,10 @@ class Demography(Module):
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether this individual is alive'),
         'date_of_birth': Property(Types.DATE, 'Date of birth of this individual'),
+        'date_of_death': Property(Types.DATE, 'Date of death of this individual'),
         'sex': Property(Types.CATEGORICAL, 'Male or female', categories=['M', 'F']),
         'mother_id': Property(Types.INT, 'Unique identifier of mother of this individual'),
-        'is_pregnant': Property(Types.BOOL, 'Whether this individual is currently pregnant'),
-        'date_of_last_pregnancy': Property(Types.DATE, 'Date of the last pregnancy of this individual'),
         'is_married': Property(Types.BOOL, 'Whether this individual is currently married'),
-        'contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
-                                  categories=['not using',
-                                              'injections',
-                                              'condom',
-                                              'periodic abstinence',
-                                              'norplant']),
         # Age calculation is handled by demography module
         'age_exact_years': Property(Types.REAL, 'The age of the individual in exact years'),
         'age_years': Property(Types.INT, 'The age of the individual in years'),
@@ -127,8 +117,6 @@ class Demography(Module):
                                  sheet_name=None)
 
         self.parameters['interpolated_pop'] = workbook['Interpolated Pop Structure']
-        self.parameters['fertility_schedule'] = workbook['Age_spec fertility']
- #       self.parmeters['risk_multiple_gestation'] = 0.02
 
         # create new variable that will align with population.sex
         ms = workbook['Mortality Rate']
@@ -151,14 +139,14 @@ class Demography(Module):
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
-
         This method is called by the simulation when creating the initial population, and is
         responsible for assigning initial values, for every individual, of those properties
         'owned' by this module, i.e. those declared in the PROPERTIES dictionary above.
-
         :param population: the population of individuals
         """
         df = population.props
+
+        df.date_of_death = pd.NaT
 
         worksheet = self.parameters['interpolated_pop']
 
@@ -209,13 +197,6 @@ class Demography(Module):
         assert (not pd.isnull(df['region_of_residence']).any())
         assert (not pd.isnull(df['district_of_residence']).any())
 
-        # assign that none of the adult (woman) population is pregnant
-        df.loc[df.is_alive, 'is_pregnant'] = False
-        df.loc[df.is_alive, 'date_of_last_pregnancy'] = pd.NaT
-
-        # TODO: Lifestyle module should look after contraception property
-        df.loc[df.is_alive, 'contraception'] = 'not using'  # this will be ascribed by the lifestype module
-
         age_in_days = self.sim.date - df.loc[df.is_alive, 'date_of_birth']
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
@@ -229,7 +210,6 @@ class Demography(Module):
 
     def initialise_simulation(self, sim):
         """Get ready for simulation start.
-
         This method is called just before the main simulation loop begins, and after all
         modules have read their parameters and the initial population has been created.
         It is a good place to add initial events to the event queue.
@@ -237,9 +217,6 @@ class Demography(Module):
         # Update age information every day
         sim.schedule_event(AgeUpdateEvent(self, self.AGE_RANGE_LOOKUP),
                            sim.date + DateOffset(days=1))
-
-        # check all population to determine if pregnancy should be triggered (repeats every month)
-        sim.schedule_event(PregnancyPoll(self), sim.date + DateOffset(months=1))
 
         # check all population to determine if person should die (from causes other than those
         # explicitly modelled) (repeats every month)
@@ -250,9 +227,7 @@ class Demography(Module):
 
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual.
-
         This is called by the simulation whenever a new person is born.
-
         :param mother_id: the mother for this child
         :param child_id: the new child
         """
@@ -265,36 +240,20 @@ class Demography(Module):
         df.at[child_id, 'sex'] = self.rng.choice(['M', 'F'], p=[f_male, 1 - f_male])
 
         df.at[child_id, 'mother_id'] = mother_id
-        df.at[child_id, 'is_pregnant'] = False
-        df.at[child_id, 'la_due_date'] = pd.NaT
-        df.at[child_id, 'date_of_last_pregnancy'] = pd.NaT
 
         df.at[child_id, 'is_married'] = False
-        df.at[child_id, 'contraception'] = 'not using'  # TODO: contraception should be governed by lifestyle module
 
         df.at[child_id, 'age_exact_years'] = 0.0
         df.at[child_id, 'age_years'] = 0
         df.at[child_id, 'age_range'] = self.AGE_RANGE_LOOKUP[0]
 
-        # Reset the mother's is_pregnant status showing that she is no longer pregnant
-        df.at[mother_id, 'is_pregnant'] = False
-
         # Child's residence is inherited from the mother
         df.at[child_id, 'region_of_residence'] = df.at[mother_id, 'region_of_residence']
         df.at[child_id, 'district_of_residence'] = df.at[mother_id, 'district_of_residence']
 
-        # Log all births (live and intrapartum stillbirth): #todo: this isnt counting antepartum stillbirth
+        # Log the birth:
         logger.info('%s|on_birth|%s',
-                        self.sim.date,
-                    {
-                        'mother': mother_id,
-                        'child': child_id,
-                        'mother_age': df.at[mother_id, 'age_years']
-                    })
-        # Log only live births:
-        if ~df.at[mother_id,'la_intrapartum_still_birth']:
-            logger.info('%s|live_births|%s',
-                        self.sim.date,
+                    self.sim.date,
                     {
                         'mother': mother_id,
                         'child': child_id,
@@ -318,69 +277,8 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype(int)
-        df.loc[df.is_alive, 'age_range'] = df.age_years.map(self.age_range_lookup)
+        df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
         df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
-
-
-class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
-    """
-    This event looks across each woman in the population to determine who will become pregnant
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(months=1))
-        self.age_low = 15
-        self.age_high = 49
-
-    def apply(self, population):
-
-        params = self.module.parameters
-
-        logger.debug('Checking to see if anyone should become pregnant....')
-
-        if self.sim.date > Date(2035, 1, 1):
-            logger.debug('Now after 2035')
-
-        df = population.props  # get the population dataframe
-
-        # get the subset of women from the population dataframe and relevant characteristics
-        subset = (df.sex == 'F') & df.is_alive & df.age_years.between(self.age_low, self.age_high) & ~df.is_pregnant
-        females = df.loc[subset, ['contraception', 'age_years']]
-
-        # load the fertility schedule (imported datasheet from excel workbook)
-        fertility_schedule = self.module.parameters['fertility_schedule']
-
-        # --------
-
-        # get the probability of pregnancy for each woman in the model, through merging with the fert_schedule data
-        len_before_merge = len(females)
-        females = females.reset_index().merge(fertility_schedule,
-                                              left_on=['age_years', 'contraception'],
-                                              right_on=['age', 'cmeth'],
-                                              how='inner').set_index('person')
-        assert len(females) == len_before_merge
-
-        # flipping the coin to determine if this woman will become pregnant
-        newly_pregnant = (self.module.rng.random_sample(size=len(females)) < females.basefert_dhs / 12)
-
-        # the imported number is a yearly proportion. So adjust the rate according
-        # to the frequency with which the event is recurring
-        # TODO: this should be linked to the self.frequency value
-
-        newly_pregnant_ids = females.index[newly_pregnant]
-
-        # updating the pregnancy status for that women
-
-        df.loc[newly_pregnant_ids, 'is_pregnant'] = True
-        df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
-
-        # All newly pregnant women then move to the labour module where it will be determine if they experience an
-        # early pregnancy loss. If there is no miscarriage, labour and birth are scheduled
-
-        for female_id in newly_pregnant_ids:
-            logger.debug('female %d pregnant at age: %d', female_id, females.at[female_id, 'age_years'])
-            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], female_id, cause='pregnancy')
-                                    , self.sim.date)
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
@@ -458,6 +356,7 @@ class InstantaneousDeath(Event, IndividualScopeEventMixin):
             # here comes the death.......
             df.at[individual_id, 'is_alive'] = False
             # the person is now dead
+            df.at[individual_id, 'date_of_death'] = self.sim.date
 
         logger.debug("*******************************************The person %s "
                      "is now officially dead and has died of %s", individual_id, self.cause)

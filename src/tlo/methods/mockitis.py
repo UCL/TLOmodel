@@ -6,6 +6,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.demography import InstantaneousDeath
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,7 +27,9 @@ class Mockitis(Module):
         'p_infection': Parameter(
             Types.REAL, 'Probability that an uninfected individual becomes infected'),
         'level_of_symptoms': Parameter(
-            Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
+            Types.CATEGORICAL,
+            'Level of symptoms that the individual will have',
+            categories=['low', 'high']),
         'p_cure': Parameter(
             Types.REAL, 'Probability that a treatment is successful in curing the individual'),
         'initial_prevalence': Parameter(
@@ -129,7 +132,7 @@ class Mockitis(Module):
         infected_td_ago = pd.to_timedelta(infected_years_ago, unit='y')
 
         # date of death of the infected individuals (in the future)
-        death_years_ahead = np.random.exponential(scale=20, size=infected_count)
+        death_years_ahead = self.rng.exponential(scale=20, size=infected_count)
         death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
         # set the properties of infected individuals
@@ -183,7 +186,7 @@ class Mockitis(Module):
         if child_is_infected:
 
             # Scheduled death date
-            death_years_ahead = np.random.exponential(scale=20)
+            death_years_ahead = self.rng.random.exponential(scale=20)
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
 
             # Level of symptoms
@@ -252,6 +255,7 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Mockitis)
 
     def apply(self, population):
 
@@ -270,14 +274,15 @@ class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
             prevalence = 0
 
         # 2. handle new infections
-        now_infected = np.random.choice([True, False], size=len(currently_uninfected),
-                                        p=[prevalence, 1 - prevalence])
+        now_infected = self.module.rng.choice([True, False],
+                                              size=len(currently_uninfected),
+                                              p=[prevalence, 1 - prevalence])
 
         # if any are infected
         if now_infected.sum():
             infected_idx = currently_uninfected[now_infected]
 
-            death_years_ahead = np.random.exponential(scale=2, size=now_infected.sum())
+            death_years_ahead = self.module.rng.exponential(scale=2, size=now_infected.sum())
             death_td_ahead = pd.to_timedelta(death_years_ahead, unit='y')
             symptoms = self.module.rng.choice(
                 self.module.parameters['level_of_symptoms']['level_of_symptoms'],
@@ -331,6 +336,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
@@ -347,7 +353,7 @@ class MockitisDeathEvent(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 
-class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEventMixin):
+class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -358,6 +364,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
@@ -365,12 +372,11 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_PresentsForCareWithSevereSymptoms'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]     # This enforces that the apppointment must be run at that facility-level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0     # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         logger.debug('This is HSI_Mockitis_PresentsForCareWithSevereSymptoms, a first appointment for person %d',
                      person_id)
@@ -400,8 +406,12 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(Event, IndividualScopeEvent
                                                                 topen=date_turns_15,
                                                                 tclose=date_turns_15 + DateOffset(months=12))
 
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_PresentsForCareWithSevereSymptoms: did not run')
+        pass
 
-class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
+
+class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -411,40 +421,20 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_Treatment_Initiation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2]  # Enforces that this apppointment must happen at those facility-levels
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at those facility-levels
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         logger.debug('This is HSI_Mockitis_StartTreatment: initiating treatent for person %d', person_id)
         df = self.sim.population.props
         treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
@@ -477,8 +467,12 @@ class HSI_Mockitis_StartTreatment(Event, IndividualScopeEventMixin):
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2)
                                                             )
 
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_StartTreatment: did not run')
+        pass
 
-class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
+
+class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
 
@@ -489,40 +483,20 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Mockitis)
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient appt
         the_appt_footprint['NewAdult'] = 1  # Plus, an amount of resources similar to an HIV initiation
 
-        # Get the consumables required
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        pkg_code1 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'First line treatment for new TB cases for adults',
-                                              'Intervention_Pkg_Code'])[0]
-        pkg_code2 = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'MDR notification among previously treated patients',
-                                              'Intervention_Pkg_Code'])[0]
-
-        item_code1 = \
-            pd.unique(consumables.loc[consumables['Items'] == 'Ketamine hydrochloride 50mg/ml, 10ml', 'Item_Code'])[0]
-        item_code2 = pd.unique(consumables.loc[consumables['Items'] == 'Underpants', 'Item_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code1, pkg_code2],
-            'Item_Code': [item_code1, item_code2]
-        }
-
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Mockitis_TreatmentMonitoring'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = ['*']   # Allows this HSI to occur at any facility-level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1   # Allows this HSI to occur at any facility-level
         self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         # There is a follow-up appoint happening now but it has no real effect!
 
         # Create the next follow-up appointment....
@@ -540,6 +514,9 @@ class HSI_Mockitis_TreatmentMonitoring(Event, IndividualScopeEventMixin):
                                                             topen=target_date_for_followup_appt,
                                                             tclose=target_date_for_followup_appt + DateOffset(weeks=2))
 
+    def did_not_run(self):
+        logger.debug('HSI_Mockitis_TreatmentMonitoring: did not run')
+        pass
 
 # ---------------------------------------------------------------------------------
 
@@ -551,6 +528,7 @@ class MockitisLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # run this event every month
         self.repeat = 6
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Mockitis)
 
     def apply(self, population):
         # get some summary statistics
