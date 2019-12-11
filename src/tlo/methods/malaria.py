@@ -665,6 +665,28 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             # ----------------------------------- HEALTHCARE-SEEKING -----------------------------------
             # clinical cases will seek care with some probability
             # severe cases will definitely seek care
+
+            # Give everyone with clinical malaria generic symptom fever (some will go to care for this)
+            # Report this to the unified symptom manager:
+            # this just gives the person the symptom
+            if len(clin) > 0:
+                self.sim.modules['SymptomManager'].chg_symptom(
+                    person_id=list(clin),
+                    symptom_string='fever',
+                    add_or_remove='+',
+                    disease_module=self.module,
+                    duration_in_days=10)
+
+
+
+
+
+
+
+
+
+
+
             interv = p['interv']
 
             # find annual intervention coverage levels rate for 2010
@@ -1657,6 +1679,7 @@ class MalariaPrevDistrictLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # get some summary statistics
         df = population.props
 
+        # todo this could be PfPR in 2-10 yr olds and clinical incidence too
         # ------------------------------------ PREVALENCE OF INFECTION ------------------------------------
         infected = df[df.is_alive & df.ma_is_infected].groupby('ma_district_edited').size()
         pop = df[df.is_alive].groupby('ma_district_edited').size()
