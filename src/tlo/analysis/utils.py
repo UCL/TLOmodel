@@ -5,9 +5,9 @@ import logging
 from ast import literal_eval
 from collections import defaultdict
 from pathlib import Path
+
 import pandas as pd
 from pandas.api.types import CategoricalDtype
-
 
 from tlo.methods.demography import make_age_range_lookup
 
