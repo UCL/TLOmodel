@@ -670,6 +670,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             # Report this to the unified symptom manager:
             # this just gives the person the symptom
             if len(clin) > 0:
+
                 self.sim.modules['SymptomManager'].chg_symptom(
                     person_id=list(clin),
                     symptom_string='fever',
@@ -677,77 +678,67 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                     disease_module=self.module,
                     duration_in_days=10)
 
-
-
-
-
-
-
-
-
-
-
-            interv = p['interv']
-
-            # find annual intervention coverage levels rate for 2010
-            act = interv.loc[interv.Year == now.year, 'ACT_coverage'].values[0]
-            # act = 1
-            act = act * 3  # correction for HSI capacity restrictions -> actual act coverage
-
-            # todo: MIS 2017 54% children <5 with fever sought care
-            # todo: 30.5% sought care same/next day
-            # CLINICAL CASES
-            seeks_care = pd.Series(data=False, index=df.loc[clin].index)
-
-            # todo check no-one with symptoms=none is in clin index
-            for i in df.loc[clin].index:
-                # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
-                seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
-
-            # print('seeks_care', seeks_care.sum())
-            if seeks_care.sum() > 0:
-
-                for person_index in seeks_care.index[seeks_care]:
-                    # print(person_index)
-
-                    logger.debug(
-                        'MalariaEvent: scheduling HSI_Malaria_rdt for clinical malaria case %d',
-                        person_index)
-
-                    delay = rng.choice(7)
-                    # print(delay)
-
-                    event = HSI_Malaria_rdt(self.module, person_id=person_index)
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                        priority=2,
-                                                                        topen=self.sim.date + DateOffset(days=delay),
-                                                                        tclose=self.sim.date + DateOffset(
-                                                                            days=(delay + 14))
-                                                                        )
-            else:
-                logger.debug(
-                    'MalariaEventNational: There is no new healthcare seeking for clinical cases')
-
-            # SEVERE CASES
-            # todo check only severe cases are passing through here
-            severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
-
-            for person_index in severe:
-                # print(person_index)
-
-                logger.debug(
-                    'MalariaEventNational: scheduling HSI_Malaria_rdt for severe malaria case %d',
-                    person_index)
-
-                delay = rng.choice(2)
-                # print(delay)
-
-                event = HSI_Malaria_rdt(self.module, person_id=person_index)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=2,
-                                                                    topen=self.sim.date + DateOffset(days=delay),
-                                                                    tclose=self.sim.date + DateOffset(days=(delay + 14))
-                                                                    )
+            # interv = p['interv']
+            #
+            # # find annual intervention coverage levels rate for 2010
+            # act = interv.loc[interv.Year == now.year, 'ACT_coverage'].values[0]
+            # # act = 1
+            # act = act * 3  # correction for HSI capacity restrictions -> actual act coverage
+            #
+            # # todo: MIS 2017 54% children <5 with fever sought care
+            # # todo: 30.5% sought care same/next day
+            # # CLINICAL CASES
+            # seeks_care = pd.Series(data=False, index=df.loc[clin].index)
+            #
+            # # todo check no-one with symptoms=none is in clin index
+            # for i in df.loc[clin].index:
+            #     # prob = self.sim.modules['HealthSystem'].get_prob_seek_care(i, symptom_code=4)
+            #     seeks_care[i] = rng.rand() < act  # placeholder for coverage / testing rates
+            #
+            # # print('seeks_care', seeks_care.sum())
+            # if seeks_care.sum() > 0:
+            #
+            #     for person_index in seeks_care.index[seeks_care]:
+            #         # print(person_index)
+            #
+            #         logger.debug(
+            #             'MalariaEvent: scheduling HSI_Malaria_rdt for clinical malaria case %d',
+            #             person_index)
+            #
+            #         delay = rng.choice(7)
+            #         # print(delay)
+            #
+            #         event = HSI_Malaria_rdt(self.module, person_id=person_index)
+            #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+            #                                                             priority=2,
+            #                                                             topen=self.sim.date + DateOffset(days=delay),
+            #                                                             tclose=self.sim.date + DateOffset(
+            #                                                                 days=(delay + 14))
+            #                                                             )
+            # else:
+            #     logger.debug(
+            #         'MalariaEventNational: There is no new healthcare seeking for clinical cases')
+            #
+            # # SEVERE CASES
+            # # todo check only severe cases are passing through here
+            # severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
+            #
+            # for person_index in severe:
+            #     # print(person_index)
+            #
+            #     logger.debug(
+            #         'MalariaEventNational: scheduling HSI_Malaria_rdt for severe malaria case %d',
+            #         person_index)
+            #
+            #     delay = rng.choice(2)
+            #     # print(delay)
+            #
+            #     event = HSI_Malaria_rdt(self.module, person_id=person_index)
+            #     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+            #                                                         priority=2,
+            #                                                         topen=self.sim.date + DateOffset(days=delay),
+            #                                                         tclose=self.sim.date + DateOffset(days=(delay + 14))
+            #                                                         )
 
             # ----------------------------------- SCHEDULED DEATHS -----------------------------------
             # schedule deaths within the next week

@@ -52,6 +52,14 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
 
         diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
+        malaria_dx_outcome = self.sim.modules['Malaira'].dx_using_rdt(person_id)
+        # need outcomes for true, false or not avail.
+        # write rdt function here which tests and returns the diagnosis
+
+        # make sure query consumables has the generic hsi as the module requesting
+
+
+
         # Work out what to do with this person....
         if self.sim.population.props.at[person_id, 'age_years'] < 5.0:
             # It's a child:
