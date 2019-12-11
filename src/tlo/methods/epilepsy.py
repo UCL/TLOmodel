@@ -4,8 +4,9 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 # todo: code specific clinic visits
 
@@ -117,36 +118,11 @@ class Epilepsy(Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-
+        # Update parameters from the resource dataframe
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Epilepsy.xlsx', sheet_name='parameter_values')
-
-        dfd.set_index('parameter_name', inplace=True)
+        self.load_parameters_from_dataframe(dfd)
 
         p = self.parameters
-
-        p['init_epil_seiz_status'] = [
-            dfd.loc['init_epil_seiz_status', 'value'],
-            dfd.loc['init_epil_seiz_status', 'value2'],
-            dfd.loc['init_epil_seiz_status', 'value3'],
-            dfd.loc['init_epil_seiz_status', 'value4'],
-        ]
-        p['init_prop_antiepileptic_seiz_stat_1'] = dfd.loc['init_prop_antiepileptic_seiz_stat_1', 'value']
-        p['init_prop_antiepileptic_seiz_stat_2'] = dfd.loc['init_prop_antiepileptic_seiz_stat_2', 'value']
-        p['init_prop_antiepileptic_seiz_stat_3'] = dfd.loc['init_prop_antiepileptic_seiz_stat_3', 'value']
-        p['base_3m_prob_epilepsy'] = dfd.loc['base_3m_prob_epilepsy', 'value']
-        p['rr_epilepsy_age_ge20'] = dfd.loc['rr_epilepsy_age_ge20', 'value']
-        p['prop_inc_epilepsy_seiz_freq'] = dfd.loc['prop_inc_epilepsy_seiz_freq', 'value']
-        p['rr_effectiveness_antiepileptics'] = dfd.loc['rr_effectiveness_antiepileptics', 'value']
-        p['base_prob_3m_seiz_stat_freq_infreq'] = dfd.loc['base_prob_3m_seiz_stat_freq_infreq', 'value']
-        p['base_prob_3m_seiz_stat_infreq_freq'] = dfd.loc['base_prob_3m_seiz_stat_infreq_freq', 'value']
-        p['base_prob_3m_seiz_stat_none_freq'] = dfd.loc['base_prob_3m_seiz_stat_none_freq', 'value']
-        p['base_prob_3m_seiz_stat_none_infreq'] = dfd.loc['base_prob_3m_seiz_stat_none_infreq', 'value']
-        p['base_prob_3m_seiz_stat_infreq_none'] = dfd.loc['base_prob_3m_seiz_stat_infreq_none', 'value']
-        p['base_prob_3m_antiepileptic'] = dfd.loc['base_prob_3m_antiepileptic', 'value']
-        p['rr_antiepileptic_seiz_infreq'] = dfd.loc['rr_antiepileptic_seiz_infreq', 'value']
-        p['base_prob_3m_stop_antiepileptic'] = dfd.loc['base_prob_3m_stop_antiepileptic', 'value']
-        p['rr_stop_antiepileptic_seiz_infreq_or_freq'] = dfd.loc['rr_stop_antiepileptic_seiz_infreq_or_freq', 'value']
-        p['base_prob_3m_epi_death'] = dfd.loc['base_prob_3m_epi_death', 'value']
 
         if 'HealthBurden' in self.sim.modules.keys():
             # get the DALY weight - 860-862 are the sequale codes for epilepsy
@@ -475,7 +451,7 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                     })
 
 
-class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
+class HSI_Epilepsy_Start_Anti_Epilpetic(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is first appointment that someone has when they present to the healthcare system with the severe
@@ -493,12 +469,11 @@ class HSI_Epilepsy_Start_Anti_Epilpetic(Event, IndividualScopeEventMixin):
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Epilepsy_Start_Anti-Epilpetics'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # This enforces that the apppointment must be run at that facility-level
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # This enforces that the apppointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
 

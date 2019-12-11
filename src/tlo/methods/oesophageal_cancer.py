@@ -8,8 +8,9 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -109,13 +110,13 @@ class Oesophageal_Cancer(Module):
             "relative rate of receiving medical treatment aimed at cure if have stage3, "
             "given diagnosis (surgery, radiotherapy and/or chemotherapy",
         ),
-        "r_diagnosis_low_grade_dysp": Parameter(
+        "rr_diagnosis_low_grade_dysp": Parameter(
             Types.REAL, "probability per 3 months of diagnosis in a person with low grade oesophageal dysplasia"
         ),
         "rr_diagnosis_high_grade_dysp": Parameter(
             Types.REAL, "rate ratio for diagnosis if have high grade oesophageal dysplasia"
         ),
-        "rr_diagnosis_stage1": Parameter(
+        "r_diagnosis_stage1": Parameter(
             Types.REAL, "rate ratio for diagnosis if have high stage 1 oesophageal cancer"
         ),
         "rr_diagnosis_stage2": Parameter(
@@ -128,7 +129,7 @@ class Oesophageal_Cancer(Module):
             Types.REAL, "rate ratio for diagnosis if have high stage 4 oesophageal cancer"
         ),
         "init_prop_oes_cancer_stage": Parameter(
-            Types.REAL,
+            Types.LIST,
             "initial proportions in ca_oesophagus categories for man aged 20 with no excess alcohol and no tobacco",
         ),
         "rp_oes_cancer_female": Parameter(
@@ -214,68 +215,12 @@ class Oesophageal_Cancer(Module):
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights
         """
-        p = self.parameters
+        # Update parameters from the resource dataframe
         dfd = pd.read_excel(
             Path(self.resourcefilepath) / "ResourceFile_Oesophageal_Cancer.xlsx", sheet_name="parameter_values"
         )
-        dfd.set_index("parameter_name", inplace=True)
-        p["r_low_grade_dysplasia_none"] = dfd.loc["r_low_grade_dysplasia_none", "value"]
-        p["rr_low_grade_dysplasia_none_female"] = dfd.loc["rr_low_grade_dysplasia_none_female", "value"]
-        p["rr_low_grade_dysplasia_none_per_year_older"] = dfd.loc["rr_low_grade_dysplasia_none_per_year_older", "value"]
-        p["rr_low_grade_dysplasia_none_tobacco"] = dfd.loc["rr_low_grade_dysplasia_none_tobacco", "value"]
-        p["rr_low_grade_dysplasia_none_ex_alc"] = dfd.loc["rr_low_grade_dysplasia_none_ex_alc", "value"]
-        p["r_high_grade_dysplasia_low_grade_dysp"] = dfd.loc["r_high_grade_dysplasia_low_grade_dysp", "value"]
-        p["rr_high_grade_dysp_undergone_curative_treatment"] = dfd.loc[
-            "rr_high_grade_dysp_undergone_curative_treatment", "value"
-        ]
-        p["r_stage1_high_grade_dysp"] = dfd.loc["r_stage1_high_grade_dysp", "value"]
-        p["rr_stage1_undergone_curative_treatment"] = dfd.loc["rr_stage1_undergone_curative_treatment", "value"]
-        p["r_stage2_stage1"] = dfd.loc["r_stage2_stage1", "value"]
-        p["rr_stage2_undergone_curative_treatment"] = dfd.loc["rr_stage2_undergone_curative_treatment", "value"]
-        p["r_stage3_stage2"] = dfd.loc["r_stage3_stage2", "value"]
-        p["rr_stage3_undergone_curative_treatment"] = dfd.loc["rr_stage3_undergone_curative_treatment", "value"]
-        p["r_stage4_stage3"] = dfd.loc["r_stage4_stage3", "value"]
-        p["rr_stage4_undergone_curative_treatment"] = dfd.loc["rr_stage4_undergone_curative_treatment", "value"]
-        p["r_death_oesoph_cancer"] = dfd.loc["r_death_oesoph_cancer", "value"]
-        p["r_curative_treatment_low_grade_dysp"] = dfd.loc["r_curative_treatment_low_grade_dysp", "value"]
-        p["rr_curative_treatment_high_grade_dysp"] = dfd.loc["rr_curative_treatment_high_grade_dysp", "value"]
-        p["rr_curative_treatment_stage1"] = dfd.loc["rr_curative_treatment_stage1", "value"]
-        p["rr_curative_treatment_stage2"] = dfd.loc["rr_curative_treatment_stage2", "value"]
-        p["rr_curative_treatment_stage3"] = dfd.loc["rr_curative_treatment_stage3", "value"]
-        p["r_diagnosis_stage1"] = dfd.loc["r_diagnosis_stage1", "value"]
-        p["rr_diagnosis_low_grade_dysp"] = dfd.loc["rr_diagnosis_low_grade_dysp", "value"]
-        p["rr_diagnosis_high_grade_dysp"] = dfd.loc["rr_diagnosis_high_grade_dysp", "value"]
-        p["rr_diagnosis_stage2"] = dfd.loc["rr_diagnosis_stage2", "value"]
-        p["rr_diagnosis_stage3"] = dfd.loc["rr_diagnosis_stage3", "value"]
-        p["rr_diagnosis_stage4"] = dfd.loc["rr_diagnosis_stage4", "value"]
-        p["init_prop_oes_cancer_stage"] = [
-            dfd.loc["init_prop_oes_cancer_stage", "value"],
-            dfd.loc["init_prop_oes_cancer_stage", "value2"],
-            dfd.loc["init_prop_oes_cancer_stage", "value3"],
-            dfd.loc["init_prop_oes_cancer_stage", "value4"],
-            dfd.loc["init_prop_oes_cancer_stage", "value5"],
-            dfd.loc["init_prop_oes_cancer_stage", "value6"],
-        ]
-        p["rp_oes_cancer_female"] = dfd.loc["rp_oes_cancer_female", "value"]
-        p["rp_oes_cancer_per_year_older"] = dfd.loc["rp_oes_cancer_per_year_older", "value"]
-        p["rp_oes_cancer_tobacco"] = dfd.loc["rp_oes_cancer_tobacco", "value"]
-        p["rp_oes_cancer_ex_alc"] = dfd.loc["rp_oes_cancer_ex_alc", "value"]
-        p["init_prop_diagnosed_oes_cancer_by_stage"] = [
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value2"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value3"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value4"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value5"],
-            dfd.loc["init_prop_diagnosed_oes_cancer_by_stage", "value6"],
-        ]
-        p["init_prop_treatment_status_oes_cancer"] = [
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value2"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value3"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value4"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value5"],
-            dfd.loc["init_prop_treatment_status_oes_cancer", "value6"],
-        ]
+        self.load_parameters_from_dataframe(dfd)
+
         if "HealthBurden" in self.sim.modules.keys():
             # get the DALY weight - 547-550 are the sequale codes for oesophageal cancer
             self.parameters["daly_wt_oes_cancer_controlled"] = self.sim.modules["HealthBurden"].get_daly_weight(
@@ -570,7 +515,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
                 # For this person, determine when they will seek care (uniform distibition [0,91]days from now)
                 date_seeking_care = self.sim.date + pd.DateOffset(days=int(rng.uniform(0, 91)))
                 # For this person, create the HSI Event for their presentation for care
-                hsi_present_for_care = HSIoStartTreatmentLowGradeOesDysplasia(self.module, person_id)
+                hsi_present_for_care = HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(self.module, person_id)
                 # Enter this event to the HealthSystem
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_present_for_care, priority=0, topen=date_seeking_care, tclose=None
@@ -628,7 +573,7 @@ class OesCancerEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
 
-class HSIoStartTreatmentLowGradeOesDysplasia(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentLowGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     It is appointment at which someone with low grade oes dysplasia is treated.
@@ -641,100 +586,88 @@ class HSIoStartTreatmentLowGradeOesDysplasia(Event, IndividualScopeEventMixin):
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
         # Get the consumables required
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_low_grade_oes_dysplasia"
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "low_grade_dysplasia"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentHighGradeOesDysplasia(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentHighGradeOesDysplasia(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
+
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_high_grade_oes_dysplasia"
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Enforces that this apppointment must happen at level 0
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "high_grade_dysplasia"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage1OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage1OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage1_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage1"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage2OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage2OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
-        # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage2_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage2"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date
 
 
-class HSIoStartTreatmentStage3OesCancer(Event, IndividualScopeEventMixin):
+class HSI_OesCancer_StartTreatmentStage3OesCancer(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         # todo this below will change to another type of appointment
         the_appt_footprint["Over5OPD"] = 1  # This requires one out patient appt
-        the_cons_footprint = self.sim.modules["HealthSystem"].get_blank_cons_footprint()
         # TODO: Here adjust the cons footprint so that it includes oes cancer treatment
         # Define the necessary information for an HSI
         self.TREATMENT_ID = "start_treatment_stage3_oes_cancer"
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [0]  # Enforces that this apppointment must happen at level 0
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1  # Enforces that this apppointment must happen at level 1
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         df.at[person_id, "ca_oesophagus_curative_treatment"] = "stage3"
         df.at[person_id, "ca_date_treatment_oesophageal_cancer"] = self.sim.date

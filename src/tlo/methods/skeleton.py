@@ -2,15 +2,18 @@
 A skeleton template for disease methods.
 
 """
-import pandas as pd
+import logging
 
 from tlo import DateOffset, Module, Parameter, Property, Types
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.population import logger
+from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.methods.healthsystem import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class Skeleton(Module):
@@ -23,7 +26,7 @@ class Skeleton(Module):
     * `read_parameters(data_folder)`
     * `initialise_population(population)`
     * `initialise_simulation(sim)`
-    * `on_birth(mother, child)` [If this is disease module]
+    * `on_birth(mother, child)`
     * `on_hsi_alert(person_id, treatment_id)` [If this is disease module]
     *  `report_daly_values()` [If this is disease module]
 
@@ -78,7 +81,6 @@ class Skeleton(Module):
 
         If this is a disease module, register this disease module with the healthsystem:
         self.sim.modules['HealthSystem'].register_disease_module(self)
-
         """
 
         raise NotImplementedError
@@ -139,6 +141,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
         :param module: the module that created this event
         """
         super().__init__(module, frequency=DateOffset(months=1))
+        assert isinstance(module, Skeleton)
 
     def apply(self, population):
         """Apply this event to the population.
@@ -164,6 +167,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # run this event every year
         self.repeat = 12
         super().__init__(module, frequency=DateOffset(months=self.repeat))
+        assert isinstance(module, Skeleton)
 
     def apply(self, population):
         # Make some summary statitics
@@ -182,7 +186,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
 
-class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
+class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
     like this.
     It must begin HSI_<Module_Name>_Description
@@ -190,6 +194,7 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Skeleton)
 
         # Define the call on resources of this treatment event: Time of Officers (Appointments)
         #   - get an 'empty' footprint:
@@ -197,24 +202,29 @@ class HSI_Skeleton_Example_Interaction(Event, IndividualScopeEventMixin):
         #   - update to reflect the appointments that are required
         the_appt_footprint['Over5OPD'] = 1  # This requires one out patient
 
-        # Define the call on resources of this treatment event: Consumables
-        #   - get a blank consumables footprint
-        the_cons_footprint = self.sim.modules['HealthSystem'].get_blank_cons_footprint()
-        #   - update with any consumables that are needed. Look in ResourceFile_Consumables.csv
-
-        # Define the facilities at which this event can occur
-        #   - this will find all the available facility levels
-        the_accepted_facility_levels = \
-            list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
-                           ['Facility_Level']))
+        # Define the facilities at which this event can occur (only one is allowed)
+        # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
+        #                            ['Facility_Level']))
+        the_accepted_facility_level = 0
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = the_accepted_facility_levels
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
-        """ Do the action that take place in this health system interaction. """
+    def apply(self, person_id, squeeze_factor):
+        """
+        Do the action that take place in this health system interaction, in light of squeeze_factor
+        Can reutrn an updated APPT_FOOTPRINT if this differs from the declaration in self.EXPECTED_APPT_FOOTPRINT
+        """
+        pass
+
+    def did_not_run(self):
+        """
+        Do any action that is neccessary when the health system interaction is not run.
+        This is called each day that the HSI is 'due' but not run due to insufficient health system capabilities.
+        Return False to cause this HSI event not to be rescheduled and to therefore never be run.
+        (Returning nothing or True will cause this event to be rescheduled for the next day.)
+        """
         pass
