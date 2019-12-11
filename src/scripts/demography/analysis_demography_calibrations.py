@@ -20,7 +20,7 @@ from tlo.methods.demography import make_age_range_lookup
 
 
 # Where will output go - by default, wherever this script is run
-outputpath = ""
+resourcefilepath = Path("./outputs") # folder for convenience of storing outputs - content does not need to be on git
 
 # date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
