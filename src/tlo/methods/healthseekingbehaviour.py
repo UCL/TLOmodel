@@ -104,37 +104,37 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Region
             if person_profile['region_of_residence'] == 'Northern':
-                f *= np.log(1.00)
+                f += np.log(1.00)
             elif person_profile['region_of_residence'] == 'Central':
-                f *= np.log(0.61)
+                f += np.log(0.61)
             elif person_profile['region_of_residence'] == 'Southern':
-                f *= np.log(0.67)
+                f += np.log(0.67)
             else:
                 raise Exception('region_of_residence not recognised')
 
             # Urban/Rural residence
             if person_profile['li_urban'] is False:
-                f *= np.log(1.00)
+                f += np.log(1.00)
             else:
-                f *= np.log(1.63)
+                f += np.log(1.63)
 
             # Sex
             if person_profile['sex'] == 'M':
-                f *= np.log(1.00)
+                f += np.log(1.00)
             else:
-                f *= np.log(1.19)
+                f += np.log(1.19)
 
             # Age-group
             if person_profile['age_years'] < 5:
-                f *= np.log(1.00)
+                f += np.log(1.00)
             elif person_profile['age_years'] < 15:
-                f *= np.log(0.64)
+                f += np.log(0.64)
             elif person_profile['age_years'] < 35:
-                f *= np.log(0.51)
+                f += np.log(0.51)
             elif person_profile['age_years'] < 60:
-                f *= np.log(0.54)
+                f += np.log(0.54)
             else:
-                f *= np.log(0.44)
+                f += np.log(0.44)
 
             # Year
             # - not encoded: this effect ignored
@@ -144,37 +144,37 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
 
             # Symptom - (can have more than one)
             if person_profile['sy_fever']:
-                f *= np.log(1.86)
+                f += np.log(1.86)
 
             if person_profile['sy_vomiting']:
-                f *= np.log(1.28)
+                f += np.log(1.28)
 
             if person_profile['sy_stomachache']:
-                f *= np.log(0.76)
+                f += np.log(0.76)
 
             if person_profile['sy_sore_throat']:
-                f *= np.log(0.89)
+                f += np.log(0.89)
 
             if person_profile['sy_respiratory_symptoms']:
-                f *= np.log(0.71)
+                f += np.log(0.71)
 
             if person_profile['sy_headache']:
-                f *= np.log(0.52)
+                f += np.log(0.52)
 
             if person_profile['sy_skin_complaint']:
-                f *= np.log(2.31)
+                f += np.log(2.31)
 
             if person_profile['sy_dental_complaint']:
-                f *= np.log(0.94)
+                f += np.log(0.94)
 
             if person_profile['sy_backache']:
-                f *= np.log(1.01)
+                f += np.log(1.01)
 
             if person_profile['sy_injury']:
-                f *= np.log(1.02)
+                f += np.log(1.02)
 
             if person_profile['sy_eye_complaint']:
-                f *= np.log(1.33)
+                f += np.log(1.33)
 
             # convert into a probability of seeking care:
             prob_seeking_care = 1 / (1 + np.exp(-f))
