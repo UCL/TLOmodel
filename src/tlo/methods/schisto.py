@@ -1,5 +1,4 @@
 import logging
-from abc import ABC
 
 import numpy as np
 import pandas as pd
@@ -9,7 +8,6 @@ from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
@@ -505,7 +503,7 @@ class SchistoInfectionsEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[new_infections, 'ss_scheduled_hsi_date'] = df.loc[new_infections, 'ss_schedule_infectiousness_start'] \
                                                               + seeking_treatment_ahead
 
-            ############ schedule events of infection and end of latent period and seeking healthcare
+            ############ schedule events of infection and end of latent period and seeking healthcare ##################
             for person_index in new_infections:
                 infect_event = SchistoInfection(self.module, person_id=person_index)
                 self.sim.schedule_event(infect_event,
@@ -676,22 +674,20 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
         # appt are scheduled and cannot be cancelled in the following situations:
         #   a) person has died
         #   b) the infection has been treated in MDA before the appt happened
-        #   c)
         # also the appt are scheduled for symptomless infections but these people should not actually seek treatment
         # if symptoms cell contains a list then it is NOT symptomless
-        # TODO:symptomless infections - don't send to HSI
         if ((df.loc[person_id, 'is_alive']) &
             (df.loc[person_id, 'ss_is_infected'] == 'Infected') &
             (df.loc[person_id, 'ss_scheduled_hsi_date'] <= self.sim.date) &
             (isinstance(df.loc[person_id, 'ss_haematobium_specific_symptoms'], list))):
 
-            # check if a person is a child or an adult and assign prob of being sent to schisto test (and hence being cured)
+            # check if a person is a child or an adult and assign prob of being sent to schisto test (hence being cured)
             if df.loc[person_id, 'age_years'] <= 15:
                 prob_test = params['prob_sent_to_lab_test_children']
             else:
                 prob_test = params['prob_sent_to_lab_test_adults']
 
-            sent_to_test = self.sim.rng.choice([True, False], p=[prob_test, 1-prob_test])
+            sent_to_test = self.module.rng.choice([True, False], p=[prob_test, 1-prob_test])
 
             if sent_to_test:
                 # request the consumable
@@ -715,6 +711,7 @@ class HSI_SchistoSeekTreatment(HSI_Event, IndividualScopeEventMixin):
                 else:
                     logger.debug('ItemsCode1 is not available, so can' 't use it.')
             else:  # person seeked treatment but was not sent to test
+                # schedule another Seeking Treatment event for that person
                 seeking_treatment_ahead_repeated = int(self.module.rng.uniform(params['delay_till_hsi_a_repeated'],
                                                                    params['delay_till_hsi_b_repeated']))
                 seeking_treatment_ahead_repeated = pd.to_timedelta(seeking_treatment_ahead_repeated, unit='D')

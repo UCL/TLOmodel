@@ -18,12 +18,10 @@ from tlo.methods import (
 
 # Where will output go
 outputpath = ""
-# date-stamp to label log files and any other outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # The resource files
 resourcefilepath = Path("./resources")
-# resourcefilepath = Path(os.path.dirname(__file__)) / '../../../resources'
 start_date = Date(2015, 1, 1)
 end_date = Date(2025, 1, 1)
 popsize = 10000
@@ -134,7 +132,6 @@ def calculate_yearly_dalys(df):
     df.loc[0, 'DALY_monthly'] = df.loc[0, 'DALY_cumulative']
     return df
 
-dalys_output = pd.DataFrame([])
 dalys_output = calculate_yearly_dalys(output['tlo.methods.schisto']['DALY_All'])
 dalys_output['Age_group'] = 'All'
 dalys_output.to_csv(savepath_daly, index=False)
