@@ -497,8 +497,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
         df.loc[newly_pregnant_ids, 'is_pregnant'] = True
         df.loc[newly_pregnant_ids, 'date_of_last_pregnancy'] = self.sim.date
 
-        # loop through each newly pregnant women in order to schedule them a 'delayed birth event'
+        # loop through each newly pregnant women in order to schedule them to have labour sheduled
         for female_id in newly_pregnant_ids:
+            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], female_id, cause='pregnancy')
+                                    , self.sim.date)
+
             logger.info('%s|pregnant_at_age|%s',
                         self.sim.date,
                         {
@@ -506,8 +509,7 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                             'age_years': females.at[female_id, 'age_years']
                         })
 
-            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], female_id, cause='pregnancy')
-                                        , self.sim.date)
+
 
 
 class DelayedBirthEvent(Event, IndividualScopeEventMixin): #TODO: Delete?

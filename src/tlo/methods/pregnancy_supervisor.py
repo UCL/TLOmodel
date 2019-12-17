@@ -1249,13 +1249,13 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
 
         # For those women who will seek care we schedule the appropriate HSI with a high priority, starting with severe
         # pre-eclampsia
-        for person in idx_care_seeker:  # todo: can we do this without a for loop
-            care_seeking_date = self.sim.date
-            event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
-            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,  # ????
-                                                                topen=care_seeking_date,
-                                                                tclose=None)
+#        for person in idx_care_seeker:  # todo: can we do this without a for loop
+#            care_seeking_date = self.sim.date
+#            event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+#                                                                priority=1,  # ????
+#                                                                topen=care_seeking_date,
+#                                                                tclose=None)
 
         # Then we schedule care seeking for women with new onset eclampsia
         prob_seek_care_ec = pd.Series(0.8, index=after_transition_eclampsia)
@@ -1265,13 +1265,13 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['random_draw', 'prob_seek_care_ec']
         idx_care_seeker = dfx.index[dfx.prob_seek_care_ec > dfx.random_draw]
 
-        for person in idx_care_seeker:
-                care_seeking_date = self.sim.date
-                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                priority=1,  # ????
-                                                                topen=care_seeking_date,
-                                                                tclose=None)
+#        for person in idx_care_seeker:
+#                care_seeking_date = self.sim.date
+#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+#                                                                priority=1,  # ????
+#                                                                topen=care_seeking_date,
+#                                                                tclose=None)
 
         # Then we schedule care seeking for women with new onset HELLP
         prob_seek_care_hellp = pd.Series(0.8, index=after_transition_hellp)
@@ -1281,13 +1281,13 @@ class PregnancyDiseaseProgressionEvent(RegularEvent, PopulationScopeEventMixin):
         dfx.columns = ['random_draw', 'prob_seek_care_hellp']
         idx_care_seeker = dfx.index[dfx.prob_seek_care_hellp > dfx.random_draw]
 
-        for person in idx_care_seeker:
-                care_seeking_date = self.sim.date
-                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-                                                                    priority=1,  # ????
-                                                                    topen=care_seeking_date,
-                                                                    tclose=None)
+#        for person in idx_care_seeker:
+#                care_seeking_date = self.sim.date
+#                event = antenatal_care.HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(self.module, person_id=person)
+#                self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+#                                                                    priority=1,  # ????
+#                                                                    topen=care_seeking_date,
+#                                                                    tclose=None)
 
         # Todo: discuss with Tim C if we need to apply symptoms IF we know that severe and > are all symptomatic?
         #  Or do we just apply a code

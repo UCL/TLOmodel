@@ -14,7 +14,7 @@ from tlo.methods.healthsystem import HSI_Event
 
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 class NewbornOutcomes(Module):
@@ -501,15 +501,15 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                                                                == 'moderate_enceph')
                                                            or(df.at[individual_id, 'nb_encephalopathy'] ==
                                                               'severe_enceph')):  #  What about preterm comps?
-            prob = 0.75  # DUMMY VALUE
+            prob = 0 #0.75  # DUMMY VALUE
             random = self.sim.rng.random_sample(size=1)
             if random < prob:
                 event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=individual_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=0, # Should this be the same as FD
                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=14)
-                                                                    )
+                                                                    tclose=None
+                                                                    ) # TODO: Dummy tclose
                 logger.info('This is NewbornOutcomesEvent scheduling HSI_NewbornOutcomes_ReceivesCareFollowingDelivery '
                             'for person %d following a home birth', individual_id)
 
@@ -634,9 +634,10 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Todo: review  (DUMMY)
+        the_appt_footprint['InpatientDays'] = 1  # Todo: review  (DUMMY)
+
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = [1] #2/3??
+        self.ACCEPTED_FACILITY_LEVEL = 1 #2/3??
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -672,7 +673,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         )[0]
         item_code_tc = pd.unique(
             consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code']
-        )[0] # TODO: ointment not eyedrops?
+        )[0]  # TODO: ointment not eyedrops?
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_bcg: 1}, {pkg_code_polio: 1}],
@@ -685,20 +686,48 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         #  delivery kit?)
 
 # ----------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------------------
+
         nci[person_id]['cord_care'] = True
 
 # ------------------------------------- VACCINATIONS (BCG/POLIO) -------------------------------------------------------
-        nci[person_id]['bcg_vacc'] = True
-        nci[person_id]['polio_vacc'] = True
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_bcg]:
+            logger.debug('pkg_code_bcg is available, so use it.')
+            nci[person_id]['bcg_vacc'] = True
+        else:
+            logger.debug('pkg_code_bcg is not available, so can' 't use it.')
+            logger.debug('newborn %d did not receive a BCG vaccine as there was no stock availble', person_id)
+            nci[person_id]['bcg_vacc'] = False
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_polio]:
+            logger.debug('pkg_code_polio is available, so use it.')
+            nci[person_id]['polio_vacc'] = True
+        else:
+            logger.debug('pkg_code_polio is not available, so can' 't use it.')
+            logger.debug('newborn %d did not receive a BCG vaccine as there was no stock availble', person_id)
+            nci[person_id]['polio_vacc'] = False
+
 
 # ------------------------------------------ VITAMIN K  ----------------------------------------------------------------
-        nci[person_id]['vit_k'] = True
+        if outcome_of_request_for_consumables['Item_Code'][item_code_vk]:
+            logger.debug('item_code_vk is available, so use it.')
+            nci[person_id]['vit_k'] = True
+        else:
+            logger.debug('item_code_vk is not available, so can' 't use it.')
+            logger.debug('newborn %d did not receive vitamin K prophylaxsis as there was no stock availble', person_id)
+            nci[person_id]['vit_k'] = False
 
 # --------------------------------------- TETRACYCLINE EYE DROPS -------------------------------------------------------
-        nci[person_id]['tetra_eye_d'] = True
+        if outcome_of_request_for_consumables['Item_Code'][item_code_tc]:
+            logger.debug('item_code_tc is available, so use it.')
+            nci[person_id]['tetra_eye_d'] = True
+        else:
+            logger.debug('item_code_tc is not available, so can' 't use it.')
+            logger.debug('newborn %d did not receive tetracycline eyedrops as there was no stock availble', person_id)
+            nci[person_id]['tetra_eye_d'] = False
 
 # --------------------------------- ANTIBIOTIC PROPHYLAXIS (MATERNAL RISK FACTORS)--------------------------------------
         # TODO: need to confirm if this is practice in malawi and find the appropriate risk factors
+        # TODO: Once I have guidlines I need to confirm consumables
 
         nci[person_id]['proph_abx'] = True
 
@@ -763,8 +792,17 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
                                                         tclose=self.sim.date + DateOffset(days=14)
                                                         )
 
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['InpatientDays'] = actual_appt_footprint['InpatientDays'] * 1
 
-class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(Event, IndividualScopeEventMixin):
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
+        pass
+
+
+class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
     This is event manages the administration of newborn resuscitation in the event of birth asphyxia
@@ -772,46 +810,64 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(Event, IndividualScopeEve
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesNewbornResuscitation'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Todo: review  (DUMMY)
+        the_appt_footprint['InpatientDays'] = 1  # Todo: review  (DUMMY)
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]  # DUMMY
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ALERT_OTHER_DISEASES = ['*']
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesNewbornResuscitation'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
+        # TODO: apply effect of squeeze factor
         logger.info('This is HSI_NewbornOutcomes_ReceivesNewbornResuscitation, neonate %d is receiving newborn '
                     'resuscitation following birth ', person_id)
 
-        random = self.sim.rng.random_sample(size=1)
-        if random < params['prob_successful_resuscitation']:
-            df.at[person_id, 'nb_respiratory_depression '] = False # Link to severe enchep
-            logger.info(
-                'Neonate %d has been successfully resuscitated after delivery with birth asphyxia', person_id)
-        # else:
-            # SCHEDULE NICU?
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] ==
+                                             'Neonatal resuscitation (institutional)',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
+        }
 
-class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, IndividualScopeEventMixin):
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('resuscitation equipment is available, so use it.')
+            random = self.sim.rng.random_sample(size=1)
+            if random < params['prob_successful_resuscitation']:
+                df.at[person_id, 'nb_respiratory_depression '] = False  # Link to severe enchep
+                logger.info('Neonate %d has been successfully resuscitated after delivery with birth asphyxia', person_id)
+            # else:
+            # SCHEDULE NICU?
+        else:
+            logger.debug('PkgCode1 is not available, so can' 't use it.')
+            # TODO: apply a probability of death without resuscitation here?
+
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['InpatientDays'] = actual_appt_footprint['InpatientDays'] * 1
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
+        pass
+
+class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
     This is event manages the administration of newborn resuscitation in the event of birth asphyxia
@@ -819,30 +875,20 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, IndividualScopeEvent
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        # Get a blank footprint and then edit to define call on resources of this treatment event
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['Over5OPD'] = 1  # Todo: review  (DUMMY)
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]  # DUMMY
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
-        }
+        assert isinstance(module, NewbornOutcomes)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'NewbornOutcomes_ReceivesTreatmentForSepsis'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
-        self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1  # Todo: review  (DUMMY)
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
@@ -850,13 +896,38 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, IndividualScopeEvent
         logger.info('This is HSI_NewbornOutcomes_ReceivesTreatmentForSepsis, neonate %d is receiving treatment '
                     'for early onsent neonatal sepsis following birth ', person_id)
 
-        # todo: SEPTIC NEWBORNS WOULD BE ADMITTED? AND RECEIVE 7-10 DAY ABX?
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_sep = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                   'Treatment of local infections (newborn)',
+                                                   'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_sep: 1}],
+            'Item_Code': [],
+        }
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+        # TODO: consider 1st line/2nd line/3rd line based on availblity and then re-calc efficacy
+
+        # TODO: SEPTIC NEWBORNS WOULD BE ADMITTED? AND RECEIVE 7-10 DAY ABX?
         treatment_effect = params['prob_cure_antibiotics']
         random = self.sim.rng.random_sample(size=1)
         if treatment_effect > random:
             df.at[person_id,'nb_early_onset_neonatal_sepsis'] = False
             print('Treatment success- antibiotics')
             # schedule inpatient admission
+
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['InpatientDays'] = actual_appt_footprint['InpatientDays'] * 1
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
+        pass
+
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):

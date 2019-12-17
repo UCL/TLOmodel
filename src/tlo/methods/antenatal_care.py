@@ -149,7 +149,7 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
         # Todo, is it here that we should be scheduling future ANC visits or should that be at the first HSI?
 
 
-class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, HSI_Event):
+class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.This is event manages a woman's firs antenatal care visit
     """
@@ -167,7 +167,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, HSI_Event):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [0]  # Community?!
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Community?!
         # TODO: ANC should be offered at level 0-2. Can all interventions be given at level 0?
         self.ALERT_OTHER_DISEASES = ['*']
 
@@ -187,7 +187,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, HSI_Event):
                                              'Intervention_Pkg_Code'])[0]
         pkg_code_syphilis = pd.unique(consumables.loc[consumables[
                                                  'Intervention_Pkg'] == 'Syphilis detection and treatment '
-                                                                        '(pregnant women',
+                                                                        '(pregnant women)',
                                              'Intervention_Pkg_Code'])[0]
         # TODO: should this just be an item code to determine syphilis then refer on for treatment?
 
@@ -231,7 +231,7 @@ class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, HSI_Event):
         pass
 
 
-class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, HSI_Event):
+class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This is event manages all subsequent antenatal care visits additional to a woman's first visit
@@ -250,7 +250,7 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, HSI_Event
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [0]  # Community?!
+        self.ACCEPTED_FACILITY_LEVEL = 0  # Community?!
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -298,7 +298,7 @@ class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, HSI_Event
         pass
 
 
-class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, HSI_Event):
+class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This is event manages diagnosis and referral for women presenting to a health facility with new onset symptoms
@@ -318,7 +318,7 @@ class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, HSI_Event):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -365,7 +365,7 @@ class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, HSI_Event):
         pass
 
 
-class HSI_AntenatalCare_EmergencyTreatment(Event, HSI_Event):
+class HSI_AntenatalCare_EmergencyTreatment(HSI_Event, IndividualScopeEventMixin):
     # TODO: This will likely evolve into smaller HSI's per emergency
     """
     This is a Health System Interaction Event.
@@ -386,7 +386,7 @@ class HSI_AntenatalCare_EmergencyTreatment(Event, HSI_Event):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -433,7 +433,7 @@ class HSI_AntenatalCare_EmergencyTreatment(Event, HSI_Event):
         pass
 
 
-class HSI_AntenatalCare_PostAbortionCare(Event, HSI_Event):  # ??Name
+class HSI_AntenatalCare_PostAbortionCare(HSI_Event, IndividualScopeEventMixin):  # ??Name
     """
     This is a Health System Interaction Event.
     This is event manages treatment for any woman referred for post-abortion care
@@ -452,7 +452,7 @@ class HSI_AntenatalCare_PostAbortionCare(Event, HSI_Event):  # ??Name
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -499,7 +499,7 @@ class HSI_AntenatalCare_PostAbortionCare(Event, HSI_Event):  # ??Name
         pass
 
 
-class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(Event, HSI_Event):  # ??Name
+class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(HSI_Event, IndividualScopeEventMixin):  # ??Name
     """
     This is a Health System Interaction Event.
     This is event manages treatment for women who have experienced an Antepartum Stillbirth
@@ -518,7 +518,7 @@ class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(Event, HSI_Event)
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ACCEPTED_FACILITY_LEVEL = 1  # 2/3?
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
