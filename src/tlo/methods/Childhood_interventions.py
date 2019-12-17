@@ -214,10 +214,10 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
                 convulsions_identified_by_HSA = \
                     self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_id_convulsions'],
                                                                   (1 - p['prob_correct_id_convulsions'])])
-                if convulsions_identified_by_HSA[True]:
+                if convulsions_identified_by_HSA:
                     df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = True
                     df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = True
-                if convulsions_identified_by_HSA[False]:
+                else:
                     df.at[person_id, 'ccm_correctly_identified_general_danger_signs'] = False
                     df.at[person_id, 'ccm_correctly_identified_iccm_danger_sign'] = False
 
@@ -368,6 +368,8 @@ class HSI_ICCM(Event, IndividualScopeEventMixin):
                 # give first dose of treatment before assisting referral
 
         # give referral decision
+        HSA_referral_decision = self.module.rng.rand() < p['prob_correct_referral_decision']
+
         HSA_referral_decision = \
             self.sim.rng.choice([True, False], size=1, p=[p['prob_correct_referral_decision'],
                                                           (1 - p['prob_correct_referral_decision'])])

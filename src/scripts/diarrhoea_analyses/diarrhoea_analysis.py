@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import demography, lifestyle, new_diarrhoea
+from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea
 
 # Where will output go - by default, wherever this script is run
 outputpath = ""
@@ -43,7 +43,7 @@ logging.getLogger().addHandler(fh)
 
 # run the simulation
 sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-sim.register(lifestyle.Lifestyle())
+sim.register(enhanced_lifestyle.Lifestyle())
 # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
 sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
 

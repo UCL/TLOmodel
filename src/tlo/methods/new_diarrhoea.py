@@ -1195,6 +1195,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         ProD_EPEC_idx = p_prolonged_diarr_EPEC.index[ProD_EPEC]
         df.loc[ProD_EPEC_idx, 'gi_diarrhoea_type'] = 'prolonged'
 
+        # Schedule recovery for acute diarrhoea episode
+        recover_acute_stage = df.index[df.is_alive & (df.age_year < 5) & df.gi_diarrhoea_type] != 'prolonged'
+
+        for person_id in recover_acute_stage:
+            self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=person_id),
+                                    df.at[person_id, 'date_of_onset_diarrhoea'] +
+                                    DateOffset(days=int(rng.random_integers(3, 6))))
+
         # TODO: add the effects of risk factors for prolonged - exclusive breastfeed, young age
 
         # # # # # # NEXT ASSIGN THE PROBABILITY OF BECOMING PERSISTENT (over 14 days) # # # # # #
@@ -1223,6 +1231,14 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
         persistent_diarr = becoming_persistent > random_draw
         persistent_diarr_idx = becoming_persistent.index[persistent_diarr]
         df.loc[persistent_diarr_idx, 'gi_diarrhoea_type'] = 'persistent'
+
+        # Schedule recovery for prolonged diarrhoea episode
+        recover_prolonged_stage = df.index[df.is_alive & (df.age_year < 5) & df.gi_diarrhoea_type] == 'prolonged'
+
+        for person_id in recover_prolonged_stage:
+            self.sim.schedule_event(SelfRecoverEvent(self.module, person_id=person_id),
+                                    df.at[person_id, 'date_of_onset_diarrhoea'] +
+                                    DateOffset(days=int(rng.random_integers(7, 13))))
 
         # # # # # # PERSISTENT DIARRHOEA OR SEVERE PERSISTENT DIARRHOEA # # # # # #
         severe_persistent_diarr = \
@@ -1343,6 +1359,25 @@ class AcuteDiarrhoeaEvent(RegularEvent, PopulationScopeEventMixin):
             df.at[recovery_from_diarr_idx, 'gi_diarrhoea_acute_type'] = np.nan
             df.at[recovery_from_diarr_idx, 'gi_diarrhoea_pathogen'] = np.nan
             df.at[recovery_from_diarr_idx, 'gi_dehydration_status'] = 'no dehydration'
+
+
+class SelfRecoverEvent(Event, IndividualScopeEventMixin):
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+    def apply(self, person_id):
+        df = self.sim.population.props  # shortcut to the dataframe
+        # set everything back to default
+        df['gi_diarrhoea_status'] = False
+        df['gi_diarrhoea_acute_type'] = np.nan
+        df['gi_diarrhoea_type'] = np.nan
+        df['gi_persistent_diarrhoea'] = np.nan
+        df['gi_dehydration_status'] = 'no dehydration'
+        df['date_of_onset_diarrhoea'] = pd.NaT
+        df['gi_recovered_date'] = pd.NaT
+        df['gi_diarrhoea_death_date'] = pd.NaT
+        df['gi_diarrhoea_death'] = False
+        df['gi_diarrhoea_pathogen'] = np.nan
 
 
 class DeathDiarrhoeaEvent(Event, IndividualScopeEventMixin):
