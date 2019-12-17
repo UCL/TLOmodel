@@ -60,7 +60,7 @@ class PregnancySupervisor(Module):
         'prob_ectopic_pregnancy': Parameter(
             Types.REAL, 'probability that a womans current pregnancy is ectopic'),
         'level_of_symptoms_ep': Parameter(
-            Types.CATEGORICAL, 'Level of symptoms that the individual will have'),
+            Types.REAL, 'Level of symptoms that the individual will have'),
         'prob_multiples': Parameter(
             Types.REAL, 'probability that a woman is currently carrying more than one pregnancy'),
         'prob_pa_complications': Parameter(
@@ -332,7 +332,7 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
 
     # =========================== GESTATIONAL AGE UPDATE FOR ALL PREGNANT WOMEN ========================================
         # Here we update the gestational age in weeks of all currently pregnant women in the simulation
-        gestation_in_days = self.sim.date - df.loc[df.is_pregnant, 'date_of_last_pregnancy']
+        gestation_in_days = self.sim.date - df.loc[(df.is_pregnant == True), 'date_of_last_pregnancy']
         gestation_in_weeks = gestation_in_days / np.timedelta64(1, 'W')
         pregnant_idx = df.index[df.is_alive & df.is_pregnant]
 

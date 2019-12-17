@@ -10,6 +10,7 @@ from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 
 from tlo.methods import demography, labour, newborn_outcomes
+from tlo.methods.healthsystem import HSI_Event
 
 
 logger = logging.getLogger(__name__)
@@ -616,7 +617,8 @@ class NewbornDeathEvent(Event, IndividualScopeEventMixin):
 
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ================================================
 
-class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEventMixin):
+
+class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This is event manages care received by newborns following a facility delivery, including referral for additional
@@ -625,31 +627,21 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, NewbornOutcomes)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesCareFollowingDelivery'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1  # Todo: review  (DUMMY)
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = [1] #2/3??
+        self.ALERT_OTHER_DISEASES = ['*']
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]  # DUMMY
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'NewbornOutcomes_ReceivesCareFollowingDelivery'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
-        self.ALERT_OTHER_DISEASES = []
-
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
+
         params = self.module.parameters
         m = self
         nci = self.module.newborn_care_info
@@ -657,6 +649,40 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(Event, IndividualScopeEv
         logger.info('This is HSI_NewbornOutcomes_ReceivesCareFollowingDelivery, neonate %d is receiving care from a '
                     'skilled birth attendant following their birth',
                     person_id)
+
+        # TODO: apply effect of squeeze factor
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                   'Clean practices and immediate essential newborn care (in facility)',
+                                                   'Intervention_Pkg_Code'])[0]
+        pkg_code_bcg = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] ==
+                                             'BCG vaccine',
+                                             'Intervention_Pkg_Code'])[0]
+        pkg_code_polio = pd.unique(consumables.loc[consumables[
+                                                     'Intervention_Pkg'] ==
+                                                 'Polio vaccine',
+                                                 'Intervention_Pkg_Code'])[0]
+
+        item_code_vk = pd.unique(
+            consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml', 'Item_Code']
+        )[0]
+        item_code_tc = pd.unique(
+            consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code']
+        )[0] # TODO: ointment not eyedrops?
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_bcg: 1}, {pkg_code_polio: 1}],
+            'Item_Code': [{item_code_vk: 1}, {item_code_tc: 1}],
+        }
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+        # TODO: Need to ensure not double counting consumables (i.e. chlorhexidine for cord care already included in
+        #  delivery kit?)
 
 # ----------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------------------
         nci[person_id]['cord_care'] = True

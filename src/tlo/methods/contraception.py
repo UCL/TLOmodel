@@ -12,6 +12,7 @@ import pandas as pd
 from tlo import Date, DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.util import transition_states
+from tlo.methods import labour
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -424,12 +425,14 @@ class Fail(RegularEvent, PopulationScopeEventMixin):
             df.at[woman, 'is_pregnant'] = True
             df.at[woman, 'date_of_last_pregnancy'] = self.sim.date
             df.at[woman, 'co_unintended_preg'] = True
+            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], woman, cause='pregnancy')
+                                    , self.sim.date)
 
             # schedule date of birth for this pregnancy
-            date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
-            # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
-            df.at[woman, 'co_date_of_childbirth'] = date_of_birth
-            self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
+        #   date_of_birth = self.sim.date + DateOffset(months=9, weeks=-2 + 4 * rng.random_sample())
+        #   # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
+        #   df.at[woman, 'co_date_of_childbirth'] = date_of_birth
+        #   self.sim.schedule_event(DelayedBirthEvent(self.module, mother_id=woman), date_of_birth)
 
             # output some logging if any pregnancy (contraception failure)
             logger.info('%s|fail_contraception|%s',
@@ -503,23 +506,11 @@ class PregnancyPoll(RegularEvent, PopulationScopeEventMixin):
                             'age_years': females.at[female_id, 'age_years']
                         })
 
-            # schedule the birth event for this woman (9 months plus/minus 2 wks)
-            date_of_birth = self.sim.date + DateOffset(months=9,
-                                                       weeks=-2 + 4 * self.module.rng.random_sample())
-            # TODO: change DateOffest to capture full range of gestations inline with Joe's Pregnancy code
-
-            # Schedule the Birth
-            self.sim.schedule_event(DelayedBirthEvent(self.module, female_id),
-                                    date_of_birth)
-
-            logger.info('%s|birth_booked|%s',
-                        self.sim.date,
-                        {
-                            'date': str(date_of_birth)
-                        })
+            self.sim.schedule_event(labour.LabourScheduler(self.sim.modules['Labour'], female_id, cause='pregnancy')
+                                        , self.sim.date)
 
 
-class DelayedBirthEvent(Event, IndividualScopeEventMixin):
+class DelayedBirthEvent(Event, IndividualScopeEventMixin): #TODO: Delete?
     """A one-off event in which a pregnant mother gives birth.
     """
 

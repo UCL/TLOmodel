@@ -1,16 +1,11 @@
-"""
-Module responsible for antenatal care provision and care seeking for pregnant women .
-"""
-
 import logging
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -18,8 +13,11 @@ logger.setLevel(logging.INFO)
 
 class AntenatalCare(Module):
     """
-    This module is responsible for antenatal care seeking and antenatal care health system interaction events
-     for pregnant women """
+    This is the Antenatal Care module. It is responsible for calculating probability of antenatal care seeking and
+    houses all Health System Interaction events pertaining to monitoring and treatment of women during the antenatal
+    period of their pregnancy
+     """
+
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -32,10 +30,7 @@ class AntenatalCare(Module):
     PROPERTIES = {
         'ac_total_anc_visits': Property(Types.INT, 'rolling total of antenatal visits this woman has attended during '
                                                    'her pregnancy'),
-
     }
-
-    TREATMENT_ID = ''
 
     def read_parameters(self, data_folder):
         """
@@ -45,12 +40,9 @@ class AntenatalCare(Module):
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_AntenatalCare.xlsx',
                             sheet_name='parameter_values')
         dfd.set_index('parameter_name', inplace=True)
-
         params['prob_seek_care_first_anc'] = dfd.loc['prob_seek_care_first_anc', 'value']
 
-#        if 'HealthBurden' in self.sim.modules.keys():
-#            params['daly_wt_haemorrhage_moderate'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=339)
-
+        #  We don't
     def initialise_population(self, population):
 
         df = population.props
@@ -93,12 +85,6 @@ class AntenatalCare(Module):
 
         logger.debug('This is AntenatalCare, being alerted about a health system interaction '
                      'person %d for: %s', person_id, treatment_id)
-
-#    def report_daly_values(self):
-
-    #    logger.debug('This is mockitis reporting my health values')
-    #    df = self.sim.population.props  # shortcut to population properties dataframe
-    #    p = self.parameters
 
 
 class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
@@ -160,257 +146,423 @@ class AntenatalCareSeeking(RegularEvent, PopulationScopeEventMixin):
                                                                 priority=1,  # ????
                                                                 topen=care_seeking_date,
                                                                 tclose=None)
-
         # Todo, is it here that we should be scheduling future ANC visits or should that be at the first HSI?
 
 
-class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, IndividualScopeEventMixin):
+class HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit(Event, HSI_Event):
     """
-    This is a Health System Interaction Event.
-    This is event manages a woman's firs antenatal care visit
+    This is a Health System Interaction Event.This is event manages a woman's firs antenatal care visit
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
+
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['AntenatalFirst'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] == 'Basic ANC',
-                                             'Intervention_Pkg_Code'])[0]
-
-        # Todo:Additional consumables to consider: Deworming treatment, syphyllis detection, tetanus toxid
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
-        }
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = [0]  # Community?!
+        # TODO: ANC should be offered at level 0-2. Can all interventions be given at level 0?
+        self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
-        m = self
 
         gestation_at_visit = df.at[person_id, 'ps_gestational_age']
         logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
                     'first antenatal care visit of their pregnancy on date %s at gestation %d', person_id,
-                        self.sim.date, gestation_at_visit)
+                    self.sim.date, gestation_at_visit)
 
-        # consider facility level at which interventions can be delivered- most basic ANC may be able to be delivered
-        # at community level but some additional interventions need to be delivered at higher level facilites
+        # Next we define the consumables required for the HSI to run
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Basic ANC',
+                                             'Intervention_Pkg_Code'])[0]
+        pkg_code_syphilis = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Syphilis detection and treatment '
+                                                                        '(pregnant women',
+                                             'Intervention_Pkg_Code'])[0]
+        # TODO: should this just be an item code to determine syphilis then refer on for treatment?
+
+        pkg_code_tetanus = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Tetanus toxoid (pregnant women)',
+                                             'Intervention_Pkg_Code'])[0]
+        pkg_code_ipt = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'IPT (pregnant women)',
+                                             'Intervention_Pkg_Code'])[0]
+
+        # TODO: Additional deworming package may be appropriate here.
+        # TODO: a/w ANC guidelines to confirm interventions for 1st ANC only - RPD at MoH contacted
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}, {pkg_code_syphilis: 1}, {pkg_code_tetanus: 1},
+                                          {pkg_code_ipt: 1}],
+            'Item_Code': [],
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+        # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor & cons request output
+        # TODO: Intervention code & scheduling of additional ANC visits?
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit: did not run')
+        pass
 
 
-class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, IndividualScopeEventMixin):
+class HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
-    This is event manages all subsequent antenatal care visits additional to her first visit
+    This is event manages all subsequent antenatal care visits additional to a woman's first visit
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
+
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_PresentsForSubsequentAntenatalCareVisit'
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #   the_appt_footprint['Over5OPD'] = 1
         the_appt_footprint['ANCSubsequent'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
-
-        pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'Basic ANC',
-                                                   'Intervention_Pkg_Code'])[0]
-
-        # Additional consumables: Deworming treatment, syphyllis detection, tetanus toxoid,
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
-        }
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForAdditionalAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = [0]  # Community?!
+        self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
-        if ~df.at[person_id,'is_pregnant']:
-            pass
+        # TODO: if this format is kept we need to calculate what number ANC visit this is here
+        logger.info('This is HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit, person %d has presented for '
+                    'a subsequent antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
 
-        logger.info('This is HSI_AntenatalCare_PresentsForFirstAntenatalCareVisit, person %d has presented for the '
-                    'first antenatal care visit of their pregnancy on date %s', person_id, self.sim.date)
+        # Next we define the consumables required for the HSI to run
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Basic ANC',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
+        }
+
+        # TODO:Additional consumables to consider depending on GA at visit and a/w guidelines
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+            # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor
+        # TODO: Intervention code
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_PresentsForSubsequentAntenatalCareVisit: did not run')
+        pass
 
 
-class HSI_AntenatalCare_PresentsDuringPregnancyRelatedEmergency(Event, IndividualScopeEventMixin):  # ??Name
+class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
-    This is event manages care for a woman who presents to a facility during pregnancy with a pregnancy related
+    This is event manages diagnosis and referral for women presenting to a health facility with new onset symptoms
+    during pregnancy
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
+
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_PresentsWithNewSymptoms'
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+
+        # Define the necessary information for an HSI
+        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        params = self.module.parameters
+        m = self
+
+        logger.info('This is HSI_AntenatalCare_PresentsWithNewOnsetSymptoms, person %d has presented for treatment '
+                    'of new onset symptoms during their pregnancy on date %s ', person_id, self.sim.date)
+
+        # Next we define the consumables required for the HSI to run
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Basic ANC',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
+        }
+
+        # TODO: Once diagnostic algorithm is finalised I can accurately request consumables above
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+            # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor
+        # TODO: Intervention code
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_PresentsWithNewOnsetSymptoms: did not run')
+        pass
+
+
+class HSI_AntenatalCare_EmergencyTreatment(Event, HSI_Event):
+    # TODO: This will likely evolve into smaller HSI's per emergency
+    """
+    This is a Health System Interaction Event.
+    This is event manages care for a woman who presents to a facility during pregnancy related emergency
     emergency.
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
 
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_EmergencyTreatment'
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code = pd.unique(consumables.loc[consumables[
-                                                 'Intervention_Pkg'] == 'Basic ANC',
-                                             'Intervention_Pkg_Code'])[0] #change
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
-        }
+        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
-        print(person_id, 'has had an emergency')
+        logger.info('This is HSI_AntenatalCare_EmergencyTreatment, person %d has been sent  for treatment '
+                    'of an antenatal emergeny on date %s ', person_id, self.sim.date)
+
+        # Next we define the consumables required for the HSI to run
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Basic ANC',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
+        }
+
+        # TODO: This will be determined by which emergency a woman is referred for?
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+            # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor
+        # TODO: Intervention code
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_EmergencyTreatment: did not run')
+        pass
 
 
-class HSI_AntenatalCare_PresentsWithNewOnsetSymptoms(Event, IndividualScopeEventMixin):  # ??Name
+class HSI_AntenatalCare_PostAbortionCare(Event, HSI_Event):  # ??Name
     """
     This is a Health System Interaction Event.
-    This is event manages care for a woman who presents to a facility during pregnancy with a pregnancy related
-    emergency.
+    This is event manages treatment for any woman referred for post-abortion care
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
 
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_PostAbortionCare'
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code = pd.unique(consumables.loc[consumables[
-                                                 'Intervention_Pkg'] == 'Basic ANC',
-                                             'Intervention_Pkg_Code'])[0] #change
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
-        }
+        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # todo: Community?! need anc guidelines...
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
+        logger.info('This is HSI_AntenatalCare_PostAbortionCare, person %d has been sent  for treatment '
+                    'following an abortion on date %s ', person_id, self.sim.date)
+
+        # Next we define the consumables required for the HSI to run
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code = pd.unique(consumables.loc[consumables[
+                                                 'Intervention_Pkg'] == 'Post-abortion case management',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
+        }
+
+        # TODO: There is also a 'post ectopic' intervention package code to consider
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+            # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor
+        # TODO: Intervention code
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_PostAbortionCare: did not run')
+        pass
 
 
-class HSI_AntenatalCare_PresentsForPostAbortionCare(Event, IndividualScopeEventMixin):  # ??Name
+class HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth(Event, HSI_Event):  # ??Name
     """
     This is a Health System Interaction Event.
-    This is event manages care for a woman who presents to a facility during pregnancy with a pregnancy related
-    emergency.
+    This is event manages treatment for women who have experienced an Antepartum Stillbirth
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, AntenatalCare)
 
+        # First we define the treatment ID for this HSI
+        self.TREATMENT_ID = 'AntenatalCare_TreatmentFollowingAntepartumStillbirth'
+
+        # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code = pd.unique(consumables.loc[consumables[
-                                                 'Intervention_Pkg'] == 'Basic ANC',
-                                             'Intervention_Pkg_Code'])[0] #change
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
-        }
+        the_appt_footprint['ANCSubsequent'] = 1  # TODO: determine most accurate appt time for this HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
-        self.ALERT_OTHER_DISEASES = []
+        self.ACCEPTED_FACILITY_LEVEL = [1]  # 2/3?
+        self.ALERT_OTHER_DISEASES = ['*']
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         params = self.module.parameters
         m = self
 
+        logger.info('This is HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth, person %d has been referred for '
+                    'care following an antenatal stillbirth on date %s ', person_id, self.sim.date)
 
-class HSI_AntenatalCare_PresentsForCarePostAntepartumStillbirth(Event, IndividualScopeEventMixin):  # ??Name
-    """
-    This is a Health System Interaction Event.
-    This is event manages care for a woman who presents to a facility during pregnancy with a pregnancy related
-    emergency.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['AntenatalFirst'] = 1
-
+        # Next we define the consumables required for the HSI to run
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
         pkg_code = pd.unique(consumables.loc[consumables[
-                                                 'Intervention_Pkg'] == 'Basic ANC',
-                                             'Intervention_Pkg_Code'])[0] #change
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [pkg_code],
-            'Item_Code': []
+                                                 'Intervention_Pkg'] == 'Post-abortion case management',
+                                             'Intervention_Pkg_Code'])[0]
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code: 1}],
+            'Item_Code': [],
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'AntenatalCare_PresentsForFirstAntenatalCareVisit'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # Community?!
-        self.ALERT_OTHER_DISEASES = []
+        # TODO: Dummy consumables above- review
 
-    def apply(self, person_id):
-        df = self.sim.population.props
-        params = self.module.parameters
-        m = self
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # answer comes back in the same format, but with quantities replaced with bools indicating availability
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code]:
+            logger.debug('PkgCode is available, so use it.')
+        else:
+            logger.debug('PkgCode is not available, so can' 't use it.')
+
+            # Return the actual appt footprints
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        # actual_appt_footprint['AntenatalFirst'] = actual_appt_footprint['AntenatalFirst'] * 2
+
+        return actual_appt_footprint
+
+        # TODO: impact of squeeze factor
+        # TODO: Intervention code
+
+    def did_not_run(self):
+        logger.debug('HSI_AntenatalCare_TreatmentFollowingAntepartumStillbirth: did not run')
+        pass
 
 
 class AntenatalCareLoggingEvent(RegularEvent, PopulationScopeEventMixin):
