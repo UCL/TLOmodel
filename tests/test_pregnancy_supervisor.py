@@ -5,14 +5,14 @@ import pytest
 from pathlib import Path
 
 from tlo import Date, Simulation
-from tlo.methods import demography, lifestyle, labour,newborn_outcomes, healthburden, healthsystem, antenatal_care,\
+from tlo.methods import demography,enhanced_lifestyle, labour,newborn_outcomes, healthburden, healthsystem, antenatal_care,\
     pregnancy_supervisor
 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2012, 1, 1)
-popsize = 100
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
@@ -43,7 +43,7 @@ def simulation():
     sim.register(anc_module)
     sim.register(ps_module)
 
-    sim.register(lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
 #    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))

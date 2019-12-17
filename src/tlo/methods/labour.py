@@ -10,6 +10,7 @@ from pathlib import Path
 from tlo import DateOffset, Module, Parameter, Property, Types
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
+from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -1536,114 +1537,156 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
     #  interventions will be given (i.e. doesnt consider if people actively follow the guidelines which may be an
     #  important determinant of intervention delivery)
 
-class HSI_Labour_PresentsForInductionOfLabour(Event, IndividualScopeEventMixin):
+class HSI_Labour_PresentsForInductionOfLabour(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
     This interaction manages induction of labour for women with indications identified antenatally such as severe
     pre-eclampsia and being post term
     """
 
+    # TODO: await antenatal care module to schedule induction
+    # TODO: women with praevia, obstructed labour, should be induced
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+        
+        self.TREATMENT_ID = 'Labour_PresentsForInductionOfLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1
     #   the_appt_footprint['NormalDelivery'] = 1  # THIS IS NOT WORKING
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'HIV Testing Services',
-                                              'Intervention_Pkg_Code'])[0]
-
-    #   pkg_code_sba_uncomp = pd.unique(consumables.loc[consumables[
-    #                                              'Intervention_Pkg'] ==
-    #                                          'Induction of labour',
-    #                                          'Intervention_Pkg_Code'])[0] # THIS IS NOT WORKING
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code], #DUMMY
-            'Item_Code': []
-        }
-
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_PresentsForInductionOfLabour'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props  # shortcut to the dataframe
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
-        # TODO: await antenatal care module to schedule induction
-        # TODO: women with praevia, obstructed labour, should be induced
+        logger.debug('This is HSI_Labour_PresentsForInductionOfLabour, person %d is attending a health facility to have'
+                   ' their labour induced on date %s', person_id, self.sim.date)
+        logger.debug(
+            "This is HSI_Labour_PresentsForInductionOfLabour: The squeeze-factor is %d.", squeeze_factor
+        )
 
-        logger.info('This is HSI_Labour_PresentsForInductionOfLabour, person %d is attending a health facility to have'
-                    ' their labour induced on date %s', person_id, self.sim.date)
+        if squeeze_factor > 0.5:  # Todo: discuss squeeze factors with TC
+            df = self.sim.population.props  # shortcut to the dataframe
+            params = self.module.parameters
+            mni = self.module.mother_and_newborn_info
 
-        # Indications: Post term, eclampsia, severe preeclampsia, mild preeclampsia at term, PROM > 24 hrs at term
-        # or PPROM > 34 weeks EGA, and IUFD.
+            # Initial request for consumables needed
+            consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+            dummy_pkg_code = pd.unique(consumables.loc[consumables[
+                                                       'Intervention_Pkg'] ==
+                                                       'HIV Testing Services',
+                                                       'Intervention_Pkg_Code'])[0]
 
-        # We use a random draw to determine if this womans labour will be successfully induced
-        random = self.sim.rng.random_sample(size=1)
-        if random < params['prob_successful_induction']:
-            logger.info('Person %d has had her labour successfully induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'successful_induction'
+            consumables_needed = {'Intervention_Package_Code': [{dummy_pkg_code: 1}],
+                                  'Item_Code': [], }
 
-        # For women whose induction fails they will undergo caesarean section
+            outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+                hsi_event=self, cons_req_as_footprint=consumables_needed
+            )
+            if outcome_of_request_for_consumables['Intervention_Package_Code'][dummy_pkg_code]: # TODO: is this right?
+                # Only if the consumables are availble will induction be attempted
+                logger.debug('PkgCode1 is available, so use it.')
+
+                # We use a random draw to determine if this womans labour will be successfully induced
+                # Indications: Post term, eclampsia, severe preeclampsia, mild preeclampsia at term, PROM > 24 hrs at term
+                # or PPROM > 34 weeks EGA, and IUFD.
+                random = self.sim.rng.random_sample(size=1)
+                if random < params['prob_successful_induction']:
+                    logger.info('Person %d has had her labour successfully induced', person_id)
+                    df.at[person_id, 'la_current_labour_successful_induction'] = 'successful_induction'
+
+                # For women whose induction fails they will undergo caesarean section
+                else:
+                    logger.info('Persons %d labour has been unsuccessful induced', person_id)
+                    df.at[person_id, 'la_current_labour_successful_induction'] = 'failed_induction'
+
+                self.sim.schedule_event(LabourEvent(self.module, person_id, cause='labour'), self.sim.date)
+
+            else:
+                logger.debug('PkgCode1 is not available, so can' 't use it.')
+                # Todo: so then do we decide the event doesnt run?
         else:
-            logger.info('Persons %d labour has been unsuccessful induced', person_id)
-            df.at[person_id, 'la_current_labour_successful_induction'] = 'failed_induction'
+            # Squeeze factor is too large
+            logger.debug("Treatment will not be provided due to squeeze factor.")
 
-        self.sim.schedule_event(LabourEvent(self.module, person_id, cause='labour'), self.sim.date)
+    #    actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+    #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+    #    return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
+        # TODO: What else needs to go in here?
+        pass
 
 
-class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEventMixin):
+class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, HSI_Event):
     """
     This is a Health System Interaction Event.
     This interaction manages a woman's initial presentation to a health facility when in labour
     """
 
+    # TODO: Squeeze factor, consumable conditions?
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module, Labour)
+        
+        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
         the_appt_footprint['Over5OPD'] = 1
     #   the_appt_footprint['NormalDelivery'] = 1  # THIS IS NOT WORKING
 
+        # Define the necessary information for an HSI
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
+                    'at birth for person %d on date %s', person_id, self.sim.date)
+
         consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
         dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                  'Intervention_Pkg'] ==
-                                              'HIV Testing Services',
-                                              'Intervention_Pkg_Code'])[0]
+                                                       'Intervention_Pkg'] ==
+                                                   'HIV Testing Services',
+                                                   'Intervention_Pkg_Code'])[0]
 
-    #    pkg_code_sba_uncomp = pd.unique(consumables.loc[consumables[
-    #                                              'Intervention_Pkg'] ==
-    #                                          'Vaginal delivery - skilled attendance',
-    #                                          'Intervention_Pkg_Code'])[0] # THIS IS NOT WORKING
+        #    pkg_code_sba_uncomp = pd.unique(consumables.loc[consumables[
+        #                                              'Intervention_Pkg'] ==
+        #                                          'Vaginal delivery - skilled attendance',
+        #                                          'Intervention_Pkg_Code'])[0] # THIS IS NOT WORKING
 
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
+        consumables_needed = {
+            'Intervention_Package_Code': [{dummy_pkg_code: 1}],
+            'Item_Code': [],
         }
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_PresentsForSkilledAttendanceInLabour'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]
-        self.ALERT_OTHER_DISEASES = []
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][dummy_pkg_code]:
+            logger.debug('PkgCode1 is available, so use it.')
+        else:
+            logger.debug('PkgCode1 is not available, so can' 't use it.')
 
-    def apply(self, person_id):
+    #    actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+    #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+    #    return actual_appt_footprint
+
         df = self.sim.population.props
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
-
-        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: Providing initial skilled attendance '
-                    'at birth for person %d on date %s', person_id, self.sim.date)
 
         # TODO: Discuss with Tim H the best way to capture which HCP will be attending this delivery and how that may
         #  affect outcomes?
@@ -1815,6 +1858,11 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(Event, IndividualScopeEven
                                                                 priority=0,
                                                                 topen=self.sim.date,
                                                                 tclose=self.sim.date + DateOffset(days=14))
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
+        # TODO: What else needs to go in here?
+        pass
 
 
 class HSI_Labour_ReceivesCareForObstructedLabour(Event, IndividualScopeEventMixin):
