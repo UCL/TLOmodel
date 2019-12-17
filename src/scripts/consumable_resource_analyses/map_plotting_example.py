@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import shapefile as shp
 
 # Example plotting script for administrative district boundaries in Malawi
+# More details available in the cookbook: https://github.com/UCL/TLOmodel/wiki/Cookbook#plotting-maps
 
 # read in the shape file
 sf = shp.Reader('../../../resources/ResourceFile_mwi_admbnda_adm2_nso_20181016.shp')
