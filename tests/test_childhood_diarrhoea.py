@@ -9,8 +9,8 @@ from tlo.methods import demography, enhanced_lifestyle, new_diarrhoea, healthsys
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 10, 1)
-popsize = 1000
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 
 @pytest.fixture(autouse=True)
@@ -23,9 +23,10 @@ def simulation():
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
     sim = Simulation(start_date=start_date)
     sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(enhanced_lifestyle.Lifestyle())
+    sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
     sim.register(new_diarrhoea.NewDiarrhoea(resourcefilepath=resourcefilepath))
+    # sim.register(hiv.hiv(resourcefilepath=resourcefilepath))
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)
 #   logging.getLogger('tlo.methods.lifestyle').setLevel(logging.WARNING)
 #   sim.seed_rngs(1)

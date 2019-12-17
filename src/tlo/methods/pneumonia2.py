@@ -1038,16 +1038,12 @@ class SelfRecoverEvent(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props  # shortcut to the dataframe
         # set everything back to default
-        df['ri_pneumonia_status'] = False
-        df['ri_pneumonia_severity'] = np.nan
-        df['malnutrition'] = False
-        df['has_hiv'] = False
-        df['exclusive_breastfeeding'] = False
-        df['continued_breastfeeding'] = False
-        df['date_of_acquiring_pneumonia'] = pd.NaT
-        df['date_of_progression_severe_pneum'] = pd.NaT
-        df['date_of_progression_very_sev_pneum'] = pd.NaT
-        df['ri_pneumonia_pathogen'] = np.nan
+        df.at[person_id, 'ri_pneumonia_status'] = False
+        df.at[person_id, 'ri_pneumonia_severity'] = np.nan
+        df.at[person_id, 'date_of_acquiring_pneumonia'] = pd.NaT
+        df.at[person_id, 'date_of_progression_severe_pneum'] = pd.NaT
+        df.at[person_id, 'date_of_progression_very_sev_pneum'] = pd.NaT
+        df.at[person_id, 'ri_pneumonia_pathogen'] = np.nan
 
 
 class DeathFromPneumoniaDisease(Event, IndividualScopeEventMixin):
