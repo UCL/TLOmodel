@@ -57,7 +57,9 @@ class DxAlgorithmChild(Module):
         :return: a string representing the diagnosis
         """
         df = self.sim.population.props
-        params = self.module['malaria'].parameters
+        params = self.sim.modules['Malaria'].parameters
+
+        diagnosis_str = 'unknown'
 
         # get the symptoms of the person:
         symptoms = df.loc[person_id, df.columns.str.startswith('sy_')]
@@ -107,7 +109,7 @@ class DxAlgorithmChild(Module):
                     diagnosis_str = 'clinical_malaria'
 
                     logger.debug("DxAlgorithmChild diagnosing clinical malaria for child %d on date %s",
-                                 person_id)
+                                 person_id, self.sim.date)
             else:
                 diagnosis_str = 'negative_malaria_test'
 

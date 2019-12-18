@@ -5,8 +5,9 @@ the health system following the onset of acute generic symptoms.
 
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.healthsystem import HSI_Event
+from tlo.methods import malaria
 from tlo.population import logger
-from tlo import DateOffset, Module, Parameter, Property, Types
+from tlo import DateOffset
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -64,7 +65,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug('Run the ICMI algorithm for this child [dx_algorithm_child]')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
+            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id, hsi_event=self)
 
             # Treat / refer based on diagnosis
             if diagnosis == 'severe_malaria':
@@ -73,7 +74,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_child(self.module, person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_compl_child(self.sim.modules['Malaria'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
@@ -85,7 +86,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_0_5 for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_0_5(self.module, person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_0_5(self.sim.modules['Malaria'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
@@ -99,13 +100,13 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
         # ----------------------------------- CHILD 5-15 -----------------------------------
 
         # diagnostic algorithm for child 5-15 yrs
-        if df.at[person_id, 'age_years'].between(5, 15):
+        if (df.at[person_id, 'age_years'] >= 5) & (df.at[person_id, 'age_years'] < 15):
             # It's a child:
             logger.debug('Run the ICMI algorithm for this child [dx_algorithm_child]')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.module.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id,
-                                                                             hsi_event=self)
+            diagnosis = self.sim.modules['DxAlgorithmChild'].diagnose(person_id=person_id,
+                                                                      hsi_event=self)
 
             # Treat / refer based on diagnosis
             if diagnosis == 'severe_malaria':
@@ -114,8 +115,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_child for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_child(self.module,
-                                                                                      person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_compl_child(self.sim.modules['Malaria'],
+                                                           person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
@@ -127,7 +128,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_5_15(self.module, person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_5_15(self.sim.modules['Malaria'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
@@ -146,8 +147,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
             logger.debug('Run the diagnostic algorithm for this adult [dx_algorithm_adult]')
 
             # Get the diagnosis from the algorithm
-            diagnosis = self.module.sim.modules['DxAlgorithmAdult'].diagnose(person_id=person_id,
-                                                                             hsi_event=self)
+            diagnosis = self.sim.modules['DxAlgorithmAdult'].diagnose(person_id=person_id,
+                                                                      hsi_event=self)
 
             # Treat / refer based on diagnosis
             if diagnosis == 'severe_malaria':
@@ -156,8 +157,8 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_compl_adult for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_compl_adult(self.module,
-                                                                                      person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_compl_adult(self.sim.modules['Malaria'],
+                                                           person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
@@ -169,7 +170,7 @@ class HSI_GenericFirstApptAtFacilityLevel1(HSI_Event, IndividualScopeEventMixin)
                     "HSI_GenericFirstApptAtFacilityLevel1: scheduling HSI_Malaria_tx_5_15 for person %d on date %s",
                     person_id, (self.sim.date + DateOffset(days=1)))
 
-                treat = self.module.sim.modules['malaria'].HSI_Malaria_tx_adult(self.module, person_id=person_id)
+                treat = malaria.HSI_Malaria_tx_adult(self.sim.modules['Malaria'], person_id=person_id)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(treat,
                                                                     priority=1,
                                                                     topen=self.sim.date,
