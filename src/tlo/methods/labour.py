@@ -1,6 +1,3 @@
-"""
-A model of Labour and the Health System Interactions associated with Skilled Birth Attendance
-"""
 import logging
 
 import pandas as pd
@@ -36,20 +33,22 @@ class Labour (Module):
 
     PARAMETERS = {
 
-     #  ===================================  NATURAL HISTORY PARAMETERS ===============================================
+        #  ===================================  NATURAL HISTORY PARAMETERS =============================================
         'prob_pregnancy': Parameter(
-            Types.REAL, 'baseline probability of pregnancy'),  # DUMMY PARAMETER
+            Types.REAL, 'baseline probability of pregnancy - currently included as a dummy parameter'),
         'prob_prom': Parameter(
             Types.REAL, 'probability of a woman in term labour having had experience prolonged rupture of membranes'),
         'prob_pl_ol': Parameter(
             Types.REAL, 'probability of a woman entering prolonged/obstructed labour'),
         'rr_PL_OL_nuliparity': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they are nuliparous'),
+        'rr_PL_OL_para1': Parameter(
+            Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if they have a parity of 1'),
         'rr_PL_OL_age_less20': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her age is less'
                         'than 20 years'),
         'prob_ptl': Parameter(
-            Types.REAL, 'probability of a woman entering labour at <37 weeks gestation'),
+            Types.REAL, 'baseline probability of a woman entering labour at less than 37 weeks gestation'),
         'prob_early_ptb': Parameter(
             Types.REAL, 'probability of a woman going into preterm labour between 28-33 weeks gestation'),
         'rr_early_ptb_age<20': Parameter(
@@ -222,11 +221,17 @@ class Labour (Module):
         'la_has_previously_delivered_preterm': Property(Types.BOOL, 'whether the woman has had a previous preterm '
                                                                     'delivery for any of her previous deliveries'),
         'la_obstructed_labour': Property(Types.BOOL, 'whether this womans labour has become obstructed'),
+        'la_ol_disability': Property(Types.BOOL, 'disability associated with obstructed labour'),
         'la_aph': Property(Types.BOOL, 'whether the woman has experienced an antepartum haemorrhage in this delivery'),
         'la_uterine_rupture': Property(Types.BOOL, 'whether the woman has experienced uterine rupture in this delivery'),
+        'la_ur_disability': Property(Types.BOOL, 'disability associated with uterine rupture'),
         'la_sepsis': Property(Types.BOOL, 'whether the woman has developed sepsis associated with in this delivery'),
+        'la_sepsis_disability': Property(Types.BOOL, 'disability associated with maternal sepsis'),
         'la_eclampsia': Property(Types.BOOL, 'whether the woman has experienced an eclamptic seizure in this delivery'),
+        'la_eclampsia_disability': Property(Types.BOOL, 'disability associated with maternal haemorrhage'),
         'la_pph': Property(Types.BOOL, 'whether the woman has experienced an postpartum haemorrhage in this delivery'),
+        'la_haemorrhage_disability': Property(Types.BOOL, 'disability associated with maternal haemorrhage'),
+        # TODO: above property could be categorical to reflect severity of bleed and map better with DALY weights
         'la_maternal_death': Property(Types.BOOL, ' whether the woman has died as a result of this pregnancy'),  # DUMMY
         'la_maternal_death_date': Property(Types.DATE, 'date of death for a date in pregnancy')  # DUMMY
     }
@@ -239,93 +244,11 @@ class Labour (Module):
         :param data_folder: path of a folder supplied to the Simulation containing data files.
           Typically modules would read a particular file within here.
         """
-        params = self.parameters
 
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_LabourSkilledBirthAttendance.xlsx',
                             sheet_name='parameter_values')
-
-        dfd.set_index('parameter_name', inplace=True)
-
-        #  ===================================  NATURAL HISTORY PARAMETERS ============================================
-
-        params['prob_pregnancy'] = dfd.loc['prob_pregnancy', 'value']
-        params['prob_prom'] = dfd.loc['prob_prom', 'value']
-        params['prob_pl_ol'] = dfd.loc['prob_pl_ol', 'value']
-        params['rr_PL_OL_nuliparity'] = dfd.loc['rr_PL_OL_nuliparity', 'value']
-        params['rr_PL_OL_para1'] = dfd.loc['rr_PL_OL_para1', 'value']
-        params['rr_PL_OL_age_less20'] = dfd.loc['rr_PL_OL_age_less20', 'value']
-        params['prob_ptl'] = dfd.loc['prob_ptl', 'value']
-        params['prob_early_ptb'] = dfd.loc['prob_early_ptb', 'value']
-        params['rr_early_ptb_age<20'] = dfd.loc['rr_early_ptb_age<20', 'value']
-        params['rr_early_ptb_prev_ptb'] = dfd.loc['rr_early_ptb_prev_ptb', 'value']
-        params['rr_early_ptb_anaemia'] = dfd.loc['rr_early_ptb_anaemia', 'value']
-        params['prob_late_ptb'] = dfd.loc['prob_late_ptb', 'value']
-        params['rr_late_ptb_prev_ptb'] = dfd.loc['rr_late_ptb_prev_ptb', 'value']
-        params['prob_potl'] = dfd.loc['prob_potl', 'value']
-        params['prob_ip_eclampsia'] = dfd.loc['prob_ip_eclampsia', 'value']
-        params['prob_aph'] = dfd.loc['prob_aph', 'value']
-        params['prob_ip_sepsis'] = dfd.loc['prob_ip_sepsis', 'value']
-        params['rr_ip_sepsis_pl_ol'] = dfd.loc['rr_ip_sepsis_pl_ol', 'value']
-        params['prob_uterine_rupture'] = dfd.loc['prob_uterine_rupture', 'value']
-        params['rr_ur_grand_multip'] = dfd.loc['rr_ur_grand_multip', 'value']
-        params['rr_ur_prev_cs'] = dfd.loc['rr_ur_prev_cs', 'value']
-        params['rr_ur_ref_ol'] = dfd.loc['rr_ur_ref_ol', 'value']
-        params['rr_ip_eclampsia_30_34'] = dfd.loc['rr_ip_eclampsia_30_34', 'value']
-        params['rr_ip_eclampsia_35'] = dfd.loc['rr_ip_eclampsia_35', 'value']
-        params['rr_ip_eclampsia_nullip'] = dfd.loc['rr_ip_eclampsia_nullip', 'value']
-        params['rr_ip_sepsis_anc_4'] = dfd.loc['rr_ip_sepsis_anc_4', 'value']
-        params['rr_ip_aph_noedu'] = dfd.loc['rr_ip_aph_noedu', 'value']
-        params['rr_aph_pl_ol'] = dfd.loc['rr_aph_pl_ol', 'value']
-        params['prob_cord_prolapse'] = dfd.loc['prob_cord_prolapse', 'value']
-        params['cfr_obstructed_labour'] = dfd.loc['cfr_obstructed_labour', 'value']
-        params['cfr_aph'] = dfd.loc['cfr_aph', 'value']
-        params['cfr_eclampsia'] = dfd.loc['cfr_eclampsia', 'value']
-        params['cfr_sepsis'] = dfd.loc['cfr_sepsis', 'value']
-        params['cfr_uterine_rupture'] = dfd.loc['cfr_uterine_rupture', 'value']
-        params['prob_still_birth_obstructed_labour'] = dfd.loc['prob_still_birth_obstructed_labour', 'value']
-        params['prob_still_birth_obstructed_labour_md'] = dfd.loc['prob_still_birth_obstructed_labour_md', 'value']
-        params['prob_still_birth_aph'] = dfd.loc['prob_still_birth_aph', 'value']
-        params['prob_still_birth_aph_md'] = dfd.loc['prob_still_birth_aph_md', 'value']
-        params['prob_still_birth_sepsis'] = dfd.loc['prob_still_birth_sepsis', 'value']
-        params['prob_still_birth_sepsis_md'] = dfd.loc['prob_still_birth_sepsis_md', 'value']
-        params['prob_still_birth_ur'] = dfd.loc['prob_still_birth_ur', 'value']
-        params['prob_still_birth_ur_md'] = dfd.loc['prob_still_birth_ur_md', 'value']
-        params['prob_still_birth_eclampsia'] = dfd.loc['prob_still_birth_eclampsia', 'value']
-        params['prob_still_birth_eclampsia_md'] = dfd.loc['prob_still_birth_eclampsia_md', 'value']
-        params['prob_pp_eclampsia'] = dfd.loc['prob_pp_eclampsia', 'value']
-        params['prob_pph'] = dfd.loc['prob_pph', 'value']
-        params['rr_pph_pl_ol'] = dfd.loc['rr_pph_pl_ol', 'value']
-        params['prob_pp_sepsis'] = dfd.loc['prob_pp_sepsis', 'value']
-        params['cfr_pph'] = dfd.loc['cfr_pph', 'value']
-        params['cfr_pp_eclampsia'] = dfd.loc['cfr_pp_eclampsia', 'value']
-        params['cfr_pp_sepsis'] = dfd.loc['cfr_pp_sepsis', 'value']
-        params['prob_neonatal_sepsis'] = dfd.loc['prob_neonatal_sepsis', 'value']
-        params['prob_neonatal_birth_asphyxia'] = dfd.loc['prob_neonatal_birth_asphyxia', 'value']
-
-        # ================================= TREATMENT PARAMETERS =====================================================
-
-        params['prob_successful_induction'] = dfd.loc['prob_successful_induction', 'value']
-        params['rr_maternal_sepsis_clean_delivery'] = dfd.loc['rr_maternal_sepsis_clean_delivery', 'value']
-        params['rr_newborn_sepsis_clean_delivery'] = dfd.loc['rr_newborn_sepsis_clean_delivery', 'value']
-        params['rr_sepsis_post_abx_prom'] = dfd.loc['rr_sepsis_post_abx_prom', 'value']
-        params['rr_newborn_sepsis_proph_abx'] = dfd.loc['rr_newborn_sepsis_proph_abx', 'value']
-        params['rr_pph_amtsl'] = dfd.loc['rr_pph_amtsl', 'value']
-        params['prob_cure_antibiotics'] = dfd.loc['prob_cure_antibiotics', 'value']
-        params['prob_cure_mgso4'] = dfd.loc['prob_cure_mgso4', 'value']
-        params['prob_prevent_mgso4'] = dfd.loc['prob_prevent_mgso4', 'value']
-        params['prob_cure_diazepam'] = dfd.loc['prob_cure_diazepam', 'value']
-        params['prob_cure_blood_transfusion'] = dfd.loc['prob_cure_blood_transfusion', 'value']
-        params['prob_cure_oxytocin'] = dfd.loc['prob_cure_oxytocin', 'value']
-        params['prob_cure_misoprostol'] = dfd.loc['prob_cure_misoprostol', 'value']
-        params['prob_cure_uterine_massage'] = dfd.loc['prob_cure_uterine_massage', 'value']
-        params['prob_cure_uterine_tamponade'] = dfd.loc['prob_cure_uterine_tamponade', 'value']
-        params['prob_cure_uterine_ligation'] = dfd.loc['prob_cure_uterine_ligation', 'value']
-        params['prob_cure_b_lynch'] = dfd.loc['prob_cure_b_lynch', 'value']
-        params['prob_cure_hysterectomy'] = dfd.loc['prob_cure_hysterectomy', 'value']
-        params['prob_cure_manual_removal'] = dfd.loc['prob_cure_manual_removal', 'value']
-        params['prob_cure_uterine_repair'] = dfd.loc['prob_cure_uterine_repair', 'value']
-        params['prob_deliver_ventouse'] = dfd.loc['prob_deliver_ventouse', 'value']
-        params['prob_deliver_forceps'] = dfd.loc['prob_deliver_forceps', 'value']
+        self.load_parameters_from_dataframe(dfd)
+        params = self.parameters
 
         # Here we will include DALY weights if applicable...
 
@@ -335,8 +258,7 @@ class Labour (Module):
             params['daly_wt_maternal_sepsis'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=340)
             params['daly_wt_eclampsia'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=347)
             params['daly_wt_obstructed_labour'] = self.sim.modules['HealthBurden'].get_daly_weight(sequlae_code=348)
-
-        # TODO: source DALY weight for Uterine Rupture
+            # TODO: source DALY weight for Uterine Rupture
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -363,14 +285,19 @@ class Labour (Module):
         df.loc[df.sex == 'F', 'la_has_previously_delivered_preterm'] = False
         df.loc[df.sex == 'F', 'la_due_date_current_pregnancy'] = pd.NaT
         df.loc[df.sex == 'F', 'la_obstructed_labour'] = False
+        df.loc[df.sex == 'F', 'la_ol_disability'] = False
         df.loc[df.sex == 'F', 'la_aph'] = False
         df.loc[df.sex == 'F', 'la_uterine_rupture'] = False
+        df.loc[df.sex == 'F', 'la_ur_disability'] = False
         df.loc[df.sex == 'F', 'la_eclampsia'] = False
+        df.loc[df.sex == 'F', 'la_eclampsia_disability'] = False
         df.loc[df.sex == 'F', 'la_pph'] = False
+        df.loc[df.sex == 'F', 'la_haemorrhage_disability'] = False
         df.loc[df.sex == 'F', 'la_maternal_death'] = False
         df.loc[df.sex == 'F', 'la_maternal_death_date'] = pd.NaT
 
 # -----------------------------------ASSIGN PREGNANCY AND DUE DATE AT BASELINE (DUMMY) --------------------------------
+        # TODO: Discuss with Tim Colbourn if he still plans to assign pregnancy at baseline
 
         # !!!!!!!!!!!!!!!!(DUMMY CODE) THIS WILL BE REPLACED BY CONTRACEPTION CODE (TC) !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -613,11 +540,16 @@ class Labour (Module):
             df.at[child_id, 'la_total_deliveries_by_cs'] = 0
             df.at[child_id, 'la_has_previously_delivered_preterm'] = False
             df.at[child_id, 'la_obstructed_labour'] = False
+            df.at[child_id, 'la_ol_disability'] = False
             df.at[child_id, 'la_aph'] = False
             df.at[child_id, 'la_uterine_rupture'] = False
+            df.at[child_id, 'la_ur_disability'] = False
             df.at[child_id, 'la_sepsis'] = False
+            df.at[child_id, 'la_sepsis_disability'] = False
             df.at[child_id, 'la_eclampsia'] = False
+            df.at[child_id, 'la_eclampsia_disability'] = False
             df.at[child_id, 'la_pph'] = False
+            df.at[child_id, 'la_haemorrhage_disability'] = False
             df.at[child_id, 'la_maternal_death'] = False
             df.at[child_id, 'la_maternal_death_date'] = pd.NaT
 
@@ -655,59 +587,38 @@ class Labour (Module):
         # TODO: Confirm when this function should be utilised.
 
     def report_daly_values(self):
-        # This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        # experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        # The names of the series of columns is taken to be the label of the cause of this disability.
-        # It will be recorded by the healthburden module as <ModuleName>_<Cause>.
 
-        # TODO: Issues 1.) DALYs wont run if theyre not hard coded
-        #  2.) how will monthly sum of DALYS work for labour complications (if variables are switched on/off)
+        # TODO: work out why values have to be hard coded, wont read parameters?
+        # TODO: Refine disability levels (could include severity) and explore a more elegant solution involving less
+        #  properties
 
-        logger.info('This is Labour reporting my health values')
+        logger.debug('This is Labour reporting my health values')
 
         df = self.sim.population.props  # shortcut to population properties dataframe
         p = self.parameters
 
-        health_values_1 = df.loc[df.is_alive, 'la_obstructed_labour'].map(
-            {
-                False: 0,
-                True: 0.324  # self.parameters['daly_wt_obstructed_labour']
-            })
+        health_values_1 = df.loc[df.is_alive, 'la_ol_disability'].map(
+            {False: 0, True: 0.324})  # p['daly_wt_obstructed_labour']
         health_values_1.name = 'Obstructed Labour'
 
-        health_values_2 = df.loc[df.is_alive, 'la_eclampsia'].map(
-            {
-                False: 0,
-                True: 0.5  # (dummy) self.parameters['daly_wt_eclampsia']
-            })
+        health_values_2 = df.loc[df.is_alive, 'la_eclampsia_disability'].map(
+            {False: 0, True: 0.5})  # p['daly_wt_eclampsia']
         health_values_2.name = 'Eclampsia'
 
-        health_values_3 = df.loc[df.is_alive, 'la_sepsis'].map(
-            {
-                False: 0,
-                True: 0.133  # self.parameters['daly_wt_maternal_sepsis']
-            })
+        health_values_3 = df.loc[df.is_alive, 'la_sepsis_disability'].map(
+            {False: 0, True: 0.133})  # p['daly_wt_maternal_sepsis']
         health_values_3.name = 'Maternal Sepsis'
 
-        health_values_4 = df.loc[df.is_alive, 'la_aph'].map(  # todo: consider severity
-            {
-                False: 0,
-                True: 0.324  # self.parameters['daly_wt_haemorrhage_severe']
-            })
+        health_values_4 = df.loc[df.is_alive, 'la_haemorrhage_disability'].map(  # todo: consider severity
+            {False: 0, True: 0.324})  # p['daly_wt_haemorrhage_severe']
         health_values_4.name = 'Antepartum Haemorrhage'
 
-        health_values_5 = df.loc[df.is_alive, 'la_pph'].map( # todo: consider severity
-            {
-                False: 0,
-                True: 0.324 # self.parameters['daly_wt_haemorrhage_severe']
-            })
+        health_values_5 = df.loc[df.is_alive, 'la_haemorrhage_disability'].map(  # todo: consider severity
+            {False: 0, True: 0.324})  # p['daly_wt_haemorrhage_severe']
         health_values_5.name = 'Postpartum Haemorrhage'
 
-        health_values_6 = df.loc[df.is_alive, 'la_uterine_rupture'].map(  # todo: consider severity
-            {
-                False: 0,
-                True: 0.5  # (dummy) self.parameters['daly_wt_haemorrhage_severe']
-            })
+        health_values_6 = df.loc[df.is_alive, 'la_ur_disability'].map(  # todo: consider severity
+            {False: 0, True: 0.5})  # p['daly_wt_haemorrhage_severe']
         health_values_6.name = 'Uterine Rupture'
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
@@ -996,7 +907,8 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                         mni[individual_id]['labour_is_currently_obstructed'] = True
                         mni[individual_id]['labour_has_previously_been_obstructed'] = True
                         df.at[individual_id, 'la_obstructed_labour'] = True
-                        logger.info('person %d has developed obstructed labour in the community on date %s',
+                        df.at[individual_id, 'la_ol_disability'] = True
+                        logger.debug('person %d has developed obstructed labour in the community on date %s',
                                     individual_id, self.sim.date)
                         logger.info('%s|obstructed_labour|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
@@ -1035,8 +947,9 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     random = self.sim.rng.random_sample(size=1)
                     if random < eff_prob_eclampsia:
                         df.at[individual_id, 'la_eclampsia'] = True
+                        df.at[individual_id, 'la_eclampsia_disability'] = True
                         mni[individual_id]['eclampsia_ip'] = True
-                        logger.info('person %d is experiencing intrapartum eclampsia in the community on date %s',
+                        logger.debug('person %d is experiencing intrapartum eclampsia in the community on date %s',
                                     individual_id, self.sim.date)
                         logger.info('%s|eclampsia|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
@@ -1066,8 +979,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     random = self.sim.rng.random_sample(size=1)
                     if random < eff_prob_aph:
                         df.at[individual_id, 'la_aph'] = True
+                        df.at[individual_id, 'la_haemorrhage_disability'] = True
                         mni[individual_id]['APH'] = True
-                        logger.info('person %d is experiencing an antepartum haemorrhage in the community on date %s',
+
+                        logger.debug('person %d is experiencing an antepartum haemorrhage in the community on date %s',
                                     individual_id, self.sim.date)
                         logger.info('%s|antepartum_haemorrhage|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
@@ -1094,9 +1009,11 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     random = self.sim.rng.random_sample(size=1)
                     if random < eff_prob_sepsis:
                         df.at[individual_id, 'la_sepsis'] = True
+                        df.at[individual_id]['sepsis_disability'] = True
                         mni[individual_id]['sepsis_ip'] = True
-                        logger.info('person %d is experiencing intrapartum maternal sepsis in the community on date %s',
-                                    individual_id, self.sim.date)
+
+                        logger.debug('person %d is experiencing intrapartum maternal sepsis in the community on date %s'
+                                     ,individual_id, self.sim.date)
                         logger.info('%s|maternal_sepsis|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
                                      'person_id': individual_id})
@@ -1133,8 +1050,10 @@ class LabourEvent(Event, IndividualScopeEventMixin):
                     random = self.sim.rng.random_sample(size=1)
                     if random < eff_prob_ur:
                         df.at[individual_id, 'la_uterine_rupture'] = True
+                        df.at[individual_id, 'la_ur_disability'] = True
                         mni[individual_id]['UR'] = True
-                        logger.info('person %d is experiencing uterine rupture in the community on date %s',
+
+                        logger.debug('person %d is experiencing uterine rupture in the community on date %s',
                                     individual_id, self.sim.date)
                         logger.info('%s|uterine_rupture|%s', self.sim.date,
                                     {'age': df.at[individual_id, 'age_years'],
@@ -1244,7 +1163,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                 if random < eff_prob_pph:
                     df.at[individual_id, 'la_pph'] = True
                     mni[individual_id]['PPH'] = True
-                    logger.info('person %d is experiencing a postpartum haemorrhage in the community on date %s',
+                    df.at[individual_id,'la_haemorrhage_disability'] = True
+
+                    logger.debug('person %d is experiencing a postpartum haemorrhage in the community on date %s',
                                 individual_id, self.sim.date)
                     logger.info('%s|postpartum_haemorrhage|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
@@ -1269,8 +1190,10 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                 random = self.sim.rng.random_sample(size=1)
                 if random < eff_prob_pp_sepsis:
                     df.at[individual_id, 'la_sepsis'] = True
+                    df.at[individual_id, 'la_sepsis_disability'] = True
                     mni[individual_id]['sepsis_pp'] = True
-                    logger.info('person %d is experiencing postpartum maternal sepsis in the community on date %s',
+
+                    logger.debug('person %d is experiencing postpartum maternal sepsis in the community on date %s',
                             individual_id, self.sim.date)
 
                     logger.info('%s|maternal_sepsis|%s', self.sim.date,
@@ -1305,8 +1228,9 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                 if random < eff_prob_eclampsia:
                     df.at[individual_id, 'la_eclampsia'] = True
                     mni[individual_id]['eclampsia_pp'] = True
-                    mni[individual_id]['timing_eclampsia'] = 'PP'
-                    logger.info('person %d is experiencing postpartum eclampsia in the community on date %s',
+                    df.at[individual_id, 'la_eclampsia_disability'] = True
+
+                    logger.debug('person %d is experiencing postpartum eclampsia in the community on date %s',
                                 individual_id, self.sim.date)
                     logger.info('%s|eclampsia|%s', self.sim.date,
                                 {'age': df.at[individual_id, 'age_years'],
@@ -1327,6 +1251,10 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
             self.sim.schedule_event(PostPartumDeathEvent(self.module, individual_id, cause='labour'), self.sim.date)
             logger.info('This is PostPartumEvent scheduling a potential death for person %d on date %s', individual_id,
                          self.sim.date + DateOffset(days=3))  # Date offsetted to allow for interventions
+
+            # Here we schedule women to an event which resets 'daly' disability associated with delivery complications
+            self.sim.schedule_event(DisabilityResetEvent(self.module, individual_id, cause='reset'),
+                                    self.sim.date + DateOffset(months=1))
 
 
 class LabourDeathEvent (Event, IndividualScopeEventMixin):
@@ -1516,7 +1444,7 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
             print('post partum death!!!')
             self.sim.schedule_event(demography.InstantaneousDeath(self.module, individual_id,
                                                                   cause='postpartum labour'), self.sim.date)
-            logger.info('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
+            logger.debug('This is PostPartumDeathEvent scheduling a death for person %d on date %s who died due to '
                         'postpartum complications', individual_id,
                          self.sim.date)
 
@@ -1525,14 +1453,35 @@ class PostPartumDeathEvent (Event, IndividualScopeEventMixin):
                             'person_id': individual_id})
 
             complication_profile = mni[individual_id]
-            logger.info('%s|labour_complications|%s', self.sim.date,
+            logger.debug('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
                          'labour_profile': complication_profile})
         else:
             complication_profile = mni[individual_id]
-            logger.info('%s|labour_complications|%s', self.sim.date,
+            logger.debug('%s|labour_complications|%s', self.sim.date,
                         {'person_id': individual_id,
                          'labour_profile': complication_profile})
+
+
+class DisabilityResetEvent (Event, IndividualScopeEventMixin):
+    """resets a woman's disability properties one month after labour"""
+
+    def __init__(self, module, individual_id, cause):
+        super().__init__(module, person_id=individual_id)
+
+    def apply(self, individual_id):
+        df = self.sim.population.props
+
+        # TODO: Confirm this allows enough time for model to count DALYs before resetting
+
+        if df.at[individual_id, 'is_alive']:
+            logger.debug('person %d is having their disability status reset', individual_id)
+
+            df.at[individual_id, 'la_sepsis_disability'] = False
+            df.at[individual_id, 'la_ol_disability'] = False
+            df.at[individual_id, 'la_ur_disability'] = False
+            df.at[individual_id, 'la_eclampsia_disability'] = False
+            df.at[individual_id, 'la_haemorrhage_disability'] = False
 
 # ======================================================================================================================
 # ================================ HEALTH SYSTEM INTERACTION EVENTS ====================================================
@@ -1729,9 +1678,11 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ol']:
             df.at[person_id, 'la_obstructed_labour'] = True
+            df.at[person_id, 'la_ol_disability'] = True
             mni[person_id]['labour_is_currently_obstructed'] = True
             mni[person_id]['labour_has_previously_been_obstructed'] = True
-            logger.info('person %d is experiencing obstructed labour in a health facility',
+
+            logger.debug('person %d is experiencing obstructed labour in a health facility',
                         person_id)
 
             # TODO: issue- if we apply risk of both UR and OL here then we will negate the effect of OL treatment on
@@ -1740,8 +1691,10 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ip_eclampsia']:
             df.at[person_id, 'la_eclampsia'] = True
+            df.at[person_id, 'la_eclampsia_disability'] = True
             mni[person_id]['eclampsia_ip'] = True
-            logger.info('person %d is experiencing eclampsia in a health facility',
+
+            logger.debug('person %d is experiencing eclampsia in a health facility',
                         person_id)
             logger.info('%s|eclampsia|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
@@ -1749,8 +1702,10 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
 
         if random < mni[person_id]['risk_aph']:
             df.at[person_id, 'la_aph'] = True
+            df.at[person_id, 'la_haemorrhage_disability'] = True
             mni[person_id]['APH'] = True
-            logger.info('person %d is experiencing an antepartum haemorrhage in a health facility',
+
+            logger.debug('person %d is experiencing an antepartum haemorrhage in a health facility',
                         person_id)
             logger.info('%s|antepartum_haemorrhage|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
@@ -1759,9 +1714,10 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_ip_sepsis']:
             df.at[person_id, 'la_sepsis'] = True
-            mni[person_id]['sepsis'] = True
-            mni[person_id]['source_sepsis'] = 'IP'
-            logger.info('person %d has developed maternal sepsis in a health facility',
+            df.at[person_id, 'la_sepsis_disability'] = True
+            mni[person_id]['sepsis_ip'] = True
+
+            logger.debug('person %d has developed maternal sepsis in a health facility',
                         person_id)
             logger.info('%s|maternal_sepsis|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
@@ -1772,8 +1728,11 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
         if random < mni[person_id]['risk_ur']:
             mni[person_id]['UR'] = True
             df.at[person_id, 'la_uterine_rupture'] = True
-            logger.info('person %d is experiencing a uterine rupture in a health facility',
+            df.at[person_id, 'la_ur_disability'] = True
+
+            logger.debug('person %d is experiencing a uterine rupture in a health facility',
                         person_id)
+
             logger.info('%s|uterine_rupture|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
                          'person_id': person_id})
@@ -2193,13 +2152,10 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
         item_code_aph3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
         item_code_aph4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
                                                        'Item_Code'])[0]
-        item_code_aph5 = pd.unique(consumables.loc[consumables['Items'] == 'Gloves, surgeon’s, latex, disposable,'
-                                                                               'sterile, pair', 'Item_Code'])[0]
 
         consumables_needed = {
             'Intervention_Package_Code': [{pkg_code_pph: 1}],
-            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1},
-                          {item_code_aph5: 1}],
+            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1},],
         }
 
         outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -2355,8 +2311,10 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_pp_eclampsia']:
             df.at[person_id, 'la_eclampsia'] = True
+            df.at[person_id, 'la_eclampsia_disability'] = True
             mni[person_id]['eclampsia_pp'] = True
-            logger.info('person %d is experiencing eclampsia in a health facility following birth',
+
+            logger.debug('person %d is experiencing eclampsia in a health facility following birth',
                         person_id)
             logger.info('%s|eclampsia|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
@@ -2364,8 +2322,10 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
         if random < mni[person_id]['risk_pph']: # increased liklihood of PPH based on whats happened so far? (APH, CS)
             df.at[person_id, 'la_pph'] = True
+            df.at[person_id, 'la_haemorrhage_disability'] = True
             mni[person_id]['PPH'] = True
-            logger.info('person %d is experiencing an postpartum haemorrhage in a health facility following birth',
+
+            logger.debug('person %d is experiencing an postpartum haemorrhage in a health facility following birth',
                         person_id)
             logger.info('%s|postpartum_haemorrhage|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],
@@ -2374,8 +2334,10 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         random = self.sim.rng.random_sample(size=1)
         if random < mni[person_id]['risk_pp_sepsis']:
             df.at[person_id, 'la_sepsis'] = True
+            df.at[person_id, 'la_sepsis_disability'] = True
             mni[person_id]['sepsis_pp'] = True
-            logger.info('person %d has developed maternal sepsis in a health facility following delivery',
+
+            logger.debug('person %d has developed maternal sepsis in a health facility following delivery',
                         person_id)
             logger.info('%s|maternal_sepsis|%s', self.sim.date,
                         {'age': df.at[person_id, 'age_years'],

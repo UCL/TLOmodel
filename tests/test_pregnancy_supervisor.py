@@ -11,8 +11,8 @@ from tlo.methods import demography,enhanced_lifestyle, labour,newborn_outcomes, 
 workbook_name = 'demography.xlsx'
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 500
+end_date = Date(2012, 1, 1)
+popsize = 1000
 
 
 @pytest.fixture(autouse=True)
@@ -52,7 +52,7 @@ def simulation():
     sim.register(enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath))
     sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability))
-#    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
 
 
     logging.getLogger('tlo.methods.lifestyle').setLevel(logging.CRITICAL)

@@ -299,15 +299,12 @@ class PregnancySupervisor(Module):
                                   (df.am_date_most_recent_miscarriage > one_month_prior)]
 
         health_values_1 = df.loc[recent_abortion, 'ps_total_induced_abortion'].map(
-        {
-            0: 0,
-            1: params['daly_wt_abortive_outcome']
-        })
+            {0: 0, 1: params['daly_wt_abortive_outcome']})
+        health_values_1.name = 'Induced Abortion'
+
         health_values_2 = df.loc[recent_miscarriage, 'ps_total_miscarriages'].map(
-        {
-            0: 0,
-            1: params['daly_wt_abortive_outcome']
-        })
+            {0: 0, 1: params['daly_wt_abortive_outcome']})
+        health_values_2.name = 'Spontaneous Miscarriage '
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive]], axis=1)
 
