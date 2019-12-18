@@ -124,10 +124,10 @@ class NewbornOutcomes(Module):
 
     def read_parameters(self, data_folder):
 
-        params = self.parameters
-
         dfd = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_NewbornOutcomes.xlsx',
                             sheet_name='parameter_values')
+#        self.load_parameters_from_dataframe(dfd)
+        params = self.parameters
 
         dfd.set_index('parameter_name', inplace=True)
 
@@ -270,7 +270,18 @@ class NewbornOutcomes(Module):
         logger.info('This is NewbornOutcomes, being alerted about a health system interaction '
                     'person %d for: %s', person_id, treatment_id)
 
-#    def report_daly_values(self):
+    def report_daly_values(self):
+        logger.debug('This is Newborn Outcomes reporting my health values')
+
+        df = self.sim.population.props  # shortcut to population properties dataframe
+        p = self.parameters
+
+        health_values_1 = df.loc[df.is_alive, 'nb_early_onset_neonatal_sepsis'].map(
+                    {False: 0, True: 0.324})  # p['daly_wt_mild_motor_sepsis']
+        health_values_1.name = 'Sepsis Motor Impairment'
+        health_values_df = pd.concat([health_values_1.loc[df.is_alive]], axis=1)
+
+        return health_values_df
 
         # TODO: discuss with TC 1.) will these all be managed here. 2.) application of incidence of these comps?
 
