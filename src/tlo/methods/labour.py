@@ -13,7 +13,7 @@ from tlo.methods import demography
 from tlo.methods.healthsystem import HSI_Event
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 LOG_FILENAME = 'labour.log'
 logging.basicConfig(filename=LOG_FILENAME,
                             filemode='w',
@@ -30,6 +30,8 @@ class Labour (Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
+
+        # Here we create a dictionary to store additional information around delivery and birth
         self.mother_and_newborn_info = dict()
 
     PARAMETERS = {
@@ -46,7 +48,7 @@ class Labour (Module):
         'rr_PL_OL_age_less20': Parameter(
             Types.REAL, 'relative risk of a woman entering prolonged/obstructed labour if her age is less'
                         'than 20 years'),
-        'prob_ptl': Parameter (
+        'prob_ptl': Parameter(
             Types.REAL, 'probability of a woman entering labour at <37 weeks gestation'),
         'prob_early_ptb': Parameter(
             Types.REAL, 'probability of a woman going into preterm labour between 28-33 weeks gestation'),
@@ -1318,7 +1320,7 @@ class PostpartumLabourEvent(Event, IndividualScopeEventMixin):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date
+                                                                tclose=self.sim.date + DateOffset(days=1)
                                                                 )
                 # todo: same issue for women who seek care but cant be seek- comps wont be allocated!
 
@@ -1784,66 +1786,66 @@ class HSI_Labour_PresentsForSkilledAttendanceInLabour(HSI_Event, IndividualScope
 # ==================================== SCHEDULE HEALTH SYSTEM INTERACTIONS ===========================================
     # Here, if a woman has developed a complication, she is scheduled to receive any care she may need
 
-    #    if mni[person_id]['labour_is_currently_obstructed']:
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-    #                    'treatment for obstructed labour for person %d', person_id)
+        if mni[person_id]['labour_is_currently_obstructed']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for obstructed labour for person %d', person_id)
 
-    #        event = HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14))
+            event = HSI_Labour_ReceivesCareForObstructedLabour(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1)) # TODO: check all these offsets
 
-    #    if mni[person_id]['sepsis_ip']:
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-    #                    'treatment for maternal sepsis during labour for person %d', person_id)
+        if mni[person_id]['sepsis_ip']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for maternal sepsis during labour for person %d', person_id)
 
-    #        event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14))
+            event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
-    #    if mni[person_id]['APH']:
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-    #                    'treatment for antepartum haemorrhage during labour for person %d', person_id)
+        if mni[person_id]['APH']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for antepartum haemorrhage during labour for person %d', person_id)
 
-    #        event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14))
+            event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
-    #    if mni[person_id]['eclampsia_ip']:
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-    #                    'treatment for eclampsia during labour for person %d', person_id)
+        if mni[person_id]['eclampsia_ip']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for eclampsia during labour for person %d', person_id)
 
-    #        event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14))
+            event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
-    #    if mni[person_id]['UR']:
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
-    #                    'treatment for uterine rupture during labour for person %d', person_id)
+        if mni[person_id]['UR']:
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling immediate additional '
+                        'treatment for uterine rupture during labour for person %d', person_id)
 
-    #        event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14)
-    #                                                            )
+            event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1)
+                                                                )
 
-    #    if df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction':
-    #        logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling a caesarean section'
-    #                    ' for person %d', person_id)
+        if df.at[person_id, 'la_current_labour_successful_induction'] == 'failed_induction':
+            logger.info('This is HSI_Labour_PresentsForSkilledAttendanceInLabour: scheduling a caesarean section'
+                        ' for person %d', person_id)
 
-    #        event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
-    #        self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-    #                                                            priority=0,
-    #                                                            topen=self.sim.date,
-    #                                                            tclose=self.sim.date + DateOffset(days=14))
+            event = HSI_Labour_ReferredForSurgicalCareInLabour(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                priority=0,
+                                                                topen=self.sim.date,
+                                                                tclose=self.sim.date + DateOffset(days=1))
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
 
@@ -1867,43 +1869,50 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #    the_appt_footprint['InpatientDays'] = 1  # TODO: to be discussed with TH/TC best appt footprint to use
-        the_appt_footprint['Over5OPD'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-    #    pkg_code_obstructed_labour = pd.unique(consumables.loc[consumables[
-    #                                                               'Intervention_Pkg'] ==
-    #                                                           'Management of obstructed labour',
-    #                                                           'Intervention_Pkg_Code'])[0]
-
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
-        }
+        assert isinstance(module, Labour)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Labour_ReceivesCareForObstructedLabour'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
-        self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1  # TODO: to be discussed with TH/TC best appt footprint to use
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        # TODO: apply squeeze factor
+
+        logger.info('This is HSI_Labour_ReceivesCareForObstructedLabour, management of obstructed labour for '
+                    'person %d on date %s',
+                    person_id, self.sim.date)
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_obst_lab = pd.unique(consumables.loc[consumables[
+                                                            'Intervention_Pkg'] ==
+                                                        'Antibiotics for pPRoM',  # TODO: Obs labour package not working
+                                                        'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_obst_lab: 1}],
+            'Item_Code': [],
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_obst_lab]:
+            logger.debug('pkg_code_obst_lab is available, so use it.')
+        else:
+            logger.debug('pkg_code_obst_lab is not available, so can' 't use it.')
+            # TODO: This will need to be equipment by equipment- i.e. if no vacuum then forceps if none then caesarean?
+            # TODO: add equipment to lines on consumable chart?
+
         df = self.sim.population.props  # shortcut to the dataframe
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
-
-        logger.info('This is HSI_Labour_ReceivesCareForObstructedLabour, management of obstructed labour for '
-                     'person %d on date %s',
-                     person_id, self.sim.date)
 
 # =====================================  OBSTRUCTED LABOUR TREATMENT ==================================================
 
@@ -1944,6 +1953,15 @@ class HSI_Labour_ReceivesCareForObstructedLabour(HSI_Event, IndividualScopeEvent
 
                     # Symphysiotomy??? Does this happen in malawi
 
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_PresentsForInductionOfLabour: did not run')
+        pass
+
 
 class HSI_Labour_ReceivesCareForMaternalSepsis(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1953,55 +1971,66 @@ class HSI_Labour_ReceivesCareForMaternalSepsis(HSI_Event, IndividualScopeEventMi
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #   the_appt_footprint['InpatientDays'] = 1
-        the_appt_footprint['Over5OPD'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-    #   pkg_code_sepsis = pd.unique(consumables.loc[consumables[
-    #                                                    'Intervention_Pkg'] ==
-    #                                                'Maternal sepsis case management',
-    #                                                'Intervention_Pkg_Code'])[0]
-
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
-        the_cons_footprint = {
-                    'Intervention_Package_Code': [dummy_pkg_code],
-                    'Item_Code': []
-                }
+        assert isinstance(module, Labour)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Labour_ReceivesCareForMaternalSepsis'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
-        self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        # TODO: Apply squeeze factor
+
+        logger.info('This is HSI_Labour_ReceivesCareForMaternalSepsis, management of maternal sepsis for '
+                    'person %d on date %s',
+                    person_id, self.sim.date)
+
         df = self.sim.population.props
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
-        logger.info('This is HSI_Labour_ReceivesCareForMaternalSepsis, management of maternal sepsis for '
-                             'person %d on date %s',
-                             person_id, self.sim.date)
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        pkg_code_sepsis = pd.unique(consumables.loc[consumables[
+                                                        'Intervention_Pkg'] ==
+                                                    'Maternal sepsis case management',
+                                                    'Intervention_Pkg_Code'])[0]
 
-# =====================================  MATERNAL SEPSIS TREATMENT ====================================================
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_sepsis: 1}],
+            'Item_Code': [],
+        }
 
-        if mni[person_id]['sepsis']:
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # TODO: consider 1st line/2nd line and efficacy etc etc
+        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sepsis]:
+            logger.debug('pkg_code_sepsis is available, so use it.')
             treatment_effect = params['prob_cure_antibiotics']
             random = self.sim.rng.random_sample(size=1)
             if treatment_effect > random:
                 mni[person_id]['sepsis'] = False
                 print('Treatment success- antibiotics')
+        else:
+            logger.debug('pkg_code_sepsis is not available, so can' 't use it.')
+
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_ReceivesCareForMaternalSepsis: did not run')
+        pass
 
 
 class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, IndividualScopeEventMixin):
-    # TODO: consider refactoring as HSI_Labour_ReceivesCareForHypertensiveDisorders??
     """
     This is a Health System Interaction Event.
     It manages the
@@ -2009,36 +2038,19 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #   the_appt_footprint['InpatientDays'] = 1  # TODO: to be discussed with TH/TC best appt footprint to use
-        the_appt_footprint['Over5OPD'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-    #    pkg_code_eclampsia = pd.unique(consumables.loc[consumables[
-    #                                                       'Intervention_Pkg'] ==
-    #                                                   'Management of eclampsia',
-    #                                                   'Intervention_Pkg_Code'])[0]
-
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-                    'Intervention_Package_Code': [dummy_pkg_code],
-                    'Item_Code': []
-                }
+        assert isinstance(module, Labour)
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_ReceivesCareForEclampsia'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
-        self.ALERT_OTHER_DISEASES = []
+        self.TREATMENT_ID = 'Labour_ReceivesCareForHypertensiveDisorder'
 
-    def apply(self, person_id):
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1  # TODO: to be discussed with TH/TC best appt footprint to use
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props  # shortcut to the dataframe
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
@@ -2046,6 +2058,46 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
         logger.info('This is HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy, management of hypertensive '
                     'disorders of pregnancy for person %d on date %s',
                              person_id, self.sim.date)
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code_eclampsia = pd.unique(consumables.loc[consumables[
+                                                               'Intervention_Pkg'] ==
+                                                           'Management of eclampsia',
+                                                       'Intervention_Pkg_Code'])[0]
+
+        item_code_nf = pd.unique(
+            consumables.loc[consumables['Items'] == 'nifedipine retard 20 mg_100_IDA',
+                            'Item_Code']
+        )[0]
+        item_code_hz = pd.unique(
+            consumables.loc[consumables['Items'] == 'Hydralazine hydrochloride 20mg/ml, 1ml_each_CMST',
+                            'Item_Code']
+        )[0]
+        item_code_md = pd.unique(
+            consumables.loc[consumables['Items'] == 'Methyldopa 250mg_1000_CMS',
+                            'Item_Code']
+        )[0]
+        item_code_hs = pd.unique(
+            consumables.loc[consumables['Items'] ==  "Ringer's lactate (Hartmann's solution), 500 ml_20_IDA",
+                            'Item_Code']
+        )[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_eclampsia: 1}],
+            'Item_Code': [{item_code_nf: 2}, {item_code_hz:  2}, {item_code_md: 2}, {item_code_hs: 1}],
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # TODO: Again determine how to reflect 1st/2nd line choice
+#        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_obst_lab]:
+#            logger.debug('pkg_code_obst_lab is available, so use it.')
+#        else:
+#            logger.debug('pkg_code_obst_lab is not available, so can' 't use it.')
+
 
 # =======================================  HYPERTENSION TREATMENT ======================================================
         # tbc
@@ -2089,6 +2141,14 @@ class HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(HSI_Event, Indi
                             person_id)
 
         # Guidelines suggest assisting with second stage of labour via AVD - consider including this?
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_ReceivesCareForMaternalSepsis: did not run')
+        pass
 
 
 class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEventMixin):
@@ -2099,51 +2159,54 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
-
-        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-    #   the_appt_footprint['InpatientDays'] = 1
-        the_appt_footprint['Over5OPD'] = 1
-
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-    #    pkg_code_pph = pd.unique(consumables.loc[consumables[
-    #                                                 'Intervention_Pkg'] ==
-    #                                             'Treatment of postpartum hemorrhage',
-    #                                             'Intervention_Pkg_Code'])[0]
-
-    #    item_code_aph1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
-    #    item_code_aph2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])
-    #                                                                                                               [0]
-    #    item_code_aph3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
-    #    item_code_aph4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
-    #                                               'Item_Code'])[0]
-    #    item_code_aph5 = pd.unique(consumables.loc[consumables['Items'] == 'Gloves, surgeon’s, latex, disposable,'
-    #                                                                       ' sterile, pair', 'Item_Code'])[0]
-
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                 'Intervention_Pkg_Code'])[0]
-
-        the_cons_footprint = {
-                    'Intervention_Package_Code': [dummy_pkg_code],
-                    'Item_Code': []
-                }
+        assert isinstance(module, Labour)
 
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Labour_ReceivesCareForMaternalHaemorrhage'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [1, 2, 3]  # check this?
-        self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+        the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        the_appt_footprint['InpatientDays'] = 1
+
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
+        self.ALERT_OTHER_DISEASES = ['*']
+
+    def apply(self, person_id, squeeze_factor):
+        # TODO: squeeze factor AND consider having APH, PPH and RPP as separate treatment events??
+
         df = self.sim.population.props
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
         logger.info('This is HSI_Labour_ReceivesCareForMaternalHaemorrhage, management of obstructed labour for person '
                     '%d on date %s', person_id, self.sim.date)
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code_pph = pd.unique(consumables.loc[consumables[
+                                                         'Intervention_Pkg'] ==
+                                                     'Treatment of postpartum hemorrhage',
+                                                     'Intervention_Pkg_Code'])[0]
+
+        item_code_aph1 = pd.unique(consumables.loc[consumables['Items'] == 'Blood, one unit', 'Item_Code'])[0]
+        item_code_aph2 = pd.unique(consumables.loc[consumables['Items'] == 'Lancet, blood, disposable', 'Item_Code'])[0]
+        item_code_aph3 = pd.unique(consumables.loc[consumables['Items'] == 'Test, hemoglobin', 'Item_Code'])[0]
+        item_code_aph4 = pd.unique(consumables.loc[consumables['Items'] == 'IV giving/infusion set, with needle',
+                                                       'Item_Code'])[0]
+        item_code_aph5 = pd.unique(consumables.loc[consumables['Items'] == 'Gloves, surgeon’s, latex, disposable,'
+                                                                               'sterile, pair', 'Item_Code'])[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_pph: 1}],
+            'Item_Code': [{item_code_aph1: 2}, {item_code_aph2: 1}, {item_code_aph3: 1}, {item_code_aph4: 1},
+                          {item_code_aph5: 1}],
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+
+        # TODO: Again determine how to use outcome of consumable request
 
 # ===================================  ANTEPARTUM HAEMORRHAGE TREATMENT ===============================================
         # TODO: consider severity grading?
@@ -2159,7 +2222,7 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                             priority=0,
                                                             topen=self.sim.date,
-                                                            tclose=self.sim.date + DateOffset(days=14)
+                                                            tclose=self.sim.date + DateOffset(days=1)
                                                             )
 
 # ======================================= POSTPARTUM HAEMORRHAGE ======================================================
@@ -2217,9 +2280,17 @@ class HSI_Labour_ReceivesCareForMaternalHaemorrhage(HSI_Event, IndividualScopeEv
                 self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                     priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=14)
+                                                                    tclose=self.sim.date + DateOffset(days=1)
                                                                     )
 
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT  # The actual time take is double what is expected
+        #    actual_appt_footprint['ConWithDCSA'] = actual_appt_footprint['ConWithDCSA'] * 2
+
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_ReceivesCareForMaternalHaemorrhage: did not run')
+        pass
 
 class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2238,7 +2309,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         the_appt_footprint['InpatientDays'] = 1
 
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL= 2 # check this?
+        self.ACCEPTED_FACILITY_LEVEL = 2 # check this?
         self.ALERT_OTHER_DISEASES = ['*']
 
     def apply(self, person_id, squeeze_factor):
@@ -2312,38 +2383,38 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
 
         # =============================  SCHEDULING ADDITIONAL TREATMENT ==============================================
 
-#        if mni[person_id]['sepsis']:
-#            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
-#                        'treatment for maternal sepsis during the postpartum period for person %d', person_id)
+        if mni[person_id]['sepsis_pp']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for maternal sepsis during the postpartum period for person %d', person_id)
 
-#            event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
-#            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-#                                                        priority=0,
-#                                                        topen=self.sim.date,
-#                                                        tclose=self.sim.date + DateOffset(days=14)
-#                                                        )
+            event = HSI_Labour_ReceivesCareForMaternalSepsis(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                        priority=0,
+                                                        topen=self.sim.date,
+                                                        tclose=self.sim.date + DateOffset(days=1)
+                                                        )
 
-#        if mni[person_id]['PPH']:
-#            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
-#                        'treatment for antepartum haemorrhage during the postpartum period for person %d', person_id)
+        if mni[person_id]['PPH']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for antepartum haemorrhage during the postpartum period for person %d', person_id)
 
-#            event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
-#            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-#                                                                    priority=0,
-#                                                                    topen=self.sim.date,
-#                                                                    tclose=self.sim.date + DateOffset(days=14)
-#                                                                    )
+            event = HSI_Labour_ReceivesCareForMaternalHaemorrhage(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1)
+                                                                    )
 
-#        if mni[person_id]['eclampsia_pp']:
-#            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
-#                        'treatment for eclampsia during the postpartum period for person %d', person_id)
+        if mni[person_id]['eclampsia_pp']:
+            logger.info('This is HSI_Labour_ReceivesCareForPostpartumPeriod: scheduling immediate additional '
+                        'treatment for eclampsia during the postpartum period for person %d', person_id)
 
-#            event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
-#            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-#                                                                    priority=0,
-#                                                                    topen=self.sim.date,
-#                                                                    tclose=self.sim.date + DateOffset(days=14)
-#                                                                    )
+            event = HSI_Labour_ReceivesCareForHypertensiveDisordersOfPregnancy(self.module, person_id=person_id)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+                                                                    priority=0,
+                                                                    topen=self.sim.date,
+                                                                    tclose=self.sim.date + DateOffset(days=1)
+                                                                    )
 
         actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT #  TODO: modify based on complications?
 
@@ -2353,7 +2424,7 @@ class HSI_Labour_ReceivesCareForPostpartumPeriod(HSI_Event, IndividualScopeEvent
         logger.debug('HSI_Labour_ReceivesCareForPostpartumPeriod: did not run')
         pass
 
-class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixin):
+class HSI_Labour_ReferredForSurgicalCareInLabour(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This event manages the Health System Interaction for a woman who needs to be referred to undergo an emergency
@@ -2362,48 +2433,51 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
+        assert isinstance(module,Labour)
+
+        # Define the necessary information for an HSI
+        self.TREATMENT_ID = 'Labour_ReferredForSurgicalCareInLabour'
 
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
 
     #   the_appt_footprint['MajorSurg'] = 1  # this appt could be used for uterine repair/pph management
-    #   the_appt_footprint['Csection'] = 1
-        the_appt_footprint['Over5OPD'] = 1
+        the_appt_footprint['Csection'] = 1
 
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
-
-        pkg_code_cs = pd.unique(consumables.loc[consumables[
-                                                        'Intervention_Pkg'] ==
-                                                'Cesearian Section with indication (with complication)',  # or without?
-                                                'Intervention_Pkg_Code'])[0]
-
-        dummy_pkg_code = pd.unique(consumables.loc[consumables[
-                                                       'Intervention_Pkg'] ==
-                                                   'HIV Testing Services',
-                                                   'Intervention_Pkg_Code'])[0]
-
-        # pkg_code_uterine_repair
-        # pkg_code_pph_surgery
-        # +/- hysterectomy?
-
-        the_cons_footprint = {
-            'Intervention_Package_Code': [dummy_pkg_code],
-            'Item_Code': []
-        }
-
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Labour_ReferredForSurgicalCareInLabour'
-        self.APPT_FOOTPRINT = the_appt_footprint
-        self.CONS_FOOTPRINT = the_cons_footprint
-        self.ACCEPTED_FACILITY_LEVELS = [2, 3]  # check this?
+        self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+        self.ACCEPTED_FACILITY_LEVEL = 2  # check this?
         self.ALERT_OTHER_DISEASES = []
 
-    def apply(self, person_id):
+    def apply(self, person_id, squeeze_factor):
+
+        #  TODO: squeeze factor and consider splitting HSIs for different surgeries
+
         df = self.sim.population.props
         params = self.module.parameters
         mni = self.module.mother_and_newborn_info
 
         logger.info('This is HSI_Labour_ReferredForSurgicalCareInLabour,providing surgical care during labour and the'
                     ' postpartum period for person %d on date %s', person_id, self.sim.date)
+
+        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+
+        pkg_code_cs = pd.unique(consumables.loc[consumables[
+                                                    'Intervention_Pkg'] ==
+                                                'Cesearian Section with indication (with complication)',  # or without?
+                                                'Intervention_Pkg_Code'])[0]
+
+        consumables_needed = {
+            'Intervention_Package_Code': [{pkg_code_cs: 1}],
+            'Item_Code': [],
+        }
+
+        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+            hsi_event=self, cons_req_as_footprint=consumables_needed
+        )
+        # TODO: consumables
+
+        # pkg_code_uterine_repair
+        # pkg_code_pph_surgery
+        # +/- hysterectomy?
 
 # ====================================== EMERGENCY CAESAREAN SECTION ==================================================
 
@@ -2456,6 +2530,13 @@ class HSI_Labour_ReferredForSurgicalCareInLabour(Event, IndividualScopeEventMixi
                     if params['prob_cure_hysterectomy'] > random:
                         mni[person_id]['PPH'] = False
                         print('Treatment success- this bleed has been stopped by a hysterectomy')
+
+        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT #  TODO: modify based on complications?
+        return actual_appt_footprint
+
+    def did_not_run(self):
+        logger.debug('HSI_Labour_ReferredForSurgicalCareInLabour: did not run')
+        pass
 
 
 class LabourLoggingEvent(RegularEvent, PopulationScopeEventMixin):

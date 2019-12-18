@@ -474,7 +474,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                     random2 = self.sim.rng.choice(('mild', 'moderate','severe', 'blindness'), p=[0.4, 0.3, 0.2, 0.1])
                     df.at[individual_id, 'nb_retinopathy_prem'] = random2
                     logger.info('Neonate %d has developed retinopathy of prematurity, severity:',random2,
-                                individual_id)
+                                individual_id) #TODO this doesnt really work
 
             #  TODO: Consider application of impairment variable and how based to decide probabilities
 
@@ -501,7 +501,7 @@ class NewbornOutcomeEvent(Event, IndividualScopeEventMixin):
                                                                == 'moderate_enceph')
                                                            or(df.at[individual_id, 'nb_encephalopathy'] ==
                                                               'severe_enceph')):  #  What about preterm comps?
-            prob = 0 #0.75  # DUMMY VALUE
+            prob = 0.75
             random = self.sim.rng.random_sample(size=1)
             if random < prob:
                 event = HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(self.module, person_id=individual_id)
@@ -669,7 +669,8 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
                                                  'Intervention_Pkg_Code'])[0]
 
         item_code_vk = pd.unique(
-            consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml', 'Item_Code']
+            consumables.loc[consumables['Items'] == 'vitamin K1  (phytomenadione) 1 mg/ml, 1 ml, inj._100_IDA',
+                            'Item_Code']
         )[0]
         item_code_tc = pd.unique(
             consumables.loc[consumables['Items'] == 'tetracycline HCl 3% skin ointment, 15 g_10_IDA', 'Item_Code']
@@ -802,7 +803,7 @@ class HSI_NewbornOutcomes_ReceivesCareFollowingDelivery(HSI_Event, IndividualSco
         pass
 
 
-class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(Event, HSI_Event):
+class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This is event manages the administration of newborn resuscitation in the event of birth asphyxia
@@ -867,7 +868,7 @@ class HSI_NewbornOutcomes_ReceivesNewbornResuscitation(Event, HSI_Event):
         logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
         pass
 
-class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, HSI_Event):
+class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
     This is event manages the administration of newborn resuscitation in the event of birth asphyxia
@@ -927,7 +928,6 @@ class HSI_NewbornOutcomes_ReceivesTreatmentForSepsis(Event, HSI_Event):
     def did_not_run(self):
         logger.debug('HSI_NewbornOutcomes_ReceivesCareFollowingDelivery: did not run')
         pass
-
 
 
 class NewbornOutcomesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
