@@ -583,7 +583,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
         # print(self.sim.date)
 
         # ----------------------------------- NEW INFECTIONS -----------------------------------
-        # new clinical infections
+        # new clinical infections: susceptible = uninfected and asym
         uninf = df.index[(df.ma_specific_symptoms == 'none') & df.is_alive]
         now_infected = rng.choice([True, False],
                                   size=len(uninf),
@@ -770,7 +770,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             # Assign time of infections across the month
             random_draw = rng.random_sample(size=len(df))
 
-            # the cfr applies to all clinical malaria - specific to severe may be even higher
+            # the cfr applies to all severe cases
             death = df.index[
                 (df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
 
@@ -790,6 +790,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             logger.debug('MalariaEventNational: no one is newly infected.')
 
 
+# todo: new symptom manager / generic hsi as in national event
 class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
@@ -1010,7 +1011,7 @@ class MalariaEventDistrict(RegularEvent, PopulationScopeEventMixin):
             # Assign time of infections across the month
             random_draw = rng.random_sample(size=len(df))
 
-            # the cfr applies to all clinical malaria - specific to severe may be even higher
+            # the cfr applies to all severe malaria cases
             death = df.index[
                 (df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now) & (random_draw < p['cfr'])]
 
