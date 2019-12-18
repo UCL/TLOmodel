@@ -668,7 +668,7 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
 
             # Give everyone with clinical malaria generic symptom fever (some will go to care for this)
             # Report this to the unified symptom manager:
-            # this just gives the person the symptom
+            # the symptom manager just gives the person the symptom
             if len(clin) > 0:
 
                 self.sim.modules['SymptomManager'].chg_symptom(
@@ -677,6 +677,12 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
                     add_or_remove='+',
                     disease_module=self.module,
                     duration_in_days=10)
+
+            # the HealthSeekingBehaviourPoll will check for generic symptoms daily and schedule a generic appt
+            # in generic appt, code 'if fever: schedule HSI_malaria_rdt
+            # if severe malaria, schedule my own HSI_severe_tx combined with rdt
+
+            # Q. how to calibrate tx coverage levels, where is the gating step?
 
             # interv = p['interv']
             #
@@ -719,26 +725,45 @@ class MalariaEventNational(RegularEvent, PopulationScopeEventMixin):
             #     logger.debug(
             #         'MalariaEventNational: There is no new healthcare seeking for clinical cases')
             #
-            # # SEVERE CASES
-            # # todo check only severe cases are passing through here
+            # SEVERE CASES
+            # todo check only severe cases are passing through here
             # severe = df.index[(df.ma_specific_symptoms == 'severe') & (df.ma_date_infected == now)]
             #
             # for person_index in severe:
             #     # print(person_index)
             #
-            #     logger.debug(
-            #         'MalariaEventNational: scheduling HSI_Malaria_rdt for severe malaria case %d',
-            #         person_index)
+            #     # adult severe malaria case
+            #     if df.at[person_index, 'age_years_exact'] >= 5:
             #
-            #     delay = rng.choice(2)
-            #     # print(delay)
+            #         logger.debug(
+            #             'MalariaEventNational: scheduling HSI_Malaria_tx_compl_adult for severe malaria case %d',
+            #             person_index)
             #
-            #     event = HSI_Malaria_rdt(self.module, person_id=person_index)
-            #     self.sim.modules['HealthSystem'].schedule_hsi_event(event,
-            #                                                         priority=2,
-            #                                                         topen=self.sim.date + DateOffset(days=delay),
-            #                                                         tclose=self.sim.date + DateOffset(days=(delay + 14))
-            #                                                         )
+            #         delay = rng.choice(2)  # random delay 0-2 days
+            #         # print(delay)
+            #
+            #         # severe malaria intervention happen with priority=0 (highest)
+            #         event = HSI_Malaria_tx_compl_adult(self.module, person_id=person_index)
+            #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+            #                                                             priority=0,
+            #                                                             topen=self.sim.date + DateOffset(days=delay),
+            #                                                             tclose=self.sim.date + DateOffset(days=(delay + 14))
+            #                                                             )
+            #     if df.at[person_index, 'age_years_exact'] < 5:
+            #         logger.debug(
+            #             'MalariaEventNational: scheduling HSI_Malaria_tx_compl_child for severe malaria case %d',
+            #             person_index)
+            #
+            #         delay = rng.choice(2)  # random delay 0-2 days
+            #         # print(delay)
+            #
+            #         event = HSI_Malaria_tx_compl_child(self.module, person_id=person_index)
+            #         self.sim.modules['HealthSystem'].schedule_hsi_event(event,
+            #                                                             priority=0,
+            #                                                             topen=self.sim.date + DateOffset(days=delay),
+            #                                                             tclose=self.sim.date + DateOffset(
+            #                                                                 days=(delay + 14))
+            #                                                             )
 
             # ----------------------------------- SCHEDULED DEATHS -----------------------------------
             # schedule deaths within the next week
@@ -1037,7 +1062,6 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
                 df.at[individual_id, 'ma_date_death'] = self.sim.date
 
 
-
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 # ---------------------------------------------------------------------------------
@@ -1055,7 +1079,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
         # Get a blank footprint and then edit to define call on resources of this treatment event
         the_appt_footprint = self.sim.modules['HealthSystem'].get_blank_appt_footprint()
-        the_appt_footprint['ConWithDCSA'] = 1
+        the_appt_footprint['LabPOC'] = 1
         # print(the_appt_footprint)
 
         # Define the necessary information for an HSI
